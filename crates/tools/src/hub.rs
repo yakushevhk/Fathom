@@ -56,6 +56,9 @@ enum HubCommand {
     /// List all live agents.
     #[serde(rename = "list")]
     List,
+    /// List all async jobs owned by this agent.
+    #[serde(rename = "jobs")]
+    Jobs,
     /// Update this agent's activity description.
     #[serde(rename = "set_activity")]
     SetActivity {
@@ -273,6 +276,28 @@ impl Tool for HubTool {
                 Ok(ToolOutput::ok(format!(
                     "{} agent(s):\n{}",
                     agents.len(),
+                    lines.join("\n")
+                )))
+            }
+
+            HubCommand::Jobs => {
+                let jobs = pr_core::async_job::AsyncJobManager::global()
+                    .list_by_owner(&agent_id);
+                if jobs.is_empty() {
+                    return Ok(ToolOutput::ok("No async jobs."));
+                }
+                let lines: Vec<String> = jobs
+                    .iter()
+                    .map(|j| {
+                        format!(
+                            "- #{} label={} status={:?} tokens={}",
+                            j.id, j.label, j.status, j.tokens
+                        )
+                    })
+                    .collect();
+                Ok(ToolOutput::ok(format!(
+                    "{} job(s):\n{}",
+                    jobs.len(),
                     lines.join("\n")
                 )))
             }

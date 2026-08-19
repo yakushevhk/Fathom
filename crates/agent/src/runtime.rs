@@ -84,6 +84,9 @@ pub struct AgentRuntime {
     /// Completion notices from background children (fleet E2):
     /// (label, summary, subtree_tokens).
     bg_results: Arc<std::sync::Mutex<Vec<(String, Result<String, String>, u64)>>>,
+    /// Receiver for async job results (from AsyncJobManager delivery sink).
+    /// Drained at turn boundaries alongside bg_results.
+    job_results: Option<tokio::sync::mpsc::UnboundedReceiver<pr_core::async_job::JobResult>>,
     /// How many times Stop hooks already forced a continuation.
     stop_continuations: u32,
     /// How many times a truncated reasoning response (empty content,
@@ -188,6 +191,7 @@ impl AgentRuntime {
             question_tx: None,
             approval_tx: None,
             bg_results: Arc::new(std::sync::Mutex::new(Vec::new())),
+            job_results: None,
             stop_continuations: 0,
             truncation_retries: 0,
             role_llms: std::collections::HashMap::new(),
@@ -220,6 +224,11 @@ impl AgentRuntime {
         pr_core::SteerRegistry::global().register(&self.id, tx.clone());
         self.steer_tx = Some(tx);
         self.peer_steer_rx = Some(rx);
+
+        // Register the async job delivery sink so background results are
+        // delivered to this agent.
+        let job_rx = pr_core::async_job::AsyncJobManager::global().register_sink(&self.id);
+        self.job_results = Some(job_rx);
     }
 
     /// Unregister this agent from the process-global bus, registry, and
@@ -939,6 +948,37 @@ impl AgentRuntime {
                             summary.chars().take(4000).collect::<String>()
                         ),
                         Err(e) => format!("[background agent {label} failed: {e}]"),
+                    };
+                    let note = Message::user(text);
+                    self.messages.push(note.clone());
+                    self.db.add_message(&self.id, &note)?;
+                    self.track_message_tokens(&note);
+                }
+            }
+
+            // AsyncJobManager results (background spawns) — drained at the
+            // same turn boundary.
+            {
+                let job_results: Vec<pr_core::async_job::JobResult> = self
+                    .job_results
+                    .as_mut()
+                    .map(|rx| {
+                        let mut v = Vec::new();
+                        while let Ok(res) = rx.try_recv() {
+                            v.push(res);
+                        }
+                        v
+                    })
+                    .unwrap_or_default();
+                for res in job_results {
+                    self.descendant_tokens += res.tokens;
+                    let text = match &res.result {
+                        Ok(summary) => format!(
+                            "[background job {} completed]\n{}",
+                            res.label,
+                            summary.chars().take(4000).collect::<String>()
+                        ),
+                        Err(e) => format!("[background job {} failed: {e}]", res.label),
                     };
                     let note = Message::user(text);
                     self.messages.push(note.clone());
@@ -1703,6 +1743,12 @@ impl AgentRuntime {
                 Ok((aid, child)) => {
                     if is_background {
                         let label = aid.0.clone();
+                        // Register the background job in AsyncJobManager so
+                        // it can be listed via hub and its result is
+                        // delivered to the parent's delivery sink.
+                        let mgr = pr_core::async_job::AsyncJobManager::global();
+                        let job_id = mgr.create_job(&self.id, &label);
+                        mgr.mark_running(job_id);
                         let fut = child_wait_future(
                             child,
                             aid.clone(),
@@ -1714,6 +1760,7 @@ impl AgentRuntime {
                             spill_dir.clone(),
                         );
                         let slot = self.bg_results.clone();
+                        let owner = self.id.clone();
                         tokio::spawn(async move {
                             // Keep the subtree token count — it feeds the
                             // session budget accounting (fleet round 2).
@@ -1721,9 +1768,14 @@ impl AgentRuntime {
                                 Ok((summary, tokens)) => (Ok(summary), tokens),
                                 Err(e) => (Err(e.to_string()), 0),
                             };
+                            // Deliver via AsyncJobManager to the owner's sink.
+                            let mgr = pr_core::async_job::AsyncJobManager::global();
+                            mgr.complete(job_id, res.clone(), tokens);
+                            // Legacy path: also push raw result to bg_results.
                             if let Ok(mut v) = slot.lock() {
                                 v.push((label, res, tokens));
                             }
+                            let _ = owner;
                         });
                         bg_launched.push((call_id, aid.0.clone()));
                     } else {

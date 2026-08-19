@@ -2118,6 +2118,7 @@ dependencies = [
  "chrono",
  "dirs",
  "futures",
+ "parking_lot",
  "pr-core",
  "pr-llm",
  "pr-memory",

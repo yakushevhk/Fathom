@@ -23,6 +23,7 @@ reqwest.workspace = true
 uuid.workspace = true
 dirs = "5"
 sha2 = "0.10"
+parking_lot.workspace = true
 
 [dev-dependencies]
 tempfile = "3"
