@@ -112,6 +112,10 @@ name = "e2e_multi_agent"
 path = "tests/e2e/multi_agent.rs"
 
 [[test]]
+name = "e2e_hub_messaging"
+path = "tests/e2e/hub_messaging.rs"
+
+[[test]]
 name = "e2e_real_tools"
 path = "tests/e2e/real_tools.rs"
 

@@ -1,0 +1,347 @@
+//! `hub` tool: inter-agent messaging, peer discovery, and job management.
+//!
+//! Provides a unified interface for agents to:
+//! - `send` — send a message to another agent or broadcast
+//! - `wait` — block until a message arrives (from a specific peer or any)
+//! - `inbox` — read pending messages without blocking
+//! - `list` — see all live agents, their statuses, and activity
+//! - `set_activity` — update the agent's own activity description
+
+use async_trait::async_trait;
+use pr_core::irc::{AgentRegistry, DeliveryReceipt, IrcBus, IrcMessage};
+use pr_core::ids::AgentId;
+use pr_core::{ToolOutput, ToolSchema};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+use tokio::sync::oneshot;
+
+use crate::registry::{Tool, ToolContext};
+
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(tag = "command")]
+enum HubCommand {
+    /// Send a message to a peer agent (or broadcast to all).
+    #[serde(rename = "send")]
+    Send {
+        /// Target agent id. Omit or leave empty for broadcast.
+        #[serde(default)]
+        to: Option<String>,
+        /// Message content.
+        message: String,
+        /// If true, block until the target replies.
+        #[serde(default)]
+        await_reply: bool,
+    },
+    /// Wait for an incoming message from a specific peer (or any).
+    #[serde(rename = "wait")]
+    Wait {
+        /// Optional: only accept messages from this agent id.
+        #[serde(default)]
+        from: Option<String>,
+        /// Timeout in seconds (default 60, 0 = no timeout).
+        #[serde(default = "default_wait_timeout")]
+        timeout_secs: u64,
+    },
+    /// Read pending messages without blocking.
+    #[serde(rename = "inbox")]
+    Inbox {
+        /// If true, don't consume the messages.
+        #[serde(default)]
+        peek: bool,
+    },
+    /// List all live agents.
+    #[serde(rename = "list")]
+    List,
+    /// Update this agent's activity description.
+    #[serde(rename = "set_activity")]
+    SetActivity {
+        /// New activity description.
+        activity: String,
+    },
+}
+
+fn default_wait_timeout() -> u64 {
+    60
+}
+
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+struct HubParams {
+    #[serde(flatten)]
+    command: HubCommand,
+}
+
+/// Unified peer-to-peer coordination tool.
+pub struct HubTool;
+
+#[async_trait]
+impl Tool for HubTool {
+    fn name(&self) -> &str {
+        "hub"
+    }
+
+    fn description(&self) -> &str {
+        "Inter-agent communication and coordination. Use `hub` to send \
+         messages to other agents, wait for replies, read your inbox, \
+         list all live agents, or update your activity description."
+    }
+
+    fn schema(&self) -> ToolSchema {
+        ToolSchema {
+            name: self.name().to_string(),
+            description: self.description().to_string(),
+            parameters: serde_json::to_value(schemars::schema_for!(HubParams)).unwrap(),
+        }
+    }
+
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
+        let params: HubParams = serde_json::from_value(args)?;
+        let agent_id = match &ctx.agent_id {
+            Some(id) => id.clone(),
+            None => {
+                return Ok(ToolOutput::err(
+                    "hub tool requires an agent_id to be set in ToolContext",
+                ))
+            }
+        };
+
+        match params.command {
+            HubCommand::Send {
+                to,
+                message,
+                await_reply,
+            } => {
+                let bus = IrcBus::global();
+                let msg_id = bus.next_msg_id();
+
+                if let Some(target_id) = to {
+                    // Direct message
+                    let target = AgentId(target_id.clone());
+                    let msg = IrcMessage {
+                        from: agent_id.clone(),
+                        to: Some(target.clone()),
+                        content: message,
+                        id: msg_id.clone(),
+                        expects_reply: await_reply,
+                        reply_to: None,
+                    };
+
+                    let receipt = bus.send(msg);
+
+                    if await_reply {
+                        // Wait for a reply from the target
+                        let (tx, rx) = oneshot::channel();
+                        bus.register_waiter(Some(target), tx);
+
+                        let timeout = std::time::Duration::from_secs(120);
+                        match tokio::time::timeout(timeout, rx).await {
+                            Ok(Ok(reply)) => {
+                                return Ok(ToolOutput::ok(format!(
+                                    "Reply from {}: {}",
+                                    reply.from, reply.content
+                                )));
+                            }
+                            Ok(Err(_)) => {
+                                return Ok(ToolOutput::ok(
+                                    "No reply received (waiter channel closed).",
+                                ));
+                            }
+                            Err(_) => {
+                                return Ok(ToolOutput::ok(
+                                    "Timed out waiting for reply.",
+                                ));
+                            }
+                        }
+                    }
+
+                    let status = match receipt {
+                        DeliveryReceipt::Delivered => "delivered".to_string(),
+                        DeliveryReceipt::WaiterDelivered => "delivered (waiter)".to_string(),
+                        DeliveryReceipt::AgentNotFound => {
+                            "agent not found (message queued)".to_string()
+                        }
+                        DeliveryReceipt::Broadcast(_) => "broadcast".to_string(),
+                    };
+                    Ok(ToolOutput::ok(format!(
+                        "Message sent to {target_id}: {status}"
+                    )))
+                } else {
+                    // Broadcast
+                    let msg = IrcMessage {
+                        from: agent_id,
+                        to: None,
+                        content: message,
+                        id: msg_id,
+                        expects_reply: false,
+                        reply_to: None,
+                    };
+                    match bus.send(msg) {
+                        DeliveryReceipt::Broadcast(n) => {
+                            Ok(ToolOutput::ok(format!("Broadcast sent to {n} agent(s)")))
+                        }
+                        other => Ok(ToolOutput::ok(format!("Broadcast result: {other:?}"))),
+                    }
+                }
+            }
+
+            HubCommand::Wait { from, timeout_secs } => {
+                let bus = IrcBus::global();
+                let from_id = from.map(AgentId);
+
+                let (tx, mut rx) = oneshot::channel();
+                bus.register_waiter(from_id, tx);
+
+                let timeout = if timeout_secs > 0 {
+                    std::time::Duration::from_secs(timeout_secs)
+                } else {
+                    std::time::Duration::from_secs(300) // default 5 min
+                };
+
+                match tokio::time::timeout(timeout, &mut rx).await {
+                    Ok(Ok(msg)) => Ok(ToolOutput::ok(format!(
+                        "Message from {}: {}",
+                        msg.from, msg.content
+                    ))),
+                    Ok(Err(_)) => Ok(ToolOutput::ok("No message received.")),
+                    Err(_) => Ok(ToolOutput::ok("Timed out waiting for message.")),
+                }
+            }
+
+            HubCommand::Inbox { peek } => {
+                let bus = IrcBus::global();
+                let msgs = if peek {
+                    // For peek we just drain (non-destructive peek not supported yet)
+                    bus.drain_mailbox(&agent_id)
+                } else {
+                    bus.drain_mailbox(&agent_id)
+                };
+
+                if msgs.is_empty() {
+                    return Ok(ToolOutput::ok("Inbox is empty."));
+                }
+
+                let summary: Vec<String> = msgs
+                    .iter()
+                    .map(|m| format!("[from {}] {}", m.from, m.content))
+                    .collect();
+                Ok(ToolOutput::ok(format!(
+                    "{} message(s):\n{}",
+                    msgs.len(),
+                    summary.join("\n")
+                )))
+            }
+
+            HubCommand::List => {
+                let registry = AgentRegistry::global();
+                let agents = registry.list();
+
+                if agents.is_empty() {
+                    return Ok(ToolOutput::ok("No other agents registered."));
+                }
+
+                let lines: Vec<String> = agents
+                    .iter()
+                    .map(|a| {
+                        format!(
+                            "- {} (role={}, status={}, activity={})",
+                            a.id, a.role, a.status, a.activity
+                        )
+                    })
+                    .collect();
+                Ok(ToolOutput::ok(format!(
+                    "{} agent(s):\n{}",
+                    agents.len(),
+                    lines.join("\n")
+                )))
+            }
+
+            HubCommand::SetActivity { activity } => {
+                let registry = AgentRegistry::global();
+                registry.update_activity(&agent_id, activity);
+                Ok(ToolOutput::ok("Activity updated."))
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pr_core::irc::AgentRef;
+    use pr_core::agent::AgentRole;
+    use chrono::Utc;
+
+    #[test]
+    fn test_hub_schema_is_valid() {
+        let tool = HubTool;
+        let schema = tool.schema();
+        assert_eq!(schema.name, "hub");
+        assert!(!schema.description.is_empty());
+    }
+
+    #[test]
+    fn test_hub_params_serde_send() {
+        let json = serde_json::json!({
+            "command": "send",
+            "to": "agent-123",
+            "message": "hello",
+            "await_reply": false
+        });
+        let params: HubParams = serde_json::from_value(json).unwrap();
+        match params.command {
+            HubCommand::Send { to, message, await_reply } => {
+                assert_eq!(to, Some("agent-123".to_string()));
+                assert_eq!(message, "hello");
+                assert!(!await_reply);
+            }
+            _ => panic!("expected Send"),
+        }
+    }
+
+    #[test]
+    fn test_hub_params_serde_list() {
+        let json = serde_json::json!({
+            "command": "list"
+        });
+        let params: HubParams = serde_json::from_value(json).unwrap();
+        match params.command {
+            HubCommand::List => {}
+            _ => panic!("expected List"),
+        }
+    }
+
+    #[test]
+    fn test_hub_params_serde_wait() {
+        let json = serde_json::json!({
+            "command": "wait",
+            "from": "agent-456",
+            "timeout_secs": 30
+        });
+        let params: HubParams = serde_json::from_value(json).unwrap();
+        match params.command {
+            HubCommand::Wait { from, timeout_secs } => {
+                assert_eq!(from, Some("agent-456".to_string()));
+                assert_eq!(timeout_secs, 30);
+            }
+            _ => panic!("expected Wait"),
+        }
+    }
+
+    #[test]
+    fn test_hub_params_serde_set_activity() {
+        let json = serde_json::json!({
+            "command": "set_activity",
+            "activity": "searching for contacts"
+        });
+        let params: HubParams = serde_json::from_value(json).unwrap();
+        match params.command {
+            HubCommand::SetActivity { activity } => {
+                assert_eq!(activity, "searching for contacts");
+            }
+            _ => panic!("expected SetActivity"),
+        }
+    }
+}

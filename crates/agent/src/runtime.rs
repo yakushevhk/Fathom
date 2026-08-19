@@ -85,6 +85,9 @@ pub struct AgentRuntime {
     /// Per-role LLM overrides inherited from the coordinator (fleet E8);
     /// children pick their provider by role at spawn time.
     role_llms: std::collections::HashMap<String, Arc<dyn LlmProvider>>,
+    /// Receiver half of the process-global IrcBus channel for this agent.
+    /// Incoming peer messages are drained at turn boundaries (fleet hub).
+    irc_rx: Option<tokio::sync::mpsc::UnboundedReceiver<pr_core::IrcMessage>>,
 }
 
 /// Per-role tool deny list from config (fleet E5). Keys are lowercase role
@@ -179,7 +182,35 @@ impl AgentRuntime {
             stop_continuations: 0,
             truncation_retries: 0,
             role_llms: std::collections::HashMap::new(),
+            irc_rx: None,
         }
+    }
+
+    /// Register this agent on the process-global IrcBus and AgentRegistry.
+    /// Call after `new()` before `run()`.
+    pub fn register_with_bus(&mut self) {
+        use pr_core::irc::{AgentRegistry, IrcBus, PeerStatus};
+
+        // Register on IrcBus for peer-to-peer messaging.
+        self.irc_rx = Some(IrcBus::global().register(&self.id));
+
+        // Register in AgentRegistry for discovery.
+        AgentRegistry::global().register(pr_core::AgentRef {
+            id: self.id.clone(),
+            role: self.role,
+            parent_id: self.parent_id.clone(),
+            status: PeerStatus::Running,
+            activity: self.task.clone(),
+            created_at: chrono::Utc::now(),
+            last_activity: chrono::Utc::now(),
+        });
+    }
+
+    /// Unregister this agent from the process-global bus and registry.
+    pub fn unregister_from_bus(&self) {
+        use pr_core::irc::{AgentRegistry, IrcBus};
+        IrcBus::global().unregister(&self.id);
+        AgentRegistry::global().unregister(&self.id);
     }
 
     /// Attach per-role LLM overrides (fleet E8).
@@ -252,6 +283,7 @@ impl AgentRuntime {
         if let Ok(ledger) = pr_tools::receipt::open_default_ledger().await {
             ctx = ctx.with_receipt_ledger(ledger);
         }
+        ctx = ctx.with_agent_id(self.id.clone());
         ctx
     }
 
@@ -773,6 +805,9 @@ impl AgentRuntime {
     }
 
     pub async fn run(&mut self) -> anyhow::Result<AgentOutput> {
+        // Register on the process-global IrcBus and AgentRegistry.
+        self.register_with_bus();
+
         // Initialize messages
         let digest = self.memory_digest_block().await;
         self.messages.push(Message::system(self.build_system_prompt(&digest)));
@@ -814,6 +849,37 @@ impl AgentRuntime {
                     self.messages.push(steer_msg.clone());
                     self.db.add_message(&self.id, &steer_msg)?;
                     self.track_message_tokens(&steer_msg);
+                }
+            }
+
+            // Inbox: peer-to-peer messages drained at turn boundaries.
+            // Injected as system-level context so the agent can react to
+            // requests from sibling agents and answer them.
+            {
+                let msgs: Vec<pr_core::IrcMessage> = self
+                    .irc_rx
+                    .as_mut()
+                    .map(|rx| {
+                        let mut v = Vec::new();
+                        while let Ok(msg) = rx.try_recv() {
+                            v.push(msg);
+                        }
+                        v
+                    })
+                    .unwrap_or_default();
+                for msg in msgs {
+                    tracing::info!(
+                        "Agent {} received peer message from {}",
+                        self.id,
+                        msg.from
+                    );
+                    let note = Message::user(format!(
+                        "[INBOX from agent {}] {}",
+                        msg.from, msg.content
+                    ));
+                    self.messages.push(note.clone());
+                    self.db.add_message(&self.id, &note)?;
+                    self.track_message_tokens(&note);
                 }
             }
 
@@ -1385,6 +1451,9 @@ impl AgentRuntime {
                 state: AgentState::Complete,
             });
         }
+
+        // Unregister from process-global bus and registry.
+        self.unregister_from_bus();
 
         Ok(AgentOutput {
             agent_id: self.id.clone(),

@@ -22,6 +22,7 @@ rust_xlsxwriter.workspace = true
 # needed at all, so the binary links fully static for the TB sandbox images.
 lettre = { version = "0.11", default-features = false, features = ["tokio1-rustls-tls", "smtp-transport", "builder", "hostname"] }
 tiktoken-rs = "0.12.0"
+parking_lot.workspace = true
 
 [dev-dependencies]
 tempfile = "3"

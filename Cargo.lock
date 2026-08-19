@@ -2143,6 +2143,7 @@ dependencies = [
  "chrono",
  "dirs",
  "lettre",
+ "parking_lot",
  "proptest",
  "pulldown-cmark",
  "reqwest",

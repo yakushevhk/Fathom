@@ -106,6 +106,9 @@ pub struct ToolContext {
     /// of which contact checks ran and what they concluded, so persistence can
     /// distinguish verified facts from guesses. Lazily attached by the runtime.
     pub receipt_ledger: Option<crate::receipt::ReceiptLedger>,
+    /// Agent id of the calling agent (set by the runtime before tool execution).
+    /// Needed by coordination tools like `hub` to identify the sender.
+    pub agent_id: Option<pr_core::AgentId>,
 }
 
 impl ToolContext {
@@ -135,6 +138,7 @@ impl ToolContext {
             memory: None,
             session_id: None,
             receipt_ledger: None,
+            agent_id: None,
         }
     }
 
@@ -187,6 +191,13 @@ impl ToolContext {
     /// to gate the "verified" flag.
     pub fn with_receipt_ledger(mut self, ledger: crate::receipt::ReceiptLedger) -> Self {
         self.receipt_ledger = Some(ledger);
+        self
+    }
+
+    /// Attach the calling agent's id (needed by `hub` and other
+    /// coordination tools to identify the sender).
+    pub fn with_agent_id(mut self, agent_id: pr_core::AgentId) -> Self {
+        self.agent_id = Some(agent_id);
         self
     }
 
@@ -347,6 +358,10 @@ impl ToolRegistry {
         // Depth enforcement happens in the agent runtime (it knows the
         // caller's depth); the tool only validates and packages the request.
         registry.register(Arc::new(crate::spawn::SpawnAgentTool));
+
+        // Inter-agent coordination: hub tool for messaging, discovery,
+        // and coordination.
+        registry.register(Arc::new(crate::hub::HubTool));
 
         // Operator control plane: ask the human mid-run. The actual
         // round-trip is performed by the agent runtime.
