@@ -65,7 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Normalized result schema** — all backends return structured results with titles, snippets, URLs, and metadata.
 
 #### Tool system
-- **46 built-in tools** + **5 browser automation tools** (CDP-based), managed through a central `ToolRegistry` with typed schemas, validation, and automatic documentation generation.
+- **51 built-in tools** + **5 browser automation tools** (CDP-based), managed through a central `ToolRegistry` with typed schemas, validation, and automatic documentation generation.
 - **Tool categories:**
   | Category | Tools |
   |---|---|
@@ -186,7 +186,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Tool discovery and schema caching.
   - Automatic reconnection on transport failure.
   - OAuth token refresh for authenticated servers.
-- **MCP Server** (`mcp-serve`) — exposes all 46 tools to external MCP clients (IDE agents, automation platforms, other AI systems).
+- **MCP Server** (`mcp-serve`) — exposes all 51 tools to external MCP clients (IDE agents, automation platforms, other AI systems).
 
 #### LLM abstraction
 - **Unified LLM interface** (`pr-llm`) — pluggable provider abstraction.

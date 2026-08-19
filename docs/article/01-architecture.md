@@ -1,6 +1,6 @@
 # 01. Architecture
 
-## Workspace: 8 crates
+## Workspace: 10 crates
 
 ```
 fathom (binary, src/main.rs + src/bench.rs)
@@ -12,7 +12,7 @@ fathom (binary, src/main.rs + src/bench.rs)
 ├── pr-agent         — the brain of the system: Coordinator, Runtime (agent loop),
 │                      ToolExecutor (batching and parallelism), prompts,
 │                      context budget, compaction, doom-loop protection
-├── pr-tools         — 38 built-in tools + registry + SSRF guard +
+├── pr-tools         — 51 built-in tools (plus 5 conditional browser tools) + registry + SSRF guard +
 │                      anti-injection + file locks + fetch cache
 ├── pr-mcp           — MCP client: dynamic connection of external tools
 ├── pr-persistence   — SQLite: session database (.research.db), contact

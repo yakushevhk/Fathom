@@ -1,6 +1,6 @@
 # Tool Reference
 
-**52 tools** available to agents (+5 browser tools when Chrome is running with CDP). Each implements the `Tool` trait and is automatically registered in `ToolRegistry`.
+**51 tools** available to agents (+5 browser tools when Chrome is running with CDP). Each implements the `Tool` trait and is automatically registered in `ToolRegistry`.
 
 **Tool categories:**
 

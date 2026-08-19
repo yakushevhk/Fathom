@@ -935,6 +935,16 @@ impl AgentRuntime {
                         self.id,
                         msg.from
                     );
+                    if msg.expects_reply {
+                        let _ = pr_core::IrcBus::global().send(pr_core::IrcMessage {
+                            from: self.id.clone(),
+                            to: Some(msg.from.clone()),
+                            content: format!("Received your message: {}", msg.content.chars().take(200).collect::<String>()),
+                            id: pr_core::IrcBus::global().next_msg_id(),
+                            expects_reply: false,
+                            reply_to: Some(msg.id.clone()),
+                        });
+                    }
                     let note = Message::user(format!(
                         "[INBOX from agent {}] {}",
                         msg.from, msg.content
@@ -1776,6 +1786,7 @@ impl AgentRuntime {
                         let mgr = pr_core::async_job::AsyncJobManager::global();
                         let job_id = mgr.create_job(&self.id, &label);
                         if !mgr.mark_running(job_id) {
+                            mgr.cancel(job_id);
                             let out = ToolOutput::err("Async job concurrency limit reached; retry later");
                             self.record_spawn_result(&call_id, &out)?;
                             continue;

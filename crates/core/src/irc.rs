@@ -213,8 +213,13 @@ impl IrcBus {
             let tx = self.agents.lock().get(&to.0).cloned();
             match tx {
                 Some(tx) => {
-                    if tx.send(msg).is_err() {
-                        // Channel closed — agent died without unregistering.
+                    if tx.send(msg.clone()).is_err() {
+                        // Channel closed — recover instead of dropping the
+                        // message. Remove the stale sender, then mailbox it.
+                        self.agents.lock().remove(&to.0);
+                        if !self.try_revive(&msg) {
+                            self.mailboxes.lock().entry(to.0.clone()).or_default().push(msg);
+                        }
                         DeliveryReceipt::AgentNotFound
                     } else {
                         DeliveryReceipt::Delivered

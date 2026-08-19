@@ -12,7 +12,7 @@ fathom/
 │   ├── core/          # Fundamental types and domain logic
 │   ├── llm/           # LLM provider abstraction
 │   ├── agent/         # Agent runtime, coordination, control plane
-│   ├── tools/         # 52+5 tools (52 core + 5 browser)
+│   ├── tools/         # 51+5 tools (51 core + 5 browser)
 │   ├── memory/        # Long-term semantic memory + entity graph
 │   ├── mcp/           # Model Context Protocol (client and server)
 │   ├── persistence/   # Data storage (SQLite, connection pool, jobs)
@@ -265,7 +265,7 @@ When the process crashes or is killed, sessions remain in the database with stat
 
 ## crates/tools
 
-**52 core tools** (+5 browser), all implement the `Tool` trait:
+**51 core tools** (+5 browser), all implement the `Tool` trait:
 
 ```rust
 #[async_trait]
@@ -290,12 +290,12 @@ Categories (details in [TOOLS.md](TOOLS.md)):
 - **Enrichment**: enrich_company, enrich_person
 - **Long-term memory**: memory_absorb, memory_search, memory_digest, memory_boost, memory_link, memory_graph
 - **Control plane**: question
-- **Multi-agent**: spawn_agent, hub, batch_spawn, handoff, daemon, steer
+- **Multi-agent**: spawn_agent (including batch/handoff parameters), hub (including steer), daemon
 - **Meta**: memory, skill, scratchpad, undo
 
 Helper modules:
 - `registry` — `ToolRegistry` (maps tool names to implementations), `ToolContext` (provides agent id, session id, working directory, config references)
-- `search` — `SearchEngine` with 7 backends: Google (Serper), Bing, Tavily, Exa, Firecrawl, Kagi, and a local fallback
+- `search` — `SearchEngine` with 7 backends: Linkup, Exa, Tavily, Serper, Brave, Parallel, and DuckDuckGo
 - `guard` — SSRF protection for all agent HTTP requests: validates every URL before fetch, blocks loopback/IPv6-private/RFC1918/link-local addresses, enforces max redirects (5), and re-validates each redirect hop to prevent DNS rebinding attacks
 - `injection` — prompt-injection detection in web content: scans fetched pages for known injection patterns and strips/neutralizes them before the content reaches the model
 - `truncate` — truncation with persistence-to-disk: spills overflow text to spill files for later retrieval
@@ -333,7 +333,7 @@ Long-term semantic memory (mem0/Memora model, detailed in [MEMORY-KB.md](MEMORY-
 Model Context Protocol — enables the agent to expose its tools to external MCP clients and to consume tools from external MCP servers.
 
 - **Client**: stdio + Streamable HTTP transports, OAuth client-credentials flow, dynamic tool discovery (discovers tools from remote MCP servers at runtime), reconnect with exponential backoff
-- **Server**: `fathom mcp-serve` — exposes all 52+5 tools externally via the MCP protocol. Each tool call is serialized and executed through the existing `ToolExecutor`, so MCP clients get the same behavior as in-process agents
+- **Server**: `fathom mcp-serve` — exposes all 51+5 tools externally via the MCP protocol. Each tool call is serialized and executed through the existing `ToolExecutor`, so MCP clients get the same behavior as in-process agents
 
 The MCP bridge allows the agent to be embedded in IDEs (via the `lsp` crate), CI/CD pipelines, or custom frontends that speak the MCP protocol.
 

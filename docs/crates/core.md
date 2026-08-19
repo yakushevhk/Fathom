@@ -33,7 +33,6 @@
 22. [protected.rs — Protected Surfaces](#22-protectedrs)
 23. [profile.rs — Profile System](#23-profilers)
 24. [capability.rs — Capability Evidence & Window Profile](#24-capabilityrs)
-11. [memory.rs — File-Based Memory Storage](#11-memoryrs)
 12. [skill.rs — Skill System](#12-skillrs)
 13. [session.rs — Session Results](#13-sessionrs)
 14. [export.rs — Result Export](#14-exportrs)
@@ -1878,6 +1877,5 @@ Below describes how modules within `pr-core` interact with each other and with e
 | `pr-llm` | `Message`, `ToolCall`, `ToolSchema`, `PrError`, `estimate_*` |
 | `pr-agent` | `AgentRole`, `AgentState`, `AgentRecord`, `AgentEvent`, `Finding`, `ToolOutput`, `Message` |
 | `pr-persistence` | `AgentRecord`, `SessionOutput`, `Contact`, `SocialProfile`, `Company` |
-| `pr-search` | `ToolOutput`, `ToolSchema` |
 | `pr-tools` | `Contact`, `SocialProfile`, `ToolOutput` |
-| `pr-cli` | `AppConfig`, `set_config_value`, `ExportFormat`, `Exporter`, `Notifier`, `SkillRegistry`, `MemoryStore` |
+| `fathom` | `AppConfig`, `set_config_value`, `ExportFormat`, `Exporter`, `Notifier`, `SkillRegistry`, `MemoryStore` |

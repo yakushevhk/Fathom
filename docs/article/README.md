@@ -33,7 +33,7 @@ code.
 
 | File | About |
 |---|---|
-| [01-architecture.md](./01-architecture.md) | Architecture: 8 crates, research pipeline, agent model, guardrails |
+| [01-architecture.md](./01-architecture.md) | Architecture: 10 crates, research pipeline, agent model, guardrails |
 | [02-tool-calling.md](./02-tool-calling.md) | Tool-calling mechanics: registry, batches, partitioning, join_all vs spawn parallelism |
 | [03-benchmarks.md](./03-benchmarks.md) | Benchmarks: dispatch, parallel batches, parsing, live session statistics |
 | [04-parsing.md](./04-parsing.md) | Parsing guide: `parse_html`, `extract_json`, SSRF protection, cache |
@@ -105,7 +105,7 @@ query and executes it with a **team of parallel LLM agents**:
 
 - planning and decomposition of the query into subtasks;
 - parallel execution of research agents;
-- **up to 38 built-in tools** (web search, HTML/JSON parsing, files, shell, git,
+- **up to 51 built-in tools** (web search, HTML/JSON parsing, files, shell, git,
   Python/Node REPL, OSINT verification of emails/phones/social media, CRM sync);
 - batched tool calling with true multi-threaded parallelism (`tokio::spawn`);
 - protection: SSRF guard, prompt-injection filters, file locks, cancellation on shell failure;

@@ -114,12 +114,21 @@ impl AgentLifecycleManager {
         };
 
         let path = self.park_dir.join(format!("{}.json", runtime.id.0));
-        if let Ok(json) = serde_json::to_string(&state) {
-            if std::fs::write(&path, &json).is_ok() {
-                tracing::debug!("parked agent {} to {}", runtime.id, path.display());
-            }
+        let tmp = self.park_dir.join(format!("{}.json.tmp", runtime.id.0));
+        let persisted = serde_json::to_vec(&state)
+            .ok()
+            .and_then(|json| {
+                std::fs::write(&tmp, json).ok()?;
+                std::fs::rename(&tmp, &path).ok()?;
+                Some(())
+            })
+            .is_some();
+        if !persisted {
+            let _ = std::fs::remove_file(&tmp);
+            tracing::error!("failed to persist agent {} checkpoint; keeping it live", runtime.id);
+            return;
         }
-
+        tracing::debug!("parked agent {} to {}", runtime.id, path.display());
         IrcBus::global().unregister(&runtime.id);
         AgentRegistry::global().update_status(&runtime.id, PeerStatus::Parked);
     }
@@ -162,9 +171,8 @@ impl AgentLifecycleManager {
         // idempotent.
         agent.register_with_bus();
 
-        // Clean up the parked file
-        let _ = std::fs::remove_file(&path);
-
+        // Keep the checkpoint until the revived runtime has successfully
+        // started; the reviver removes it after handing off the trigger.
         Some(agent)
     }
 
@@ -217,20 +225,19 @@ impl IrcReviver for AgentLifecycleManager {
         )));
 
         // Spawn a new tokio task to run the revived agent
-        let tools = self.tools.clone();
-        let event_tx = self.event_tx.clone();
-        let db = self.db.clone();
-        let cancel = self.cancel.clone();
+        let park_dir = self.park_dir.clone();
         let id = id.clone();
 
         tokio::spawn(async move {
             // Run the agent for one more turn to process the message
             match agent.run().await {
                 Ok(output) => {
+                    let path = park_dir.join(format!("{}.json", id.0));
+                    let _ = std::fs::remove_file(path);
                     tracing::info!("revived agent {} completed: {}", id, output.summary.chars().take(100).collect::<String>());
                 }
                 Err(e) => {
-                    tracing::warn!("revived agent {} failed: {}", id, e);
+                    tracing::warn!("revived agent {} failed; checkpoint retained: {}", id, e);
                 }
             }
         });
