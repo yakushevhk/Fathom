@@ -19,6 +19,7 @@ use crate::ids::AgentId;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::LazyLock;
 use parking_lot::Mutex;
@@ -105,6 +106,31 @@ struct Waiter {
     tx: oneshot::Sender<IrcMessage>,
 }
 
+// ─── Reviver hook ──────────────────────────────────────────────────────────
+
+/// Implemented by the agent runtime layer (pr-agent) to revive parked
+/// agents when a message arrives for them. Registered process-globally so
+/// [`IrcBus`] can route messages to agents that are no longer live but
+/// whose state was persisted.
+pub trait IrcReviver: Send + Sync {
+    /// Attempt to revive agent `id` and deliver `msg` to it.
+    /// Returns `true` when the message was accepted for delivery (the
+    /// revival may happen asynchronously).
+    fn revive(&self, id: &AgentId, msg: IrcMessage) -> bool;
+}
+
+static REVIVER: LazyLock<Mutex<Option<Arc<dyn IrcReviver>>>> = LazyLock::new(|| Mutex::new(None));
+
+/// Register the process-global reviver (called once by the agent runtime).
+pub fn register_reviver(reviver: Arc<dyn IrcReviver>) {
+    *REVIVER.lock() = Some(reviver);
+}
+
+/// Access the registered reviver, if any.
+pub fn reviver() -> Option<Arc<dyn IrcReviver>> {
+    REVIVER.lock().clone()
+}
+
 // ─── IrcBus ────────────────────────────────────────────────────────────────
 
 /// Process-global message bus for inter-agent communication.
@@ -159,6 +185,7 @@ impl IrcBus {
     /// Send a message to one agent or broadcast to all.
     ///
     /// Priority: waiters (blocking `wait` calls) → agent channel → mailbox.
+    /// If the agent is not registered, tries the reviver hook (park/revive).
     pub fn send(&self, msg: IrcMessage) -> DeliveryReceipt {
         // Try waiters first (highest priority).
         {
@@ -188,12 +215,14 @@ impl IrcBus {
                     }
                 }
                 None => {
-                    // Agent not currently registered — put in mailbox.
-                    self.mailboxes
-                        .lock()
-                        .entry(to.0.clone())
-                        .or_default()
-                        .push(msg);
+                    // Agent not currently registered — try reviver, then mailbox.
+                    if !self.try_revive(&msg) {
+                        self.mailboxes
+                            .lock()
+                            .entry(to.0.clone())
+                            .or_default()
+                            .push(msg);
+                    }
                     DeliveryReceipt::Delivered
                 }
             }
@@ -229,6 +258,17 @@ impl IrcBus {
     /// Check whether a given agent is currently registered (alive).
     pub fn is_registered(&self, id: &AgentId) -> bool {
         self.agents.lock().contains_key(&id.0)
+    }
+
+    /// Try to revive a parked agent via the registered reviver hook.
+    /// Returns true if the reviver accepted the message.
+    fn try_revive(&self, msg: &IrcMessage) -> bool {
+        if let Some(to) = &msg.to {
+            if let Some(reviver) = reviver() {
+                return reviver.revive(to, msg.clone());
+            }
+        }
+        false
     }
 }
 

@@ -1,3 +1,4 @@
+pub mod lifecycle;
 pub mod runtime;
 pub mod coordinator;
 pub mod compaction;
@@ -14,6 +15,7 @@ pub mod task_tree;
 pub mod improvement;
 pub mod reflection;
 
+pub use lifecycle::*;
 pub use runtime::*;
 pub use coordinator::*;
 pub use compaction::*;
