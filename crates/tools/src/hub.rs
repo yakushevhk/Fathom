@@ -31,6 +31,10 @@ enum HubCommand {
         /// If true, block until the target replies.
         #[serde(default)]
         await_reply: bool,
+        /// If true, deliver as a steering directive (mid-run instruction)
+        /// instead of a regular inbox message.
+        #[serde(default)]
+        steer: bool,
     },
     /// Wait for an incoming message from a specific peer (or any).
     #[serde(rename = "wait")]
@@ -113,11 +117,26 @@ impl Tool for HubTool {
                 to,
                 message,
                 await_reply,
+                steer,
             } => {
                 let bus = IrcBus::global();
                 let msg_id = bus.next_msg_id();
 
                 if let Some(target_id) = to {
+                    // Check if this is a steering directive.
+                    if steer {
+                        let target = AgentId(target_id.clone());
+                        if pr_core::SteerRegistry::global().steer(&target, message.clone()) {
+                            return Ok(ToolOutput::ok(format!(
+                                "Steering directive sent to {target_id}"
+                            )));
+                        } else {
+                            return Ok(ToolOutput::ok(format!(
+                                "Cannot steer {target_id}: agent not found or not registered for steering"
+                            )));
+                        }
+                    }
+
                     // Direct message
                     let target = AgentId(target_id.clone());
                     let msg = IrcMessage {
@@ -292,7 +311,7 @@ mod tests {
         });
         let params: HubParams = serde_json::from_value(json).unwrap();
         match params.command {
-            HubCommand::Send { to, message, await_reply } => {
+            HubCommand::Send { to, message, await_reply, steer } => {
                 assert_eq!(to, Some("agent-123".to_string()));
                 assert_eq!(message, "hello");
                 assert!(!await_reply);

@@ -70,6 +70,13 @@ pub struct AgentRuntime {
     denied_tools: HashSet<String>,
     /// Mid-run user instructions (fleet E1), drained at turn boundaries.
     steer_rx: Option<Arc<tokio::sync::Mutex<tokio::sync::mpsc::UnboundedReceiver<String>>>>,
+    /// Sender half of the steer channel; registered in the process-global
+    /// SteerRegistry so other agents (via hub) and the HTTP API can deliver
+    /// mid-run instructions to this agent.
+    steer_tx: Option<tokio::sync::mpsc::UnboundedSender<String>>,
+    /// Receiver for peer-delivered steering instructions (from `hub steer`
+    /// via SteerRegistry). Drained at turn boundaries alongside `steer_rx`.
+    peer_steer_rx: Option<tokio::sync::mpsc::UnboundedReceiver<String>>,
     /// Control plane: `question` tool requests to the operator.
     pub question_tx: Option<crate::control::QuestionTx>,
     /// Control plane: approval requests for side-effect tools.
@@ -176,6 +183,8 @@ impl AgentRuntime {
             cancel: CancellationToken::new(),
             denied_tools: denied,
             steer_rx: None,
+            steer_tx: None,
+            peer_steer_rx: None,
             question_tx: None,
             approval_tx: None,
             bg_results: Arc::new(std::sync::Mutex::new(Vec::new())),
@@ -186,8 +195,8 @@ impl AgentRuntime {
         }
     }
 
-    /// Register this agent on the process-global IrcBus and AgentRegistry.
-    /// Call after `new()` before `run()`.
+    /// Register this agent on the process-global IrcBus, AgentRegistry and
+    /// SteerRegistry. Call after `new()` before `run()`.
     pub fn register_with_bus(&mut self) {
         use pr_core::irc::{AgentRegistry, IrcBus, PeerStatus};
 
@@ -204,13 +213,22 @@ impl AgentRuntime {
             created_at: chrono::Utc::now(),
             last_activity: chrono::Utc::now(),
         });
+
+        // Register the peer-steering channel so other agents (via hub
+        // steer:) and supervisors can inject mid-run instructions.
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel::<String>();
+        pr_core::SteerRegistry::global().register(&self.id, tx.clone());
+        self.steer_tx = Some(tx);
+        self.peer_steer_rx = Some(rx);
     }
 
-    /// Unregister this agent from the process-global bus and registry.
+    /// Unregister this agent from the process-global bus, registry, and
+    /// steer registry.
     pub fn unregister_from_bus(&self) {
         use pr_core::irc::{AgentRegistry, IrcBus};
         IrcBus::global().unregister(&self.id);
         AgentRegistry::global().unregister(&self.id);
+        pr_core::SteerRegistry::global().unregister(&self.id);
     }
 
     /// Attach per-role LLM overrides (fleet E8).
@@ -846,6 +864,29 @@ impl AgentRuntime {
                 while let Ok(msg) = rx.try_recv() {
                     tracing::info!("Agent {} received steering instruction", self.id);
                     let steer_msg = Message::user(format!("[USER INSTRUCTION] {msg}"));
+                    self.messages.push(steer_msg.clone());
+                    self.db.add_message(&self.id, &steer_msg)?;
+                    self.track_message_tokens(&steer_msg);
+                }
+            }
+
+            // Peer steering: mid-run instructions from other agents (via
+            // `hub steer:`). Drained at the same turn boundary.
+            {
+                let peer_msgs: Vec<String> = self
+                    .peer_steer_rx
+                    .as_mut()
+                    .map(|rx| {
+                        let mut v = Vec::new();
+                        while let Ok(msg) = rx.try_recv() {
+                            v.push(msg);
+                        }
+                        v
+                    })
+                    .unwrap_or_default();
+                for msg in peer_msgs {
+                    tracing::info!("Agent {} received peer steering: {}", self.id, msg);
+                    let steer_msg = Message::user(format!("[PEER STEERING] {msg}"));
                     self.messages.push(steer_msg.clone());
                     self.db.add_message(&self.id, &steer_msg)?;
                     self.track_message_tokens(&steer_msg);
