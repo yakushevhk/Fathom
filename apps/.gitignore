@@ -1,0 +1,16 @@
+# Build artifacts
+node_modules/
+.next/
+out/
+dist/
+*.tsbuildinfo
+.env
+.env.*
+
+# Tauri
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/
+apps/desktop/src-tauri/Cargo.lock
+
+# OS
+.DS_Store

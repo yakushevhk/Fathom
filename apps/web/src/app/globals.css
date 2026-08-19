@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+:root {
+  --bg-surface: #060606;
+  --bg-elevated: #141414;
+  --bg-glass: rgba(10,10,10,0.85);
+  --fg-primary: #e8e8e8;
+  --fg-secondary: #888;
+  --fg-tertiary: #555;
+  --border: rgba(255,255,255,0.06);
+  --accent-blue: #4a9eff;
+  --danger: #e5484d;
+  --success: #30a46c;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-surface);
+  color: var(--fg-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); }
+
+/* Animations */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-fade-in { animation: fade-in 0.5s cubic-bezier(0.16,1,0.3,1); }
+.animate-pulse { animation: pulse 2.4s infinite; }
+.animate-spin { animation: spin 750ms linear infinite; }
