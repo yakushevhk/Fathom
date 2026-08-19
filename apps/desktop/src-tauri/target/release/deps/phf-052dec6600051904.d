@@ -1,0 +1,11 @@
+/Users/yakushev/Documents/GitHub/Fathom/apps/desktop/src-tauri/target/release/deps/phf-052dec6600051904.d: /Users/yakushev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/phf-0.13.1/src/lib.rs /Users/yakushev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/phf-0.13.1/src/map.rs /Users/yakushev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/phf-0.13.1/src/ordered_map.rs /Users/yakushev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/phf-0.13.1/src/ordered_set.rs /Users/yakushev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/phf-0.13.1/src/set.rs
+
+/Users/yakushev/Documents/GitHub/Fathom/apps/desktop/src-tauri/target/release/deps/libphf-052dec6600051904.rlib: /Users/yakushev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/phf-0.13.1/src/lib.rs /Users/yakushev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/phf-0.13.1/src/map.rs /Users/yakushev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/phf-0.13.1/src/ordered_map.rs /Users/yakushev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/phf-0.13.1/src/ordered_set.rs /Users/yakushev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/phf-0.13.1/src/set.rs
+
+/Users/yakushev/Documents/GitHub/Fathom/apps/desktop/src-tauri/target/release/deps/libphf-052dec6600051904.rmeta: /Users/yakushev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/phf-0.13.1/src/lib.rs /Users/yakushev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/phf-0.13.1/src/map.rs /Users/yakushev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/phf-0.13.1/src/ordered_map.rs /Users/yakushev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/phf-0.13.1/src/ordered_set.rs /Users/yakushev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/phf-0.13.1/src/set.rs
+
+/Users/yakushev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/phf-0.13.1/src/lib.rs:
+/Users/yakushev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/phf-0.13.1/src/map.rs:
+/Users/yakushev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/phf-0.13.1/src/ordered_map.rs:
+/Users/yakushev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/phf-0.13.1/src/ordered_set.rs:
+/Users/yakushev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/phf-0.13.1/src/set.rs:
