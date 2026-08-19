@@ -12,6 +12,17 @@ use std::sync::Arc;
 use tokio::sync::broadcast;
 use tokio_util::sync::CancellationToken;
 
+struct RegistrationGuard(AgentId);
+
+impl Drop for RegistrationGuard {
+    fn drop(&mut self) {
+        pr_core::irc::IrcBus::global().unregister(&self.0);
+        pr_core::AgentRegistry::global().unregister(&self.0);
+        pr_core::SteerRegistry::global().unregister(&self.0);
+        pr_core::async_job::AsyncJobManager::global().unregister_sink(&self.0);
+    }
+}
+
 pub struct AgentRuntime {
     pub id: AgentId,
     pub session_id: SessionId,
@@ -198,6 +209,9 @@ impl AgentRuntime {
     /// Register this agent on the process-global IrcBus, AgentRegistry and
     /// SteerRegistry. Call after `new()` before `run()`.
     pub fn register_with_bus(&mut self) {
+        if self.irc_rx.is_some() {
+            return;
+        }
         use pr_core::irc::{AgentRegistry, IrcBus, PeerStatus};
 
         // Register on IrcBus for peer-to-peer messaging.
@@ -831,6 +845,7 @@ impl AgentRuntime {
     pub async fn run(&mut self) -> anyhow::Result<AgentOutput> {
         // Register on the process-global IrcBus and AgentRegistry.
         self.register_with_bus();
+        let _registration_guard = RegistrationGuard(self.id.clone());
 
         // Initialize messages
         let digest = self.memory_digest_block().await;
@@ -1760,7 +1775,11 @@ impl AgentRuntime {
                         // delivered to the parent's delivery sink.
                         let mgr = pr_core::async_job::AsyncJobManager::global();
                         let job_id = mgr.create_job(&self.id, &label);
-                        mgr.mark_running(job_id);
+                        if !mgr.mark_running(job_id) {
+                            let out = ToolOutput::err("Async job concurrency limit reached; retry later");
+                            self.record_spawn_result(&call_id, &out)?;
+                            continue;
+                        }
                         let fut = child_wait_future(
                             child,
                             aid.clone(),

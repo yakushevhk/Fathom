@@ -33,7 +33,6 @@
 22. [protected.rs — Protected Surfaces](#22-protectedrs)
 23. [profile.rs — Profile System](#23-profilers)
 24. [capability.rs — Capability Evidence & Window Profile](#24-capabilityrs)
-10. [token.rs — Token Counting](#10-tokenrs)
 11. [memory.rs — File-Based Memory Storage](#11-memoryrs)
 12. [skill.rs — Skill System](#12-skillrs)
 13. [session.rs — Session Results](#13-sessionrs)

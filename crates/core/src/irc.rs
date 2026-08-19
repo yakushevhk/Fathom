@@ -102,7 +102,9 @@ pub enum DeliveryReceipt {
 // ─── Waiter ────────────────────────────────────────────────────────────────
 
 struct Waiter {
+    id: u64,
     from: Option<AgentId>,
+    to: Option<AgentId>,
     tx: oneshot::Sender<IrcMessage>,
 }
 
@@ -170,16 +172,20 @@ impl IrcBus {
     /// half that the agent should poll.
     pub fn register(&self, id: &AgentId) -> mpsc::UnboundedReceiver<IrcMessage> {
         let (tx, rx) = mpsc::unbounded_channel();
-        self.agents.lock().insert(id.0.clone(), tx);
+        self.agents.lock().insert(id.0.clone(), tx.clone());
+        // Deliver messages queued before registration. Keeping this operation
+        // here prevents a newly revived agent from missing its mailbox.
+        let queued = self.mailboxes.lock().remove(&id.0).unwrap_or_default();
+        for msg in queued {
+            let _ = tx.send(msg);
+        }
         rx
     }
 
-    /// Unregister an agent. Pending mailboxes are cleaned up.
+    /// Unregister an agent. Its mailbox is retained so messages sent during
+    /// a park/revive transition are not discarded.
     pub fn unregister(&self, id: &AgentId) {
-        let mut agents = self.agents.lock();
-        agents.remove(&id.0);
-        drop(agents);
-        self.mailboxes.lock().remove(&id.0);
+        self.agents.lock().remove(&id.0);
     }
 
     /// Send a message to one agent or broadcast to all.
@@ -187,22 +193,22 @@ impl IrcBus {
     /// Priority: waiters (blocking `wait` calls) → agent channel → mailbox.
     /// If the agent is not registered, tries the reviver hook (park/revive).
     pub fn send(&self, msg: IrcMessage) -> DeliveryReceipt {
-        // Try waiters first (highest priority).
-        {
-            let mut waiters = self.waiters.lock();
-            if let Some(pos) = waiters.iter().position(|w| {
-                w.from
-                    .as_ref()
-                    .map(|f| msg.from.0 == f.0)
-                    .unwrap_or(true)
-            }) {
-                let waiter = waiters.remove(pos);
+        if let Some(ref to) = msg.to {
+            // Waiters apply only to direct messages. Broadcast must reach all
+            // peers and must not be consumed by an unrelated waiter.
+            let waiter = {
+                let mut waiters = self.waiters.lock();
+                waiters.iter().position(|w| {
+                    let from_matches = w.from.as_ref().map(|f| msg.from.0 == f.0).unwrap_or(true);
+                    let to_matches = w.to.as_ref().map(|t| msg.to.as_ref().map(|m| m.0 == t.0).unwrap_or(false)).unwrap_or(true);
+                    from_matches && to_matches
+                }).map(|pos| waiters.remove(pos))
+            };
+            if let Some(waiter) = waiter {
                 let _ = waiter.tx.send(msg);
                 return DeliveryReceipt::WaiterDelivered;
             }
-        }
 
-        if let Some(ref to) = msg.to {
             // Direct message to a specific agent.
             let tx = self.agents.lock().get(&to.0).cloned();
             match tx {
@@ -240,13 +246,25 @@ impl IrcBus {
     /// Register a one-shot waiter. When a message arrives (optionally
     /// filtered by `from`), it is delivered to this channel instead of the
     /// agent's mailbox.
-    pub fn register_waiter(&self, from: Option<AgentId>, tx: oneshot::Sender<IrcMessage>) {
-        self.waiters.lock().push(Waiter { from, tx });
+    pub fn register_waiter(&self, from: Option<AgentId>, to: Option<AgentId>, tx: oneshot::Sender<IrcMessage>) -> u64 {
+        let id = self.next_id.fetch_add(1, Ordering::Relaxed);
+        self.waiters.lock().push(Waiter { id, from, to, tx });
+        id
+    }
+
+    /// Remove a waiter after timeout or cancellation.
+    pub fn cancel_waiter(&self, id: u64) {
+        self.waiters.lock().retain(|w| w.id != id);
     }
 
     /// Drain the mailbox for an agent (non-blocking inbox read).
     pub fn drain_mailbox(&self, id: &AgentId) -> Vec<IrcMessage> {
         self.mailboxes.lock().remove(&id.0).unwrap_or_default()
+    }
+
+    /// Inspect the mailbox without consuming messages.
+    pub fn peek_mailbox(&self, id: &AgentId) -> Vec<IrcMessage> {
+        self.mailboxes.lock().get(&id.0).cloned().unwrap_or_default()
     }
 
     /// Generate a unique message id.
@@ -431,7 +449,7 @@ mod tests {
         bus.register(&bob);
 
         let (tx, rx) = oneshot::channel();
-        bus.register_waiter(Some(alice.clone()), tx);
+        bus.register_waiter(Some(alice.clone()), Some(bob.clone()), tx);
 
         let msg = IrcMessage {
             from: alice.clone(),
@@ -468,11 +486,11 @@ mod tests {
         };
         bus.send(msg);
 
-        // Bob registers and drains mailbox.
-        bus.register(&bob);
-        let msgs = bus.drain_mailbox(&bob);
-        assert_eq!(msgs.len(), 1);
-        assert_eq!(msgs[0].content, "mailbox test");
+        // Bob registers and receives the queued message on the channel.
+        let mut rx = bus.register(&bob);
+        let received = rx.recv().await.unwrap();
+        assert_eq!(received.content, "mailbox test");
+        assert!(bus.drain_mailbox(&bob).is_empty());
     }
 
     #[tokio::test]

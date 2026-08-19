@@ -151,12 +151,13 @@ impl Tool for HubTool {
                         reply_to: None,
                     };
 
-                    let receipt = bus.send(msg);
-
-                    if await_reply {
-                        // Wait for a reply from the target
+                    let receipt = if await_reply {
+                        // Register before sending to avoid losing a fast reply.
+                        // Correlate both sender and recipient to avoid stealing
+                        // another agent's message.
                         let (tx, rx) = oneshot::channel();
-                        bus.register_waiter(Some(target), tx);
+                        let waiter_id = bus.register_waiter(Some(target.clone()), Some(agent_id.clone()), tx);
+                        let receipt = bus.send(msg);
 
                         let timeout = std::time::Duration::from_secs(120);
                         match tokio::time::timeout(timeout, rx).await {
@@ -167,6 +168,7 @@ impl Tool for HubTool {
                                 )));
                             }
                             Ok(Err(_)) => {
+                                bus.cancel_waiter(waiter_id);
                                 // Side-channel auto-reply: when the target
                                 // agent is parked or not listening, the
                                 // IrcBus reviver may have spawned a new turn
@@ -211,12 +213,15 @@ impl Tool for HubTool {
                                 ));
                             }
                             Err(_) => {
+                                bus.cancel_waiter(waiter_id);
                                 return Ok(ToolOutput::ok(
                                     "Timed out waiting for reply.",
                                 ));
                             }
                         }
-                    }
+                    } else {
+                        bus.send(msg)
+                    };
 
                     let status = match receipt {
                         DeliveryReceipt::Delivered => "delivered".to_string(),
@@ -253,7 +258,7 @@ impl Tool for HubTool {
                 let from_id = from.map(AgentId);
 
                 let (tx, mut rx) = oneshot::channel();
-                bus.register_waiter(from_id, tx);
+                let waiter_id = bus.register_waiter(from_id, Some(agent_id.clone()), tx);
 
                 let timeout = if timeout_secs > 0 {
                     std::time::Duration::from_secs(timeout_secs)
@@ -266,16 +271,21 @@ impl Tool for HubTool {
                         "Message from {}: {}",
                         msg.from, msg.content
                     ))),
-                    Ok(Err(_)) => Ok(ToolOutput::ok("No message received.")),
-                    Err(_) => Ok(ToolOutput::ok("Timed out waiting for message.")),
+                    Ok(Err(_)) => {
+                        bus.cancel_waiter(waiter_id);
+                        Ok(ToolOutput::ok("No message received."))
+                    }
+                    Err(_) => {
+                        bus.cancel_waiter(waiter_id);
+                        Ok(ToolOutput::ok("Timed out waiting for message."))
+                    },
                 }
             }
 
             HubCommand::Inbox { peek } => {
                 let bus = IrcBus::global();
                 let msgs = if peek {
-                    // For peek we just drain (non-destructive peek not supported yet)
-                    bus.drain_mailbox(&agent_id)
+                    bus.peek_mailbox(&agent_id)
                 } else {
                     bus.drain_mailbox(&agent_id)
                 };

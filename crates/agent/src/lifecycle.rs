@@ -17,7 +17,6 @@ use pr_core::{AppConfig, Message, SessionId};
 use pr_llm::LlmProvider;
 use pr_persistence::Persistence;
 use pr_tools::ToolRegistry;
-use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::broadcast;
 use tokio_util::sync::CancellationToken;
@@ -51,7 +50,6 @@ pub struct AgentLifecycleManager {
     pub event_tx: broadcast::Sender<pr_core::AgentEvent>,
     pub db: Arc<Persistence>,
     pub default_llm: Arc<dyn LlmProvider>,
-    pub role_llms: HashMap<String, Arc<dyn LlmProvider>>,
     pub cancel: CancellationToken,
 }
 
@@ -68,15 +66,25 @@ impl AgentLifecycleManager {
             .unwrap_or_else(|| std::path::PathBuf::from("/tmp"))
             .join(".fathom")
             .join("parked");
-        let _ = std::fs::create_dir_all(&park_dir);
+        Self::new_with_park_dir(tools, event_tx, db, default_llm, cancel, park_dir)
+    }
 
+    /// Construct a manager with an explicit checkpoint directory.
+    pub fn new_with_park_dir(
+        tools: Arc<ToolRegistry>,
+        event_tx: broadcast::Sender<pr_core::AgentEvent>,
+        db: Arc<Persistence>,
+        default_llm: Arc<dyn LlmProvider>,
+        cancel: CancellationToken,
+        park_dir: std::path::PathBuf,
+    ) -> Arc<Self> {
+        let _ = std::fs::create_dir_all(&park_dir);
         let mgr = Arc::new(Self {
             park_dir,
             tools,
             event_tx,
             db,
             default_llm,
-            role_llms: HashMap::new(),
             cancel,
         });
 
@@ -85,16 +93,6 @@ impl AgentLifecycleManager {
         register_reviver(reviver);
 
         mgr
-    }
-
-    /// Set per-role LLM overrides.
-    pub fn with_role_llms(mut self: Arc<Self>, map: HashMap<String, Arc<dyn LlmProvider>>) -> Arc<Self> {
-        // Can't mutate through Arc, but we're the only early-stage builder.
-        unsafe {
-            let ptr = Arc::as_ptr(&self) as *mut Self;
-            (*ptr).role_llms = map;
-        }
-        self
     }
 
     /// Park an agent: serialize its state, save to disk, unregister from
@@ -134,18 +132,7 @@ impl AgentLifecycleManager {
         let json = std::fs::read_to_string(&path).ok()?;
         let state: ParkedAgentState = serde_json::from_str(&json).ok()?;
 
-        let role_key = match state.role {
-            AgentRole::Coordinator => "coordinator",
-            AgentRole::Researcher => "researcher",
-            AgentRole::Analyst => "analyst",
-            AgentRole::Verifier => "verifier",
-            AgentRole::Writer => "writer",
-        };
-        let child_llm = self
-            .role_llms
-            .get(role_key)
-            .cloned()
-            .unwrap_or_else(|| self.default_llm.clone());
+        let child_llm = self.default_llm.clone();
 
         let mut agent = AgentRuntime::new(
             state.id.clone(),
@@ -170,7 +157,9 @@ impl AgentLifecycleManager {
         agent.descendant_tokens = state.descendant_tokens;
         agent.estimated_tokens = state.estimated_tokens;
 
-        // Register on the bus (replaces the mailbox entries)
+        // Register before returning so IrcBus can deliver the triggering
+        // message; AgentRuntime::run() treats an existing registration as
+        // idempotent.
         agent.register_with_bus();
 
         // Clean up the parked file
@@ -339,19 +328,16 @@ mod tests {
         agent.register_with_bus();
 
         // Park it manually via the manager
-        let mgr = AgentLifecycleManager::new(
+        let mgr = AgentLifecycleManager::new_with_park_dir(
             tools,
             tx,
             db,
             llm,
             cancel,
+            park_dir.clone(),
         );
 
-        // Override park dir for testing
-        unsafe {
-            let ptr = Arc::as_ptr(&mgr) as *mut AgentLifecycleManager;
-            (*ptr).park_dir = park_dir.clone();
-        }
+        // The manager uses the isolated test checkpoint directory.
 
         // Must be registered before park
         assert!(IrcBus::global().is_registered(&agent_id));

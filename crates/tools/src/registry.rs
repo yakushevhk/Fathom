@@ -449,6 +449,8 @@ mod tests {
             "extract_contacts",
             "save_contacts",
             "spawn_agent",
+            "hub",
+            "daemon",
             "question",
             "memory_absorb",
             "memory_search",

@@ -90,7 +90,7 @@ Each LLM response may contain multiple tool calls — they are executed as a
 | Doom-loop detector | `pr-agent/doom_loop.rs` | Detects repeating meaningless calls and stops the agent |
 | Context compaction | `pr-agent/compaction.rs` | Compresses history when the context blows up |
 | Token budget | `pr-agent/budget.rs` | An agent cannot burn more than allocated |
-| Recovery/Resume | `pr-agent/recovery.rs`, `resume.rs` | Session can be restarted after a crash |
+| Recovery/Resume | `pr-agent/resume.rs`, `resume.rs` | Session can be restarted after a crash |
 | Truncation retry | `runtime.rs` | If a reasoning model spent the entire budget on thinking and returned empty content — retry with an increased budget (up to 2 times) and a deterministic fallback |
 
 ## Reasoning model support

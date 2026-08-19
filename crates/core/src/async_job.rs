@@ -110,11 +110,25 @@ impl AsyncJobManager {
         id
     }
 
-    /// Mark a job as running.
-    pub fn mark_running(&self, id: JobId) {
-        if let Some(job) = self.jobs.lock().get_mut(&id) {
-            job.status = JobStatus::Running;
+    /// Mark a job as running if a concurrency slot is available.
+    /// Returns false when the configured limit is reached; callers should
+    /// leave the job registered or queue it rather than exceeding the cap.
+    pub fn mark_running(&self, id: JobId) -> bool {
+        let mut jobs = self.jobs.lock();
+        let running = jobs.values().filter(|j| j.status == JobStatus::Running).count() as u64;
+        if running >= self.max_running.load(Ordering::Relaxed) {
+            return false;
         }
+        if let Some(job) = jobs.get_mut(&id) {
+            job.status = JobStatus::Running;
+            return true;
+        }
+        false
+    }
+
+    /// Configure the process-wide running-job limit.
+    pub fn set_max_running(&self, max: usize) {
+        self.max_running.store(max.max(1) as u64, Ordering::Relaxed);
     }
 
     /// Complete a job with a result. The result is delivered to the owner's
@@ -198,7 +212,7 @@ mod tests {
         let id = mgr.create_job(&owner, "test-job");
         assert_eq!(mgr.get(id).unwrap().status, JobStatus::Registered);
 
-        mgr.mark_running(id);
+        assert!(mgr.mark_running(id));
         assert_eq!(mgr.get(id).unwrap().status, JobStatus::Running);
 
         mgr.complete(id, Ok("done".to_string()), 42);

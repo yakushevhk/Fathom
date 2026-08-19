@@ -7,14 +7,14 @@
   <a href="#"><img src="https://img.shields.io/badge/Rust-2021-DEA584?style=flat&colorA=222222&logo=rust&logoColor=white" alt="Rust"></a>
   <a href="#"><img src="https://img.shields.io/badge/LOC-72k-blue?style=flat&colorA=222222" alt="LOC"></a>
   <a href="#"><img src="https://img.shields.io/badge/tests-1407%20passed-3FB950?style=flat&colorA=222222" alt="Tests"></a>
-  <a href="#"><img src="https://img.shields.io/badge/tools-46+5%20browser-58A6FF?style=flat&colorA=222222" alt="Tools"></a>
+  <a href="#"><img src="https://img.shields.io/badge/tools-52+5%20browser-58A6FF?style=flat&colorA=222222" alt="Tools"></a>
   <a href="#"><img src="https://img.shields.io/badge/crates-10-3178C6?style=flat&colorA=222222" alt="Crates"></a>
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-58A6FF?style=flat&colorA=222222" alt="License"></a>
 </p>
 
 ---
 
-**Fathom** is an autonomous research agent written in Rust. It accepts a natural-language query, decomposes it into sub-tasks with hierarchical sub-agents, and uses 46+ tools — across 7 search backends, OSINT extraction, browser automation, shell execution, and semantic memory — to gather, verify, and persist information.
+**Fathom** is an autonomous research agent written in Rust. It accepts a natural-language query, decomposes it into sub-tasks with hierarchical sub-agents, and uses 52 tools — across 7 search backends, OSINT extraction, browser automation, shell execution, and semantic memory — to gather, verify, and persist information.
 
 > Sub-agents spawn sub-agents. Coordinators plan, researchers gather, analysts cross-reference, verifiers fact-check, writers produce output. All in one binary.
 
@@ -38,7 +38,7 @@ Unlike a single-shot LLM prompt, Fathom treats research as an **ongoing, paralle
 | **Total** | **72,031** |
 | **Rust files** | **141** |
 | **Crates** | **10** |
-| **Tools** | **46 + 5 browser** (CDP) |
+| **Tools** | **52 + 5 browser** (CDP) |
 | **Search backends** | 7 (Linkup, Exa, Tavily, Serper, Brave, Parallel.ai, DuckDuckGo) |
 | **Test annotations** | **204** (`#[test]` / `#[tokio::test]` / `#[proptest]`) |
 | **Test files** | **22** |
@@ -180,7 +180,7 @@ Fathom implements the **Model Context Protocol** (MCP), making it both a consume
 - Automatic reconnection on transport failure
 - OAuth token refresh for authenticated servers
 
-**MCP Server** (`mcp-serve`) — Fathom can expose its own 46-tool arsenal to external MCP clients. Run `fathom mcp-serve` to start an MCP server that any MCP-compatible host (IDE agents, automation platforms, other AI systems) can connect to and use. This turns Fathom into a **research backend** for other AI tools.
+**MCP Server** (`mcp-serve`) — Fathom can expose its own 52-tool arsenal to external MCP clients. Run `fathom mcp-serve` to start an MCP server that any MCP-compatible host (IDE agents, automation platforms, other AI systems) can connect to and use. This turns Fathom into a **research backend** for other AI tools.
 
 ### 08 · HTTP API + dashboard — real-time streaming, mid-run steering, approvals
 
@@ -241,7 +241,7 @@ cargo build --release
 # HTTP API server — REST endpoints, SSE streaming, Prometheus metrics, dashboard
 ./target/release/fathom serve --port 8080
 
-# MCP server — expose all 46 tools to external MCP clients (IDE agents, other AI)
+# MCP server — expose all 52 tools to external MCP clients (IDE agents, other AI)
 ./target/release/fathom mcp-serve
 
 # Semantic memory — search, inspect, and manage the knowledge base
@@ -285,7 +285,7 @@ This single command triggers the full pipeline: a coordinator decomposes the req
 | [docs/INSTALLATION.md](docs/INSTALLATION.md) | Setup, build, Docker, systemd deployment |
 | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Full configuration reference — LLM, memory, tools, server, memory TTLs |
 | [docs/USAGE.md](docs/USAGE.md) | CLI commands and real-world examples |
-| [docs/TOOLS.md](docs/TOOLS.md) | All 46 tools reference with schemas and usage |
+| [docs/TOOLS.md](docs/TOOLS.md) | All 52 tools reference with schemas and usage |
 | [docs/HTTP-API.md](docs/HTTP-API.md) | HTTP API reference — auth, sessions, streaming, approvals |
 | [docs/OSINT-LEADGEN.md](docs/OSINT-LEADGEN.md) | OSINT and lead generation guide — extraction, verification, CRM push |
 | [docs/MEMORY-KB.md](docs/MEMORY-KB.md) | Semantic memory — absorb pipeline, hybrid search, entity graph |
@@ -301,7 +301,7 @@ Fathom/
 │   ├── core/               # Types, config, memory, skills, export, CRM — foundational types and shared infrastructure
 │   ├── llm/                # LLM abstraction, providers, retry, streaming — unified interface to DeepSeek, OpenAI, etc.
 │   ├── agent/              # Agent loop, coordinator, goal mode, IPC — the brain: plan, spawn, monitor, steer
-│   ├── tools/              # 46 tools (web, file, shell, browser, OSINT…) — tool registry, schema, dispatch
+│   ├── tools/              # 52 tools (web, file, shell, browser, OSINT…) — tool registry, schema, dispatch
 │   ├── memory/             # Semantic memory + entity graph — hybrid search, absorb pipeline, GC
 │   ├── mcp/                # MCP client (stdio/HTTP/OAuth) + server — connect to or expose tools via Model Context Protocol
 │   ├── persistence/        # SQLite, contact DB, session history — durable storage for jobs, contacts, sessions

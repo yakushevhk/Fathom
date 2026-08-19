@@ -190,8 +190,44 @@ impl Tool for DaemonTool {
                         }
                     }
 
+                    if let Some(pattern) = ready_pattern {
+                        let regex = regex::Regex::new(&pattern)
+                            .map_err(|e| anyhow::anyhow!("Invalid ready_pattern: {e}"))?;
+                        let Some(stdout) = child.stdout.take() else {
+                            let _ = child.start_kill();
+                            let _ = child.wait().await;
+                            reg.update_status(&name, DaemonStatus::Failed);
+                            return Ok(ToolOutput::err("Daemon stdout unavailable for ready_pattern"));
+                        };
+                        use tokio::io::AsyncBufReadExt;
+                        let mut lines = tokio::io::BufReader::new(stdout).lines();
+                        let mut matched = false;
+                        while std::time::Instant::now() < deadline {
+                            let remaining = deadline.saturating_duration_since(std::time::Instant::now());
+                            match tokio::time::timeout(remaining, lines.next_line()).await {
+                                Ok(Ok(Some(line))) if regex.is_match(&line) => {
+                                    matched = true;
+                                    break;
+                                }
+                                Ok(Ok(Some(_))) => {}
+                                Ok(Ok(None)) | Ok(Err(_)) | Err(_) => break,
+                            }
+                        }
+                        if !matched {
+                            let _ = child.start_kill();
+                            let _ = child.wait().await;
+                            reg.update_status(&name, DaemonStatus::Failed);
+                            return Ok(ToolOutput::err(format!(
+                                "Daemon '{name}' ready_pattern not matched within {timeout_secs}s"
+                            )));
+                        }
+                        ready = true;
+                    }
+
                     if !ready {
                         tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+                        reg.update_status(&name, DaemonStatus::Running);
+                    } else {
                         reg.update_status(&name, DaemonStatus::Running);
                     }
                 } else {
