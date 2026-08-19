@@ -81,11 +81,8 @@ pub struct AgentRuntime {
     pub question_tx: Option<crate::control::QuestionTx>,
     /// Control plane: approval requests for side-effect tools.
     pub approval_tx: Option<crate::control::ApprovalTx>,
-    /// Completion notices from background children (fleet E2):
-    /// (label, summary, subtree_tokens).
-    bg_results: Arc<std::sync::Mutex<Vec<(String, Result<String, String>, u64)>>>,
     /// Receiver for async job results (from AsyncJobManager delivery sink).
-    /// Drained at turn boundaries alongside bg_results.
+    /// Drained at turn boundaries.
     job_results: Option<tokio::sync::mpsc::UnboundedReceiver<pr_core::async_job::JobResult>>,
     /// How many times Stop hooks already forced a continuation.
     stop_continuations: u32,
@@ -190,7 +187,6 @@ impl AgentRuntime {
             peer_steer_rx: None,
             question_tx: None,
             approval_tx: None,
-            bg_results: Arc::new(std::sync::Mutex::new(Vec::new())),
             job_results: None,
             stop_continuations: 0,
             truncation_retries: 0,
@@ -232,12 +228,13 @@ impl AgentRuntime {
     }
 
     /// Unregister this agent from the process-global bus, registry, and
-    /// steer registry.
+    /// steer registry, and async job sink.
     pub fn unregister_from_bus(&self) {
         use pr_core::irc::{AgentRegistry, IrcBus};
         IrcBus::global().unregister(&self.id);
         AgentRegistry::global().unregister(&self.id);
         pr_core::SteerRegistry::global().unregister(&self.id);
+        pr_core::async_job::AsyncJobManager::global().unregister_sink(&self.id);
     }
 
     /// Attach per-role LLM overrides (fleet E8).
@@ -927,29 +924,6 @@ impl AgentRuntime {
                         "[INBOX from agent {}] {}",
                         msg.from, msg.content
                     ));
-                    self.messages.push(note.clone());
-                    self.db.add_message(&self.id, &note)?;
-                    self.track_message_tokens(&note);
-                }
-            }
-
-            // Background children that finished since the last turn (fleet E2).
-            {
-                let mut finished = self
-                    .bg_results
-                    .lock()
-                    .map(|mut v| std::mem::take(&mut *v))
-                    .unwrap_or_default();
-                for (label, res, tokens) in finished.drain(..) {
-                    self.descendant_tokens += tokens;
-                    let text = match res {
-                        Ok(summary) => format!(
-                            "[background agent {label} completed]\n{}",
-                            summary.chars().take(4000).collect::<String>()
-                        ),
-                        Err(e) => format!("[background agent {label} failed: {e}]"),
-                    };
-                    let note = Message::user(text);
                     self.messages.push(note.clone());
                     self.db.add_message(&self.id, &note)?;
                     self.track_message_tokens(&note);
@@ -1797,8 +1771,6 @@ impl AgentRuntime {
                             1,
                             spill_dir.clone(),
                         );
-                        let slot = self.bg_results.clone();
-                        let owner = self.id.clone();
                         tokio::spawn(async move {
                             // Keep the subtree token count — it feeds the
                             // session budget accounting (fleet round 2).
@@ -1808,12 +1780,7 @@ impl AgentRuntime {
                             };
                             // Deliver via AsyncJobManager to the owner's sink.
                             let mgr = pr_core::async_job::AsyncJobManager::global();
-                            mgr.complete(job_id, res.clone(), tokens);
-                            // Legacy path: also push raw result to bg_results.
-                            if let Ok(mut v) = slot.lock() {
-                                v.push((label, res, tokens));
-                            }
-                            let _ = owner;
+                            mgr.complete(job_id, res, tokens);
                         });
                         bg_launched.push((call_id, aid.0.clone()));
                     } else {
