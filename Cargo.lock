@@ -2265,6 +2265,7 @@ dependencies = [
  "chrono",
  "futures",
  "http-body-util",
+ "parking_lot",
  "pr-agent",
  "pr-core",
  "pr-llm",

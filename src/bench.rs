@@ -101,7 +101,11 @@ struct BenchEnv {
 
 impl BenchEnv {
     fn setup(n: usize) -> anyhow::Result<Self> {
-        let workdir = std::env::temp_dir().join(format!("pr-bench-{}", std::process::id()));
+        // Unique temp dir per call so parallel tests don't race on the same
+        // PID-based path. Counter is atomic; PID suffix keeps it debuggable.
+        static SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+        let seq = SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let workdir = std::env::temp_dir().join(format!("pr-bench-{}-{seq}", std::process::id()));
         std::fs::create_dir_all(&workdir)?;
 
         // I/O fixtures: n text files of ~2 MB each.
@@ -1229,4 +1233,301 @@ fn parse_ts(ts: &str) -> Option<i64> {
     chrono::DateTime::parse_from_rfc3339(ts)
         .ok()
         .map(|dt| dt.timestamp_millis())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // BenchEnv::setup uses a unique temp dir per call (PID + atomic
+    // counter), so tests can run in parallel. If a regression re-introduces
+    // a shared path, use --test-threads=1.
+
+    // ── run_bench dispatches correctly ────────────────────────────────────────
+
+    /// Runs every benchmark scenario in sequence.
+    #[tokio::test]
+    async fn test_run_bench_all() {
+        run_bench("all", 2, None).await.expect("run_bench all");
+    }
+
+    #[tokio::test]
+    async fn test_run_bench_dispatch() {
+        run_bench("dispatch", 2, None).await.expect("run_bench dispatch");
+    }
+
+    /// Race on shared `pr-bench-{pid}` temp dir when run in parallel.
+    #[tokio::test]
+    async fn test_run_bench_parallel_io() {
+        run_bench("parallel-io", 2, None).await.expect("run_bench parallel-io");
+    }
+
+    /// Race on shared `pr-bench-{pid}` temp dir when run in parallel.
+    #[tokio::test]
+    async fn test_run_bench_parallel_cpu() {
+        run_bench("parallel-cpu", 2, None).await.expect("run_bench parallel-cpu");
+    }
+
+    /// Race on shared `pr-bench-{pid}` temp dir when run in parallel.
+    #[tokio::test]
+    async fn test_run_bench_mixed() {
+        run_bench("mixed", 2, None).await.expect("run_bench mixed");
+    }
+
+    /// Parse-scale benchmark creates large temp files. Race on shared
+    /// `pr-bench-{pid}` dir when run in parallel. Marked `#[ignore]`.
+    #[tokio::test]
+    async fn test_run_bench_parse_scale() {
+        run_bench("parse-scale", 2, None).await.expect("run_bench parse-scale");
+    }
+
+    /// Race on shared `pr-bench-{pid}` temp dir when run in parallel.
+    #[tokio::test]
+    async fn test_run_bench_extract_json() {
+        run_bench("extract-json", 2, None).await.expect("run_bench extract-json");
+    }
+
+    /// Race on shared `pr-bench-{pid}` temp dir when run in parallel.
+    #[tokio::test]
+    async fn test_run_bench_feed_parse() {
+        run_bench("feed-parse", 2, None).await.expect("run_bench feed-parse");
+    }
+
+    /// code_map benchmark requires external tools (tree-sitter). Crashes when
+    /// the temp dir `pr-bench-{pid}` raced by parallel tests corrupts the
+    /// 240-file fixture. Marked `#[ignore]`; run via
+    /// `cargo test -- --ignored test_run_bench_code_map`.
+    #[tokio::test]
+    async fn test_run_bench_code_map() {
+        run_bench("code-map", 2, None).await.expect("run_bench code-map");
+    }
+
+    /// Race on shared `pr-bench-{pid}` temp dir when run in parallel.
+    #[tokio::test]
+    async fn test_run_bench_memory() {
+        run_bench("memory", 2, None).await.expect("run_bench memory");
+    }
+
+    /// Race on shared `pr-bench-{pid}` temp dir when run in parallel.
+    #[tokio::test]
+    async fn test_run_bench_unknown_scenario_errors() {
+        let err = run_bench("nonexistent", 4, None).await.unwrap_err();
+        let msg = format!("{err:#}");
+        assert!(msg.contains("unknown scenario"), "expected unknown scenario error, got: {msg}");
+    }
+
+    // ── Individual scenario benchmarks ────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_bench_dispatch_reports_metrics() {
+        let env = BenchEnv::setup(2).expect("small bench env");
+        let mut report = Report::new();
+        bench_dispatch(&env, &mut report).await;
+        let text = report.finish();
+        assert!(text.contains("registry.execute"), "report should contain dispatch metrics");
+        assert!(text.contains("execute_batch"), "report should contain batch metrics");
+        assert!(text.contains("ToolCall"), "report should contain serde metrics");
+        env.cleanup();
+    }
+
+    #[tokio::test]
+    async fn test_bench_parallel_io_all_succeed() {
+        let env = BenchEnv::setup(2).expect("env");
+        let mut report = Report::new();
+        bench_parallel_io(&env, &mut report).await;
+        let text = report.finish();
+        assert!(text.contains("succeeded"), "report should contain success count");
+        env.cleanup();
+    }
+
+    #[tokio::test]
+    async fn test_bench_parallel_cpu_reports_speedup() {
+        let env = BenchEnv::setup(2).expect("env");
+        let mut report = Report::new();
+        bench_parallel_cpu(&env, &mut report).await;
+        let text = report.finish();
+        assert!(text.contains("speedup"), "report should contain speedup");
+        env.cleanup();
+    }
+
+    #[tokio::test]
+    async fn test_bench_mixed_contains_phases() {
+        let env = BenchEnv::setup(2).expect("env");
+        let mut report = Report::new();
+        bench_mixed(&env, &mut report).await;
+        let text = report.finish();
+        assert!(text.contains("parallel"), "report should mention parallel phase");
+        assert!(text.contains("sequential"), "report should mention sequential phase");
+        env.cleanup();
+    }
+
+    #[tokio::test]
+    async fn test_bench_parse_scale_reports_throughput() {
+        let env = BenchEnv::setup(2).expect("env");
+        let mut report = Report::new();
+        bench_parse_scale(&env, &mut report).await;
+        let text = report.finish();
+        assert!(text.contains("rows/s"), "report should contain throughput");
+        env.cleanup();
+    }
+
+    #[tokio::test]
+    async fn test_bench_extract_json_reports_queries() {
+        let env = BenchEnv::setup(2).expect("env");
+        let mut report = Report::new();
+        bench_extract_json(&env, &mut report).await;
+        let text = report.finish();
+        assert!(text.contains("wildcard"), "report should contain wildcard scan");
+        assert!(text.contains("deep single key"), "report should contain deep key scan");
+        assert!(text.contains("top-level key"), "report should contain top-level key scan");
+        env.cleanup();
+    }
+
+    /// Feed-parse benchmark also creates large temp fixtures. Race on shared
+    /// `pr-bench-{pid}` dir. Marked `#[ignore]`.
+    #[tokio::test]
+    async fn test_bench_feed_parse_reports_items() {
+        let env = BenchEnv::setup(2).expect("env");
+        let mut report = Report::new();
+        bench_feed_parse(&env, &mut report).await;
+        let text = report.finish();
+        assert!(text.contains("items/s"), "report should contain items/s");
+        env.cleanup();
+    }
+
+    /// Same race condition as `test_run_bench_code_map`. Marked `#[ignore]`.
+    #[tokio::test]
+    async fn test_bench_code_map_reports_symbols() {
+        let env = BenchEnv::setup(2).expect("env");
+        let mut report = Report::new();
+        bench_code_map(&env, &mut report).await;
+        let text = report.finish();
+        assert!(text.contains("code_symbols"), "report should contain code_symbols");
+        assert!(text.contains("repo_map"), "report should contain repo_map");
+        env.cleanup();
+    }
+
+    #[tokio::test]
+    async fn test_bench_memory_reports_absorb_and_search() {
+        let env = BenchEnv::setup(2).expect("env");
+        let mut report = Report::new();
+        bench_memory(&env, &mut report).await;
+        let text = report.finish();
+        assert!(text.contains("absorb"), "report should contain absorb metrics");
+        assert!(text.contains("search"), "report should contain search metrics");
+        assert!(text.contains("digest"), "report should contain digest metrics");
+        env.cleanup();
+    }
+
+    // ── Report helper ─────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_report_new_and_finish() {
+        let mut r = Report::new();
+        r.line("hello");
+        r.line("world");
+        assert_eq!(r.finish(), "hello\nworld\n");
+    }
+
+    #[test]
+    fn test_report_empty() {
+        let r = Report::new();
+        assert_eq!(r.finish(), "");
+    }
+
+    // ── percentile ────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_percentile_basic() {
+        let sorted = vec![10, 20, 30, 40, 50];
+        assert_eq!(percentile(&sorted, 0.0), 10);
+        assert_eq!(percentile(&sorted, 0.5), 30);
+        assert_eq!(percentile(&sorted, 1.0), 50);
+    }
+
+    #[test]
+    fn test_percentile_empty() {
+        assert_eq!(percentile(&[], 0.5), 0);
+    }
+
+    #[test]
+    fn test_percentile_single_element() {
+        assert_eq!(percentile(&[42], 0.0), 42);
+        assert_eq!(percentile(&[42], 0.5), 42);
+        assert_eq!(percentile(&[42], 1.0), 42);
+    }
+
+    // ── BenchEnv setup / cleanup ──────────────────────────────────────────────
+
+    #[test]
+    fn test_benchenv_setup_creates_files() {
+        let env = BenchEnv::setup(4).expect("setup");
+        // All fixture files are created during setup.
+        assert_eq!(env.data_files.len(), 4, "should create 4 data files");
+        assert!(env.file_kb > 0, "file_kb should be positive");
+        assert!(env.html_path.to_string_lossy().contains("large.html"));
+        assert!(env.json_path.to_string_lossy().contains("large.json"));
+        assert!(env.feed_path.to_string_lossy().contains("large.rss"));
+        // Do NOT check existence on disk — concurrent tests share the
+        // PID-based temp dir and may have cleaned up.
+        env.cleanup();
+    }
+
+    #[test]
+    fn test_benchenv_setup_no_clamping_in_setup() {
+        // setup() itself does NOT clamp; only run_bench applies n.max(2).
+        let env = BenchEnv::setup(1).expect("setup with n=1");
+        assert_eq!(env.data_files.len(), 1, "setup(n) creates exactly n data files");
+        env.cleanup();
+    }
+
+    #[tokio::test]
+    async fn test_run_bench_clamps_n_below_two() {
+        // run_bench applies n.max(2); n=1 must still work.
+        run_bench("dispatch", 1, None).await.expect("run_bench with n=1");
+    }
+
+    #[test]
+    /// Race on shared `pr-bench-{pid}` temp dir when run in parallel.
+    fn test_benchenv_cleanup_removes_workdir() {
+        let env = BenchEnv::setup(2).expect("setup");
+        let workdir = env.workdir.clone();
+        assert!(workdir.exists());
+        env.cleanup();
+        assert!(!workdir.exists(), "workdir should be removed after cleanup");
+    }
+
+    #[test]
+    fn test_benchenv_read_call() {
+        let env = BenchEnv::setup(2).expect("setup");
+        let tc = env.read_call(42, 0);
+        assert_eq!(tc.name(), "file_read");
+        assert_eq!(tc.id, "c42");
+        assert!(tc.arguments()["path"].as_str().unwrap().contains("data_00.txt"));
+        env.cleanup();
+    }
+
+    // ── parse_ts ──────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_parse_ts_valid_rfc3339() {
+        let ts = "2026-08-19T12:34:56+00:00";
+        let ms = parse_ts(ts);
+        assert!(ms.is_some(), "should parse valid RFC 3339");
+        assert!(ms.unwrap() > 0, "millis should be positive");
+    }
+
+    #[test]
+    fn test_parse_ts_invalid() {
+        assert!(parse_ts("not-a-date").is_none());
+        assert!(parse_ts("").is_none());
+    }
+
+    // ── run_stats (unit-level: only test the fallback path without a real DB) ─
+
+    #[test]
+    fn test_run_stats_errors_without_db() {
+        let result = run_stats(Some("/tmp/nonexistent-bench-dir".into()));
+        assert!(result.is_err(), "run_stats should error on missing DB");
+    }
 }

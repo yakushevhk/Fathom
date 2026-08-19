@@ -28,3 +28,4 @@ async-trait.workspace = true
 tower = { version = "0.4", features = ["util"] }
 http-body-util = "0.1"
 tempfile = "3"
+parking_lot.workspace = true
