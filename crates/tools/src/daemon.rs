@@ -127,6 +127,7 @@ impl Tool for DaemonTool {
                     created_by: agent_id,
                     started_at: SystemTime::now(),
                     last_heartbeat: SystemTime::now(),
+                    generation: 1,
                 };
                 if !reg.try_register(info) {
                     return Ok(ToolOutput::err(format!(
@@ -315,6 +316,7 @@ impl Tool for DaemonTool {
                     created_by: info.created_by,
                     started_at: SystemTime::now(),
                     last_heartbeat: SystemTime::now(),
+                    generation: 1,
                 });
 
                 let n = name.clone();

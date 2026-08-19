@@ -33,6 +33,8 @@ pub struct DaemonInfo {
     pub created_by: AgentId,
     pub started_at: SystemTime,
     pub last_heartbeat: SystemTime,
+    /// Generation token prevents an old watcher from mutating a restarted daemon.
+    pub generation: u64,
 }
 
 /// Process-global registry of daemon processes.
@@ -138,6 +140,7 @@ mod tests {
             created_by: owner.clone(),
             started_at: SystemTime::now(),
             last_heartbeat: SystemTime::now(),
+            generation: 1,
         });
         assert_eq!(reg.list().len(), 1);
         assert_eq!(reg.list_by_owner(&owner).len(), 1);
@@ -156,6 +159,7 @@ mod tests {
             created_by: owner,
             started_at: SystemTime::now(),
             last_heartbeat: SystemTime::now(),
+            generation: 1,
         });
         reg.update_status("test", DaemonStatus::Running);
         assert_eq!(reg.get("test").unwrap().status, DaemonStatus::Running);
@@ -174,6 +178,7 @@ mod tests {
             created_by: owner,
             started_at: SystemTime::now(),
             last_heartbeat: SystemTime::now(),
+            generation: 1,
         });
         reg.update_port("web", 8080);
         let info = reg.get("web").unwrap();
