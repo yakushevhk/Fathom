@@ -48,6 +48,16 @@ struct SpawnAgentParams {
     /// parent's scratchpad, findings, or memory). Default is false.
     #[serde(default)]
     isolated: bool,
+
+    // ── Handoff ─────────────────────────────────────────────────────────
+    /// Agent id to handoff the parent's conversation to. Instead of
+    /// spawning a new child, the parent serializes its current state
+    /// (messages, findings, tokens) and passes it to the specified agent
+    /// via the global IrcBus as a handoff message. The target agent
+    /// receives the full context and continues from there.
+    /// Mutually exclusive with `task` and `tasks`.
+    #[serde(default)]
+    handoff_to: Option<String>,
 }
 
 /// A single task in a batch spawn.
@@ -140,6 +150,21 @@ Sub-agents do NOT see your conversation. Put everything the child needs into `ta
             Ok(p) => p,
             Err(e) => return Ok(ToolOutput::err(format!("Invalid arguments: {e}"))),
         };
+
+        // ── Handoff: pass full conversation to another agent ────────────
+        if let Some(ref target) = params.handoff_to {
+            return Ok(ToolOutput::ok_with_meta(
+                format!("Handoff request to agent {target}"),
+                serde_json::json!({
+                    "spawn_request": true,
+                    "handoff_to": target,
+                    "task": params.task,
+                    "role": params.role,
+                    "context": params.context,
+                    "handoff": true,
+                }),
+            ));
+        }
 
         // ── Batch spawn (parallel fan-out) ──────────────────────────────
         if !params.tasks.is_empty() {
@@ -371,6 +396,28 @@ mod tests {
         let meta = out.metadata.unwrap();
         assert!(meta["task"].as_str().unwrap().contains("Respond with JSON matching this schema"));
         assert!(meta["isolated"] == false);
+    }
+
+    #[tokio::test]
+    async fn test_spawn_handoff_metadata() {
+        let tool = SpawnAgentTool;
+        let out = tool
+            .execute(
+                serde_json::json!({
+                    "handoff_to": "agent-999",
+                    "task": "continue from here",
+                    "role": "analyst"
+                }),
+                &ctx(),
+            )
+            .await
+            .unwrap();
+        assert!(out.success);
+        let meta = out.metadata.unwrap();
+        assert_eq!(meta["spawn_request"], true);
+        assert_eq!(meta["handoff"], true);
+        assert_eq!(meta["handoff_to"], "agent-999");
+        assert_eq!(meta["role"], "analyst");
     }
 
     #[test]

@@ -1368,6 +1368,44 @@ impl AgentRuntime {
                     {
                         let meta = result.metadata.clone().unwrap_or_default();
 
+                        // Handoff: serialize current state and send to target
+                        // agent via IrcBus, then stop this agent.
+                        if meta.get("handoff").and_then(|v| v.as_bool()) == Some(true) {
+                            if let Some(target) = meta.get("handoff_to").and_then(|v| v.as_str()) {
+                                let target_id = pr_core::AgentId(target.to_string());
+                                let state = crate::lifecycle::ParkedAgentState {
+                                    id: self.id.clone(),
+                                    session_id: self.session_id.0.clone(),
+                                    parent_id: self.parent_id.clone(),
+                                    role: self.role,
+                                    task: self.task.clone(),
+                                    depth: self.depth,
+                                    messages: self.messages.clone(),
+                                    tokens_used: self.tokens_used,
+                                    descendant_tokens: self.descendant_tokens,
+                                    estimated_tokens: self.estimated_tokens,
+                                    config: self.config.clone(),
+                                    created_at: chrono::Utc::now(),
+                                };
+                                let json = serde_json::to_string(&state)
+                                    .unwrap_or_else(|_| "{}".to_string());
+                                let handoff_msg = pr_core::IrcMessage {
+                                    from: self.id.clone(),
+                                    to: Some(target_id.clone()),
+                                    content: format!(
+                                        "[HANDOFF] Agent {} is handing off its session.\n{}",
+                                        self.id, json
+                                    ),
+                                    id: format!("handoff_{}", uuid::Uuid::now_v7()),
+                                    expects_reply: false,
+                                    reply_to: None,
+                                };
+                                pr_core::IrcBus::global().send(handoff_msg);
+                                final_content = format!("Session handed off to {target}");
+                                break 'main_loop;
+                            }
+                        }
+
                         // Batch spawn: expand into one pending spawn per task.
                         if let Some(batch) = meta.get("spawn_batch").and_then(|v| v.as_array()) {
                             if !batch.is_empty() {
