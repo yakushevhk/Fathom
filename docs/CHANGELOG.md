@@ -196,7 +196,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Session output** — structured output with metadata, citations, and executive summary.
 
 #### Testing
-- **92 test annotations** across 22 test files (3,531 assertions).
+- **204 test annotations** across 22 test files (3,735 assertions).
 - **E2E tests**: `e2e_basic_research`, `e2e_multi_agent`, `e2e_real_tools`.
 - **Integration tests**: `integration_export_notify`, `integration_history`.
 - **Property-based testing** with `proptest`.

@@ -6,7 +6,7 @@
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/Rust-2021-DEA584?style=flat&colorA=222222&logo=rust&logoColor=white" alt="Rust"></a>
   <a href="#"><img src="https://img.shields.io/badge/LOC-72k-blue?style=flat&colorA=222222" alt="LOC"></a>
-  <a href="#"><img src="https://img.shields.io/badge/tests-92%20suites-3FB950?style=flat&colorA=222222" alt="Tests"></a>
+  <a href="#"><img src="https://img.shields.io/badge/tests-1407%20passed-3FB950?style=flat&colorA=222222" alt="Tests"></a>
   <a href="#"><img src="https://img.shields.io/badge/tools-46+5%20browser-58A6FF?style=flat&colorA=222222" alt="Tools"></a>
   <a href="#"><img src="https://img.shields.io/badge/crates-10-3178C6?style=flat&colorA=222222" alt="Crates"></a>
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-58A6FF?style=flat&colorA=222222" alt="License"></a>
@@ -40,9 +40,9 @@ Unlike a single-shot LLM prompt, Fathom treats research as an **ongoing, paralle
 | **Crates** | **10** |
 | **Tools** | **46 + 5 browser** (CDP) |
 | **Search backends** | 7 (Linkup, Exa, Tavily, Serper, Brave, Parallel.ai, DuckDuckGo) |
-| **Test annotations** | **92** (`#[test]` / `#[tokio::test]` / `#[proptest]`) |
+| **Test annotations** | **204** (`#[test]` / `#[tokio::test]` / `#[proptest]`) |
 | **Test files** | **22** |
-| **Assertions** | **3,531** |
+| **Assertions** | **3,735** |
 | **Agent roles** | 5 (coordinator, researcher, analyst, verifier, writer) |
 | **CRM integrations** | 3 (amoCRM, Bitrix24, HubSpot) |
 | **Export formats** | PDF, HTML, JSON, DOCX, Markdown |
