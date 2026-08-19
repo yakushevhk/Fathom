@@ -512,7 +512,7 @@ impl McpClient {
                 "protocolVersion": "2024-11-05",
                 "capabilities": {},
                 "clientInfo": {
-                    "name": "parallel-research",
+                    "name": "fathom",
                     "version": "0.1.0"
                 }
             })),

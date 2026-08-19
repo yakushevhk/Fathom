@@ -69,11 +69,11 @@ pub enum TaskType {
     LeadGen,
 }
 
-/// User-scoped ledger directory: `~/.parallel-research/ledger`. Shared by the
+/// User-scoped ledger directory: `~/.fathom/ledger`. Shared by the
 /// verification-receipt ledger and per-session task-tree blackboards.
 fn default_ledger_dir() -> anyhow::Result<std::path::PathBuf> {
     let home = dirs::home_dir().ok_or_else(|| anyhow::anyhow!("no home dir"))?;
-    Ok(home.join(".parallel-research").join("ledger"))
+    Ok(home.join(".fathom").join("ledger"))
 }
 
 impl Coordinator {
@@ -1275,7 +1275,7 @@ Rules: at most 3 new_subtasks; each must be independently executable by a resear
 
     /// Fan out sub-tasks to separate worker OS processes via [`ProcessManager`].
     ///
-    /// Each worker is spawned as `parallel-research worker ...` and reports
+    /// Each worker is spawned as `fathom worker ...` and reports
     /// progress over a per-agent Unix domain socket. Intermediate events
     /// (tool calls, LLM chunks) are re-emitted on the local event bus so the
     /// TUI/headless progress output works identically to single-process mode.

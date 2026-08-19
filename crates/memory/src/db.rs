@@ -15,7 +15,7 @@ use std::sync::Mutex;
 /// Environment variable overriding the memory database location.
 pub const MEMORY_DB_ENV: &str = "PR_MEMORY_DB";
 
-/// Global memory database: `~/.parallel-research/memory.db` unless the
+/// Global memory database: `~/.fathom/memory.db` unless the
 /// `PR_MEMORY_DB` environment variable points elsewhere.
 pub fn default_memory_db_path() -> PathBuf {
     if let Ok(p) = std::env::var(MEMORY_DB_ENV) {
@@ -23,7 +23,7 @@ pub fn default_memory_db_path() -> PathBuf {
     }
     let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
     PathBuf::from(home)
-        .join(".parallel-research")
+        .join(".fathom")
         .join("memory.db")
 }
 

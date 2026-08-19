@@ -32,6 +32,10 @@
 
 Declares all public submodules of the crate and re-exports their contents via `pub use ...::*`, so external consumers can write `use pr_agent::AgentRuntime` instead of `use pr_agent::runtime::AgentRuntime`.
 
+### Design Decisions
+
+The module structure is designed around a **layered runtime architecture**. The `runtime` module provides the core agent loop, `coordinator` orchestrates multi-agent sessions, and the remaining modules provide supporting infrastructure (compaction, hooks, IPC, process management, tool execution, budget, and recovery). The `ipc` and `process_manager` modules are intentionally kept private — they are only used by `coordinator.rs` for multiprocess fan-out, and exposing them would create an unnecessary public API surface. This encapsulation ensures that the multiprocess communication protocol can evolve without affecting external consumers.
+
 ### Declared Modules (14 total)
 
 ```
@@ -52,6 +56,19 @@ All modules except `ipc` and `process_manager` re-export their public API to the
 ### 2.1. Structure `AgentRuntime`
 
 The main working unit of the system. Each instance is one LLM agent operating in its own "think → call tool → get result" loop.
+
+**Architecture overview:**
+
+`AgentRuntime` is the heart of the entire system. It owns the complete conversational state of a single agent — the message history, the token accounting, the compaction engine, the tool budget, the loop guard, and the registries for memory and skills. Because agents are spawned recursively (the `spawn_agent` tool creates child runtimes), the runtime is fully self-contained: a child agent inherits exactly what it needs (contact database, CRM, cancellation token, role LLM assignment) and runs independently until it produces an `AgentOutput`.
+
+The runtime is designed around a few core architectural principles:
+
+- **Single ownership of context.** All context management (messages, token estimation, compaction) lives in one place, so there is a single well-defined notion of "how full is the context" at any moment.
+- **Turn-based execution.** The loop is strictly sequential per agent: drain external inputs → one LLM call → execute the requested tools → feed results back. This makes the agent's behavior deterministic and debuggable.
+- **Layered safety rails.** Tools are gated by role permissions, PreToolUse hooks, doom-loop detection, and cascading cancellation, then bounded by turn and result budgets. Failures are degraded gracefully rather than aborting the run.
+- **Observability by construction.** Every meaningful transition (state change, tool call started/completed, spawn, completion, failure) is emitted on the event bus, so the TUI, logging, and the session coordinator all see the same stream of events.
+
+**Event bus and external coordination:** the `event_tx` broadcast channel fans events out to any number of subscribers (TUI, stall monitor, coordinator). The runtime itself treats the bus as fire-and-forget: send errors are ignored because the system must keep running even if no one is listening. The same event stream is what allows the multiprocess mode to mirror worker progress into the parent coordinator's event bus via the IPC `Event` variant (see [section 8](#8-ipcrs)).
 
 **Fields:**
 
@@ -442,6 +459,12 @@ For each `tool_call` in order:
 
 **File:** `src/coordinator.rs` — session coordinator. Manages the lifecycle of a research session: from decomposition to synthesis.
 
+### Architecture Overview
+
+The `Coordinator` is the **orchestrator** for a single research session. While `AgentRuntime` handles one agent's turn loop, the `Coordinator` handles the multi-agent workflow: it decomposes the user's query into subtasks, fans out to parallel researcher agents, collects results, optionally reflects on gaps (LeadGen mode), synthesizes everything into a coherent report, and writes output files.
+
+The coordinator is also the **entry point for graceful degradation**. It runs a background heartbeat that touches the session DB every 60 seconds (so the `SessionResumer` doesn't treat a live session as stale), and a stall monitor that tracks per-agent progress and cancels stalled agents after a configurable grace period. If the session crashes, the `SessionResumer` can recover it by reading completed agents from the DB and re-running only the pending subtasks.
+
 ### 3.1. Structure `Coordinator`
 
 | Field | Type | Purpose |
@@ -589,6 +612,16 @@ Sends an event to the bus.
 4. Clears `agent_tokens`.
 5. Returns `findings`.
 
+**Architecture and concurrency model:**
+
+`spawn_researchers` uses `tokio::task::JoinSet` to manage the concurrent agent pool. Each researcher runs inside a `tokio::select!` that races two branches: the agent's `run()` method (with optional timeout) and a `token.cancelled()` branch. This design means:
+
+- **Graceful cancellation:** when the stall monitor or user cancels a session, it cancels `session_cancel`, which propagates to all child tokens. Each agent's `select!` notices the cancelled token and returns an error instead of blocking.
+- **Bounded concurrency:** `JoinSet` naturally collects results as they complete, regardless of submission order. The `max_agents` and `budget_exhausted()` checks prevent launching beyond configured limits.
+- **Timeout integration:** `run_with_timeout` wraps each agent in a `tokio::time::timeout`. If an agent exceeds its timeout, the future returns `Err(Elapsed)`, which `spawn_researchers` treats as a failure — it logs the error, updates the DB, and continues collecting other results.
+
+The `agent_tokens` map (a `HashMap<String, CancellationToken>` behind `Arc<Mutex<...>>`) is the stall monitor's interface for killing individual agents. The stall monitor's background loop can look up any agent's token in this map and cancel it if the agent has been idle too long.
+
 ### 3.15. `Coordinator::execute(&mut self) -> Result<SessionOutput>` — async — MAIN METHOD
 
 **Step-by-step algorithm:**
@@ -598,15 +631,26 @@ Sends an event to the bus.
 2. Starts stall monitor (`start_stall_monitor`).
 3. Emits `SessionStarted`.
 
+**Design rationale:** The heartbeat and stall monitor run as background tokio tasks alongside the main execution. The heartbeat keeps the DB session row alive (updated_at every 60s), while the stall monitor watches the event bus for progress. If an agent hasn't emitted any event for `warn_secs` seconds, it logs a warning; if `kill_secs` passes without progress, it cancels that agent's token. This two-level approach means a single stuck shell command won't hold up the entire session.
+
 #### Step 1: Plan
 4. Calls `self.plan().await` — gets `sub_tasks: Vec<String>`.
 5. Logs the number of subtasks.
 6. For each subtask — calls `db.add_subtask()` (Goal Mode light, fleet E4).
 
+**Planner design:** The `plan()` method uses the LLM itself (with a Coordinator role prompt) to decompose the user's query into 2-5 independent subtasks. For LeadGen tasks, the planner also detects the target contact count and structures subtasks as non-overlapping collection tasks partitioned by industry, name range, or source type. The planner outputs JSON, and the parser falls back gracefully to a single monolithic task if JSON parsing fails.
+
 #### Step 2: Fan-out
 7. If `sub_tasks` is empty — runs `run_single_agent()`.
 8. If `use_multiprocess` — runs `run_multiprocess_fanout(&sub_tasks)`.
 9. Otherwise — runs `spawn_researchers(&sub_tasks)` (in-process).
+
+**Fan-out strategy:** The coordinator supports three modes:
+- **In-process (`spawn_researchers`):** each researcher runs as a `tokio::spawn` task within the same process. This is the default — it's simple, fast, and shares the event bus and DB connection natively.
+- **Multiprocess (`run_multiprocess_fanout`):** each researcher launches as a separate OS process (`pr-agent-worker` binary) communicating over Unix Domain Sockets. This provides stronger isolation: a crash in one worker doesn't bring down the others, and OS-level parallelism is maximized.
+- **Single agent:** when planning produces no subtasks (fallback), the coordinator runs a single researcher directly.
+
+The maximum number of concurrent agents is bounded by `config.agent.max_concurrent_children` (for in-process) and `max_agents` (overall limit). The session token budget is also checked before launching each agent.
 
 #### Step 2.5: Sync subtask statuses
 10. Calls `sync_subtask_statuses()` — synchronizes subtask string statuses with agent outcomes.
@@ -622,6 +666,8 @@ Sends an event to the bus.
       - Forms a gap-filling task.
       - Runs `spawn_researchers(&[gap_task])`.
       - Persists findings, adds to the overall list.
+
+**Reflection round rationale:** LeadGen tasks often have a numeric target (`"find 50 contacts"`). After the initial fan-out, the coordinator checks how many contacts were actually saved. If the target wasn't reached and there's headroom in the agent budget, it launches one more researcher with a gap-filling task. This is a light form of Goal Mode: the coordinator adapts the plan based on partial results.
 
 #### Step 3: Synthesize
 13. Calls `self.synthesize(&findings).await`.
@@ -720,6 +766,18 @@ Sends an event to the bus.
 4. Calls `pm.shutdown_all().await`.
 5. Returns `findings`.
 
+**Architecture and process isolation:**
+
+Multiprocess fan-out is the alternative to in-process `spawn_researchers`. Its core value is **fault isolation**: each researcher runs in a completely separate OS process, so a crash, SIGKILL, or unbounded memory use in one researcher cannot corrupt the coordinator or its siblings. This is particularly valuable for shell-heavy research tasks or for running untrusted tool code.
+
+The protocol is a **request/reply + event stream hybrid over a Unix Domain Socket**:
+- The coordinator binds a socket at `socket_dir/{agent_id}.sock`, spawns the `pr-agent-worker` binary with the socket path, and waits up to 30 seconds for the worker to connect.
+- Once connected, the worker sends `Ready` and then streams `Event` messages back to the coordinator (mirrored onto the coordinator's event bus via `to_agent_event`) and finally a `Result` message.
+- The coordinator waits for the result with `wait_for_completion_with_events`, which runs until either the worker sends a `Result` or the child process exits unexpectedly (in which case it produces an `aborted: true` output, equivalent to a `Disconnected` status).
+- `shutdown_all()` performs a graceful teardown: send `Cancel` to every worker, wait up to 5 seconds, then SIGKILL stragglers. This ensures no orphaned worker processes remain.
+
+Event forwarding in multiprocess mode happens through `IpcMessage::Event` — see [section 8](#8-ipcrs) for the mapping and [section 9](#9-process_managerrs) for the process management details.
+
 ### 3.22. `synthesize(&self, findings) -> Result<String>` — async
 
 **Algorithm:**
@@ -764,6 +822,14 @@ Sends an event to the bus.
 ## 4. compaction.rs
 
 **File:** `src/compaction.rs` — context compaction engine.
+
+### Architecture Overview
+
+The compaction engine is the system's primary defense against context window overflow. It operates in **two phases**: first a cheap, no-LLM micro-compaction that deduplicates and prunes, then (if needed) an LLM-driven summarization that condenses the middle of the conversation.
+
+The key design insight is that the `compact()` method is **idempotent and non-fatal**. If the LLM summarization fails, the engine simply returns the original messages unchanged — the agent loop continues, and the next turn will try compaction again. This makes the compaction system resilient to transient LLM failures.
+
+The engine also tracks **effectiveness**: if two consecutive compaction passes reduce the context by less than 5%, it enters a 300-second cooldown (`COOLDOWN_DURATION`). This prevents wasting tokens on fruitless compaction attempts (e.g., when the conversation is already as dense as possible).
 
 ### 4.1. Constants
 
@@ -1010,7 +1076,7 @@ Returns a static string for each role:
 ### 6.1. `prompts/default.txt`
 
 Base prompt for most models (GPT-4, Claude, etc.). Contains:
-- Identification: "You are an autonomous research agent working within the Parallel Research system."
+- Identification: "You are an autonomous research agent working within the Fathom system."
 - General instructions: use tools, don't fabricate, be accurate, record issues.
 - Behavioral guidelines: think step by step, break down tasks, try alternatives, use markdown.
 
@@ -1023,6 +1089,24 @@ Abbreviated version for DeepSeek — more concise, with a focus on tools. Same c
 ## 7. hooks.rs
 
 **File:** `src/hooks.rs` — lifecycle hooks (fleet E3, ZCode pattern). Subprocesses invoked at specific stages of the agent cycle.
+
+### Architecture Overview
+
+The hook system implements a **subprocess-based extension mechanism** inspired by the ZCode pattern. At three points in the agent lifecycle — before a tool runs, after a tool runs, and when the LLM wants to stop — the runtime invokes a user-configured subprocess command, passes a JSON payload on stdin, and parses the JSON response from stdout.
+
+This design is deliberately **process-boundary**: hooks run as separate OS processes, not as in-process plugins. This means:
+- **No language lock-in.** Hooks can be written in any language (bash, Python, Go, Node.js) — the protocol is JSON over stdin/stdout.
+- **No runtime crashes.** A buggy hook that segfaults or panics won't take down the agent.
+- **30-second timeout.** Every hook call is wrapped in a `tokio::time::timeout` with `kill_on_drop`. If a hook hangs, it's killed and treated as "no response" (the agent continues).
+- **Wildcard matching.** A hook with `tool: ""` (empty string) matches any tool, while a hook with a specific tool name only matches that tool. This allows broad safety policies (e.g., "deny all shell commands") alongside tool-specific hooks.
+
+The three hook points serve different purposes:
+
+| Hook Point | When | Use Case |
+|------------|------|----------|
+| `pre_tool_use` | Before tool execution | Security gate: deny dangerous commands, enforce rate limits, validate arguments |
+| `post_tool_use` | After tool execution | Audit log, save output snapshots, notify external systems |
+| `stop` | When LLM wants to stop | Quality gate: force the agent to continue if its output is incomplete |
 
 ### 7.1. Constants
 
@@ -1186,6 +1270,23 @@ enum StopVerdict { Stop, Continue(String) }
 
 **File:** `src/ipc.rs` — inter-process communication protocol between coordinator and worker processes via Unix Domain Socket.
 
+### Architecture Overview
+
+The IPC protocol is the backbone of the multiprocess fan-out mode. It uses a **simple JSON-line protocol over a Unix Domain Socket** (UDS): each message is a single line of JSON terminated by `\n`. This is intentionally simpler than gRPC or a full message bus — it requires no external dependencies, no schema registry, and the protocol is trivially debuggable (`echo '{"Ready":null}' | nc -U socket.sock`).
+
+The protocol has **6 message types**, 3 from coordinator → worker and 3 from worker → coordinator:
+
+| Direction | Message | Purpose |
+|-----------|---------|---------|
+| Coordinator → Worker | `Task` | Assigns the research task to the worker |
+| Coordinator → Worker | `Cancel` | Requests early termination |
+| Coordinator → Worker | `Ack` | Acknowledges a received result |
+| Worker → Coordinator | `Ready` | Signals that the worker has initialized |
+| Worker → Coordinator | `Result` | Returns the final output (status, summary, tokens) |
+| Worker → Coordinator | `Event` | Streams a live `AgentEvent` for real-time monitoring |
+
+The `Event` forwarding mechanism is what makes the multiprocess mode transparent to the TUI and stall monitor: the worker serializes each `AgentEvent` as an `IpcMessage::Event`, the coordinator deserializes it and re-broadcasts it on its own event bus. This is handled by `to_agent_event()` in [section 8.3](#83-to_agent_eventipc_msg-session_id---option).
+
 ### 8.1. Enum `IpcMessage`
 
 All variants are serialized/deserialized via `serde`:
@@ -1299,6 +1400,15 @@ Matches by `IpcMessage` variant:
 
 **File:** `src/process_manager.rs` — worker process management for multiprocess fan-out.
 
+### Architecture Overview
+
+`ProcessManager` is the process lifecycle owner in multiprocess mode. It is responsible for the complete worker lifecycle: **spawn → handshake → stream events → await result → graceful shutdown**. It tracks two maps — `children` (the OS `Child` handles) and `streams` (the write halves of the UDS connections) — keyed by `agent_id`.
+
+The design ensures that no worker is ever left orphaned:
+- During spawn, a 30-second connection timeout guards the UDS handshake.
+- During shutdown, the sequence is **Cancel → 5s grace → SIGKILL → reap**. `children` is drained so terminated processes are properly reaped (avoiding zombie processes).
+- Event reading saturates at 16MB per IPC line (`read_line_capped`), protecting against OOM from a malicious or malfunctioning worker.
+
 ### 9.1. Structure `ProcessManager`
 
 | Field | Type | Purpose |
@@ -1400,6 +1510,18 @@ Matches by `IpcMessage` variant:
 
 **File:** `src/background.rs` — background task management for the agent (fleet E2).
 
+### Architecture Overview
+
+The background task system lets an agent **fire-and-forget non-blocking work**. When the `spawn_agent` tool is invoked with `"background": true`, the runtime wraps the child in a background task instead of awaiting it. The results are collected asynchronously and injected into the parent's conversation at the next turn boundary (via the `bg_results` buffer that `AgentRuntime::run` drains in step 1b).
+
+The concurrency model is a simple **job vector + token handle** design:
+
+- The `BackgroundManager` owns a list of `BackgroundJob`s, each wrapping a `JoinHandle<()>`. The child's `run()` future is spawned detached (`tokio::spawn`); the spawned task computes the result and pushes it to the shared `bg_results: Arc<Mutex<Vec<...>>>`.
+- `poll_completed()` is invoked by the parent (typically between turns or during `agent.run()`) to check `JoinHandle::is_finished()` and harvest results with their elapsed duration.
+- `cancel_all()` aborts every living handle — used during shutdown so background work doesn't outlive the session.
+
+The key coordination point is the `bg_results` channel. Because it is an `Arc<Mutex<Vec<_>>>`, it is shareable between the spawned background task (which appends results) and the agent runtime (which drains them at the next turn boundary via `std::mem::take`). Drain happens at the start of each turn, so results appear in the conversation exactly when the model next composes a response.
+
 ### 10.1. Structure `BackgroundJob`
 
 | Field | Type | Description |
@@ -1463,6 +1585,20 @@ Returns `jobs.is_empty()`.
 ## 11. budget.rs
 
 **File:** `src/budget.rs` — tool result budget. Limits output volume per turn and per run.
+
+### Architecture Overview
+
+The budget system is a **two-layer output limiter** that prevents any single tool result or turn from overflowing the context window.
+
+1. **`TurnBudget`** — per-turn byte budget. Reset at the start of every turn (step 1d of the main loop). Each tool result's content is charged against this budget via `record()`. If the budget is exhausted, subsequent tool results are dropped entirely with a `"[Tool output dropped: turn output budget exhausted]"` message.
+2. **`ResultBudget`** — per-result character budget, used during spawn batch result collection and synthesis. It divides the available headroom evenly among the batch and spills oversized results to disk.
+
+When a result exceeds the byte or line limit, `apply_turn_budget` performs a **three-step truncation**:
+1. **Line truncation** — if lines exceed the limit, the middle is removed and replaced with a note.
+2. **Byte truncation** — if bytes exceed the limit, the content is truncated at a UTF-8-safe boundary.
+3. **Spill to disk** — the full original content is saved to `{working_dir}/.pr-context/spills/{agent_id}/{tool_name}_{timestamp}_{hash}.txt`. The truncated message includes a spill path and first 500 characters, so the agent can re-read the full output with `read_file` if needed.
+
+The spill directory is capped at `MAX_SPILL_FILES_PER_AGENT` (20) to prevent unbounded disk usage.
 
 ### 11.1. Constants
 
@@ -1580,6 +1716,18 @@ Returns `replacement` if truncated, otherwise `original`.
 
 **File:** `src/doom_loop.rs` — agent loop detection.
 
+### Architecture Overview
+
+The doom loop detector is a **sliding-window pattern matcher** that identifies when an agent is repeatedly calling the same tool with identical arguments. This is a common failure mode for LLMs: they get stuck in a loop where they call `read_file` on the same path, or `search_web` with the same query, over and over.
+
+The detector works by maintaining a sliding window of the last 6 invocations. It normalizes argument JSON using `BTreeMap` (so `{"a":1,"b":2}` and `{"b":2,"a":1}` produce the same hash), then checks for 3+ consecutive identical calls. On detection, it returns a warning string that the main loop uses to issue a "nudge" — a message injected into the conversation telling the model to try a different approach.
+
+The system has two escalation levels:
+1. **Nudge** (first detection): the agent is warned but allowed to continue. The `doom_nudged` flag is set.
+2. **Stop** (second detection after nudge): the agent is aborted with a doom loop warning. The `MAX_NUDGE_CONTINUATIONS` (3) limit in `has_exceeded_nudge_limit` provides additional headroom for the `record_nudge` path.
+
+The detector resets cleanly (`reset()`) when a new session or agent starts, so prior loops don't carry over.
+
 ### 12.1. Constants
 
 | Constant | Value | Purpose |
@@ -1662,6 +1810,14 @@ Resets `history`, `consecutive_same`, and `nudge_count` to their initial state.
 
 **File:** `src/recovery.rs` — session recovery after crashes (fleet H1, H3).
 
+### Architecture Overview
+
+The recovery system provides **crash resilience through persistence**. Because all messages, tool results, and agent states are written to the SQLite DB as they happen, a crashed session can be reconstructed: completed agents are re-read from the DB, their final summaries regenerated from the persisted message history, and only the pending (never-completed) subtasks are re-executed.
+
+The key concept is the **staleness threshold** (`stale_threshold`, default 5 minutes). A live session keeps touching its `updated_at` via the heartbeat (see [section 3.9](#39-start_heartbeatdb-session_id---heartbeatguard)); if a session has been `Running` but hasn't been updated for 5 minutes, it's presumed dead — the previous heartbeat thread died with the process, or the whole host went down. Only such stale sessions are offered for resumption.
+
+The recovery flow integrates with the CLI (`resume.rs`) to offer the user a choice at startup: resume a `Running` stale session, or start fresh. After resumption, the `Coordinator::execute_resume` path reuses the existing `session_id`, restores accumulated tokens and agent counts, re-runs pending tasks, then re-synthesizes and rewrites the output files, so the final report is complete and idempotent.
+
 ### 13.1. Structure `RecoveredSession`
 
 | Field | Type | Description |
@@ -1741,6 +1897,18 @@ Initializes with `stale_threshold = Duration::from_secs(300)`.
 
 **File:** `src/resume.rs` — CLI utility for selecting and launching session resumption.
 
+### Architecture Overview
+
+The resume module is the **user-facing CLI gateway** to the recovery system. When the application starts, it calls `handle_resume_interactive()`, which:
+
+1. Scans the DB for stale `Running` sessions via `SessionResumer::find_resumable()`.
+2. If found, presents an interactive menu showing each session's query, age, progress (% done), agent counts, and token usage.
+3. The user chooses: resume a session, start fresh, or quit.
+
+The user experience is designed to be **zero-surprise**: each session is displayed with its completion percentage and human-readable age, so the user can recognize which sessions matter. The `format_summary` function renders this in a compact, scannable format.
+
+The `interactive_select` function reads from stdin and handles empty input, invalid numbers, and explicit quit commands. After selection, the coordinator is initialized with the recovered session's `session_id` and `query`, so the output files overwrite (not duplicate) the previous ones.
+
 ### 14.1. Structure `SessionSummary`
 
 | Field | Type | Description |
@@ -1812,6 +1980,23 @@ enum ResumeOption {
 ## 15. tool_executor.rs
 
 **File:** `src/tool_executor.rs` — parallel tool executor. Classifies tool_calls into concurrent and sequential, launches parallel ones simultaneously with path overlap detection.
+
+### Architecture Overview
+
+The parallel tool executor addresses a core performance concern: **modern LLMs emit batched tool calls**, and executing them one at a time is slow. Instead, the executor classifies each tool call into a category, groups safe-to-parallelize calls, and launches them with `join_all` (or `tokio::join!` when both parallel and sequential batches exist).
+
+The safety rules are:
+
+| Category | Tools | Execution |
+|----------|-------|-----------|
+| `ReadOnly` | `search_code`, `fetch_url`, `read_file`, `get_contacts` | Always concurrent — reads have no side effects |
+| `Write` | `write_file`, `append_file`, `update_record` | Concurrent, but only if paths don't overlap |
+| `Shell` | `shell` | Always sequential — ordering and side effects matter |
+| `Unknown` | anything else | Always sequential — the executor is conservative |
+
+**Path overlap detection** prevents data races: two write calls targeting the same file (or the same directory tree) are placed into the sequential batch. For example, `write_file` on `/tmp/data` and `write_file` on `/tmp/data/file.txt` conflict (one is a prefix of the other), so they execute sequentially. Path normalization (trailing-slash removal, `./` prefix stripping) makes the comparison robust.
+
+The `execute_batch` entry point runs the parallel and sequential batches concurrently with `tokio::join!`, then re-sorts the combined results by their original index, preserving the order expected by the agent loop (which pairs results to call IDs in invocation order).
 
 ### 15.1. Structure `ToolCategory`
 

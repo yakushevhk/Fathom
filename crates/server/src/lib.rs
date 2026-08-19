@@ -1,4 +1,4 @@
-//! HTTP API server for the Parallel Research agent.
+//! HTTP API server for the Fathom agent.
 //!
 //! Exposes a JSON API for creating and monitoring research sessions, plus
 //! health and Prometheus metrics endpoints:
@@ -63,7 +63,7 @@ use tower_http::trace::TraceLayer;
 
 /// Environment variable overriding the per-client rate limit
 /// (requests per minute).
-pub const RATE_LIMIT_ENV: &str = "PARALLEL_RESEARCH_RATE_LIMIT";
+pub const RATE_LIMIT_ENV: &str = "FATHOM_RATE_LIMIT";
 /// Default per-client rate limit: requests per minute.
 pub const DEFAULT_RATE_LIMIT: usize = 120;
 
@@ -296,7 +296,7 @@ pub async fn run_server(host: String, port: u16) -> anyhow::Result<()> {
     if !ip.is_loopback() && !ApiKeyAuth::from_env().is_enabled() {
         anyhow::bail!(
             "refusing to bind non-loopback address {ip} without API keys. \
-             Set PARALLEL_RESEARCH_API_KEYS (comma-separated) or use --host 127.0.0.1"
+             Set FATHOM_API_KEYS (comma-separated) or use --host 127.0.0.1"
         );
     }
 
@@ -305,7 +305,7 @@ pub async fn run_server(host: String, port: u16) -> anyhow::Result<()> {
 
     let addr = SocketAddr::from((ip, port));
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    tracing::info!("Parallel Research API listening on http://{addr}");
+    tracing::info!("Fathom API listening on http://{addr}");
     axum::serve(
         listener,
         app.into_make_service_with_connect_info::<SocketAddr>(),
@@ -1060,7 +1060,7 @@ async fn health_check(State(state): State<Arc<AppState>>) -> Response {
         code,
         serde_json::json!({
             "status": status,
-            "service": "parallel-research",
+            "service": "fathom",
             "version": env!("CARGO_PKG_VERSION"),
             "database": if db_ok { "ok" } else { "error" },
             "active_sessions": state.metrics.sessions_active.get(),
@@ -1092,7 +1092,7 @@ mod tests {
     fn test_state() -> Arc<AppState> {
         let db = Arc::new(Persistence::in_memory().unwrap());
         // Memory off in generic tests: they must never touch the real
-        // ~/.parallel-research/memory.db. Memory API tests build their own
+        // ~/.fathom/memory.db. Memory API tests build their own
         // state with a temp-db config (see memory_state).
         let mut config = AppConfig::default();
         config.memory.enabled = false;
@@ -1191,7 +1191,7 @@ mod tests {
         assert_eq!(status, StatusCode::OK);
         assert_eq!(body["status"], "ok");
         assert_eq!(body["database"], "ok");
-        assert_eq!(body["service"], "parallel-research");
+        assert_eq!(body["service"], "fathom");
     }
 
     #[tokio::test]
@@ -1206,7 +1206,7 @@ mod tests {
         assert!(ctype.contains("text/html"), "{ctype}");
         let body = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
         let html = String::from_utf8_lossy(&body);
-        assert!(html.contains("Parallel Research"));
+        assert!(html.contains("Fathom"));
         assert!(html.contains("/api/v1/sessions") || html.contains("api/v1"));
         assert!(html.contains("EventSource"), "live SSE wiring present");
     }

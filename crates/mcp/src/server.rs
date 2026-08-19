@@ -91,7 +91,7 @@ impl McpServer {
                     "protocolVersion": "2024-11-05",
                     "capabilities": {"tools": {}},
                     "serverInfo": {
-                        "name": "parallel-research",
+                        "name": "fathom",
                         "version": env!("CARGO_PKG_VERSION")
                     }
                 }
@@ -189,7 +189,7 @@ mod tests {
         assert_eq!(resp["jsonrpc"], "2.0");
         assert_eq!(resp["id"], 1);
         assert_eq!(resp["result"]["protocolVersion"], "2024-11-05");
-        assert_eq!(resp["result"]["serverInfo"]["name"], "parallel-research");
+        assert_eq!(resp["result"]["serverInfo"]["name"], "fathom");
     }
 
     #[tokio::test]

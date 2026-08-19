@@ -726,14 +726,14 @@ mod tests {
         let _ = std::fs::remove_dir_all(dir);
     }
 
-    /// Spawn the real `parallel-research` binary as a worker, verify the
+    /// Spawn the real `fathom` binary as a worker, verify the
     /// socket handshake and bookkeeping, then shut it down. This does not
     /// wait for the agent to finish (that would require a live LLM), so it
     /// stays fast and hermetic.
     ///
     /// Ignored by default because it spawns a real subprocess; run with
     /// `cargo test -p pr-agent -- --ignored` to exercise it. Requires the
-    /// `parallel-research` binary to be built (`cargo build`).
+    /// `fathom` binary to be built (`cargo build`).
     #[tokio::test]
     #[ignore = "spawns the real binary as a subprocess"]
     async fn test_spawn_and_shutdown_real_worker() {
@@ -741,8 +741,8 @@ mod tests {
         let manifest = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         let workspace_root = manifest.join("..").join("..");
         let candidates = [
-            workspace_root.join("target/debug/parallel-research"),
-            workspace_root.join("target/release/parallel-research"),
+            workspace_root.join("target/debug/fathom"),
+            workspace_root.join("target/release/fathom"),
         ];
         let binary_path = candidates
             .iter()
@@ -750,7 +750,7 @@ mod tests {
             .cloned()
             .unwrap_or_else(|| {
                 panic!(
-                    "parallel-research binary not found; run `cargo build` first (looked in {:?})",
+                    "fathom binary not found; run `cargo build` first (looked in {:?})",
                     candidates
                 )
             });

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `pr-tui` crate is a terminal user interface (TUI) for the Parallel Research Agent. Built on the **ratatui** library (a fork of tui-rs) using **crossterm** as the backend. It implements an interactive console with query input, real-time agent progress display, LLM output streaming, and session history.
+The `pr-tui` crate is a terminal user interface (TUI) for the Fathom Agent. Built on the **ratatui** library (a fork of tui-rs) using **crossterm** as the backend. It implements an interactive console with query input, real-time agent progress display, LLM output streaming, and session history.
 
 ---
 
@@ -499,7 +499,7 @@ Builds a layout of 3 vertical blocks:
 
 ### 5.2 `draw_header(frame, app, area)` — header
 
-Panel styled as `" Parallel Research "` with white text on blue background. `Span::styled` with `Style::default().fg(Color::White).bg(Color::Blue).add_modifier(Modifier::BOLD)`.
+Panel styled as `" Fathom "` with white text on blue background. `Span::styled` with `Style::default().fg(Color::White).bg(Color::Blue).add_modifier(Modifier::BOLD)`.
 
 ### 5.3 `draw_body(frame, app, area)` — main body
 

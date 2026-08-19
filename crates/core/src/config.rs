@@ -380,7 +380,7 @@ pub struct MemoryConfig {
     #[serde(default = "default_memory_enabled")]
     pub enabled: bool,
     /// Path to the memory SQLite file. Empty = default
-    /// `~/.parallel-research/memory.db` (env `PR_MEMORY_DB` overrides).
+    /// `~/.fathom/memory.db` (env `PR_MEMORY_DB` overrides).
     #[serde(default)]
     pub db_path: String,
     /// Embedding backend: `auto` (OpenAI-compatible when credentials are
@@ -624,7 +624,7 @@ impl AppConfig {
             }
         }
         let home = dirs::home_dir().ok_or_else(|| anyhow::anyhow!("no home dir"))?;
-        Ok(home.join(".parallel-research").join("config.toml"))
+        Ok(home.join(".fathom").join("config.toml"))
     }
 
     pub fn save(&self) -> anyhow::Result<()> {

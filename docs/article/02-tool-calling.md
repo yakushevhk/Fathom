@@ -1,7 +1,7 @@
 # 02. Tool calling: from JSON in LLM response to execution on cores
 
 This file is a deep dive into the path of a single tool call through the system.
-All measurements are taken by the `parallel-research bench` command; methodology is in
+All measurements are taken by the `fathom bench` command; methodology is in
 [03-benchmarks.md](./03-benchmarks.md).
 
 ## Tool anatomy

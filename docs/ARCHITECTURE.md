@@ -1,13 +1,13 @@
 # Architecture
 
-Parallel Research is a modular system of **9 crates** in a Cargo workspace. The core is built around an async agent loop on `tokio`.
+Fathom is a modular system of **10 crates** in a Cargo workspace. The core is built around an async agent loop on `tokio` with a broadcast-channel event bus, a pluggable tool execution pipeline, and a coordinator that decomposes work across sub-agents. Every component is designed for observability, crash recovery, and graceful degradation.
 
 ---
 
 ## Crate Overview
 
 ```
-parallel-research/
+fathom/
 ├── crates/
 │   ├── core/          # Fundamental types and domain logic
 │   ├── llm/           # LLM provider abstraction
@@ -17,7 +17,8 @@ parallel-research/
 │   ├── mcp/           # Model Context Protocol (client and server)
 │   ├── persistence/   # Data storage (SQLite, connection pool, jobs)
 │   ├── server/        # HTTP API
-│   └── tui/           # Terminal interface
+│   ├── tui/           # Terminal interface
+│   └── lsp/           # Language server protocol (editor integration)
 └── src/main.rs        # CLI entry point
 ```
 
@@ -31,65 +32,71 @@ core  ←──  llm  ←──  agent  ←──  server
        └── memory ──┘ (depends on core + llm)
 ```
 
-`core` depends on nothing (foundation). `agent` combines `llm`, `tools`, `memory`, `persistence`.
+`core` depends on nothing (foundation). `agent` combines `llm`, `tools`, `memory`, `persistence`. The dependency graph is a strict DAG — there are no circular dependencies, which keeps compilation fast and makes each crate independently testable. The `lsp` crate provides editor integration via the Language Server Protocol, allowing IDEs to inspect sessions, memory, and submit queries from within the editor.
 
 ---
 
 ## crates/core
 
-Fundamental types and domain logic. **Does not depend on other crates.**
+Fundamental types and domain logic. **Does not depend on other crates.** Every other crate imports from `core` for its shared types, configuration structures, and error types.
 
 | Module | Purpose |
 |--------|---------|
-| `ids` | `SessionId`, `AgentId`, `FindingId` (UUID v7) |
-| `message` | OpenAI-compatible `Message`, `ToolCall` |
-| `agent` | `AgentRole`, `AgentState`, `AgentStatus`, `AgentRecord` |
-| `event` | `AgentEvent` — events for the bus (broadcast) |
-| `finding` | `Finding`, `Source` — research results |
-| `config` | `AppConfig` and all 10 config sections |
-| `memory` | `MemoryStore` (MEMORY.md/USER.md), typed memories |
-| `skill` | `Skill`, `SkillRegistry` (SKILL.md) |
-| `export` | `Exporter` — PDF/HTML/JSON/DOCX |
-| `notify` | `Notifier` — webhook/email/Telegram |
-| `crm` | `CrmSync` — amoCRM/Bitrix24/HubSpot |
-| `session` | `SessionOutput` — session result |
-| `token` | Accurate token counting (tiktoken cl100k_base) + heuristic-fallback |
-| `error` | `PrError`, `PrResult` |
+| `ids` | `SessionId`, `AgentId`, `FindingId` (UUID v7, time-ordered for efficient B-tree indexing) |
+| `message` | OpenAI-compatible `Message`, `ToolCall` — the canonical message format used throughout the system |
+| `agent` | `AgentRole`, `AgentState`, `AgentStatus`, `AgentRecord` — role definitions (researcher, analyst, verifier, writer, coordinator) and state machine |
+| `event` | `AgentEvent` — all events for the broadcast bus (session lifecycle, agent lifecycle, tool calls, LLM streaming, control-plane requests) |
+| `finding` | `Finding`, `Source` — structured research results with source attribution, confidence levels, and category tags |
+| `config` | `AppConfig` and all 10 config sections (agent, llm, tools, memory, persistence, server, tui, export, notify, crm) |
+| `memory` | `MemoryStore` (MEMORY.md/USER.md), typed memories with scopes |
+| `skill` | `Skill`, `SkillRegistry` (SKILL.md) — loadable skill definitions from the filesystem |
+| `export` | `Exporter` — PDF/HTML/JSON/DOCX export with templating |
+| `notify` | `Notifier` — webhook/email/Telegram notifications on session completion |
+| `crm` | `CrmSync` — amoCRM/Bitrix24/HubSpot CRM integration |
+| `session` | `SessionOutput` — session result structure consumed by export, notify, and CRM subsystems |
+| `token` | Accurate token counting (tiktoken cl100k_base) + CJK-aware heuristic fallback for models without BPE data |
+| `error` | `PrError`, `PrResult` — unified error type with context (source location, chain of causes) |
+
+The `config` module loads from `~/.fathom/config.toml` (or a custom path via `--config`) and merges environment variable overrides for every section. Each config section maps to a subsystem and can be reloaded at runtime (the `server` and `tui` hosts watch for SIGHUP or config file changes).
 
 ---
 
 ## crates/llm
 
-Abstraction of LLM providers.
+Abstraction of LLM providers. The crate defines a single `LlmProvider` trait that all providers implement, making the agent runtime provider-agnostic.
 
 - **`LlmProvider` trait** — `complete()` and `stream()` methods
+  - `complete()`: sends a full message list, returns the model's response (text + optional tool calls). Used for the ordinary turn.
+  - `stream()`: sends a full message list, returns a `Stream<Item = LlmDelta>` where each delta is either a text chunk, a partial tool-call fragment, or a finish signal. The runtime assembles streaming deltas into complete tool calls and text blocks.
 - **`DeepSeekProvider`** — OpenAI-compatible API
-  - Retry with exponential backoff (3 attempts)
-  - Streaming fallback for large responses
-  - Response size limits (50MB)
-  - HTTP timeout (5 min)
-- **`retry`** — generic `with_retry()` helper
+  - Retry with exponential backoff (3 attempts, base delay 1s, jitter)
+  - Streaming fallback for large responses: if the initial stream fails, the runtime falls back to `complete()`
+  - Response size limits (50MB) — protects against runaway model output
+  - HTTP timeout (5 min) — configurable per provider
+- **`retry`** — generic `with_retry()` helper that retries on transient errors (network errors, 5xx, rate limits) with exponential backoff and jitter, while propagating permanent errors (4xx, auth failures) immediately
+
+The trait is designed so that adding a new provider (e.g., Anthropic, Google Gemini) requires implementing only two async methods. The `select_model_base()` function in `agent::prompt` chooses the appropriate system prompt template per model family.
 
 ---
 
 ## crates/agent
 
-The heart of the system — the agent runtime.
+The heart of the system — the agent runtime. This crate orchestrates the LLM call loop, tool execution, sub-agent coordination, context management, and the control plane for human-in-the-loop interaction.
 
 | Module | Purpose |
 |--------|---------|
-| `runtime` | `AgentRuntime` — loop LLM → tools → repeat, streaming, approval/question |
-| `coordinator` | `Coordinator` — planning, fan-out, Goal Mode, synthesis |
-| `compaction` | Hermes-style context compression |
-| `prompt` | `PromptBuilder` — 3 cache tiers, role prompts |
-| `tool_executor` | Smart parallelism (read-only in parallel, write sequentially) |
-| `budget` | Result budget capping |
-| `control` | Control plane: question/approval request types to the operator |
-| `ipc` | IPC protocol for multi-process |
-| `process_manager` | `ProcessManager` — spawn/monitor workers |
-| `doom_loop` | `DoomLoopDetector` — protection against infinite looping |
-| `resume` | `SessionResumer` — session resumption |
-| `hooks` | PreToolUse/PostToolUse/Stop subprocess hooks |
+| `runtime` | `AgentRuntime` — the main loop: system prompt → LLM → tool calls → execute → repeat |
+| `coordinator` | `Coordinator` — planning, fan-out, Goal Mode, synthesis, session lifecycle |
+| `compaction` | Hermes-style context compression (micro-compaction without LLM, full compaction with LLM summarization) |
+| `prompt` | `PromptBuilder` — 3 cache tiers (stable/context/volatile), role-specific prompts, model base selection |
+| `tool_executor` | Smart parallelism engine (read-only tools run concurrently, write tools serialize, path-overlap detection) |
+| `budget` | Result budget capping for sub-agent outputs (fair-share truncation with spill-to-disk) |
+| `control` | Control plane: question/approval request types, oneshot reply channels, timeout handling |
+| `ipc` | IPC protocol for multi-process mode (Unix domain socket, JSON-line messages) |
+| `process_manager` | `ProcessManager` — spawn/monitor worker processes, socket lifecycle, kill-on-drop guarantees |
+| `doom_loop` | `DoomLoopDetector` — protection against infinite looping (3 consecutive identical tool calls) |
+| `resume` | `SessionResumer` — session resumption after crash (reconstructs state from the database) |
+| `hooks` | PreToolUse/PostToolUse/Stop subprocess hooks (ZCode pattern, best-effort external policy enforcement) |
 
 ### Agent Loop
 
@@ -114,6 +121,27 @@ The heart of the system — the agent runtime.
 └─────────────────────────────────────────────────┘
 ```
 
+**Step-by-step detail:**
+
+1. **Prompt construction** — `PromptBuilder` assembles three tiers: *stable* (identity, role, general instructions — persists across sessions for cache hits), *context* (cwd, platform, model, date — per session), and *volatile* (tools list, skills, memory digest — changes every turn). For depth-0 agents, a memory digest is injected from the long-term memory store.
+
+2. **Doom loop check** — `DoomLoopDetector` compares the incoming tool call signature (name + hash of args) against the last N calls. Three identical calls in a row triggers a stop, preventing the model from burning tokens on a failing operation.
+
+3. **Token estimation** — Uses `tiktoken` cl100k_base BPE encoding for accurate counting. If the estimated tokens exceed `context_window * compact_threshold` (default 50%), the compaction engine kicks in.
+
+4. **LLM call** — The runtime calls `stream()` on the active provider. Every text delta is forwarded to the event bus as `LlmStreamChunk` events (consumed by the TUI and HTTP SSE endpoints). Tool-call fragments are assembled incrementally — if the model emits a partial tool call (e.g., function name first, then arguments), the runtime collects fragments until the call is complete. If streaming fails mid-response, the runtime falls back to `complete()`.
+
+5. **Gates** — Before any tool call is executed, it passes through three gates in order:
+   - **Role deny** — per-role deny lists from `[agent.role_deny]` config (e.g., a `researcher` may not run `shell`)
+   - **Approval** — tools listed in `[agent] approval_tools` require operator approval before execution
+   - **PreToolUse hooks** — subprocess hooks that can deny the call with a reason
+
+6. **Tool execution** — `ToolExecutor` partitions calls into parallel-safe and sequential groups. Read-only tools (web_search, web_fetch, file_read, glob, grep, OSINT lookups) run concurrently via `futures::future::join_all`. Write tools (file_write, file_edit, shell, spawn_agent) take exclusive access. Path-overlap detection serializes file tools operating on the same path. The `question` tool is special: it blocks the agent loop, emits a `QuestionAsked` event, and waits for the operator to respond via the control plane (HTTP endpoint or TUI input).
+
+7. **Loop** — The runtime repeats until the model produces no tool calls, or `max_iterations` (configurable, default 30) is reached. Each iteration appends the tool results to the message list and rebuilds the volatile prompt tier.
+
+8. **Return** — The final text response is returned as the agent's output, along with total token usage, findings, and any collected contacts.
+
 ### Coordinator Flow (Full Goal Mode)
 
 ```
@@ -137,6 +165,75 @@ Write output (index.md, summary.md, findings/) + absorb results into memory
   ↓
 Export + Notify
 ```
+
+**Coordinator lifecycle in detail:**
+
+- **Planning** — The coordinator agent (special role `AgentRole::Coordinator`) receives the user query and decomposes it into 2–5 self-contained sub-tasks. Each sub-task is persisted to the database with metadata (role, parent, status, depth). The coordinator decides the role for each sub-agent: `researcher`, `analyst`, `verifier`, or `writer`.
+
+- **Fan-out** — Sub-agents are spawned either as in-process tokio tasks (default) or as separate OS processes (when `use_multiprocess = true`). Each sub-agent gets its own `AgentRuntime` with a fresh prompt, the sub-task description, and a cancellation token shared with the parent.
+
+- **Collection** — As sub-agents complete, their results are budget-capped by `ResultBudget`: each result is truncated to a fair share of the parent's available context window, and the full text is spilled to disk. The parent receives a summary + a spill path.
+
+- **Reflection** — For lead-generation tasks, the coordinator runs a gap analysis: if the collected contacts fall short of the target, it spawns additional gap-filling sub-agents with refined queries.
+
+- **Goal Mode** — The coordinator compares the accumulated results against the original goal using an LLM judge. If gaps remain, it spawns new sub-tasks targeting specific missing information. This repeats up to `replan_rounds` (default 3).
+
+- **Synthesis** — All findings are merged into a structured report. The coordinator writes markdown files to the output directory (`index.md`, `summary.md`, `findings/`), absorbs contacts and findings into long-term memory, and triggers the export/notification pipeline.
+
+- **Stall monitoring** — A background task monitors sub-agent progress via timestamps. If a sub-agent hasn't sent an event within `warn_secs` (configurable), a warning is logged. If it exceeds `kill_secs`, the sub-agent is cancelled and its slot is freed for re-execution.
+
+### PromptBuilder — 3-Tier Cache Architecture
+
+Inspired by the Hermes cache-stable prompt architecture, `PromptBuilder` maximizes LLM provider cache hit rates by ordering prompt content from most stable to most volatile:
+
+- **Tier 1 — Stable**: Identity, role description, general instructions, output format rules. These change rarely and are likely already cached by the provider.
+- **Tier 2 — Context**: Environment info (cwd, platform, model name, date, timezone). Changes per session but is stable across turns within a session.
+- **Tier 3 — Volatile**: Tools list (with schemas), loaded skills, memory digest, conversation history. Changes every turn.
+
+When `build()` is called, tiers are concatenated with distinctive separator tokens that help the provider's cache system identify which sections have changed.
+
+### Context Management
+
+1. **Token counting** — accurate BPE (tiktoken cl100k_base), fallback on CJK-aware heuristic when the model isn't in the tiktoken registry
+2. **Tool result truncation** — per-tool 50KB/2000 lines, per-turn 200KB, with persistence-to-disk so the full result is retrievable
+3. **Micro-compaction** — dedup tool results by content hash, prune old outputs (no LLM call, purely algorithmic)
+4. **Full compaction** — LLM summarization of the middle section (head + summary + tail preserved, the middle is summarized into a structured format: Goal/Done/Blocked/Next)
+5. **Anti-thrashing** — hysteresis system: after an ineffective compaction (less than 5% reduction), further compactions are suppressed until the transcript grows by 1.2× or a minimum number of rounds pass. This prevents losing the provider's prompt cache by re-sending a compressed version every turn.
+
+Trigger: `estimated_tokens >= context_window * compact_threshold` (default 50%).
+
+Complemented by long-term memory ([MEMORY-KB.md](MEMORY-KB.md)): relevant facts are injected into the prompt as a digest, rather than being stored in the session context.
+
+### Control Plane
+
+The control plane (`control` module) provides two interaction channels between agents and the human operator:
+
+- **Questions** — The `question` tool blocks the agent loop and emits a `QuestionAsked` event on the bus. The operator answers via `POST /api/v1/sessions/:id/answer` (HTTP) or the TUI input field. If no answer arrives within the timeout (configurable, default 5 min), the agent receives an "operator unavailable" notice and continues.
+
+- **Approvals** — Tools listed in `[agent] approval_tools` are gated behind operator approval. The agent emits an `ApprovalRequested` event with a human-readable preview of the call arguments. The operator allows or denies via `POST /api/v1/sessions/:id/approve` or the TUI. Timeout behavior is controlled by `[agent] approval_fallback` (default: deny).
+
+Both channels use `tokio::sync::oneshot` channels for reply, with the host (TUI/HTTP) holding the sender half. Dropping the receiver is treated as "operator went away."
+
+### Lifecycle Hooks (PreToolUse / PostToolUse / Stop)
+
+Hooks are subprocesses invoked with a JSON payload on stdin at defined points of the agent loop. They enable external policy enforcement without modifying the agent code:
+
+- **PreToolUse** — Receives `{"tool", "args"}` → returns `{"decision": "allow"|"deny", "reason"?}`. A `deny` verdict refuses the call and feeds the reason back to the model. Multiple hooks can be registered; the first `deny` wins.
+
+- **PostToolUse** — Receives `{"tool", "args", "result", "success"}` → returns `{"append_context"?}`. Extra context is appended to the tool result before it reaches the model.
+
+- **Stop** — Receives `{"final_summary"}` → returns `{"continue": bool, "reason"?}`. When `continue` is true, the agent gets the reason as a follow-up instruction instead of stopping. Bounded by `MAX_STOP_CONTINUATIONS` (3) to prevent infinite loops.
+
+Hooks are best-effort: a timeout, spawn failure, or unparseable verdict is treated as "allow / no-op" and only logged.
+
+### Session Resumption
+
+When the process crashes or is killed, sessions remain in the database with status `running`. `SessionResumer` finds interrupted sessions (no update for >5 minutes), reconstructs their state from the database, and returns a `ResumeState` that the coordinator uses to continue:
+
+- Completed agent outputs are recovered from the DB
+- Unfinished agent tasks are collected for re-execution
+- Subtree token counts are computed so the budget is accurate
+- The session is marked as `resumed` and the coordinator picks up from where it left off
 
 ---
 
@@ -170,15 +267,15 @@ Categories (details in [TOOLS.md](TOOLS.md)):
 - **Meta**: spawn_agent, memory, skill, scratchpad, undo
 
 Helper modules:
-- `registry` — `ToolRegistry`, `ToolContext`
-- `search` — `SearchEngine` (7 backends)
-- `guard` — SSRF protection for all agent HTTP requests
-- `injection` — prompt-injection detection in web content
-- `truncate` — truncation with persistence-to-disk
-- `file_history` — undo/redo snapshots
-- `file_lock` — per-path locking
-- `autosave` — deterministic contact saving
-- `extract` — contact extraction engine
+- `registry` — `ToolRegistry` (maps tool names to implementations), `ToolContext` (provides agent id, session id, working directory, config references)
+- `search` — `SearchEngine` with 7 backends: Google (Serper), Bing, Tavily, Exa, Firecrawl, Kagi, and a local fallback
+- `guard` — SSRF protection for all agent HTTP requests: validates every URL before fetch, blocks loopback/IPv6-private/RFC1918/link-local addresses, enforces max redirects (5), and re-validates each redirect hop to prevent DNS rebinding attacks
+- `injection` — prompt-injection detection in web content: scans fetched pages for known injection patterns and strips/neutralizes them before the content reaches the model
+- `truncate` — truncation with persistence-to-disk: spills overflow text to spill files for later retrieval
+- `file_history` — undo/redo snapshots: every `file_write` and `file_edit` creates a snapshot; the `undo` tool restores the last snapshot
+- `file_lock` — per-path locking: prevents concurrent file writes from colliding
+- `autosave` — deterministic contact saving: after every tool call that produces contacts, the runtime auto-saves them to the contact database
+- `extract` — contact extraction engine: regex-based + LLM-assisted extraction of emails, phones, social links from text
 
 ---
 
@@ -188,56 +285,94 @@ Long-term semantic memory (mem0/Memora model, detailed in [MEMORY-KB.md](MEMORY-
 
 | Module | Purpose |
 |--------|---------|
-| `db` | `MemoryDb` — SQLite: facts, FTS5, embeddings, version edges, history |
-| `absorb` | Write pipeline: secrets → consolidation → dedup → classification (5 outcomes) |
-| `search` | Hybrid search (vectors + BM25), freshness decay, LLM-rerank, digest |
-| `embed` | Embedders: OpenAI-compatible + offline TF-IDF fallback |
-| `graph` | Entity graph person↔company: node dedup, multi-hop BFS |
-| `distill` | Distillation of session run-facts into durable knowledge |
-| `secrets` | Detection of API keys/tokens/PEM on write |
+| `db` | `MemoryDb` — SQLite: facts, FTS5 full-text search, embeddings (384d vectors), version edges, history |
+| `absorb` | Write pipeline: secrets detection → consolidation → dedup → classification (5 outcomes: new, related, duplicate, contradicting, updated) |
+| `search` | Hybrid search (cosine similarity on vectors + BM25 keyword), freshness decay, LLM-rerank, digest generation |
+| `embed` | Embedders: OpenAI-compatible API (text-embedding-3-small) + offline TF-IDF fallback |
+| `graph` | Entity graph person↔company: node dedup, multi-hop BFS traversal (up to 6 hops), relationship extraction |
+| `distill` | Distillation of session run-facts into durable knowledge (extracts key entities, facts, relationships from a session transcript) |
+| `secrets` | Detection of API keys/tokens/PEM on write — prevents sensitive data from being stored in memory |
 
-Key principles: append-only versioning (edges `supersedes`/`contradicts`,
-nothing is overwritten), scopes `user/agent/run`, digest in prompt before start,
-auto-absorb of collected contacts by the runtime.
+**Key principles:**
+- **Append-only versioning** — facts are never overwritten. Edges carry `supersedes` or `contradicts` relationships, creating a version history that can be inspected and rolled back.
+- **Scopes** — `user` (global across sessions), `agent` (per-agent), `run` (per-session). Memory searches scope by default to the current session, then agent, then user.
+- **Digest** — Before a depth-0 agent starts, the runtime generates a memory digest: a condensed summary of the most relevant facts for the current query, injected into the system prompt.
+- **Auto-absorb** — The runtime automatically absorbs collected contacts and findings into long-term memory after each tool execution cycle.
 
 ---
 
 ## crates/mcp
 
-Model Context Protocol:
-- **Client**: stdio + Streamable HTTP transports, OAuth client-credentials, dynamic tool discovery, reconnect
-- **Server**: `parallel-research mcp-serve` — exposes all tools externally and actually executes `tools/call`
+Model Context Protocol — enables the agent to expose its tools to external MCP clients and to consume tools from external MCP servers.
+
+- **Client**: stdio + Streamable HTTP transports, OAuth client-credentials flow, dynamic tool discovery (discovers tools from remote MCP servers at runtime), reconnect with exponential backoff
+- **Server**: `fathom mcp-serve` — exposes all 44 tools externally via the MCP protocol. Each tool call is serialized and executed through the existing `ToolExecutor`, so MCP clients get the same behavior as in-process agents
+
+The MCP bridge allows the agent to be embedded in IDEs (via the `lsp` crate), CI/CD pipelines, or custom frontends that speak the MCP protocol.
 
 ---
 
 ## crates/persistence
 
-- **`Persistence`** — SQLite (WAL mode, pool of 4 round-robin connections) for sessions/agents/messages/findings/subtasks
-- **`ContactDb`** — contact database (SQLite)
-- **`PgContactDb`** — PostgreSQL backend (optional)
-- **`JobsDb`** — durable jobs with attempts and self-healing retry
-- **`SessionHistory`** — session history and search (CLI `sessions`)
+- **`Persistence`** — SQLite (WAL mode, pool of 4 round-robin connections) for sessions/agents/messages/findings/subtasks. WAL mode allows concurrent readers without blocking the writer, and the connection pool distributes load across connections so that streaming writes from multiple agents don't serialize on a single mutex. In-memory databases use a single connection (each `:memory:` connection is a different database).
+- **`ContactDb`** — contact database (SQLite): stores extracted contacts with dedup, source URLs, verification status, and timestamps.
+- **`PgContactDb`** — PostgreSQL backend (optional, behind `postgres` feature flag). Used in production deployments where shared access across multiple instances is needed.
+- **`JobsDb`** — durable jobs with attempts and self-healing retry. Lives in its own SQLite database (`~/.fathom/jobs.db`). Each job records its task description, attempt count, last error, and status. Failed attempts are retried with an augmented task that carries the previous error, so the agent can diagnose and fix its own failure. Jobs survive process restarts: the runner (`fathom job-run <id>`) is spawned as a detached process with `setsid`, so it outlives the terminal that submitted it.
+- **`SessionHistory`** — session history and search (CLI `sessions`): indexes all past sessions with full-text search on queries and summaries.
+
+**Schema migrations** are idempotent: `add_column_if_missing()` checks for column existence before adding, so databases created by older versions upgrade gracefully.
 
 ---
 
 ## crates/server
 
 Axum HTTP API (details in [HTTP-API.md](HTTP-API.md)):
-- REST endpoints for sessions, agents, jobs, **memory**
-- Control plane: `POST /sessions/:id/answer`, `POST /sessions/:id/approve`
-- SSE streaming of events, mid-run steering
-- API key auth + rate limiting, Prometheus metrics, health checks
+
+| Endpoint | Purpose |
+|----------|---------|
+| `POST /api/v1/sessions` | Create a research session |
+| `GET /api/v1/sessions` | List all sessions |
+| `GET /api/v1/sessions/:id` | Get session status |
+| `GET /api/v1/sessions/:id/results` | Get session results |
+| `DELETE /api/v1/sessions/:id` | Cancel a running session |
+| `POST /api/v1/sessions/:id/steer` | Inject a mid-run instruction |
+| `POST /api/v1/sessions/:id/answer` | Answer a pending `question` tool |
+| `POST /api/v1/sessions/:id/approve` | Allow/deny a pending side-effect tool |
+| `GET /api/v1/agents` | List all agents |
+| `GET /api/v1/agents/:id` | Get agent status |
+| `GET /api/v1/events` | SSE stream of all agent events |
+| `GET /api/v1/sessions/:id/events` | SSE stream filtered to one session |
+| `POST /api/v1/jobs` | Submit a durable background job |
+| `GET /api/v1/jobs` | List all jobs |
+| `GET /api/v1/jobs/:id` | Get job status |
+| `GET /api/v1/jobs/:id/log` | Tail the job log |
+| `DELETE /api/v1/jobs/:id` | Cancel an active job |
+| `POST /api/v1/jobs/:id/rerun` | Re-run a finished/stale job |
+| `GET /health` | Health check |
+| `GET /metrics` | Prometheus metrics |
+| `GET /dashboard` | Embedded single-file live dashboard |
+
+**Key architectural features:**
+- **SSE streaming** — All agent events are broadcast via `tokio::sync::broadcast` and exposed as Server-Sent Events. The `GET /api/v1/events` endpoint streams every event on the server. The `GET /api/v1/sessions/:id/events` endpoint filters to one session using a two-level cache: a positive cache (agents known to belong to this session) and a negative cache (agents proven to belong to other sessions), so a busy multi-session server doesn't re-query the DB for every foreign event.
+- **Mid-run steering** — The `POST /api/v1/sessions/:id/steer` endpoint injects a user instruction into a running session. The text reaches all agents at the next turn boundary via a `tokio::sync::mpsc` channel.
+- **Control plane** — The `POST /api/v1/sessions/:id/answer` and `POST /api/v1/sessions/:id/approve` endpoints resolve pending `question` and `approval` requests by sending the operator's response through the oneshot channel to the waiting agent.
+- **Auth** — API key authentication via `X-API-Key` header, rate limiting (default 120 requests/minute per client, configurable via `FATHOM_RATE_LIMIT` env var), Prometheus metrics for request duration, total requests, and in-flight sessions.
+- **Embedded dashboard** — A single-file HTML dashboard (`assets/dashboard.html`) is served at `GET /dashboard`. It provides a read-only live view of all sessions, agents, events, and memory state, consuming the same REST/SSE API that external clients use.
 
 ---
 
 ## crates/tui
 
-Ratatui interface:
-- Multi-agent tree view
-- Streaming buffer (line-buffered, live LLM deltas)
-- Jobs panel, Memory panel (scopes, graph, recent entries)
-- Operator control: answer to `question` via input, `y/n` for approval
-- Event log, thinking display, vim input modes
+Ratatui terminal interface:
+
+- **Multi-agent tree view** — Shows the agent hierarchy in a collapsible tree: coordinator at the root, sub-agents as children, with status indicators (running, completed, failed, waiting).
+- **Streaming buffer** — Line-buffered, live LLM deltas: every `LlmStreamChunk` event is rendered as it arrives, so the user sees the model's response character by character.
+- **Jobs panel** — Lists all durable background jobs with status, attempts, and progress.
+- **Memory panel** — Three sub-panels: scopes (user/agent/run), entity graph (rendered as an ASCII tree), recent entries (timestamped list).
+- **Operator control** — Input field at the bottom for answering `question` tool prompts, `y/n` prompts for approval requests, and general steering commands.
+- **Event log** — Scrollable log of all `AgentEvent` types with timestamps and color-coded severity.
+- **Thinking display** — When the model emits a `thinking` block, it's rendered in a distinct panel with a dimmed style so the user can see the reasoning process without it cluttering the main output.
+- **Vim input modes** — Normal/insert mode for the input field, with vi keybindings.
 
 ---
 
@@ -263,6 +398,15 @@ Synthesize ──► summary.md + findings/
 Export (PDF/HTML/JSON) + Notify (webhook/email/Telegram) + CRM sync
 ```
 
+**The event bus ties everything together.** Every component publishes and subscribes to `AgentEvent` via a `tokio::sync::broadcast` channel:
+
+- `AgentRuntime` publishes `ToolCallStarted`, `ToolCallCompleted`, `LlmStreamChunk`, `AgentStateChanged`, `QuestionAsked`, `ApprovalRequested`
+- `Coordinator` publishes `AgentSpawned`, `AgentCompleted`, `AgentFailed`, `SessionStarted`, `SessionCompleted`, `SessionFailed`
+- `Persistence` subscribes to events and writes them to the database (agents, messages, findings)
+- `Server` subscribes to events and forwards them to SSE clients
+- `Tui` subscribes to events and updates the live display
+- `ProcessManager` converts worker IPC events back into `AgentEvent` for the coordinator
+
 ---
 
 ## Multi-Process Architecture
@@ -277,34 +421,53 @@ Coordinator (process 1)
     └──spawn──► Worker (process 4)  ── agent_id_3
 ```
 
-- Each worker is a separate OS process (`parallel-research worker ...`)
-- IPC via Unix domain sockets (JSON-line messages)
-- SQLite WAL mode for concurrent access
-- Coordinator receives progress/tool-call/completion events
+- Each worker is a separate OS process (`fathom worker ...`)
+- **IPC via Unix domain sockets** — JSON-line messages (framed by newlines). The `IpcMessage` enum covers all coordination messages: `StartTask`, `Cancel`, `Progress`, `ToolCall`, `ToolResult`, `Completed`, `Failed`, `LlmChunk`.
+- **Socket naming** — Agent UUIDs are hashed into short 16-hex-char filenames to stay within the ~104-byte Unix domain socket path limit.
+- **SQLite WAL mode** for concurrent access — multiple processes can read/write the same database without blocking.
+- **Lifecycle guarantees:**
+  - Workers are spawned with `kill_on_drop(true)` — dropping the `Child` handle kills the OS process.
+  - Socket-wait timeout (30s) explicitly kills and reaps the worker on failure.
+  - Socket reads are capped at 8 MiB per line — a runaway worker cannot balloon coordinator memory.
+  - `shutdown_all` cancels, then explicitly kills and reaps every child that is still alive.
+- **Stall monitoring** — The coordinator runs a background task that tracks per-agent event timestamps. If an agent hasn't sent an event within `warn_secs`, a warning is logged. If it exceeds `kill_secs`, the agent is cancelled.
 
-**Benefits**: isolation (one agent crash doesn't bring down others), per-process resource limits.
-
----
-
-## Context Management
-
-1. **Token counting** — accurate BPE (tiktoken cl100k_base), fallback on CJK-aware heuristic
-2. **Tool result truncation** — per-tool 50KB/2000 lines, per-turn 200KB, persistence-to-disk
-3. **Micro-compaction** — dedup tool results by hash, prune old outputs (without LLM)
-4. **Full compaction** — LLM summarization of the middle section (head + summary + tail)
-5. **Anti-thrashing** — cooldown after ineffective compressions
-
-Trigger: `estimated_tokens >= context_window * compact_threshold` (default 50%).
-
-Complemented by long-term memory ([MEMORY-KB.md](MEMORY-KB.md)): relevant
-facts are injected into the prompt as a digest, rather than being stored in the session context.
+**Benefits**: isolation (one agent crash doesn't bring down others), per-process resource limits (cgroups, ulimits), and the ability to distribute agents across machines in future versions.
 
 ---
 
 ## Error Handling
 
-- **Retry** — LLM requests with exponential backoff
-- **Doom loop detection** — 3 identical tool calls → stop
-- **Cascading errors** — shell failure cancels sibling tool calls
-- **Destructive command protection** — blocking `rm -rf /`, `mkfs`, fork bombs
-- **Graceful degradation** — tool errors are returned to the model as tool results
+- **Retry** — LLM requests with exponential backoff (3 attempts, base delay 1s, jitter)
+- **Doom loop detection** — 3 identical tool calls → stop the agent
+- **Cascading errors** — shell failure cancels sibling tool calls in the same batch
+- **Destructive command protection** — blocking `rm -rf /`, `mkfs`, fork bombs in the `shell` tool
+- **Graceful degradation** — tool errors are returned to the model as tool results (the model can retry, adjust, or give up)
+
+---
+
+## Streaming
+
+Streaming is first-class throughout the architecture:
+
+1. **LLM streaming** — `LlmProvider::stream()` returns a `Stream<Item = LlmDelta>`. The `AgentRuntime` forwards each delta as an `LlmStreamChunk` event on the broadcast bus. Tool-call fragments are assembled incrementally from the stream.
+
+2. **SSE streaming** — The HTTP server exposes two SSE endpoints (`/events` and `/sessions/:id/events`) that stream all events in real time. The `event_stream()` function creates a `Stream` from the broadcast receiver, optionally filtering by session.
+
+3. **TUI streaming** — The Ratatui interface renders LLM deltas character by character in a line-buffered buffer, giving the user a live view of the model's response.
+
+4. **IPC streaming** — In multi-process mode, `LlmChunk` IPC messages stream deltas from the worker to the coordinator, which re-publishes them as `AgentEvent` so the server/TUI see them the same way as in-process agents.
+
+---
+
+## How Components Connect
+
+The system is wired together through three shared primitives:
+
+1. **`tokio::sync::broadcast`** — The event bus. Every subsystem that needs observability subscribes to the broadcast channel. The channel is bounded (capacity 1024) and drops the oldest event if a slow subscriber can't keep up — this ensures a slow TUI or HTTP client can't block the agent loop.
+
+2. **`Persistence` (Arc-shared)** — All stateful operations (sessions, agents, messages, findings, jobs, memory) go through the persistence layer. The connection pool ensures concurrent access doesn't serialize.
+
+3. **`CancellationToken` (tokio_util)** — Every agent and job receives a cancellation token. When the user cancels a session (via HTTP, TUI, or CLI), the token is triggered, and all in-flight operations (LLM calls, tool executions, agent loops) are cancelled at their next await point.
+
+The `AppState` struct in the server crate holds Arc references to the persistence layer, the broadcast sender, and the control-plane channels. The TUI holds similar references, allowing both frontends to operate on the same running sessions interchangeably.

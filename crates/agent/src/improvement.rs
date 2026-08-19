@@ -94,10 +94,10 @@ impl ImprovementBacklog {
         }
     }
 
-    /// The default backlog path: `~/.parallel-research/ledger/improvement-backlog.md`.
+    /// The default backlog path: `~/.fathom/ledger/improvement-backlog.md`.
     pub fn default_path() -> anyhow::Result<PathBuf> {
         let home = dirs::home_dir().ok_or_else(|| anyhow::anyhow!("no home dir"))?;
-        Ok(home.join(".parallel-research").join("ledger").join(BACKLOG_REL_PATH))
+        Ok(home.join(".fathom").join("ledger").join(BACKLOG_REL_PATH))
     }
 
     /// Load the backlog from disk. Absent file → empty.

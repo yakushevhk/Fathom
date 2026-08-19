@@ -1,6 +1,6 @@
 //! SKILL.md-based skill system.
 //!
-//! Skills are discovered by scanning `~/.parallel-research/skills/` for
+//! Skills are discovered by scanning `~/.fathom/skills/` for
 //! directories containing a `SKILL.md` file. Each skill has a name,
 //! description, and full content that can be injected into the system prompt.
 
@@ -87,16 +87,16 @@ fn parse_skill_header(content: &str) -> (String, String) {
 
 // ── SkillRegistry ────────────────────────────────────────────────────────────
 
-/// Registry that discovers and manages skills from `~/.parallel-research/skills/`.
+/// Registry that discovers and manages skills from `~/.fathom/skills/`.
 pub struct SkillRegistry {
     skills_dir: PathBuf,
     skills: Vec<Skill>,
 }
 
 impl SkillRegistry {
-    /// Create a new registry rooted at `~/.parallel-research/skills/`.
+    /// Create a new registry rooted at `~/.fathom/skills/`.
     pub fn new(home_dir: &Path) -> Self {
-        let skills_dir = home_dir.join(".parallel-research").join("skills");
+        let skills_dir = home_dir.join(".fathom").join("skills");
         Self {
             skills_dir,
             skills: Vec::new(),
@@ -452,7 +452,7 @@ mod tests {
         let registry = SkillRegistry::new(&dir);
         assert!(registry
             .skills_dir()
-            .ends_with(".parallel-research/skills"));
+            .ends_with(".fathom/skills"));
         cleanup(&dir);
     }
 }

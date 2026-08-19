@@ -9,7 +9,7 @@
 //! - **Frozen contract**: durable schemas and DB files — changing these breaks
 //!   persistence.
 //!
-//! The guard is **case-insensitive** so a write to `.PARALLEL-RESEARCH/...`
+//! The guard is **case-insensitive** so a write to `.FATHOM/...`
 //! (HFS+/NTFS) cannot bypass a check written against the lower-case path. When
 //! a path matches a protected surface, the write is refused (fail-closed) and
 //! the reason surfaced. In-flight knowledge only: this is a *content* guard;
@@ -120,19 +120,19 @@ mod tests {
 
     #[test]
     fn blocks_config_surface() {
-        let v = ProtectedSurfaces::check(Path::new("/home/u/.parallel-research/config.toml"));
+        let v = ProtectedSurfaces::check(Path::new("/home/u/.fathom/config.toml"));
         assert!(matches!(v, SurfaceVerdict::Denied(SurfaceKind::SafetyConfig)));
     }
 
     #[test]
     fn case_insensitive_block() {
-        let v = ProtectedSurfaces::check(Path::new("/tmp/.PARALLEL-RESEARCH/CONFIG.TOML"));
+        let v = ProtectedSurfaces::check(Path::new("/tmp/.FATHOM/CONFIG.TOML"));
         assert!(matches!(v, SurfaceVerdict::Denied(SurfaceKind::SafetyConfig)));
     }
 
     #[test]
     fn blocks_memory_db() {
-        let v = ProtectedSurfaces::check(Path::new("/home/u/.parallel-research/memory.db"));
+        let v = ProtectedSurfaces::check(Path::new("/home/u/.fathom/memory.db"));
         assert!(matches!(v, SurfaceVerdict::Denied(SurfaceKind::MemoryDb)));
     }
 

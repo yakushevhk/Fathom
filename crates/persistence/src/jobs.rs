@@ -1,8 +1,8 @@
 //! Durable background-job registry.
 //!
 //! Jobs survive process restarts: the registry lives in its own SQLite
-//! database (default `~/.parallel-research/jobs.db`), and the runner
-//! (`parallel-research job-run <id>`) updates its row as attempts start,
+//! database (default `~/.fathom/jobs.db`), and the runner
+//! (`fathom job-run <id>`) updates its row as attempts start,
 //! fail and complete. Failed attempts are retried with an augmented task
 //! that carries the previous error, so the agent can diagnose and fix its
 //! own failure.
@@ -16,7 +16,7 @@ pub const JOBS_DB_ENV: &str = "PR_JOBS_DB";
 /// Environment variable overriding the per-job workspace root.
 pub const JOBS_DIR_ENV: &str = "PR_JOBS_DIR";
 
-/// Global jobs registry: `~/.parallel-research/jobs.db` unless the
+/// Global jobs registry: `~/.fathom/jobs.db` unless the
 /// `PR_JOBS_DB` environment variable points elsewhere.
 pub fn default_jobs_db_path() -> std::path::PathBuf {
     if let Ok(p) = std::env::var(JOBS_DB_ENV) {
@@ -24,19 +24,19 @@ pub fn default_jobs_db_path() -> std::path::PathBuf {
     }
     let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
     std::path::PathBuf::from(home)
-        .join(".parallel-research")
+        .join(".fathom")
         .join("jobs.db")
 }
 
 /// Root directory holding one workspace per job:
-/// `~/.parallel-research/jobs/<job-id>` unless `PR_JOBS_DIR` overrides it.
+/// `~/.fathom/jobs/<job-id>` unless `PR_JOBS_DIR` overrides it.
 pub fn default_jobs_root() -> std::path::PathBuf {
     if let Ok(p) = std::env::var(JOBS_DIR_ENV) {
         return std::path::PathBuf::from(p);
     }
     let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
     std::path::PathBuf::from(home)
-        .join(".parallel-research")
+        .join(".fathom")
         .join("jobs")
 }
 

@@ -2,19 +2,19 @@
 //! of tasks.
 //!
 //! A profile is a small declarative overlay applied on top of
-//! `~/.parallel-research/config.toml`:
+//! `~/.fathom/config.toml`:
 //!
 //! - an extra system-prompt block injected into every agent;
 //! - optional overrides for the main/fast model, temperature and depth;
 //! - extra tools denied for every role.
 //!
-//! Profiles live in `~/.parallel-research/profiles/<name>.toml`; three
+//! Profiles live in `~/.fathom/profiles/<name>.toml`; three
 //! presets (`hunter`, `analyst`, `validator`) are built in and available
 //! without any files.
 //!
 //! ```bash
-//! parallel-research profiles list
-//! parallel-research run --profile hunter "find decision makers at Acme"
+//! fathom profiles list
+//! fathom run --profile hunter "find decision makers at Acme"
 //! ```
 
 use crate::config::AppConfig;
@@ -65,7 +65,7 @@ pub struct Profile {
 /// Directory holding user profile files.
 pub fn profiles_dir() -> PathBuf {
     let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-    PathBuf::from(home).join(".parallel-research").join("profiles")
+    PathBuf::from(home).join(".fathom").join("profiles")
 }
 
 /// Names of the built-in presets.
@@ -224,8 +224,8 @@ impl Profile {
     /// Render a commented TOML template (for `profiles new`).
     pub fn template(name: &str) -> String {
         format!(
-            r#"# Parallel Research profile '{name}'
-# Selected with: parallel-research run --profile {name} "..."
+            r#"# Fathom profile '{name}'
+# Selected with: fathom run --profile {name} "..."
 
 name = "{name}"
 description = "what this persona is for"

@@ -68,7 +68,7 @@ impl Tool for MemoryTool {
 
 ## Capability
 
-Reads and writes to MEMORY.md (general persistent memory) and USER.md (user-specific context) stored in `~/.parallel-research/memory/`. Entries persist across sessions and are injected into the system prompt.
+Reads and writes to MEMORY.md (general persistent memory) and USER.md (user-specific context) stored in `~/.fathom/memory/`. Entries persist across sessions and are injected into the system prompt.
 
 ## When to Use
 

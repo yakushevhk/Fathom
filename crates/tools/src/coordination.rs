@@ -31,7 +31,7 @@ impl Tool for SkillTool {
     fn description(&self) -> &str {
         "Load the full instructions of a skill by name.
 
-Skills are reusable playbooks discovered from ~/.parallel-research/skills.
+Skills are reusable playbooks discovered from ~/.fathom/skills.
 Your system prompt lists each skill's name and description; call this tool
 with the skill name to read its complete workflow before following it."
     }

@@ -6,7 +6,7 @@
 //! supersession apply) and archives the run-scoped originals. Nothing is
 //! deleted — archived rows stay queryable by id/follow=full_history.
 //!
-//! Designed to run as a background job (`parallel-research memory distill`
+//! Designed to run as a background job (`fathom memory distill`
 //! or a scheduled durable job).
 
 use crate::absorb::{AbsorbFact, AbsorbRequest};

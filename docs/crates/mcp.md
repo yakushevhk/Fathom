@@ -367,7 +367,7 @@ MCP initialization protocol. Algorithm:
        "protocolVersion": "2024-11-05",
        "capabilities": {},
        "clientInfo": {
-         "name": "parallel-research",
+         "name": "fathom",
          "version": "0.1.0"
        }
      }
@@ -530,7 +530,7 @@ Processing a single JSON-RPC request. Algorithm:
          "protocolVersion": "2024-11-05",
          "capabilities": {"tools": {}},
          "serverInfo": {
-           "name": "parallel-research",
+           "name": "fathom",
            "version": "0.1.0"
          }
        }

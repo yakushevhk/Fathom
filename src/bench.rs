@@ -38,7 +38,7 @@ pub async fn run_bench(scenario: &str, n: usize, save: Option<String>) -> anyhow
     }
 
     report.line(&format!(
-        "# parallel-research — tool layer benchmarks\n\nhost: {} · cores: {} · files: {} × ~{} KB · release build\n",
+        "# fathom — tool layer benchmarks\n\nhost: {} · cores: {} · files: {} × ~{} KB · release build\n",
         std::env::consts::OS,
         std::thread::available_parallelism()
             .map(|v| v.get())

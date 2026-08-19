@@ -6,7 +6,7 @@ path conflict detector, cascade cancellation on shell errors, and `ToolCall`
 serde machinery. This layer runs on every step of every agent — its
 characteristics directly determine research time.
 
-The benchmark is built into the product: `parallel-research bench`. All numbers
+The benchmark is built into the product: `fathom bench`. All numbers
 in this article are from a single run on **macOS, 10 cores, release build**
 (2026-08-08); reproducible with a single command, fixtures are created
 automatically in a temporary directory and cleaned up afterwards.
@@ -195,7 +195,7 @@ parallelism disappears without a trace.
 
 ## Session statistics
 
-`parallel-research stats -o <dir>` reads SQLite tracing from a real session
+`fathom stats -o <dir>` reads SQLite tracing from a real session
 (tables tool_calls / agents / sessions) and computes what synthetic benchmarks
 cannot show:
 
@@ -235,12 +235,12 @@ of 103 files before the optimization from §9.1 and milliseconds after.
 ## How to reproduce
 
 ```bash
-parallel-research bench                # all 8 scenarios
-parallel-research bench -s dispatch    # only overhead
-parallel-research bench -s feed-parse  # web_feed
-parallel-research bench -s code-map    # code_symbols / repo_map
-parallel-research bench --save report.md
-parallel-research stats -o <dir>       # real session statistics
+fathom bench                # all 8 scenarios
+fathom bench -s dispatch    # only overhead
+fathom bench -s feed-parse  # web_feed
+fathom bench -s code-map    # code_symbols / repo_map
+fathom bench --save report.md
+fathom stats -o <dir>       # real session statistics
 ```
 
 Scenarios: `dispatch`, `parallel-io`, `parallel-cpu`, `mixed`, `parse-scale`,

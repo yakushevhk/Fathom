@@ -3,7 +3,7 @@
 ## Workspace: 8 crates
 
 ```
-parallel-research (binary, src/main.rs + src/bench.rs)
+fathom (binary, src/main.rs + src/bench.rs)
 ├── pr-core          — domain types with no logic dependencies:
 │                      Session, AgentId, Message, ToolCall, ToolOutput,
 │                      Finding, Contact, AppConfig, errors
@@ -28,7 +28,7 @@ isolation (the `bench` command uses only `pr-tools` + `pr-agent::ToolExecutor`).
 ## Request lifecycle
 
 ```
-CLI: parallel-research run "query"
+CLI: fathom run "query"
         │
         ▼
 ┌─────────────────────────────────────────────────────────────┐

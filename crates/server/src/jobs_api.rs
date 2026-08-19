@@ -3,7 +3,7 @@
 //! Jobs are long-running research tasks executed by a fully detached runner
 //! process (`job-run`), so they survive server restarts. The registry lives
 //! in a SQLite database shared with the CLI, which means jobs submitted via
-//! HTTP are visible to `parallel-research jobs list` and vice versa.
+//! HTTP are visible to `fathom jobs list` and vice versa.
 
 use crate::{error, json, AppState};
 use axum::{

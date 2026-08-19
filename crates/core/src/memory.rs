@@ -247,9 +247,9 @@ pub struct MemoryStore {
 }
 
 impl MemoryStore {
-    /// Create a new MemoryStore rooted at `~/.parallel-research/memory/`.
+    /// Create a new MemoryStore rooted at `~/.fathom/memory/`.
     pub fn new(home_dir: &Path) -> Self {
-        let base = home_dir.join(".parallel-research").join("memory");
+        let base = home_dir.join(".fathom").join("memory");
         Self {
             memory_path: base.join(MEMORY_FILENAME),
             user_path: base.join(USER_FILENAME),
@@ -264,7 +264,7 @@ impl MemoryStore {
         max_memory_chars: usize,
         max_user_chars: usize,
     ) -> Self {
-        let base = home_dir.join(".parallel-research").join("memory");
+        let base = home_dir.join(".fathom").join("memory");
         Self {
             memory_path: base.join(MEMORY_FILENAME),
             user_path: base.join(USER_FILENAME),
@@ -609,8 +609,8 @@ mod tests {
     fn test_new_store_creates_paths() {
         let dir = test_dir();
         let store = MemoryStore::new(&dir);
-        assert!(store.memory_path().ends_with(".parallel-research/memory/MEMORY.md"));
-        assert!(store.user_path().ends_with(".parallel-research/memory/USER.md"));
+        assert!(store.memory_path().ends_with(".fathom/memory/MEMORY.md"));
+        assert!(store.user_path().ends_with(".fathom/memory/USER.md"));
         cleanup(&dir);
     }
 

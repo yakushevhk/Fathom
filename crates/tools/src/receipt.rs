@@ -153,11 +153,11 @@ impl ReceiptLedger {
         }
     }
 
-    /// The default user-scoped ledger path: `~/.parallel-research/ledger/verify_receipts.jsonl`.
+    /// The default user-scoped ledger path: `~/.fathom/ledger/verify_receipts.jsonl`.
     pub fn default_path() -> anyhow::Result<PathBuf> {
         let home = dirs::home_dir().ok_or_else(|| anyhow::anyhow!("no home dir"))?;
         Ok(home
-            .join(".parallel-research")
+            .join(".fathom")
             .join("ledger")
             .join("verify_receipts.jsonl"))
     }

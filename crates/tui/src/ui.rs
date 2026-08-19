@@ -58,14 +58,14 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
     let mode_tag = if app.replay_mode { " [REPLAY]" } else { "" };
     let title = if let Some(ref session_id) = app.session_id {
         format!(
-            " Parallel Research{} | Session: {} | {}:{:02} ",
+            " Fathom{} | Session: {} | {}:{:02} ",
             mode_tag,
             &session_id.0[..8.min(session_id.0.len())],
             minutes,
             seconds
         )
     } else {
-        format!(" Parallel Research{} | {}:{:02} ", mode_tag, minutes, seconds)
+        format!(" Fathom{} | {}:{:02} ", mode_tag, minutes, seconds)
     };
 
     let header = Paragraph::new(title)
@@ -731,7 +731,7 @@ fn draw_footer(frame: &mut Frame, app: &App, area: Rect) {
 fn draw_help_overlay(frame: &mut Frame, area: Rect) {
     let lines = vec![
         Line::from(Span::styled(
-            "Parallel Research — keymap",
+            "Fathom — keymap",
             Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
         )),
         Line::from(""),

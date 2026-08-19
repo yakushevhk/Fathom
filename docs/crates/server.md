@@ -77,7 +77,7 @@ pub struct AppState {
 2. Initializes `ToolRegistry::with_builtins()`
 3. Creates `Metrics::new()`
 4. Loads `ApiKeyAuth::from_env()`
-5. Creates `RateLimiter` with limit from env `PARALLEL_RESEARCH_RATE_LIMIT` (default 120 req/min)
+5. Creates `RateLimiter` with limit from env `FATHOM_RATE_LIMIT` (default 120 req/min)
 6. Creates a broadcast channel for events (capacity 1024)
 
 #### `is_active(session_id) -> bool`
@@ -258,7 +258,7 @@ Calls `db.get_agent(&id)`. `AgentDetailRow` is serialized directly to JSON (deri
 
 1. Checks database availability: `db.list_sessions().is_ok()`
 2. Returns:
-   - `200 {"status": "ok", "service": "parallel-research", "version": "...", "database": "ok", "active_sessions": N}`
+   - `200 {"status": "ok", "service": "fathom", "version": "...", "database": "ok", "active_sessions": N}`
    - `503 {"status": "degraded", "database": "error"}` when database is unavailable
 
 #### `GET /metrics` — `metrics_endpoint`
@@ -330,7 +330,7 @@ struct RunningSession {
 ### 1.9 Constants
 
 ```rust
-pub const RATE_LIMIT_ENV: &str = "PARALLEL_RESEARCH_RATE_LIMIT";
+pub const RATE_LIMIT_ENV: &str = "FATHOM_RATE_LIMIT";
 pub const DEFAULT_RATE_LIMIT: usize = 120; // requests per minute
 ```
 
@@ -353,7 +353,7 @@ pub struct ApiKeyInfo {
 
 #### `from_env()` — loading from environment variable
 
-Reads `PARALLEL_RESEARCH_API_KEYS` (comma-separated). Each key gets the name `key-{index}`. Empty entries are skipped.
+Reads `FATHOM_API_KEYS` (comma-separated). Each key gets the name `key-{index}`. Empty entries are skipped.
 
 #### `with_key(key, name)` — programmatic registration
 Inserts a key into the HashMap with metadata.
@@ -451,7 +451,7 @@ Algorithm:
 ### 2.7 Constants
 
 ```rust
-pub const API_KEYS_ENV: &str = "PARALLEL_RESEARCH_API_KEYS";
+pub const API_KEYS_ENV: &str = "FATHOM_API_KEYS";
 ```
 
 ---

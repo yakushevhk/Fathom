@@ -13,8 +13,8 @@
 ## Building from source
 
 ```bash
-git clone <repo-url> parallel-research
-cd parallel-research
+git clone <repo-url> fathom
+cd fathom
 
 # Debug build (fast)
 cargo build
@@ -23,20 +23,26 @@ cargo build
 cargo build --release
 
 # Binary
-./target/release/parallel-research --help
+./target/release/fathom --help
 ```
+
+The Rust workspace consists of 10 crates (`pr-core`, `pr-llm`, `pr-agent`, `pr-tools`, `pr-mcp`, `pr-persistence`, `pr-memory`, `pr-server`, `pr-tui`, `pr-lsp`) plus the root binary. The release profile uses LTO and symbol stripping for minimal binary size.
 
 ---
 
-## First run
+## Configuration setup
 
-1. **Create config** (auto-generated on first run):
+The first run auto-generates a default config file at `~/.fathom/config.toml`:
 
 ```bash
-./target/release/parallel-research config show
+./target/release/fathom config show
 ```
 
-2. **Edit** `~/.parallel-research/config.toml`:
+This command creates the config directory and file if they don't exist, then prints the effective config with all defaults filled in. The default config is ready to use — you only need to add an API key.
+
+### Manual configuration
+
+Edit `~/.fathom/config.toml`:
 
 ```toml
 [llm]
@@ -46,11 +52,305 @@ api_key = "sk-your-key"          # REQUIRED
 model = "deepseek-v4-flash"
 ```
 
-3. **Run**:
+The config uses TOML with all sections optional — missing fields take sensible defaults. See [CONFIGURATION.md](CONFIGURATION.md) for the full reference.
+
+### Config path override
+
+The config file location can be overridden via the `PR_CONFIG` environment variable:
 
 ```bash
-./target/release/parallel-research run "Test query" --output ./test/
+PR_CONFIG=/path/to/config.toml fathom run "query" --output ./test/
 ```
+
+This is useful for one-off runs with different settings, CI/CD pipelines, or testing without touching your main config file.
+
+### CLI config management
+
+Individual config values can be set from the command line:
+
+```bash
+# Set a value by dotted key path (validated against the schema)
+fathom config set llm.api_key "sk-new-key"
+fathom config set agent.max_depth 3
+fathom config set search.backend hybrid
+```
+
+The value is parsed as bool / integer / float / string (in that order). Unknown keys or type mismatches are rejected without modifying the file.
+
+### First run
+
+```bash
+./target/release/fathom run "Test query" --output ./test/
+```
+
+---
+
+## Profiles directory
+
+Personas (profiles) are named TOML presets that tune the agent fleet for different task categories. They live in `~/.fathom/profiles/<name>.toml`.
+
+Three built-in presets are available without any files on disk:
+
+| Profile | Purpose |
+|---------|---------|
+| `hunter` | OSINT / lead generation — aggressive tool usage, broad search |
+| `analyst` | Deep analysis — higher depth, slower but more thorough |
+| `validator` | Fact-checking — conservative, verifies claims |
+
+### Using profiles
+
+```bash
+# List available profiles (built-in + user-defined)
+fathom profiles list
+
+# Run with a profile
+fathom run --profile hunter "Find decision makers at Acme Corp"
+
+# Create a new profile template
+fathom profiles new security-audit
+```
+
+A profile overlay can override the system prompt, main/fast model, temperature, agent depth, and tool deny-lists. User-defined files in the profiles directory override built-in presets with the same name.
+
+---
+
+## Environment variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PARALLEL_LLM_API_KEY` | LLM API key | — |
+| `PARALLEL_CDP_ENDPOINT` | Chrome DevTools Protocol endpoint | `http://localhost:9222` |
+| `PARALLEL_VISION_API_BASE` | Vision model API base | `https://router.y7.hk/v1` |
+| `PARALLEL_VISION_API_KEY` | Vision API key | — |
+| `PARALLEL_VISION_MODEL` | Vision model | `qwen-vl-max` |
+| `FATHOM_API_KEYS` | API keys for HTTP API (comma-separated) | — (open access) |
+| `RUST_LOG` | Logging level | `info` |
+| `PR_CONFIG` | Config file path | `~/.fathom/config.toml` |
+| `PR_MEMORY_DB` | Memory database path | `~/.fathom/memory.db` |
+| `PR_OUTPUT_DIR` | Research output directory | `./research-output` |
+
+### Notes on env vars
+
+- **`PARALLEL_LLM_API_KEY`** — overrides the `api_key` in `[llm]` config section. Set this instead of editing the config file in containerized environments.
+- **`PR_CONFIG`** — absolute or relative path to a TOML config file. When set, the default `~/.fathom/config.toml` is ignored entirely.
+- **`PR_MEMORY_DB`** — path to the long-term memory SQLite database. When set, the `[memory] db_path` config field is ignored.
+- **`PR_OUTPUT_DIR`** — overrides `[output] dir` at runtime, useful for ad-hoc runs without editing config.
+- **`FATHOM_API_KEYS`** — when the HTTP API server is bound to a non-loopback address, this variable is required. Multiple keys can be comma-separated.
+
+---
+
+## Docker
+
+### Building the image
+
+```bash
+docker build -t fathom .
+```
+
+The `Dockerfile` uses multi-stage build:
+- **Stage 1**: `rust:1.97-bookworm` — builds the release binary from source
+- **Stage 2**: `debian:bookworm-slim` — minimal runtime image with `ca-certificates` and a non-root `researcher` user (uid 1000)
+
+The runtime image contains only the binary, CA certificates, and the researcher home directory — no compiler toolchain, no package manager.
+
+### Running
+
+```bash
+docker run -it --rm \
+  -e PARALLEL_LLM_API_KEY="sk-your-key" \
+  -v research-data:/data \
+  fathom \
+  run "Your query" --output /data/results/
+```
+
+The container's working directory is `/data` — research output and database files (contacts.db, memory.db) should be placed here. The config file is read from `/home/researcher/.fathom/config.toml`; mount a custom config:
+
+```bash
+docker run -it --rm \
+  -e PARALLEL_LLM_API_KEY="sk-your-key" \
+  -v ./my-config.toml:/home/researcher/.fathom/config.toml \
+  -v research-data:/data \
+  fathom \
+  run "Your query" --output /data/results/
+```
+
+### Docker Compose
+
+A `docker-compose.yml` file configures:
+- Port 8080 (HTTP API server)
+- Volumes: `research-data` (output + databases), `research-config` (config persistence)
+- Environment variables for the LLM API key and logging level
+
+```bash
+docker compose up -d
+```
+
+### Exposed ports and volumes
+
+| Item | Details |
+|------|---------|
+| Port | `8080` (HTTP API) |
+| Volume `/data` | Research output, contacts.db, memory.db, jobs database |
+| Volume `~/.fathom/` | Config file persistence |
+| Entrypoint | `fathom` |
+| Default command | `serve --port 8080` |
+
+---
+
+## Systemd (Linux)
+
+Unit file: `fathom.service`
+
+```bash
+# Installation
+sudo cp fathom.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable fathom
+sudo systemctl start fathom
+
+# Status
+sudo systemctl status fathom
+
+# Logs
+journalctl -u fathom -f
+```
+
+The service runs the HTTP API on port 8080 with:
+- **Auto-restart** on failure (`Restart=on-failure`) — the agent process recovers from crashes automatically
+- **Hardening** — `ProtectSystem=strict`, `PrivateTmp=true`, `NoNewPrivileges=true`, `CapabilityBoundingSet=` (empty) for a minimal attack surface
+- **Resource limits** — CPU and memory constraints configurable in the unit file
+- **Environment** — set `PARALLEL_LLM_API_KEY` and other variables in the unit's `[Service]` section
+
+---
+
+## Memory database initialization
+
+The long-term semantic memory store is a SQLite database (mem0/Memora-inspired) that is created automatically on first use. It stores:
+
+- Self-contained facts (append-only rows with versioning via `supersedes` edges)
+- FTS5 keyword index for BM25 full-text search
+- Binary embeddings for vector similarity search
+- Typed edges between memories (supersedes / contradicts / related_to / ...)
+- Audit history of all changes
+
+The database is located at `~/.fathom/memory.db` by default, or at the path specified by `PR_MEMORY_DB` or `[memory] db_path` in config. It is opened on session start when `[memory] enabled = true` (the default). The embedder model (default: `text-embedding-3-small`) is auto-detected — if an OpenAI-compatible embedding endpoint is available, it's used; otherwise, a TF-IDF fallback is used.
+
+### Memory isolation scopes
+
+Memories are namespaced by scope for isolation:
+
+| Scope | Purpose |
+|-------|---------|
+| `user` | Facts about the user/client — personal preferences, contact info |
+| `agent` | General agent knowledge — reusable across sessions |
+| `run` | Session-local episode facts — temporary, subject to GC |
+
+### Garbage collection
+
+The memory subsystem runs automatic GC based on configurable thresholds:
+- `gc_ttl_days` (default: 30) — run-scoped facts older than this are archived
+- `gc_compact_above` (default: 200) — compact a scope group when it exceeds this many active rows
+- `gc_confidence_decay_rate` (default: 0.02) — daily confidence decay for unaccessed memories
+- `gc_confidence_threshold` (default: 0.15) — memories below this confidence are archived
+- `gc_auto` — auto-run GC + distill on a background timer (hourly)
+
+---
+
+## Contacts database
+
+The contacts database stores people and companies collected during OSINT / lead generation research. It is a SQLite database created automatically at `./contacts.db` (or the path in `[contacts] db_path`).
+
+### Schema
+
+The database contains these tables:
+- `contacts` — id, email, phone, name, title, company, created_at, updated_at, source
+- `social_profiles` — id, contact_id, platform, url, username
+- `companies` — id, name, website, industry, size, location, description
+- `tags` — id, contact_id, tag
+- `notes` — id, contact_id, note, created_at
+
+### PostgreSQL backend
+
+When `[contacts] pg_url` is set to a PostgreSQL connection string, the PostgreSQL backend is used instead of SQLite (requires the `postgres` feature of `pr-persistence`). This enables multi-process access and shared contact databases across deployments.
+
+### CRM sync
+
+The `[crm]` section configures optional CRM synchronization:
+
+```toml
+[crm]
+provider = "amocrm"       # amocrm | bitrix24 | hubspot
+domain = "mycompany"      # Domain/subdomain (amoCRM, Bitrix24)
+api_key = "..."           # API key/token
+```
+
+When configured, contacts saved during research are automatically pushed to the CRM. The sync runs as a best-effort post-processing step — failures are logged but do not fail the research run itself.
+
+### Contacts CLI
+
+```bash
+# List all contacts
+fathom contacts list
+
+# Search contacts
+fathom contacts search "Acme Corp"
+
+# Export contacts
+fathom contacts export --format csv
+```
+
+---
+
+## Multi-model routing setup
+
+The LLM layer supports multiple models and providers through a factory pattern. All providers speak the OpenAI-compatible chat-completions protocol, so any endpoint implementing it works (DeepSeek, OpenAI, OpenRouter, vLLM, Ollama, LM Studio, etc.).
+
+### Primary and fast models
+
+```toml
+[llm]
+provider = "deepseek"
+base_url = "https://api.deepseek.com"
+api_key = "sk-your-key"
+model = "deepseek-v4-flash"       # Primary model for reasoning
+fast_model = "deepseek-chat"       # Cheap model for auxiliary calls
+```
+
+The `fast_model` is used for high-volume, low-stakes tasks:
+- Entity extraction from web pages
+- Memory fact classification (deduplicate / supersede / contradict / related)
+- Search result reranking
+- Memory digest generation
+
+When `fast_model` is empty, the primary model is used for everything.
+
+### Per-role model routing
+
+Different agent roles can use different models on the same endpoint:
+
+```toml
+[agent]
+role_models = {
+  researcher = "deepseek-chat",       # Cheap for broad exploration
+  analyst = "deepseek-reasoner",      # Strong for deep analysis
+  verifier = "deepseek-chat"          # Lightweight for fact-checking
+}
+```
+
+This enables cost-efficient routing where expensive reasoning models are reserved for the roles that need them, while high-volume search and extraction roles use cheaper models.
+
+### Provider compatibility
+
+| Provider | `base_url` typically | Notes |
+|----------|---------------------|-------|
+| DeepSeek | `https://api.deepseek.com` | Native OpenAI-compatible |
+| OpenAI | `https://api.openai.com/v1` | |
+| OpenRouter | `https://openrouter.ai/api/v1` | Model routing |
+| vLLM | `http://localhost:8000/v1` | Self-hosted |
+| Ollama | `http://localhost:11434/v1` | Local models |
+| LM Studio | `http://localhost:1234/v1` | Local models |
+
+Any unknown provider name is accepted with a trace warning — genuinely new protocols can be added explicitly in the code.
 
 ---
 
@@ -65,77 +365,6 @@ The script:
 - Installs it to `/usr/local/bin/` (or `~/.local/bin/`)
 - Creates a default config
 - Optionally installs a systemd service (`INSTALL_SYSTEMD=1 ./install.sh`)
-
----
-
-## Docker
-
-### Building the image
-
-```bash
-docker build -t parallel-research .
-```
-
-The `Dockerfile` uses multi-stage build:
-- **Stage 1**: `rust:1.82-bookworm` — build
-- **Stage 2**: `debian:bookworm-slim` — minimal image, non-root user
-
-### Running
-
-```bash
-docker run -it --rm \
-  -e PARALLEL_LLM_API_KEY="sk-your-key" \
-  -v research-data:/data \
-  parallel-research \
-  run "Your query" --output /data/results/
-```
-
-### Docker Compose
-
-```bash
-docker compose up -d
-```
-
-`docker-compose.yml` configures:
-- Port 8080 (HTTP API)
-- Volumes: `research-data`, `research-config`
-- Environment variables
-
----
-
-## Systemd (Linux)
-
-Unit file: `parallel-research.service`
-
-```bash
-# Installation
-sudo cp parallel-research.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable parallel-research
-sudo systemctl start parallel-research
-
-# Status
-sudo systemctl status parallel-research
-
-# Logs
-journalctl -u parallel-research -f
-```
-
-The service runs the HTTP API on port 8080 with auto-restart and hardening options.
-
----
-
-## Environment variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PARALLEL_LLM_API_KEY` | LLM API key | — |
-| `PARALLEL_CDP_ENDPOINT` | Chrome DevTools Protocol endpoint | `http://localhost:9222` |
-| `PARALLEL_VISION_API_BASE` | Vision model API base | `https://router.y7.hk/v1` |
-| `PARALLEL_VISION_API_KEY` | Vision API key | — |
-| `PARALLEL_VISION_MODEL` | Vision model | `qwen-vl-max` |
-| `PARALLEL_RESEARCH_API_KEYS` | API keys for HTTP API (comma-separated) | — (open access) |
-| `RUST_LOG` | Logging level | `info` |
 
 ---
 
@@ -177,10 +406,10 @@ Browser tools automatically detect CDP availability on `localhost:9222`.
 
 ```bash
 # Version and help
-./target/release/parallel-research --help
+./target/release/fathom --help
 
 # Config
-./target/release/parallel-research config show
+./target/release/fathom config show
 
 # Health check HTTP API (if serve is running)
 curl http://localhost:8080/health

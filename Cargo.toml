@@ -1,11 +1,11 @@
 [package]
-name = "parallel-research"
+name = "fathom"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
 
 [[bin]]
-name = "parallel-research"
+name = "fathom"
 path = "src/main.rs"
 
 [workspace]

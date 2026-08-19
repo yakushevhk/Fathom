@@ -32,7 +32,7 @@ const OPENAI_COMPATIBLE: &[&str] = &[
 pub fn build_provider(cfg: &LlmConfig) -> anyhow::Result<Arc<dyn LlmProvider>> {
     if cfg.api_key.trim().is_empty() {
         anyhow::bail!(
-            "No LLM api_key configured. Set it in ~/.parallel-research/config.toml:\n\
+            "No LLM api_key configured. Set it in ~/.fathom/config.toml:\n\
             [llm]\napi_key = \"your-key\""
         );
     }

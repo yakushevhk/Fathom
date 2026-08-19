@@ -15,7 +15,7 @@ use std::time::{Duration, Instant};
 
 /// Environment variable holding comma-separated API keys. When unset or
 /// empty, authentication is disabled (open access).
-pub const API_KEYS_ENV: &str = "PARALLEL_RESEARCH_API_KEYS";
+pub const API_KEYS_ENV: &str = "FATHOM_API_KEYS";
 
 /// Metadata about a registered API key.
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -78,7 +78,7 @@ impl Notifier {
                 config.smtp_host.trim().to_string()
             };
             let from = if config.email_from.trim().is_empty() {
-                "parallel-research@localhost".to_string()
+                "fathom@localhost".to_string()
             } else {
                 config.email_from.trim().to_string()
             };
@@ -439,7 +439,7 @@ email_to = "me@example.com"
             NotificationChannel::Email { smtp_host, to, from, .. } => {
                 assert_eq!(smtp_host, "localhost");
                 assert_eq!(to, "me@example.com");
-                assert_eq!(from, "parallel-research@localhost");
+                assert_eq!(from, "fathom@localhost");
             }
             other => panic!("expected Email channel, got {other:?}"),
         }

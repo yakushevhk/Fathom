@@ -9,7 +9,7 @@ use tokio::sync::broadcast;
 use tracing_subscriber::EnvFilter;
 
 #[derive(Parser)]
-#[command(name = "parallel-research", about = "Autonomous research agent with hierarchical sub-agents")]
+#[command(name = "fathom", about = "Autonomous research agent with hierarchical sub-agents")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -34,7 +34,7 @@ enum Commands {
         #[arg(long)]
         repeat: Option<u64>,
         /// Persona/profile to apply (hunter | analyst | validator | file
-        /// name in ~/.parallel-research/profiles | path to a .toml).
+        /// name in ~/.fathom/profiles | path to a .toml).
         #[arg(long)]
         profile: Option<String>,
     },
@@ -73,13 +73,13 @@ enum Commands {
         #[arg(long, default_value = "8080")]
         port: u16,
         /// Bind address. Loopback by default; a non-loopback address requires
-        /// PARALLEL_RESEARCH_API_KEYS to be set.
+        /// FATHOM_API_KEYS to be set.
         #[arg(long, default_value = "127.0.0.1")]
         host: String,
     },
     /// Expose the agent's tools over MCP (stdio) for external clients
     /// (Claude, ZCode, ...). Add to an MCP client config as:
-    /// `{"command": "parallel-research", "args": ["mcp-serve"]}`.
+    /// `{"command": "fathom", "args": ["mcp-serve"]}`.
     McpServe,
     /// Contact database operations (OSINT / lead generation)
     Contacts {
@@ -161,7 +161,7 @@ enum ProfilesAction {
     List,
     /// Show one profile's definition
     Show { name: String },
-    /// Create a template profile file in ~/.parallel-research/profiles/
+    /// Create a template profile file in ~/.fathom/profiles/
     New { name: String },
 }
 
@@ -545,7 +545,7 @@ fn memory_scope_filter(scope: &str) -> anyhow::Result<pr_memory::ScopeFilter> {
     }
 }
 
-/// `parallel-research memory ...` — manage the long-term memory store
+/// `fathom memory ...` — manage the long-term memory store
 /// without running an agent.
 async fn cmd_memory(action: MemoryAction) -> anyhow::Result<()> {
     let config = AppConfig::load()?;
@@ -730,7 +730,7 @@ fn open_history_db(output: Option<String>) -> anyhow::Result<pr_persistence::Ses
     Ok(pr_persistence::SessionHistory::new(db))
 }
 
-/// `parallel-research sessions ...` — browse the session history.
+/// `fathom sessions ...` — browse the session history.
 fn cmd_sessions(output: Option<String>, action: SessionsAction) -> anyhow::Result<()> {
     let history = open_history_db(output)?;
     match action {
@@ -1265,7 +1265,7 @@ async fn run_research(
 
     if config.llm.api_key.is_empty() {
         anyhow::bail!(
-            "No API key configured. Set it in ~/.parallel-research/config.toml:\n\
+            "No API key configured. Set it in ~/.fathom/config.toml:\n\
             [llm]\napi_key = \"your-key\""
         );
     }
@@ -1277,7 +1277,7 @@ async fn run_research(
     let session_id = SessionId::new();
 
     println!("╔══════════════════════════════════════════╗");
-    println!("║        Parallel Research Agent           ║");
+    println!("║        Fathom Agent           ║");
     println!("╚══════════════════════════════════════════╝");
     println!();
     println!("  Query:  {}", query);
@@ -2115,7 +2115,7 @@ fn print_job_status(job: &pr_persistence::JobRow) {
     }
 }
 
-/// `parallel-research profiles ...` — manage personas/profiles.
+/// `fathom profiles ...` — manage personas/profiles.
 fn cmd_profiles(action: ProfilesAction) -> anyhow::Result<()> {
     match action {
         ProfilesAction::List => {
@@ -2134,7 +2134,7 @@ fn cmd_profiles(action: ProfilesAction) -> anyhow::Result<()> {
                 println!("{:<12} {}{}", p.name, p.description, mark);
             }
             println!();
-            println!("Use: parallel-research run --profile <name> \"...\"");
+            println!("Use: fathom run --profile <name> \"...\"");
         }
         ProfilesAction::Show { name } => {
             let p = pr_core::profile::load(&name)?;
@@ -2207,8 +2207,8 @@ async fn cmd_jobs_submit(task: String, attempts: i64) -> anyhow::Result<()> {
     println!("  Dir:      {}", job_dir.display());
     println!("  Log:      {}", log_path.display());
     println!();
-    println!("  Watch it live:  parallel-research jobs status {} --watch 5", short_id(&job.id));
-    println!("  Tail the log:   parallel-research jobs logs {}", short_id(&job.id));
+    println!("  Watch it live:  fathom jobs status {} --watch 5", short_id(&job.id));
+    println!("  Tail the log:   fathom jobs logs {}", short_id(&job.id));
     Ok(())
 }
 
@@ -2216,7 +2216,7 @@ fn cmd_jobs_list() -> anyhow::Result<()> {
     let db = open_jobs_db()?;
     let jobs = db.list()?;
     if jobs.is_empty() {
-        println!("No jobs yet. Submit one with: parallel-research jobs submit \"<task>\"");
+        println!("No jobs yet. Submit one with: fathom jobs submit \"<task>\"");
         return Ok(());
     }
     println!(
@@ -2323,7 +2323,7 @@ fn cmd_jobs_rerun(id: String) -> anyhow::Result<()> {
     pr_persistence::spawn_detached_runner(&exe, &job.id, Some(&log_path))?;
 
     println!("Re-run started for job {}", short_id(&job.id));
-    println!("  Watch it live:  parallel-research jobs status {} --watch 5", short_id(&job.id));
+    println!("  Watch it live:  fathom jobs status {} --watch 5", short_id(&job.id));
     Ok(())
 }
 

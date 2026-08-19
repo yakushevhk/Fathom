@@ -4,6 +4,177 @@
 
 ---
 
+## Tool Registration
+
+Every tool in the system implements the `Tool` trait, defined in `crates/tools/src/registry.rs`:
+
+```rust
+#[async_trait]
+pub trait Tool: Send + Sync {
+    fn name(&self) -> &str;
+    fn description(&self) -> &str;
+    fn schema(&self) -> ToolSchema;
+    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput>;
+}
+```
+
+The `ToolRegistry` is a `HashMap<String, Arc<dyn Tool>>` that stores all registered tools by name. It is constructed via `ToolRegistry::with_builtins()`, which registers every built-in tool in a single call. The registry is shared across the agent runtime (`Arc<ToolRegistry>`) and can be extended after construction:
+
+- **`register(&mut self, tool: Arc<dyn Tool>)`** — adds a tool by name. Tools with the same name replace the previous entry.
+- **`register_lsp(&mut self, project_root: PathBuf)`** — registers the LSP tool adapter, which lazily starts an LSP server on first use, auto-detected from the project's files.
+- **`get(&self, name: &str) -> Option<&Arc<dyn Tool>>`** — looks up a tool by name.
+- **`list_schemas(&self) -> Vec<ToolSchema>`** — returns the JSON schemas for all registered tools, used by the prompt builder to present available tools to the LLM and by the MCP bridge to expose tools to external MCP clients.
+- **`execute(&self, name, args, ctx) -> ToolOutput`** — dispatches a call. Unknown tool names return `ToolOutput::err("Unknown tool: …")` rather than panicking, so the LLM can read the error and correct itself.
+
+### MCP Bridge
+
+External MCP (Model Context Protocol) servers can contribute tools to the registry through the MCP bridge (`crates/mcp/src/bridge.rs`). Tool names are namespaced as `mcp__{server}__{tool}` to avoid collisions with built-in tools and between servers. The Fathom server can also operate in reverse — exposing its own tool registry as an MCP server over stdio via `fathom mcp-serve`, so external MCP clients (Claude, ZCode, etc.) can call Fathom tools.
+
+---
+
+## Tool Schema Generation
+
+Each tool's `schema()` method returns a `ToolSchema` struct:
+
+```rust
+pub struct ToolSchema {
+    pub name: String,
+    pub description: String,
+    pub parameters: serde_json::Value,
+}
+```
+
+The `parameters` field is a JSON Schema object describing the tool's expected arguments — types, defaults, descriptions, and constraints. Schemas are generated at registration time by each tool's implementation and presented to the LLM in the system prompt via the `PromptBuilder` (which groups them into a volatile "tools" section that changes whenever tools are added or removed). The schema is also exposed through the HTTP API and MCP server for client-side tool discovery.
+
+---
+
+## ToolContext
+
+Every tool execution receives a shared `ToolContext` that provides access to all subsystems:
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `working_dir` | `PathBuf` | Working directory for file operations |
+| `http_client` | `reqwest::Client` | HTTP client with 30s request / 10s connect timeouts |
+| `search_config` | `SearchConfig` | Search backend configuration (Linkup, Exa, Tavily, Serper, etc.) |
+| `file_history` | `FileHistory` | Checkpoint history for undo support |
+| `file_locks` | `FileLockManager` | Per-path locking for concurrent file writes |
+| `read_tracker` | `ReadTracker` | Tracks file reads for read-before-write validation and staleness detection |
+| `vision_api_base` / `vision_api_key` | `String` | Vision API configuration (env `PARALLEL_VISION_API_*`) |
+| `llm` / `fast_llm` | `Option<Arc<dyn LlmProvider>>` | LLM providers for tools that need auxiliary AI calls (entity extraction, memory classification, search reranking). `aux_llm()` prefers the fast model. |
+| `contact_db` | `Option<Arc<dyn ContactStore>>` | Contact persistence database (SQLite or PostgreSQL) |
+| `crm` | `Option<Arc<CrmSync>>` | CRM sync (amoCRM / Bitrix24 / HubSpot) |
+| `fetch_cache` | `FetchCache` | Session-scoped fetch cache (10 min TTL, 64 entries) |
+| `mx_cache` | `MxCache` | Session-scoped MX lookup cache (10 min TTL, 256 entries) |
+| `memory` | `Option<Arc<Memory>>` | Long-term semantic memory store (mem0/Memora-inspired) |
+| `session_id` | `Option<String>` | Session id for scoping / tagging run-level memories |
+| `receipt_ledger` | `Option<ReceiptLedger>` | Durable verification-receipt ledger for contact verification |
+
+The context is constructed via builder methods (`with_llm`, `with_memory`, `with_contact_db`, etc.) and shared across all agents in a session via `Arc<ToolContext>`.
+
+---
+
+## Agent Loop Integration
+
+Tools are executed within the agent runtime's main loop (`crates/agent/src/runtime.rs`), which proceeds through three phases each turn:
+
+### Phase 1: Pre-processing
+
+The LLM's response is parsed into `ToolCall` structs. Each call goes through:
+
+1. **Doom loop detection** — if the same tool+args has been called 3+ times consecutively, the model is nudged (first offense) or stopped (second offense).
+2. **Denied-tools check** — per-role deny lists (configurable in `[agent] deny_tools`).
+3. **Pre-tool hooks** — user-defined hooks (`eval` / `approve` / `deny`) via `[hooks]` config.
+4. **Budget enforcement** — `TurnBudget` tracks per-turn token usage and truncates oversized tool outputs.
+
+### Phase 2: Execution
+
+The `ToolExecutor` partitions calls into parallel-safe and sequential groups (see below), executes them, and returns results tagged with durations. Parallel-safe calls are spawned as independent tasks so CPU-bound tools overlap across worker threads.
+
+### Phase 3: Post-processing
+
+Results are processed in original call order:
+
+- **Cascading cancellation** — a failed shell tool cancels all sibling calls that follow it in the batch.
+- **Sub-agent delegation** — `spawn_agent` calls are collected and run concurrently after the post-processing pass.
+- **Operator questions** — `question` tools block until the human answers (or a timeout tells the agent to proceed alone).
+- **Post-tool hooks** — may append additional context to results.
+- **Autosave** — harvested contacts from any tool's metadata are automatically persisted to the contact database.
+- **Findings** — structured findings from tool metadata are harvested and accumulated.
+- **Persistence** — the turn's messages and tool results are saved to the database.
+
+---
+
+## Parallel Execution
+
+Tools are classified for smart parallelism in `ToolExecutor`:
+
+| Class | Behavior |
+|-------|----------|
+| **Parallel-safe** (read-only) | Executed concurrently via `futures::future::join_all` (network I/O overlap) or `tokio::spawn` (CPU + I/O overlap across worker threads) |
+| **Sequential** (write/state) | Executed one at a time, in order |
+
+### Parallel-safe tools
+
+Web searches, fetches, crawls, parsers, file reads, glob, grep, PDF extraction, image analysis, OSINT verification/enrichment/extraction, memory reads (`memory_search`, `memory_digest`). These are read-only: they read from the network, filesystem, or database without mutating state.
+
+### Sequential tools
+
+File writes, file edits, shell commands, browser automation, git operations, code REPLs, `spawn_agent`, `question`, `memory_absorb`, `memory_boost`, `memory_link`, `memory_graph`, `save_contacts`, `skill`, `scratchpad`, `undo`. These mutate state and require exclusive access.
+
+### Execution strategies
+
+The `ToolExecutor` provides two execution strategies:
+
+- **`execute_batch`** — polls all parallel-safe futures on the calling task via `join_all`. Overlaps network I/O but not CPU-bound work (futures share one thread).
+- **`execute_batch_spawn`** — spawns each parallel-safe call as its own tokio task. The multi-threaded runtime spreads them across worker threads, so CPU-heavy tools (parse_html, extract_json, grep) genuinely overlap. This is the default strategy used by the runtime.
+
+### Path-overlap detection
+
+If two parallel-safe file tools target the same file path, the second one is moved to the sequential group to avoid read-write races. The `extract_file_path` function checks common argument keys (`path`, `file`, `file_path`, `filename`, `pattern`).
+
+### Cascading cancellation
+
+When a shell tool fails, all sibling tool calls in the batch are cancelled with a clear error message. This prevents the agent from continuing after a destructive command failure and avoids wasted work.
+
+---
+
+## Caching
+
+The system maintains two session-scoped caches shared across all agents via `ToolContext`:
+
+### FetchCache
+
+Memoizes successful `web_fetch` responses (body + content type) keyed by URL. **64 entries** maximum, **10-minute TTL**. Eviction is oldest-by-insertion when the cap is exceeded. This means agents that re-read the same URL within the TTL skip the download entirely — particularly useful when multiple sub-agents are researching the same sources.
+
+### MxCache
+
+Memoizes DNS-over-HTTPS MX lookup results per domain. **256 entries** maximum, **10-minute TTL**. The cached value is the full MX record list (including empty lists for domains without mail) so cache hits reproduce byte-identical tool output. Repeated `verify_email` calls for addresses at the same domain skip the DNS round trip.
+
+Both caches are tiny, bounded, cheap to clone (everything lives behind `Arc`), and strictly transparent — they only skip network/DNS work, never changing what a tool returns.
+
+---
+
+## Stall Detection
+
+The coordinator runs a stall monitor (`crates/agent/src/coordinator.rs`) for every session to detect agents that have stopped making progress.
+
+### How it works
+
+1. Every `AgentEvent` updates a per-agent "last progress" timestamp.
+2. A background task ticks every 30 seconds and checks idle time.
+3. Default thresholds: **warn at 450 seconds** (7.5 minutes), **kill at 1200 seconds** (20 minutes). Both are configurable via `[agent] stall_warn_seconds` and `[agent] stall_kill_seconds`; setting either to 0 disables that stage.
+4. On warn: a `tracing::warn!` log is emitted (visible in TUI).
+5. On kill: the agent's `CancellationToken` is cancelled, which the runtime checks at the start of each main loop iteration. The agent stops with an `AgentFailed` event.
+
+The stall monitor only watches agents registered in the session's token map. It auto-terminates when the session completes or fails.
+
+### Doom loop detection
+
+Separate from the stall monitor, the `DoomLoopDetector` (`crates/agent/src/doom_loop.rs`) catches agents stuck retrying the same failing operation. It tracks a bounded history of `(tool_name, args_hash)` signatures — the `hash_args` function uses `serde_json::Value`'s sorted-key serialization so semantically identical arguments produce the same hash regardless of insertion order. After 3 consecutive identical calls (default threshold), the agent is nudged to change strategy. On a second offense, the agent is stopped entirely. The detector resets when the agent recovers.
+
+---
+
 ## Web
 
 ### `web_search`
@@ -17,7 +188,7 @@ Internet search via the configured backend (Linkup/Exa/Tavily/Serper/Brave/Paral
 **Returns**: list of results (title, URL, snippet).
 
 ### `web_fetch`
-Downloads a page and converts HTML to readable text.
+Downloads a page and converts HTML to readable text. Results are cached in the session-scoped FetchCache (10 min TTL) so repeated fetches of the same URL within the same session skip the download entirely.
 
 | Parameter | Type | Description |
 |----------|------|-------------|
@@ -165,7 +336,7 @@ Uses ripgrep if available.
 ## Execution
 
 ### `shell`
-Executes a bash command.
+Executes a bash command. A shell failure triggers cascading cancellation of all sibling tool calls in the batch — no subsequent tool in the same turn runs.
 
 | Parameter | Type | Description |
 |----------|------|-------------|
@@ -379,7 +550,7 @@ Search news/mentions (Serper News or Google News RSS).
 ## Verification
 
 ### `verify_email`
-Checks email: syntax, MX records, disposable, role-based.
+Checks email: syntax, MX records, disposable, role-based. MX lookups are cached in the session-scoped MxCache (10 min TTL, 256 entries) so repeated checks for the same domain skip the DNS round trip.
 
 | Parameter | Type | Description |
 |----------|------|-------------|
@@ -446,7 +617,7 @@ Enriches person data.
 ## Meta
 
 ### `spawn_agent`
-Spawns a sub-agent for a subtask.
+Spawns a sub-agent for a subtask. The runtime collects all spawn requests in a turn, verifies that the nesting depth is not exceeded, and executes the children concurrently after the post-processing pass. Depth enforcement is handled by the agent runtime, not the tool itself.
 
 | Parameter | Type | Description |
 |----------|------|-------------|
@@ -549,7 +720,7 @@ Loads full skill instructions by name.
 
 | Parameter | Type | Description |
 |----------|------|-------------|
-| `name` | string | Skill name (from `~/.parallel-research/skills`) |
+| `name` | string | Skill name (from `~/.fathom/skills`) |
 
 ### `scratchpad`
 Shared session ledger for coordination between agents (`.pr-context/ledger.md`).

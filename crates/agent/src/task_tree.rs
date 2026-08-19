@@ -108,7 +108,7 @@ impl TaskTreeLedger {
     }
 
     /// Derive a default ledger path under `dir` for `session_id`:
-    /// `<dir>/task_tree/<session_id>.jsonl`. `dir` is e.g. `~/.parallel-research/ledger`.
+    /// `<dir>/task_tree/<session_id>.jsonl`. `dir` is e.g. `~/.fathom/ledger`.
     pub fn for_session(dir: impl AsRef<Path>, session_id: &str) -> PathBuf {
         // Sanitize the id so it cannot escape the directory.
         let safe: String = session_id

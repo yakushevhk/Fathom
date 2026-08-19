@@ -856,6 +856,38 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 
 [[package]]
+name = "fathom"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "clap",
+ "crossterm",
+ "futures",
+ "pr-agent",
+ "pr-core",
+ "pr-llm",
+ "pr-lsp",
+ "pr-mcp",
+ "pr-memory",
+ "pr-persistence",
+ "pr-server",
+ "pr-tools",
+ "pr-tui",
+ "ratatui",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "toml",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
 name = "find-msvc-tools"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1852,38 +1884,6 @@ name = "option-ext"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
-
-[[package]]
-name = "parallel-research"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "chrono",
- "clap",
- "crossterm",
- "futures",
- "pr-agent",
- "pr-core",
- "pr-llm",
- "pr-lsp",
- "pr-mcp",
- "pr-memory",
- "pr-persistence",
- "pr-server",
- "pr-tools",
- "pr-tui",
- "ratatui",
- "rusqlite",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
- "toml",
- "tracing",
- "tracing-subscriber",
- "uuid",
-]
 
 [[package]]
 name = "parking_lot"
