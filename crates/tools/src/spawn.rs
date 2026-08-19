@@ -16,8 +16,10 @@ use crate::registry::{Tool, ToolContext};
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 struct SpawnAgentParams {
-    /// Task description for the sub-agent
-    task: String,
+    /// Task description for the sub-agent (single spawn). Mutually exclusive
+    /// with `tasks` (batch spawn).
+    #[serde(default)]
+    task: Option<String>,
     /// Agent role: researcher, analyst, verifier, writer
     #[serde(default = "default_role")]
     role: String,
@@ -29,6 +31,38 @@ struct SpawnAgentParams {
     /// Run in background: the tool returns immediately; the child's result
     /// is delivered to the parent as a notice once it finishes (fleet E2,
     /// OpenCode pattern). Use for long-running side tasks.
+    #[serde(default)]
+    background: bool,
+
+    // ── Batch spawn fields ──────────────────────────────────────────────
+
+    /// Batch of sub-tasks for parallel execution (mutually exclusive with
+    /// `task`). Each task runs as a separate agent concurrently.
+    #[serde(default)]
+    tasks: Vec<BatchTask>,
+    /// Optional JSON schema for the output (as a JSON object). When set,
+    /// the sub-agent is instructed to produce output matching this schema.
+    #[serde(default)]
+    output_schema: Option<serde_json::Value>,
+    /// If true, each sub-agent runs in isolated mode (no access to the
+    /// parent's scratchpad, findings, or memory). Default is false.
+    #[serde(default)]
+    isolated: bool,
+}
+
+/// A single task in a batch spawn.
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+struct BatchTask {
+    /// Task description for this sub-agent.
+    task: String,
+    /// Agent role override (optional, defaults to the parent's `role`).
+    #[serde(default)]
+    role: Option<String>,
+    /// Per-task context override (optional, defaults to the parent's
+    /// context if any).
+    #[serde(default)]
+    context: Vec<String>,
+    /// Run this task in the background.
     #[serde(default)]
     background: bool,
 }
@@ -107,7 +141,75 @@ Sub-agents do NOT see your conversation. Put everything the child needs into `ta
             Err(e) => return Ok(ToolOutput::err(format!("Invalid arguments: {e}"))),
         };
 
-        if params.task.trim().is_empty() {
+        // ── Batch spawn (parallel fan-out) ──────────────────────────────
+        if !params.tasks.is_empty() {
+            if params.task.is_some() {
+                return Ok(ToolOutput::err(
+                    "spawn_agent: use either `task` (single) or `tasks` (batch), not both",
+                ));
+            }
+            if params.tasks.len() > 8 {
+                return Ok(ToolOutput::err(
+                    "spawn_agent: batch size limited to 8 tasks per call",
+                ));
+            }
+
+            let mut batch: Vec<serde_json::Value> = Vec::with_capacity(params.tasks.len());
+            // Output schema instruction appended to each task.
+            let schema_hint = params
+                .output_schema
+                .as_ref()
+                .map(|s| {
+                    format!(
+                        "\n\nRespond with JSON matching this schema:\n{}",
+                        serde_json::to_string_pretty(s).unwrap_or_default()
+                    )
+                })
+                .unwrap_or_default();
+
+            for t in &params.tasks {
+                let role = t
+                    .role
+                    .clone()
+                    .unwrap_or_else(|| params.role.clone())
+                    .to_lowercase();
+                let context = if t.context.is_empty() {
+                    params.context.clone()
+                } else {
+                    t.context.clone()
+                };
+                let full_task = if schema_hint.is_empty() {
+                    t.task.clone()
+                } else {
+                    format!("{}{}", t.task, schema_hint)
+                };
+                batch.push(serde_json::json!({
+                    "task": full_task,
+                    "role": role,
+                    "context": context,
+                    "background": t.background || params.background,
+                }));
+            }
+
+            return Ok(ToolOutput::ok_with_meta(
+                format!("Batch spawn created for {} task(s)", batch.len()),
+                serde_json::json!({
+                    "spawn_request": true,
+                    "spawn_batch": batch,
+                    "output_schema": params.output_schema,
+                    "isolated": params.isolated,
+                }),
+            ));
+        }
+
+        // ── Single spawn ────────────────────────────────────────────────
+        let Some(task) = params.task else {
+            return Ok(ToolOutput::err(
+                "spawn_agent requires `task` (single) or `tasks` (batch)",
+            ));
+        };
+
+        if task.trim().is_empty() {
             return Ok(ToolOutput::err("spawn_agent requires a non-empty task"));
         }
 
@@ -120,6 +222,17 @@ Sub-agents do NOT see your conversation. Put everything the child needs into `ta
             }
         };
 
+        // Optional output-schema instruction.
+        let full_task = if let Some(schema) = &params.output_schema {
+            format!(
+                "{}\n\nRespond with JSON matching this schema:\n{}",
+                task,
+                serde_json::to_string_pretty(schema).unwrap_or_default()
+            )
+        } else {
+            task
+        };
+
         // The agent runtime intercepts this metadata marker, checks the depth
         // limit against the calling agent's depth, runs the child and replaces
         // this tool result with the child's (budget-capped) summary.
@@ -127,10 +240,12 @@ Sub-agents do NOT see your conversation. Put everything the child needs into `ta
             format!("Spawn request created for {role} agent"),
             serde_json::json!({
                 "spawn_request": true,
-                "task": params.task,
+                "task": full_task,
                 "role": role,
                 "context": params.context,
                 "background": params.background,
+                "output_schema": params.output_schema,
+                "isolated": params.isolated,
             }),
         ))
     }
@@ -186,6 +301,78 @@ mod tests {
         assert!(out.content.contains("Unknown role"));
     }
 
+    #[tokio::test]
+    async fn test_batch_spawn_metadata() {
+        let tool = SpawnAgentTool;
+        let out = tool
+            .execute(
+                serde_json::json!({
+                    "tasks": [
+                        {"task": "Task A", "role": "researcher"},
+                        {"task": "Task B", "role": "analyst"}
+                    ],
+                    "output_schema": {"type": "object", "properties": {"x": {"type": "string"}}}
+                }),
+                &ctx(),
+            )
+            .await
+            .unwrap();
+        assert!(out.success);
+        let meta = out.metadata.unwrap();
+        assert_eq!(meta["spawn_request"], true);
+        assert_eq!(meta["spawn_batch"].as_array().unwrap().len(), 2);
+        assert!(meta["spawn_batch"][0]["task"].as_str().unwrap().contains("Task A"));
+        assert!(meta["spawn_batch"][1]["task"].as_str().unwrap().contains("Task B"));
+        assert_eq!(meta["spawn_batch"][1]["role"], "analyst");
+        // output_schema is threaded through
+        assert!(meta["output_schema"].is_object());
+    }
+
+    #[tokio::test]
+    async fn test_batch_spawn_validates_both_or_neither() {
+        let tool = SpawnAgentTool;
+        // Both task AND tasks -> error
+        let out = tool
+            .execute(
+                serde_json::json!({"task": "single", "tasks": [{"task": "A"}]}),
+                &ctx(),
+            )
+            .await
+            .unwrap();
+        assert!(!out.success);
+        assert!(out.content.contains("not both"));
+
+        // tasks over cap (9) -> error
+        let many: Vec<serde_json::Value> = (0..9)
+            .map(|i| serde_json::json!({"task": format!("T{i}")}))
+            .collect();
+        let out = tool
+            .execute(serde_json::json!({"tasks": many}), &ctx())
+            .await
+            .unwrap();
+        assert!(!out.success);
+        assert!(out.content.contains("8"));
+    }
+
+    #[tokio::test]
+    async fn test_single_spawn_output_schema() {
+        let tool = SpawnAgentTool;
+        let out = tool
+            .execute(
+                serde_json::json!({
+                    "task": "Extract JSON",
+                    "output_schema": {"type": "object"}
+                }),
+                &ctx(),
+            )
+            .await
+            .unwrap();
+        assert!(out.success);
+        let meta = out.metadata.unwrap();
+        assert!(meta["task"].as_str().unwrap().contains("Respond with JSON matching this schema"));
+        assert!(meta["isolated"] == false);
+    }
+
     #[test]
     fn test_spawn_schema() {
         let schema = SpawnAgentTool.schema();
@@ -194,5 +381,7 @@ mod tests {
         assert!(props.get("task").is_some());
         assert!(props.get("role").is_some());
         assert!(props.get("context").is_some());
+        assert!(props.get("tasks").is_some());
+        assert!(props.get("output_schema").is_some());
     }
 }

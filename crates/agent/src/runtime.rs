@@ -1316,7 +1316,8 @@ impl AgentRuntime {
                     // `spawn_agent` returns a marker; the child is prepared and
                     // run concurrently with sibling spawns after this pass
                     // (fleet D4). The tool message is emitted once the child
-                    // completes.
+                    // completes. A `spawn_batch` marker expands into one
+                    // pending spawn per task so each runs as its own agent.
                     if tool_name == "spawn_agent"
                         && result
                             .metadata
@@ -1326,6 +1327,26 @@ impl AgentRuntime {
                             == Some(true)
                     {
                         let meta = result.metadata.clone().unwrap_or_default();
+
+                        // Batch spawn: expand into one pending spawn per task.
+                        if let Some(batch) = meta.get("spawn_batch").and_then(|v| v.as_array()) {
+                            if !batch.is_empty() {
+                                let base = meta.clone();
+                                for (i, item) in batch.iter().enumerate() {
+                                    let mut item_meta = base.clone();
+                                    if let Some(obj) = item.as_object() {
+                                        for (k, v) in obj {
+                                            item_meta[k.clone()] = v.clone();
+                                        }
+                                    }
+                                    // Unique call_id per batch item
+                                    let batch_call_id = format!("{}_{}", tool_call.id, i);
+                                    pending_spawns.push((batch_call_id, item_meta));
+                                }
+                                continue;
+                            }
+                        }
+
                         pending_spawns.push((tool_call.id.clone(), meta));
                         continue;
                     }
