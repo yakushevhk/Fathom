@@ -118,13 +118,7 @@ impl Tool for DaemonTool {
                 ready_pattern,
                 timeout_secs,
             } => {
-                if reg.get(&name).is_some() {
-                    return Ok(ToolOutput::err(format!(
-                        "Daemon '{name}' already exists. Stop it first or use a different name."
-                    )));
-                }
-
-                reg.register(DaemonInfo {
+                let info = DaemonInfo {
                     name: name.clone(),
                     shell: shell.clone(),
                     status: DaemonStatus::Starting,
@@ -133,7 +127,12 @@ impl Tool for DaemonTool {
                     created_by: agent_id,
                     started_at: SystemTime::now(),
                     last_heartbeat: SystemTime::now(),
-                });
+                };
+                if !reg.try_register(info) {
+                    return Ok(ToolOutput::err(format!(
+                        "Daemon '{name}' already exists. Stop it first or use a different name."
+                    )));
+                }
 
                 let working_dir = cwd
                     .map(std::path::PathBuf::from)

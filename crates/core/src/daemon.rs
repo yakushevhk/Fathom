@@ -53,7 +53,17 @@ impl DaemonRegistry {
         &REG
     }
 
-    /// Register a new daemon.
+    /// Register a new daemon. Returns false if the name is already active.
+    pub fn try_register(&self, info: DaemonInfo) -> bool {
+        let mut daemons = self.daemons.lock();
+        if daemons.contains_key(&info.name) {
+            return false;
+        }
+        daemons.insert(info.name.clone(), info);
+        true
+    }
+
+    /// Register or replace a daemon (used by restart).
     pub fn register(&self, info: DaemonInfo) {
         self.daemons.lock().insert(info.name.clone(), info);
     }
