@@ -1,0 +1,91 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const blocks = [
+  { key: 'jobs', name: 'Durable jobs', d: 'jobs submit/list/status/logs/cancel/rerun — SQLite-backed background tasks with attempts and self-healing retry. They survive restarts.' },
+  { key: 'multiprocess', name: 'Multi-process', d: 'Optional OS-process isolation per agent over Unix sockets: one crash never takes down the fleet, per-process resource limits.' },
+  { key: 'hooks', name: 'Hooks', d: 'Subprocess hooks like in ZCode: PreToolUse (allow/deny), PostToolUse (extra context), Stop (limited "continue").' },
+  { key: 'reliability', name: 'Reliability', d: 'Cancellation tokens across the whole agent tree, retry with error classification and Retry-After, prompt-injection defense on web content, doom-loop detector.' },
+  { key: 'streaming', name: 'True streaming', d: 'stream: true in the agent loop — text deltas hit the TUI live, tool calls are assembled from stream fragments, automatic fallback to non-streaming on failure.' },
+  { key: 'approval', name: 'Approval flow', d: 'Side-effect tools (save_contacts, git_push by default) wait for approval: y/n in the TUI, POST /sessions/:id/approve in the API.' },
+  { key: 'question', name: 'Question tool', d: 'Agents can ask the operator mid-task; without an operator present they continue autonomously.' },
+  { key: 'watch', name: 'Watch mode', d: 'run --repeat N collects on a schedule and diffs runs: new emails/phones/persons are printed and alerted via webhook, Telegram or email.' },
+  { key: 'context', name: 'Context management', d: 'Real BPE token counting (tiktoken cl100k_base), CJK-aware fallback, per-tool truncation with persistence-to-disk, Hermes-style compaction with anti-thrashing cooldown.' },
+  { key: 'export', name: 'Export & notify', d: 'PDF, HTML, JSON, DOCX reports plus webhook, email and Telegram notifications on completion.' },
+  { key: 'crm', name: 'CRM sync', d: 'amoCRM, Bitrix24, HubSpot — dedup by crm_id, no duplicates on repeated pushes.' },
+  { key: 'personas', name: 'Personas', d: 'run --profile hunter|analyst|validator (or your own TOML): ready prompts, model/depth/tool overrides. Per-role models via [agent.role_models].' },
+  { key: 'goal', name: 'Goal Mode', d: 'After fan-out an LLM judge checks the result against the goal and runs up to replan_rounds gap-filling rounds; count-based reflection for lead-gen quotas.' },
+  { key: 'tokens', name: 'Exact tokens', d: 'Session token limits, budget-capped sub-agent results, p50/p95 per-tool stats from real sessions.' },
+  { key: 'verification_receipts', name: 'Verification receipts', d: 'Append-only JSONL ledger of every verification check — email syntax, domain MX, SMTP probe, phone normalize, social profile — with pass/fail/inconclusive verdicts.' },
+  { key: 'session_resume', name: 'Session resume', d: 'Detects interrupted sessions (stale for 5+ minutes) and reconstructs state — completed agents are recovered, unfinished sub-tasks continue from where they stopped.' },
+  { key: 'file_history', name: 'File history & undo', d: 'Every file modification by agents is tracked. Undo reverts the last change — useful when a sub-agent writes garbage.' },
+  { key: 'fetch_cache', name: 'Fetch & MX cache', d: 'Session-scoped TTL caches for fetched URLs and DNS MX lookups — no duplicate network requests within a session.' },
+  { key: 'file_lock', name: 'File locking', d: 'Concurrent write serialization prevents multiple agents from writing to the same file at the same time.' },
+  { key: 'scratchpad', name: 'Scratchpad', d: 'Session-shared ledger for inter-agent coordination — agents leave notes, partial results and status updates for each other.' },
+  { key: 'output_truncation', name: 'Output truncation', d: 'Per-tool byte/line caps and turn budget enforcement — oversized tool outputs are truncated with a marker, never silently dropped.' },
+  { key: 'stall_detection', name: 'Stall detection', d: 'Configurable warn (450s) and kill (1200s) timeouts per agent. Cancellation tokens propagate across the entire agent tree — cancelling the coordinator cancels every descendant. Heartbeat monitoring detects stuck workers.' },
+];
+---
+
+<Layout title="Operations — Fathom Research">
+  <main class="ops-page">
+    <div class="container">
+      <div class="ops-hero">
+        <p class="eyebrow" data-i18n="opsPage.hero.badge">Operations</p>
+        <h1 class="h2-sec" data-i18n="opsPage.hero.title">Built to run unattended.</h1>
+        <p class="copy-lg mx-auto" data-i18n="opsPage.hero.sub">Beyond the agent loop: durability, isolation, safety and observability — everything needed to leave the fleet running overnight.</p>
+      </div>
+
+      <div class="ops-grid">
+        {
+          blocks.map((b) => (
+            <div class="ops-card">
+              <div class="ops-name" data-i18n={'opsPage.blocks.' + b.key + '.name'}>{b.name}</div>
+              <p data-i18n={'opsPage.blocks.' + b.key + '.d'}>{b.d}</p>
+            </div>
+          ))
+        }
+      </div>
+
+      <div class="ops-cta">
+        <div class="bench-card-lg">
+          <h3 data-i18n="opsPage.cta.title">One binary, everything included</h3>
+          <p class="bench-sub" data-i18n="opsPage.cta.sub">CLI, TUI, HTTP server, dashboard, MCP server and worker processes all ship in a single static binary.</p>
+          <div class="code-card">
+            <pre><code>parallel-research run "..."            # one-shot
+parallel-research run --repeat 24 ...  # every 24h with diff alerts
+parallel-research jobs submit "..."    # durable background
+parallel-research serve                # API + dashboard
+parallel-research tui                  # interactive
+parallel-research mcp-serve            # MCP server</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .ops-page { padding: 70px 0 90px; }
+  .eyebrow { font-family: var(--font-mono); font-size: 13px; letter-spacing: .16px; text-transform: uppercase; color: var(--grey-600); }
+  .copy-lg { color: var(--grey-700); font-size: 17px; line-height: 1.55; max-width: 640px; }
+  .mx-auto { margin-left: auto; margin-right: auto; }
+
+  .ops-hero { max-width: 820px; margin: 0 auto 48px; text-align: center; padding: 0 24px; }
+  .ops-hero h1 { font-size: clamp(34px, 5vw, 68px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.02; margin-top: 12px; }
+  .ops-hero .copy-lg { margin-top: 20px; }
+
+  .ops-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .ops-card { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 24px; transition: box-shadow .25s, transform .25s var(--ease-out), border-color .25s; }
+  .ops-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--grey-400); }
+  .ops-name { font-family: var(--font-mono); font-weight: 600; font-size: 14px; margin-bottom: 10px; }
+  .ops-card p { color: var(--grey-600); font-size: 14px; line-height: 1.55; }
+
+  .ops-cta { max-width: 900px; margin: 48px auto 0; }
+  .bench-card-lg { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 28px; }
+  .bench-card-lg h3 { font-size: 22px; font-weight: 500; }
+  .bench-sub { color: var(--grey-600); font-size: 14px; margin: 8px 0 18px; line-height: 1.6; }
+  .code-card { border: 1px solid var(--grey-200); border-radius: var(--radius-md); background: var(--grey-900); overflow: hidden; }
+  .code-card pre { margin: 0; padding: 22px; overflow-x: auto; }
+  .code-card code { font-family: var(--font-mono); font-size: 13px; line-height: 1.8; color: var(--grey-100); white-space: pre; }
+</style>

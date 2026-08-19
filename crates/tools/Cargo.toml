@@ -1,0 +1,38 @@
+[package]
+name = "pr-tools"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+pr-core.workspace = true
+pr-llm.workspace = true
+pr-lsp.workspace = true
+pr-persistence.workspace = true
+pr-memory.workspace = true
+tokio.workspace = true
+reqwest.workspace = true
+scraper.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+async-trait.workspace = true
+tracing.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+url = "2"
+quick-xml.workspace = true
+glob = "0.3"
+regex = "1"
+urlencoding = "2"
+dirs = "5"
+lopdf = "0.31"
+phonenumber = "0.3"
+tokio-tungstenite = "0.24"
+base64 = "0.22"
+futures.workspace = true
+
+[dev-dependencies]
+tempfile = "3"
+proptest.workspace = true

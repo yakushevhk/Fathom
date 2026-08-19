@@ -1,0 +1,127 @@
+[package]
+name = "parallel-research"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[[bin]]
+name = "parallel-research"
+path = "src/main.rs"
+
+[workspace]
+resolver = "2"
+members = [
+    "crates/core",
+    "crates/llm",
+    "crates/agent",
+    "crates/tools",
+    "crates/mcp",
+    "crates/persistence",
+    "crates/memory",
+    "crates/server",
+    "crates/tui",
+    "crates/lsp",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[workspace.dependencies]
+tokio = { version = "1", features = ["full"] }
+tokio-util = "0.7"
+futures = "0.3"
+async-trait = "0.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+# rustls instead of default native-tls: the bench/sandbox containers have no
+# system CA bundle and (on alpine-based images) no libssl at all. rustls with
+# bundled Mozilla roots + static musl builds make the binary run anywhere.
+reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "http2", "charset", "rustls-tls"] }
+reqwest-eventsource = "0.6"
+rusqlite = { version = "0.32", features = ["bundled"] }
+schemars = "0.8"
+clap = { version = "4", features = ["derive"] }
+uuid = { version = "1", features = ["v7", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow = "1"
+thiserror = "1"
+scraper = "0.21"
+url = "2"
+quick-xml = "0.36"
+proptest = "1"
+pulldown-cmark = "0.10"
+which = "7"
+rust_xlsxwriter = "0.79"
+tokio-postgres = "0.7"
+deadpool-postgres = { version = "0.14", features = ["rt_tokio_1"] }
+pr-core = { path = "crates/core" }
+pr-llm = { path = "crates/llm" }
+pr-agent = { path = "crates/agent" }
+pr-tools = { path = "crates/tools" }
+pr-mcp = { path = "crates/mcp" }
+pr-persistence = { path = "crates/persistence" }
+pr-memory = { path = "crates/memory" }
+pr-server = { path = "crates/server" }
+pr-tui = { path = "crates/tui" }
+pr-lsp = { path = "crates/lsp" }
+
+[dependencies]
+pr-core.workspace = true
+pr-llm.workspace = true
+pr-agent.workspace = true
+pr-tools.workspace = true
+pr-persistence = { path = "crates/persistence", features = ["postgres"] }
+pr-memory.workspace = true
+pr-server.workspace = true
+pr-mcp = { path = "crates/mcp" }
+pr-tui.workspace = true
+pr-lsp.workspace = true
+ratatui = "0.29"
+crossterm = "0.28"
+tokio.workspace = true
+clap.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+anyhow.workspace = true
+toml.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+rusqlite.workspace = true
+
+[dev-dependencies]
+tempfile = "3"
+serde_json.workspace = true
+futures.workspace = true
+async-trait.workspace = true
+tokio.workspace = true
+
+[[test]]
+name = "e2e_basic_research"
+path = "tests/e2e/basic_research.rs"
+
+[[test]]
+name = "e2e_multi_agent"
+path = "tests/e2e/multi_agent.rs"
+
+[[test]]
+name = "e2e_real_tools"
+path = "tests/e2e/real_tools.rs"
+
+[[test]]
+name = "integration_export_notify"
+path = "tests/integration/export_notify.rs"
+
+[[test]]
+name = "integration_history"
+path = "tests/integration/history.rs"
+
+[profile.release]
+lto = true
+strip = true

@@ -1,0 +1,273 @@
+---
+// Pipeline3D — солидный инженерный дашборд-демо пайплайна (Three.js).
+// 3×4 сетка из 12 панелей-стадий: каждая панель = мини-карточка с
+// ID-номером, именем, числовым счётчиком и прогресс-баром. Данные
+// переходят от панели к панели по сетке, активная панель горит,
+// счётчик растёт, прогресс-бар заполняется. В конце — complete.
+// Стиль: wireframe-рамки, подложки-плитки, моноширинный текст,
+// тонкая фоновая сетка, без теней/planet.
+// Композиция: сетка-дашборд (передняя камера, лёгкий drag-наклон).
+---
+<div class="pipeline-wrap">
+  <div class="pipeline-stage">
+    <canvas data-pipeline3d role="img" aria-label="Live pipeline demo: query travels through search, parse, enrich, segment and send stages"></canvas>
+    <div class="pipeline-status">
+      <span class="ps-dot"></span>
+      <span class="ps-path" data-pipeline-path></span>
+    </div>
+  </div>
+</div>
+
+<script>
+  import * as THREE from 'three';
+
+  // ——— пайплайн из 12 шагов (сетка 3×4) ———
+  const STEPS = [
+    { n: 'search',        met: 'urls',     max: 48, hue: 206 },
+    { n: 'parse',         met: 'pages',    max: 120, hue: 25 },
+    { n: 'extract',       met: 'emails',   max: 38, hue: 260 },
+    { n: 'verify·emails', met: 'v-emails', max: 31, hue: 55 },
+    { n: 'verify·phones', met: 'v-phones', max: 12, hue: 160 },
+    { n: 'find·team',     met: 'people',   max: 9, hue: 210 },
+    { n: 'enrich',        met: 'social',   max: 9, hue: 28 },
+    { n: 'segment·role',  met: 'roles',    max: 9, hue: 148 },
+    { n: 'segment·co',    met: 'cos',      max: 9, hue: 72 },
+    { n: 'score',         met: 'hot',      max: 8, hue: 20 },
+    { n: 'compose',       met: 'msg',      max: 8, hue: 200 },
+    { n: 'send',          met: 'sent',     max: 8, hue: 130 },
+  ];
+  const COLS = 4, ROWS = 3; // 12 панелей
+  const STEP_MS = 1150;
+
+  const canvas = document.querySelector('[data-pipeline3d]');
+  const pathEl = document.querySelector('[data-pipeline-path]');
+
+  let W = 0, H = 460;
+  function cssSize() { const r = canvas.parentElement.getBoundingClientRect(); W = Math.max(320, Math.floor(r.width)); }
+  cssSize();
+
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  renderer.setSize(W, H, false);
+  renderer.setClearColor(0x0a0a0a, 0);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(44, W / H, 0.1, 50);
+  camera.position.set(0, 0, 4.7);
+  camera.lookAt(0, 0, 0);
+
+  function hex(h, s, l) { return new THREE.Color().setHSL(((h % 360) + 360) / 360, s / 100, l / 100); }
+
+  // ——— спрайты текста (моноширинный, CanvasTexture) ———
+  function makeTextSprite(text, { fs = 17, color = '#b8b8bf', weight = 500 } = {}) {
+    const m = 6;
+    const cv = document.createElement('canvas');
+    const ctx = cv.getContext('2d');
+    ctx.font = `${weight} ${fs}px "JetBrains Mono", ui-monospace, monospace`;
+    const w = Math.ceil(ctx.measureText(text).width) + m * 2;
+    const h = Math.ceil(fs * 1.4) + m;
+    cv.width = w; cv.height = h;
+    ctx.font = `${weight} ${fs}px "JetBrains Mono", ui-monospace, monospace`;
+    ctx.fillStyle = color; ctx.textBaseline = 'middle';
+    ctx.fillText(text, m, h / 2);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: new THREE.CanvasTexture(cv), transparent: true, depthWrite: false,
+    }));
+    sp.scale.set(w * 0.0042, h * 0.0042, 1);
+    return sp;
+  }
+  // спрайт с обновляемым текстом (для счётчиков) — пересоздаёт текстуру только при смене строки
+  function makeDynamic(fs, baseColor) {
+    const sp = makeTextSprite('0', { fs, color: baseColor, weight: 600 });
+    sp.userData = { _last: null };
+    sp.dyn = (txt, color) => {
+      if (txt === sp.userData._last) return;
+      sp.userData._last = txt;
+      const m = 6;
+      const cv = document.createElement('canvas');
+      const ctx = cv.getContext('2d');
+      ctx.font = `600 ${fs}px "JetBrains Mono", ui-monospace, monospace`;
+      const w = Math.ceil(ctx.measureText(txt).width) + m * 2;
+      const h = Math.ceil(fs * 1.4) + m;
+      cv.width = w; cv.height = h;
+      ctx.font = `600 ${fs}px "JetBrains Mono", ui-monospace, monospace`;
+      ctx.fillStyle = color; ctx.textBaseline = 'middle';
+      ctx.fillText(txt, m, h / 2);
+      sp.material.map = new THREE.CanvasTexture(cv);
+      sp.material.needsUpdate = true;
+      sp.scale.set(w * 0.0042, h * 0.0042, 1);
+    };
+    return sp;
+  }
+
+  // ——— прямоугольники-линии и подложки ———
+  function makeLineRect(x, y, w, h, mat) {
+    const pts = [new THREE.Vector3(x - w / 2, y - h / 2, 0), new THREE.Vector3(x + w / 2, y - h / 2, 0),
+      new THREE.Vector3(x + w / 2, y + h / 2, 0), new THREE.Vector3(x - w / 2, y + h / 2, 0),
+      new THREE.Vector3(x - w / 2, y - h / 2, 0)];
+    return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat);
+  }
+  function makePlane(w, h, color, opacity = 1) {
+    return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({
+      color, transparent: opacity < 1, opacity, depthWrite: false,
+    }));
+  }
+
+  // ——— build панели ———
+  const CARD_W = 1.62, CARD_H = 1.06;
+  const SPX = 1.72, SPY = 1.22;
+  const x0 = -(COLS - 1) * SPX / 2;
+  const y0 = (ROWS - 1) * SPY / 2;
+  const panels = STEPS.map((s, idx) => {
+    const col = idx % COLS, row = Math.floor(idx / COLS);
+    const x = x0 + col * SPX;
+    const y = y0 - row * SPY;
+    // тёмная подложка-плитка
+    const tile = makePlane(CARD_W, CARD_H, 0x111114, 0.55);
+    tile.position.set(x, y, -0.01);
+    // материал рамки
+    const mat = new THREE.LineBasicMaterial({ color: hex(s.hue, 45, 52) });
+    const frame = makeLineRect(x, y, CARD_W, CARD_H, mat);
+    // ID-номер (01..12) — маленький, верх-лево
+    const id = makeTextSprite(String(idx + 1).padStart(2, '0'), { fs: 12, color: '#5c5c64' });
+    id.position.set(x - CARD_W / 2 + 0.26, y + CARD_H / 2 - 0.24, 0);
+    // имя — по центру
+    const name = makeTextSprite(s.n, { fs: 16, color: '#d2d2da', weight: 600 });
+    name.position.set(x, y + 0.26, 0);
+    // счётчик-значение
+    const cnt = makeDynamic(26, hex(s.hue, 85, 80));
+    cnt.position.set(x, y - 0.02, 0);
+    // подпись единицы измерения — мелко
+    const unit = makeTextSprite(s.met, { fs: 10, color: '#6a6a72' });
+    unit.position.set(x, y - 0.24, 0);
+    // прогресс-бар: рамка + заливка
+    const PROG_W = 0.9, PROG_H = 0.05;
+    const progMat = new THREE.LineBasicMaterial({ color: 0x3a3a42 });
+    const progFrame = makeLineRect(x, y - 0.38, PROG_W, PROG_H, progMat);
+    const fillMat = new THREE.MeshBasicMaterial({ color: hex(s.hue, 80, 70) });
+    const fill = makePlane(PROG_W, PROG_H, hex(s.hue, 80, 70), 0.95);
+    fill.position.set(x, y - 0.38, 0);
+    // anchor fill to left edge so scale.x grows rightward
+    fill.geometry.translate(PROG_W / 2, 0, 0);
+    fill.scale.x = 0;
+    // собираем объекты в группу этой панели
+    const g = new THREE.Group();
+    g.add(tile, frame, id, name, cnt, unit, progFrame, fill);
+    scene.add(g);
+    return { ...s, idx, x, y, g, mat, tile, name, cnt, unit, fill, fillMat };
+  });
+
+  // фоновая тонкая сетка-поле (нижние 2/3)
+  const grid = new THREE.GridHelper(9, 18, hex(0, 0, 32), hex(0, 0, 24));
+  grid.position.y = -CARD_H * 1.5;
+  if (grid.material && !Array.isArray(grid.material)) { grid.material.transparent = true; grid.material.opacity = 0.45; }
+  scene.add(grid);
+
+  function setPath(t) { if (pathEl && pathEl.textContent !== t) pathEl.textContent = t; }
+  function stepStatus(st, procText) {
+    return `${String(st.idx + 1).padStart(2, '0')} ${st.n} · ${st.max} ${st.met} ${procText || ''}`;
+  }
+
+  // ——— фазовое обновление ———
+  function update(now) {
+    const total = STEPS.length;
+    const span = STEP_MS * total + STEP_MS; // 12 шагов + 1 пауза complete
+    const t = now % span;
+    const stepIdx = Math.min(total - 1, Math.floor(t / STEP_MS));
+    const alpha = (t - stepIdx * STEP_MS) / STEP_MS;
+    const isComplete = t >= STEP_MS * total;
+
+    panels.forEach((p) => {
+      const active = p.idx === stepIdx;
+      const done = isComplete || p.idx < stepIdx;
+      // рамка
+      if (active) p.mat.color.copy(hex(p.hue, 90, 74));
+      else if (done) p.mat.color.copy(hex(p.hue, 60, 46));
+      else p.mat.color.copy(hex(p.hue, 40, 40));
+      // подложка активной ярче
+      p.tile.material.opacity = active ? 0.8 : 0.5;
+      // счётчик
+      if (active) {
+        const v = Math.round(p.max * Math.min(1, alpha + 0.04));
+        p.cnt.dyn(String(v), hex(p.hue, 90, 86));
+      } else {
+        p.cnt.dyn(String(done ? p.max : 0), done ? hex(p.hue, 80, 74) : '#595961');
+      }
+      // прогресс-бар
+      const prog = active ? Math.min(1, alpha + 0.04) : done ? 1 : 0;
+      p.fill.scale.x = Math.max(0.0001, prog);
+      p.fill.material.color.copy(active ? hex(p.hue, 85, 74) : done ? hex(p.hue, 70, 60) : hex(0, 0, 30));
+    });
+
+    const activePanel = panels[stepIdx];
+    if (isComplete) setPath('[complete] 47 contacts · 12 verified · 9 sent ✓');
+    else setPath(stepStatus(activePanel, '▸ ' + (stepIdx === total - 1 ? 'complete' : 'next ' + (stepIdx + 1))));
+  }
+
+  // ——— рендер-цикл ———
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let dragging = false, lastX = 0, lastY = 0, ty = 0, tx = 0;
+  canvas.style.cursor = 'grab';
+  canvas.addEventListener('pointerdown', (e) => { dragging = true; lastX = e.clientX; lastY = e.clientY; canvas.style.cursor = 'grabbing'; });
+  window.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    tx += (e.clientX - lastX) * 0.0016;
+    ty = Math.max(-0.35, Math.min(0.35, ty + (e.clientY - lastY) * 0.0016));
+    lastX = e.clientX; lastY = e.clientY;
+  });
+  window.addEventListener('pointerup', () => { dragging = false; canvas.style.cursor = 'grab'; });
+
+  function render(now) {
+    try {
+      const auto = 0.03 * Math.cos(now * 0.00011);
+      camera.position.set(0, ty + auto * 0.18, 4.7);
+      camera.lookAt(tx * 0.3, 0, 0);
+      update(now);
+      renderer.render(scene, camera);
+    } catch (err) { if (pathEl) pathEl.textContent = 'ERR ' + err.message; }
+  }
+  function onResize() { cssSize(); renderer.setSize(W, H, false); camera.aspect = W / H; camera.updateProjectionMatrix(); }
+  window.addEventListener('resize', onResize);
+
+  const io = 'IntersectionObserver' in window
+    ? new IntersectionObserver((es) => { let v = false; for (const e of es) if (e.isIntersecting) v = true; v ? start() : stop(); }, { rootMargin: '60px' })
+    : null;
+  const host = canvas.closest('.pipeline-wrap');
+  io && host && io.observe(host);
+
+  let raf = null;
+  function loop(now) { render(now); raf = requestAnimationFrame(loop); }
+  function start() { if (!raf && !reduced) loop(); }
+  function stop() { if (raf) { cancelAnimationFrame(raf); raf = null; } }
+  if (reduced) { render(5.5 * STEP_MS); setPath('search→parse→extract→…→send'); }
+  else { io || start(); }
+</script>
+
+<style>
+  .pipeline-wrap { max-width: 980px; margin: 0 auto; }
+  .pipeline-stage {
+    position: relative;
+    background: #0a0a0a;
+    border: 1px solid #1d1d1d;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.7);
+  }
+  .pipeline-stage canvas { display: block; width: 100%; height: 460px; touch-action: none; }
+  .pipeline-status {
+    position: absolute;
+    left: 16px; bottom: 14px;
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--font-mono); font-size: 12px; color: #bdbdbd;
+    background: rgba(18, 18, 18, 0.9); border: 1px solid #26262b; border-radius: 6px;
+    padding: 6px 12px; letter-spacing: 0.02em;
+    max-width: calc(100% - 32px); white-space: nowrap; overflow: hidden;
+  }
+  .ps-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #8fb6cc; box-shadow: 0 0 8px #8fb6cc;
+    animation: psPulse 1.2s ease-in-out infinite; flex: none;
+  }
+  .ps-path { overflow: hidden; text-overflow: ellipsis; }
+  @keyframes psPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+</style>

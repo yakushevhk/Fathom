@@ -1,0 +1,227 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import AgentCanvas from '../../components/AgentCanvas.astro';
+
+const crew = [
+  { name: 'Researcher', href: '/agents/researcher', current: true },
+  { name: 'Searching', href: '/agents/searching' },
+  { name: 'Extracting', href: '/agents/extracting' },
+  { name: 'Structuring', href: '/agents/structuring' },
+  { name: 'Cleaning', href: '/agents/cleaning' },
+  { name: 'Memoring', href: '/agents/memoring' },
+  { name: 'Outreach', href: '/agents/outreach' },
+];
+
+const capabilities = [
+  { n: 'The agent loop', d: 'LLM → tools → repeat, up to 50 iterations per agent — with true token streaming: text deltas arrive live, tool calls are assembled from stream fragments, and a broken stream falls back to a plain completion instead of failing.' },
+  { n: 'OSINT workflow, codified', d: 'The Researcher role prompt runs a fixed arc: locate targets (search_business_directory, find_leads) → harvest (parse_corporate_site, extract_contacts, search_social) → verify (verify_email, verify_phone, suggest_emails) → persist (save_contacts).' },
+  { n: 'Hierarchical fan-out', d: 'spawn_agent grows a tree of sub-agents up to max_depth, with explicit context handoff and inherited token budgets. background mode detaches a child and delivers its result later as a notice — the parent keeps working.' },
+  { n: 'Cite or it did not happen', d: 'A source-quality hierarchy ranks academic above official above news above blogs above forums. Every finding records its URL; sources.md dedupes citations across the whole fleet.' },
+  { n: 'Multi-format intake', d: 'web_fetch and web_crawl for pages, web_feed for RSS / Atom / sitemaps (~1.1M items/s in the built-in bench), analyze_image for screenshots and documents, pdf_extract for filings, code_symbols + repo_map for codebases.' },
+  { n: 'Untrusted by design', d: 'Fetched pages are framed as untrusted data and scanned for prompt-injection patterns before entering context; the SSRF guard blocks internal IPs on every fetch and every redirect hop.' },
+];
+
+const flow = [
+  { t: 'Plan', d: 'The coordinator decomposes the request into 2–5 non-overlapping subtasks and persists them; lead-gen queries get per-task contact quotas.' },
+  { t: 'Fan out', d: 'Each subtask becomes a Researcher — an in-process JoinSet task or an isolated OS worker process — with its share of the session token budget.' },
+  { t: 'Research loop', d: 'Search → fetch → extract → record the source URL, again and again. Children spawn via spawn_agent up to max_depth; background children report back as notices.' },
+  { t: 'Reflect', d: 'A count-based check closes lead-gen quotas with a gap-filling round; Goal Mode’s LLM judge replans up to replan_rounds times until the goal is covered.' },
+  { t: 'Hand off', d: 'Budget-capped summaries, structured findings and deduped sources flow into synthesis, memory and the contact DB — personalization fuel for outreach.' },
+];
+
+const hood = [
+  ['agent loop', 'LLM → tool calls → repeat, max_iterations default 50; steering messages and background notices injected at turn boundaries'],
+  ['streaming', 'stream: true — live text deltas, tool calls assembled from fragments, automatic non-streaming fallback on broken or empty streams'],
+  ['spawn_agent', 'hierarchy up to max_depth (default 2); roles researcher / analyst / verifier / writer; explicit context handoff; background mode'],
+  ['fan-out', 'coordinator splits the query into 2–5 subtasks; JoinSet or OS-process workers (use_multiprocess); max_agents 20'],
+  ['budgets', 'session_token_limit split across each batch (floor 4,096 tokens); children inherit what is left of the parent’s cap'],
+  ['doom loop', '3 identical tool calls in a row → first offense nudges the agent, second offense stops it'],
+  ['goal mode', 'LLM judge compares results with the goal; up to replan_rounds (default 1) gap-filling rounds, at most 3 new subtasks each'],
+  ['fetch safety', '2 MiB body cap, 50,000-char text truncation, injection scan, SSRF guard with ≤ 5 redirects re-validated per hop'],
+  ['prompt', '3 cache tiers (stable / context / volatile) for prefix-cache hits; memory digest injected at depth 0'],
+  ['stall guard', 'no progress for 450s → warning; 1200s → the agent is cancelled'],
+];
+
+const tools = [
+  'web_search', 'web_fetch', 'web_crawl', 'web_feed', 'parse_html', 'extract_json',
+  'parse_corporate_site', 'extract_contacts', 'search_business_directory', 'search_social',
+  'search_news', 'find_leads', 'verify_email', 'verify_phone', 'verify_social_profile',
+  'suggest_emails', 'save_contacts', 'analyze_image', 'pdf_extract', 'code_symbols',
+  'repo_map', 'spawn_agent',
+];
+---
+
+<Layout title="Researcher Agent — Fathom Research">
+  <main class="ag-page">
+    <div class="container">
+      <!-- Hero -->
+      <div class="ag-hero">
+        <p class="eyebrow" data-i18n="agents.researcher.hero.eyebrow">AGENT 01 / 07</p>
+        <h1 class="h2-sec" data-i18n="agents.researcher.hero.title">Researcher</h1>
+        <p class="copy-lg mx-auto" data-i18n="agents.researcher.hero.sub">The field worker of the outreach pipeline. It searches the open web, reads primary sources and brings back cited facts plus raw contacts — the raw truth every personalized message is later written from.</p>
+        <div class="hero-canvas">
+          <AgentCanvas agents={[{ name: 'Researcher', mode: 'researcher', hue: 206 }]} />
+        </div>
+      </div>
+
+      <!-- Cross-nav -->
+      <div class="chips chips-nav">
+        {
+          crew.map((a) =>
+            a.current ? (
+              <span class="chip chip--on">{a.name}</span>
+            ) : (
+              <a class="chip" href={a.href}>{a.name}</a>
+            )
+          )
+        }
+      </div>
+
+      <!-- What it does -->
+      <div class="sec-head">
+        <p class="eyebrow" data-i18n="agents.researcher.what.eyebrow">What it does</p>
+        <h2 class="h3-sec" data-i18n="agents.researcher.what.title">One loop, built to gather truth</h2>
+      </div>
+      <div class="api-grid">
+        {capabilities.map((c, i) => (
+          <div class="api-card">
+            <div class="api-name" data-i18n={`agents.researcher.cap.${i}.n`}>{c.n}</div>
+            <p data-i18n={`agents.researcher.cap.${i}.d`}>{c.d}</p>
+          </div>
+        ))}
+      </div>
+
+      <!-- How it works -->
+      <div class="sec-head">
+        <p class="eyebrow" data-i18n="agents.researcher.how.eyebrow">How it works</p>
+        <h2 class="h3-sec" data-i18n="agents.researcher.how.title">From query to cited findings</h2>
+      </div>
+      <div class="flow">
+        {flow.map((s, i) => (
+          <div class="flow-step">
+            <span class="flow-num">{i + 1}</span>
+            <h3 data-i18n={`agents.researcher.flow.${i}.t`}>{s.t}</h3>
+            <p data-i18n={`agents.researcher.flow.${i}.d`}>{s.d}</p>
+          </div>
+        ))}
+      </div>
+
+      <!-- Under the hood -->
+      <div class="sec-head">
+        <p class="eyebrow" data-i18n="agents.researcher.hood.eyebrow">Under the hood</p>
+        <h2 class="h3-sec" data-i18n="agents.researcher.hood.title">The runtime underneath</h2>
+      </div>
+      <div class="mini-table-wrap">
+        <table class="mini-table">
+          <thead><tr><th data-i18n="agents.researcher.hood.keyCol">Key</th><th data-i18n="agents.researcher.hood.detailCol">Detail</th></tr></thead>
+          <tbody>
+            {hood.map((r, i) => (
+              <tr>
+                <td data-i18n={`agents.researcher.hood.${i}.k`}>{r[0]}</td>
+                <td data-i18n={`agents.researcher.hood.${i}.d`}>{r[1]}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Tools -->
+      <div class="sec-head">
+        <p class="eyebrow" data-i18n="agents.researcher.tools.eyebrow">Tools</p>
+        <h2 class="h3-sec" data-i18n="agents.researcher.tools.title">What the Researcher can call</h2>
+      </div>
+      <div class="chips">
+        {tools.map((t) => (
+          <span class="chip chip--tool">{t}</span>
+        ))}
+      </div>
+
+      <!-- Feeds the outreach pipeline -->
+      <div class="feat">
+        <div class="feat-copy">
+          <p class="eyebrow" data-i18n="agents.researcher.feeds.eyebrow">Feeds the outreach pipeline</p>
+          <h2 class="h3-sec" data-i18n="agents.researcher.feeds.title">Cited facts become personal lines</h2>
+          <p class="copy-lg" data-i18n="agents.researcher.feeds.body">Everything the Researcher gathers is personalization material: cited facts, source URLs, raw contacts with provenance. Extracted contacts are auto-persisted with the page they came from; verified emails and phones land in the contact DB and sync to the CRM without duplicates. Downstream, the outreach step writes each message against exactly these facts — a hiring round, a funding event, a tech migration — so the first line is never generic.</p>
+        </div>
+        <div class="code-card">
+          <pre><code>{`finding #7   person: Jane Doe — CTO, Acme
+email        jane@acme.com  [verified: MX + SMTP 250]
+sources      acme.com/team · news: "Acme closes Series B"
+signal       hiring 6 platform engineers (posted Aug 3)
+status       saved to contacts → CRM (dedup by crm_id)`}</code></pre>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="cta-strip">
+        <h2 data-i18n="agents.researcher.cta.title">Truth in. Personal message out.</h2>
+        <div class="cta-links">
+          <a href="/agents/outreach" class="btn btn-secondary" data-i18n="agents.researcher.cta.prev">&larr; Outreach</a>
+          <a href="/features/auto-outreach" class="btn btn-primary" data-i18n="agents.researcher.cta.auto">Auto outreach →</a>
+          <a href="/agents/searching" class="btn btn-secondary" data-i18n="agents.researcher.cta.next">Searching &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .ag-page { padding: 70px 0 90px; }
+  .eyebrow { font-family: var(--font-mono); font-size: 13px; letter-spacing: .16px; text-transform: uppercase; color: var(--grey-600); }
+  .h3-sec { font-size: clamp(20px, 2.4vw, 34px); font-weight: 500; letter-spacing: -0.02em; margin: 12px 0 0; }
+  .ic { font-family: var(--font-mono); font-size: .85em; background: var(--grey-100); border: 1px solid var(--grey-200); padding: 1px 6px; border-radius: 5px; }
+  .copy-lg { color: var(--grey-700); font-size: 17px; line-height: 1.55; max-width: 640px; }
+  .mx-auto { margin-left: auto; margin-right: auto; }
+
+  .ag-hero { max-width: 820px; margin: 0 auto 40px; text-align: center; padding: 0 24px; }
+  .ag-hero h1 { font-size: clamp(34px, 5vw, 68px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.02; margin-top: 12px; }
+  .ag-hero .copy-lg { margin-top: 20px; }
+
+  /* dark canvas panel (both themes) */
+  .hero-canvas { background: #0a0a0a; border: 1px solid #222; border-radius: var(--radius-xl); padding: 26px 20px; max-width: 320px; margin: 34px auto 0; }
+  .hero-canvas :global(.agent-grid) { max-width: none; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chips-nav { justify-content: center; margin: 0 auto 8px; max-width: 860px; }
+  .chip { font-family: var(--font-mono); font-size: 12.5px; color: var(--grey-700); background: var(--bg-card); border: 1px solid var(--grey-300); border-radius: var(--radius-full); padding: 7px 14px; transition: border-color .2s, color .2s; }
+  a.chip:hover { border-color: var(--grey-500); color: var(--grey-900); }
+  .chip--on { background: var(--grey-900); border-color: var(--grey-900); color: #fff; }
+  .chip--tool { color: var(--grey-800); cursor: default; }
+
+  .sec-head { max-width: 720px; margin: 60px auto 28px; text-align: center; }
+
+  .api-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; background: var(--grey-300); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--grey-300); }
+  .api-card { background: var(--bg-card); padding: 24px; display: flex; flex-direction: column; gap: 8px; }
+  .api-card .api-name { font-family: var(--font-mono); font-weight: 600; font-size: 14px; }
+  .api-card p { color: var(--grey-600); font-size: 14px; line-height: 1.55; }
+  @media (max-width: 800px) { .api-grid { grid-template-columns: 1fr; } }
+
+  .flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .flow-step { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 20px; }
+  .flow-num { display: inline-flex; width: 26px; height: 26px; align-items: center; justify-content: center; border-radius: 50%; background: var(--grey-900); color: #fff; font-family: var(--font-mono); font-size: 12px; margin-bottom: 12px; }
+  .flow-step h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .flow-step p { font-size: 13px; color: var(--grey-600); line-height: 1.55; }
+  @media (max-width: 1000px) { .flow { grid-template-columns: repeat(2, 1fr); } }
+
+  .mini-table-wrap { border: 1px solid var(--grey-200); border-radius: 8px; overflow: auto; background: var(--bg-card); }
+  .mini-table { width: 100%; border-collapse: collapse; font-size: 13px; font-family: var(--font-mono); }
+  .mini-table th { font-size: 10px; text-transform: uppercase; letter-spacing: .6px; color: var(--grey-600); text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--grey-200); background: var(--grey-50); }
+  .mini-table td { padding: 10px 14px; border-bottom: 1px solid var(--grey-100); color: var(--grey-800); vertical-align: top; }
+  .mini-table td:first-child { white-space: nowrap; color: var(--grey-900); font-weight: 600; }
+  .mini-table tr:last-child td { border-bottom: none; }
+
+  .feat { display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: center; padding: 56px 0 0; }
+  @media (max-width: 900px) { .feat { grid-template-columns: 1fr; gap: 28px; } }
+  .feat .h3-sec { margin-bottom: 16px; }
+
+  .code-card { border: 1px solid var(--grey-200); border-radius: var(--radius-md); background: var(--bg-dark); overflow: hidden; box-shadow: var(--shadow-lg); }
+  .code-card pre { margin: 0; padding: 22px; overflow-x: auto; }
+  .code-card code { font-family: var(--font-mono); font-size: 13px; line-height: 1.8; color: var(--grey-100); white-space: pre; }
+
+  .cta-strip { margin-top: 64px; background: var(--bg-dark); border-radius: var(--radius-xl); padding: 48px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+  .cta-strip h2 { color: #fff; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; }
+  .cta-links { display: flex; gap: 10px; flex-wrap: wrap; }
+  .cta-strip .btn-primary { background: var(--bg-card); color: var(--grey-900); }
+  .cta-strip .btn-secondary { border-color: rgba(255,255,255,.25); color: rgba(255,255,255,.85); }
+  .cta-strip .btn-secondary:hover { border-color: rgba(255,255,255,.5); color: #fff; }
+</style>

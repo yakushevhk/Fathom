@@ -1,0 +1,187 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const categories = [
+  {
+    key: 'web', name: 'Web',
+    icon: '🌐',
+    desc: 'Multi-source search and fetching across 7 backends.',
+    tools: ['web_search', 'web_fetch', 'web_crawl', 'web_feed'],
+  },
+  {
+    key: 'parsing', name: 'Parsing',
+    icon: '🧩',
+    desc: 'HTML and JSON extraction from any document.',
+    tools: ['parse_html', 'extract_json'],
+  },
+  {
+    key: 'code', name: 'Code',
+    icon: '⌘',
+    desc: 'Map codebases and extract symbols.',
+    tools: ['code_symbols', 'repo_map'],
+  },
+  {
+    key: 'lsp', name: 'LSP',
+    icon: '🔮',
+    desc: 'Language Server Protocol integration — document_symbols, goto_definition, find_references, hover, workspace_symbols. Auto-detects project language and installs the LSP server on demand.',
+    tools: ['lsp'],
+  },
+  {
+    key: 'files', name: 'Files',
+    icon: '📁',
+    desc: 'Read, write, edit, search files with undo history.',
+    tools: ['file_read', 'file_write', 'file_edit', 'glob', 'grep'],
+  },
+  {
+    key: 'exec', name: 'Execution',
+    icon: '⚙️',
+    desc: 'Run shell and scripting languages safely.',
+    tools: ['shell', 'python_exec', 'node_exec'],
+  },
+  {
+    key: 'browser', name: 'Browser (CDP)',
+    icon: '🖥️',
+    desc: 'Drive a real Chrome via DevTools Protocol.',
+    tools: ['browser_navigate', 'browser_screenshot', 'browser_click', 'browser_type', 'browser_extract'],
+  },
+  {
+    key: 'vision', name: 'Vision',
+    icon: '👁️',
+    desc: 'Analyze images with a vision model.',
+    tools: ['analyze_image'],
+  },
+  {
+    key: 'git', name: 'Git',
+    icon: '🔀',
+    desc: 'Status, diffs, and safe commits/pushes.',
+    tools: ['git_status', 'git_diff', 'git_log', 'git_add', 'git_commit', 'git_push'],
+  },
+  {
+    key: 'pdf', name: 'PDF',
+    icon: '📄',
+    desc: 'Extract text and structure from PDFs.',
+    tools: ['pdf_extract'],
+  },
+  {
+    key: 'osint', name: 'OSINT / Lead Gen',
+    icon: '🕵️',
+    desc: 'Find contacts, companies, and enrichment data.',
+    tools: ['extract_contacts', 'save_contacts', 'find_leads', 'search_business_directory', 'search_social', 'parse_corporate_site', 'search_news'],
+  },
+  {
+    key: 'verify', name: 'Verification',
+    icon: '✅',
+    desc: 'Validate emails, phones, and social profiles.',
+    tools: ['verify_email', 'suggest_emails', 'verify_phone', 'verify_social_profile'],
+  },
+  {
+    key: 'enrich', name: 'Enrichment',
+    icon: '✨',
+    desc: 'Add structured context to companies and people.',
+    tools: ['enrich_company', 'enrich_person'],
+  },
+  {
+    key: 'meta', name: 'Meta',
+    icon: '🧠',
+    desc: 'Spawn children, inspect memory.',
+    tools: ['spawn_agent', 'memory'],
+  },
+  {
+    key: 'memory', name: 'Semantic Memory',
+    icon: '💾',
+    desc: 'Long-term knowledge base + entity graph.',
+    tools: ['memory_absorb', 'memory_search', 'memory_digest', 'memory_boost', 'memory_link', 'memory_graph'],
+  },
+  {
+    key: 'control', name: 'Control plane',
+    icon: '🎛️',
+    desc: 'Operator interaction and session tools.',
+    tools: ['question', 'skill', 'scratchpad', 'undo'],
+  },
+];
+---
+
+<Layout title="Tools — Fathom Research">
+  <main class="tools-page">
+    <div class="container">
+      <div class="tools-hero">
+        <p class="eyebrow" data-i18n="tools.hero.badge">Tools</p>
+        <h1 class="h2-sec" data-i18n-html data-i18n="tools.hero.title1">50+ built-in tools<br /><span class="muted">(+5 browser via CDP)</span></h1>
+        <p class="copy-lg mx-auto" data-i18n="tools.hero.sub">Every tool implements a single <code class="inline-code">Tool</code> trait and runs in a parallel-safe registry. Read-only tools execute concurrently; writes serialize automatically.</p>
+      </div>
+
+      <div class="tools-grid">
+        {
+          categories.map((c) => (
+            <div class="tool-cat">
+              <div class="tool-cat__head">
+                <span class="tool-cat__icon">{c.icon}</span>
+                <h3 class="tool-cat__name" data-i18n={'tools.cat.' + c.key + '.name'}>{c.name}</h3>
+              </div>
+              <p class="tool-cat__desc" data-i18n={'tools.cat.' + c.key + '.desc'}>{c.desc}</p>
+              <ul class="tool-list">
+                {
+                  c.tools.map((t) => (
+                    <li><code>{t}</code></li>
+                  ))
+                }
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+
+      <div class="tools-cta">
+        <div class="bench-card-lg">
+          <h3 data-i18n="tools.parallel.title">Fathom-safe by construction</h3>
+          <p class="bench-sub" data-i18n-html data-i18n="tools.parallel.sub">Each tool declares whether it is parallel-safe. Read-only tools (search, parse, fetch) run concurrently via <code class="inline-code">execute_batch_spawn</code>; writes serialize automatically with path-overlap detection, so two agents never edit the same file at once. That is how CPU batches hit 3.78× on real workloads.</p>
+          <div class="more-links">
+            <a href="/benchmarks" class="btn btn-secondary" data-i18n="tools.parallel.numbers">See the numbers</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="tools-cta">
+        <div class="bench-card-lg">
+          <h3 data-i18n="tools.mcp.title">Plus MCP</h3>
+          <p class="bench-sub" data-i18n-html data-i18n="tools.mcp.sub">All 50+ tools are exposed to external MCP clients via <code class="inline-code">parallel-research mcp-serve</code>, and external MCP servers (stdio / HTTP / OAuth) are auto-discovered and made available to agents.</p>
+          <div class="more-links">
+            <a href="/docs/tools" class="btn btn-primary" data-i18n="tools.mcp.docs">Full tool docs</a>
+            <a href="/mcp" class="btn btn-secondary" data-i18n="tools.mcp.mcp">MCP both ways</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .tools-page { padding: 70px 0 90px; }
+
+  .tools-hero { max-width: 820px; margin: 0 auto 48px; text-align: center; padding: 0 24px; }
+  .eyebrow { font-family: var(--font-mono); font-size: 13px; letter-spacing: .16px; text-transform: uppercase; color: var(--grey-600); }
+  .tools-hero h1 { font-size: clamp(34px, 5vw, 68px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.02; margin-top: 12px; }
+  .tools-hero h1 .muted { color: var(--grey-500); font-size: 0.55em; }
+  .tools-hero .copy-lg { margin-top: 20px; }
+  .inline-code { font-family: var(--font-mono); font-size: 0.85em; background: var(--grey-100); border: 1px solid var(--grey-200); padding: 1px 6px; border-radius: 5px; }
+
+  .tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+
+  .tool-cat { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 24px; transition: box-shadow .25s, transform .25s var(--ease-out), border-color .25s; }
+  .tool-cat:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); border-color: var(--grey-400); }
+
+  .tool-cat__head { display: flex; align-items: center; gap: 10px; }
+  .tool-cat__icon { font-size: 1.4rem; line-height: 1; }
+  .tool-cat__name { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+
+  .tool-cat__desc { color: var(--grey-600); font-size: 14px; line-height: 1.5; margin: 10px 0 14px; }
+
+  .tool-list { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+  .tool-list li { }
+  .tool-list code { font-family: var(--font-mono); font-size: 11px; color: var(--grey-700); background: var(--grey-100); border: 1px solid var(--grey-200); padding: 3px 8px; border-radius: 5px; }
+
+  .tools-cta { max-width: 900px; margin: 44px auto 0; }
+  .bench-card-lg { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 28px; }
+  .bench-sub { color: var(--grey-600); font-size: 14px; margin: 8px 0 18px; line-height: 1.6; }
+  .more-links { display: flex; gap: 10px; flex-wrap: wrap; }
+</style>

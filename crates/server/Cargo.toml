@@ -1,0 +1,30 @@
+[package]
+name = "pr-server"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+pr-core.workspace = true
+pr-agent.workspace = true
+pr-llm.workspace = true
+pr-tools.workspace = true
+pr-persistence.workspace = true
+pr-memory.workspace = true
+axum = "0.7"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+tokio.workspace = true
+tokio-util.workspace = true
+futures.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+anyhow.workspace = true
+
+[dev-dependencies]
+async-trait.workspace = true
+tower = { version = "0.4", features = ["util"] }
+http-body-util = "0.1"
+tempfile = "3"

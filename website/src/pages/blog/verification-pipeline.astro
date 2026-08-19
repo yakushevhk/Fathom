@@ -1,0 +1,105 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="Five gates: email verification — Fathom Research Blog">
+  <main class="article-page">
+    <div class="article-wrap">
+
+      <!-- Breadcrumb -->
+      <div class="breadcrumb">
+        <a href="/blog">Blog</a>
+        <span>›</span>
+        <span>Verification</span>
+      </div>
+
+      <!-- Hero -->
+      <header class="article-hero">
+        <div class="article-meta">
+          <span data-i18n="postVerify.hero.date">August 10, 2026</span>
+          <span>·</span>
+          <span data-i18n="postVerify.hero.readTime">7 min read</span>
+        </div>
+        <span class="article-tag" data-i18n="postVerify.hero.tag">Verification</span>
+        <h1 class="article-title" data-i18n-html data-i18n="postVerify.hero.title">Five gates: how we verify every email before it hits the CRM</h1>
+        <p class="article-intro" data-i18n="postVerify.hero.intro">Most lead-gen tools treat email verification as a checkbox. We built a five-stage pipeline with an append-only receipt ledger so you can prove — not just claim — that a contact was verified.</p>
+      </header>
+
+      <!-- Highlights -->
+      <div class="highlights">
+        <div class="highlights-title" data-i18n="postVerify.highlights.title">Highlights</div>
+        <ul>
+          <li data-i18n-html data-i18n="postVerify.highlights.0"><code>verify_email</code> runs five sequential gates: syntax, MX, disposable, role-based, SMTP probe</li>
+          <li data-i18n-html data-i18n="postVerify.highlights.1">SMTP probe connects to port 25 and runs HELO → MAIL FROM → RCPT TO — never sends message content</li>
+          <li data-i18n-html data-i18n="postVerify.highlights.2">Append-only verification receipt ledger keyed by (kind, value) — one green can never silence a red</li>
+          <li data-i18n-html data-i18n="postVerify.highlights.3">Three verification levels: <code>Verified</code> (SMTP accepted), <code>Partial</code> (syntax+MX ok), <code>Unverified</code></li>
+        </ul>
+      </div>
+
+      <!-- Body -->
+      <div class="article-body">
+        <h2 data-i18n="postVerify.s1.title">Why five gates?</h2>
+        <p data-i18n="postVerify.s1.p1">A single regex check tells you nothing. An email can pass syntax validation, resolve MX records, and still bounce — because the mailbox doesn't exist, the domain is a catch-all, or the address is a department alias that never reads cold outreach. Each gate eliminates a different class of false positives.</p>
+
+        <h2 data-i18n="postVerify.s2.title">The SMTP handshake</h2>
+        <p data-i18n="postVerify.s2.p1">The optional fifth gate connects to the best MX host on port 25 with a 10-second timeout. The dialogue: read the banner (220), say HELO, issue MAIL FROM, then RCPT TO — the actual deliverability signal. The server responds 250 (accepted) or 5xx (rejected). We never send message content — just the envelope. A 4xx response means greylisting, which we mark as inconclusive rather than false-negative.</p>
+
+        <h2 data-i18n="postVerify.s3.title">The receipt ledger</h2>
+        <p data-i18n="postVerify.s3.p1">Every check writes a typed receipt to an append-only JSONL file. The key is (kind, value) — so a PASS on email_smtp can never mask a FAIL on email_domain_mx. When save_contacts runs, it consults the ledger: SMTP accepted? → Verified. Syntax+MX ok? → Partial. Otherwise → Unverified. This is how we guarantee honest status labels.</p>
+
+        <h2 data-i18n="postVerify.s4.title">Auto-save: the safety net</h2>
+        <p data-i18n="postVerify.s4.p1">The LLM doesn't always remember to call save_contacts. So after every extract_contacts or find_leads call, the runtime automatically persists harvested contacts — with the same dedup and receipt-gated verification. Contacts reach the database even if the model gets distracted, context gets compacted, or the session crashes.</p>
+      </div>
+
+      <!-- Related -->
+      <div class="related-posts">
+        <h3 data-i18n="postVerify.related.title">Related Posts</h3>
+        <div class="related-grid">
+          <a href="/blog/memory-that-remembers" class="related-card">
+            <span class="related-cat">Memory</span>
+            <span class="related-name" data-i18n="postVerify.related.0">A memory that remembers: append-only knowledge for research agents</span>
+          </a>
+          <a href="/blog/benchmarks-repo-map" class="related-card">
+            <span class="related-cat">Benchmarks</span>
+            <span class="related-name" data-i18n="postVerify.related.1">How benchmarks caught a 31x slowdown before it shipped</span>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .article-page { padding: 48px 0 80px; }
+  .article-wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+
+  .breadcrumb { display: flex; gap: 8px; align-items: center; font-family: var(--font-mono); font-size: 13px; color: var(--grey-500); margin-bottom: 32px; }
+  .breadcrumb a { color: var(--grey-600); }
+  .breadcrumb a:hover { color: var(--grey-900); }
+
+  .article-hero { margin-bottom: 40px; }
+  .article-meta { display: flex; gap: 8px; font-family: var(--font-mono); font-size: 13px; color: var(--grey-500); margin-bottom: 12px; }
+  .article-tag { display: inline-block; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; background: var(--grey-100); border: 1px solid var(--grey-200); padding: 4px 10px; border-radius: var(--radius-sm); margin-bottom: 16px; }
+  .article-title { font-size: clamp(28px, 4vw, 48px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.08; margin-bottom: 20px; }
+  .article-intro { font-size: 18px; color: var(--grey-700); line-height: 1.6; }
+
+  .highlights { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 40px; }
+  .highlights-title { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--grey-500); margin-bottom: 14px; }
+  .highlights ul { list-style: none; padding: 0; }
+  .highlights li { position: relative; padding-left: 18px; font-size: 14px; line-height: 1.6; color: var(--grey-700); margin-bottom: 10px; }
+  .highlights li::before { content: ''; position: absolute; left: 0; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--grey-900); }
+
+  .article-body h2 { font-size: 22px; font-weight: 600; margin: 40px 0 16px; letter-spacing: -0.02em; }
+  .article-body p { font-size: 16px; line-height: 1.7; color: var(--grey-700); margin-bottom: 20px; }
+  :global(code) { font-family: var(--font-mono); font-size: 0.9em; background: var(--grey-100); padding: 2px 6px; border-radius: 4px; }
+
+  .related-posts { margin-top: 56px; padding-top: 32px; border-top: 1px solid var(--grey-200); }
+  .related-posts h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+  .related-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .related-card { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 20px; transition: box-shadow .25s, transform .25s var(--ease-out), border-color .25s; }
+  .related-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--grey-400); }
+  .related-cat { display: block; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; color: var(--grey-500); margin-bottom: 8px; }
+  .related-name { font-size: 14px; font-weight: 500; color: var(--grey-900); }
+  @media (max-width: 600px) { .related-grid { grid-template-columns: 1fr; } }
+</style>

@@ -1,0 +1,29 @@
+[package]
+name = "pr-persistence"
+version.workspace = true
+edition.workspace = true
+
+[features]
+default = []
+# Enables the optional PostgreSQL contact backend (`pg` module).
+postgres = ["dep:tokio-postgres", "dep:deadpool-postgres", "dep:tokio"]
+
+[dependencies]
+pr-core.workspace = true
+rusqlite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+tracing.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+async-trait.workspace = true
+tokio-postgres = { workspace = true, optional = true }
+deadpool-postgres = { workspace = true, optional = true }
+tokio = { workspace = true, optional = true }
+libc = "0.2"
+
+[dev-dependencies]
+tempfile = "3"
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

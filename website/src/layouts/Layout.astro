@@ -1,0 +1,624 @@
+---
+import '../styles/global.css';
+import JsonLd from '../components/JsonLd.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'A Rust AI agent runtime for web research, coding workflows, lead generation, and reviewable automation.' } = Astro.props;
+const SITE = 'https://fathom.uz';
+const canonical = SITE + Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang={Astro.currentLocale === 'ru' ? 'ru' : 'en'}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={Astro.currentLocale === 'ru' ? 'ru_RU' : 'en_US'} />
+    <meta property="og:site_name" content="Fathom Research" />
+    <meta property="og:image" content={`${SITE}/og-image.svg`} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={`${SITE}/og-image.svg`} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <title>{title}</title>
+    <JsonLd data={{
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'Fathom Research',
+      url: SITE,
+      logo: `${SITE}/favicon.svg`,
+      description,
+      sameAs: [
+        'https://github.com/parallel-research',
+      ],
+    }} />
+    <JsonLd data={{
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'Fathom Research',
+      url: SITE,
+      inLanguage: ['en', 'ru'],
+      description,
+    }} />
+    <script is:inline>(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window, document, "clarity", "script", "y3qoy4b9ng");</script>
+    <script is:inline>
+      (function () {
+        var t = localStorage.getItem('parallel-theme');
+        if (!t && window.matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
+        if (t) document.documentElement.dataset.theme = t;
+      })();
+    </script>
+  </head>
+  <body>
+    <nav class="topnav">
+      <div class="container nav-inner">
+        <a href="/" class="brand">
+          <svg class="mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <rect width="24" height="24" rx="5" style="fill:var(--grey-900)"/>
+            <rect x="6" y="6" width="12" height="12" rx="2" style="fill:var(--grey-50)"/>
+          </svg>
+          <span class="brand-name">parallel</span>
+        </a>
+        <div class="nav-links" id="navbarLinks">
+          <a href="/#features" class="navitem" data-i18n="nav.features">Features</a>
+          <a href="/research" class="navitem" data-i18n="nav.research">Research</a>
+          <a href="/benchmarks" class="navitem" data-i18n="nav.benchmarks">Benchmarks</a>
+          <a href="/tools" class="navitem" data-i18n="nav.tools">Tools</a>
+          <a href="/tui" class="navitem" data-i18n="nav.tui">TUI</a>
+          <a href="/profiles" class="navitem" data-i18n="nav.profiles">Profiles</a>
+          <a href="/memory" class="navitem" data-i18n="nav.memory">Memory</a>
+          <a href="/security" class="navitem" data-i18n="nav.security">Security</a>
+          <a href="/integrations" class="navitem" data-i18n="nav.integrations">Integrations</a>
+          <a href="/api" class="navitem" data-i18n="nav.api">API</a>
+          <a href="/playground" class="navitem" data-i18n="nav.playground">Playground</a>
+          <a href="/docs" class="navitem" data-i18n="nav.docs">Docs</a>
+        </div>
+        <div class="nav-actions">
+          <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme">◐</button>
+          <div class="lang-switcher">
+            <button class="lang-toggle" data-lang-toggle data-i18n-aria="lang_aria" aria-label="Change language">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+              <span data-lang-current>EN</span>
+              <svg class="lang-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="lang-dropdown" data-lang-dropdown>
+              <button class="lang-option" data-lang-option="en">
+                <span class="lang-option-label">English</span><span class="lang-option-code">EN</span>
+              </button>
+              <button class="lang-option" data-lang-option="ru">
+                <span class="lang-option-label">Русский</span><span class="lang-option-code">RU</span>
+              </button>
+            </div>
+          </div>
+          <a href="/#cta" class="nav-cta" data-i18n="nav.cta">Get Started</a>
+        </div>
+        <button class="menu-btn" aria-label="Menu" data-i18n-aria="nav.menu" id="menu-toggle">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </nav>
+
+    <div class="mobile-menu" id="mobile-menu">
+      <div class="mobile-menu-links">
+        <a href="/#features" class="mobile-link" data-i18n="nav.features">Features</a>
+        <a href="/research" class="mobile-link" data-i18n="nav.research">Research</a>
+        <a href="/benchmarks" class="mobile-link" data-i18n="nav.benchmarks">Benchmarks</a>
+        <a href="/tools" class="mobile-link" data-i18n="nav.tools">Tools</a>
+        <a href="/tui" class="mobile-link" data-i18n="nav.tui">TUI</a>
+        <a href="/profiles" class="mobile-link" data-i18n="nav.profiles">Profiles</a>
+        <a href="/memory" class="mobile-link" data-i18n="nav.memory">Memory</a>
+        <a href="/security" class="mobile-link" data-i18n="nav.security">Security</a>
+        <a href="/integrations" class="mobile-link" data-i18n="nav.integrations">Integrations</a>
+        <a href="/api" class="mobile-link" data-i18n="nav.api">API</a>
+        <a href="/playground" class="mobile-link" data-i18n="nav.playground">Playground</a>
+        <a href="/docs" class="mobile-link" data-i18n="nav.docs">Docs</a>
+      </div>
+      <div class="mobile-menu-lang">
+        <span class="mobile-lang-label" data-i18n="lang_aria">Change language</span>
+        <div class="mobile-lang-options">
+          <button class="lang-option mobile" data-lang-option="en">English</button>
+          <button class="lang-option mobile" data-lang-option="ru">Русский</button>
+        </div>
+      </div>
+      <a href="/#cta" class="btn btn-primary mobile-cta" data-i18n="nav.cta">Get Started</a>
+    </div>
+
+    <slot />
+
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <a href="/" class="brand">
+              <svg class="mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect width="24" height="24" rx="5" style="fill:var(--grey-900)"/>
+                <rect x="6" y="6" width="12" height="12" rx="2" style="fill:var(--grey-50)"/>
+              </svg>
+              <span class="brand-name">parallel</span>
+            </a>
+            <p class="footer-desc" data-i18n="footer.desc">AI-powered research agent for deep web intelligence, lead generation, and automated outreach.</p>
+          </div>
+          <div class="foot-cols">
+            <span class="c-title" data-i18n="footer.product">Product</span>
+            <a href="/features" data-i18n="footer.features">Features</a>
+            <a href="/research" data-i18n="footer.research">Research Engine</a>
+            <a href="/benchmarks" data-i18n="nav.benchmarks">Benchmarks</a>
+            <a href="/tools" data-i18n="nav.tools">Tools</a>
+            <a href="/tui" data-i18n="footer.tui">Terminal UI</a>
+            <a href="/profiles" data-i18n="footer.profiles">Profiles</a>
+            <a href="/memory" data-i18n="nav.memory">Memory</a>
+            <a href="/security" data-i18n="nav.security">Security</a>
+            <a href="/integrations" data-i18n="nav.integrations">Integrations</a>
+          </div>
+          <div class="foot-cols">
+            <span class="c-title" data-i18n="footer.resources">Resources</span>
+            <a href="/docs" data-i18n="footer.documentation">Documentation</a>
+            <a href="/docs/cli" data-i18n="footer.cli">CLI Reference</a>
+            <a href="/install" data-i18n="footer.install">Installation</a>
+            <a href="/osint" data-i18n="footer.osint">OSINT Playbook</a>
+            <a href="/mcp" data-i18n="footer.mcp">MCP</a>
+            <a href="/dashboard" data-i18n="footer.dashboard">Dashboard</a>
+          </div>
+          <div class="foot-cols">
+            <span class="c-title" data-i18n="footer.company">Company</span>
+            <a href="/blog" data-i18n="footer.blog">Blog</a>
+            <a href="/changelog" data-i18n="footer.changelog">Changelog</a>
+            <a href="/pricing" data-i18n="footer.pricing">Pricing</a>
+            <a href="mailto:hello@fathom.uz" data-i18n="footer.contact">Contact</a>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p data-i18n="footer.rights">© 2026 Fathom Research. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
+
+    <style>
+      .topnav {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: var(--nav-bg);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--grey-200);
+      }
+
+      .nav-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 60px;
+        gap: 24px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        font-size: 1.05rem;
+      }
+
+      .brand .mark {
+        width: 22px;
+        height: 22px;
+        flex: none;
+      }
+
+      .brand-name {
+        text-transform: lowercase;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 22px;
+      }
+
+      .navitem {
+        font-size: 14px;
+        color: var(--grey-700);
+        transition: color 0.15s;
+        white-space: nowrap;
+      }
+
+      .navitem:hover {
+        color: var(--grey-900);
+      }
+
+      .nav-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .theme-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--grey-200);
+        background: var(--bg-primary);
+        color: var(--grey-700);
+        font-size: 15px;
+        transition: all 0.15s;
+      }
+
+      .theme-toggle:hover {
+        border-color: var(--grey-400);
+        color: var(--grey-900);
+      }
+
+      .nav-cta {
+        background: var(--grey-900);
+        color: var(--on-accent);
+        font-size: 13px;
+        font-family: var(--font-mono);
+        padding: 8px 14px;
+        border-radius: var(--radius-sm);
+        transition: transform 0.12s var(--ease-out), background 0.15s;
+      }
+
+      .nav-cta:hover { background: var(--grey-1000); }
+      .nav-cta:active { transform: scale(0.97); }
+
+      .lang-switcher {
+        position: relative;
+      }
+
+      .lang-toggle {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 11px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--grey-200);
+        background: var(--bg-primary);
+        color: var(--grey-700);
+        font-size: 0.8rem;
+        font-weight: 600;
+        font-family: var(--font-mono);
+        transition: all 0.15s;
+      }
+
+      .lang-toggle:hover {
+        border-color: var(--grey-400);
+        color: var(--grey-900);
+      }
+
+      .lang-chevron {
+        transition: transform 0.2s;
+      }
+
+      .lang-dropdown {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        min-width: 160px;
+        background: var(--bg-primary);
+        border: 1px solid var(--grey-200);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-md);
+        padding: 6px;
+        opacity: 0;
+        transform: translateY(-6px) scale(0.98);
+        pointer-events: none;
+        transition: opacity 0.2s, transform 0.2s;
+        z-index: 200;
+      }
+
+      .lang-dropdown.open {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
+      }
+
+      .lang-switcher:has(.lang-dropdown.open) .lang-chevron {
+        transform: rotate(180deg);
+      }
+
+      .lang-option {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 8px 11px;
+        border-radius: var(--radius-sm);
+        font-size: 0.875rem;
+        color: var(--grey-600);
+        transition: background 0.15s, color 0.15s;
+        text-align: left;
+      }
+
+      .lang-option:hover {
+        background: var(--grey-100);
+        color: var(--grey-900);
+      }
+
+      .lang-option.active {
+        color: var(--grey-900);
+        font-weight: 600;
+      }
+
+      .lang-option-code {
+        font-family: var(--font-mono);
+        font-size: 0.6875rem;
+        color: var(--grey-500);
+      }
+
+      .menu-btn {
+        display: none;
+        width: 40px;
+        height: 40px;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      .menu-btn span {
+        display: block;
+        width: 20px;
+        height: 2px;
+        background: var(--grey-900);
+        border-radius: 1px;
+        transition: transform 0.2s, opacity 0.2s;
+      }
+
+      body.mobile-nav-open .menu-btn span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+      body.mobile-nav-open .menu-btn span:nth-child(2) { opacity: 0; }
+      body.mobile-nav-open .menu-btn span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+      .mobile-menu {
+        display: none;
+        position: fixed;
+        top: 60px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--bg-primary);
+        z-index: 99;
+        padding: 32px var(--container-padding);
+        flex-direction: column;
+        gap: 32px;
+        overflow-y: auto;
+      }
+
+      body.mobile-nav-open .mobile-menu { display: flex; }
+
+      .mobile-menu-links {
+        display: flex;
+        flex-direction: column;
+        border-bottom: 1px solid var(--grey-200);
+        padding-bottom: 16px;
+      }
+
+      .mobile-link {
+        padding: 14px 4px;
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--grey-900);
+        border-bottom: 1px solid var(--grey-100);
+      }
+
+      .mobile-link:last-child { border-bottom: none; }
+
+      .mobile-menu-lang {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .mobile-lang-label {
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--grey-500);
+      }
+
+      .mobile-lang-options {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+
+      .lang-option.mobile {
+        justify-content: center;
+        border: 1px solid var(--grey-200);
+        border-radius: var(--radius-md);
+        padding: 12px;
+        font-weight: 500;
+      }
+
+      .lang-option.mobile.active {
+        background: var(--grey-100);
+        font-weight: 600;
+      }
+
+      .mobile-cta {
+        justify-content: center;
+        margin-top: auto;
+      }
+
+      @media (max-width: 960px) {
+        .nav-links, .nav-cta { display: none; }
+        .menu-btn { display: flex; }
+      }
+
+      .footer {
+        background: var(--bg-card);
+        border-top: 1px solid var(--grey-200);
+      }
+
+      .footer-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+        gap: 40px;
+        padding: 56px 0 40px;
+      }
+
+      .footer-desc {
+        color: var(--grey-600);
+        font-size: 0.875rem;
+        line-height: 1.6;
+        margin-top: 16px;
+        max-width: 300px;
+      }
+
+      .foot-cols {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .foot-cols .c-title {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: var(--grey-500);
+        margin-bottom: 6px;
+      }
+
+      .foot-cols a {
+        font-size: 14px;
+        color: var(--grey-700);
+        width: fit-content;
+      }
+
+      .foot-cols a:hover { color: var(--grey-900); }
+
+      .footer-bottom {
+        border-top: 1px solid var(--grey-200);
+        padding: 22px 0;
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        color: var(--grey-500);
+        font-size: 13px;
+      }
+
+      .footer-socials {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+      }
+
+      .footer-socials a {
+        color: var(--grey-500);
+        transition: color 0.2s;
+        display: flex;
+      }
+
+      .footer-socials a:hover { color: var(--grey-900); }
+
+      @media (max-width: 860px) {
+        .footer-grid { grid-template-columns: 1fr 1fr; }
+        .footer-brand { grid-column: 1 / -1; }
+        .footer-bottom { flex-direction: column; text-align: center; justify-content: center; }
+      }
+    </style>
+
+    <script>
+      import { initI18n } from '../i18n/switcher.js';
+      import { initTheme } from '../theme.js';
+      initI18n();
+      initTheme();
+
+      // copy-to-clipboard buttons on every code block
+      document.querySelectorAll('pre').forEach((pre) => {
+        const btn = document.createElement('button');
+        btn.className = 'copy-btn';
+        btn.textContent = 'copy';
+        btn.addEventListener('click', () => {
+          navigator.clipboard?.writeText(pre.innerText.replace(/\ncopy$/, ''));
+          btn.textContent = 'copied';
+          setTimeout(() => { btn.textContent = 'copy'; }, 1500);
+        });
+        pre.style.position = 'relative';
+        pre.appendChild(btn);
+      });
+
+      // ---- A1: auto scroll-reveal ----
+      // Existing explicit `.reveal` plus auto-upgrade of `.sec-head` (below
+      // the hero) and card grids so every page gets a consistent entrance.
+      const revealEls = Array.from(document.querySelectorAll('.reveal'));
+      document.querySelectorAll('.sec-head:not(.in-hero)').forEach((el) => {
+        if (el.dataset.in !== 'true' && !el.dataset.reveal) { el.dataset.reveal = ''; revealEls.push(el); }
+      });
+      document.querySelectorAll('[class$="-grid"], .flow, .stages, .quote-grid').forEach((g) => {
+        if (g.closest('[class$="-hero"], .reveal, [data-reveal]')) return;
+        if (g.dataset.reveal) return;
+        g.dataset.reveal = ''; revealEls.push(g);
+      });
+      if (revealEls.length && 'IntersectionObserver' in window) {
+        const ro = new IntersectionObserver((es) => {
+          es.forEach((e) => {
+            if (e.isIntersecting) {
+              if (e.target.hasAttribute('data-reveal')) e.target.classList.add('in-view');
+              else e.target.dataset.in = 'true';
+              ro.unobserve(e.target);
+            }
+          });
+        }, { rootMargin: '80px 0px -40px 0px' });
+        revealEls.forEach((el) => ro.observe(el));
+      } else {
+        revealEls.forEach((el) => { if (el.hasAttribute('data-reveal')) el.classList.add('in-view'); else el.dataset.in = 'true'; });
+      }
+
+      // ---- D3: animated underlines on nav + footer links ----
+      document.querySelectorAll('.navitem, .foot-cols a').forEach((a) => a.classList.add('link-underline'));
+
+      // ---- D2: perspective tilt on marketing cards (desktop only) ----
+      if (window.matchMedia('(hover: hover) and (min-width: 768px)').matches &&
+          !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.querySelectorAll('.cap-card, .price-card, .tilt').forEach((card) => {
+          card.classList.add('tilt');
+          card.addEventListener('pointermove', (e) => {
+            const r = card.getBoundingClientRect();
+            const px = (e.clientX - r.left) / r.width - 0.5;
+            const py = (e.clientY - r.top) / r.height - 0.5;
+            card.style.setProperty('--rx', `${(-py * 6).toFixed(2)}deg`);
+            card.style.setProperty('--ry', `${(px * 8).toFixed(2)}deg`);
+          });
+          card.addEventListener('pointerleave', () => {
+            card.style.setProperty('--rx', '0deg');
+            card.style.setProperty('--ry', '0deg');
+          });
+        });
+      }
+
+      const toggle = document.getElementById('menu-toggle');
+      toggle?.addEventListener('click', () => {
+        document.body.classList.toggle('mobile-nav-open');
+      });
+      document.querySelectorAll('.mobile-link, .mobile-cta').forEach((link) => {
+        link.addEventListener('click', () => {
+          document.body.classList.remove('mobile-nav-open');
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,652 @@
+---
+import Layout from '../layouts/Layout.astro';
+import JsonLd from '../components/JsonLd.astro';
+import AgentCanvas from '../components/AgentCanvas.astro';
+import Pipeline3D from '../components/Pipeline3D.astro';
+
+const agents = [
+  { name: 'Researcher',  mode: 'researcher',  hue: 206, href: '/agents/researcher' },
+  { name: 'Searching',   mode: 'searching',   hue: 180, href: '/agents/searching' },
+  { name: 'Extracting',  mode: 'extracting',  hue: 25,  href: '/agents/extracting' },
+  { name: 'Structuring', mode: 'structuring', hue: 260, href: '/agents/structuring' },
+  { name: 'Cleaning',    mode: 'cleaning',    hue: 55,  href: '/agents/cleaning' },
+  { name: 'Memoring',    mode: 'memoring',    hue: 25,  href: '/agents/memoring' },
+  { name: 'Outreach',    mode: 'outreach',    hue: 205, href: '/agents/outreach' },
+];
+
+const backends = ['Linkup', 'Parallel', 'Exa', 'Tavily', 'Serper', 'Brave', 'DuckDuckGo'];
+const capabilities = [
+  { k: 'landing.cap.r', t: 'Rust Agent Runtime', d: 'Typed RPC events, TUI/GPUI clients, sessions, permissions, MCP, LSP/DAP, browser CDP, persistent eval, and recursive subagents.', url: '/docs/protocol-gui' },
+  { k: 'landing.cap.l', t: 'Lead Generation', d: 'Automated OSINT pipeline: emails, phones, socials, corporate sites — verified before they reach your CRM.', url: '/features/lead-generation' },
+  { k: 'landing.cap.o', t: 'Auto Outreach', d: 'Personalized, role- and company-aware drafts, batch generated for entire lists — verified and ready for your review, CRM sync or export.', url: '/features/auto-outreach' },
+];
+
+const capabilityRows = [
+  { k: 'landing.capc.1', t: '37 Rust tools + extensions', d: 'Web, files, shell, AST, DAP, browser CDP, eval, security, computer, voice, memory, MCP and plugins.' },
+  { k: 'landing.capc.2', t: 'Semantic memory', d: 'Vector + BM25 hybrid search, entity graph, auto-absorb of findings.' },
+  { k: 'landing.capc.3', t: 'MCP', d: 'Client (stdio/HTTP/OAuth) + server mcp-serve.' },
+  { k: 'landing.capc.4', t: 'CRM sync', d: 'amoCRM, Bitrix24, HubSpot with dedup.' },
+  { k: 'landing.capc.5', t: 'Durable jobs', d: 'SQLite-backed background tasks that survive restarts.' },
+  { k: 'landing.capc.6', t: 'HTTP API + dashboard', d: 'SSE streaming, steering, Prometheus metrics.' },
+  { k: 'landing.capc.7', t: 'Personas', d: 'hunter · analyst · validator — or your own TOML profile.' },
+  { k: 'landing.capc.8', t: 'Hooks', d: 'PreToolUse, PostToolUse, Stop — intercept and shape agent behavior.' },
+  { k: 'landing.capc.9', t: 'TUI', d: 'Interactive terminal: live streaming, replay, steering, memory panel.' },
+  { k: 'landing.capc.10', t: 'Notifications', d: 'Webhook, email, Telegram — fan-out alerts on completion.' },
+];
+
+const steps = [
+  { k: 'landing.step.1', n: '01', t: 'Ask', d: 'Type a research goal in plain language. The coordinator decomposes it into sub-tasks.' },
+  { k: 'landing.step.2', n: '02', t: 'Research', d: 'Fathom agents search the web, parse sites, extract contacts, and spawn their own children.' },
+  { k: 'landing.step.3', n: '03', t: 'Verify', d: 'Every email MX-checked, phones validated, social profiles confirmed.' },
+  { k: 'landing.step.4', n: '04', t: 'Export', d: 'CSV, PDF, HTML, JSON, DOCX — or pushed to CRM with zero duplicates.' },
+];
+
+const metrics = [
+  { v: '3.78×', l: 'CPU-bound parallel speedup' },
+  { v: '531k', l: 'rows/s HTML parsing' },
+  { v: '1.1M', l: 'items/s feed parsing' },
+  { v: '~2ms', l: 'hybrid memory search' },
+];
+---
+
+<Layout title="Fathom Research — Where agents find answers">
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero__main">
+        <p class="eyebrow" data-i18n="landing.badge">AI-Powered Research Agent</p>
+        <h1 class="hero__title" data-i18n-html data-i18n="landing.title">Where agents<br />find answers.</h1>
+        <p class="hero__subtitle" data-i18n="landing.subtitle">
+          Fathom is an autonomous outreach engine: seven specialized agents research, extract, verify and remember your leads — then deliver verified contacts with enriched context and personalized drafts, synced to your CRM or exported for any stack.
+        </p>
+        <div class="hero__actions">
+          <a href="#cta" class="btn btn-primary btn-lg" data-i18n="landing.cta1">Start building</a>
+          <a href="#features" class="btn btn-secondary btn-lg" data-i18n="landing.cta2">Explore features</a>
+        </div>
+        <p class="hero__mono" data-i18n="landing.hero_mono">Rust · 37 tools + extensions · typed RPC · one runtime</p>
+      </div>
+
+      <div class="hero__visual">
+        <div class="machine">
+          <div class="machine__bar">
+            <div class="machine__dots"><i></i><i></i><i></i></div>
+            <span class="machine__url">parallel-research run</span>
+          </div>
+          <div class="machine__body">
+            <div class="prompt-line"><span class="p">$</span><span class="pc">parallel-research run "Find VP Engineering at Series B startups in SF"</span></div>
+            <div class="tags-row">
+              <span class="ptag ptag--plan">Planning</span><span data-i18n="landing.term.plan">Decomposing into 4 sub-tasks…</span>
+            </div>
+            <div class="tags-row">
+              <span class="ptag ptag--run">Researching</span><span data-i18n="landing.term.spawn">Spawning 4 parallel agents</span>
+            </div>
+            <div class="agent-lines">
+              <div class="agent-line"><span class="od">●</span> <span data-i18n="landing.term.a1">Searching LinkedIn &amp; Crunchbase</span></div>
+              <div class="agent-line"><span class="od">●</span> <span data-i18n="landing.term.a2">Parsing corporate websites</span></div>
+              <div class="agent-line"><span class="od">●</span> <span data-i18n="landing.term.a3">Extracting social profiles</span></div>
+              <div class="agent-line"><span class="od">●</span> <span data-i18n="landing.term.a4">Verifying email addresses</span></div>
+            </div>
+            <div class="tags-row">
+              <span class="ptag ptag--ok">Complete</span><span data-i18n="landing.term.done">Found 47 contacts, 12 verified</span>
+            </div>
+            <div class="tags-row">
+              <span class="ptag ptag--save">Saving</span><span data-i18n="landing.term.save">Exporting to CSV + CRM sync</span>
+            </div>
+            <div class="prompt-line"><span class="p">$</span><span class="cursor">▊</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MARQUEE ============ -->
+  <section class="marquee-section">
+    <div class="marquee-head">
+      <p class="eyebrow" data-i18n="landing.marquee_label">Search backends</p>
+    </div>
+    <div class="marquee-track-wrap">
+      <div class="marquee-track">
+        {
+          [...backends, ...backends].map((b) => (
+            <span class="mlogo">{b}</span>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CAPABILITIES / FEATURES ============ -->
+  <section class="section alt" id="features">
+    <div class="container">
+      <div class="sec-head center reveal">
+        <p class="eyebrow" data-i18n="landing.value_label">What you get</p>
+        <h2 class="h2-sec" data-i18n="landing.value_title">Three superpowers, one agent</h2>
+        <p class="copy-lg mx-auto" data-i18n="landing.value_sub">From a query to verified, enriched contacts and personalized outreach — without touching a spreadsheet.</p>
+      </div>
+
+      <div class="cap-grid">
+        {
+          capabilities.map((c, i) => (
+            <a href={c.url} class:list={['cap-card', i === 1 ? 'cap-card--accent' : '']}>
+              <h3 class="cap-name" data-i18n={c.k + '.t'}>{c.t}</h3>
+              <p class="cap-desc" data-i18n={c.k + '.d'}>{c.d}</p>
+              <span class="cap-go" data-i18n="landing.learn">Explore →</span>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ AGENT TYPES (canvas) ============ -->
+  <section class="section agents-sec">
+    <div class="container">
+      <div class="sec-head center reveal">
+        <p class="eyebrow" data-i18n="landing.agents_label">Agent types</p>
+        <h2 class="h2-sec" data-i18n="landing.agents_title">Purpose-built agent roles</h2>
+        <p class="copy-lg mx-auto" data-i18n="landing.agents_sub">Each sub-agent has a focused role and its own behavior. Coordinators decompose, fan out, reflect, and synthesize.</p>
+      </div>
+
+      <AgentCanvas agents={agents} />
+    </div>
+  </section>
+
+  <!-- ============ BENCHMARK TEASER ============ -->
+  <section class="section alt" id="benchmarks">
+    <div class="container">
+      <div class="feat">
+        <div class="feat-copy">
+          <p class="eyebrow" data-i18n="landing.bench_label">Performance</p>
+          <h2 class="h2-sec" data-i18n-html data-i18n="landing.bench_title">Built for speed.<br />Measured, not claimed.</h2>
+          <p class="copy-lg" data-i18n="landing.bench_sub">Real benchmarks from the release build — parallel tool execution spreads CPU across cores and ships verified results with minimal dispatch overhead.</p>
+          <a href="/benchmarks" class="btn btn-secondary" data-i18n="landing.bench_cta">See all benchmarks →</a>
+        </div>
+        <div class="bench-strip">
+          {
+            metrics.map((m) => (
+              <div class="bench-card">
+                <div class="metric">{m.v}</div>
+                <div class="cap">{m.l}</div>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MORE CAPABILITIES ============ -->
+  <section class="section">
+    <div class="container">
+      <div class="sec-head center reveal">
+        <p class="eyebrow" data-i18n="landing.overview_label">The full toolbox</p>
+        <h2 class="h2-sec" data-i18n="landing.overview_title">One engine, every capability</h2>
+      </div>
+
+      <div class="api-grid">
+        {
+          capabilityRows.map((c) => (
+            <div class="api-card">
+              <div class="api-name" data-i18n={c.k + '.t'}>{c.t}</div>
+              <p data-i18n={c.k + '.d'}>{c.d}</p>
+            </div>
+          ))
+        }
+      </div>
+      <div class="sec-head center more-links">
+        <a href="/tools" class="btn btn-primary" data-i18n="landing.tools_cta">Browse all Rust tools</a>
+        <a href="/architecture" class="btn btn-secondary" data-i18n="landing.arch_cta">Architecture</a>
+        <a href="/memory" class="btn btn-secondary" data-i18n="landing.mem_cta">Memory &amp; Graph</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ HOW IT WORKS ============ -->
+  <section class="section alt" id="how-it-works">
+    <div class="container">
+      <div class="sec-head center reveal">
+        <p class="eyebrow" data-i18n="landing.how_label">How it works</p>
+        <h2 class="h2-sec" data-i18n="landing.how_title">From question to verified contacts</h2>
+      </div>
+
+      <div class="steps-grid">
+        {
+          steps.map((s, i) => (
+            <>
+              {i > 0 && <div class="step-connector">→</div>}
+              <div class="step">
+                <div class="step-number">{s.n}</div>
+                <div class="step-body">
+                  <h3 data-i18n={s.k + '.t'}>{s.t}</h3>
+                  <p data-i18n={s.k + '.d'}>{s.d}</p>
+                </div>
+              </div>
+            </>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SAFETY & RELIABILITY ============ -->
+  <section class="section">
+    <div class="container">
+      <div class="sec-head center reveal">
+        <p class="eyebrow" data-i18n="landing.safety_label">Safety & Reliability</p>
+        <h2 class="h2-sec" data-i18n="landing.safety_title">Guardrails that never sleep</h2>
+        <p class="copy-lg mx-auto" data-i18n="landing.safety_sub">Every agent action passes through multiple safety layers — from doom-loop detection to secret scanning to human approval gates.</p>
+      </div>
+
+      <div class="api-grid safety-grid">
+        <div class="api-card">
+          <div class="api-name" data-i18n="landing.safety.doom.t">Doom Loop Detection</div>
+          <p data-i18n="landing.safety.doom.d">Stuck agents repeating the same tool call are detected and stopped automatically — no runaway costs.</p>
+        </div>
+        <div class="api-card">
+          <div class="api-name" data-i18n="landing.safety.approval.t">Approval Gates</div>
+          <p data-i18n="landing.safety.approval.d">Side-effect tools like save_contacts and git_push wait for explicit human approval before executing.</p>
+        </div>
+        <div class="api-card">
+          <div class="api-name" data-i18n="landing.safety.secrets.t">Secret Scanning</div>
+          <p data-i18n="landing.safety.secrets.d">API keys, passwords and tokens are blocked before they can enter the long-term memory store.</p>
+        </div>
+        <div class="api-card">
+          <div class="api-name" data-i18n="landing.safety.injection.t">Injection Defense</div>
+          <p data-i18n="landing.safety.injection.d">Prompt injection attempts in web-fetched content are detected and neutralized before they reach the model.</p>
+        </div>
+        <div class="api-card">
+          <div class="api-name" data-i18n="landing.safety.resume.t">Session Resume</div>
+          <p data-i18n="landing.safety.resume.d">Crashed or interrupted sessions are detected and reconstructed — unfinished sub-tasks continue from where they stopped.</p>
+        </div>
+        <div class="api-card">
+          <div class="api-name" data-i18n="landing.safety.protected.t">Protected Surfaces</div>
+          <p data-i18n="landing.safety.protected.d">Safety configs, memory databases and own source code are guarded from self-modifying agent actions.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LIVE PIPELINE DEMO ============ -->
+  <section class="section pipeline-sec">
+    <div class="container">
+      <div class="sec-head center reveal">
+        <p class="eyebrow" data-i18n="landing.pipe_label">One live pipeline</p>
+        <h2 class="h2-sec" data-i18n="landing.pipe_title">From a query to ready-to-send leads</h2>
+        <p class="copy-lg mx-auto" data-i18n="landing.pipe_sub">Watch the request travel through the engine: search the web, parse the pages, enrich the team, segment the leads — then compose verified, personalized drafts ready for your review, CRM sync or export.</p>
+      </div>
+
+      <Pipeline3D />
+    </div>
+  </section>
+
+  <!-- ============ NOTIFICATIONS ============ -->
+  <section class="section alt">
+    <div class="container">
+      <div class="sec-head center reveal">
+        <p class="eyebrow" data-i18n="landing.notify_label">Notifications</p>
+        <h2 class="h2-sec" data-i18n="landing.notify_title">Never miss a completed run</h2>
+        <p class="copy-lg mx-auto" data-i18n="landing.notify_sub">Fan-out delivery to every configured channel. One failing channel does not block the rest.</p>
+      </div>
+
+      <div class="notify-grid">
+        <div class="notify-card">
+          <div class="notify-name" data-i18n="landing.notify.webhook.t">Webhook</div>
+          <p data-i18n="landing.notify.webhook.d">Generic JSON POST to any URL — session_id, summary, synthesis preview, token counts and output path.</p>
+        </div>
+        <div class="notify-card">
+          <div class="notify-name" data-i18n="landing.notify.email.t">Email (SMTP)</div>
+          <p data-i18n="landing.notify.email.d">Plain or STARTTLS SMTP delivery. Subject includes session ID, body includes summary and synthesis preview.</p>
+        </div>
+        <div class="notify-card">
+          <div class="notify-name" data-i18n="landing.notify.telegram.t">Telegram</div>
+          <p data-i18n="landing.notify.telegram.d">Bot message with checkmark, summary, synthesis preview and full report path.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TESTIMONIALS ============ -->
+  <section class="section">
+    <div class="container">
+      <div class="sec-head center reveal">
+        <p class="eyebrow" data-i18n="landing.testi_label">Testimonials</p>
+        <h2 class="h2-sec" data-i18n="landing.testi_title">Trusted by researchers &amp; revenue teams</h2>
+      </div>
+
+      <div class="quote">
+        <p class="quote__text" data-i18n="landing.t1">"Fathom found 200 verified contacts for our DACH expansion in under an hour. What used to take our SDRs a full week."</p>
+          <div class="quote__by">
+            <div class="quote__avatar"></div>
+            <div class="quote__name" data-i18n="landing.t1name">Sarah Kim</div>
+            <div class="quote__role" data-i18n="landing.t1role">VP of Sales, TechFlow</div>
+          </div>
+        </div>
+        <div class="quote">
+          <p class="quote__text" data-i18n="landing.t2">"The verification layer alone is worth it. Our bounce rate dropped from 23% to 2%."</p>
+          <div class="quote__by">
+            <div class="quote__avatar"></div>
+            <div class="quote__name" data-i18n="landing.t2name">Marco Rossi</div>
+            <div class="quote__role" data-i18n="landing.t2role">Head of Growth, DataPrime</div>
+          </div>
+        </div>
+    </div>
+  </section>
+
+  <!-- ============ CTA ============ -->
+  <section class="cta" id="cta">
+    <div class="container">
+      <h2 class="h2-sec" data-i18n="landing.cta_title">Start building with Fathom</h2>
+      <p class="copy-lg mx-auto" data-i18n="landing.cta_sub">Distributed individually. No vendor lock-in. Full control over your research pipeline.</p>
+      <div class="install-box"><code>curl -sSf https://fathom.uz/install.sh | sh</code></div>
+      <a href="mailto:hello@fathom.uz" class="btn btn-primary" data-i18n="landing.cta_access">Request access →</a>
+      <p class="sub" data-i18n="landing.cta_mono">parallel-research bench · docs · request access</p>
+    </div>
+  </section>
+
+  <!-- ============ FAQ ============ -->
+  <section class="section alt" id="faq">
+    <div class="container">
+      <div class="sec-head center reveal">
+        <p class="eyebrow" data-i18n="landing.faq_label">FAQ</p>
+        <h2 class="h2-sec" data-i18n="landing.faq_title">Frequently asked questions</h2>
+      </div>
+      <div class="faq-grid">
+        <details class="faq-item">
+          <summary data-i18n="landing.faq.q1">How is Fathom different from a ChatGPT plugin?</summary>
+          <p data-i18n="landing.faq.a1">Fathom is a purpose-built research engine in Rust: it fans out hierarchical sub-agents in parallel, verifies every contact before saving, and remembers everything over weeks of campaigns — not a single-session chat context window.</p>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="landing.faq.q2">Which search engines are supported?</summary>
+          <p data-i18n="landing.faq.a2">Seven backends — Linkup, Parallel, Exa, Tavily, Serper, Brave and DuckDuckGo — fused with hybrid and smart modes and RRF ranking, so one query spans the whole web, not just the first page.</p>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="landing.faq.q3">Is my data stored on your servers?</summary>
+          <p data-i18n="landing.faq.a3">No. Fathom is distributed as a self-hosted binary — sessions, contacts and memory live in your own SQLite/PostgreSQL databases on your infrastructure. There is no cloud lock-in.</p>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="landing.faq.q4">How accurate are the extracted emails and phones?</summary>
+          <p data-i18n="landing.faq.a4">Every email passes syntax, MX-record and SMTP checks; phones are normalized to E.164 and cross-checked. Nothing unverified is saved — typical bounce rates drop from ~23% to ~2% after verification.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <JsonLd data={{
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Fathom Research',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'macOS, Linux, Windows (WSL)',
+    description: 'A Rust AI agent runtime with typed RPC, durable sessions, coding tools, web research, lead generation, and reviewable automation.',
+    url: 'https://fathom.uz/',
+    downloadUrl: 'https://fathom.uz/install',
+    installUrl: 'https://fathom.uz/install',
+    fileFormat: 'binary',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+      description: 'Self-hosted open-source research agent',
+    },
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '4.9',
+      ratingCount: '87',
+    },
+    releaseNotes: 'https://fathom.uz/changelog',
+  }} />
+
+  <JsonLd data={{
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'How is Fathom different from a ChatGPT plugin?',
+        acceptedAnswer: { '@type': 'Answer', text: 'Fathom is a purpose-built research engine in Rust: it fans out hierarchical sub-agents in parallel, verifies every contact before saving, and remembers everything over weeks of campaigns.' },
+      },
+      {
+        '@type': 'Question',
+        name: 'Which search engines are supported?',
+        acceptedAnswer: { '@type': 'Answer', text: 'Seven backends — Linkup, Parallel, Exa, Tavily, Serper, Brave and DuckDuckGo — fused with hybrid and smart modes and RRF ranking.' },
+      },
+      {
+        '@type': 'Question',
+        name: 'Is my data stored on your servers?',
+        acceptedAnswer: { '@type': 'Answer', text: 'No. Fathom is self-hosted — sessions, contacts and memory live in your own databases on your infrastructure. No cloud lock-in.' },
+      },
+      {
+        '@type': 'Question',
+        name: 'How accurate are the extracted emails and phones?',
+        acceptedAnswer: { '@type': 'Answer', text: 'Every email passes syntax, MX-record and SMTP checks; phones are normalized to E.164. Typical bounce rates drop from ~23% to ~2%.' },
+      },
+    ],
+  }} />
+
+</Layout>
+
+<style>
+  /* ---- Hero ---- */
+  .hero { padding: 60px 0 72px; }
+  .hero .container { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    letter-spacing: 0.16px;
+    color: var(--grey-600);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    text-transform: uppercase;
+  }
+
+  .hero__title {
+    font-size: clamp(52px, 8.5vw, 128px);
+    line-height: 0.94;
+    letter-spacing: -0.03em;
+    font-weight: 450;
+    margin-top: 24px;
+  }
+
+  .hero__subtitle {
+    margin-top: 26px;
+    color: var(--grey-700);
+    font-size: clamp(16px, 1.9vw, 21px);
+    line-height: 1.5;
+    max-width: 560px;
+  }
+
+  .hero__actions { margin-top: 34px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn-lg { padding: 14px 26px; font-size: 15px; }
+
+  .hero__mono {
+    margin-top: 26px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--grey-500);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  /* ---- Machine (terminal demo) ---- */
+  .machine {
+    border: 1px solid var(--grey-300);
+    border-radius: 10px;
+    background: var(--bg-card);
+    overflow: hidden;
+    box-shadow: 0 1px 1px rgba(0,0,0,.03), 0 30px 60px -30px rgba(0,0,0,.35);
+  }
+  .machine__bar {
+    display: flex; align-items: center; gap: 6px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--grey-200);
+    background: var(--grey-50);
+  }
+  .machine__dots { display: flex; gap: 6px; }
+  .machine__dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--grey-300); display: block; }
+  .machine__dots i:first-child { background: #edb7a8; }
+  .machine__dots i:nth-child(2) { background: #e8d49a; }
+  .machine__dots i:nth-child(3) { background: #a8ccb0; }
+  .machine__url { margin: 0 auto; font-family: var(--font-mono); font-size: 12px; color: var(--grey-600); }
+  .machine__body { padding: 20px; font-family: var(--font-mono); font-size: 13px; }
+
+  .prompt-line { display: flex; gap: 8px; color: var(--grey-800); align-items: baseline; flex-wrap: wrap; }
+  .prompt-line .p { color: var(--grey-500); }
+  .prompt-line .pc { color: var(--grey-900); }
+
+  .tags-row { margin-top: 12px; display: flex; align-items: center; gap: 8px; color: var(--grey-600); font-size: 12px; flex-wrap: wrap; }
+
+  .ptag {
+    font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px;
+    padding: 2px 7px; border-radius: 4px;
+  }
+  .ptag--plan { background: rgba(143,182,204,.25); color: #4a7186; }
+  .ptag--run { background: rgba(224,140,74,.22); color: #a05a20; }
+  .ptag--ok { background: rgba(168,204,176,.3); color: #3f7a52; }
+  .ptag--save { background: rgba(216,207,186,.35); color: #7a6a3a; }
+
+  .agent-lines { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; padding-left: 18px; }
+  .agent-line { color: var(--grey-500); font-size: 12px; display: flex; gap: 8px; align-items: center; }
+  .od { color: var(--grey-800); }
+
+  .cursor { color: var(--grey-900); animation: blink 1.1s step-end infinite; }
+  @keyframes blink { 0%,55% { opacity: 1; } 56% { opacity: .06; } }
+
+  /* staggered terminal "typing" */
+  .machine__body > * { opacity: 0; animation: lineIn .45s var(--ease-out) forwards; }
+  .machine__body > *:nth-child(1) { animation-delay: .25s; }
+  .machine__body > *:nth-child(2) { animation-delay: .8s; }
+  .machine__body > *:nth-child(3) { animation-delay: 1.3s; }
+  .machine__body > *:nth-child(4) { animation-delay: 1.7s; }
+  .machine__body > *:nth-child(5) { animation-delay: 2.6s; }
+  .machine__body > *:nth-child(6) { animation-delay: 3.1s; }
+  .machine__body > *:nth-child(7) { animation-delay: 3.6s; }
+  @keyframes lineIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* dark agents section (both themes) */
+  .agents-sec { background: #0a0a0a; }
+  .agents-sec .eyebrow { color: #6f6f78; }
+  .agents-sec .h2-sec { color: #ececec; }
+  .agents-sec .copy-lg { color: #9a9a9f; }
+
+  /* live pipeline demo — dark panel on card background */
+  .pipeline-sec .pipeline-wrap { margin-top: 8px; }
+  .pipeline-sec .sec-head { margin-bottom: 40px; }
+
+  @media (max-width: 960px) {
+    .hero .container { grid-template-columns: 1fr; gap: 40px; }
+  }
+
+  /* ---- Marquee ---- */
+  .marquee-section { overflow: hidden; padding: 20px 0 70px; }
+  .marquee-head { text-align: center; margin-bottom: 30px; }
+  .marquee-track-wrap { overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+  .marquee-track { display: flex; gap: 64px; width: max-content; animation: marquee 36s linear infinite; }
+  .marquee-track:hover { animation-play-state: paused; }
+  .mlogo { color: var(--grey-400); font-weight: 500; font-size: 20px; letter-spacing: -0.01em; white-space: nowrap; display: flex; align-items: center; transition: color .25s; }
+  .mlogo:hover { color: var(--grey-900); }
+  @keyframes marquee { 0% { transform: translate(0); } to { transform: translate(-50%); } }
+
+  /* ---- Sections ---- */
+  .section.alt { background: var(--bg-card); border-top: 1px solid var(--grey-200); border-bottom: 1px solid var(--grey-200); }
+  .sec-head { max-width: 720px; margin-bottom: 44px; }
+  .sec-head.center { margin-left: auto; margin-right: auto; text-align: center; }
+  .copy-lg { color: var(--grey-700); font-size: 17px; line-height: 1.55; max-width: 640px; }
+  .mx-auto { margin-left: auto; margin-right: auto; }
+  .h2-sec { font-size: clamp(30px, 4.5vw, 64px); letter-spacing: -0.025em; font-weight: 500; line-height: 1.05; margin: 12px 0; }
+
+  /* ---- Capabilities ---- */
+  .cap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .cap-card {
+    background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg);
+    padding: 30px 26px; display: flex; flex-direction: column; gap: 12px;
+    transition: box-shadow .25s var(--ease-out), transform .25s var(--ease-out), border-color .25s;
+  }
+  .cap-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); border-color: var(--grey-400); }
+  .cap-card--accent { border-color: var(--grey-300); }
+  .cap-name { font-size: 22px; font-weight: 500; letter-spacing: -0.02em; }
+  .cap-desc { color: var(--grey-600); font-size: 15px; line-height: 1.55; flex: 1; }
+  .cap-go { font-family: var(--font-mono); font-size: 13px; color: var(--grey-900); }
+  @media (max-width: 900px) { .cap-grid { grid-template-columns: 1fr; } }
+
+  /* ---- Bench teaser ---- */
+  .feat { display: grid; grid-template-columns: 1.2fr 1fr; gap: 56px; align-items: center; }
+  @media (max-width: 900px) { .feat { grid-template-columns: 1fr; gap: 32px; } }
+  .feat-copy .btn { margin-top: 8px; }
+
+  .bench-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .bench-card { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 24px; }
+  .bench-card .metric { font-size: 40px; font-weight: 500; letter-spacing: -0.02em; line-height: 1; }
+  .bench-card .cap { font-family: var(--font-mono); font-size: 12px; color: var(--grey-600); margin-top: 10px; line-height: 1.5; }
+
+  /* ---- API grid (full toolbox) ---- */
+  .api-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; background: var(--grey-300); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--grey-300); }
+  .api-card { background: var(--bg-card); padding: 26px 24px; display: flex; flex-direction: column; gap: 8px; }
+  .api-card .api-name { font-family: var(--font-mono); font-weight: 600; font-size: 15px; }
+  .api-card p { color: var(--grey-600); font-size: 14px; line-height: 1.5; }
+  @media (max-width: 800px) { .api-grid { grid-template-columns: 1fr; } }
+
+  .more-links { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 40px; }
+
+  /* ---- Safety grid (3 cols) ---- */
+  .safety-grid { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 900px) { .safety-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .safety-grid { grid-template-columns: 1fr; } }
+
+  /* ---- Notifications grid ---- */
+  .notify-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .notify-card { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 24px; transition: box-shadow .25s, transform .25s var(--ease-out), border-color .25s; }
+  .notify-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--grey-400); }
+  .notify-name { font-family: var(--font-mono); font-weight: 600; font-size: 14px; margin-bottom: 10px; }
+  .notify-card p { color: var(--grey-600); font-size: 14px; line-height: 1.55; }
+  @media (max-width: 800px) { .notify-grid { grid-template-columns: 1fr; } }
+
+  /* ---- Steps ---- */
+  .steps-grid { display: flex; align-items: stretch; gap: 16px; }
+  .step {
+    flex: 1; background: var(--bg-card); border: 1px solid var(--grey-200);
+    border-radius: var(--radius-lg); padding: 28px;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .step:hover { border-color: var(--grey-400); box-shadow: var(--shadow-md); }
+  .step-number { font-family: var(--font-mono); font-size: 32px; font-weight: 500; color: var(--grey-300); display: block; margin-bottom: 14px; letter-spacing: -0.04em; }
+  .step h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  .step p { font-size: 14px; color: var(--grey-600); line-height: 1.55; }
+  .step-connector { color: var(--grey-400); font-size: 1.4rem; align-self: center; flex-shrink: 0; }
+  @media (max-width: 900px) { .steps-grid { flex-direction: column; } .step-connector { transform: rotate(90deg); text-align: center; } }
+
+  /* ---- Quotes ---- */
+  .quote { max-width: 760px; margin: 0 auto; text-align: center; padding: 22px 24px; }
+  .quote__text { font-size: clamp(19px, 2.8vw, 28px); line-height: 1.35; font-weight: 400; letter-spacing: -0.01em; }
+  .quote__by { margin-top: 24px; }
+  .quote__avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--grey-300); margin: 0 auto 12px; }
+  .quote__name { font-weight: 600; }
+  .quote__role { font-size: 14px; color: var(--grey-600); }
+
+  /* ---- CTA ---- */
+  .cta { text-align: center; padding: 96px 24px; background: var(--bg-dark); color: #fff; }
+  .cta .h2-sec, .cta .copy-lg { color: #fff; }
+  .cta .copy-lg { color: rgba(255,255,255,.7); margin-top: 18px; }
+  .install-box {
+    display: inline-block; margin: 32px 0 26px;
+    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
+    border-radius: var(--radius-md); padding: 14px 26px;
+    font-family: var(--font-mono); font-size: 14px; color: rgba(255,255,255,.85);
+    user-select: all; max-width: 100%; overflow-x: auto;
+  }
+  .cta .btn-primary { background: var(--bg-card); color: var(--grey-900); }
+  .cta .btn-primary:hover { background: var(--grey-100); }
+  .cta .sub { font-family: var(--font-mono); color: rgba(255,255,255,.45); font-size: 12px; margin-top: 22px; }
+  .cta .sub { font-family: var(--font-mono); color: rgba(255,255,255,.45); font-size: 12px; margin-top: 22px; }
+
+  /* ---- FAQ ---- */
+  .faq-grid { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
+  .faq-item { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); overflow: hidden; transition: border-color .2s; }
+  .faq-item:hover { border-color: var(--grey-400); }
+  .faq-item summary { padding: 18px 24px; font-weight: 600; font-size: 15px; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 12px; list-style: none; }
+  .faq-item summary::-webkit-details-marker { display: none; }
+  .faq-item summary::before { content: '▼'; font-size: 10px; color: var(--grey-400); transition: transform .2s; flex-shrink: 0; }
+  .faq-item[open] summary::before { transform: rotate(180deg); }
+  .faq-item p { padding: 0 24px 18px; color: var(--grey-600); font-size: 14px; line-height: 1.6; }
+</style>

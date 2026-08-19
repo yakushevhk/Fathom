@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parallel Research — Dashboard</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --border: #30363d;
+    --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff;
+    --green: #3fb950; --yellow: #d29922; --red: #f85149; --magenta: #bc8cff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 14px/1.45 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  header { display: flex; align-items: center; gap: 16px; padding: 12px 20px;
+           background: var(--panel); border-bottom: 1px solid var(--border); }
+  header h1 { font-size: 16px; margin: 0; }
+  header .status { font-size: 12px; color: var(--muted); }
+  header .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+                background: var(--red); margin-right: 6px; }
+  header .dot.ok { background: var(--green); }
+  header input { background: var(--bg); color: var(--text); border: 1px solid var(--border);
+                 border-radius: 6px; padding: 4px 8px; font-size: 12px; width: 220px; }
+  main { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px 20px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  section { background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+            padding: 12px 16px; min-height: 120px; }
+  section h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em;
+               color: var(--muted); margin: 0 0 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 500; }
+  .badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11px; }
+  .b-run { background: rgba(88,166,255,.15); color: var(--accent); }
+  .b-done { background: rgba(63,185,80,.15); color: var(--green); }
+  .b-fail { background: rgba(248,81,73,.15); color: var(--red); }
+  .b-idle { background: rgba(139,148,158,.15); color: var(--muted); }
+  .agent { padding: 3px 0; font-size: 13px; white-space: nowrap; overflow: hidden;
+           text-overflow: ellipsis; }
+  .agent .role { color: var(--magenta); font-weight: 600; }
+  .agent .tok { color: var(--muted); font-size: 11px; }
+  #events { max-height: 320px; overflow-y: auto; font-family: ui-monospace, Menlo, monospace;
+            font-size: 12px; }
+  #events div { padding: 2px 0; border-bottom: 1px dashed #21262d; color: var(--muted); }
+  #events div b { color: var(--text); }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 13px; }
+  .kv .k { color: var(--muted); }
+  .empty { color: var(--muted); font-size: 13px; padding: 8px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Parallel Research</h1>
+  <span class="status"><span class="dot" id="health-dot"></span><span id="health-text">connecting…</span></span>
+  <span style="flex:1"></span>
+  <input id="apikey" type="password" placeholder="API key (if auth enabled)">
+</header>
+<main>
+  <section>
+    <h2>Sessions</h2>
+    <div id="sessions"><div class="empty">loading…</div></div>
+  </section>
+  <section>
+    <h2>Agents</h2>
+    <div id="agents"><div class="empty">loading…</div></div>
+  </section>
+  <section>
+    <h2>Memory</h2>
+    <div id="memory"><div class="empty">loading…</div></div>
+  </section>
+  <section>
+    <h2>Jobs</h2>
+    <div id="jobs"><div class="empty">loading…</div></div>
+  </section>
+  <section style="grid-column: 1 / -1">
+    <h2>Live events</h2>
+    <div id="events"><div class="empty">waiting for events…</div></div>
+  </section>
+</main>
+<script>
+(function () {
+  "use strict";
+  var API = "/api/v1";
+  var keyInput = document.getElementById("apikey");
+  keyInput.value = localStorage.getItem("pr_api_key") || "";
+  keyInput.addEventListener("change", function () {
+    localStorage.setItem("pr_api_key", keyInput.value);
+  });
+
+  function headers() {
+    var h = {};
+    if (keyInput.value) { h["X-Api-Key"] = keyInput.value; }
+    return h;
+  }
+
+  function api(path) {
+    return fetch(API + path, { headers: headers() }).then(function (r) {
+      if (!r.ok) { throw new Error("HTTP " + r.status); }
+      return r.json();
+    });
+  }
+
+  function badge(status) {
+    var s = String(status || "");
+    if (s === "completed") return '<span class="badge b-done">completed</span>';
+    if (s === "running") return '<span class="badge b-run">running</span>';
+    if (s === "failed" || s === "cancelled") return '<span class="badge b-fail">' + s + "</span>";
+    return '<span class="badge b-idle">' + (s || "?") + "</span>";
+  }
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+
+  function renderSessions(data) {
+    var el = document.getElementById("sessions");
+    var list = data.sessions || [];
+    if (!list.length) { el.innerHTML = '<div class="empty">no sessions yet</div>'; return; }
+    var rows = list.slice(0, 25).map(function (s) {
+      return "<tr><td title=\"" + esc(s.id) + "\">" + esc(String(s.id).slice(0, 8)) +
+        "</td><td>" + esc((s.query || "").slice(0, 60)) + "</td><td>" + badge(s.status) +
+        "</td><td>" + esc(s.total_agents != null ? s.total_agents : "") +
+        "</td><td>" + esc(s.total_tokens != null ? s.total_tokens : "") + "</td></tr>";
+    }).join("");
+    el.innerHTML = "<table><tr><th>id</th><th>query</th><th>status</th><th>agents</th><th>tokens</th></tr>" + rows + "</table>";
+  }
+
+  function renderAgents(data) {
+    var el = document.getElementById("agents");
+    var list = data.agents || [];
+    if (!list.length) { el.innerHTML = '<div class="empty">no agents yet</div>'; return; }
+    // Group by parent for a tree-ish view (roots first).
+    var byParent = {};
+    list.forEach(function (a) {
+      var key = a.parent_id || "";
+      (byParent[key] = byParent[key] || []).push(a);
+    });
+    var html = "";
+    function walk(parentId, depth) {
+      (byParent[parentId] || []).forEach(function (a) {
+        var indent = "\u00a0\u00a0".repeat(depth) + (depth ? "↳ " : "");
+        html += '<div class="agent">' + indent +
+          '<span class="role">' + esc(a.role) + "</span> " +
+          badge(a.status) + " " +
+          esc((a.task || "").slice(0, 70)) +
+          ' <span class="tok">' + esc(a.tokens_used || 0) + "tk</span></div>";
+        walk(a.id, depth + 1);
+      });
+    }
+    walk("", 0);
+    el.innerHTML = html;
+  }
+
+  function renderMemory(data) {
+    var el = document.getElementById("memory");
+    if (!data || !data.scopes) { el.innerHTML = '<div class="empty">memory disabled</div>'; return; }
+    var sc = data.scopes;
+    el.innerHTML =
+      '<div class="kv">' +
+      '<span class="k">embedding model</span><span>' + esc(data.embedding_model) + "</span>" +
+      '<span class="k">agent scope</span><span>active ' + esc(sc.agent.active) + " · superseded " + esc(sc.agent.superseded) + " · archived " + esc(sc.agent.archived) + "</span>" +
+      '<span class="k">user scope</span><span>active ' + esc(sc.user.active) + "</span>" +
+      '<span class="k">run scope</span><span>active ' + esc(sc.run.active) + "</span>" +
+      '<span class="k">entity graph</span><span>' + esc(data.entity_graph.nodes) + " nodes · " + esc(data.entity_graph.edges) + " edges</span>" +
+      "</div>";
+  }
+
+  function renderJobs(data) {
+    var el = document.getElementById("jobs");
+    var list = data.jobs || [];
+    if (!list.length) { el.innerHTML = '<div class="empty">no jobs</div>'; return; }
+    var rows = list.slice(0, 25).map(function (j) {
+      return "<tr><td title=\"" + esc(j.id) + "\">" + esc(String(j.id).slice(0, 8)) +
+        "</td><td>" + esc((j.task || "").slice(0, 60)) + "</td><td>" + badge(j.status) +
+        "</td><td>" + esc(j.attempt || 0) + "/" + esc(j.max_attempts || 0) + "</td></tr>";
+    }).join("");
+    el.innerHTML = "<table><tr><th>id</th><th>task</th><th>status</th><th>attempts</th></tr>" + rows + "</table>";
+  }
+
+  function pushEvent(name, payload) {
+    var el = document.getElementById("events");
+    if (el.firstChild && el.firstChild.className === "empty") { el.innerHTML = ""; }
+    var line = document.createElement("div");
+    var time = new Date().toTimeString().slice(0, 8);
+    line.innerHTML = "[" + time + "] <b>" + esc(name) + "</b> " + esc(JSON.stringify(payload || {}).slice(0, 220));
+    el.prepend(line);
+    while (el.children.length > 200) { el.removeChild(el.lastChild); }
+  }
+
+  function refresh() {
+    api("/sessions").then(renderSessions).catch(function () {});
+    api("/agents").then(renderAgents).catch(function () {});
+    api("/memories/stats").then(renderMemory).catch(function () {
+      document.getElementById("memory").innerHTML = '<div class="empty">memory disabled</div>';
+    });
+    api("/jobs").then(renderJobs).catch(function () {});
+    fetch("/health").then(function (r) { return r.json(); }).then(function (h) {
+      document.getElementById("health-dot").className = "dot ok";
+      document.getElementById("health-text").textContent = "online · " + (h.service || "");
+    }).catch(function () {
+      document.getElementById("health-dot").className = "dot";
+      document.getElementById("health-text").textContent = "offline";
+    });
+  }
+
+  function connectSSE() {
+    try {
+      var es = new EventSource(API + "/events");
+      es.onmessage = function (ev) {
+        try {
+          var msg = JSON.parse(ev.data);
+          pushEvent(msg.event || "event", msg.data || msg);
+        } catch (e) { pushEvent("raw", ev.data); }
+      };
+      es.onerror = function () { setTimeout(connectSSE, 5000); es.close(); };
+    } catch (e) { /* SSE unavailable */ }
+  }
+
+  refresh();
+  setInterval(refresh, 5000);
+  connectSSE();
+})();
+</script>
+</body>
+</html>

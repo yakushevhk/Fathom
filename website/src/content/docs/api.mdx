@@ -1,0 +1,889 @@
+---
+title: "Api — Fathom Research"
+sidebarId: "api"
+---
+  
+<main class="api-docs">
+    <aside class="api-sidebar">
+      <div class="sidebar-inner">
+        <div class="sidebar-section">
+          <h3 class="sidebar-heading" data-i18n="docsApi.sb.gettingStarted">Getting Started</h3>
+          <a href="#overview" class="sidebar-link active" data-i18n="docsApi.sb.overview">Overview</a>
+          <a href="#authentication" class="sidebar-link" data-i18n="docsApi.sb.auth">Authentication</a>
+        </div>
+        <div class="sidebar-section">
+          <h3 class="sidebar-heading" data-i18n="docsApi.sb.sessions">Sessions</h3>
+          <a href="#post-sessions" class="sidebar-link" data-i18n="docsApi.sb.createSession">Create Session</a>
+          <a href="#get-sessions" class="sidebar-link" data-i18n="docsApi.sb.listSessions">List Sessions</a>
+          <a href="#get-session" class="sidebar-link" data-i18n="docsApi.sb.getSession">Get Session</a>
+          <a href="#delete-session" class="sidebar-link" data-i18n="docsApi.sb.cancelSession">Cancel Session</a>
+          <a href="#post-steer" class="sidebar-link" data-i18n="docsApi.sb.steerSession">Steer Session</a>
+          <a href="#get-results" class="sidebar-link" data-i18n="docsApi.sb.getResults">Get Results</a>
+        </div>
+        <div class="sidebar-section">
+          <h3 class="sidebar-heading" data-i18n="docsApi.sb.streams">Streams</h3>
+          <a href="#get-session-events" class="sidebar-link" data-i18n="docsApi.sb.sessionEvents">Session Events</a>
+          <a href="#get-global-events" class="sidebar-link" data-i18n="docsApi.sb.globalEvents">Global Events</a>
+          <a href="#sse-events" class="sidebar-link" data-i18n="docsApi.sb.eventTypes">Event Types</a>
+        </div>
+        <div class="sidebar-section">
+          <h3 class="sidebar-heading" data-i18n="docsApi.sb.agents">Agents</h3>
+          <a href="#get-agents" class="sidebar-link" data-i18n="docsApi.sb.listAgents">List Agents</a>
+          <a href="#get-agent" class="sidebar-link" data-i18n="docsApi.sb.getAgent">Get Agent</a>
+        </div>
+        <div class="sidebar-section">
+          <h3 class="sidebar-heading" data-i18n="docsApi.sb.control">Control Plane</h3>
+          <a href="#post-answer" class="sidebar-link" data-i18n="docsApi.sb.answerQuestion">Answer Question</a>
+          <a href="#post-approve" class="sidebar-link" data-i18n="docsApi.sb.approveTool">Approve Tool</a>
+        </div>
+        <div class="sidebar-section">
+          <h3 class="sidebar-heading" data-i18n="docsApi.sb.jobs">Jobs</h3>
+          <a href="#post-jobs" class="sidebar-link" data-i18n="docsApi.sb.createJob">Create Job</a>
+          <a href="#get-jobs" class="sidebar-link" data-i18n="docsApi.sb.listJobs">List Jobs</a>
+          <a href="#get-job" class="sidebar-link" data-i18n="docsApi.sb.getJob">Get Job</a>
+          <a href="#delete-job" class="sidebar-link" data-i18n="docsApi.sb.cancelJob">Cancel Job</a>
+          <a href="#get-job-log" class="sidebar-link" data-i18n="docsApi.sb.jobLog">Job Log</a>
+          <a href="#post-rerun" class="sidebar-link" data-i18n="docsApi.sb.rerunJob">Rerun Job</a>
+        </div>
+        <div class="sidebar-section">
+          <h3 class="sidebar-heading" data-i18n="docsApi.sb.memoryApi">Memory</h3>
+          <a href="#get-memories" class="sidebar-link" data-i18n="docsApi.sb.listMemories">List/Search</a>
+          <a href="#post-absorb" class="sidebar-link" data-i18n="docsApi.sb.absorbMemory">Absorb</a>
+          <a href="#get-memory-stats" class="sidebar-link" data-i18n="docsApi.sb.memoryStats">Stats</a>
+          <a href="#post-distill" class="sidebar-link" data-i18n="docsApi.sb.distillMemory">Distill</a>
+          <a href="#post-gc" class="sidebar-link" data-i18n="docsApi.sb.gcMemory">GC</a>
+          <a href="#get-memory" class="sidebar-link" data-i18n="docsApi.sb.getMemory">Get Memory</a>
+          <a href="#delete-memory" class="sidebar-link" data-i18n="docsApi.sb.archiveMemory">Archive</a>
+        </div>
+        <div class="sidebar-section">
+          <h3 class="sidebar-heading" data-i18n="docsApi.sb.system">System</h3>
+          <a href="#health" class="sidebar-link" data-i18n="docsApi.sb.health">Health Check</a>
+          <a href="#metrics" class="sidebar-link" data-i18n="docsApi.sb.metrics">Metrics</a>
+          <a href="#dashboard" class="sidebar-link" data-i18n="docsApi.sb.dashboard">Dashboard</a>
+        </div>
+        <div class="sidebar-section">
+          <h3 class="sidebar-heading" data-i18n="docsApi.sb.reference">Reference</h3>
+          <a href="#cli-commands" class="sidebar-link" data-i18n="docsApi.sb.cli">CLI Commands</a>
+          <a href="#error-codes" class="sidebar-link" data-i18n="docsApi.sb.errorCodes">Error Codes</a>
+        </div>
+      </div>
+    </aside>
+
+    <div class="api-content">
+      <div class="api-header">
+        <span class="section-label" data-i18n="docsApi.sectionLabel">Developer API</span>
+        <h1 class="api-title" data-i18n="docsApi.title">HTTP API Reference</h1>
+        <p class="api-description" data-i18n="docsApi.desc">
+          Full reference for the Fathom Research REST API. Manage sessions, stream events, and control AI research agents programmatically.
+        </p>
+      </div>
+
+      {/* OVERVIEW */}
+      <section id="overview" class="api-section">
+        <h2 class="api-section-title" data-i18n="docsApi.overviewTitle">Overview</h2>
+        <p class="api-text" data-i18n="docsApi.overviewText">
+          The Fathom Research API is a RESTful interface for managing AI research sessions. All responses are JSON-encoded. Streaming endpoints use Server-Sent Events (SSE).
+        </p>
+        <div class="info-block">
+          <div class="info-label" data-i18n="docsApi.baseUrlLabel">Base URL</div>
+          <code class="info-code">http://localhost:8080</code>
+        </div>
+        <p class="api-text" data-i18n="docsApi.overviewAuthText">
+          The API supports two authentication methods via HTTP headers:
+        </p>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">HTTP Headers</span>
+          </div>
+          <pre><code dangerouslySetInnerHTML={{__html: `Authorization: Bearer &lt;your-api-key&gt;
+X-Api-Key: &lt;your-api-key&gt;`}} /></pre>
+        </div>
+      </section>
+
+      {/* AUTHENTICATION */}
+      <section id="authentication" class="api-section">
+        <h2 class="api-section-title" data-i18n="docsApi.authTitle">Authentication</h2>
+        <p class="api-text" data-i18n-html="docsApi.authText">
+          All API requests (except <code>/health</code>, <code>/metrics</code>, and <code>/dashboard</code>) require a valid API key. Keys are configured via the <code>PARALLEL_RESEARCH_API_KEYS</code> environment variable as a comma-separated list.
+        </p>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">Environment</span>
+          </div>
+          <pre><code dangerouslySetInnerHTML={{__html: `PARALLEL_RESEARCH_API_KEYS=key-abc123,key-def456,key-ghi789`}} /></pre>
+        </div>
+        <p class="api-text" data-i18n-html="docsApi.authRateLimit">
+          Each key maps to an independent identity. Rate limiting is applied per-key: <strong>120 requests/minute</strong> for standard endpoints. Exceeding limits returns <code>429 Too Many Requests</code>.
+        </p>
+        <div class="callout callout-warn">
+          <div class="callout-icon">⚠</div>
+          <div data-i18n-html="docsApi.authWarn">
+            <strong>Security note:</strong> Never expose API keys in client-side code or public repositories. Use environment variables or a secrets manager.
+          </div>
+        </div>
+      </section>
+
+      {/* ENDPOINTS */}
+      <section class="api-section">
+        <h2 class="api-section-title" style="margin-bottom: 48px;" data-i18n="docsApi.endpointsTitle">Endpoints</h2>
+
+        {/* POST /api/v1/sessions */}
+        <article id="post-sessions" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-post">POST</span>
+            <code class="endpoint-path">/api/v1/sessions</code>
+          </div>
+          <p class="endpoint-desc" data-i18n="docsApi.postSessionsDesc">Create a new research session. The API spawns a coordinator agent that orchestrates sub-agents based on the query.</p>
+
+          <h4 class="param-heading" data-i18n="docsApi.requestBody">Request Body</h4>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">JSON</span>
+              <span class="code-label" data-i18n="docsApi.requestLabel">Request</span>
+            </div>
+            <pre><code dangerouslySetInnerHTML={{__html: `{
+  "query": "Find SaaS companies in Berlin with 10-50 employees",
+  "output_dir": "./results/session-001"
+}`}} /></pre>
+          </div>
+
+          <div class="param-table">
+            <div class="param-row param-row-header">
+              <span data-i18n="docsApi.thParam">Parameter</span><span data-i18n="docsApi.thType">Type</span><span data-i18n="docsApi.thDesc">Description</span>
+            </div>
+            <div class="param-row">
+              <code>query</code>
+              <span class="param-type">string</span>
+              <span data-i18n="docsApi.paramQuery">Research query or task description</span>
+            </div>
+            <div class="param-row">
+              <code>output_dir</code>
+              <span class="param-type">string</span>
+              <span data-i18n="docsApi.paramOutputDir">Directory to store results (optional)</span>
+            </div>
+          </div>
+
+          <h4 class="param-heading" data-i18n-html="docsApi.response201">Response — <code>201 Created</code></h4>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">JSON</span>
+              <span class="code-label" data-i18n="docsApi.responseLabel">Response</span>
+            </div>
+            <pre><code dangerouslySetInnerHTML={{__html: `{
+  "id": "sess_a1b2c3d4",
+  "status": "running",
+  "query": "Find SaaS companies in Berlin...",
+  "output_dir": "./results/session-001"
+}`}} /></pre>
+          </div>
+        </article>
+
+        {/* GET /api/v1/sessions */}
+        <article id="get-sessions" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-get">GET</span>
+            <code class="endpoint-path">/api/v1/sessions</code>
+          </div>
+          <p class="endpoint-desc" data-i18n="docsApi.getSessionsDesc">List all research sessions. Returns an array sorted by creation date (newest first).</p>
+
+          <h4 class="param-heading" data-i18n-html="docsApi.response200">Response — <code>200 OK</code></h4>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">JSON</span>
+              <span class="code-label" data-i18n="docsApi.responseLabel">Response</span>
+            </div>
+            <pre><code dangerouslySetInnerHTML={{__html: `{
+  "sessions": [
+    {
+      "id": "sess_a1b2c3d4",
+      "query": "Find SaaS companies in Berlin...",
+      "status": "completed",
+      "output_dir": "./results/session-001",
+      "total_tokens": 42000,
+      "total_agents": 3,
+      "created_at": "2026-08-07T10:30:00Z",
+      "updated_at": "2026-08-07T10:35:00Z",
+      "active": false
+    },
+    {
+      "id": "sess_e5f6g7h8",
+      "query": "Analyze competitor pricing...",
+      "status": "running",
+      "output_dir": "./results/session-002",
+      "total_tokens": 18000,
+      "total_agents": 2,
+      "created_at": "2026-08-07T11:00:00Z",
+      "updated_at": "2026-08-07T11:02:00Z",
+      "active": true
+    }
+  ],
+  "count": 2
+}`}} /></pre>
+          </div>
+        </article>
+
+        {/* GET /api/v1/sessions/:id */}
+        <article id="get-session" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-get">GET</span>
+            <code class="endpoint-path">/api/v1/sessions/:id</code>
+          </div>
+          <p class="endpoint-desc" data-i18n="docsApi.getSessionDesc">Retrieve detailed status of a specific session, including all spawned agents and their current states.</p>
+
+          <h4 class="param-heading" data-i18n="docsApi.pathParams">Path Parameters</h4>
+          <div class="param-table">
+            <div class="param-row param-row-header">
+              <span data-i18n="docsApi.thParam">Parameter</span><span data-i18n="docsApi.thType">Type</span><span data-i18n="docsApi.thDesc">Description</span>
+            </div>
+            <div class="param-row">
+              <code>id</code>
+              <span class="param-type">string</span>
+              <span data-i18n-html="docsApi.paramId">Session identifier (e.g., <code>sess_a1b2c3d4</code>)</span>
+            </div>
+          </div>
+
+          <h4 class="param-heading" data-i18n-html="docsApi.response200">Response — <code>200 OK</code></h4>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">JSON</span>
+              <span class="code-label">Response</span>
+            </div>
+            <pre><code dangerouslySetInnerHTML={{__html: `{
+  "id": "sess_a1b2c3d4",
+  "query": "Find SaaS companies in Berlin...",
+  "status": "running",
+  "output_dir": "./results/session-001",
+  "total_tokens": 42000,
+  "total_agents": 3,
+  "created_at": "2026-08-07T10:30:00Z",
+  "updated_at": "2026-08-07T10:31:00Z",
+  "active": true
+}`}} /></pre>
+          </div>
+        </article>
+
+        {/* DELETE /api/v1/sessions/:id */}
+        <article id="delete-session" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-delete">DELETE</span>
+            <code class="endpoint-path">/api/v1/sessions/:id</code>
+          </div>
+          <p class="endpoint-desc" data-i18n="docsApi.deleteSessionDesc">Cancel a running session. All active agents are terminated gracefully.</p>
+
+          <h4 class="param-heading" data-i18n-html="docsApi.response200">Response — <code>200 OK</code></h4>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">JSON</span>
+              <span class="code-label" data-i18n="docsApi.responseLabel">Response</span>
+            </div>
+            <pre><code dangerouslySetInnerHTML={{__html: `{
+  "id": "sess_a1b2c3d4",
+  "status": "cancelled"
+}`}} /></pre>
+          </div>
+        </article>
+
+        {/* POST /api/v1/sessions/:id/steer */}
+        <article id="post-steer" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-post">POST</span>
+            <code class="endpoint-path">/api/v1/sessions/:id/steer</code>
+          </div>
+          <p class="endpoint-desc" data-i18n="docsApi.postSteerDesc">Send a mid-run instruction to adjust the research direction without stopping the session.</p>
+
+          <h4 class="param-heading" data-i18n="docsApi.requestBody">Request Body</h4>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">JSON</span>
+              <span class="code-label" data-i18n="docsApi.requestLabel">Request</span>
+            </div>
+            <pre><code dangerouslySetInnerHTML={{__html: `{
+  "message": "Focus only on companies with Series A funding"
+}`}} /></pre>
+          </div>
+
+          <h4 class="param-heading" data-i18n-html="docsApi.response202">Response — <code>202 Accepted</code></h4>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">JSON</span>
+              <span class="code-label" data-i18n="docsApi.responseLabel">Response</span>
+            </div>
+            <pre><code dangerouslySetInnerHTML={{__html: `{
+  "id": "sess_a1b2c3d4",
+  "steered": true,
+  "message": "Instruction delivered to session sess_a1b2c3d4"
+}`}} /></pre>
+          </div>
+        </article>
+
+        {/* GET /api/v1/sessions/:id/results */}
+        <article id="get-results" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-get">GET</span>
+            <code class="endpoint-path">/api/v1/sessions/:id/results</code>
+          </div>
+          <p class="endpoint-desc" data-i18n-html="docsApi.getResultsDesc">Retrieve completed research results for a session. Returns <code>409</code> if the session is not completed.</p>
+
+          <h4 class="param-heading" data-i18n-html="docsApi.response200">Response — <code>200 OK</code></h4>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">JSON</span>
+              <span class="code-label" data-i18n="docsApi.responseLabel">Response</span>
+            </div>
+            <pre><code dangerouslySetInnerHTML={{__html: `{
+  "session_id": "sess_a1b2c3d4",
+  "status": "completed",
+  "summary": "Found 3 SaaS companies in Berlin matching criteria.",
+  "output_dir": "./results/session-001",
+  "total_tokens": 42000,
+  "total_agents": 3,
+  "findings": [
+    {
+      "file": "./results/session-001/techcorp.md",
+      "content": "TechCorp GmbH — B2B SaaS, 25 employees, Series A 2025"
+    }
+  ]
+}`}} /></pre>
+          </div>
+        </article>
+
+        {/* GET /api/v1/sessions/:id/events */}
+        <article id="get-session-events" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-get">GET</span>
+            <code class="endpoint-path">/api/v1/sessions/:id/events</code>
+          </div>
+          <p class="endpoint-desc" data-i18n-html="docsApi.sessionEventsDesc">Open an SSE stream for real-time events from a specific session. Events are sent as <code>data:</code> lines with a JSON payload containing a <code>type</code> field (snake_case). There is no <code>event:</code> field in the SSE frame.</p>
+
+          <h4 class="param-heading" data-i18n="docsApi.response200Stream">Response — <code>200 OK</code> (text/event-stream)</h4>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">SSE</span>
+              <span class="code-label" data-i18n="docsApi.streamLabel">Stream</span>
+            </div>
+            <pre><code dangerouslySetInnerHTML={{__html: `data: {"type":"agent_spawned","agent_id":"agent_x1y2z3","role":"web-researcher"}
+
+data: {"type":"finding","agent_id":"agent_x1y2z3","title":"TechCorp GmbH","confidence":0.92}
+
+data: {"type":"session_completed","session_id":"sess_a1b2c3d4","duration_ms":45200}`}} /></pre>
+          </div>
+        </article>
+
+        {/* GET /api/v1/events */}
+        <article id="get-global-events" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-get">GET</span>
+            <code class="endpoint-path">/api/v1/events</code>
+          </div>
+          <p class="endpoint-desc" data-i18n="docsApi.globalEventsDesc">Global SSE stream. Receives events from all active sessions. Useful for dashboards and monitoring.</p>
+
+          <h4 class="param-heading" data-i18n="docsApi.queryParams">Query Parameters</h4>
+          <div class="param-table">
+            <div class="param-row param-row-header">
+              <span data-i18n="docsApi.thParam">Parameter</span><span data-i18n="docsApi.thType">Type</span><span data-i18n="docsApi.thDesc">Description</span>
+            </div>
+            <div class="param-row">
+              <code>types</code>
+              <span class="param-type">string</span>
+              <span data-i18n="docsApi.paramTypes">Comma-separated event types to filter (optional)</span>
+            </div>
+          </div>
+        </article>
+
+        {/* GET /api/v1/agents */}
+        <article id="get-agents" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-get">GET</span>
+            <code class="endpoint-path">/api/v1/agents</code>
+          </div>
+          <p class="endpoint-desc" data-i18n="docsApi.getAgentsDesc">List all active and recently completed agents across all sessions.</p>
+
+          <h4 class="param-heading" data-i18n-html="docsApi.response200">Response — <code>200 OK</code></h4>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">JSON</span>
+              <span class="code-label" data-i18n="docsApi.responseLabel">Response</span>
+            </div>
+            <pre><code dangerouslySetInnerHTML={{__html: `{
+  "agents": [
+    {
+      "id": "agent_x1y2z3",
+      "session_id": "sess_a1b2c3d4",
+      "task": "Research web presence of SaaS companies",
+      "status": "completed",
+      "depth": 0,
+      "tokens_used": 18420
+    }
+  ],
+  "count": 1
+}`}} /></pre>
+          </div>
+        </article>
+
+        {/* GET /api/v1/agents/:id */}
+        <article id="get-agent" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-get">GET</span>
+            <code class="endpoint-path">/api/v1/agents/:id</code>
+          </div>
+          <p class="endpoint-desc" data-i18n="docsApi.getAgentDesc">Get detailed status and metadata for a specific agent, including tool calls and LLM interaction log.</p>
+
+          <h4 class="param-heading" data-i18n-html="docsApi.response200">Response — <code>200 OK</code></h4>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">JSON</span>
+              <span class="code-label" data-i18n="docsApi.responseLabel">Response</span>
+            </div>
+            <pre><code dangerouslySetInnerHTML={{__html: `{
+  "id": "agent_x1y2z3",
+  "session_id": "sess_a1b2c3d4",
+  "parent_id": null,
+  "task": "Research web presence of SaaS companies",
+  "role": "web-researcher",
+  "depth": 0,
+  "status": "completed",
+  "tokens_used": 18420,
+  "created_at": "2026-08-07T10:30:01Z",
+  "completed_at": "2026-08-07T10:30:42Z"
+}`}} /></pre>
+          </div>
+        </article>
+
+        {/* POST /api/v1/sessions/:id/answer */}
+        <article id="post-answer" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-post">POST</span>
+            <code class="endpoint-path">/api/v1/sessions/:id/answer</code>
+          </div>
+          <p class="endpoint-desc">Answer a pending <code>question</code> tool call. The agent blocks until the operator responds or timeout expires.</p>
+          <h4 class="param-heading">Request Body</h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"request_id": "ctrl_abc123", "text": "Focus on Series B companies"&#125;`}} /></pre></div>
+          <h4 class="param-heading">Response — <code>200 OK</code></h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"answered": true, "request_id": "ctrl_abc123"&#125;`}} /></pre></div>
+          <p class="endpoint-desc">Returns <code>410 GONE</code> if agent stopped waiting, <code>404</code> if no such request_id.</p>
+        </article>
+
+        {/* POST /api/v1/sessions/:id/approve */}
+        <article id="post-approve" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-post">POST</span>
+            <code class="endpoint-path">/api/v1/sessions/:id/approve</code>
+          </div>
+          <p class="endpoint-desc">Allow or deny a pending side-effect tool call (e.g. <code>save_contacts</code>, <code>git_push</code>).</p>
+          <h4 class="param-heading">Request Body</h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"request_id": "ctrl_def456", "approved": true&#125;`}} /></pre></div>
+          <h4 class="param-heading">Response — <code>200 OK</code></h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"approved": true, "request_id": "ctrl_def456"&#125;`}} /></pre></div>
+        </article>
+
+        {/* POST /api/v1/jobs */}
+        <article id="post-jobs" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-post">POST</span>
+            <code class="endpoint-path">/api/v1/jobs</code>
+          </div>
+          <p class="endpoint-desc">Submit a durable background job. Spawns a fully detached runner process.</p>
+          <h4 class="param-heading">Request Body</h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"task": "Find CTOs at fintech startups in Berlin", "attempts": 3&#125;`}} /></pre></div>
+          <h4 class="param-heading">Response — <code>202 ACCEPTED</code></h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"id": "job_abc123", "status": "queued", "task": "...", "attempts": 3, "max_attempts": 3, "output_dir": "./jobs/job_abc123", "log": "./jobs/job_abc123/run.log"&#125;`}} /></pre></div>
+        </article>
+
+        {/* GET /api/v1/jobs */}
+        <article id="get-jobs" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-get">GET</span>
+            <code class="endpoint-path">/api/v1/jobs</code>
+          </div>
+          <p class="endpoint-desc">List all jobs. Jobs with running status but dead PID are marked <code>"stale"</code>.</p>
+          <h4 class="param-heading">Response — <code>200 OK</code></h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"jobs": [...], "count": 5&#125;`}} /></pre></div>
+        </article>
+
+        {/* GET /api/v1/jobs/:id */}
+        <article id="get-job" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-get">GET</span>
+            <code class="endpoint-path">/api/v1/jobs/:id</code>
+          </div>
+          <p class="endpoint-desc">Get job status by full ID or unique prefix.</p>
+          <h4 class="param-heading">Response — <code>200 OK</code></h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"id": "job_abc123", "status": "completed", "task": "...", "attempts": 1, "max_attempts": 3&#125;`}} /></pre></div>
+        </article>
+
+        {/* DELETE /api/v1/jobs/:id */}
+        <article id="delete-job" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-delete">DELETE</span>
+            <code class="endpoint-path">/api/v1/jobs/:id</code>
+          </div>
+          <p class="endpoint-desc">Cancel an active job. Terminates the runner process and marks the job cancelled.</p>
+          <h4 class="param-heading">Response — <code>200 OK</code></h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"id": "job_abc123", "status": "cancelled"&#125;`}} /></pre></div>
+        </article>
+
+        {/* GET /api/v1/jobs/:id/log */}
+        <article id="get-job-log" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-get">GET</span>
+            <code class="endpoint-path">/api/v1/jobs/:id/log</code>
+          </div>
+          <p class="endpoint-desc">Tail the job log file.</p>
+          <h4 class="param-heading">Query Parameters</h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">HTTP</span></div><pre><code dangerouslySetInnerHTML={{__html: `?lines=100  (default 100, cap 2000)`}} /></pre></div>
+          <h4 class="param-heading">Response — <code>200 OK</code></h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"lines": ["...", "..."], "total_lines": 150, "returned": 100&#125;`}} /></pre></div>
+        </article>
+
+        {/* POST /api/v1/jobs/:id/rerun */}
+        <article id="post-rerun" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-post">POST</span>
+            <code class="endpoint-path">/api/v1/jobs/:id/rerun</code>
+          </div>
+          <p class="endpoint-desc">Re-run a finished or stale job. Resets state and spawns a new runner.</p>
+          <h4 class="param-heading">Response — <code>202 ACCEPTED</code></h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"id": "job_abc123", "status": "queued", ...&#125;`}} /></pre></div>
+        </article>
+
+        {/* GET /api/v1/memories */}
+        <article id="get-memories" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-get">GET</span>
+            <code class="endpoint-path">/api/v1/memories</code>
+          </div>
+          <p class="endpoint-desc">List memories or perform hybrid search. If <code>?q=</code> is non-empty, does semantic search.</p>
+          <h4 class="param-heading">Query Parameters</h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">HTTP</span></div><pre><code dangerouslySetInnerHTML={{__html: `?q=CTO+fintech&scope=agent&status=active&limit=20&top_k=10`}} /></pre></div>
+          <h4 class="param-heading">Response — <code>200 OK</code></h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"query": "CTO fintech", "memories": [...]&#125;`}} /></pre></div>
+        </article>
+
+        {/* POST /api/v1/memories/absorb */}
+        <article id="post-absorb" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-post">POST</span>
+            <code class="endpoint-path">/api/v1/memories/absorb</code>
+          </div>
+          <p class="endpoint-desc">Absorb facts through the full memory pipeline (classification, embedding, dedup, storage).</p>
+          <h4 class="param-heading">Request Body</h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"facts": [&#123;"content": "Acme Corp uses React", "confidence": 0.9&#125;], "source": "research", "scope": "agent"&#125;`}} /></pre></div>
+          <h4 class="param-heading">Response — <code>200 OK</code></h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"created": 1, "duplicates": 0, "superseded": 0&#125;`}} /></pre></div>
+        </article>
+
+        {/* GET /api/v1/memories/stats */}
+        <article id="get-memory-stats" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-get">GET</span>
+            <code class="endpoint-path">/api/v1/memories/stats</code>
+          </div>
+          <p class="endpoint-desc">Memory store statistics: scope counts, entity graph nodes/edges.</p>
+          <h4 class="param-heading">Response — <code>200 OK</code></h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"embedding_model": "text-embedding-3-small", "scopes": &#123;"agent": &#123;"active": 42, "superseded": 5, "archived": 12&#125;&#125;, "entity_graph": &#123;"nodes": 28, "edges": 45&#125;&#125;`}} /></pre></div>
+        </article>
+
+        {/* POST /api/v1/memories/distill */}
+        <article id="post-distill" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-post">POST</span>
+            <code class="endpoint-path">/api/v1/memories/distill</code>
+          </div>
+          <p class="endpoint-desc">Promote run-scoped facts into agent-scoped knowledge.</p>
+          <h4 class="param-heading">Query Parameters</h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">HTTP</span></div><pre><code dangerouslySetInnerHTML={{__html: `?session=sess_abc123&dry_run=true`}} /></pre></div>
+          <h4 class="param-heading">Response — <code>200 OK</code></h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"promoted": 8, "archived": 3&#125;`}} /></pre></div>
+        </article>
+
+        {/* POST /api/v1/memories/gc */}
+        <article id="post-gc" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-post">POST</span>
+            <code class="endpoint-path">/api/v1/memories/gc</code>
+          </div>
+          <p class="endpoint-desc">Garbage-collect expired/stale facts and compact groups.</p>
+          <h4 class="param-heading">Query Parameters</h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">HTTP</span></div><pre><code dangerouslySetInnerHTML={{__html: `?ttl_days=30&dry_run=false`}} /></pre></div>
+          <h4 class="param-heading">Response — <code>200 OK</code></h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"stale_archived": 15, "compacted": 2, "dry_run": false&#125;`}} /></pre></div>
+        </article>
+
+        {/* GET /api/v1/memories/:id */}
+        <article id="get-memory" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-get">GET</span>
+            <code class="endpoint-path">/api/v1/memories/:id</code>
+          </div>
+          <p class="endpoint-desc">Get one memory by ID with optional history following.</p>
+          <h4 class="param-heading">Query Parameters</h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">HTTP</span></div><pre><code dangerouslySetInnerHTML={{__html: `?follow=latest  (options: active, latest, full_history)`}} /></pre></div>
+          <h4 class="param-heading">Response — <code>200 OK</code></h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"memories": [...]&#125;`}} /></pre></div>
+        </article>
+
+        {/* DELETE /api/v1/memories/:id */}
+        <article id="delete-memory" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-delete">DELETE</span>
+            <code class="endpoint-path">/api/v1/memories/:id</code>
+          </div>
+          <p class="endpoint-desc">Soft-delete a memory by setting status to "archived".</p>
+          <h4 class="param-heading">Response — <code>200 OK</code></h4>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"archived": "mem_abc123"&#125;`}} /></pre></div>
+        </article>
+
+        {/* GET /health */}
+        <article id="health" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-get">GET</span>
+            <code class="endpoint-path">/health</code>
+          </div>
+          <p class="endpoint-desc" data-i18n="docsApi.healthDesc">Health check endpoint. No authentication required. Returns server status and version.</p>
+
+          <h4 class="param-heading" data-i18n-html="docsApi.response200">Response — <code>200 OK</code></h4>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">JSON</span>
+              <span class="code-label" data-i18n="docsApi.responseLabel">Response</span>
+            </div>
+            <pre><code dangerouslySetInnerHTML={{__html: `{
+  "status": "ok",
+  "service": "parallel-research",
+  "version": "0.1.0",
+  "database": "ok",
+  "active_sessions": 2
+}
+
+// Possible values:
+// status: "ok" | "degraded"
+// database: "ok" | "error"`}} /></pre>
+          </div>
+        </article>
+
+        {/* GET /metrics */}
+        <article id="metrics" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-get">GET</span>
+            <code class="endpoint-path">/metrics</code>
+          </div>
+          <p class="endpoint-desc" data-i18n="docsApi.metricsDesc">Prometheus-compatible metrics endpoint. No authentication required. Scrape with any Prometheus-compatible collector.</p>
+
+          <h4 class="param-heading" data-i18n="docsApi.response200Metrics">Response — <code>200 OK</code> (text/plain)</h4>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">Prometheus</span>
+              <span class="code-label" data-i18n="docsApi.metricsLabel">Metrics</span>
+            </div>
+            <pre><code dangerouslySetInnerHTML={{__html: `# HELP pr_sessions_total Total number of sessions
+# TYPE pr_sessions_total counter
+pr_sessions_total 42
+
+# HELP pr_agents_active Currently active agents
+# TYPE pr_agents_active gauge
+pr_agents_active 3
+
+# HELP pr_request_duration_seconds Request latency
+# TYPE pr_request_duration_seconds histogram
+pr_request_duration_seconds_bucket{le="0.1"} 120`}} /></pre>
+          </div>
+        </article>
+
+        {/* GET /dashboard */}
+        <article id="dashboard" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-get">GET</span>
+            <code class="endpoint-path">/dashboard</code>
+          </div>
+          <p class="endpoint-desc">Embedded single-file HTML dashboard. Sessions, agent tree, memory stats, jobs, and live SSE event feed. No authentication required.</p>
+          <h4 class="param-heading">Response — <code>200 OK</code></h4>
+          <p class="endpoint-desc"><code>text/html</code> — self-contained dashboard page. Open in a browser.</p>
+        </article>
+      </section>
+
+      {/* SSE EVENTS */}
+      <section id="sse-events" class="api-section">
+        <h2 class="api-section-title" data-i18n="docsApi.sseEventsTitle">SSE Event Types</h2>
+        <p class="api-text" data-i18n="docsApi.sseEventsText">
+          Server-Sent Events are pushed over persistent HTTP connections. Each event is sent as a <code>data:</code> line with a JSON payload. Event types use <strong>snake_case</strong> in the JSON <code>type</code> field (e.g., <code>session_started</code>, <code>agent_spawned</code>). There is no <code>event:</code> field in the SSE frame.
+        </p>
+        <div class="event-table">
+          <div class="event-row event-row-header">
+            <span data-i18n="docsApi.eventTypeLabel">Event Type</span><span data-i18n="docsApi.thDesc">Description</span>
+          </div>
+          <div class="event-row">
+            <code class="event-name">session_started</code>
+            <span data-i18n="docsApi.ev.sessionStarted">Fired when a new session is initialized</span>
+          </div>
+          <div class="event-row">
+            <code class="event-name">agent_spawned</code>
+            <span data-i18n="docsApi.ev.agentSpawned">A new agent was created within the session</span>
+          </div>
+          <div class="event-row">
+            <code class="event-name">agent_state_changed</code>
+            <span data-i18n="docsApi.ev.agentStateChanged">Agent transitioned between states (idle → running → completed)</span>
+          </div>
+          <div class="event-row">
+            <code class="event-name">finding</code>
+            <span data-i18n="docsApi.ev.finding">An agent discovered a research finding</span>
+          </div>
+          <div class="event-row">
+            <code class="event-name">tool_call_started</code>
+            <span data-i18n="docsApi.ev.toolCallStarted">Agent began executing a tool (web search, scrape, etc.)</span>
+          </div>
+          <div class="event-row">
+            <code class="event-name">tool_call_completed</code>
+            <span data-i18n="docsApi.ev.toolCallCompleted">Tool execution finished with results</span>
+          </div>
+          <div class="event-row">
+            <code class="event-name">llm_stream_chunk</code>
+            <span data-i18n="docsApi.ev.llmStreamChunk">Streaming token from the LLM response (for live UI)</span>
+          </div>
+          <div class="event-row">
+            <code class="event-name">agent_completed</code>
+            <span data-i18n="docsApi.ev.agentCompleted">Agent finished its task successfully</span>
+          </div>
+          <div class="event-row">
+            <code class="event-name">agent_failed</code>
+            <span data-i18n="docsApi.ev.agentFailed">Agent encountered an unrecoverable error</span>
+          </div>
+          <div class="event-row">
+            <code class="event-name">session_completed</code>
+            <span data-i18n="docsApi.ev.sessionCompleted">All agents finished; session results are ready</span>
+          </div>
+          <div class="event-row">
+            <code class="event-name">session_failed</code>
+            <span data-i18n="docsApi.ev.sessionFailed">Session terminated due to a critical error</span>
+          </div>
+          <div class="event-row">
+            <code class="event-name">question_asked</code>
+            <span data-i18n="docsApi.ev.questionAsked">Agent's question tool is waiting for operator answer (use POST /answer)</span>
+          </div>
+          <div class="event-row">
+            <code class="event-name">approval_requested</code>
+            <span data-i18n="docsApi.ev.approvalRequested">Agent wants to run a side-effect tool that needs approval (use POST /approve)</span>
+          </div>
+          <div class="event-row">
+            <code class="event-name">session_forked</code>
+            <span data-i18n="docsApi.ev.sessionForked">Session was forked from another session</span>
+          </div>
+          <div class="event-row">
+            <code class="event-name">file_change_undone</code>
+            <span data-i18n="docsApi.ev.fileChangeUndone">A file change was rolled back via undo</span>
+          </div>
+          <div class="event-row">
+            <code class="event-name">title_generated</code>
+            <span data-i18n="docsApi.ev.titleGenerated">Session title was auto-generated</span>
+          </div>
+        </div>
+      </section>
+
+      {/* CLI COMMANDS */}
+      <section id="cli-commands" class="api-section">
+        <h2 class="api-section-title" data-i18n="docsApi.cliTitle">CLI Commands</h2>
+        <p class="api-text" data-i18n-html="docsApi.cliText">
+          The <code>parallel-research</code> CLI provides local development and operational tools. Install via <code>cargo install parallel-research</code> or build from source.
+        </p>
+        <div class="cli-table">
+          <div class="cli-row cli-row-header">
+            <span data-i18n="docsApi.cliCmdLabel">Command</span><span data-i18n="docsApi.thDesc">Description</span>
+          </div>
+          <div class="cli-row">
+            <code class="cli-cmd">parallel-research run</code>
+            <span data-i18n="docsApi.cli.run">Execute a one-shot research query and print results to stdout</span>
+          </div>
+          <div class="cli-row">
+            <code class="cli-cmd">parallel-research worker</code>
+            <span data-i18n="docsApi.cli.worker">Start a background worker process for processing queued sessions</span>
+          </div>
+          <div class="cli-row">
+            <code class="cli-cmd">parallel-research tui</code>
+            <span data-i18n="docsApi.cli.tui">Launch the interactive terminal UI for monitoring sessions</span>
+          </div>
+          <div class="cli-row">
+            <code class="cli-cmd">parallel-research serve</code>
+            <span data-i18n="docsApi.cli.serve">Start the HTTP API server (this API)</span>
+          </div>
+          <div class="cli-row">
+            <code class="cli-cmd">parallel-research contacts</code>
+            <span data-i18n="docsApi.cli.contacts">Manage contact lists for outreach campaigns</span>
+          </div>
+          <div class="cli-row">
+            <code class="cli-cmd">parallel-research resume</code>
+            <span data-i18n="docsApi.cli.resume">Resume a previously interrupted session from checkpoint</span>
+          </div>
+          <div class="cli-row">
+            <code class="cli-cmd">parallel-research config</code>
+            <span data-i18n="docsApi.cli.config">View and manage configuration (API keys, model settings, etc.)</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ERROR CODES */}
+      <section id="error-codes" class="api-section">
+        <h2 class="api-section-title" data-i18n="docsApi.errorTitle">Error Codes</h2>
+        <p class="api-text" data-i18n-html="docsApi.errorText">
+          All error responses follow a consistent JSON format with a human-readable <code>error</code> string.
+        </p>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">JSON</span>
+            <span class="code-label" data-i18n="docsApi.errorFormatLabel">Error Format</span>
+          </div>
+          <pre><code dangerouslySetInnerHTML={{__html: `{
+  "error": "Invalid or missing API key"
+}`}} /></pre>
+        </div>
+
+        <div class="error-table">
+          <div class="error-row error-row-header">
+            <span data-i18n="docsApi.errorStatusLabel">Status</span><span data-i18n="docsApi.errorCodeLabel">Code</span><span data-i18n="docsApi.thDesc">Description</span>
+          </div>
+          <div class="error-row">
+            <span class="error-status error-400">400</span>
+            <code>bad_request</code>
+            <span data-i18n="docsApi.err.400">Invalid or missing required parameters</span>
+          </div>
+          <div class="error-row">
+            <span class="error-status error-401">401</span>
+            <code>unauthorized</code>
+            <span data-i18n="docsApi.err.401">Missing or invalid API key in request headers</span>
+          </div>
+          <div class="error-row">
+            <span class="error-status error-404">404</span>
+            <code>not_found</code>
+            <span data-i18n="docsApi.err.404">The requested resource (session, agent) does not exist</span>
+          </div>
+          <div class="error-row">
+            <span class="error-status error-429">429</span>
+            <code>rate_limited</code>
+            <span data-i18n-html="docsApi.err.429">Too many requests — retry after the <code>Retry-After</code> header</span>
+          </div>
+          <div class="error-row">
+            <span class="error-status error-500">500</span>
+            <code>internal_error</code>
+            <span data-i18n="docsApi.err.500">Unexpected server error — check logs for details</span>
+          </div>
+          <div class="error-row">
+            <span class="error-status error-503">503</span>
+            <code>service_unavailable</code>
+            <span data-i18n="docsApi.err.503">LLM API key not configured or memory subsystem disabled</span>
+          </div>
+          <div class="error-row">
+            <span class="error-status error-409">409</span>
+            <code>conflict</code>
+            <span data-i18n="docsApi.err.409">The resource is in a state that doesn't allow the operation (e.g. session is not running)</span>
+          </div>
+          <div class="error-row">
+            <span class="error-status error-410">410</span>
+            <code>gone</code>
+            <span data-i18n="docsApi.err.410">The agent stopped waiting for a response (approval/question timed out)</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="api-footer">
+        <p>Fathom Research API · Version 0.1.0</p>
+      </div>
+    </div>
+  </main>

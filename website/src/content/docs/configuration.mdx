@@ -1,0 +1,961 @@
+---
+title: "Configuration — Fathom Research"
+sidebarId: "configuration"
+---
+<div class="doc-header">
+    <span class="doc-badge" data-i18n="docsConfig.badge">Configuration</span>
+    <h1 data-i18n="docsConfig.title">Configuration Reference</h1>
+    <p class="doc-lead" data-i18n-html="docsConfig.lead">
+      Full reference for <code>~/.parallel-research/config.toml</code>. All sections are optional — missing fields use defaults. Old configs without newer sections load without errors.
+    </p>
+  </div>
+
+  <section id="full-example">
+    <h2 data-i18n="docsConfig.fullExampleTitle">Full Example</h2>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">~/.parallel-research/config.toml</span>
+      </div>
+      <pre><code dangerouslySetInnerHTML={{__html: `<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-comment"># LLM Provider</span>
+<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-section">[llm]</span>
+provider    = <span class="code-string">"deepseek"</span>
+base_url    = <span class="code-string">"https://api.deepseek.com"</span>
+api_key     = <span class="code-string">"sk-your-key"</span>
+model       = <span class="code-string">"deepseek-v4-flash"</span>
+fast_model  = <span class="code-string">""</span>
+max_tokens  = <span class="code-number">8192</span>
+temperature = <span class="code-number">0.7</span>
+
+<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-comment"># Agents</span>
+<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-section">[agent]</span>
+max_depth         = <span class="code-number">2</span>
+max_agents        = <span class="code-number">20</span>
+max_iterations    = <span class="code-number">50</span>
+timeout_seconds   = <span class="code-number">600</span>
+use_multiprocess  = <span class="code-keyword">false</span>
+stall_warn_seconds  = <span class="code-number">450</span>
+stall_kill_seconds  = <span class="code-number">1200</span>
+session_token_limit = <span class="code-number">0</span>
+replan_rounds       = <span class="code-number">1</span>
+approval_tools      = [<span class="code-string">"save_contacts"</span>, <span class="code-string">"git_push"</span>]
+approval_fallback   = <span class="code-string">"allow"</span>
+approval_timeout_seconds = <span class="code-number">300</span>
+
+<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-comment"># Search</span>
+<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-section">[search]</span>
+backend = <span class="code-string">"hybrid"</span>
+
+<span class="code-section">[search.linkup]</span>
+api_key = <span class="code-string">"..."</span>
+<span class="code-section">[search.exa]</span>
+api_key = <span class="code-string">"..."</span>
+<span class="code-section">[search.tavily]</span>
+api_key = <span class="code-string">"..."</span>
+<span class="code-section">[search.serper]</span>
+api_key = <span class="code-string">"..."</span>
+<span class="code-section">[search.brave]</span>
+api_key = <span class="code-string">"..."</span>
+<span class="code-section">[search.parallel]</span>
+api_key = <span class="code-string">"..."</span>
+
+<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-comment"># Context Management</span>
+<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-section">[context]</span>
+context_window        = <span class="code-number">128000</span>
+context_window_profile = <span class="code-string">"low"</span>
+compact_threshold     = <span class="code-number">0.50</span>
+tool_output_max_bytes = <span class="code-number">50000</span>
+tool_output_max_lines = <span class="code-number">2000</span>
+turn_budget_bytes     = <span class="code-number">200000</span>
+
+<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-comment"># Memory</span>
+<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-section">[memory]</span>
+enabled           = <span class="code-keyword">true</span>
+db_path           = <span class="code-string">""</span>
+embeddings        = <span class="code-string">"auto"</span>
+embedding_model   = <span class="code-string">"text-embedding-3-small"</span>
+semantic_weight   = <span class="code-number">0.7</span>
+top_k             = <span class="code-number">5</span>
+min_score         = <span class="code-number">0.25</span>
+temporal_decay    = <span class="code-number">0.01</span>
+auto_digest       = <span class="code-keyword">true</span>
+llm_classify      = <span class="code-keyword">true</span>
+rerank            = <span class="code-keyword">false</span>
+gc_ttl_days       = <span class="code-number">30</span>
+gc_compact_above  = <span class="code-number">200</span>
+gc_auto           = <span class="code-keyword">false</span>
+
+<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-comment"># Hooks</span>
+<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-section">[[hooks]]</span>
+event     = <span class="code-string">"PreToolUse"</span>
+command   = <span class="code-string">"/usr/local/bin/my-guard.sh"</span>
+tool      = <span class="code-string">"shell"</span>
+timeout_ms = <span class="code-number">3000</span>
+
+<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-comment"># Output</span>
+<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-section">[output]</span>
+dir = <span class="code-string">"./research-output"</span>
+
+<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-comment"># Export</span>
+<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-section">[export]</span>
+format = <span class="code-string">"html"</span>
+
+<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-comment"># Notifications</span>
+<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-section">[notifications]</span>
+webhook_url          = <span class="code-string">""</span>
+email_to             = <span class="code-string">""</span>
+email_from           = <span class="code-string">""</span>
+smtp_host            = <span class="code-string">""</span>
+smtp_port            = <span class="code-number">587</span>
+smtp_username        = <span class="code-string">""</span>
+smtp_password        = <span class="code-string">""</span>
+telegram_bot_token   = <span class="code-string">""</span>
+telegram_chat_id     = <span class="code-string">""</span>
+
+<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-comment"># Contacts</span>
+<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-section">[contacts]</span>
+db_path = <span class="code-string">"./contacts.db"</span>
+pg_url  = <span class="code-string">""</span>
+
+<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-comment"># CRM Sync</span>
+<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-section">[crm]</span>
+provider = <span class="code-string">""</span>
+domain   = <span class="code-string">""</span>
+api_key  = <span class="code-string">""</span>
+
+<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-comment"># MCP Servers</span>
+<span class="code-comment"># ─────────────────────────────────────────</span>
+<span class="code-section">[[mcp.servers]]</span>
+name      = <span class="code-string">"web-search"</span>
+transport = <span class="code-string">"stdio"</span>
+command   = <span class="code-string">"npx"</span>
+args      = [<span class="code-string">"-y"</span>, <span class="code-string">"@modelcontextprotocol/server-web-search"</span>]
+
+<span class="code-section">[[mcp.servers]]</span>
+name      = <span class="code-string">"remote-tools"</span>
+transport = <span class="code-string">"http"</span>
+url       = <span class="code-string">"https://mcp.example.com"</span>`}} /></pre>
+    </div>
+  </section>
+
+  <section id="llm">
+    <h2 data-i18n="docsConfig.llmTitle">[llm]</h2>
+    <p data-i18n-html="docsConfig.llmSub">LLM provider settings. The <code>api_key</code> field is required for operation.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="docsConfig.thField">Field</th>
+            <th data-i18n="docsConfig.thType">Type</th>
+            <th data-i18n="docsConfig.thDefault">Default</th>
+            <th data-i18n="docsConfig.thDesc">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>provider</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>"deepseek"</code></td>
+            <td data-i18n="docsConfig.llm.provider">Provider name</td>
+          </tr>
+          <tr>
+            <td><code>base_url</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>"https://api.deepseek.com"</code></td>
+            <td data-i18n="docsConfig.llm.baseUrl">API endpoint</td>
+          </tr>
+          <tr>
+            <td><code>api_key</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>""</code></td>
+            <td data-i18n-html="docsConfig.llm.apiKey"><strong>Required</strong> for operation</td>
+          </tr>
+          <tr>
+            <td><code>model</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>"deepseek-chat"</code></td>
+            <td data-i18n="docsConfig.llm.model">Model identifier</td>
+          </tr>
+          <tr>
+            <td><code>fast_model</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>""</code></td>
+            <td data-i18n="docsConfig.llm.fastModel">Cheap/fast model for entity extraction, memory absorb, reranking. Empty = reuse model</td>
+          </tr>
+          <tr>
+            <td><code>max_tokens</code></td>
+            <td><span class="type-badge">u32</span></td>
+            <td><code>8192</code></td>
+            <td data-i18n="docsConfig.llm.maxTokens">Max response tokens</td>
+          </tr>
+          <tr>
+            <td><code>temperature</code></td>
+            <td><span class="type-badge">f32</span></td>
+            <td><code>0.7</code></td>
+            <td data-i18n="docsConfig.llm.temperature">Generation temperature</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="agent">
+    <h2 data-i18n="docsConfig.agentTitle">[agent]</h2>
+    <p data-i18n="docsConfig.agentSub">Agent orchestration settings: depth limits, concurrency, and timeouts.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="docsConfig.thField">Field</th>
+            <th data-i18n="docsConfig.thType">Type</th>
+            <th data-i18n="docsConfig.thDefault">Default</th>
+            <th data-i18n="docsConfig.thDesc">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>max_depth</code></td>
+            <td><span class="type-badge">u32</span></td>
+            <td><code>2</code></td>
+            <td data-i18n="docsConfig.agent.maxDepth">Max sub-agent nesting depth</td>
+          </tr>
+          <tr>
+            <td><code>max_agents</code></td>
+            <td><span class="type-badge">u32</span></td>
+            <td><code>20</code></td>
+            <td data-i18n="docsConfig.agent.maxAgents">Max agents per session</td>
+          </tr>
+          <tr>
+            <td><code>max_iterations</code></td>
+            <td><span class="type-badge">u32</span></td>
+            <td><code>50</code></td>
+            <td data-i18n="docsConfig.agent.maxIterations">Max LLM iterations per agent</td>
+          </tr>
+          <tr>
+            <td><code>timeout_seconds</code></td>
+            <td><span class="type-badge">u64</span></td>
+            <td><code>600</code></td>
+            <td data-i18n="docsConfig.agent.timeout">Session timeout (seconds)</td>
+          </tr>
+          <tr>
+            <td><code>use_multiprocess</code></td>
+            <td><span class="type-badge">bool</span></td>
+            <td><code>false</code></td>
+            <td data-i18n="docsConfig.agent.useMultiprocess">Isolate agents in separate processes</td>
+          </tr>
+          <tr>
+            <td><code>max_concurrent_children</code></td>
+            <td><span class="type-badge">u32</span></td>
+            <td><code>4</code></td>
+            <td data-i18n="docsConfig.agent.maxConcurrent">Max children of one parent running concurrently</td>
+          </tr>
+          <tr>
+            <td><code>stall_warn_seconds</code></td>
+            <td><span class="type-badge">u64</span></td>
+            <td><code>450</code></td>
+            <td data-i18n="docsConfig.agent.stallWarn">Seconds of zero progress before stall warning (0 disables)</td>
+          </tr>
+          <tr>
+            <td><code>stall_kill_seconds</code></td>
+            <td><span class="type-badge">u64</span></td>
+            <td><code>1200</code></td>
+            <td data-i18n="docsConfig.agent.stallKill">Seconds of zero progress before agent is cancelled (0 disables)</td>
+          </tr>
+          <tr>
+            <td><code>deny_tools</code></td>
+            <td><span class="type-badge">map</span></td>
+            <td><code>&#123;&#125;</code></td>
+            <td data-i18n-html="docsConfig.agent.denyTools">Per-role tool deny lists: <code>&#123;"verifier": ["shell", "save_contacts"]&#125;</code></td>
+          </tr>
+          <tr>
+            <td><code>role_models</code></td>
+            <td><span class="type-badge">map</span></td>
+            <td><code>&#123;&#125;</code></td>
+            <td data-i18n-html="docsConfig.agent.roleModels">Per-role model overrides: <code>&#123;"researcher": "deepseek-chat"&#125;</code></td>
+          </tr>
+          <tr>
+            <td><code>session_token_limit</code></td>
+            <td><span class="type-badge">u64</span></td>
+            <td><code>0</code></td>
+            <td data-i18n="docsConfig.agent.sessionTokenLimit">Session-wide token budget; 0 disables. Fan-out stops when reached</td>
+          </tr>
+          <tr>
+            <td><code>replan_rounds</code></td>
+            <td><span class="type-badge">u32</span></td>
+            <td><code>1</code></td>
+            <td data-i18n="docsConfig.agent.replanRounds">Goal Mode: max gap-filling replan rounds after initial fan-out (0 disables)</td>
+          </tr>
+          <tr>
+            <td><code>approval_tools</code></td>
+            <td><span class="type-badge">string[]</span></td>
+            <td><code>["save_contacts", "git_push"]</code></td>
+            <td data-i18n="docsConfig.agent.approvalTools">Tools requiring operator approval before execution</td>
+          </tr>
+          <tr>
+            <td><code>approval_fallback</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>"allow"</code></td>
+            <td data-i18n="docsConfig.agent.approvalFallback">Verdict when no operator connected: "allow" or "deny"</td>
+          </tr>
+          <tr>
+            <td><code>approval_timeout_seconds</code></td>
+            <td><span class="type-badge">u64</span></td>
+            <td><code>300</code></td>
+            <td data-i18n="docsConfig.agent.approvalTimeout">Seconds to wait for operator approval before fallback applies</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="search">
+    <h2 data-i18n="docsConfig.searchTitle">[search]</h2>
+    <p data-i18n-html="docsConfig.searchSub">Search backend configuration. Sub-sections <code>[search.*]</code> contain API keys per provider. DuckDuckGo requires no key.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="docsConfig.thField">Field</th>
+            <th data-i18n="docsConfig.thType">Type</th>
+            <th data-i18n="docsConfig.thDefault">Default</th>
+            <th data-i18n="docsConfig.thDesc">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>backend</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>"hybrid"</code></td>
+            <td data-i18n="docsConfig.search.backend">Search backend to use</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="search-backends" data-i18n="docsConfig.searchBackendsTitle">Backend Values</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="docsConfig.search.thValue">Value</th>
+            <th data-i18n="docsConfig.thDesc">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>linkup</code></td>
+            <td data-i18n="docsConfig.search.bv.linkup">Linkup search API</td>
+          </tr>
+          <tr>
+            <td><code>exa</code></td>
+            <td data-i18n="docsConfig.search.bv.exa">Exa neural search</td>
+          </tr>
+          <tr>
+            <td><code>tavily</code></td>
+            <td data-i18n="docsConfig.search.bv.tavily">Tavily search API</td>
+          </tr>
+          <tr>
+            <td><code>serper</code></td>
+            <td data-i18n="docsConfig.search.bv.serper">Serper (Google) API</td>
+          </tr>
+          <tr>
+            <td><code>brave</code></td>
+            <td data-i18n="docsConfig.search.bv.brave">Brave Search API</td>
+          </tr>
+          <tr>
+            <td><code>parallel</code></td>
+            <td data-i18n="docsConfig.search.bv.parallel">Fathom search API</td>
+          </tr>
+          <tr>
+            <td><code>duckduckgo</code></td>
+            <td data-i18n="docsConfig.search.bv.ddg">DuckDuckGo (no key needed)</td>
+          </tr>
+          <tr>
+            <td><code>hybrid</code></td>
+            <td data-i18n="docsConfig.search.bv.hybrid">First configured backend with results (order: linkup → exa → tavily → serper → brave → parallel → duckduckgo)</td>
+          </tr>
+          <tr>
+            <td><code>smart</code></td>
+            <td data-i18n="docsConfig.search.bv.smart">All configured backends in parallel, dedup by URL, reciprocal rank fusion ranking</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="context">
+    <h2 data-i18n="docsConfig.contextTitle">[context]</h2>
+    <p data-i18n="docsConfig.contextSub">Context management and token budget settings.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="docsConfig.thField">Field</th>
+            <th data-i18n="docsConfig.thType">Type</th>
+            <th data-i18n="docsConfig.thDefault">Default</th>
+            <th data-i18n="docsConfig.thDesc">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>context_window</code></td>
+            <td><span class="type-badge">u32</span></td>
+            <td><code>128000</code></td>
+            <td data-i18n="docsConfig.context.window">Context window size (tokens)</td>
+          </tr>
+          <tr>
+            <td><code>context_window_profile</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>"low"</code></td>
+            <td data-i18n-html="docsConfig.context.windowProfile">Window profile: <code>low</code> (128K) or <code>max</code> (256K). Explicit <code>context_window</code> always wins</td>
+          </tr>
+          <tr>
+            <td><code>compact_threshold</code></td>
+            <td><span class="type-badge">f32</span></td>
+            <td><code>0.50</code></td>
+            <td data-i18n="docsConfig.context.compactThreshold">Compression trigger (fraction of window)</td>
+          </tr>
+          <tr>
+            <td><code>tool_output_max_bytes</code></td>
+            <td><span class="type-badge">u32</span></td>
+            <td><code>50000</code></td>
+            <td data-i18n="docsConfig.context.toolBytes">Tool output limit (bytes)</td>
+          </tr>
+          <tr>
+            <td><code>tool_output_max_lines</code></td>
+            <td><span class="type-badge">u32</span></td>
+            <td><code>2000</code></td>
+            <td data-i18n="docsConfig.context.toolLines">Tool output limit (lines)</td>
+          </tr>
+          <tr>
+            <td><code>turn_budget_bytes</code></td>
+            <td><span class="type-badge">u32</span></td>
+            <td><code>200000</code></td>
+            <td data-i18n="docsConfig.context.turnBudget">Aggregate budget per turn (bytes)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="output">
+    <h2 data-i18n="docsConfig.outputTitle">[output]</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="docsConfig.thField">Field</th>
+            <th data-i18n="docsConfig.thType">Type</th>
+            <th data-i18n="docsConfig.thDefault">Default</th>
+            <th data-i18n="docsConfig.thDesc">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>dir</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>"./research-output"</code></td>
+            <td data-i18n="docsConfig.output.dir">Output directory for results</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="export">
+    <h2 data-i18n="docsConfig.exportTitle">[export]</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="docsConfig.thField">Field</th>
+            <th data-i18n="docsConfig.thType">Type</th>
+            <th data-i18n="docsConfig.thDefault">Default</th>
+            <th data-i18n="docsConfig.thDesc">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>format</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>"html"</code></td>
+            <td data-i18n-html="docsConfig.export.format"><code>pdf</code> | <code>html</code> | <code>json</code> | <code>docx</code>. Unknown format falls back to HTML. PDF/DOCX require pandoc.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="notifications">
+    <h2 data-i18n="docsConfig.notifTitle">[notifications]</h2>
+    <p data-i18n="docsConfig.notifSub">Notifications are sent only when the corresponding field is non-empty.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="docsConfig.thField">Field</th>
+            <th data-i18n="docsConfig.thType">Type</th>
+            <th data-i18n="docsConfig.thDefault">Default</th>
+            <th data-i18n="docsConfig.thDesc">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>webhook_url</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>""</code></td>
+            <td data-i18n="docsConfig.notif.webhook">URL for JSON POST on completion</td>
+          </tr>
+          <tr>
+            <td><code>email_to</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>""</code></td>
+            <td data-i18n="docsConfig.notif.emailTo">Email recipient</td>
+          </tr>
+          <tr>
+            <td><code>email_from</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>""</code></td>
+            <td data-i18n="docsConfig.notif.emailFrom">Email sender (default: parallel-research@localhost)</td>
+          </tr>
+          <tr>
+            <td><code>smtp_host</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>""</code></td>
+            <td data-i18n="docsConfig.notif.smtpHost">SMTP server (default: localhost)</td>
+          </tr>
+          <tr>
+            <td><code>smtp_port</code></td>
+            <td><span class="type-badge">u16</span></td>
+            <td><code>587</code></td>
+            <td data-i18n="docsConfig.notif.smtpPort">SMTP port</td>
+          </tr>
+          <tr>
+            <td><code>smtp_username</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>""</code></td>
+            <td data-i18n="docsConfig.notif.smtpUser">SMTP login</td>
+          </tr>
+          <tr>
+            <td><code>smtp_password</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>""</code></td>
+            <td data-i18n="docsConfig.notif.smtpPass">SMTP password</td>
+          </tr>
+          <tr>
+            <td><code>telegram_bot_token</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>""</code></td>
+            <td data-i18n="docsConfig.notif.tgToken">Telegram bot token</td>
+          </tr>
+          <tr>
+            <td><code>telegram_chat_id</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>""</code></td>
+            <td data-i18n="docsConfig.notif.tgChat">Telegram chat ID for notifications</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="contacts">
+    <h2 data-i18n="docsConfig.contactsTitle">[contacts]</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="docsConfig.thField">Field</th>
+            <th data-i18n="docsConfig.thType">Type</th>
+            <th data-i18n="docsConfig.thDefault">Default</th>
+            <th data-i18n="docsConfig.thDesc">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>db_path</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>"./contacts.db"</code></td>
+            <td data-i18n="docsConfig.contacts.dbPath">SQLite database path</td>
+          </tr>
+          <tr>
+            <td><code>pg_url</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>""</code></td>
+            <td data-i18n="docsConfig.contacts.pgUrl">PostgreSQL URL (non-empty → use PG instead of SQLite)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="crm">
+    <h2 data-i18n="docsConfig.crmTitle">[crm]</h2>
+    <p data-i18n-html="docsConfig.crmSub">CRM synchronization. Leave <code>provider</code> empty to disable.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="docsConfig.thField">Field</th>
+            <th data-i18n="docsConfig.thType">Type</th>
+            <th data-i18n="docsConfig.thDefault">Default</th>
+            <th data-i18n="docsConfig.thDesc">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>provider</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>""</code></td>
+            <td data-i18n="docsConfig.crm.provider"><code>amocrm</code> | <code>bitrix24</code> | <code>hubspot</code> | empty</td>
+          </tr>
+          <tr>
+            <td><code>domain</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>""</code></td>
+            <td data-i18n="docsConfig.crm.domain">Domain/subdomain (amoCRM, Bitrix24)</td>
+          </tr>
+          <tr>
+            <td><code>api_key</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>""</code></td>
+            <td data-i18n="docsConfig.crm.apiKey">API key/token</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="memory">
+    <h2 data-i18n="docsConfig.memoryTitle">[memory]</h2>
+    <p data-i18n-html="docsConfig.memorySub">Long-term semantic memory settings. The memory subsystem stores facts in SQLite with hybrid vector+BM25 search, entity graph, and automatic housekeeping.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="docsConfig.thField">Field</th>
+            <th data-i18n="docsConfig.thType">Type</th>
+            <th data-i18n="docsConfig.thDefault">Default</th>
+            <th data-i18n="docsConfig.thDesc">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>enabled</code></td><td><span class="type-badge">bool</span></td><td><code>true</code></td><td data-i18n="docsConfig.memory.enabled">Master switch. When false, no memory DB is opened and memory_* tools are not registered</td></tr>
+          <tr><td><code>db_path</code></td><td><span class="type-badge">string</span></td><td><code>""</code></td><td data-i18n="docsConfig.memory.dbPath">Path to memory SQLite file. Empty = ~/.parallel-research/memory.db</td></tr>
+          <tr><td><code>embeddings</code></td><td><span class="type-badge">string</span></td><td><code>"auto"</code></td><td data-i18n-html="docsConfig.memory.embeddings">Embedding backend: <code>auto</code>, <code>openai</code>, or <code>tfidf</code></td></tr>
+          <tr><td><code>embedding_base_url</code></td><td><span class="type-badge">string</span></td><td><code>""</code></td><td data-i18n="docsConfig.memory.embBaseUrl">OpenAI-compatible embeddings endpoint. Empty = reuse llm.base_url</td></tr>
+          <tr><td><code>embedding_api_key</code></td><td><span class="type-badge">string</span></td><td><code>""</code></td><td data-i18n="docsConfig.memory.embApiKey">API key for embeddings endpoint. Empty = reuse llm.api_key</td></tr>
+          <tr><td><code>embedding_model</code></td><td><span class="type-badge">string</span></td><td><code>"text-embedding-3-small"</code></td><td data-i18n="docsConfig.memory.embModel">Embedding model id (OpenAI-compatible backend)</td></tr>
+          <tr><td><code>semantic_weight</code></td><td><span class="type-badge">f32</span></td><td><code>0.7</code></td><td data-i18n-html="docsConfig.memory.semanticWeight">Hybrid search weight: <code>score = w*semantic + (1-w)*bm25</code></td></tr>
+          <tr><td><code>top_k</code></td><td><span class="type-badge">u32</span></td><td><code>5</code></td><td data-i18n="docsConfig.memory.topK">Default number of memories returned by search/digest</td></tr>
+          <tr><td><code>min_score</code></td><td><span class="type-badge">f32</span></td><td><code>0.25</code></td><td data-i18n="docsConfig.memory.minScore">Minimum hybrid score for a search hit</td></tr>
+          <tr><td><code>temporal_decay</code></td><td><span class="type-badge">f32</span></td><td><code>0.01</code></td><td data-i18n="docsConfig.memory.temporalDecay">Linear freshness decay per day (0 disables)</td></tr>
+          <tr><td><code>auto_digest</code></td><td><span class="type-badge">bool</span></td><td><code>true</code></td><td data-i18n="docsConfig.memory.autoDigest">Inject topic digest into system prompt of top-level agents</td></tr>
+          <tr><td><code>llm_classify</code></td><td><span class="type-badge">bool</span></td><td><code>true</code></td><td data-i18n="docsConfig.memory.llmClassify">Use LLM to classify new facts (duplicate/supersede/contradict/related)</td></tr>
+          <tr><td><code>rerank</code></td><td><span class="type-badge">bool</span></td><td><code>false</code></td><td data-i18n="docsConfig.memory.rerank">Second-pass LLM reranking of search results (+1 LLM call per search)</td></tr>
+          <tr><td><code>gc_ttl_days</code></td><td><span class="type-badge">u32</span></td><td><code>30</code></td><td data-i18n="docsConfig.memory.gcTtlDays">GC: archive untouched run-scoped facts older than this</td></tr>
+          <tr><td><code>gc_compact_above</code></td><td><span class="type-badge">u32</span></td><td><code>200</code></td><td data-i18n="docsConfig.memory.gcCompactAbove">GC: compact scope group when it holds more than this many active rows</td></tr>
+          <tr><td><code>gc_confidence_decay_rate</code></td><td><span class="type-badge">f64</span></td><td><code>0.02</code></td><td data-i18n="docsConfig.memory.gcConfDecay">GC: daily confidence decay rate for inactive memories</td></tr>
+          <tr><td><code>gc_confidence_threshold</code></td><td><span class="type-badge">f64</span></td><td><code>0.15</code></td><td data-i18n="docsConfig.memory.gcConfThreshold">GC: confidence threshold below which a memory is archived</td></tr>
+          <tr><td><code>gc_auto</code></td><td><span class="type-badge">bool</span></td><td><code>false</code></td><td data-i18n="docsConfig.memory.gcAuto">Auto-run GC + distill on a background timer (hourly)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="hooks">
+    <h2 data-i18n="docsConfig.hooksTitle">[[hooks]]</h2>
+    <p data-i18n-html="docsConfig.hooksSub">Lifecycle hooks — subprocesses invoked at defined points of the agent loop. JSON on stdin, JSON verdict on stdout. All hooks are best-effort: timeout, spawn failure, or unparsable verdict = allow.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="docsConfig.thField">Field</th>
+            <th data-i18n="docsConfig.thType">Type</th>
+            <th data-i18n="docsConfig.thDefault">Default</th>
+            <th data-i18n="docsConfig.thDesc">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>event</code></td><td><span class="type-badge">string</span></td><td><em>required</em></td><td data-i18n-html="docsConfig.hooks.event"><code>PreToolUse</code>, <code>PostToolUse</code>, or <code>Stop</code></td></tr>
+          <tr><td><code>command</code></td><td><span class="type-badge">string</span></td><td><em>required</em></td><td data-i18n="docsConfig.hooks.command">Command to run (receives JSON on stdin, answers JSON on stdout)</td></tr>
+          <tr><td><code>args</code></td><td><span class="type-badge">string[]</span></td><td><code>[]</code></td><td data-i18n="docsConfig.hooks.args">Command arguments</td></tr>
+          <tr><td><code>tool</code></td><td><span class="type-badge">string</span></td><td><code>""</code></td><td data-i18n="docsConfig.hooks.tool">Only fire for this tool name (empty = all tools). Applies to Pre/PostToolUse</td></tr>
+          <tr><td><code>timeout_ms</code></td><td><span class="type-badge">u64</span></td><td><code>5000</code></td><td data-i18n="docsConfig.hooks.timeoutMs">Hook timeout in milliseconds (floor 500ms at runtime)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 data-i18n="docsConfig.hooksEventsTitle">Hook Events</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="docsConfig.thField">Event</th>
+            <th data-i18n="docsConfig.hooks.thInput">Input (JSON on stdin)</th>
+            <th data-i18n="docsConfig.hooks.thOutput">Output (JSON on stdout)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>PreToolUse</code></td>
+            <td><code>&#123;"event":"PreToolUse","tool":"…","args":…&#125;</code></td>
+            <td><code>&#123;"decision":"allow|deny","reason":"…"&#125;</code></td>
+          </tr>
+          <tr>
+            <td><code>PostToolUse</code></td>
+            <td><code>&#123;"event":"PostToolUse","tool":"…","result":"…","success":bool&#125;</code></td>
+            <td><code>&#123;"append_context":"…"&#125;</code></td>
+          </tr>
+          <tr>
+            <td><code>Stop</code></td>
+            <td><code>&#123;"event":"Stop","final_summary":"…"&#125;</code></td>
+            <td><code>&#123;"continue":bool,"reason":"…"&#125;</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p data-i18n="docsConfig.hooksStopNote">Stop hooks can force continuation up to 3 times (MAX_STOP_CONTINUATIONS). PostToolUse append_context values are concatenated and wrapped in [hook context].</p>
+  </section>
+
+  <section id="mcp">
+    <h2 data-i18n="docsConfig.mcpTitle">[[mcp.servers]]</h2>
+    <p data-i18n="docsConfig.mcpSub">Array of MCP (Model Context Protocol) servers for extending tool capabilities.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="docsConfig.thField">Field</th>
+            <th data-i18n="docsConfig.thType">Type</th>
+            <th data-i18n="docsConfig.thDesc">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>name</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td data-i18n="docsConfig.mcp.name">Server name</td>
+          </tr>
+          <tr>
+            <td><code>transport</code></td>
+            <td><span class="type-badge">string</span></td>
+            <td><code>stdio</code> | <code>http</code></td>
+          </tr>
+          <tr>
+            <td><code>command</code></td>
+            <td><span class="type-badge">string?</span></td>
+            <td data-i18n="docsConfig.mcp.command">Command (for stdio transport)</td>
+          </tr>
+          <tr>
+            <td><code>args</code></td>
+            <td><span class="type-badge">string[]</span></td>
+            <td data-i18n="docsConfig.mcp.args">Arguments (for stdio transport)</td>
+          </tr>
+          <tr>
+            <td><code>url</code></td>
+            <td><span class="type-badge">string?</span></td>
+            <td data-i18n="docsConfig.mcp.url">URL (for http transport)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="env-vars">
+    <h2 data-i18n="docsConfig.envTitle">Environment Variables</h2>
+    <p data-i18n-html="docsConfig.envSub">Environment variables override config file values. Prefix: <code>PARALLEL_</code>.</p>
+
+    <h3 id="priority" data-i18n="docsConfig.priorityTitle">Priority Order</h3>
+    <ol class="priority-list">
+      <li>
+        <span class="priority-num">1</span>
+        <div>
+          <strong data-i18n="docsConfig.p1Title">Environment variables</strong>
+          <span class="priority-tag highest" data-i18n="docsConfig.p1Tag">Highest priority</span>
+          <p data-i18n="docsConfig.p1Desc"><code>PARALLEL_*</code> prefixed variables</p>
+        </div>
+      </li>
+      <li>
+        <span class="priority-num">2</span>
+        <div>
+          <strong data-i18n="docsConfig.p2Title">Config file</strong>
+          <p><code>~/.parallel-research/config.toml</code></p>
+        </div>
+      </li>
+      <li>
+        <span class="priority-num">3</span>
+        <div>
+          <strong data-i18n="docsConfig.p3Title">Defaults</strong>
+          <span class="priority-tag" data-i18n="docsConfig.p3Tag">Lowest priority</span>
+          <p data-i18n="docsConfig.p3Desc">Built-in default values</p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="docsConfig.env.thVar">Environment Variable</th>
+            <th data-i18n="docsConfig.env.thEq">Config Equivalent</th>
+            <th data-i18n="docsConfig.thDesc">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>PARALLEL_LLM_API_KEY</code></td>
+            <td><code>llm.api_key</code></td>
+            <td data-i18n="docsConfig.env.llmApiKey">LLM API key</td>
+          </tr>
+          <tr>
+            <td><code>PARALLEL_LLM_PROVIDER</code></td>
+            <td><code>llm.provider</code></td>
+            <td data-i18n="docsConfig.env.llmProvider">LLM provider name</td>
+          </tr>
+          <tr>
+            <td><code>PARALLEL_LLM_MODEL</code></td>
+            <td><code>llm.model</code></td>
+            <td data-i18n="docsConfig.env.llmModel">Model identifier</td>
+          </tr>
+          <tr>
+            <td><code>PARALLEL_LLM_BASE_URL</code></td>
+            <td><code>llm.base_url</code></td>
+            <td data-i18n="docsConfig.env.llmBaseUrl">API endpoint</td>
+          </tr>
+          <tr>
+            <td><code>PARALLEL_SEARCH_BACKEND</code></td>
+            <td><code>search.backend</code></td>
+            <td data-i18n="docsConfig.env.searchBackend">Search backend</td>
+          </tr>
+          <tr>
+            <td><code>PARALLEL_VISION_API_BASE</code></td>
+            <td>—</td>
+            <td data-i18n="docsConfig.env.visionBase">Vision model API base URL</td>
+          </tr>
+          <tr>
+            <td><code>PARALLEL_VISION_API_KEY</code></td>
+            <td>—</td>
+            <td data-i18n="docsConfig.env.visionKey">Vision model API key</td>
+          </tr>
+          <tr>
+            <td><code>PARALLEL_VISION_MODEL</code></td>
+            <td>—</td>
+            <td data-i18n="docsConfig.env.visionModel">Vision model name</td>
+          </tr>
+          <tr>
+            <td><code>PARALLEL_CDP_ENDPOINT</code></td>
+            <td>—</td>
+            <td data-i18n="docsConfig.env.cdpEndpoint">Chrome DevTools Protocol endpoint for browser tools (default: ws://127.0.0.1:9222)</td>
+          </tr>
+          <tr>
+            <td><code>PARALLEL_2GIS_API_KEY</code></td>
+            <td>—</td>
+            <td data-i18n="docsConfig.env.gis2Key">2GIS Catalog API key for business directory search</td>
+          </tr>
+          <tr>
+            <td><code>PARALLEL_GOOGLE_PLACES_API_KEY</code></td>
+            <td>—</td>
+            <td data-i18n="docsConfig.env.googlePlacesKey">Google Places API key for business directory search</td>
+          </tr>
+          <tr>
+            <td><code>PARALLEL_YANDEX_MAPS_API_KEY</code></td>
+            <td>—</td>
+            <td data-i18n="docsConfig.env.yandexMapsKey">Yandex Maps Geosearch API key for business directory search</td>
+          </tr>
+          <tr>
+            <td><code>PARALLEL_TWITTER_BEARER_TOKEN</code></td>
+            <td>—</td>
+            <td data-i18n="docsConfig.env.twitterToken">Twitter/X API v2 bearer token for social search</td>
+          </tr>
+          <tr>
+            <td><code>PARALLEL_RESEARCH_API_KEYS</code></td>
+            <td>—</td>
+            <td data-i18n="docsConfig.env.apiKeys">Comma-separated API keys for HTTP server authentication</td>
+          </tr>
+          <tr>
+            <td><code>PARALLEL_RESEARCH_RATE_LIMIT</code></td>
+            <td>—</td>
+            <td data-i18n="docsConfig.env.rateLimit">HTTP server rate limit per client (default: 120 requests/minute)</td>
+          </tr>
+          <tr>
+            <td><code>PR_CONFIG</code></td>
+            <td>—</td>
+            <td data-i18n="docsConfig.env.prConfig">Override config.toml file path</td>
+          </tr>
+          <tr>
+            <td><code>PR_MEMORY_DB</code></td>
+            <td><code>memory.db_path</code></td>
+            <td data-i18n="docsConfig.env.prMemoryDb">Override memory SQLite database path</td>
+          </tr>
+          <tr>
+            <td><code>PR_OUTPUT_DIR</code></td>
+            <td><code>output.dir</code></td>
+            <td data-i18n="docsConfig.env.prOutputDir">Session output directory (passed to worker processes)</td>
+          </tr>
+          <tr>
+            <td><code>PR_JOBS_DB</code></td>
+            <td>—</td>
+            <td data-i18n="docsConfig.env.prJobsDb">Override jobs database path</td>
+          </tr>
+          <tr>
+            <td><code>PR_JOBS_DIR</code></td>
+            <td>—</td>
+            <td data-i18n="docsConfig.env.prJobsDir">Override jobs output directory</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="cli-commands">
+    <h2 data-i18n="docsConfig.cliTitle">CLI Config Commands</h2>
+    <p data-i18n="docsConfig.cliSub">Manage configuration from the command line.</p>
+
+    <h3 data-i18n="docsConfig.cliShowTitle">Show Current Config</h3>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">bash</span>
+      </div>
+      <pre><code dangerouslySetInnerHTML={{__html: `parallel-research config show`}} /></pre>
+    </div>
+
+    <h3 data-i18n="docsConfig.cliSetTitle">Set a Value</h3>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">bash</span>
+      </div>
+      <pre><code dangerouslySetInnerHTML={{__html: `parallel-research config set llm.api_key <span class="code-string">"sk-..."</span>`}} /></pre>
+    </div>
+    <p data-i18n-html="docsConfig.cliSetDesc">Uses dot notation for nested keys: <code>section.field</code>.</p>
+  </section>
+
+  <section id="backwards-compat">
+    <h2 data-i18n="docsConfig.compatTitle">Backwards Compatibility</h2>
+    <p data-i18n-html="docsConfig.compatSub">
+      All new sections use <code>#[serde(default)]</code>. Configs from older versions
+      (with only <code>[llm]</code>, <code>[agent]</code>, <code>[search]</code>) load correctly —
+      new fields receive default values automatically.
+    </p>
+  </section>

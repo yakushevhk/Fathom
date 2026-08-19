@@ -1,0 +1,29 @@
+[package]
+name = "pr-core"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+toml.workspace = true
+dirs = "5"
+schemars.workspace = true
+tracing.workspace = true
+tokio = { workspace = true, features = ["process", "fs", "io-util", "net", "rt", "time"] }
+reqwest.workspace = true
+pulldown-cmark.workspace = true
+rust_xlsxwriter.workspace = true
+# rustls instead of native-tls (matches the workspace reqwest): no OpenSSL
+# needed at all, so the binary links fully static for the TB sandbox images.
+lettre = { version = "0.11", default-features = false, features = ["tokio1-rustls-tls", "smtp-transport", "builder", "hostname"] }
+tiktoken-rs = "0.12.0"
+
+[dev-dependencies]
+tempfile = "3"
+proptest.workspace = true
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

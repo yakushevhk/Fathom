@@ -1,0 +1,1265 @@
+---
+title: "Outreach — Fathom Research"
+sidebarId: "outreach"
+---
+  
+export const leadsPipeline = [
+  { n: '01', t: 'Ask', d: 'Write the goal in plain language. The coordinator decomposes it into sub-tasks, each with its own token budget and a shared contact-target counter.' },
+  { n: '02', t: 'Find', d: 'find_leads searches business directories + parses up to 6 corporate sites per company + runs role-based social searches in parallel.' },
+  { n: '03', t: 'Extract', d: 'extract_contacts pulls emails, phones and social profiles from pages — including obfuscated patterns like "bob at acme dot com". Every record carries a confidence score and its source URL.' },
+  { n: '04', t: 'Verify', d: 'verify_email (syntax → MX → disposable → role → optional SMTP probe), verify_phone (libphonenumber), verify_social_profile (14 platforms). Only verified rows survive.' },
+  { n: '05', t: 'Enrich', d: 'enrich_company + enrich_person pull size, revenue, founding year, HQ, tech stack, and the person\u2019s title, bio and direct contact.' },
+  { n: '06', t: 'Persist', d: 'Autosave writes every extracted lead to contacts.db (dedup + merge), absorbs findings into memory, and optionally pushes to your CRM with crm_id dedup.' },
+];
+
+export const verifyStages = [
+  ['Syntax', 'RFC 5322 subset: one @, ≤254 chars, local ≤64, no leading/double dots, non-numeric TLD.'],
+  ['MX lookup', 'DNS-over-HTTPS (Google + Cloudflare fallback); falls back to A-record per RFC 5321 §5.1 when no MX.'],
+  ['Disposable', 'Blocks ~50 known throwaway providers (mailinator, yopmail, guerrillamail…).'],
+  ['Role-based', 'Flags department mailboxes (info@, sales@, no-reply@, admin@…).'],
+  ['SMTP probe', 'Optional (smtp_check=true): TCP:25 → HELO → MAIL FROM → RCPT TO. Accepts 250/251, rejects 5xx. Never sends DATA.'],
+];
+
+<div class="doc-header">
+    <span class="doc-badge" data-i18n="docsOutreach.badge">Outreach</span>
+    <h1 data-i18n="docsOutreach.title">Outreach &amp; Lead Generation Guide</h1>
+    <p class="doc-lead" data-i18n="docsOutreach.lead">
+      Turn a plain-language goal into <strong>verified, enriched, ready-to-use leads</strong> — then
+      into personalized outreach drafts synced to your CRM. This is the end-to-end workflow that ties
+      the agent's tools together.
+    </p>
+  </div>
+
+  {/* ============ THE PIPELINE ============ */}
+  <section id="pipeline">
+    <h2 data-i18n="docsOutreach.pipelineTitle">The full pipeline</h2>
+    <p data-i18n="docsOutreach.pipelineSub">
+      A research run is the same loop at every level: plan, fan out, collect under budgets, verify,
+      then hand cleaner signal to the next stage. Here is what actually happens, tool by tool.
+    </p>
+    <div class="flow-list">
+      {leadsPipeline.map((s) => (
+        <div class="flow-item">
+          <div class="flow-index">{s.n}</div>
+          <div class="flow-body">
+            <div class="flow-title">{s.t}</div>
+            <p class="flow-desc">{s.d}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  {/* ============ A REAL REQUEST ============ */}
+  <section id="example">
+    <h2 data-i18n="docsOutreach.exTitle">Start with a plain-language goal</h2>
+    <p data-i18n="docsOutreach.exSub">No schemas, no CRM setup first. Ask for what you want in the terms that make sense to you.</p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`parallel-research run "Find VP Engineering at Series B startups in SF, verify their emails, and save the leads"\`}`}} /></pre>
+    </div>
+    <p data-i18n-html data-i18n="docsOutreach.exFoot">
+      The coordinator turns that into sub-tasks with per-task contact quotas. Each sub-task becomes a
+      Researcher (or an OS process with <code>use_multiprocess = true</code>), runs until its budget is
+      spent, then hands its findings forward.
+    </p>
+  </section>
+
+  {/* ============ VERIFICATION DEEP DIVE ============ */}
+  <section id="verification">
+    <h2 data-i18n="docsOutreach.verifyTitle">Why verification matters</h2>
+    <p data-i18n-html data-i18n="docsOutreach.verifySub">
+      Every bounce costs sender reputation and budget. That is why email goes through five gates
+      before it is saved. <code>verify_email</code> returns a <strong>confidence score in [0,1]</strong>
+      and a verdict — you decide the cutoff that matches your risk appetite.
+    </p>
+    <table class="mini-table">
+      <thead><tr><th data-i18n="docsOutreach.stageCol">Stage</th><th data-i18n="docsOutreach.checkCol">What it checks</th></tr></thead>
+      <tbody>
+        {verifyStages.map(([k, d]) => (
+          <tr><td><code>{k}</code></td><td>{d}</td></tr>
+        ))}
+      </tbody>
+    </table>
+
+    <h3 data-i18n="docsOutreach.confTitle">Confidence scoring</h3>
+    <ul class="check-list">
+      <li data-i18n="docsOutreach.conf1">Base <strong>0.5</strong> — syntax, disposable and role checks adjust it.</li>
+      <li data-i18n="docsOutreach.conf2"><strong>+0.4</strong> if the domain resolves via MX/A.</li>
+      <li data-i18n="docsOutreach.conf3"><strong>SMTP accepted → ≥ 0.95</strong>; rejected → ≤ 0.2; no SMTP → capped at 0.9.</li>
+      <li data-i18n="docsOutreach.conf4"><strong>−0.3</strong> if the address looks disposable. Final value clamped to [0,1].</li>
+    </ul>
+    <div class="callout">
+      <div class="callout-icon">💡</div>
+      <div class="callout-content" data-i18n-html data-i18n="docsOutreach.callout">
+        <strong>Don't guess emails.</strong> <code>suggest_emails</code> generates up to 9 patterns
+        (first.last, f.last, last.first…) and learns the company's pattern from your known addresses —
+        matching candidates get <strong>+0.15 confidence</strong> (capped 0.95).
+      </div>
+    </div>
+  </section>
+
+  {/* ============ CRM & EXPORT ============ */}
+  <section id="crm">
+    <h2 data-i18n="docsOutreach.crmTitle">Get leads into your workflow</h2>
+    <p data-i18n="docsOutreach.crmSub">
+      Everything lands in <code>contacts.db</code> automatically (dedup + merge). From there you have
+      three paths.
+    </p>
+    <div class="steps">
+      <div class="step">
+        <h3>1 · Export</h3>
+        <p>CSV, vCard, JSON or Excel via <code>parallel-research contacts export</code> — or richer PDF/HTML/DOCX session reports.</p>
+      </div>
+      <div class="step">
+        <h3>2 · Push to CRM</h3>
+        <p><code>parallel-research contacts push-crm</code> syncs to amoCRM, Bitrix24 or HubSpot. Dedup by <code>crm_id</code> means re-runs never double-create.</p>
+      </div>
+      <div class="step">
+        <h3>3 · Watch for new leads</h3>
+        <p><code>watch</code> mode re-runs the same query every N seconds, diffs the contact DB and alerts on new rows.</p>
+      </div>
+    </div>
+  </section>
+
+  {/* ============ SAFETY ============ */}
+  <section id="safety">
+    <h2 data-i18n="docsOutreach.safetyTitle">Human-in-the-loop where it counts</h2>
+    <p data-i18n="docsOutreach.safetyBody">
+      Side effects wait for an explicit yes. <code>save_contacts</code> and <code>git_push</code> are
+      gated behind an approval flow by default — approve in the TUI, or via
+      <code>POST /api/v1/sessions/:id/approve</code> on the API.
+    </p>
+  </section>
+
+  {/* ============ OSINT TOOLS DEEP DIVE ============ */}
+  <section id="osint-tools">
+    <h2 data-i18n="docsOutreach.osintTitle">OSINT Tools Deep Dive</h2>
+    <p data-i18n="docsOutreach.osintSub">
+      The outreach pipeline is powered by five complementary data-gathering tools. Each one targets a
+      different surface — business directories, social networks, news coverage, or individual corporate
+      sites — and the coordinator orchestrates them in parallel to maximize coverage while staying within
+      per-run budgets.
+    </p>
+
+    <div class="tool-card" id="find-leads">
+      <div class="tool-card-header">
+        <div class="tool-card-icon">🔍</div>
+        <div>
+          <h3 class="tool-card-name">find_leads</h3>
+          <span class="tool-card-tag">Lead Generation Engine</span>
+        </div>
+      </div>
+      <p>
+        The primary entry point for any outreach task. <code>find_leads</code> takes a natural-language
+        goal and decomposes it into directory searches, corporate-site parses, and social-network probes.
+        It runs up to 6 corporate-site parses per company in parallel and merges results on the fly.
+      </p>
+      <h4>Parameters</h4>
+      <table class="mini-table">
+        <thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>industry</code></td><td>string</td><td>SIC/NAICS category or free-text (e.g. "B2B SaaS", "fintech")</td></tr>
+          <tr><td><code>location</code></td><td>string</td><td>City, region, or country — parsed into geo-coordinates for directory radius search</td></tr>
+          <tr><td><code>roles</code></td><td>string[]</td><td>Target titles: <code>["VP Engineering", "CTO", "Head of Platform"]</code></td></tr>
+          <tr><td><code>limit</code></td><td>number</td><td>Max companies to return (default 50, max 500)</td></tr>
+          <tr><td><code>enrich</code></td><td>boolean</td><td>When <code>true</code>, auto-runs <code>enrich_company</code> on each hit</td></tr>
+        </tbody>
+      </table>
+      <h4>Example invocation</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">python</span></div>
+        <pre><code dangerouslySetInnerHTML={{__html: `{\`result = await agent.call_tool("find_leads", {
+    industry: "B2B SaaS",
+    location: "San Francisco Bay Area",
+    roles: ["VP Engineering", "CTO"],
+    limit: 25,
+    enrich: true
+})\`}`}} /></pre>
+      </div>
+      <h4>Example output (one record)</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json</span></div>
+        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+  "company": "Acme Analytics",
+  "website": "https://acme-analytics.com",
+  "industry": "B2B SaaS",
+  "location": "San Francisco, CA",
+  "employees": "80-120",
+  "funding_stage": "Series B",
+  "contacts": [
+    {
+      "name": "Jordan Lee",
+      "title": "VP Engineering",
+      "email": "jordan.lee@acme-analytics.com",
+      "email_confidence": 0.97,
+      "linkedin": "https://linkedin.com/in/jordanlee",
+      "source_url": "https://acme-analytics.com/team"
+    }
+  ],
+  "confidence": 0.92,
+  "sources": [
+    "https://2gis.com/san-francisco/firm/acme-analytics",
+    "https://acme-analytics.com/team",
+    "https://linkedin.com/company/acme-analytics"
+  ]
+}\`}`}} /></pre>
+      </div>
+    </div>
+
+    <div class="tool-card" id="search-business-directory">
+      <div class="tool-card-header">
+        <div class="tool-card-icon">📂</div>
+        <div>
+          <h3 class="tool-card-name">search_business_directory</h3>
+          <span class="tool-card-tag">Multi-directory Search</span>
+        </div>
+      </div>
+      <p>
+        Searches across 2GIS, Google Maps, Yandex Maps, and Yellow Pages in a single call. The tool
+        fans out to all available directories for the target geography, deduplicates by normalized name
+        + address, and returns a unified result set.
+      </p>
+      <h4>Parameters</h4>
+      <table class="mini-table">
+        <thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>query</code></td><td>string</td><td>Search query (e.g. "software company", "coworking space")</td></tr>
+          <tr><td><code>city</code></td><td>string</td><td>Target city name</td></tr>
+          <tr><td><code>country</code></td><td>string</td><td>Country name or ISO-3166-1 alpha-2 code</td></tr>
+          <tr><td><code>limit</code></td><td>number</td><td>Max results per directory (default 20, max 100)</td></tr>
+        </tbody>
+      </table>
+      <h4>Returned fields per record</h4>
+      <ul class="check-list">
+        <li><strong>name</strong> — Normalized business name</li>
+        <li><strong>category</strong> — Business category from the directory</li>
+        <li><strong>address</strong> — Full street address</li>
+        <li><strong>phone</strong> — Phone number in E.164 when available</li>
+        <li><strong>website</strong> — Company website URL</li>
+        <li><strong>email</strong> — Public email if listed in the directory</li>
+        <li><strong>rating</strong> — Average star rating (Google Maps, 2GIS)</li>
+        <li><strong>source</strong> — Which directory the record came from</li>
+      </ul>
+      <h4>Example output</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json</span></div>
+        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+  "name": "NovaTech Solutions",
+  "category": "Software Development",
+  "address": "45 Market St, Suite 200, San Francisco, CA 94105",
+  "phone": "+14155550123",
+  "website": "https://novatech.io",
+  "email": "hello@novatech.io",
+  "rating": 4.6,
+  "reviews_count": 38,
+  "source": "google_maps"
+}\`}`}} /></pre>
+      </div>
+    </div>
+
+    <div class="tool-card" id="search-social">
+      <div class="tool-card-header">
+        <div class="tool-card-icon">🌐</div>
+        <div>
+          <h3 class="tool-card-name">search_social</h3>
+          <span class="tool-card-tag">Social Network Search</span>
+        </div>
+      </div>
+      <p>
+        Searches Twitter/X, Telegram, and LinkedIn for people and companies matching a query. Useful for
+        finding decision-makers by title+company, discovering niche community participants, and
+        cross-referencing names found through directory searches.
+      </p>
+      <h4>Parameters</h4>
+      <table class="mini-table">
+        <thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>query</code></td><td>string</td><td>Search string (e.g. "VP Engineering Stripe", "CTO fintech")</td></tr>
+          <tr><td><code>platforms</code></td><td>string[]</td><td>Platforms to search: <code>["twitter", "telegram", "linkedin"]</code> (default: all)</td></tr>
+          <tr><td><code>limit</code></td><td>number</td><td>Max results per platform (default 10, max 50)</td></tr>
+        </tbody>
+      </table>
+      <h4>Returned fields per record</h4>
+      <ul class="check-list">
+        <li><strong>profile_url</strong> — Direct link to the profile</li>
+        <li><strong>name</strong> — Display name</li>
+        <li><strong>bio</strong> — Profile bio / description text</li>
+        <li><strong>followers_count</strong> — Follower count (Twitter, LinkedIn approximate)</li>
+        <li><strong>location</strong> — Self-reported location</li>
+        <li><strong>platform</strong> — Source platform identifier</li>
+      </ul>
+      <h4>Example output</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json</span></div>
+        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+  "profile_url": "https://twitter.com/jordanlee_eng",
+  "name": "Jordan Lee",
+  "bio": "VP Engineering @AcmeAnalytics · Building data pipelines at scale",
+  "followers_count": 4200,
+  "location": "San Francisco, CA",
+  "platform": "twitter"
+}\`}`}} /></pre>
+      </div>
+    </div>
+
+    <div class="tool-card" id="search-news">
+      <div class="tool-card-header">
+        <div class="tool-card-icon">📰</div>
+        <div>
+          <h3 class="tool-card-name">search_news</h3>
+          <span class="tool-card-tag">News &amp; Press Search</span>
+        </div>
+      </div>
+      <p>
+        Searches news articles, press releases, and blog coverage. Especially useful for identifying
+        recently funded companies, new executive hires, product launches, and partnership announcements
+        — all high-signal events for outreach timing.
+      </p>
+      <h4>Parameters</h4>
+      <table class="mini-table">
+        <thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>query</code></td><td>string</td><td>Search terms (e.g. "Series B funding SaaS", "CTO appointment fintech")</td></tr>
+          <tr><td><code>limit</code></td><td>number</td><td>Max articles to return (default 20, max 100)</td></tr>
+          <tr><td><code>from_date</code></td><td>string</td><td>Start date in ISO 8601 (e.g. "2025-01-01")</td></tr>
+          <tr><td><code>to_date</code></td><td>string</td><td>End date in ISO 8601 (e.g. "2025-06-30")</td></tr>
+        </tbody>
+      </table>
+      <h4>Returned fields per record</h4>
+      <ul class="check-list">
+        <li><strong>title</strong> — Article headline</li>
+        <li><strong>url</strong> — Canonical URL</li>
+        <li><strong>source</strong> — Publication name</li>
+        <li><strong>date</strong> — Publication date</li>
+        <li><strong>snippet</strong> — 200-character excerpt</li>
+        <li><strong>mentioned_persons</strong> — Extracted named entities (people)</li>
+        <li><strong>mentioned_companies</strong> — Extracted named entities (companies)</li>
+      </ul>
+      <h4>Example output</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json</span></div>
+        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+  "title": "Acme Analytics Raises $40M Series B Led by Sequoia",
+  "url": "https://techcrunch.com/2025/03/15/acme-series-b",
+  "source": "TechCrunch",
+  "date": "2025-03-15",
+  "snippet": "Acme Analytics, the San Francisco-based B2B data platform, has closed a $40M Series B round...",
+  "mentioned_persons": ["Jordan Lee", "Maria Chen"],
+  "mentioned_companies": ["Acme Analytics", "Sequoia Capital"]
+}\`}`}} /></pre>
+      </div>
+    </div>
+
+    <div class="tool-card" id="parse-corporate-site">
+      <div class="tool-card-header">
+        <div class="tool-card-icon">🏢</div>
+        <div>
+          <h3 class="tool-card-name">parse_corporate_site</h3>
+          <span class="tool-card-tag">Website Analyzer</span>
+        </div>
+      </div>
+      <p>
+        Analyzes a corporate website to extract structured company intelligence. Crawls the homepage,
+        <code>/about</code>, <code>/team</code>, and <code>/contact</code> pages (following
+        <code>robots.txt</code>). Resolves obfuscated emails and phone numbers embedded in JavaScript or
+        rendered via anti-scraping techniques.
+      </p>
+      <h4>What gets extracted</h4>
+      <ul class="check-list">
+        <li><strong>Company name</strong> — From &lt;title&gt;, OG tags, or structured data (JSON-LD)</li>
+        <li><strong>Description</strong> — Meta description or first meaningful paragraph</li>
+        <li><strong>Industry</strong> — Inferred from content keywords + JSON-LD categories</li>
+        <li><strong>Size</strong> — Employee count range from careers page or LinkedIn widget</li>
+        <li><strong>HQ</strong> — Address from footer, contact page, or structured data</li>
+        <li><strong>Contact emails</strong> — Extracted from pages, mailto links, and JS-rendered content</li>
+        <li><strong>Contact phones</strong> — Parsed from all pages, including international formats</li>
+        <li><strong>Social profiles</strong> — Twitter, LinkedIn, GitHub, Telegram links from headers/footers</li>
+        <li><strong>Team members</strong> — Names and titles from <code>/team</code>, <code>/about</code>, or leadership pages</li>
+      </ul>
+      <h4>Example output</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json</span></div>
+        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+  "company_name": "Acme Analytics",
+  "description": "Real-time data pipelines for modern B2B teams",
+  "industry": "B2B SaaS / Data Infrastructure",
+  "size": "80-120 employees",
+  "hq": "45 Market St, Suite 200, San Francisco, CA 94105",
+  "emails": ["sales@acme-analytics.com", "careers@acme-analytics.com"],
+  "phones": ["+14155550100"],
+  "social": {
+    "twitter": "https://twitter.com/acmeanalytics",
+    "linkedin": "https://linkedin.com/company/acme-analytics",
+    "github": "https://github.com/acme-analytics"
+  },
+  "team": [
+    { "name": "Jordan Lee", "title": "VP Engineering" },
+    { "name": "Maria Chen", "title": "CEO" },
+    { "name": "Alex Rivera", "title": "CTO" }
+  ],
+  "technologies": ["React", "Go", "Kubernetes", "PostgreSQL"]
+}\`}`}} /></pre>
+      </div>
+    </div>
+  </section>
+
+  {/* ============ VERIFICATION TOOLS DEEP DIVE ============ */}
+  <section id="verification-tools">
+    <h2 data-i18n="docsOutreach.verifyToolsTitle">Verification Tools Deep Dive</h2>
+    <p data-i18n="docsOutreach.verifyToolsSub">
+      Raw data is noisy. Verification tools clean, normalize, and score every contact record before it
+      enters your pipeline. Here is exactly what each tool does and how to interpret its output.
+    </p>
+
+    <div class="tool-card" id="verify-email">
+      <div class="tool-card-header">
+        <div class="tool-card-icon">✉️</div>
+        <div>
+          <h3 class="tool-card-name">verify_email</h3>
+          <span class="tool-card-tag">5-Stage Pipeline</span>
+        </div>
+      </div>
+      <p>
+        The most critical verification tool. Every email passes through five sequential stages — each
+        stage can short-circuit the pipeline if a hard failure is detected (e.g., invalid syntax). The
+        final confidence score is a composite of all stage results.
+      </p>
+      <h4>The 5-stage pipeline in detail</h4>
+      <table class="mini-table">
+        <thead><tr><th>Stage</th><th>What happens</th><th>Score impact</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>1. Syntax</strong></td>
+            <td>
+              Validates against RFC 5322 subset: exactly one <code>@</code>, total length &le;254,
+              local part &le;64, no leading/double dots, TLD is non-numeric and at least 2 chars.
+            </td>
+            <td>Fail → 0.0 (hard stop)</td>
+          </tr>
+          <tr>
+            <td><strong>2. MX lookup</strong></td>
+            <td>
+              DNS-over-HTTPS via Google (primary) and Cloudflare (fallback). If no MX records exist,
+              falls back to A-record lookup per RFC 5321 &sect;5.1.
+            </td>
+            <td>Resolved → +0.4; NXDOMAIN → 0.1 (hard stop)</td>
+          </tr>
+          <tr>
+            <td><strong>3. Disposable</strong></td>
+            <td>
+              Checks the domain against ~50 known throwaway providers: mailinator, yopmail,
+              guerrillamail, tempmail, 10minutemail, etc.
+            </td>
+            <td>Match → &minus;0.3</td>
+          </tr>
+          <tr>
+            <td><strong>4. Role-based</strong></td>
+            <td>
+              Flags departmental / noreply addresses: <code>info@</code>, <code>sales@</code>,
+              <code>support@</code>, <code>admin@</code>, <code>no-reply@</code>, <code>billing@</code>, etc.
+            </td>
+            <td>Match → &minus;0.15 (still usable, but lower priority)</td>
+          </tr>
+          <tr>
+            <td><strong>5. SMTP probe</strong></td>
+            <td>
+              Optional (<code>smtp_check=true</code>). Opens TCP:25, sends <code>HELO</code>,
+              <code>MAIL FROM</code>, <code>RCPT TO</code>. Accepts 250/251 as deliverable, 5xx as
+              rejected. <strong>Never sends DATA</strong> — no actual email is delivered.
+            </td>
+            <td>Accepted → &ge;0.95; Rejected → &le;0.2; Timeout → capped at 0.9</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h4>Confidence scoring algorithm</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">python</span></div>
+        <pre><code dangerouslySetInnerHTML={{__html: `{\`score = 0.5                                    # base
+if mx_resolved:     score += 0.4               # domain is real
+if disposable:      score -= 0.3               # throwaway domain
+if role_based:      score -= 0.15              # department mailbox
+if smtp_accepted:   score = max(score, 0.95)   # server confirmed
+if smtp_rejected:   score = min(score, 0.2)    # server denied
+if no_smtp_check:   score = min(score, 0.9)    # can't fully confirm
+score = clamp(score, 0.0, 1.0)
+if pattern_matched: score = min(score + 0.15, 0.95)  # suggest_emails bonus\`}`}} /></pre>
+      </div>
+
+      <h4>Example responses</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json — Valid corporate email</span></div>
+        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+  "email": "jordan.lee@acme-analytics.com",
+  "verdict": "valid",
+  "confidence": 0.97,
+  "stages": {
+    "syntax": "pass",
+    "mx": "pass",
+    "disposable": "clean",
+    "role_based": false,
+    "smtp": "accepted (250 OK)"
+  },
+  "mx_records": ["alt1.gmail-smtp-in.l.google.com", "gmail-smtp-in.l.google.com"]
+}\`}`}} /></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json — Disposable email</span></div>
+        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+  "email": "test@mailinator.com",
+  "verdict": "disposable",
+  "confidence": 0.05,
+  "stages": {
+    "syntax": "pass",
+    "mx": "pass",
+    "disposable": "flagged (mailinator)",
+    "role_based": false,
+    "smtp": "skipped"
+  }
+}\`}`}} /></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json — Role-based, SMTP accepted</span></div>
+        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+  "email": "info@acme-analytics.com",
+  "verdict": "role_based",
+  "confidence": 0.78,
+  "stages": {
+    "syntax": "pass",
+    "mx": "pass",
+    "disposable": "clean",
+    "role_based": "flagged (info@)",
+    "smtp": "accepted (250 OK)"
+  }
+}\`}`}} /></pre>
+      </div>
+    </div>
+
+    <div class="tool-card" id="verify-phone">
+      <div class="tool-card-header">
+        <div class="tool-card-icon">📞</div>
+        <div>
+          <h3 class="tool-card-name">verify_phone</h3>
+          <span class="tool-card-tag">Phone Normalization</span>
+        </div>
+      </div>
+      <p>
+        Normalizes phone numbers using <code>libphonenumber</code> (the same library behind Google's
+        Android dialer). Parses raw input into E.164 format, detects the country, and classifies the
+        line type.
+      </p>
+      <h4>What it returns</h4>
+      <ul class="check-list">
+        <li><strong>e164</strong> — E.164 canonical format (e.g. <code>+14155550123</code>)</li>
+        <li><strong>country</strong> — ISO-3166-1 alpha-2 country code</li>
+        <li><strong>line_type</strong> — <code>mobile</code>, <code>fixed_line</code>, <code>voip</code>, <code>toll_free</code>, or <code>unknown</code></li>
+        <li><strong>valid</strong> — Boolean: does the number match the numbering plan for the detected country?</li>
+        <li><strong>carrier</strong> — Carrier name when available (mobile numbers only)</li>
+      </ul>
+      <h4>Example</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json</span></div>
+        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+  "input": "8 (495) 123-45-67",
+  "e164": "+74951234567",
+  "country": "RU",
+  "line_type": "fixed_line",
+  "valid": true,
+  "carrier": null
+}\`}`}} /></pre>
+      </div>
+    </div>
+
+    <div class="tool-card" id="verify-social-profile">
+      <div class="tool-card-header">
+        <div class="tool-card-icon">👤</div>
+        <div>
+          <h3 class="tool-card-name">verify_social_profile</h3>
+          <span class="tool-card-tag">14 Platforms</span>
+        </div>
+      </div>
+      <p>
+        Validates and enriches social profile URLs. Returns structured metadata specific to each
+        platform — follower counts, bios, verification status, and more.
+      </p>
+      <h4>Supported platforms (14)</h4>
+      <div class="platform-grid">
+        <span class="platform-chip">Twitter / X</span>
+        <span class="platform-chip">LinkedIn</span>
+        <span class="platform-chip">GitHub</span>
+        <span class="platform-chip">Telegram</span>
+        <span class="platform-chip">Instagram</span>
+        <span class="platform-chip">Facebook</span>
+        <span class="platform-chip">YouTube</span>
+        <span class="platform-chip">TikTok</span>
+        <span class="platform-chip">Reddit</span>
+        <span class="platform-chip">Mastodon</span>
+        <span class="platform-chip">Threads</span>
+        <span class="platform-chip">Bluesky</span>
+        <span class="platform-chip">Hacker News</span>
+        <span class="platform-chip">Product Hunt</span>
+      </div>
+      <h4>Example response</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json</span></div>
+        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+  "url": "https://twitter.com/jordanlee_eng",
+  "platform": "twitter",
+  "valid": true,
+  "metadata": {
+    "name": "Jordan Lee",
+    "handle": "@jordanlee_eng",
+    "bio": "VP Engineering @AcmeAnalytics",
+    "followers": 4200,
+    "following": 890,
+    "verified": false,
+    "joined": "2019-04-22",
+    "location": "San Francisco, CA"
+  }
+}\`}`}} /></pre>
+      </div>
+    </div>
+
+    <div class="tool-card" id="suggest-emails">
+      <div class="tool-card-header">
+        <div class="tool-card-icon">🧩</div>
+        <div>
+          <h3 class="tool-card-name">suggest_emails</h3>
+          <span class="tool-card-tag">Pattern Inference</span>
+        </div>
+      </div>
+      <p>
+        Given a person's full name and a company domain, generates candidate email addresses using the 9
+        most common corporate patterns. When known addresses for the same domain are available, it
+        infers the company's actual pattern and boosts matching candidates.
+      </p>
+      <h4>The 9 standard patterns</h4>
+      <table class="mini-table">
+        <thead><tr><th>#</th><th>Pattern</th><th>Example (Jordan Lee)</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>first.last</code></td><td>jordan.lee@acme-analytics.com</td></tr>
+          <tr><td>2</td><td><code>firstlast</code></td><td>jordanlee@acme-analytics.com</td></tr>
+          <tr><td>3</td><td><code>f.last</code></td><td>j.lee@acme-analytics.com</td></tr>
+          <tr><td>4</td><td><code>first</code></td><td>jordan@acme-analytics.com</td></tr>
+          <tr><td>5</td><td><code>last</code></td><td>lee@acme-analytics.com</td></tr>
+          <tr><td>6</td><td><code>first_last</code></td><td>jordan_lee@acme-analytics.com</td></tr>
+          <tr><td>7</td><td><code>last.first</code></td><td>lee.jordan@acme-analytics.com</td></tr>
+          <tr><td>8</td><td><code>flast</code></td><td>jlee@acme-analytics.com</td></tr>
+          <tr><td>9</td><td><code>first-last</code></td><td>jordan-lee@acme-analytics.com</td></tr>
+        </tbody>
+      </table>
+      <h4>Confidence scoring for suggestions</h4>
+      <ul class="check-list">
+        <li>Each candidate gets a <strong>base confidence of 0.3</strong> — it's just a pattern guess.</li>
+        <li>If the inferred pattern from known addresses matches → <strong>+0.15</strong> (capped at 0.95).</li>
+        <li>Running <code>verify_email</code> on the suggestion can push the score up to <strong>0.97</strong>.</li>
+        <li>Suggestions that fail MX lookup drop to <strong>0.05</strong> immediately.</li>
+      </ul>
+      <div class="callout">
+        <div class="callout-icon">💡</div>
+        <div class="callout-content">
+          <strong>Pattern inference is cumulative.</strong> Each time you save a verified email for a
+          domain, <code>suggest_emails</code> learns that domain's pattern. After 3+ known addresses
+          for the same domain, the pattern lock is reliable enough to boost candidates to
+          <strong>+0.20</strong>.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* ============ ENRICHMENT TOOLS DEEP DIVE ============ */}
+  <section id="enrichment-tools">
+    <h2 data-i18n="docsOutreach.enrichTitle">Enrichment Tools Deep Dive</h2>
+    <p data-i18n="docsOutreach.enrichSub">
+      Once you have a verified contact, enrichment fills in the context that makes outreach personal
+      and relevant. These two tools turn bare email addresses into full profiles.
+    </p>
+
+    <div class="tool-card" id="enrich-company">
+      <div class="tool-card-header">
+        <div class="tool-card-icon">🏗️</div>
+        <div>
+          <h3 class="tool-card-name">enrich_company</h3>
+          <span class="tool-card-tag">Company Intelligence</span>
+        </div>
+      </div>
+      <p>
+        Takes a company name or domain and returns structured intelligence gathered from public sources:
+        corporate filings, about pages, job postings, technology stacks, and press coverage.
+      </p>
+      <h4>What gets discovered</h4>
+      <ul class="check-list">
+        <li><strong>Industry</strong> — Primary and secondary SIC/NAICS categories</li>
+        <li><strong>Company size</strong> — Employee range (e.g. 80-120)</li>
+        <li><strong>Revenue</strong> — Estimated annual revenue when publicly available</li>
+        <li><strong>Founding year</strong> — Year of incorporation or launch</li>
+        <li><strong>HQ</strong> — Headquarters address</li>
+        <li><strong>Description</strong> — One-paragraph company description</li>
+        <li><strong>Technologies</strong> — Detected tech stack from job postings, headers, and scripts</li>
+        <li><strong>Funding</strong> — Latest funding round, amount, and investors</li>
+      </ul>
+      <h4>Example response</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json</span></div>
+        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+  "domain": "acme-analytics.com",
+  "company_name": "Acme Analytics",
+  "industry": "B2B SaaS — Data Infrastructure",
+  "employee_range": "80-120",
+  "estimated_revenue": "$10M-$25M",
+  "founded": 2019,
+  "hq": "San Francisco, CA, USA",
+  "description": "Real-time data pipeline platform for B2B analytics teams.",
+  "technologies": ["React", "Go", "Kubernetes", "PostgreSQL", "Snowflake"],
+  "funding": {
+    "latest_round": "Series B",
+    "amount": "$40M",
+    "date": "2025-03-15",
+    "investors": ["Sequoia Capital", "Y Combinator"]
+  }
+}\`}`}} /></pre>
+      </div>
+    </div>
+
+    <div class="tool-card" id="enrich-person">
+      <div class="tool-card-header">
+        <div class="tool-card-icon">🧑‍💼</div>
+        <div>
+          <h3 class="tool-card-name">enrich_person</h3>
+          <span class="tool-card-tag">Person Intelligence</span>
+        </div>
+      </div>
+      <p>
+        Takes a name and company (or email) and discovers publicly available professional information.
+        Cross-references LinkedIn, Twitter, GitHub, press mentions, and conference speaker lists.
+      </p>
+      <h4>What gets discovered</h4>
+      <ul class="check-list">
+        <li><strong>Title</strong> — Current job title</li>
+        <li><strong>Company</strong> — Current employer</li>
+        <li><strong>LinkedIn</strong> — Profile URL</li>
+        <li><strong>Twitter / X</strong> — Profile URL and handle</li>
+        <li><strong>GitHub</strong> — Profile URL and notable repos</li>
+        <li><strong>Public contact details</strong> — Emails and phones found in public directories</li>
+        <li><strong>Location</strong> — City / metro area</li>
+        <li><strong>Bio</strong> — Summary from LinkedIn or conference bios</li>
+      </ul>
+      <h4>Example response</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json</span></div>
+        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+  "name": "Jordan Lee",
+  "title": "VP Engineering",
+  "company": "Acme Analytics",
+  "location": "San Francisco, CA",
+  "bio": "Engineering leader with 12 years in data infrastructure. Previously at Stripe and Google.",
+  "linkedin": "https://linkedin.com/in/jordanlee",
+  "twitter": "https://twitter.com/jordanlee_eng",
+  "github": "https://github.com/jordanlee",
+  "emails": ["jordan.lee@acme-analytics.com"],
+  "phones": ["+14155550199"],
+  "recent_mentions": [
+    {
+      "title": "Acme Analytics Raises $40M Series B",
+      "source": "TechCrunch",
+      "date": "2025-03-15"
+    }
+  ]
+}\`}`}} /></pre>
+      </div>
+    </div>
+  </section>
+
+  {/* ============ CONTACT MANAGEMENT WORKFLOW ============ */}
+  <section id="contact-management">
+    <h2 data-i18n="docsOutreach.contactsTitle">Contact Management Workflow</h2>
+    <p data-i18n="docsOutreach.contactsSub">
+      Every contact discovered by the pipeline flows through a unified management layer backed by
+      SQLite. The system handles deduplication, merge, export, and CRM sync — so you never lose data
+      or create duplicates.
+    </p>
+
+    <h3 id="contacts-db">How contacts.db works</h3>
+    <p>
+      All contacts are stored in <code>contacts.db</code>, a SQLite database in your project's data
+      directory. The schema is designed for fast dedup and flexible metadata.
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">sql</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`CREATE TABLE contacts (
+    id          TEXT PRIMARY KEY,   -- UUID v4
+    name        TEXT,
+    email       TEXT,
+    phone       TEXT,
+    title       TEXT,
+    company     TEXT,
+    linkedin    TEXT,
+    twitter     TEXT,
+    github      TEXT,
+    website     TEXT,
+    location    TEXT,
+    bio         TEXT,
+    confidence  REAL DEFAULT 0.0,
+    source_url  TEXT,
+    crm_id      TEXT,               -- set after CRM push
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX idx_dedup
+    ON contacts(email, phone, linkedin);\`}`}} /></pre>
+    </div>
+    <h4>Dedup logic</h4>
+    <ul class="check-list">
+      <li><strong>Primary key:</strong> email + phone + LinkedIn composite. If any two of the three match, the record is merged.</li>
+      <li><strong>Merge strategy:</strong> non-empty fields from the newer record overwrite older empty fields; confidence takes the higher value.</li>
+      <li><strong>Name normalization:</strong> diacritics stripped, whitespace collapsed, case-insensitive comparison.</li>
+    </ul>
+
+    <h3 id="extract-contacts">extract_contacts</h3>
+    <p>
+      Extracts emails, phone numbers, and social profile URLs from free text, raw HTML, or a live URL.
+      Handles obfuscated patterns like <code>bob [at] acme [dot] com</code> and JavaScript-rendered
+      content.
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">python</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`result = await agent.call_tool("extract_contacts", {
+    url: "https://acme-analytics.com/team"
+})
+
+result = await agent.call_tool("extract_contacts", {
+    text: "Reach Jordan at jordan.lee@acme-analytics.com or +1 (415) 555-0199"
+})\`}`}} /></pre>
+    </div>
+
+    <h3 id="save-contacts">save_contacts</h3>
+    <p>
+      Saves extracted contacts to <code>contacts.db</code> with automatic dedup and merge. When CRM
+      integration is configured, an optional push happens after save.
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">python</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`# Save with auto-push to CRM
+await agent.call_tool("save_contacts", { push_crm: true })
+
+# Save without CRM push (default)
+await agent.call_tool("save_contacts", {})\`}`}} /></pre>
+    </div>
+
+    <h3 id="cli-commands">CLI commands</h3>
+    <table class="mini-table">
+      <thead><tr><th>Command</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>contacts list</code></td>
+          <td>List all contacts in the database with optional <code>--limit</code> filter</td>
+        </tr>
+        <tr>
+          <td><code>contacts export --format csv</code></td>
+          <td>Export contacts to CSV, vCard (.vcf), JSON, or XLSX</td>
+        </tr>
+        <tr>
+          <td><code>contacts export --format vcard</code></td>
+          <td>Export as vCard 3.0 — compatible with Apple Contacts, Google Contacts, Outlook</td>
+        </tr>
+        <tr>
+          <td><code>contacts export --format xlsx</code></td>
+          <td>Export as Excel workbook with separate sheets for contacts and companies</td>
+        </tr>
+        <tr>
+          <td><code>contacts dedup</code></td>
+          <td>Run dedup pass on existing database; reports merge count and conflicts</td>
+        </tr>
+        <tr>
+          <td><code>contacts push-crm</code></td>
+          <td>Sync all unsent contacts to the configured CRM</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 id="crm-integration">CRM integration</h3>
+    <div class="steps">
+      <div class="step">
+        <h3>amoCRM v4</h3>
+        <p>
+          OAuth 2.0 integration. Creates leads with contact and company entities. Supports
+          <code>crm_id</code> dedup — re-runs update existing leads instead of creating duplicates.
+          Custom fields mapped via <code>[crm].amocrm_field_map</code> config.
+        </p>
+      </div>
+      <div class="step">
+        <h3>Bitrix24 REST</h3>
+        <p>
+          Webhook-based integration. Creates contacts + leads + companies in a single batch call.
+          Activity timeline auto-populated with outreach events. Requires
+          <code>BITRIX24_WEBHOOK_URL</code> env variable.
+        </p>
+      </div>
+      <div class="step">
+        <h3>HubSpot v3</h3>
+        <p>
+          Private app token integration via the CRM v3 Objects API. Creates contacts with
+          associations to companies. Supports batch upsert (up to 100 records per call). Custom
+          properties mapped via <code>[crm].hubspot_property_map</code>.
+        </p>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">toml — config.toml CRM section</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`[crm]
+provider = "amocrm"          # amocrm | bitrix24 | hubspot
+domain = "mycompany.amocrm.com"
+api_key = "..."
+
+# Or for HubSpot:
+# provider = "hubspot"
+# domain = "api.hubapi.com"
+# api_key = "pat-xxx-..."\`}`}} /></pre>
+    </div>
+  </section>
+
+  {/* ============ APPROVAL FLOW DEEP DIVE ============ */}
+  <section id="approval-flow">
+    <h2 data-i18n="docsOutreach.approvalTitle">Approval Flow Deep Dive</h2>
+    <p data-i18n="docsOutreach.approvalSub">
+      Not every tool should run without human review. The approval flow gates side-effect-causing
+      operations — so the agent can plan freely, but it needs your explicit OK before it writes to your
+      CRM, saves contacts, or pushes code.
+    </p>
+
+    <h3 id="gated-tools">Gated tools (by default)</h3>
+    <table class="mini-table">
+      <thead><tr><th>Tool</th><th>Why it's gated</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>save_contacts</code></td>
+          <td>Writes to <code>contacts.db</code> and optionally pushes to CRM — real side effects</td>
+        </tr>
+        <tr>
+          <td><code>git_push</code></td>
+          <td>Pushes code to a remote repository — irreversible once published</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 id="customize-approval">How to customize</h3>
+    <p>
+      Add or remove gated tools in <code>config.toml</code> under the <code>[agent]</code> section:
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">toml</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`[agent]
+# Default: save_contacts and git_push require approval
+approval_tools = ["save_contacts", "git_push"]
+
+# Add more tools to the gate:
+approval_tools = ["save_contacts", "git_push", "send_email", "crm_push"]
+
+# Remove all gates (use with caution):
+approval_tools = []\`}`}} /></pre>
+    </div>
+
+    <h3 id="tui-approval">TUI approval workflow</h3>
+    <ul class="check-list">
+      <li>The agent pauses and displays a summary of the pending action in the terminal UI.</li>
+      <li>You see: tool name, parameters, expected outcome, and any warnings.</li>
+      <li>Press <code>y</code> to approve, <code>n</code> to reject, or <code>e</code> to edit the parameters before approving.</li>
+      <li>Editing opens the parameter JSON in your <code>$EDITOR</code> for inline modification.</li>
+    </ul>
+
+    <h3 id="api-approval">API approval workflow</h3>
+    <p>
+      When running headless or integrated into CI/CD, approve via the REST API:
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`# Approve a pending action
+curl -X POST http://localhost:8080/api/v1/sessions/sess_abc123/approve \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{"action_id": "act_789", "approved": true}'
+
+# Reject a pending action
+curl -X POST http://localhost:8080/api/v1/sessions/sess_abc123/approve \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{"action_id": "act_789", "approved": false}'\`}`}} /></pre>
+    </div>
+
+    <h3 id="timeout-fallback">Timeout and fallback behavior</h3>
+    <p>
+      If no approval arrives within the configured window, the agent uses the fallback strategy:
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">toml</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`[agent]
+# What to do when approval times out:
+# "deny"  — skip the action, continue the pipeline
+# "allow" — auto-approve (for fully automated runs)
+# "pause" — pause the session, resume later
+approval_fallback = "deny"
+
+# Timeout in seconds (default: 300 = 5 minutes)
+approval_timeout_seconds = 300\`}`}} /></pre>
+    </div>
+    <div class="callout">
+      <div class="callout-icon">⚠️</div>
+      <div class="callout-content">
+        <strong>Never set <code>approval_fallback = "allow"</code> in production</strong> unless you
+        are running a fully automated pipeline with strict parameter validation. Auto-approve bypasses
+        human review for CRM writes and code pushes.
+      </div>
+    </div>
+  </section>
+
+  {/* ============ WATCH MODE & MONITORING ============ */}
+  <section id="watch-mode">
+    <h2 data-i18n="docsOutreach.watchTitle">Watch Mode &amp; Monitoring</h2>
+    <p data-i18n="docsOutreach.watchSub">
+      Watch mode transforms a one-shot outreach task into a recurring monitor. Re-run the same query
+      on a schedule, diff the results, and get notified only when new contacts appear.
+    </p>
+
+    <h3 id="repeat-flag">The --repeat flag</h3>
+    <p>
+      Add <code>--repeat N</code> to re-run every <code>N</code> seconds. The agent runs the full
+      pipeline on each cycle — but only saves contacts that are new or changed since the last run.
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`# Re-run every 24 hours (86400 seconds)
+parallel-research run "Find new VP Engineering hires at Series B startups in SF" \\\\
+  --repeat 86400\`}`}} /></pre>
+    </div>
+
+    <h3 id="diff-detection">How diff detection works</h3>
+    <ul class="check-list">
+      <li>Each run snapshots the contact database state (hash of email + phone + LinkedIn).</li>
+      <li>Before saving, new records are compared against the previous snapshot.</li>
+      <li>Only genuinely new or updated contacts trigger notifications.</li>
+      <li>Removed contacts (present in snapshot, absent in new run) are logged but not deleted.</li>
+    </ul>
+
+    <h3 id="notification-channels">Notification channels</h3>
+    <div class="steps">
+      <div class="step">
+        <h3>Webhook</h3>
+        <p>
+          POST JSON payload to any URL. Configurable via <code>NOTIFY_WEBHOOK_URL</code> env
+          variable. Payload includes new contact count, contact details, and run metadata.
+        </p>
+      </div>
+      <div class="step">
+        <h3>Email</h3>
+        <p>
+          Send a digest email via SMTP. Configure <code>SMTP_HOST</code>, <code>SMTP_PORT</code>,
+          <code>SMTP_USER</code>, <code>SMTP_PASS</code>, and <code>NOTIFY_EMAIL_TO</code>.
+        </p>
+      </div>
+      <div class="step">
+        <h3>Telegram</h3>
+        <p>
+          Send a message to a Telegram chat via Bot API. Set
+          <code>TELEGRAM_BOT_TOKEN</code> and <code>TELEGRAM_CHAT_ID</code> env variables.
+        </p>
+      </div>
+    </div>
+
+    <h3 id="daily-monitoring-example">Example: daily lead monitoring setup</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`# Full monitoring setup
+export NOTIFY_WEBHOOK_URL="https://hooks.slack.com/services/T00/B00/xxx"
+export TELEGRAM_BOT_TOKEN="123456:ABC-..."
+export TELEGRAM_CHAT_ID="-1001234567890"
+
+parallel-research run \\\\
+  "Find newly funded startups in Berlin, extract CTO contacts, verify emails" \\\\
+  --repeat 86400\`}`}} /></pre>
+    </div>
+    <h4>Webhook payload example</h4>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">json</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+  "event": "watch_diff",
+  "run_id": "run_20250615_001",
+  "timestamp": "2025-06-15T08:00:00Z",
+  "new_contacts": 7,
+  "updated_contacts": 2,
+  "total_contacts": 156,
+  "contacts": [
+    {
+      "name": "New CTO at StartupX",
+      "email": "cto@startupx.io",
+      "title": "CTO",
+      "company": "StartupX",
+      "confidence": 0.94
+    }
+  ],
+  "query": "newly funded startups in Berlin"
+}\`}`}} /></pre>
+    </div>
+  </section>
+
+  {/* ============ REAL-WORLD WORKFLOW EXAMPLES ============ */}
+  <section id="workflow-examples">
+    <h2 data-i18n="docsOutreach.examplesTitle">Real-World Workflow Examples</h2>
+    <p data-i18n="docsOutreach.examplesSub">
+      These end-to-end examples show how the pipeline works in practice — from a plain-language goal
+      to verified, enriched leads ready for outreach.
+    </p>
+
+    <h3 id="example-1">Example 1: Build a targeted engineering leadership list</h3>
+    <div class="workflow-example">
+      <div class="workflow-goal">
+        <span class="workflow-goal-label">Goal</span>
+        <p>"Build a list of VPs of Engineering at B2B SaaS companies in the Bay Area with verified emails and LinkedIn profiles."</p>
+      </div>
+      <h4>Command</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">bash</span></div>
+        <pre><code dangerouslySetInnerHTML={{__html: `{\`parallel-research run \\\\
+  "Find VP Engineering at B2B SaaS companies in the Bay Area. \\\\
+   Verify their emails and LinkedIn profiles. \\\\
+   Save enriched contacts with confidence >= 0.85."\`}`}} /></pre>
+      </div>
+      <h4>What happens step by step</h4>
+      <table class="mini-table">
+        <thead><tr><th>Step</th><th>Tool</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>find_leads</code></td><td>Searches 2GIS + Google Maps for "B2B SaaS" companies in SF Bay Area. Parses up to 6 corporate sites per company. Searches LinkedIn for VP Engineering titles.</td></tr>
+          <tr><td>2</td><td><code>extract_contacts</code></td><td>Pulls emails, phones, and LinkedIn URLs from all discovered pages. Handles obfuscated patterns.</td></tr>
+          <tr><td>3</td><td><code>verify_email</code></td><td>5-stage pipeline on each email. Filters out anything below 0.85 confidence.</td></tr>
+          <tr><td>4</td><td><code>verify_social_profile</code></td><td>Validates each LinkedIn URL and extracts profile metadata.</td></tr>
+          <tr><td>5</td><td><code>enrich_person</code></td><td>Adds bio, title confirmation, Twitter/GitHub profiles, and recent mentions.</td></tr>
+          <tr><td>6</td><td><code>save_contacts</code></td><td>Saves to contacts.db (dedup + merge). Waits for approval before write.</td></tr>
+        </tbody>
+      </table>
+      <h4>Expected output structure</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json</span></div>
+        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+  "session_id": "sess_abc123",
+  "query": "VP Engineering at B2B SaaS companies in the Bay Area",
+  "total_companies_found": 87,
+  "total_contacts_extracted": 134,
+  "verified_contacts": 92,
+  "filtered_contacts": 41,
+  "contacts": [
+    {
+      "name": "Jordan Lee",
+      "title": "VP Engineering",
+      "company": "Acme Analytics",
+      "email": "jordan.lee@acme-analytics.com",
+      "email_confidence": 0.97,
+      "linkedin": "https://linkedin.com/in/jordanlee",
+      "linkedin_verified": true,
+      "twitter": "https://twitter.com/jordanlee_eng",
+      "location": "San Francisco, CA",
+      "bio": "Engineering leader with 12 years in data infrastructure.",
+      "company_size": "80-120 employees",
+      "company_funding": "Series B ($40M)"
+    }
+  ]
+}\`}`}} /></pre>
+      </div>
+    </div>
+
+    <h3 id="example-2">Example 2: Monitor competitor hiring</h3>
+    <div class="workflow-example">
+      <div class="workflow-goal">
+        <span class="workflow-goal-label">Goal</span>
+        <p>"Monitor competitor hiring and alert me when they post new senior engineering roles."</p>
+      </div>
+      <h4>Command</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">bash</span></div>
+        <pre><code dangerouslySetInnerHTML={{__html: `{\`parallel-research run \\\\
+  "Monitor career pages and job boards for senior engineering roles \\\\
+   at CompetitorA, CompetitorB, CompetitorC. \\\\
+   Alert on new VP/Director/Staff-level postings." \\\\
+  --repeat 43200\`}`}} /></pre>
+      </div>
+      <h4>What happens step by step</h4>
+      <table class="mini-table">
+        <thead><tr><th>Step</th><th>Tool</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>parse_corporate_site</code></td><td>Crawls <code>/careers</code> and <code>/jobs</code> pages of each competitor. Extracts job titles, locations, and posting dates.</td></tr>
+          <tr><td>2</td><td><code>search_news</code></td><td>Searches for recent hiring announcements and press coverage mentioning the competitors.</td></tr>
+          <tr><td>3</td><td>Diff engine</td><td>Compares current findings against the previous run's snapshot. Identifies new postings.</td></tr>
+          <tr><td>4</td><td>Notify</td><td>Sends a Telegram message with each new senior role: title, location, posting URL, and date.</td></tr>
+        </tbody>
+      </table>
+      <h4>Expected notification payload</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json</span></div>
+        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+  "event": "watch_diff",
+  "new_postings": [
+    {
+      "company": "CompetitorA",
+      "title": "Director of Platform Engineering",
+      "location": "San Francisco, CA",
+      "url": "https://competitora.com/careers/director-platform",
+      "posted_date": "2025-06-14",
+      "detected_at": "2025-06-15T08:00:00Z"
+    }
+  ],
+  "monitoring_since": "2025-06-01T00:00:00Z",
+  "total_runs": 30
+}\`}`}} /></pre>
+      </div>
+    </div>
+
+    <h3 id="example-3">Example 3: Enrich an existing CSV of contacts</h3>
+    <div class="workflow-example">
+      <div class="workflow-goal">
+        <span class="workflow-goal-label">Goal</span>
+        <p>"I have a CSV of 200 contacts with names and companies. Enrich them with verified emails and LinkedIn profiles."</p>
+      </div>
+      <h4>Command</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">bash</span></div>
+        <pre><code dangerouslySetInnerHTML={{__html: `{\`# Step 1: Import the CSV
+parallel-research contacts import --file contacts.csv --map name,company
+
+# Step 2: Enrich each contact
+parallel-research run \\\\
+  "For each contact in the database that is missing an email, \\\\
+   find their professional email and LinkedIn profile. \\\\
+   Verify emails before saving." \\\\
+  --source-db contacts.db
+
+# Step 3: Export enriched results
+parallel-research contacts export --format csv --file enriched_contacts.csv\`}`}} /></pre>
+      </div>
+      <h4>What happens step by step</h4>
+      <table class="mini-table">
+        <thead><tr><th>Step</th><th>Tool</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Import</td><td>Parses CSV, maps columns, and inserts into contacts.db with dedup.</td></tr>
+          <tr><td>2</td><td><code>suggest_emails</code></td><td>For each contact without an email, generates 9 pattern candidates using name + company domain.</td></tr>
+          <tr><td>3</td><td><code>verify_email</code></td><td>Runs 5-stage verification on each candidate. Keeps the highest-confidence match above 0.8.</td></tr>
+          <tr><td>4</td><td><code>search_social</code></td><td>Searches LinkedIn for the person's name + company. Validates and enriches the profile URL.</td></tr>
+          <tr><td>5</td><td><code>enrich_person</code></td><td>Fills in bio, title confirmation, location, and additional social profiles.</td></tr>
+          <tr><td>6</td><td><code>save_contacts</code></td><td>Merges enriched data into existing contact records. Updates only changed fields.</td></tr>
+          <tr><td>7</td><td>Export</td><td>Exports the enriched database to CSV with all new fields included.</td></tr>
+        </tbody>
+      </table>
+      <h4>Expected output structure</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">text — enriched_contacts.csv columns</span></div>
+        <pre><code dangerouslySetInnerHTML={{__html: `{\`name,email,email_confidence,title,company,linkedin,twitter,location,bio,source
+Jordan Lee,jordan.lee@acme-analytics.com,0.97,VP Engineering,Acme Analytics,https://linkedin.com/in/jordanlee,https://twitter.com/jordanlee_eng,"San Francisco, CA","Engineering leader with 12 years...",suggest_emails+verify
+Maria Chen,maria.chen@startupx.io,0.91,CTO,StartupX,https://linkedin.com/in/mariachen,,Berlin,"Former Google, building developer tools...",search_social+verify\`}`}} /></pre>
+      </div>
+      <div class="callout">
+        <div class="callout-icon">💡</div>
+        <div class="callout-content">
+          <strong>Pattern learning compounds.</strong> After enriching 200 contacts,
+          <code>suggest_emails</code> has learned the email patterns for dozens of domains. Future
+          enrichment runs for the same companies will be significantly faster and more accurate.
+        </div>
+      </div>
+    </div>
+  </section>

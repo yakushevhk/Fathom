@@ -1,0 +1,262 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const installers = [
+  {
+    name: 'install.sh',
+    d: 'One-line installer. Builds the release binary, installs it to /usr/local/bin (or $PREFIX/bin), creates the default config directory — and optionally installs the systemd service unit with INSTALL_SYSTEMD=1.',
+    code: `curl -sSf https://fathom.uz/install.sh | sh
+
+# also install + enable the systemd unit
+curl -sSf https://fathom.uz/install.sh | INSTALL_SYSTEMD=1 sh`,
+  },
+  {
+    name: 'Cargo',
+    d: 'Build from source with the Rust toolchain. Release builds are compiled with LTO and stripped — a slim, self-contained binary.',
+    code: `cargo install --path .
+
+# or build directly
+cargo build --release
+./target/release/parallel-research --help`,
+  },
+  {
+    name: 'Docker',
+    d: 'Multi-stage image: rust:1.97-bookworm builder → debian:bookworm-slim runtime. Runs as a non-root user; output and databases live in /data.',
+    code: `docker build -t parallel-research .
+
+docker run -it --rm \\
+  -e PARALLEL_LLM_API_KEY="sk-..." \\
+  -v research-data:/data \\
+  parallel-research run "your query" --output /data/results/`,
+  },
+  {
+    name: 'docker-compose',
+    d: 'Publishes port 8080 with restart policy and named volumes: research-data for output, contacts and memory databases, research-config for config.toml.',
+    code: `docker compose up -d
+
+# volumes:
+#   research-data    → /data (results, contacts.db, memory.db, jobs)
+#   research-config  → config.toml (LLM key, agent settings)`,
+  },
+];
+
+const deps = [
+  { name: 'pandoc', enables: 'PDF and DOCX report export (HTML / JSON export always works)' },
+  { name: 'ripgrep', enables: 'speeds up the grep tool; built-in fallback when absent' },
+  { name: 'python3 / node', enables: 'REPL and code-execution tools' },
+  { name: 'Chrome + CDP', enables: '5 browser tools; auto-detected via PARALLEL_CDP_ENDPOINT' },
+];
+
+const envVars = [
+  { name: 'PARALLEL_RESEARCH_API_KEYS', purpose: 'Comma-separated keys protecting /api/v1/*. Required when serve binds to a non-loopback address.' },
+  { name: 'PARALLEL_RESEARCH_RATE_LIMIT', purpose: 'Per-client HTTP API requests per minute (default: 120).' },
+  { name: 'PARALLEL_CDP_ENDPOINT', purpose: 'Chrome DevTools Protocol endpoint for the browser tools (default: localhost:9222).' },
+  { name: 'PARALLEL_VISION_API_KEY', purpose: 'API key for the vision model used on screenshots and images.' },
+  { name: 'PARALLEL_VISION_MODEL', purpose: 'Vision model identifier.' },
+  { name: 'PARALLEL_2GIS_API_KEY', purpose: '2GIS Catalog API key for business-directory search.' },
+  { name: 'PARALLEL_GOOGLE_PLACES_API_KEY', purpose: 'Google Places API key for business-directory search.' },
+  { name: 'PARALLEL_YANDEX_MAPS_API_KEY', purpose: 'Yandex Maps API key for business-directory search.' },
+  { name: 'PARALLEL_TWITTER_BEARER_TOKEN', purpose: 'X (Twitter) bearer token for the social-search tool.' },
+  { name: 'PR_CONFIG', purpose: 'Config file path override (default: ~/.parallel-research/config.toml).' },
+  { name: 'PR_MEMORY_DB', purpose: 'Semantic memory SQLite database path override.' },
+  { name: 'PR_JOBS_DB', purpose: 'Durable jobs SQLite database path override.' },
+  { name: 'RUST_LOG', purpose: 'Log level filter (default: info).' },
+];
+---
+
+<Layout title="Installation — Fathom Research">
+  <main class="inst-page">
+    <div class="container">
+      <div class="inst-hero">
+        <p class="eyebrow" data-i18n="install.hero.badge">Install</p>
+        <h1 class="h2-sec" data-i18n="install.hero.title">One binary. Every runtime.</h1>
+        <p class="copy-lg mx-auto" data-i18n="install.hero.sub">CLI, TUI, HTTP server, web dashboard and MCP endpoint ship in a single binary. Install with one command, build from source with Cargo, or run it in Docker — pick your path.</p>
+      </div>
+
+      <!-- Installers -->
+      <div class="api-grid">
+        {
+          installers.map((m, i) => (
+            <div class="api-card">
+              <div class="api-name">{m.name}</div>
+              <p data-i18n={'install.api.' + i + '.d'}>{m.d}</p>
+              <pre class="card-code"><code>{m.code}</code></pre>
+            </div>
+          ))
+        }
+      </div>
+
+      <!-- Systemd -->
+      <div class="feat" id="systemd">
+        <div class="feat-copy">
+          <p class="eyebrow" data-i18n="install.systemd.badge">Linux service</p>
+          <h2 class="h3-sec" data-i18n="install.systemd.title">Run it under systemd</h2>
+          <p class="copy-lg" data-i18n-html data-i18n="install.systemd.sub">The unit starts <code class="ic">parallel-research serve</code> on port 8080 with <code class="ic">Restart=on-failure</code> and a hardening sandbox: <code class="ic">NoNewPrivileges</code>, <code class="ic">PrivateTmp</code>, <code class="ic">ProtectSystem=full</code>, <code class="ic">ProtectHome=read-only</code> — writes are restricted to <code class="ic">/var/lib/parallel-research</code>.</p>
+        </div>
+        <div class="code-card">
+          <pre><code>{`sudo cp parallel-research.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now parallel-research
+
+# status and live logs
+systemctl status parallel-research
+journalctl -u parallel-research -f`}</code></pre>
+        </div>
+      </div>
+
+      <!-- Optional dependencies -->
+      <div class="feat feat-reverse" id="dependencies">
+        <div class="feat-copy">
+          <p class="eyebrow" data-i18n="install.deps.badge">Optional dependencies</p>
+          <h2 class="h3-sec" data-i18n="install.deps.title">Nothing required, everything upgradeable</h2>
+          <p class="copy-lg" data-i18n="install.deps.sub">The binary works standalone. These tools unlock extra capabilities — each one is detected automatically at runtime, and every absence has a graceful fallback.</p>
+        </div>
+        <div>
+          <div class="mini-table-wrap">
+            <table class="mini-table">
+              <thead><tr><th data-i18n="install.deps.colTool">Tool</th><th data-i18n="install.deps.colEnables">What it enables</th></tr></thead>
+              <tbody>
+                {deps.map((d, i) => (
+                  <tr>
+                    <td>{d.name}</td>
+                    <td data-i18n={'install.deps.' + i + '.enables'}>{d.enables}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div class="code-card code-card--gap">
+            <pre><code>{`# macOS
+brew install pandoc ripgrep
+
+# Debian / Ubuntu
+sudo apt install pandoc ripgrep
+
+# Chrome with a CDP endpoint for the browser tools
+google-chrome --remote-debugging-port=9222 --headless`}</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Requirements -->
+      <div class="sec-head" id="requirements">
+        <p class="eyebrow" data-i18n="install.req.badge">Requirements</p>
+        <h2 class="h3-sec" data-i18n="install.req.title">Small footprint, no surprises</h2>
+      </div>
+      <div class="chips">
+        <span class="chip">Rust stable · edition 2021</span>
+        <span class="chip">macOS / Linux · Windows via WSL</span>
+        <span class="chip">SQLite bundled (WAL)</span>
+        <span class="chip">PostgreSQL optional · tokio-postgres</span>
+        <span class="chip">single static binary</span>
+      </div>
+
+      <!-- Env vars -->
+      <div class="sec-head" id="env-vars">
+        <p class="eyebrow" data-i18n="install.env.badge">Environment</p>
+        <h2 class="h3-sec" data-i18n="install.env.title">Env vars reference</h2>
+        <p class="copy-lg" data-i18n="install.env.sub">Environment variables override config-file values. API keys for external services are only ever read from the environment or your local config.</p>
+      </div>
+      <div class="mini-table-wrap">
+        <table class="mini-table">
+          <thead><tr><th data-i18n="install.env.colVar">Variable</th><th data-i18n="install.env.colPurpose">Purpose</th></tr></thead>
+          <tbody>
+            {envVars.map((v, i) => (
+              <tr>
+                <td>{v.name}</td>
+                <td data-i18n={'install.env.' + i + '.purpose'}>{v.purpose}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Verify -->
+      <div class="feat" id="verify">
+        <div class="feat-copy">
+          <p class="eyebrow" data-i18n="install.verify.badge">Verify</p>
+          <h2 class="h3-sec" data-i18n="install.verify.title">Check the installation</h2>
+          <p class="copy-lg" data-i18n-html data-i18n="install.verify.sub"><code class="ic">bench</code> exercises the tool-execution layer with zero network and zero LLM calls — a safe smoke test on any machine. Then start the server or the TUI.</p>
+          <div class="more-links">
+            <a href="/benchmarks" class="btn btn-secondary" data-i18n="install.verify.bench">Benchmarks</a>
+            <a href="/docs/cli" class="btn btn-secondary" data-i18n="install.verify.cli">CLI reference</a>
+          </div>
+        </div>
+        <div class="code-card">
+          <pre><code>{`parallel-research bench     # tool layer — no network, no LLM
+parallel-research serve     # HTTP API + dashboard on :8080
+parallel-research tui       # interactive terminal UI
+
+curl http://localhost:8080/health`}</code></pre>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="cta-strip">
+        <div class="cta-copy">
+          <h3 data-i18n="install.cta.title">Installed? Run your first research.</h3>
+          <p data-i18n="install.cta.sub">Configure the LLM key, pick a search backend and launch a session in under five minutes.</p>
+        </div>
+        <div class="cta-actions">
+          <a href="/docs/quickstart" class="cta-btn" data-i18n="install.cta.next">Next: quickstart →</a>
+          <a href="/docs/cli" class="cta-link" data-i18n="install.cta.cli">CLI reference</a>
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .inst-page { padding: 70px 0 90px; }
+  .eyebrow { font-family: var(--font-mono); font-size: 13px; letter-spacing: .16px; text-transform: uppercase; color: var(--grey-600); }
+  .h3-sec { font-size: clamp(20px, 2.4vw, 34px); font-weight: 500; letter-spacing: -0.02em; margin: 12px 0 16px; }
+  .ic { font-family: var(--font-mono); font-size: .85em; background: var(--grey-100); border: 1px solid var(--grey-200); padding: 1px 6px; border-radius: 5px; }
+  .copy-lg { color: var(--grey-700); font-size: 17px; line-height: 1.55; max-width: 640px; }
+  .mx-auto { margin-left: auto; margin-right: auto; }
+
+  .inst-hero { max-width: 820px; margin: 0 auto 48px; text-align: center; padding: 0 24px; }
+  .inst-hero h1 { font-size: clamp(34px, 5vw, 68px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.02; margin-top: 12px; }
+  .inst-hero .copy-lg { margin-top: 20px; }
+
+  .api-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; background: var(--grey-300); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--grey-300); }
+  .api-card { background: var(--bg-card); padding: 26px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .api-card .api-name { font-family: var(--font-mono); font-weight: 600; font-size: 15px; }
+  .api-card p { color: var(--grey-600); font-size: 14px; line-height: 1.55; }
+  .card-code { margin-top: auto; background: var(--grey-900); border-radius: var(--radius-md); padding: 14px 16px; overflow-x: auto; }
+  .card-code code { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.7; color: var(--grey-100); white-space: pre; }
+  @media (max-width: 800px) { .api-grid { grid-template-columns: 1fr; } }
+
+  .feat { display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: center; padding: 56px 0; }
+  .feat-reverse { direction: rtl; }
+  .feat-reverse > * { direction: ltr; }
+  @media (max-width: 900px) { .feat, .feat-reverse { grid-template-columns: 1fr; gap: 28px; direction: ltr; } }
+
+  .code-card { border: 1px solid var(--grey-200); border-radius: var(--radius-md); background: var(--bg-dark); overflow: hidden; box-shadow: var(--shadow-lg); }
+  .code-card pre { margin: 0; padding: 22px; overflow-x: auto; }
+  .code-card code { font-family: var(--font-mono); font-size: 13px; line-height: 1.8; color: var(--grey-100); white-space: pre; }
+  .code-card--gap { margin-top: 14px; }
+
+  .mini-table-wrap { border: 1px solid var(--grey-200); border-radius: 8px; overflow: auto; background: var(--bg-card); }
+  .mini-table { width: 100%; border-collapse: collapse; font-size: 13px; font-family: var(--font-mono); }
+  .mini-table th { font-size: 10px; text-transform: uppercase; letter-spacing: .6px; color: var(--grey-600); text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--grey-200); background: var(--grey-50); }
+  .mini-table td { padding: 10px 14px; border-bottom: 1px solid var(--grey-100); color: var(--grey-800); }
+  .mini-table td:first-child { white-space: nowrap; font-weight: 500; }
+  .mini-table tr:last-child td { border-bottom: none; }
+
+  .sec-head { max-width: 720px; margin: 56px 0 24px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-family: var(--font-mono); font-size: 12.5px; color: var(--grey-700); background: var(--bg-card); border: 1px solid var(--grey-300); border-radius: var(--radius-full); padding: 7px 14px; }
+
+  .more-links { display: flex; gap: 10px; margin-top: 24px; }
+
+  .cta-strip { margin-top: 64px; background: var(--bg-dark); border-radius: var(--radius-xl); padding: 40px 44px; display: flex; align-items: center; justify-content: space-between; gap: 32px; }
+  .cta-copy h3 { color: #fff; font-size: 24px; font-weight: 500; letter-spacing: -0.02em; }
+  .cta-copy p { color: var(--grey-500); font-size: 14.5px; line-height: 1.6; margin-top: 8px; max-width: 480px; }
+  .cta-actions { display: flex; align-items: center; gap: 20px; flex-shrink: 0; }
+  .cta-btn { background: var(--bg-card); color: var(--grey-900); font-weight: 600; font-size: 15px; padding: 13px 26px; border-radius: var(--radius-md); white-space: nowrap; transition: transform var(--duration) var(--ease-out), box-shadow var(--duration); }
+  .cta-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 30px -12px rgba(255, 255, 255, 0.35); }
+  .cta-link { color: var(--grey-400); font-size: 14px; font-weight: 500; white-space: nowrap; }
+  .cta-link:hover { color: #fff; }
+  @media (max-width: 800px) { .cta-strip { flex-direction: column; align-items: flex-start; padding: 32px 28px; } }
+</style>

@@ -1,0 +1,32 @@
+# Build artifacts
+/target/
+
+# Website build
+/website/dist/
+/website/.astro/
+/website/node_modules/
+
+# OS noise
+.DS_Store
+
+# Local SQLite databases
+*.db
+*.db-wal
+*.db-shm
+
+# Python
+__pycache__/
+*.pyc
+
+# Local tool state
+/.zcode/
+/.opencode/
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+
+# Research output (runtime data, not source)
+/research-output/

@@ -1,0 +1,21 @@
+[package]
+name = "pr-llm"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+pr-core.workspace = true
+tokio.workspace = true
+reqwest.workspace = true
+reqwest-eventsource.workspace = true
+eventsource-stream = "0.2"
+serde.workspace = true
+serde_json.workspace = true
+futures.workspace = true
+async-trait.workspace = true
+tracing.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
