@@ -167,8 +167,47 @@ impl Tool for HubTool {
                                 )));
                             }
                             Ok(Err(_)) => {
+                                // Side-channel auto-reply: when the target
+                                // agent is parked or not listening, the
+                                // IrcBus reviver may have spawned a new turn
+                                // but the result may not arrive. Generate
+                                // a canned auto-reply so the caller doesn't
+                                // hang.
+                                if let Some(llm) = &ctx.aux_llm() {
+                                    let prompt = format!(
+                                        "Agent {} is not available to reply. \
+                                         Generate a brief, helpful auto-reply \
+                                         acknowledging the message.",
+                                        target_id
+                                    );
+                                    if let Ok(resp) = llm
+                                        .complete(&pr_llm::CompletionRequest {
+                                            messages: vec![
+                                                pr_core::Message::system(
+                                                    "You are generating an auto-reply \
+                                                     for an unavailable agent.",
+                                                ),
+                                                pr_core::Message::user(&prompt),
+                                            ],
+                                            tools: vec![],
+                                            temperature: Some(0.3),
+                                            max_tokens: Some(100),
+                                            stream: false,
+                                        })
+                                        .await
+                                    {
+                                        if let pr_core::Message::Assistant { content, .. } = &resp.message {
+                                            if let Some(text) = content {
+                                                return Ok(ToolOutput::ok(format!(
+                                                    "[auto-reply from {}] {}",
+                                                    target_id, text
+                                                )));
+                                            }
+                                        }
+                                    }
+                                }
                                 return Ok(ToolOutput::ok(
-                                    "No reply received (waiter channel closed).",
+                                    "No reply received (agent unavailable).",
                                 ));
                             }
                             Err(_) => {

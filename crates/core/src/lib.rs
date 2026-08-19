@@ -1,6 +1,7 @@
 pub mod irc;
 pub mod steer;
 pub mod async_job;
+pub mod daemon;
 pub mod ids;
 pub mod message;
 pub mod agent;
@@ -24,6 +25,7 @@ pub mod protected;
 pub use irc::*;
 pub use steer::*;
 pub use async_job::*;
+pub use daemon::*;
 pub use ids::*;
 pub use message::*;
 pub use agent::*;

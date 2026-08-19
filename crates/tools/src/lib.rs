@@ -36,6 +36,7 @@ pub mod autosave;
 pub mod receipt;
 pub mod injection;
 pub mod hub;
+pub mod daemon;
 pub mod coordination;
 
 pub use registry::*;

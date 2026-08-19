@@ -363,6 +363,10 @@ impl ToolRegistry {
         // and coordination.
         registry.register(Arc::new(crate::hub::HubTool));
 
+        // Daemon process management: start/stop/restart long-running
+        // processes (dev servers, watchers, REPLs).
+        registry.register(Arc::new(crate::daemon::DaemonTool));
+
         // Operator control plane: ask the human mid-run. The actual
         // round-trip is performed by the agent runtime.
         registry.register(Arc::new(crate::question::QuestionTool));
