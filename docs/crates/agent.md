@@ -15,12 +15,10 @@
 7. [hooks.rs — Lifecycle hooks](#7-hooksrs)
 8. [ipc.rs — Inter-process protocol](#8-ipcrs)
 9. [process_manager.rs — Worker process management](#9-process_managerrs)
-10. [background.rs — Background tasks](#10-backgroundrs)
-11. [budget.rs — Output budget](#11-budgetrs)
-12. [doom_loop.rs — Loop detector](#12-doom_looprs)
-13. [recovery.rs — Crash recovery](#13-recoveryrs)
-14. [resume.rs — Session resumption](#14-resumers)
-15. [tool_executor.rs — Parallel tool executor](#15-tool_executorrs)
+10. [budget.rs — Output budget](#10-budgetrs)
+11. [doom_loop.rs — Loop detector](#11-doom_looprs)
+12. [resume.rs — Session resumption](#12-resumers)
+13. [tool_executor.rs — Parallel tool executor](#13-tool_executorrs)
 
 ---
 
@@ -32,12 +30,22 @@
 
 Declares all public submodules of the crate and re-exports their contents via `pub use ...::*` so that external consumers can write `use pr_agent::AgentRuntime` instead of `use pr_agent::runtime::AgentRuntime`.
 
-### Declared modules (14 in total)
+### Declared modules (16 in total)
 
 ```
-runtime, coordinator, compaction, ipc, process_manager, prompt,
-tool_executor, budget, background, resume, doom_loop, recovery, hooks
+lifecycle, runtime, coordinator, compaction, ipc, process_manager, prompt,
+tool_executor, budget, resume, doom_loop, hooks, control,
+task_tree, improvement, reflection
 ```
+
+Additional agent modules:
+
+| Module | Key types and purpose |
+|--------|----------------------|
+| `lifecycle` | `AgentLifecycleManager` — park, revive, and release agents |
+| `task_tree` | Task-tree structure and parent/child task coordination |
+| `improvement` | Agent improvement tracking and optimization |
+| `reflection` | Agent reflection and self-review |
 
 ### Re-exports (11 in total)
 
@@ -86,7 +94,12 @@ The main working unit of the system. Each instance is a single LLM agent operati
 | `cancel` | `CancellationToken` | Cooperative cancellation token |
 | `denied_tools` | `HashSet<String>` | Tools forbidden for this role |
 | `steer_rx` | `Option<Arc<Mutex<UnboundedReceiver<String>>>>` | Channel for mid-run instructions from the user |
+| `steer_tx` | `Option<UnboundedSender<String>>` | Sender half of the steering channel, forwarded to child agents |
+| `peer_steer_rx` | `Option<Arc<Mutex<UnboundedReceiver<String>>>>` | Channel for mid-run instructions from peer agents |
+| `irc_rx` | `Option<Arc<Mutex<UnboundedReceiver<IrcMessage>>>>` | Incoming messages from the process-global IrcBus |
+| `job_results` | `Arc<Mutex<Vec<AsyncJobResult>>>` | Results of in-process async background jobs |
 | `bg_results` | `Arc<Mutex<Vec<(String, Result<String, String>, u64)>>>` | Results of background child agents |
+| `truncation_retries` | `u32` | Counter of retries after response truncation |
 | `stop_continuations` | `u32` | Counter of forced continuations by Stop hooks |
 | `role_llms` | `HashMap<String, Arc<dyn LlmProvider>>` | LLM providers per role (fleet E8) |
 
@@ -202,7 +215,27 @@ Each iteration is one agent "turn".
   - Reads all accumulated instructions in a `try_recv()` loop.
   - For each: creates `Message::user("[USER INSTRUCTION] {msg}")`, pushes it to history, saves it to the DB, tracks tokens.
 
-##### 1b. Inject background child results (fleet E2)
+##### 1b. Drain the peer steering channel
+- If `peer_steer_rx` is connected:
+  - Acquires the lock on `rx`.
+  - Reads all accumulated instructions in a `try_recv()` loop.
+  - For each: creates `Message::user("[PEER INSTRUCTION] {msg}")`, pushes it to history, saves it to the DB, tracks tokens.
+
+##### 1c. Drain the IRC bus
+- If `irc_rx` is connected:
+  - Acquires the lock on `rx`.
+  - Reads all accumulated messages in a `try_recv()` loop.
+  - For each: creates `Message::user("[IRC] {sender}: {payload}")`, pushes it to history, saves it to the DB, tracks tokens.
+
+##### 1d. Drain async job results
+- Acquires the lock on `job_results`.
+- Takes all items via `std::mem::take`.
+- For each `AsyncJobResult`:
+  - Adds `descendant_tokens += result.tokens`.
+  - Builds the text: on success — `[async job {label} completed]\n{summary}`; on error — `[async job {label} failed: {e}]`.
+  - Pushes `Message::user(text)` to history, saves to DB, tracks tokens.
+
+##### 1e. Inject background child results (fleet E2)
 - Acquires the lock on `bg_results`.
 - Takes all items via `std::mem::take`.
 - For each `(label, result, tokens)`:
@@ -210,38 +243,38 @@ Each iteration is one agent "turn".
   - Builds the text: on success — `[background agent {label} completed]\n{summary}` (truncated to 4000 characters); on error — `[background agent {label} failed: {e}]`.
   - Pushes `Message::user(text)` to history, saves to DB, tracks tokens.
 
-##### 1c. Cooperative cancellation check
+##### 1f. Cooperative cancellation check
 - If `self.cancel.is_cancelled()`:
   - Logs a warning.
   - Emits `AgentFailed { error: "cancelled" }`.
   - `anyhow::bail!("agent cancelled")`.
 
-##### 1d. Reset the turn budget
+##### 1g. Reset the turn budget
 - `self.turn_budget = TurnBudget::new(config.context.turn_budget_bytes)`.
 
-##### 1e. Check whether compaction is needed
+##### 1h. Check whether compaction is needed
 - `self.compaction_engine.set_estimated_tokens(self.estimated_tokens)`.
 - If `should_compact()` returns `true` — calls `self.run_compaction().await`.
 
-##### 1f. Build the LLM request
+##### 1i. Build the LLM request
 - `CompletionRequest { messages: self.messages.clone(), tools: tool_schemas.clone(), temperature, max_tokens, stream: false }`.
 
-##### 1g. Call the LLM
+##### 1j. Call the LLM
 - `self.llm.complete(&req).await`.
 - On error: logs, emits `AgentFailed`, returns `Err`.
 
-##### 1h. Token tracking
+##### 1k. Token tracking
 - If `response.usage` exists — `tokens_used += usage.total_tokens`.
 
-##### 1i. Add the assistant response
+##### 1l. Add the assistant response
 - Pushes `response.message` into `self.messages`.
 - Saves to DB, tracks tokens.
 
-##### 1j. Extract content and tool_calls
+##### 1m. Extract content and tool_calls
 - If the response is `Message::Assistant { content, tool_calls }`:
   - If `content` is not empty — updates `final_content`, emits `LlmStreamChunk`.
 
-##### 1k. Handle the absence of tool_calls (the model wants to stop)
+##### 1n. Handle the absence of tool_calls (the model wants to stop)
 - If `tool_calls` is empty:
   - **Stop hooks (fleet E3):** checks `stop_continuations < MAX_STOP_CONTINUATIONS` (3).
     - If so — calls `run_stop_hooks(&config.hooks, &summary_so_far)`.
@@ -253,10 +286,10 @@ Each iteration is one agent "turn".
     - `continue 'main_loop` — the agent keeps working.
   - If `StopVerdict::Stop` — `break` out of the loop.
 
-##### 1l. Handle tool_calls
+##### 1o. Handle tool_calls
 For each `tool_call` in order:
 
-###### 1l-i. Doom loop detection
+###### 1o-i. Doom loop detection
 - Calls `self.doom_loop.record_and_check(tool_name, &tool_args)`.
 - If the detector triggers (3+ identical calls):
   - Collects the IDs of all remaining sibling tool_calls.
@@ -273,30 +306,30 @@ For each `tool_call` in order:
     - Sets `doom_warning`.
     - `break 'main_loop` — full agent stop.
 
-###### 1l-ii. Emit ToolCallStarted
+###### 1o-ii. Emit ToolCallStarted
 
-###### 1l-iii. Cascading cancellation
+###### 1o-iii. Cascading cancellation
 - If `shell_failed` contains an error:
   - Result = `ToolOutput::err("Cancelled: sibling shell tool failed with: {err}")` with metadata `cascade_cancelled: true`.
   - Moves to the next step (does not execute the tool).
 
-###### 1l-iv. Role permission gate (fleet E5)
+###### 1o-iv. Role permission gate (fleet E5)
 - If `denied_tools` contains `tool_name`:
   - Result = `ToolOutput::err_code("Permission denied: role ... is not allowed to use '...'", "permission_denied")`.
 
-###### 1l-v. PreToolUse hooks (fleet E3)
+###### 1o-v. PreToolUse hooks (fleet E3)
 - Calls `run_pre_tool_hooks(&config.hooks, tool_name, &tool_args)`.
 - If `PreToolVerdict::Deny(reason)`:
   - Result = `ToolOutput::err_code("Denied by hook: {reason}", "hook_denied")`.
   - Logs via `emit_tool_hook_denied`.
 
-###### 1l-vi. Execute the tool
+###### 1o-vi. Execute the tool
 - If `PreToolVerdict::Allow`:
   - `self.tools.execute(tool_name, tool_args, &tool_ctx).await`.
   - On success: if `tool_name == "shell"` and `!output.success` — records the error in `shell_failed`.
   - On execution error: `ToolOutput::err("Tool execution error: {e}")`.
 
-###### 1l-vii. Sub-agent delegation (fleet D4)
+###### 1o-vii. Sub-agent delegation (fleet D4)
 - If `tool_name == "spawn_agent"` and the metadata contains `"spawn_request": true`:
   - Saves `(call_id, metadata)` into `pending_spawns`.
   - `continue` — does not push a tool message immediately.
@@ -332,7 +365,7 @@ For each `tool_call` in order:
 - Pushes `Message::tool(tool_call_id, content)` to history.
 - Saves to DB, tracks tokens.
 
-##### 1m. Run the collected spawn requests (fleet D4)
+##### 1p. Run the collected spawn requests (fleet D4)
 - If `pending_spawns` is not empty — calls `self.run_spawn_batch(&mut pending_spawns).await`.
 
 #### Step 2: Post-loop
@@ -359,6 +392,24 @@ For each `tool_call` in order:
 14. Returns `(agent_id, child_runtime)`.
 
 ### 2.14. `run_spawn_batch(&mut self, pending) -> Result<()>` — async
+
+#### `spawn_agent` tool parameters
+
+The `spawn_agent` tool produces metadata that the runtime processes in the main loop (step 1o). Key parameters:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `task` | `String` | Task description for a single sub-agent |
+| `role` | `String` | Agent role: researcher, analyst, verifier, writer |
+| `context` | `Vec<String>` | Facts and constraints inherited by the child |
+| `tasks` | `Vec<BatchTask>` | Batch of sub-tasks for parallel fan-out (mutually exclusive with `task`) |
+| `output_schema` | `Option<Value>` | Expected JSON schema for structured output |
+| `handoff_to` | `Option<String>` | Agent ID to hand off the full conversation context to |
+| `isolated` | `bool` | If true, the child runs in isolated mode |
+
+**Batch spawn flow:** When `tasks` is non-empty, the tool emits a `spawn_batch` marker. The runtime expands it into individual pending spawns (one per task), each inheriting the parent's `role` and `context`. The expanded items are then processed by `run_spawn_batch` below.
+
+**Handoff flow:** When `handoff_to` is set, the tool emits a metadata flag `handoff: true`. At the turn boundary the runtime serializes the parent's full state (messages, findings, tokens) and sends it via the global `IrcBus` to the target agent. The parent then breaks out of its main loop. Handoff is mutually exclusive with `task` and `tasks`.
 
 **Algorithm:**
 
@@ -1396,75 +1447,11 @@ Matches on the `IpcMessage` variant:
 
 ---
 
-## 10. background.rs
-
-**File:** `src/background.rs` — management of the agent's background tasks (fleet E2).
-
-### 10.1. The `BackgroundJob` struct
-
-| Field | Type | Description |
-|------|-----|----------|
-| `id` | `AgentId` | Background agent identifier |
-| `label` | `String` | Human-readable label (task, truncated to 30 characters) |
-| `handle` | `JoinHandle<()>` | Handle of the async task |
-| `started_at` | `Instant` | Start time |
-
-### 10.2. The `BackgroundManager` struct
-
-| Field | Type | Description |
-|------|-----|----------|
-| `jobs` | `Vec<BackgroundJob>` | List of active background tasks |
-
-### 10.3. `BackgroundManager::new()`
-
-Creates an empty `jobs` vector.
-
-### 10.4. `spawn(&mut self, label, agent_id, child, bg_results)` — async
-
-**Algorithm:**
-1. Clones `bg_results` (Arc).
-2. Runs `tokio::spawn`:
-   - Calls `child.run().await`.
-   - On success `output`:
-     - Computes `total = output.tokens_used + output.descendant_tokens`.
-     - Builds `capped_summary` — truncates `output.summary` to 4000 characters at a UTF-8 boundary.
-     - Acquires the lock on `bg_results`, pushes `(label, Ok(capped_summary), total)`.
-   - On error `e`:
-     - Acquires the lock on `bg_results`, pushes `(label, Err(e.to_string()), 0)`.
-3. Saves `BackgroundJob { id: agent_id, label: label.to_string(), handle, started_at: Instant::now() }` into `jobs`.
-
-### 10.5. `poll_completed(&mut self) -> Vec<(AgentId, String, Duration)>`
-
-**Algorithm:**
-1. Creates `completed: Vec`.
-2. Iterates `jobs` with an index:
-   - For each `job`, checks `job.handle.is_finished()`.
-   - If finished:
-     - Computes `elapsed = job.started_at.elapsed()`.
-     - Pushes `(job.id, job.label, elapsed)`.
-3. Removes the completed jobs from `jobs` (iterates in reverse order for correct index-based removal).
-4. Returns `completed`.
-
-### 10.6. `cancel_all(&self)`
-
-**Algorithm:**
-For each `job` in `jobs` — calls `job.handle.abort()`.
-
-### 10.7. `active_count(&self) -> usize`
-
-Returns `jobs.len()`.
-
-### 10.8. `is_empty(&self) -> bool`
-
-Returns `jobs.is_empty()`.
-
----
-
-## 11. budget.rs
+## 10. budget.rs
 
 **File:** `src/budget.rs` — the tool output budget. Limits output volume per turn and per run.
 
-### 11.1. Constants
+### 10.1. Constants
 
 | Constant | Value | Purpose |
 |-----------|----------|------------|
@@ -1475,7 +1462,7 @@ Returns `jobs.is_empty()`.
 | `SPILL_DIR_NAME` | `.pr-context` | Directory name for spill files |
 | `MAX_SPILL_FILES_PER_AGENT` | 20 | Maximum number of spill files |
 
-### 11.2. The `Truncated` enum
+### 10.2. The `Truncated` enum
 
 ```rust
 enum Truncated {
@@ -1484,11 +1471,11 @@ enum Truncated {
 }
 ```
 
-### 11.3. `Truncated::content(&self, original) -> &str`
+### 10.3. `Truncated::content(&self, original) -> &str`
 
 Returns `replacement` if truncated, otherwise `original`.
 
-### 11.4. `apply_turn_budget(tool_name, result, max_bytes, max_lines, turn_budget, working_dir) -> Truncated`
+### 10.4. `apply_turn_budget(tool_name, result, max_bytes, max_lines, turn_budget, working_dir) -> Truncated`
 
 **Algorithm:**
 1. Copies `result.content` into `content`.
@@ -1530,20 +1517,20 @@ Returns `replacement` if truncated, otherwise `original`.
 7. **Charge to the budget:** `turn_budget.record(content.len() as u64)`.
 8. Returns `Truncated::Truncated { replacement: content }` or `Truncated::Unchanged`.
 
-### 11.5. The `TurnBudget` struct
+### 10.5. The `TurnBudget` struct
 
 | Field | Type | Description |
 |------|-----|----------|
 | `limit_bytes` | `u64` | Total limit per turn |
 | `used_bytes` | `u64` | Bytes spent |
 
-### 11.6. `TurnBudget::new(limit)` / `record(bytes)` / `remaining()`
+### 10.6. `TurnBudget::new(limit)` / `record(bytes)` / `remaining()`
 
 - `new(limit)` — initializes with `used_bytes = 0`.
 - `record(bytes)` — increments `used_bytes`.
 - `remaining()` — returns `limit_bytes.saturating_sub(used_bytes)`.
 
-### 11.7. The `ResultBudget` struct
+### 10.7. The `ResultBudget` struct
 
 | Field | Type | Description |
 |------|-----|----------|
@@ -1552,7 +1539,7 @@ Returns `replacement` if truncated, otherwise `original`.
 | `spill_dir` | `PathBuf` | Directory for spill files |
 | `agent_dir` | `PathBuf` | Spill file directory for a specific agent |
 
-### 11.8. `ResultBudget::new(headroom, batch_len, spill_dir)`
+### 10.8. `ResultBudget::new(headroom, batch_len, spill_dir)`
 
 **Algorithm:**
 1. `per_result_chars = headroom / max(batch_len, 1)`. Minimum 4000.
@@ -1561,7 +1548,7 @@ Returns `replacement` if truncated, otherwise `original`.
 4. Counts existing spill files: `existing = agent_dir.read_dir().count()`.
 5. If `existing >= 20` — logs a warning (spill disabled).
 
-### 11.9. `cap_result(&self, text) -> String`
+### 10.9. `cap_result(&self, text) -> String`
 
 **Algorithm:**
 1. If `text.len() <= per_result_chars` — returns `text.to_string()`.
@@ -1576,11 +1563,11 @@ Returns `replacement` if truncated, otherwise `original`.
 
 ---
 
-## 12. doom_loop.rs
+## 11. doom_loop.rs
 
 **File:** `src/doom_loop.rs` — the agent loop detector.
 
-### 12.1. Constants
+### 11.1. Constants
 
 | Constant | Value | Purpose |
 |-----------|----------|------------|
@@ -1588,14 +1575,14 @@ Returns `replacement` if truncated, otherwise `original`.
 | `THRESHOLD` | 3 | Trigger threshold (3+ identical) |
 | `MAX_NUDGE_CONTINUATIONS` | 3 | Nudge continuation limit |
 
-### 12.2. The `ToolInvocation` struct
+### 11.2. The `ToolInvocation` struct
 
 | Field | Type | Description |
 |------|-----|----------|
 | `tool_name` | `String` | Tool name |
 | `args_hash` | `u64` | Hash of the arguments |
 
-### 12.3. The `DoomLoopDetector` struct
+### 11.3. The `DoomLoopDetector` struct
 
 | Field | Type | Description |
 |------|-----|----------|
@@ -1603,11 +1590,11 @@ Returns `replacement` if truncated, otherwise `original`.
 | `consecutive_same` | `u32` | Counter of consecutive identical invocations |
 | `nudge_count` | `u32` | Counter of nudge continuations |
 
-### 12.4. `DoomLoopDetector::new()`
+### 11.4. `DoomLoopDetector::new()`
 
 Creates an empty `VecDeque` with capacity `MAX_HISTORY`, zeroes the counters.
 
-### 12.5. `args_hash(args) -> u64`
+### 11.5. `args_hash(args) -> u64`
 
 **Algorithm:**
 1. Tries to deserialize `args` into `serde_json::Value`.
@@ -1621,7 +1608,7 @@ Creates an empty `VecDeque` with capacity `MAX_HISTORY`, zeroes the counters.
 
 **Purpose:** guarantees that `{"a":1,"b":2}` and `{"b":2,"a":1}` produce the same hash.
 
-### 12.6. `record_and_check(&mut self, tool_name, args_json) -> Option<String>`
+### 11.6. `record_and_check(&mut self, tool_name, args_json) -> Option<String>`
 
 **Algorithm:**
 1. Computes `hash = args_hash(args_json)`.
@@ -1644,104 +1631,25 @@ You MUST stop calling this tool. Try different arguments or a different tool.
 If you cannot make progress, summarize what you have and stop.
 ```
 
-### 12.7. `record_nudge(&mut self)`
+### 11.7. `record_nudge(&mut self)`
 
 Increments `nudge_count`.
 
-### 12.8. `has_exceeded_nudge_limit(&self) -> bool`
+### 11.8. `has_exceeded_nudge_limit(&self) -> bool`
 
 Returns `nudge_count >= MAX_NUDGE_CONTINUATIONS`.
 
-### 12.9. `reset(&mut self)`
+### 11.9. `reset(&mut self)`
 
 Resets `history`, `consecutive_same`, and `nudge_count` to their initial state.
 
 ---
 
-## 13. recovery.rs
-
-**File:** `src/recovery.rs` — session recovery after crashes (fleet H1, H3).
-
-### 13.1. The `RecoveredSession` struct
-
-| Field | Type | Description |
-|------|-----|----------|
-| `session_id` | `SessionId` | ID of the recovered session |
-| `query` | `String` | Original query |
-| `sub_tasks` | `Vec<String>` | List of subtasks |
-| `completed_agents` | `Vec<AgentOutput>` | Results of completed agents |
-| `pending_tasks` | `Vec<String>` | Subtasks without completed agents |
-| `created_at` | `DateTime<Utc>` | Session creation time |
-
-### 13.2. The `SessionResumer` struct
-
-| Field | Type | Description |
-|------|-----|----------|
-| `db` | `Arc<Persistence>` | Persistence layer |
-| `config` | `AppConfig` | Configuration |
-| `event_tx` | `Option<broadcast::Sender<AgentEvent>>` | Event bus |
-| `stale_threshold` | `Duration` | Session "staleness" threshold (default 5 minutes) |
-
-### 13.3. `SessionResumer::new(db, config, event_tx)`
-
-Initializes with `stale_threshold = Duration::from_secs(300)`.
-
-### 13.4. `find_resumable(&self) -> Vec<SessionSummary>`
-
-**Algorithm:**
-1. Calls `db.active_sessions()?` — gets the list of sessions with status `Running`.
-2. Filters: keeps only sessions where `updated_at` is older than `stale_threshold` (5 minutes).
-3. For each filtered session:
-   - Gets the session's agents via `db.agents_for_session()`.
-   - Counts agents by status: `completed`, `failed`, `running`.
-   - Gets `sub_tasks` via `db.get_subtasks()`.
-   - Builds `SessionSummary { session_id, query, created_at, completed_agents, failed_agents, running_agents, total_tokens, sub_tasks }`.
-4. Sorts by `created_at` (newest first).
-5. Returns the vector.
-
-### 13.5. `resume(&self, session_id) -> Result<RecoveredSession>` — async
-
-**Algorithm:**
-1. Calls `db.get_session(&session_id)?`.
-2. Checks `session.status != Running` — if not Running, bail.
-3. Gets the agents via `db.agents_for_session()`.
-4. Gets the subtasks via `db.get_subtasks()`.
-5. **For each completed agent:**
-   - Gets the messages via `db.messages_for_agent(&agent_id)`.
-   - Generates a summary via `summarize_agent_messages(&messages)`.
-   - Gets the findings via `db.findings_for_agent(&agent_id)`.
-   - Pushes `AgentOutput { agent_id, summary, tokens_used, descendant_tokens: 0, findings, aborted: false }`.
-6. **Determines pending_tasks:**
-   - Collects the set of completed agents' tasks.
-   - From the subtasks, selects those not present in the completed ones.
-7. Emits `SessionResumed { session_id, completed, pending }`.
-8. Returns `RecoveredSession`.
-
-### 13.6. `mark_stale_sessions_running(&self) -> Result<()>`
-
-**Algorithm:**
-1. Calls `db.active_sessions()`.
-2. For each session:
-   - If `updated_at` is older than 5 minutes:
-     - Calls `db.mark_session_status(&session_id, "running")`.
-     - Logs.
-3. Errors for individual sessions are logged and do not interrupt processing.
-
-### 13.7. `summarize_agent_messages(messages) -> String`
-
-**Algorithm:**
-1. Takes the **last** `Message::Assistant` from the list.
-2. If found — returns its `content`.
-3. If not found — looks for the last `Message::Tool`.
-4. If neither is found — `"(no summary available)"`.
-
----
-
-## 14. resume.rs
+## 12. resume.rs
 
 **File:** `src/resume.rs` — a CLI utility for selecting and launching session resumption.
 
-### 14.1. The `SessionSummary` struct
+### 12.1. The `SessionSummary` struct
 
 | Field | Type | Description |
 |------|-----|----------|
@@ -1754,7 +1662,7 @@ Initializes with `stale_threshold = Duration::from_secs(300)`.
 | `total_tokens` | `u64` | Total tokens |
 | `sub_tasks` | `Vec<SubtaskRecord>` | Subtasks |
 
-### 14.2. The `ResumeOption` enum
+### 12.2. The `ResumeOption` enum
 
 ```rust
 enum ResumeOption {
@@ -1764,7 +1672,7 @@ enum ResumeOption {
 }
 ```
 
-### 14.3. `format_summary(summary, index) -> String`
+### 12.3. `format_summary(summary, index) -> String`
 
 **Algorithm:**
 1. Computes `age` — the difference between `Utc::now()` and `created_at`.
@@ -1777,7 +1685,7 @@ enum ResumeOption {
        Tokens: {total_tokens}
    ```
 
-### 14.4. `interactive_select(summaries) -> ResumeOption`
+### 12.4. `interactive_select(summaries) -> ResumeOption`
 
 **Algorithm:**
 1. If `summaries` is empty — logs "No resumable sessions found", returns `Fresh`.
@@ -1791,7 +1699,7 @@ enum ResumeOption {
    - A number — parses it, checks `1 <= n <= summaries.len()`, returns `Resume(summaries[n-1])`.
    - Invalid input — `Exit`.
 
-### 14.5. `handle_resume_interactive(db, config, event_tx) -> Option<Coordinator>` — async
+### 12.5. `handle_resume_interactive(db, config, event_tx) -> Option<Coordinator>` — async
 
 **Algorithm:**
 1. Creates `SessionResumer::new(db, config, event_tx)`.
@@ -1809,11 +1717,11 @@ enum ResumeOption {
 
 ---
 
-## 15. tool_executor.rs
+## 13. tool_executor.rs
 
 **File:** `src/tool_executor.rs` — the parallel tool executor. Classifies tool_calls into concurrent and sequential, runs parallel ones simultaneously with path-overlap detection.
 
-### 15.1. The `ToolCategory` enum
+### 13.1. The `ToolCategory` enum
 
 ```rust
 enum ToolCategory {
@@ -1824,7 +1732,7 @@ enum ToolCategory {
 }
 ```
 
-### 15.2. `classify_tool(name) -> ToolCategory`
+### 13.2. `classify_tool(name) -> ToolCategory`
 
 **Algorithm:**
 1. Converts `name` to lowercase.
@@ -1834,7 +1742,7 @@ enum ToolCategory {
    - `"shell"` → `Shell`
    - `_` → `Unknown`
 
-### 15.3. `extract_paths(tool_name, args) -> Vec<String>`
+### 13.3. `extract_paths(tool_name, args) -> Vec<String>`
 
 **Algorithm:**
 1. Deserializes `args` into `serde_json::Value`.
@@ -1849,7 +1757,7 @@ enum ToolCategory {
    - Strips the `./` prefix.
 7. Returns the vector.
 
-### 15.4. `paths_overlap(a, b) -> bool`
+### 13.4. `paths_overlap(a, b) -> bool`
 
 **Algorithm:**
 1. For each path from `a` and each path from `b`:
@@ -1859,7 +1767,7 @@ enum ToolCategory {
 
 **Example:** `["/tmp/foo.txt"]` and `["/tmp/foo.txt"]` → true. `["/tmp/data"]` and `["/tmp/data/file.txt"]` → true.
 
-### 15.5. The `PartitionedBatch` struct
+### 13.5. The `PartitionedBatch` struct
 
 | Field | Type | Description |
 |------|-----|----------|
@@ -1867,7 +1775,7 @@ enum ToolCategory {
 | `concurrent` | `Vec<(usize, String, String)>` | `(index, name, args)` — may run in parallel |
 | `conflict_groups` | `Vec<Vec<usize>>` | Groups of indices conflicting over paths |
 
-### 15.6. `partition_batch(tool_calls) -> PartitionedBatch`
+### 13.6. `partition_batch(tool_calls) -> PartitionedBatch`
 
 **Algorithm:**
 1. Classifies each `tool_call` via `classify_tool`.
@@ -1879,7 +1787,7 @@ enum ToolCategory {
 5. Builds `conflict_groups` from the `sequential` indices.
 6. Returns `PartitionedBatch`.
 
-### 15.7. `execute_parallel(tools, concurrent, tool_ctx) -> Vec<(usize, ToolOutput)>` — async
+### 13.7. `execute_parallel(tools, concurrent, tool_ctx) -> Vec<(usize, ToolOutput)>` — async
 
 **Algorithm:**
 1. If `concurrent` is empty — returns an empty vector.
@@ -1889,7 +1797,7 @@ enum ToolCategory {
 4. Collects the results: `(idx, output)` for each.
 5. Returns the vector of pairs.
 
-### 15.8. `execute_sequential(tools, sequential, tool_ctx) -> Vec<(usize, ToolOutput)>` — async
+### 13.8. `execute_sequential(tools, sequential, tool_ctx) -> Vec<(usize, ToolOutput)>` — async
 
 **Algorithm:**
 1. Creates `results: Vec`.
@@ -1898,7 +1806,7 @@ enum ToolCategory {
    - Pushes `(idx, output)`.
 3. Returns `results`.
 
-### 15.9. `execute_batch(tools, tool_calls, tool_ctx) -> Vec<(usize, ToolOutput)>` — async
+### 13.9. `execute_batch(tools, tool_calls, tool_ctx) -> Vec<(usize, ToolOutput)>` — async
 
 **Algorithm:**
 1. Calls `partition_batch(tool_calls)`.

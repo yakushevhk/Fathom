@@ -1,6 +1,26 @@
 # Tool Reference
 
-**44 tools** available to agents (+5 browser tools when Chrome is running with CDP). Each implements the `Tool` trait and is automatically registered in `ToolRegistry`.
+**52 tools** available to agents (+5 browser tools when Chrome is running with CDP). Each implements the `Tool` trait and is automatically registered in `ToolRegistry`.
+
+**Tool categories:**
+
+| Category | Tools |
+|---|---|
+| **Web search** | `web_search`, `web_fetch`, `web_crawl`, `web_feed` |
+| **Browser** | `browser_navigate`, `browser_click`, `browser_type`, `browser_extract`, `browser_screenshot` (CDP) |
+| **File system** | `file_read`, `file_write`, `file_edit`, `glob`, `grep` |
+| **Shell** | `shell` (sandboxed) |
+| **Code analysis** | `code_symbols`, `repo_map` |
+| **OSINT** | `verify_email`, `suggest_emails`, `verify_phone`, `verify_social_profile`, `search_social`, `search_business_directory`, `find_leads`, `enrich_company`, `enrich_person`, `extract_contacts`, `parse_corporate_site`, `search_news` |
+| **Memory** | `memory_absorb`, `memory_search`, `memory_digest`, `memory_boost`, `memory_link`, `memory_graph`, `memory` (basic) |
+| **Data** | `parse_html`, `extract_json` |
+| **Vision** | `analyze_image` |
+| **Git** | `git_status`, `git_diff`, `git_log`, `git_add`, `git_commit`, `git_push` |
+| **PDF** | `pdf_extract` |
+| **REPL** | `python_exec`, `node_exec` |
+| **Contacts** | `save_contacts` |
+| **Agent control** | `spawn_agent`, `question`, `skill`, `scratchpad`, `undo` |
+| **Coordination** | `hub`, `daemon` |
 
 ---
 
@@ -621,8 +641,14 @@ Spawns a sub-agent for a subtask. The runtime collects all spawn requests in a t
 
 | Parameter | Type | Description |
 |----------|------|-------------|
-| `task` | string | Task for the sub-agent |
-| `role` | string? | Role (default: researcher) |
+| `task` | string? | Task for the sub-agent (single spawn) |
+| `role` | string | Agent role (default: `researcher`) |
+| `context` | string[]? | Context for the child |
+| `background` | bool | Run in background, default false |
+| `tasks` | object[]? | Batch spawn (up to 8 tasks) |
+| `output_schema` | object? | JSON schema for the output |
+| `isolated` | bool | Isolated mode, default false |
+| `handoff_to` | string? | Handoff the session to another agent |
 
 **Limitation**: nesting depth (`max_depth`).
 
@@ -714,6 +740,35 @@ runtime (like `spawn_agent`) — the tool itself only validates the question.
 | Parameter | Type | Description |
 |----------|------|-------------|
 | `question` | string | One specific question (up to 500 characters) |
+
+---
+
+## hub — Inter-Agent Coordination Tool
+
+Unified peer-to-peer coordination using the IRC message bus. Agents can send messages to each other, wait for replies, read their inbox, discover live peers, manage async jobs, and update their activity description.
+
+| Command | Parameters | Description |
+|---------|-----------|-------------|
+| `send` | `to` (string?), `message` (string), `await_reply` (bool), `steer` (bool) | Send a message to a peer. Omit `to` for broadcast. When `steer=true`, delivers as a steering directive (mid-run instruction). When `await_reply=true`, blocks until the target replies (120s timeout). |
+| `wait` | `from` (string?), `timeout_secs` (u64) | Block until a message arrives from a specific peer (or any). Default timeout 60s; 0 = no timeout (5 min max). |
+| `inbox` | `peek` (bool) | Read pending messages without blocking. If `peek=true`, messages are not consumed. |
+| `list` | — | List all live agents with their role, status, and activity. |
+| `jobs` | — | List all async jobs owned by this agent (id, label, status, tokens). |
+| `set_activity` | `activity` (string) | Update this agent's activity description visible to other agents. |
+
+---
+
+## daemon — Daemon Process Management Tool
+
+Manage long-running background processes (dev servers, watchers, REPLs). Each daemon is identified by a unique name per agent.
+
+| Command | Parameters | Description |
+|---------|-----------|-------------|
+| `start` | `name` (string), `shell` (string), `cwd` (string?), `port` (u16?), `ready_pattern` (string?), `timeout_secs` (u64) | Start a new daemon process. Optionally block until a TCP port is reachable or a regex pattern appears in stdout/stderr. Default timeout 30s. |
+| `stop` | `name` (string) | Stop a running daemon by sending SIGTERM (unix) or taskkill (windows). |
+| `restart` | `name` (string) | Kill and re-spawn a daemon with the same command. |
+| `status` | `name` (string?) | Check a specific daemon's status and metadata (pid, port, command), or list all daemons when name is omitted. |
+| `list` | — | List all daemons owned by this agent. |
 
 ### `skill`
 Loads full skill instructions by name.

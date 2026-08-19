@@ -12,7 +12,7 @@ fathom/
 │   ├── core/          # Fundamental types and domain logic
 │   ├── llm/           # LLM provider abstraction
 │   ├── agent/         # Agent runtime, coordination, control plane
-│   ├── tools/         # 44 tools (web, osint, memory, question...)
+│   ├── tools/         # 52+5 tools (52 core + 5 browser)
 │   ├── memory/        # Long-term semantic memory + entity graph
 │   ├── mcp/           # Model Context Protocol (client and server)
 │   ├── persistence/   # Data storage (SQLite, connection pool, jobs)
@@ -45,6 +45,13 @@ Fundamental types and domain logic. **Does not depend on other crates.** Every o
 | `ids` | `SessionId`, `AgentId`, `FindingId` (UUID v7, time-ordered for efficient B-tree indexing) |
 | `message` | OpenAI-compatible `Message`, `ToolCall` — the canonical message format used throughout the system |
 | `agent` | `AgentRole`, `AgentState`, `AgentStatus`, `AgentRecord` — role definitions (researcher, analyst, verifier, writer, coordinator) and state machine |
+| `irc` | `IrcBus` — peer-to-peer message bus between agents; `AgentRegistry`, `SteerRegistry`, `AsyncJobManager`, `DaemonRegistry` — runtime registries |
+| `steer` | Steer instructions — operator/parent mid-run directives delivered at the next turn boundary |
+| `async_job` | Durable async job coordination (`AsyncJobManager`) — submit, monitor, and collect results of background agents |
+| `daemon` | Long-running daemon agents (`DaemonRegistry`) — persistent background tasks with restart semantics |
+| `protected` | Protected tool/interaction mechanisms |
+| `profile` | Agent profile definitions |
+| `capability` | Capability registry — declared tool/interaction capabilities of an agent |
 | `event` | `AgentEvent` — all events for the broadcast bus (session lifecycle, agent lifecycle, tool calls, LLM streaming, control-plane requests) |
 | `finding` | `Finding`, `Source` — structured research results with source attribution, confidence levels, and category tags |
 | `config` | `AppConfig` and all 10 config sections (agent, llm, tools, memory, persistence, server, tui, export, notify, crm) |
@@ -86,6 +93,7 @@ The heart of the system — the agent runtime. This crate orchestrates the LLM c
 | Module | Purpose |
 |--------|---------|
 | `runtime` | `AgentRuntime` — the main loop: system prompt → LLM → tool calls → execute → repeat |
+| `lifecycle` | `AgentLifecycleManager` — park/revive agent lifecycle (suspend agent to disk and restore) |
 | `coordinator` | `Coordinator` — planning, fan-out, Goal Mode, synthesis, session lifecycle |
 | `compaction` | Hermes-style context compression (micro-compaction without LLM, full compaction with LLM summarization) |
 | `prompt` | `PromptBuilder` — 3 cache tiers (stable/context/volatile), role-specific prompts, model base selection |
@@ -138,6 +146,14 @@ The heart of the system — the agent runtime. This crate orchestrates the LLM c
 
 6. **Tool execution** — `ToolExecutor` partitions calls into parallel-safe and sequential groups. Read-only tools (web_search, web_fetch, file_read, glob, grep, OSINT lookups) run concurrently via `futures::future::join_all`. Write tools (file_write, file_edit, shell, spawn_agent) take exclusive access. Path-overlap detection serializes file tools operating on the same path. The `question` tool is special: it blocks the agent loop, emits a `QuestionAsked` event, and waits for the operator to respond via the control plane (HTTP endpoint or TUI input).
 
+    On turn boundaries, the runtime drains:
+    - **Steering** — operator/parent steer directives from `SteerRegistry`
+    - **Peer steering** — peer-to-peer steer directives from `IrcBus`
+    - **IrcBus inbox** — peer messages delivered via the inter-agent message bus
+    - **AsyncJobManager results** — completed background async-job outputs
+
+    Before the first turn, `register_with_bus()` advertises the agent on the IrcBus; after the final turn, `unregister_from_bus()` removes it.
+
 7. **Loop** — The runtime repeats until the model produces no tool calls, or `max_iterations` (configurable, default 30) is reached. Each iteration appends the tool results to the message list and rebuilds the volatile prompt tier.
 
 8. **Return** — The final text response is returned as the agent's output, along with total token usage, findings, and any collected contacts.
@@ -181,6 +197,16 @@ Export + Notify
 - **Synthesis** — All findings are merged into a structured report. The coordinator writes markdown files to the output directory (`index.md`, `summary.md`, `findings/`), absorbs contacts and findings into long-term memory, and triggers the export/notification pipeline.
 
 - **Stall monitoring** — A background task monitors sub-agent progress via timestamps. If a sub-agent hasn't sent an event within `warn_secs` (configurable), a warning is logged. If it exceeds `kill_secs`, the sub-agent is cancelled and its slot is freed for re-execution.
+
+### Multi-Agent Communication
+
+Beyond the coordinator's fan-out pattern, the agent runtime supports several additional multi-agent primitives:
+
+- **IrcBus** — A peer-to-peer message bus that allows agents to send and receive messages directly, without going through the coordinator. Each agent registers via `register_with_bus()` and drains its inbox at every turn boundary. Messages are addressed by `AgentId` and delivered asynchronously.
+- **hub tool** — A tool that enables agents to send messages to arbitrary peers, inspect the roster of live agents, and coordinate work across the agent hierarchy. Supports `send`, `wait`, `list`, `inbox`, `jobs`, `cancel`, `start`, `stop`, `restart`, `ps`, `logs`, and `describe` operations.
+- **Batch spawn** — The `tasks[]` parameter on `spawn_agent` allows spawning multiple sub-agents in a single tool call. Each sub-task can optionally specify an `output_schema` for structured result validation. The parent collects all results in a single turn.
+- **Handoff** — A tool mechanism that transfers control of a conversation or task from one agent to another. The handing-off agent serializes its state and passes it to the recipient, who resumes from that point.
+- **daemon tool** — A tool that spawns long-running background agents (`Daemon`). Daemons persist across sessions, restart on failure, and can be discovered via `DaemonRegistry` and the `hub` tool.
 
 ### PromptBuilder — 3-Tier Cache Architecture
 
@@ -239,7 +265,7 @@ When the process crashes or is killed, sessions remain in the database with stat
 
 ## crates/tools
 
-**44 tools** (+5 browser), all implement the `Tool` trait:
+**52 core tools** (+5 browser), all implement the `Tool` trait:
 
 ```rust
 #[async_trait]
@@ -264,7 +290,8 @@ Categories (details in [TOOLS.md](TOOLS.md)):
 - **Enrichment**: enrich_company, enrich_person
 - **Long-term memory**: memory_absorb, memory_search, memory_digest, memory_boost, memory_link, memory_graph
 - **Control plane**: question
-- **Meta**: spawn_agent, memory, skill, scratchpad, undo
+- **Multi-agent**: spawn_agent, hub, batch_spawn, handoff, daemon, steer
+- **Meta**: memory, skill, scratchpad, undo
 
 Helper modules:
 - `registry` — `ToolRegistry` (maps tool names to implementations), `ToolContext` (provides agent id, session id, working directory, config references)
@@ -306,7 +333,7 @@ Long-term semantic memory (mem0/Memora model, detailed in [MEMORY-KB.md](MEMORY-
 Model Context Protocol — enables the agent to expose its tools to external MCP clients and to consume tools from external MCP servers.
 
 - **Client**: stdio + Streamable HTTP transports, OAuth client-credentials flow, dynamic tool discovery (discovers tools from remote MCP servers at runtime), reconnect with exponential backoff
-- **Server**: `fathom mcp-serve` — exposes all 44 tools externally via the MCP protocol. Each tool call is serialized and executed through the existing `ToolExecutor`, so MCP clients get the same behavior as in-process agents
+- **Server**: `fathom mcp-serve` — exposes all 52+5 tools externally via the MCP protocol. Each tool call is serialized and executed through the existing `ToolExecutor`, so MCP clients get the same behavior as in-process agents
 
 The MCP bridge allows the agent to be embedded in IDEs (via the `lsp` crate), CI/CD pipelines, or custom frontends that speak the MCP protocol.
 

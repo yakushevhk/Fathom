@@ -417,3 +417,7 @@ curl http://localhost:8080/health
 # Tests
 cargo test --workspace
 ```
+
+## Multi-agent Communication
+
+Fathom agents can communicate with each other in real-time via the built-in `hub` tool. Each agent is registered on a process-global IrcBus and can send/receive messages, broadcast to all peers, and wait for replies. Parked agents are automatically revived when a message arrives for them. The `daemon` tool lets agents manage long-running background processes (dev servers, watchers, REPLs) with port readiness checks.

@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.0] — 2026-08-19
+
+### Added
+- **IrcBus + AgentRegistry + Hub tool** — peer-to-peer messaging and agent discovery across the bus.
+- **Agent lifecycle park/revive** — `AgentLifecycleManager` and `IrcReviver` for pausing and resuming agent execution.
+- **Steering** — `SteerRegistry` with peer-steering via `hub steer:` directive.
+- **Batch spawn** — `tasks[]` array support, `output_schema`, isolated execution, and handoff between agents.
+- **AsyncJobManager** — in-process job tracking, delivery sinks, `hub jobs` for monitoring.
+- **DaemonBroker** — `DaemonRegistry` and `daemon` tool with port readiness checks.
+- **Auto-reply / side-channel** — LLM-generated auto-reply on `await_reply` for non-blocking agent interaction.
+- **Handoff** — session transfer between agents via `IrcBus`.
+
+### Fixed
+- **AsyncJobManager cleanup** — `unregister_sink` and removal of duplicate deliveries.
+
+---
+
 ## [0.1.0] — 2026-08-19
 
 ### Added

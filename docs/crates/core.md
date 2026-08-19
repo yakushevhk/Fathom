@@ -26,17 +26,52 @@
 15. [notify.rs — Notification System](#15-notifyrs)
 16. [contact.rs — Contacts](#16-contactrs)
 17. [crm.rs — CRM Integration](#17-crmrs)
+18. [irc.rs — Process-Global Message Bus](#18-ircrs)
+19. [steer.rs — Steering Channel Registry](#19-steerrs)
+20. [async_job.rs — Async Job Manager](#20-async_jobrs)
+21. [daemon.rs — Daemon Registry](#21-daemonrs)
+22. [protected.rs — Protected Surfaces](#22-protectedrs)
+23. [profile.rs — Profile System](#23-profilers)
+24. [capability.rs — Capability Evidence & Window Profile](#24-capabilityrs)
+10. [token.rs — Token Counting](#10-tokenrs)
+11. [memory.rs — File-Based Memory Storage](#11-memoryrs)
+12. [skill.rs — Skill System](#12-skillrs)
+13. [session.rs — Session Results](#13-sessionrs)
+14. [export.rs — Result Export](#14-exportrs)
+15. [notify.rs — Notification System](#15-notifyrs)
+16. [contact.rs — Contacts](#16-contactrs)
+17. [crm.rs — CRM Integration](#17-crmrs)
+18. [irc.rs — Process-Global Message Bus](#18-ircrs)
+19. [steer.rs — Steering Channel Registry](#19-steerrs)
+20. [async_job.rs — Async Job Manager](#20-async_jobrs)
+21. [daemon.rs — Daemon Registry](#21-daemonrs)
+22. [protected.rs — Protected Surfaces](#22-protectedrs)
+23. [profile.rs — Profile System](#23-profilers)
+24. [capability.rs — Capability Evidence & Window Profile](#24-capabilityrs)
 
 ---
 
 ## 1. lib.rs
 
-The crate declares 16 public modules and re-exports all their public symbols via glob re-export (`pub use module::*`):
+The crate declares 23 public modules and re-exports all their public symbols via glob re-export (`pub use module::*`):
 
 ```
 ids, message, agent, event, finding, tool, config, error,
-token, memory, skill, session, export, notify, contact, crm
+token, memory, skill, session, export, notify, contact, crm,
+irc, steer, async_job, daemon, protected, profile, capability
 ```
+
+Additional modules:
+
+| Module | Key types and purpose |
+|--------|----------------------|
+| `irc` | `IrcBus` (process-global message bus), `AgentRegistry` (agent discovery), `IrcReviver` (parked-agent revival hook), `PeerStatus`, `DeliveryReceipt` |
+| `steer` | `SteerRegistry` — global steering channel registry for mid-run instructions |
+| `async_job` | `AsyncJobManager` — in-process background job tracking with delivery sinks |
+| `daemon` | `DaemonRegistry` — long-running process registry |
+| `protected` | `ProtectedSurfaces` — security surfaces protection |
+| `profile` | Profile system — TOML persona presets |
+| `capability` | `CapabilityEvidence`, `WindowProfile` — context window negotiation |
 
 This means crate consumers can write `use pr_core::AgentId` directly, without specifying the full path `pr_core::ids::AgentId`.
 

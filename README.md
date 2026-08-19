@@ -101,28 +101,29 @@ All extracted contacts are written to a **deduplicated contact database** (SQLit
 
 **Goal Mode** is the crown jewel of OSINT workflows. An LLM judge evaluates the completeness of gathered data against a goal specification (e.g., "find CEO email and LinkedIn at Acme Corp"). If the goal is unmet, the system runs **gap-filling rounds**: the judge identifies what's missing, and agents re-focus their search on the gaps. This continues until the goal is satisfied or the maximum round limit is reached. The result is a structured report showing what was found, what's still missing, and the confidence level for each field.
 
-### 04 · 46 tools (+5 browser) — extensible tool registry
+### 04 · 52 tools (+5 browser) — extensible tool registry
 
-Fathom ships with **46 built-in tools** plus **5 browser automation tools** (CDP-based), all managed through a central **tool registry** with typed schemas, validation, and automatic documentation generation.
+Fathom ships with **52 built-in tools** plus **5 browser automation tools** (CDP-based), all managed through a central **tool registry** with typed schemas, validation, and automatic documentation generation.
 
 **Tool categories:**
 
 | Category | Tools |
 |---|---|
-| **Web search** | `web_search` (7 backends), `web_crawl`, `feed_parse`, `extract_links` |
-| **Browser** | `browser_navigate`, `browser_click`, `browser_extract`, `browser_screenshot`, `browser_pdf` (CDP) |
-| **File system** | `read_file`, `write_file`, `edit_file`, `list_dir`, `grep` |
-| **Shell** | `run_command`, `run_script` (sandboxed) |
+| **Web search** | `web_search`, `web_fetch`, `web_crawl`, `web_feed` |
+| **Browser** | `browser_navigate`, `browser_click`, `browser_type`, `browser_extract`, `browser_screenshot` (CDP) |
+| **File system** | `file_read`, `file_write`, `file_edit`, `glob`, `grep` |
+| **Shell** | `shell` (sandboxed) |
 | **Code analysis** | `code_symbols`, `repo_map` (AST-based codebase understanding) |
-| **OSINT** | `email_verify`, `phone_verify`, `social_search`, `enrich_entity` |
-| **Memory** | `memory_absorb`, `memory_search`, `memory_digest`, `memory_boost`, `memory_link`, `memory_graph`, `memory_stats` |
-| **Data** | `read_csv`, `read_json`, `sql_query`, `kv_get`, `kv_set` |
-| **Vision** | `vision_analyze` (image understanding via LLM) |
-| **Git** | `git_log`, `git_diff`, `git_clone` |
-| **PDF** | `pdf_extract`, `pdf_search` |
-| **REPL** | `python_repl`, `node_repl` (interactive runtimes) |
-| **Contacts** | `save_contacts`, `get_contacts`, `push_crm` |
-| **Agent control** | `spawn_agent`, `send_message`, `set_goal` |
+| **OSINT** | `verify_email`, `suggest_emails`, `verify_phone`, `verify_social_profile`, `search_social`, `search_business_directory`, `find_leads`, `enrich_company`, `enrich_person`, `extract_contacts`, `parse_corporate_site`, `search_news` |
+| **Memory** | `memory_absorb`, `memory_search`, `memory_digest`, `memory_boost`, `memory_link`, `memory_graph`, `memory` (basic) |
+| **Data** | `parse_html`, `extract_json` |
+| **Vision** | `analyze_image` (image understanding via LLM) |
+| **Git** | `git_status`, `git_diff`, `git_log`, `git_add`, `git_commit`, `git_push` |
+| **PDF** | `pdf_extract` |
+| **REPL** | `python_exec`, `node_exec` (interactive runtimes) |
+| **Contacts** | `save_contacts` |
+| **Agent control** | `spawn_agent`, `question`, `skill`, `scratchpad`, `undo` |
+| **Coordination** | `hub`, `daemon` |
 
 Each tool declares its JSON schema, a natural-language description, and cost/rate-limit metadata. The LLM sees these schemas as tool definitions and can invoke any tool in the same turn. Tool dispatch overhead is ~0.75 µs per call — negligible even in complex chains.
 

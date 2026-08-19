@@ -822,4 +822,53 @@ error: failed to run custom build command for 'openssl-sys'
    rm Cargo.lock
    cargo generate-lockfile
    cargo build
-   ```
+
+---
+
+## Parked Agent Not Reviving
+
+### Symptom
+
+Агент не отвечает на hub-сообщения, хотя был завершён.
+
+### Root Cause
+
+Файл `~/.fathom/parked/<id>.json` повреждён, удалён, или reviver callback не зарегистрирован.
+
+### Resolution
+
+Удалить файл вручную, перезапустить сессию.
+
+---
+
+## Hub Messages Not Delivered
+
+### Symptom
+
+Агент ждёт ответа от другого агента, но сообщение не доставлено.
+
+### Root Cause
+
+Адресат не зарегистрирован в IrcBus, припаркован, или mailbox переполнен.
+
+### Resolution
+
+Проверить `fathom tui` — виден ли агент-адресат в дереве; если нет — он припаркован и должен быть revived автоматически.
+
+Приоритет сообщений: waiter (blocking wait) → agent channel → mailbox → reviver hook.
+
+---
+
+## Daemon Process Failed
+
+### Symptom
+
+`daemon` tool возвращает ошибку или статус Failed.
+
+### Root Cause
+
+Процесс упал, не стартовал в timeout, порт не открылся.
+
+### Resolution
+
+Проверить лог процесса, увеличить timeout_secs, убедиться что команда корректна.
