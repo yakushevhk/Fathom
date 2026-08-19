@@ -157,7 +157,7 @@ impl Tool for HubTool {
                         // another agent's message.
                         let (tx, rx) = oneshot::channel();
                         let waiter_id = bus.register_waiter(Some(target.clone()), Some(agent_id.clone()), tx);
-                        let receipt = bus.send(msg);
+                        let _receipt = bus.send(msg);
 
                         let timeout = std::time::Duration::from_secs(120);
                         match tokio::time::timeout(timeout, rx).await {
