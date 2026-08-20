@@ -8,6 +8,7 @@ export default function MemoriesPage() {
   const [stats, setStats] = useState<MemoryStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [actionMsg, setActionMsg] = useState('')
+  const [absorbContent, setAbsorbContent] = useState('')
 
   const load = async () => {
     try {
@@ -55,14 +56,21 @@ export default function MemoriesPage() {
         <div className="flex items-center gap-4 mb-4 text-xs text-gray-400">
           {stats && (
             <>
-              <span>{stats.total_facts} facts</span>
-              <span>{stats.archived_facts} archived</span>
-              <span>{stats.cache_entries} cache entries</span>
+              <span>{Object.values(stats.scopes).reduce((total, scope) => total + scope.active, 0)} active</span>
+              <span>{Object.values(stats.scopes).reduce((total, scope) => total + scope.archived, 0)} archived</span>
+              <span>{stats.entity_graph.nodes} entities</span>
             </>
           )}
           <div className="ml-auto flex gap-1">
-            <button onClick={() => doAction('Absorb', () => api.memories.absorb())}
-              className="px-2 py-1 rounded border border-white/[0.06] text-[10px] text-gray-500 hover:text-gray-300 hover:border-white/20">
+            <input value={absorbContent} onChange={e => setAbsorbContent(e.target.value)} placeholder="Fact to absorb" className="px-2 py-1 rounded border border-white/[0.06] bg-transparent text-[10px] text-gray-300" />
+            <button onClick={() => doAction('Absorb', async () => {
+              const content = absorbContent.trim()
+              if (!content) throw new Error('Enter fact content before absorbing')
+              const result = await api.memories.absorb(content)
+              setAbsorbContent('')
+              return result
+            })} disabled={!absorbContent.trim()}
+              className="px-2 py-1 rounded border border-white/[0.06] text-[10px] text-gray-500 hover:text-gray-300 hover:border-white/20 disabled:opacity-30">
               Absorb
             </button>
             <button onClick={() => doAction('Distill', () => api.memories.distill())}
@@ -91,8 +99,8 @@ export default function MemoriesPage() {
             {memories.map(m => (
               <div key={m.id} className="p-3 rounded-md border border-white/[0.06] bg-[#141414]">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-mono text-gray-500">{m.type}</span>
-                  {m.archived && <span className="text-[10px] text-gray-600">archived</span>}
+                  <span className="text-[10px] font-mono text-gray-500">{m.scope}:{m.scope_key}</span>
+                  <span className="text-[10px] text-gray-600">{m.status}</span>
                   <button onClick={() => doArchive(m.id)}
                     className="ml-auto text-[10px] text-gray-500 hover:text-red-400 px-1.5 py-0.5 rounded border border-white/[0.06] hover:border-red-500/30">
                     Archive

@@ -229,7 +229,7 @@ export function Sidebar() {
         </nav>
 
         {/* Footer links */}
-        <div className="p-3 border-t border-white/[0.06] flex justify-around text-xs text-gray-500">
+        <div className="p-3 border-t border-white/[0.06] flex flex-wrap justify-center gap-x-3 gap-y-2 text-xs text-gray-500">
           <Link href="/" className={pathname === '/' ? 'text-gray-200' : 'hover:text-gray-300'} onClick={closeSidebar}>
             Chats
           </Link>
@@ -244,6 +244,15 @@ export function Sidebar() {
           </Link>
           <Link href="/events" className={pathname === '/events' ? 'text-gray-200' : 'hover:text-gray-300'} onClick={closeSidebar}>
             Events
+          </Link>
+          <Link href="/governance" className={pathname === '/governance' ? 'text-gray-200' : 'hover:text-gray-300'} onClick={closeSidebar}>
+            Govern
+          </Link>
+          <Link href="/computers" className={pathname === '/computers' ? 'text-gray-200' : 'hover:text-gray-300'} onClick={closeSidebar}>
+            Browser
+          </Link>
+          <Link href="/coworkers" className={pathname === '/coworkers' ? 'text-gray-200' : 'hover:text-gray-300'} onClick={closeSidebar}>
+            Coworkers
           </Link>
         </div>
       </aside>

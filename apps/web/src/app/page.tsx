@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { api, type Health, type AgentEvent } from '@/lib/api'
+import { api, apiBaseUrl, apiKeyHeaders, type Health, type AgentEvent } from '@/lib/api'
 import { useSessions } from '@/hooks/useSessions'
 import Link from 'next/link'
 
@@ -32,34 +32,30 @@ export default function HomePage() {
 
   // SSE global events (last 5)
   useEffect(() => {
-    const base = typeof window !== 'undefined'
-      ? localStorage.getItem('fathom_base_url') || 'http://127.0.0.1:8080'
-      : 'http://127.0.0.1:8080'
-    const url = `${base}/api/v1/events`
-    let es: EventSource | null = null
+    const ctrl = new AbortController()
     let reconnectTimer: ReturnType<typeof setTimeout> | undefined
-
-    const connect = () => {
-      es = new EventSource(url)
-      es.onmessage = (e) => {
-        try {
-          const parsed = JSON.parse(e.data) as AgentEvent
-          setEvents(prev => [parsed, ...prev].slice(0, 5))
-        } catch {
-          // ignore parse errors
+    const connect = async () => {
+      try {
+        const response = await fetch(`${apiBaseUrl()}/api/v1/events`, { signal: ctrl.signal, headers: { Accept: 'text/event-stream', ...apiKeyHeaders() } })
+        const reader = response.body?.getReader()
+        if (!reader) return
+        const decoder = new TextDecoder()
+        let buffer = ''
+        for (;;) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() ?? ''
+          for (const line of lines) if (line.startsWith('data: ')) {
+            try { setEvents(prev => [JSON.parse(line.slice(6)) as AgentEvent, ...prev].slice(0, 5)) } catch { /* ignore malformed event */ }
+          }
         }
-      }
-      es.onerror = () => {
-        es?.close()
-        reconnectTimer = setTimeout(connect, 3000)
-      }
+      } catch { /* aborted or disconnected */ }
+      if (!ctrl.signal.aborted) reconnectTimer = setTimeout(connect, 3000)
     }
-
     connect()
-    return () => {
-      es?.close()
-      clearTimeout(reconnectTimer)
-    }
+    return () => { ctrl.abort(); clearTimeout(reconnectTimer) }
   }, [])
 
   const runningSessions = sessions.filter(s => s.status === 'running' || s.active)

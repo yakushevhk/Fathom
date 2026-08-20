@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { api, type AgentEvent } from '@/lib/api'
+import { api, apiKeyHeaders, type AgentEvent } from '@/lib/api'
 
 interface DisplayEvent {
   id: string
@@ -28,7 +28,7 @@ export default function EventsPage() {
       try {
         const res = await fetch(api.events.globalUrl(), {
           signal: ctrl.signal,
-          headers: { Accept: 'text/event-stream' },
+          headers: { Accept: 'text/event-stream', ...apiKeyHeaders() },
         })
         setConnected(true)
         const reader = res.body?.getReader()

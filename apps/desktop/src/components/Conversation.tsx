@@ -16,6 +16,8 @@ interface Message {
   expandable?: boolean
   expanded?: boolean
   agentId?: string
+  requestId?: string
+  controlKind?: 'question' | 'approval'
 }
 
 export function Conversation({ activeSession, engineUrl }: ConversationProps) {
@@ -151,6 +153,12 @@ export function Conversation({ activeSession, engineUrl }: ConversationProps) {
           ) : (
             <div className="message-content">
               {renderContent(msg.content)}
+              {msg.controlKind === 'question' && msg.requestId && (
+                <QuestionControl sessionId={activeSession.id} requestId={msg.requestId} />
+              )}
+              {msg.controlKind === 'approval' && msg.requestId && (
+                <ApprovalControl sessionId={activeSession.id} requestId={msg.requestId} toolName={msg.toolName} />
+              )}
             </div>
           )}
         </div>
@@ -232,6 +240,27 @@ function eventToMessage(event: AgentEvent): Message | null {
     case 'llm_stream_chunk':
       // Stream chunks are aggregated — skip individual chunks
       return null
+    case 'question_asked':
+      return {
+        id: `question-${event.request_id as string}`,
+        type: 'system',
+        content: `Question: ${event.question as string || ''}`,
+        timestamp: new Date(),
+        agentId: event.agent_id as string,
+        requestId: event.request_id as string,
+        controlKind: 'question',
+      }
+    case 'approval_requested':
+      return {
+        id: `approval-${event.request_id as string}`,
+        type: 'system',
+        content: `Approval required for ${event.tool as string || 'tool'}\n${event.args_preview as string || ''}`,
+        timestamp: new Date(),
+        toolName: event.tool as string,
+        agentId: event.agent_id as string,
+        requestId: event.request_id as string,
+        controlKind: 'approval',
+      }
     case 'finding':
       return {
         id: `finding-${event.agent_id as string}-${Date.now()}`,
@@ -243,6 +272,25 @@ function eventToMessage(event: AgentEvent): Message | null {
     default:
       return null
   }
+}
+
+function QuestionControl({ sessionId, requestId }: { sessionId: string; requestId: string }) {
+  const [answer, setAnswer] = useState('')
+  const [sent, setSent] = useState(false)
+  if (sent) return <span className="text-muted">Answer sent</span>
+  return <div className="control-actions">
+    <input className="surface-input" value={answer} onChange={event => setAnswer(event.target.value)} placeholder="Your answer…" aria-label="Answer question" />
+    <button className="surface-button primary" disabled={!answer.trim()} onClick={() => { void api.sessions.answer(sessionId, requestId, answer.trim()).then(() => setSent(true)) }}>Answer</button>
+  </div>
+}
+
+function ApprovalControl({ sessionId, requestId, toolName }: { sessionId: string; requestId: string; toolName?: string }) {
+  const [decided, setDecided] = useState(false)
+  if (decided) return <span className="text-muted">Decision sent</span>
+  return <div className="control-actions">
+    <button className="surface-button primary" onClick={() => { void api.sessions.approve(sessionId, requestId, true).then(() => setDecided(true)) }}>Approve{toolName ? ` ${toolName}` : ''}</button>
+    <button className="surface-button" onClick={() => { void api.sessions.approve(sessionId, requestId, false).then(() => setDecided(true)) }}>Deny</button>
+  </div>
 }
 
 function renderContent(content: string) {

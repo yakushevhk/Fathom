@@ -1,8 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { Conversation } from './components/Conversation'
 import { Composer } from './components/Composer'
 import { StatusStrip } from './components/StatusStrip'
+import { LiveScreen } from './components/LiveScreen'
+import { GovernancePanel } from './components/GovernancePanel'
+import { CoworkerRail } from './components/CoworkerRail'
 import { useEngine } from './hooks/useEngine'
 import { useSessions } from './hooks/useSessions'
 import { api, type SessionSummary } from './lib/api'
@@ -13,6 +16,11 @@ export default function App() {
   const [activeSession, setActiveSession] = useState<SessionSummary | null>(null)
   const [showSettings, setShowSettings] = useState(false)
   const [showRightPane, setShowRightPane] = useState(false)
+  const [rightTab, setRightTab] = useState<'details' | 'computer' | 'governance'>('computer')
+
+  useEffect(() => {
+    setActiveSession(current => current ? sessions.find(session => session.id === current.id) ?? current : current)
+  }, [sessions])
 
   const handleStartEngine = async () => {
     await start()
@@ -26,11 +34,12 @@ export default function App() {
   const handleNewSession = async (query: string) => {
     const id = await create(query)
     if (id) {
-      // Poll for the new session to appear
-      setTimeout(() => {
+      try {
+        setActiveSession(await api.sessions.get(id))
+      } catch {
         const session = sessions.find(s => s.id === id)
         if (session) setActiveSession(session)
-      }, 500)
+      }
     }
   }
 
@@ -53,6 +62,16 @@ export default function App() {
       </div>
 
       <div className="app-body">
+        <CoworkerRail
+          sessions={sessions}
+          activeSession={activeSession}
+          onSelect={session => { setActiveSession(session); setShowRightPane(true); setRightTab('details') }}
+          onChannel={channel => {
+            if (channel === 'computer') { setShowRightPane(true); setRightTab('computer') }
+            if (channel === 'governance') { setShowRightPane(true); setRightTab('governance') }
+            if (channel === 'overview') { setShowRightPane(true); setRightTab('details') }
+          }}
+        />
         {/* Sidebar */}
         <Sidebar
           sessions={sessions}
@@ -86,7 +105,7 @@ export default function App() {
                 activeSession={activeSession}
                 onSteer={(instruction) => {
                   if (activeSession) {
-                    api.sessions.steer(activeSession.id, instruction)
+                    void api.sessions.steer(activeSession.id, instruction).catch(() => undefined)
                   }
                 }}
                 onCancel={() => {
@@ -97,19 +116,21 @@ export default function App() {
           )}
         </div>
 
-        {/* Right pane (optional: diff, changes, terminal) */}
+        {/* Governed control room */}
         {showRightPane && (
           <div className="right-pane">
-            <div className="right-pane-header">
-              Details
-              <button className="titlebar-btn" onClick={() => setShowRightPane(false)}>&times;</button>
+            <div className="right-pane-header control-room-header">
+              <div className="right-pane-tabs" role="tablist" aria-label="Control room">
+                <button className={rightTab === 'computer' ? 'selected' : ''} onClick={() => setRightTab('computer')} role="tab" aria-selected={rightTab === 'computer'}>Computer</button>
+                <button className={rightTab === 'governance' ? 'selected' : ''} onClick={() => setRightTab('governance')} role="tab" aria-selected={rightTab === 'governance'}>Guardrails</button>
+                <button className={rightTab === 'details' ? 'selected' : ''} onClick={() => setRightTab('details')} role="tab" aria-selected={rightTab === 'details'}>Session</button>
+              </div>
+              <button className="titlebar-btn" onClick={() => setShowRightPane(false)} aria-label="Close control room">&times;</button>
             </div>
-            <div className="right-pane-body">
-              {activeSession ? (
-                <SessionDetails session={activeSession} />
-              ) : (
-                <p className="text-muted">Select a session to view details</p>
-              )}
+            <div className="right-pane-body control-room-body">
+              {rightTab === 'computer' && <LiveScreen />}
+              {rightTab === 'governance' && <GovernancePanel />}
+              {rightTab === 'details' && (activeSession ? <SessionDetails session={activeSession} /> : <p className="text-muted">Select a session to view details</p>)}
             </div>
           </div>
         )}

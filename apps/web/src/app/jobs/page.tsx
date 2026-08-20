@@ -38,7 +38,7 @@ export default function JobsPage() {
     setLogId(id)
     try {
       const resp = await api.jobs.log(id)
-      setLogContent(resp.log)
+      setLogContent(resp.lines.join('\n'))
     } catch { setLogContent('(no log available)') }
     setLogLoading(false)
   }
@@ -94,7 +94,7 @@ export default function JobsPage() {
                     {j.status}
                   </span>
                   <span className="text-[10px] text-gray-600 font-mono">{j.id.slice(0, 8)}</span>
-                  <span className="text-[10px] text-gray-600">attempt {j.attempts}/{j.max_attempts}</span>
+                  <span className="text-[10px] text-gray-600">attempt {j.attempt}/{j.max_attempts}</span>
                   <div className="ml-auto flex gap-1">
                     <button onClick={() => viewLog(j.id)}
                       className="text-[10px] text-gray-500 hover:text-gray-300 px-1.5 py-0.5 rounded border border-white/[0.06] hover:border-white/20">

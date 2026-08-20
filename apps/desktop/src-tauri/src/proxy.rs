@@ -8,6 +8,29 @@ use crate::AppState;
 use reqwest::Client;
 use serde_json::Value;
 use tauri::State;
+
+fn api_key() -> Option<String> {
+    std::env::var("FATHOM_API_KEY").ok().filter(|key| !key.trim().is_empty())
+}
+
+async fn send_json(request: reqwest::RequestBuilder) -> Result<Value, String> {
+    let response = request.send().await.map_err(|e| format!("request failed: {e}"))?;
+    let status = response.status();
+    let body = response.text().await.map_err(|e| format!("read failed: {e}"))?;
+    let value = serde_json::from_str::<Value>(&body).unwrap_or_else(|_| Value::String(body.clone()));
+    if !status.is_success() {
+        let detail = value.get("error").and_then(Value::as_str).unwrap_or(body.trim());
+        return Err(format!("HTTP {status}: {detail}"));
+    }
+    Ok(value)
+}
+
+fn authorized(request: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
+    match api_key() {
+        Some(key) => request.header("X-Api-Key", key),
+        None => request,
+    }
+}
 use tokio::sync::Mutex;
 
 /// Helper: send a GET to the engine and return JSON body.
@@ -19,14 +42,7 @@ async fn engine_get(state: &Mutex<AppState>, path: &str) -> Result<Value, String
         .await
         .ok_or_else(|| "engine not running".to_string())?;
     let client = Client::new();
-    let resp = client
-        .get(format!("{url}{path}"))
-        .send()
-        .await
-        .map_err(|e| format!("request failed: {e}"))?;
-    resp.json::<Value>()
-        .await
-        .map_err(|e| format!("parse failed: {e}"))
+    send_json(authorized(client.get(format!("{url}{path}")))).await
 }
 
 /// Helper: send a POST to the engine with JSON body.
@@ -42,18 +58,48 @@ async fn engine_post(
         .await
         .ok_or_else(|| "engine not running".to_string())?;
     let client = Client::new();
-    let resp = client
-        .post(format!("{url}{path}"))
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| format!("request failed: {e}"))?;
-    resp.json::<Value>()
-        .await
-        .map_err(|e| format!("parse failed: {e}"))
+    send_json(authorized(client.post(format!("{url}{path}")).json(&body))).await
 }
 
 /// Helper: send a DELETE to the engine.
+#[tauri::command]
+pub async fn engine_screenshot(
+    state: State<'_, Mutex<AppState>>,
+    path: String,
+) -> Result<Value, String> {
+    let app = state.lock().await;
+    let url = app.daemon.base_url().await.ok_or_else(|| "engine not running".to_string())?;
+    let response = authorized(Client::new().get(format!("{url}{path}")))
+        .send().await.map_err(|e| format!("request failed: {e}"))?;
+    let status = response.status();
+    let content_type = response.headers().get(reqwest::header::CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok()).unwrap_or("image/png").to_string();
+    let bytes = response.bytes().await.map_err(|e| format!("read failed: {e}"))?;
+    if !status.is_success() { return Err(format!("HTTP {status}: screenshot request failed")); }
+    Ok(serde_json::json!({ "bytes": bytes.to_vec(), "content_type": content_type }))
+}
+
+#[tauri::command]
+pub async fn engine_request(
+    state: State<'_, Mutex<AppState>>,
+    method: String,
+    path: String,
+    body: Option<Value>,
+) -> Result<Value, String> {
+    let app = state.lock().await;
+    let url = app.daemon.base_url().await.ok_or_else(|| "engine not running".to_string())?;
+    let client = Client::new();
+    let request = match method.to_uppercase().as_str() {
+        "GET" => client.get(format!("{url}{path}")),
+        "POST" => client.post(format!("{url}{path}")),
+        "PUT" => client.put(format!("{url}{path}")),
+        "DELETE" => client.delete(format!("{url}{path}")),
+        other => return Err(format!("unsupported HTTP method: {other}")),
+    };
+    let request = if let Some(body) = body { request.json(&body) } else { request };
+    send_json(authorized(request)).await
+}
+
 async fn engine_delete(state: &Mutex<AppState>, path: &str) -> Result<Value, String> {
     let app = state.lock().await;
     let url = app
@@ -62,14 +108,7 @@ async fn engine_delete(state: &Mutex<AppState>, path: &str) -> Result<Value, Str
         .await
         .ok_or_else(|| "engine not running".to_string())?;
     let client = Client::new();
-    let resp = client
-        .delete(format!("{url}{path}"))
-        .send()
-        .await
-        .map_err(|e| format!("request failed: {e}"))?;
-    resp.json::<Value>()
-        .await
-        .map_err(|e| format!("parse failed: {e}"))
+    send_json(authorized(client.delete(format!("{url}{path}")))).await
 }
 
 // ── Tauri commands ────────────────────────────────────────────────────────
@@ -150,6 +189,26 @@ pub async fn get_session_results(
     id: String,
 ) -> Result<Value, String> {
     engine_get(&state, &format!("/api/v1/sessions/{id}/results")).await
+}
+
+#[tauri::command]
+pub async fn answer_session(
+    state: State<'_, Mutex<AppState>>,
+    id: String,
+    request_id: String,
+    text: String,
+) -> Result<Value, String> {
+    engine_post(&state, &format!("/api/v1/sessions/{id}/answer"), serde_json::json!({ "request_id": request_id, "text": text })).await
+}
+
+#[tauri::command]
+pub async fn approve_session(
+    state: State<'_, Mutex<AppState>>,
+    id: String,
+    request_id: String,
+    approved: bool,
+) -> Result<Value, String> {
+    engine_post(&state, &format!("/api/v1/sessions/{id}/approve"), serde_json::json!({ "request_id": request_id, "approved": approved })).await
 }
 
 // ── Agent API ─────────────────────────────────────────────────────────────

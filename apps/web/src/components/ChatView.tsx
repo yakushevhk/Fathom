@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { api, type AgentEvent, type SessionResults } from '@/lib/api'
+import { api, apiKeyHeaders, type AgentEvent, type SessionResults } from '@/lib/api'
 import { Markdown } from './Markdown'
 
 interface ChatViewProps {
@@ -51,7 +51,7 @@ export function ChatView({ sessionId, baseUrl }: ChatViewProps) {
         try {
           const res = await fetch(api.events.sessionUrl(sessionId), {
             signal: ctrl.signal,
-            headers: { Accept: 'text/event-stream' },
+            headers: { Accept: 'text/event-stream', ...apiKeyHeaders() },
           })
           const reader = res.body?.getReader()
           if (!reader) continue
