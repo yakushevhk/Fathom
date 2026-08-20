@@ -1,6 +1,6 @@
 # CLI Usage
 
-The `fathom` binary has commands for headless research, interactive TUI, HTTP API serving, MCP tool exposure, memory management, background jobs, session history, and contact/CRM operations.
+The `fathom` binary is a **universal autonomous AI worker** — it accepts natural-language tasks, decomposes them into sub-tasks with hierarchical sub-agents, and executes them autonomously. Commands span headless investigation, interactive TUI, HTTP API serving, MCP tool exposure, memory management, background jobs, session history, contact/CRM operations, and browser-based computer use.
 
 ```
 fathom <COMMAND>
@@ -261,7 +261,7 @@ curl http://localhost:8080/api/v1/sessions/<SESSION_ID>/results
 
 ## `mcp-serve` — MCP server
 
-Exposes all built-in agent tools to external MCP clients (Claude Desktop, ZCode, Cursor, etc.) over stdio. The server uses the shared `ToolRegistry` with all built-in tools registered. External MCP servers configured in `[mcp.servers]` are **not** re-exported (to avoid loops).
+Exposes all **63 agent tools** (57 built-in + 6 computer-use) to external MCP clients (Claude Desktop, ZCode, Cursor, etc.) over stdio. The server uses the shared `ToolRegistry` with all tools registered. External MCP servers configured in `[mcp.servers]` are **not** re-exported (to avoid loops).
 
 ```bash
 fathom mcp-serve
@@ -273,6 +273,44 @@ Connection in the MCP client config:
 ```
 
 Nothing may print to stdout when the MCP server is running — the stdio protocol owns it. All logging goes to stderr.
+
+---
+
+## `computer` — browser-based computer use
+
+Fathom can operate a real browser via a loopback Playwright service (`apps/computer`). The agent uses accessibility-tree snapshots (opaque refs) to "see" the page like a screen-reader and interact via refs — never brittle CSS selectors.
+
+The computer service is started separately from the `apps/computer` directory:
+
+```bash
+cd apps/computer
+npm start                    # starts the Playwright computer service
+```
+
+The computer service exposes a REST API that the coordinator and agents call through the built-in computer-use tools (`computer_snapshot`, `computer_navigate`, `computer_click`, `computer_type`, `computer_key`, `computer_screenshot`). Each agent-action returns a fresh snapshot so the agent always has current state.
+
+### With Docker supervisor
+
+When `COMPUTER_TOKEN` (and optionally `COMPUTER_IMAGE`, `COMPUTER_NETWORK`, `COMPUTER_BASE_PORT`) is set in the environment, Fathom provisions **one isolated computer per agent** — each with its own persistent workspace, profile volume, loopback port, health checks, and restrictive capabilities.
+
+```bash
+fathom serve --port 8080
+# The HTTP API proxies computer actions to the right Docker container per agent
+```
+
+### Human takeover
+
+The TUI, Tauri desktop app, and web dashboard all support **human takeover**: the operator can view the live screen, inspect the accessibility tree, type, click, navigate, and enter secrets — all without the agent losing context. Useful for multi-step auth flows, CAPTCHAs, or sensitive credential entry.
+
+### Computer relay
+
+The HTTP API exposes `/api/v1/computers/*` endpoints that proxy snapshot, click, type, key, screen, files, and control actions to the active computer service (or per-agent Docker container). This enables:
+
+- **Live screen streaming** in the web dashboard and desktop app
+- **Human-in-the-loop approval** for sensitive actions
+- **Secret injection** without exposing the value in logs or to the agent
+
+For full details — see [COMPUTER-USE.md](COMPUTER-USE.md).
 
 ---
 
@@ -492,6 +530,31 @@ fathom profiles new <name>
 | `validator` | Fact-checking and verification — cautious, cross-references sources |
 
 User-created profiles live in `~/.fathom/profiles/` as `.toml` files.
+
+### Examples
+
+```bash
+# List all available profiles
+fathom profiles list
+
+# Inspect the hunter profile definition
+fathom profiles show hunter
+
+# Create a new profile template
+fathom profiles new my-persona
+
+# Use a profile with a research run
+fathom run --profile analyst "Analyze Q3 market trends for electric vehicles"
+
+# Use a profile in the interactive TUI
+fathom tui --profile hunter
+
+# Custom user-created profile
+fathom run --profile my-persona "Research top AI startups in Europe"
+
+# Profile from an explicit path
+fathom run --profile ~/.fathom/profiles/custom-brief.toml "Brief on quantum computing"
+```
 
 ---
 

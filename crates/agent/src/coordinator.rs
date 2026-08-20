@@ -60,6 +60,8 @@ pub struct Coordinator {
     /// Shared task-tree blackboard for this session: durable journal of
     /// coordination records + child→parent beacons. Lazy-created at run start.
     tree_ledger: Option<crate::task_tree::TaskTreeLedger>,
+    /// Optional policy governance gate inherited by every agent in the session.
+    governance: Option<Arc<pr_governance::Governance>>,
 }
 
 /// What kind of job the query describes (fleet C2).
@@ -110,6 +112,7 @@ impl Coordinator {
             mx_cache: pr_tools::cache::MxCache::new(),
             profile_prompt: None,
             tree_ledger: None,
+            governance: None,
         }
     }
 
@@ -153,6 +156,12 @@ impl Coordinator {
     /// agents; `None` when unset (agents fall back to their main model).
     fn fast_llm(&self) -> Option<Arc<dyn pr_llm::LlmProvider>> {
         pr_llm::build_fast_provider(&self.config.llm).ok().flatten()
+    }
+
+    /// Attach the policy governance gate to every agent in this session.
+    pub fn with_governance(mut self, governance: Arc<pr_governance::Governance>) -> Self {
+        self.governance = Some(governance);
+        self
     }
 
     /// Attach an active profile's system-prompt block (injected into every
@@ -442,6 +451,7 @@ impl Coordinator {
         agent.fetch_cache = Some(self.fetch_cache.clone());
         agent.mx_cache = Some(self.mx_cache.clone());
         agent.profile_prompt = self.profile_prompt.clone();
+        agent.governance = self.governance.clone();
         agent.question_tx = self.question_tx.clone();
         agent.approval_tx = self.approval_tx.clone();
         agent = agent.with_role_llms(self.role_llms.clone());

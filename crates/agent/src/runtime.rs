@@ -77,6 +77,8 @@ pub struct AgentRuntime {
     harvested_findings: Vec<Finding>,
     /// Cooperative cancellation (session cancel, stall kill, steering stop).
     cancel: CancellationToken,
+    /// Optional policy governance gate, inherited by spawned sub-agents.
+    pub governance: Option<Arc<pr_governance::Governance>>,
     /// Tools this agent's role is not allowed to use (fleet E5).
     denied_tools: HashSet<String>,
     /// Mid-run user instructions (fleet E1), drained at turn boundaries.
@@ -184,6 +186,7 @@ impl AgentRuntime {
             fetch_cache: None,
             mx_cache: None,
             profile_prompt: None,
+            governance: None,
             compaction_engine,
             turn_budget,
             memory_store,
@@ -249,6 +252,17 @@ impl AgentRuntime {
         AgentRegistry::global().unregister(&self.id);
         pr_core::SteerRegistry::global().unregister(&self.id);
         pr_core::async_job::AsyncJobManager::global().unregister_sink(&self.id);
+    }
+
+    /// Attach the optional policy governance gate.
+    pub fn with_governance(mut self, governance: Arc<pr_governance::Governance>) -> Self {
+        self.governance = Some(governance);
+        self
+    }
+
+    /// Replace the optional policy governance gate.
+    pub fn set_governance(&mut self, governance: Option<Arc<pr_governance::Governance>>) {
+        self.governance = governance;
     }
 
     /// Attach per-role LLM overrides (fleet E8).
@@ -331,6 +345,63 @@ impl AgentRuntime {
 
     fn emit_tool_hook_denied(&self, tool: &str) {
         tracing::warn!("tool {tool} denied by PreToolUse hook (agent {})", self.id);
+    }
+
+    fn governance_context(&self, tool: &str, args: &serde_json::Value) -> pr_governance::ActionContext {
+        pr_governance::ActionContext::new(
+            self.id.0.clone(),
+            self.session_id.0.clone(),
+            tool.to_string(),
+            args.clone(),
+        )
+    }
+
+    fn governance_decision(
+        &self,
+        tool: &str,
+        args: &serde_json::Value,
+    ) -> Option<pr_governance::Decision> {
+        let governance = self.governance.as_ref()?;
+        let context = self.governance_context(tool, args);
+        let decision = governance.authorize(&context);
+        self.record_governance_event(&context, decision);
+        Some(decision)
+    }
+
+    /// Persist a redacted governance event. Governance's optional sink is also
+    /// notified, allowing callers to attach additional audit transports.
+    fn record_governance_event(
+        &self,
+        context: &pr_governance::ActionContext,
+        decision: pr_governance::Decision,
+    ) {
+        let event = pr_governance::AuditEvent::new(context, decision);
+        if let Some(governance) = &self.governance {
+            if let Err(error) = governance.record(&event) {
+                tracing::warn!("governance audit sink failed: {error}");
+            }
+        }
+        let pr_governance::AuditEvent { id, timestamp, context, decision } = event;
+        let row = pr_persistence::AuditEventRow {
+            id,
+            timestamp: timestamp.to_rfc3339(),
+            agent: context.agent,
+            session: context.session,
+            tool: context.tool,
+            args: context.args.to_string(),
+            url: context.url,
+            element: context.element,
+            file: context.file,
+            intent: context.intent,
+            mcp_metadata: context.mcp_metadata.map(|value| value.to_string()),
+            decision: match decision {
+                pr_governance::AuditDecision::Allow => "allow".to_string(),
+                pr_governance::AuditDecision::Deny => "deny".to_string(),
+            },
+        };
+        if let Err(error) = self.db.record_audit_event(&row) {
+            tracing::warn!("governance audit persistence failed: {error}");
+        }
     }
 
     fn build_system_prompt(&self, memory_digest: &str) -> String {
@@ -1241,6 +1312,20 @@ impl AgentRuntime {
                         continue;
                     }
 
+                    // Governance is deliberately after role permissions and
+                    // before operator approval/hooks/execution. With no gate
+                    // configured this preserves the historical behavior.
+                    if let Some(decision) = self.governance_decision(tool_name, &tool_args) {
+                        if !decision.is_allowed() {
+                            let output = ToolOutput::err_code(
+                                format!("Governance denied tool '{tool_name}'"),
+                                "governance_denied",
+                            );
+                            prepared.push(PreparedCall::Immediate(tool_call.clone(), output));
+                            continue;
+                        }
+                    }
+
                     // Operator approval gate for side-effect tools. Denials
                     // surface to the model as a normal tool error so it can
                     // adapt (ask differently, skip, ...).
@@ -1735,6 +1820,7 @@ impl AgentRuntime {
         child.fetch_cache = self.fetch_cache.clone();
         child.mx_cache = self.mx_cache.clone();
         child.profile_prompt = self.profile_prompt.clone();
+        child.governance = self.governance.clone();
         // Children inherit what is left of the parent's token cap.
         child.token_cap = self.token_cap.map(|cap| cap.saturating_sub(self.tokens_used));
         child.question_tx = self.question_tx.clone();
@@ -2596,6 +2682,60 @@ mod tests {
             matches!(m, Message::Tool { content, .. } if content.contains("Permission denied"))
         });
         assert!(denied);
+    }
+
+    #[tokio::test]
+    async fn test_governance_denied_tool_never_executes_and_is_audited() {
+        let db = Arc::new(Persistence::in_memory().unwrap());
+        let session_id = SessionId::new();
+        db.create_session(&session_id, "q").unwrap();
+        let marker = tempfile::NamedTempFile::new().unwrap();
+        let marker_path = marker.path().to_string_lossy().to_string();
+        std::fs::remove_file(marker.path()).unwrap();
+
+        let policy = pr_governance::PolicyConfig {
+            rules: vec![pr_governance::PolicyRule {
+                effect: pr_governance::PolicyEffect::Deny,
+                tool: Some("shell".to_string()),
+                host: None,
+                path: None,
+                intent: None,
+            }],
+        };
+        let governance = Arc::new(pr_governance::Governance::new(
+            pr_governance::PolicyEngine::new(policy),
+        ));
+        let llm = Arc::new(MockProvider::new(vec![
+            CompletionResponse {
+                message: Message::assistant_with_tools(
+                    None,
+                    vec![pr_core::ToolCall::new(
+                        "gov-deny",
+                        "shell",
+                        serde_json::json!({"command": format!("touch {marker_path}")}),
+                    )],
+                ),
+                usage: Some(Usage { prompt_tokens: 5, completion_tokens: 5, total_tokens: 10 }),
+                finish_reason: Some("tool_calls".to_string()),
+            },
+            MockProvider::text("done"),
+        ]));
+        let mut agent = make_runtime(llm, db.clone(), AppConfig::default(), 0)
+            .with_governance(governance);
+        agent.session_id = session_id;
+        register_parent(&db, &agent);
+
+        let output = agent.run().await.unwrap();
+        assert_eq!(output.summary, "done");
+        assert!(!marker.path().exists(), "governance-denied shell must not execute");
+        let denied = agent.messages.iter().any(|m| {
+            matches!(m, Message::Tool { content, .. } if content.contains("Governance denied"))
+        });
+        assert!(denied);
+        let events = db.list_audit_events().unwrap();
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].decision, "deny");
+        assert_eq!(events[0].tool, "shell");
     }
 
     #[tokio::test]

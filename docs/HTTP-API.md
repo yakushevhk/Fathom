@@ -1,6 +1,6 @@
 # HTTP API
 
-Fathom provides a REST API built on **Axum** for programmatic control of research. The API exposes session lifecycle management, agent inspection, live event streaming, operator-in-the-loop controls (steering, question/answer, tool-call approval), a long-term semantic memory store, and a durable background jobs subsystem. All endpoints under `/api/v1` are protected by authentication and rate limiting when configured.
+Fathom provides a REST API built on **Axum** for programmatic control of the universal autonomous AI worker. The API exposes session lifecycle management, agent inspection, live event streaming, operator-in-the-loop controls (steering, question/answer, tool-call approval), a long-term semantic memory store, a durable background jobs subsystem, computer-use relay, credential vault, persistent coworker profiles, cron-like scheduling, policy governance, redacted action replay, live observability counters, notification delivery, and an AG-UI compatibility bridge. All endpoints under `/api/v1` are protected by authentication and rate limiting when configured.
 
 Start:
 ```bash
@@ -426,6 +426,440 @@ Single memory record. Accepts `?follow=latest|full_history` (default: `latest`).
 ### `DELETE /api/v1/memories/:id`
 
 Archive (soft delete). The memory is marked as archived and excluded from default queries, but its full history is preserved and accessible via `?follow=full_history`.
+
+---
+
+## Computer API — single computer mode
+
+Relay routes to the configured computer-use service (a small loopback HTTP service, by default `http://127.0.0.1:8765`, overridable via `FATHOM_COMPUTER_SERVICE_URL`; the upstream token comes from `COMPUTER_TOKEN`). The server validates requests, forwards them to the computer service, and proxies the response back.
+
+Requests are proxied verbatim to the upstream service and may contain secrets; responses can include `mimeType`-tagged base64 data (e.g. screenshots). Upstream calls and websocket writes have explicit timeouts so a disconnected or wedged computer service cannot retain a request task indefinitely.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `POST` | `/api/v1/computers/session` | Start or refresh the browser session |
+| `GET` | `/api/v1/computers/health` | Computer service health check |
+| `GET` | `/api/v1/computers/snapshot` | Accessibility snapshot of the current page |
+| `POST` | `/api/v1/computers/navigate` | Navigate to a URL |
+| `POST` | `/api/v1/computers/click` | Click at coordinates / on an element |
+| `POST` | `/api/v1/computers/type` | Type text into the page |
+| `POST` | `/api/v1/computers/key` | Send a keyboard key chord |
+| `POST` | `/api/v1/computers/secret` | Enter a secret without returning/logging its value |
+| `GET` | `/api/v1/computers/screenshot` | Capture a screenshot (`{mimeType, data}` base64) |
+| `GET` | `/api/v1/computers/tabs` | List open tabs |
+| `POST` | `/api/v1/computers/tabs/open` | Open a new tab |
+| `POST` | `/api/v1/computers/tabs/:tab_id/activate` | Activate a tab |
+| `POST` | `/api/v1/computers/tabs/:tab_id/close` | Close a tab |
+| `POST` | `/api/v1/computers/control/take` | Take operator control of the computer |
+| `POST` | `/api/v1/computers/control/release` | Release operator control |
+| `GET` | `/api/v1/computers/files` | List workspace files |
+| `GET` | `/api/v1/computers/files/read?path=...` | Read a workspace file |
+| `PUT` | `/api/v1/computers/files/write` | Write a workspace file (raw body) |
+| `DELETE` | `/api/v1/computers/files?path=...` | Delete a workspace file |
+
+**Notes:**
+- Action bodies (`navigate`, `click`, `type`, `key`, `session`, `tabs/open`) are arbitrary JSON passed straight through to the computer service.
+- `GET /api/v1/computers/screenshot` returns `{ "mimeType": "image/png", "data": "<base64>" }`.
+- The files workspace body writes are capped (default 1.1 MB); screenshots are capped at 20 MB and other JSON bodies at 2 MB — oversized payloads are rejected.
+
+### `POST /api/v1/computers/secret`
+
+Enter a secret directly into the computer without returning or logging the value. The request body is the secret action JSON; the upstream service returns only the refreshed page metadata/snapshot. The value is never echoed back to the caller.
+
+---
+
+## Computer API — per-agent (Docker supervisor mode)
+
+Agent-scoped routes resolve each agent's supervised computer container and proxy to it. Available in addition to the single-computer mode: `health`, `snapshot`, `screenshot`, `screen` (websocket), input actions (`navigate`, `click`, `type`, `key`), control hand-off, and file operations. Container lifecycle is managed by the supervisor endpoints below.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/v1/computers/:agent_id/snapshot` | Snapshot of the agent's browser |
+| `POST` | `/api/v1/computers/:agent_id/navigate` | Navigate the agent's browser |
+| `POST` | `/api/v1/computers/:agent_id/click` | Click in the agent's browser |
+| `POST` | `/api/v1/computers/:agent_id/type` | Type text in the agent's browser |
+| `POST` | `/api/v1/computers/:agent_id/key` | Send a key chord to the agent's browser |
+| `GET` | `/api/v1/computers/:agent_id/screenshot` | Screenshot of the agent's browser |
+| `GET` | `/api/v1/computers/:agent_id/screen` | **WebSocket** — continuous screen stream (binary frames, ~500 ms polling interval) |
+| `GET` | `/api/v1/computers/:agent_id/health` | Health of the agent's computer |
+| `POST` | `/api/v1/computers/:agent_id/control/take` | Take operator control |
+| `POST` | `/api/v1/computers/:agent_id/control/release` | Release operator control |
+| `GET` | `/api/v1/computers/:agent_id/files` | List the agent's workspace files |
+| `GET` | `/api/v1/computers/:agent_id/files/read?path=...` | Read a file from the agent's workspace |
+| `PUT` | `/api/v1/computers/:agent_id/files/write` | Write to the agent's workspace (raw body) |
+| `DELETE` | `/api/v1/computers/:agent_id/files?path=...` | Delete from the agent's workspace |
+
+### `GET /api/v1/computers/:agent_id/screen`
+
+Upgrades to a websocket and emits binary image frames at a bounded polling interval (currently 500 ms). The client may close the websocket at any time; polling stops on close, read error, timeout, or a client that does not accept frames promptly.
+
+---
+
+### Docker supervisor endpoints
+
+Available only when the Docker computer supervisor is configured (`COMPUTER_TOKEN` set). If not configured, returns `503 Service Unavailable`.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/v1/computers` | List supervised containers |
+| `POST` | `/api/v1/computers/:agent_id/ensure` | Ensure a container exists for the agent (create if missing) |
+| `POST` | `/api/v1/computers/:agent_id/stop` | Stop the agent's container |
+| `POST` | `/api/v1/computers/:agent_id/reset` | Reset the agent's container to a clean state |
+
+**Responses:**
+- `GET /api/v1/computers` → `200` with the container list
+- `POST /api/v1/computers/:agent_id/stop` → `{ "agent_id": "...", "stopped": true }`
+- `POST /api/v1/computers/:agent_id/reset` → `{ "agent_id": "...", "reset": true }`
+- `503` — supervisor not configured; `502` — upstream supervisor error
+
+---
+
+## Credentials API
+
+An encrypted vault of named secrets. Secrets are encrypted with **AES-256-GCM** at rest (key from `FATHOM_CREDENTIAL_KEY`, a 32-byte key in hex or base64). The vault stores only metadata in query results — the plaintext secret is never returned by the API.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/v1/credentials` | List credential metadata (id, name, kind, timestamps) |
+| `POST` | `/api/v1/credentials` | Store a credential (upsert by unique `name`) |
+| `DELETE` | `/api/v1/credentials/:id` | Delete a credential |
+
+**Request (POST):**
+```json
+{ "name": "outreach-smtp", "kind": "password", "secret": "sup3rs3cret" }
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | ✅ | Unique credential name (upsert target, ≤128 bytes) |
+| `kind` | string | ✅ | Credential type/label (≤64 bytes) |
+| `secret` | string | ✅ | Plaintext secret to encrypt (≤64 KiB, never returned) |
+
+**Response 200 (GET):** array of `{ "id", "name", "kind", "created_at", "updated_at" }`.
+**Response 201 (POST):** the stored credential metadata (no secret).
+**Errors:**
+- `400` — invalid name/kind/secret, or encryption key not configured
+- `404` — credential id not found (DELETE)
+- `204` (DELETE) — successful deletion
+
+---
+
+## Coworkers API
+
+Persistent desktop-agent coworker profiles. Coworkers have a name, role, system prompt, and visibility; channels link a coworker to one or more sessions. Routes are mounted under `/api/v1` and use the same authentication and rate limiting as the rest of the API.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/v1/coworkers` | List all configured coworkers |
+| `POST` | `/api/v1/coworkers` | Create a coworker |
+| `GET` | `/api/v1/coworkers/:id` | Fetch one coworker |
+| `PUT` / `PATCH` | `/api/v1/coworkers/:id` | Replace an existing coworker |
+| `DELETE` | `/api/v1/coworkers/:id` | Delete a coworker |
+
+**Request (POST / PUT):**
+```json
+{
+  "name": "outreach",
+  "title": "Outreach Specialist",
+  "role": "researcher",
+  "prompt": "You research prospects and draft outreach...",
+  "visibility": "private",
+  "active": true
+}
+```
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `name` | string | ✅ | — | Display name (≤100 chars) |
+| `title` | string | ❌ | `""` | Job title (≤200 chars) |
+| `role` | string | ❌ | `""` | Agent role (≤100 chars) |
+| `prompt` | string | ✅ | — | System prompt (≤20,000 chars) |
+| `visibility` | string | ❌ | `"private"` | Visibility scope (≤32 chars) |
+| `active` | bool | ❌ | `true` | Whether the coworker is active |
+
+**Responses:** `GET /api/v1/coworkers` → `{ "coworkers": [ ... ] }`; create returns `201` with `{ "coworker": { "id", "name", "title", "role", "prompt", "visibility", "active", "created_at", "updated_at" } }`.
+
+**Errors:** `400` — invalid id or field too long; `404` — coworker not found; `500` — database error.
+
+---
+
+## Channels API
+
+Channels link a coworker to sessions, giving the coworker a conversation context.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/v1/channels?coworker_id=...` | List channels for a coworker (`coworker_id` required) |
+| `POST` | `/api/v1/channels` | Create a channel, optionally attached to a session |
+| `PUT` / `PATCH` | `/api/v1/channels/:id` | Update a channel title/session mapping |
+| `DELETE` | `/api/v1/channels/:id` | Delete a channel |
+
+**Request (POST):**
+```json
+{ "coworker_id": "outreach", "title": "Q3 Leads", "session_id": "019fd38a-..." }
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `coworker_id` | string | ✅ | The coworker this channel belongs to |
+| `title` | string | ✅ | Channel title (≤200 chars) |
+| `session_id` | string | ❌ | Session to link (validated to exist) |
+
+**Responses:** list → `{ "channels": [ ... ] }`; create → `201` `{ "channel": { "id", "coworker_id", "title", "session_id", "created_at", "updated_at" } }`.
+
+**Errors:** `400` — missing/`coworker_id` or bad fields; `404` — coworker or session not found; `500` — database error.
+
+---
+
+## Schedules API
+
+Cron-like scheduling for coworkers. Schedules are persisted and claimed by worker processes with `POST /api/v1/schedules/claim` (bounded scheduler tick; no jobs are spawned here).
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/v1/schedules` | List all schedules |
+| `POST` | `/api/v1/schedules` | Create a schedule |
+| `GET` | `/api/v1/schedules/:id` | Fetch one schedule |
+| `PUT` / `PATCH` | `/api/v1/schedules/:id` | Update a schedule |
+| `DELETE` | `/api/v1/schedules/:id` | Delete a schedule |
+| `POST` | `/api/v1/schedules/claim` | Claim due schedules (`{ "limit": N }`, default 25, max 100) |
+
+**Request (POST / PUT):**
+```json
+{
+  "coworker_id": "outreach",
+  "cron": "0 9 * * 1-5",
+  "timezone": "Europe/Moscow",
+  "query": "Research new fintech startups",
+  "enabled": true,
+  "next_run": null
+}
+```
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `coworker_id` | string | ✅ | — | Coworker to schedule (validated id) |
+| `cron` (alias `cron_expression`) | string | ✅ | — | Five-field cron expression (≤256 chars, validated) |
+| `timezone` | string | ❌ | `"UTC"` | IANA timezone (≤128 chars) |
+| `query` | string | ✅ | — | Session query to run (≤20,000 chars) |
+| `enabled` | bool | ❌ | `true` | Whether the schedule is active |
+| `next_run` | string | ❌ | `null` | Optional next-run override (≤64 chars) |
+
+**Responses:** list → `{ "schedules": [...], "count": N }`; create → `201` `{ "schedule": { "id", "coworker_id", "cron_expression", "timezone", "query", "enabled", "next_run", "last_run", "created_at", "updated_at" } }`; claim → `{ "schedules": [...], "count": N }`.
+
+**Errors:** `400` — invalid id, empty/oversized field, or invalid cron expression; `404` — schedule not found; `500` — database error.
+
+---
+
+## Governance API
+
+Policy engine for governing agent tool actions. Governed decisions are recorded to an audit log. Governance is disabled by default unless `FATHOM_GOVERNANCE_ENABLED=true` (policy can also be seeded via `FATHOM_GOVERNANCE_POLICY`).
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/v1/governance/policy` | Get the active policy |
+| `PUT` | `/api/v1/governance/policy` | Replace the active policy (max 1000 rules) |
+| `POST` | `/api/v1/governance/decide` | Evaluate an action against the policy |
+| `GET` | `/api/v1/governance/audit` | List audit events (newest first) |
+
+### `POST /api/v1/governance/decide`
+
+Evaluate an action against the current policy. When governance is disabled, every action is allowed (but still audited).
+
+**Request:** an `ActionContext`:
+```json
+{
+  "agent": "researcher-123",
+  "session": "019fd38a-...",
+  "tool": "web_search",
+  "args": { "query": "..." }
+}
+```
+
+Optional context fields: `url`, `element`, `file`, `intent`, `mcp_metadata`.
+
+**Response 200:** a decision object `{ "decision": "allow" | "deny" }` (plus policy metadata).
+
+### `GET /api/v1/governance/audit`
+
+**Query parameters:** `limit` (default 50, max 200), `decision` (`allow`/`deny`, case-insensitive), `agent`, `session`.
+
+**Response 200:** array of audit rows, newest first:
+```json
+[{
+  "id": "...",
+  "timestamp": "2026-08-20T12:00:00Z",
+  "agent": "researcher-123",
+  "session": "...",
+  "tool": "web_search",
+  "args": "{\"query\":\"...\"}",
+  "url": null, "element": null, "file": null, "intent": null, "mcp_metadata": null,
+  "decision": "allow"
+}]
+```
+
+Audit rows are **redacted** — secrets in `args`/`mcp_metadata` are never stored raw.
+
+### `GET` / `PUT /api/v1/governance/policy`
+
+Policy is a set of rules using simple, safe string matching (never code evaluation). A deny rule always takes precedence over an allow rule; unmatched actions are denied.
+
+```json
+{ "rules": [
+  { "effect": "deny", "tool": "shell", "host": null, "path": null, "intent": null },
+  { "effect": "allow", "tool": "web_search" }
+] }
+```
+
+**Errors:** `400` — too many rules (>1000) on PUT; `500` — decide/audit failure.
+
+---
+
+## Replay API
+
+Redacted action recording timeline. Replay rows describe the bounded execution timeline of governed actions (records are separate from audit decisions — audit explains *why* an action was allowed/denied, replay describes *when* it ran). Payloads are redacted before storage and again at the API boundary.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/v1/replay` | List redacted recorded actions (newest first) |
+
+**Query parameters:**
+- `session` — filter by session id (≤256 bytes)
+- `agent` — filter by agent id (≤256 bytes)
+- `limit` — max results (default 50, max 200)
+
+**Response 200:**
+```json
+{ "actions": [
+  {
+    "id": "...",
+    "agent": "...",
+    "session": "...",
+    "tool": "computer_click",
+    "args_redacted": "{...}",
+    "decision": "allow",
+    "started_at": "...",
+    "completed_at": "...",
+    "duration_ms": 1234,
+    "result_redacted": "...",
+    "screenshot_before": null,
+    "screenshot_after": null,
+    "policy_version": "..."
+  }
+] }
+```
+
+**Errors:** `400` — invalid filter value; `500` — database error.
+
+---
+
+## Observability API
+
+Live operational counters exposing process metrics and bounded audit counts.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/v1/observability/summary` | Live counters and audit totals |
+
+**Response 200:**
+```json
+{
+  "active_sessions": 2,
+  "sessions_total": 42,
+  "agents_spawned": 128,
+  "tool_calls": 890,
+  "tokens_used": 15234567,
+  "audit_events": 500,
+  "audit_denials": 3,
+  "audit_counts_truncated": false
+}
+```
+
+`audit_counts_truncated` is `true` when the bounded audit sample reached its hard limit (10,000 rows), so counts must be treated as lower bounds.
+
+---
+
+## Notifications API
+
+Safe, operator-triggered notification delivery through channels configured in the server `[notifications]` section. The endpoint deliberately accepts only a symbolic channel name — never destination details, credentials, or message content.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `POST` | `/api/v1/notifications/test` | Send a bounded test message on one configured channel |
+
+**Request:**
+```json
+{ "channel": "telegram" }
+```
+
+`channel` must be one of `webhook`, `email`, `telegram` (case-insensitive).
+
+**Response 200:** `{ "channel": "telegram", "status": "sent" }`
+
+**Errors:**
+- `400` — unknown channel name
+- `409` — channel symbol is known but not configured server-side
+- `502` — delivery failed (addresses/transport details are deliberately not echoed)
+- `504` — delivery timed out (10 s)
+
+---
+
+## AG-UI compatibility bridge
+
+A narrow transport adapter exposing the existing agent event bus as versioned AG-UI-like SSE envelopes. It does not implement the complete AG-UI command or state protocol; events are read-only and payloads are redacted at the boundary before leaving the server.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/v1/ag-ui/events` | AG-UI-like SSE event stream |
+| `GET` | `/api/v1/ag-ui/health` | Bridge capabilities/protocol info |
+
+### `GET /api/v1/ag-ui/events`
+
+SSE stream of agent events wrapped in an AG-UI envelope. Supports resuming via the `Last-Event-ID` header or `?last_event_id=<seq>` query parameter; a keep-alive heartbeat is emitted every 15 seconds. A bounded ring (256 events) allows replay from a recent cursor after connection drops.
+
+Each message is a JSON envelope:
+```json
+{
+  "protocol": "fathom.ag-ui",
+  "version": "1",
+  "event_type": "RUN_STARTED",
+  "event_id": "019fd38a-...",
+  "timestamp_ms": 1780000000000,
+  "data": { "type": "session_started", "id": "...", "..." : "..." }
+}
+```
+
+**Event types (`event_type` field):**
+
+| `event_type` | Fathom source event |
+|--------------|---------------------|
+| `RUN_STARTED` | `session_started`, `session_forked` |
+| `RUN_FINISHED` | `session_completed` |
+| `RUN_ERROR` | `session_failed` |
+| `STEP_STARTED` | `agent_spawned` |
+| `STEP_FINISHED` | `agent_completed` |
+| `STEP_ERROR` | `agent_failed` |
+| `TEXT_MESSAGE_CONTENT` | `llm_stream_chunk` |
+| `TOOL_CALL_START` | `tool_call_started` |
+| `TOOL_CALL_END` | `tool_call_completed` |
+| `INTERRUPT` | `question_asked`, `approval_requested` |
+| `STATE_DELTA` | `finding`, `agent_state_changed`, `file_change_undone`, `title_generated` |
+| `ERROR` | bridge serialization error |
+
+**Redaction:** values under credential-bearing keys (`api_key`, `password`, `secret`, `token`, `authorization`, `private_key`, `credential`, ...) are replaced with `"[REDACTED]"` recursively.
+
+### `GET /api/v1/ag-ui/health`
+
+**Response 200:**
+```json
+{
+  "ok": true,
+  "protocol": "fathom.ag-ui",
+  "version": "1",
+  "transport": "sse",
+  "capabilities": { "events": true, "commands": false, "state_mutation": false }
+}
+```
 
 ---
 

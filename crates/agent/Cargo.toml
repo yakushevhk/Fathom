@@ -9,6 +9,7 @@ pr-llm.workspace = true
 pr-tools.workspace = true
 pr-persistence.workspace = true
 pr-memory.workspace = true
+pr-governance.workspace = true
 tokio.workspace = true
 futures.workspace = true
 tokio-util.workspace = true

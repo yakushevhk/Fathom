@@ -21,6 +21,8 @@ members = [
     "crates/server",
     "crates/tui",
     "crates/lsp",
+    "crates/governance",
+    "crates/supervisor",
 ]
 
 [workspace.package]
@@ -41,6 +43,9 @@ toml = "0.8"
 # bundled Mozilla roots + static musl builds make the binary run anywhere.
 reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "http2", "charset", "rustls-tls"] }
 reqwest-eventsource = "0.6"
+bollard = "0.18"
+ring = "0.17"
+base64 = "0.22"
 rusqlite = { version = "0.32", features = ["bundled"] }
 schemars = "0.8"
 clap = { version = "4", features = ["derive"] }
@@ -70,6 +75,8 @@ pr-memory = { path = "crates/memory" }
 pr-server = { path = "crates/server" }
 pr-tui = { path = "crates/tui" }
 pr-lsp = { path = "crates/lsp" }
+pr-governance = { path = "crates/governance" }
+pr-supervisor = { path = "crates/supervisor" }
 
 [dependencies]
 pr-core.workspace = true
@@ -82,6 +89,7 @@ pr-server.workspace = true
 pr-mcp = { path = "crates/mcp" }
 pr-tui.workspace = true
 pr-lsp.workspace = true
+pr-governance.workspace = true
 ratatui = "0.29"
 crossterm = "0.28"
 tokio.workspace = true

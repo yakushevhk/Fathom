@@ -4,7 +4,7 @@ The config is stored in `~/.fathom/config.toml` (TOML). All sections are optiona
 
 The configuration file is the single source of truth for the entire system. It is loaded once at startup by `AppConfig::load()`, which reads the path resolved from the `PR_CONFIG` environment variable (if set) or `~/.fathom/config.toml` by default. Every config struct uses `#[serde(default)]` on all fields, so new sections and keys are always backward-compatible — older configs missing newer sections (e.g. `[memory]`, `[[mcp.servers]]`, `[[hooks]]`) load without errors and use Rust-level defaults.
 
-The config is broadly divided into: LLM provider routing, agent orchestration parameters, search backends, context-management budgets, output & export, multi-channel notifications, contact database, CRM sync, long-term semantic memory, MCP tool servers, lifecycle hooks, and personality profiles.
+The config is broadly divided into: LLM provider routing, agent orchestration parameters, search backends, context-management budgets, output & export, multi-channel notifications, contact database, CRM sync, governance policy engine, credentials vault, long-term semantic memory, MCP tool servers, lifecycle hooks, computer use (browser/Playwright), personality profiles, and HTTP server settings. This reflects Fathom's positioning as a **universal autonomous AI worker** — a virtual AI employee capable of research, outreach, code, and computer use.
 
 ---
 
@@ -326,6 +326,42 @@ CRM integration pushes collected contacts to external CRM platforms. This is opt
 
 **Provider notes.** For **amoCRM** the `domain` is your subdomain (e.g. `mycompany` in `mycompany.amocrm.ru`). The `api_key` is the integration token from Settings → API Access. For **Bitrix24** the `domain` is your portal URL (e.g. `mycompany.bitrix24.com`). The `api_key` is a webhook secret or OAuth token. For **HubSpot** the `domain` field is unused; the `api_key` is a private app access token. Contacts are pushed asynchronously — the CRM sync runs in the background after the session completes, and failures are logged but do not block the session.
 
+### `[governance]`
+
+Governance enforces a policy engine that evaluates every agent action against an allow/deny ruleset before execution. When enabled, the system checks each tool call against the configured policy and blocks violations. Requires `FATHOM_GOVERNANCE_ENABLED=true` to activate.
+
+| Field | Type | Default | Description |
+|------|-----|---------|----------|
+| `enabled` | bool | `false` | Master switch for the governance policy engine |
+| `policy` | string | `""` | JSON string of allow/deny rules (see [GOVERNANCE.md](GOVERNANCE.md) for format) |
+
+**Environment variables.** These fields can also be set via environment variables:
+
+| Variable | Type | Description |
+|----------|------|-------------|
+| `FATHOM_GOVERNANCE_ENABLED` | bool | Enable governance policy engine (`true`/`false`) |
+| `FATHOM_GOVERNANCE_POLICY` | JSON string | Inline JSON policy document with allow/deny rules |
+
+**Policy format.** The `policy` field (or `FATHOM_GOVERNANCE_POLICY` env var) accepts a JSON document of the form:
+
+```json
+{"rules":[{"effect":"allow","tool":"browser.*","host":"example.com"},{"effect":"deny","tool":"browser.type","path":"/admin/*"}]}
+```
+
+When the policy is empty (default), governance still tracks actions but does not block them. See [GOVERNANCE.md](GOVERNANCE.md) for the full rule schema, audit log format, and best practices.
+
+### `[credentials]`
+
+The credentials vault provides encrypted storage for secrets (API keys, passwords, tokens) that agents can use during operation. All stored values are encrypted at rest using AES-256-GCM.
+
+| Environment variable | Description |
+|---------------------|-------------|
+| `FATHOM_CREDENTIAL_KEY` | 32-byte AES-256-GCM encryption key for the credentials vault. Must be exactly 32 bytes when decoded, encoded as 64 hex characters or base64. |
+
+**Key derivation.** The `FATHOM_CREDENTIAL_KEY` is used directly as the AES-256-GCM key (after hex/base64 decoding). A random 12-byte nonce is generated per encryption operation. Encrypted blobs are stored in SQLite alongside metadata (label, scope, timestamps). The vault is accessible via the HTTP API at `/api/v1/credentials` — list responses never include plaintext values.
+
+**Security.** Never commit the key to version control. In production, inject it via a secrets manager or environment variable. The key is read once at server startup; changing it requires a server restart and re-encryption of all stored credentials.
+
 ### `[memory]`
 
 Long-term semantic memory (see [MEMORY-KB.md](MEMORY-KB.md) for the full design). The memory subsystem stores self-contained facts in a SQLite database with hybrid (vector + BM25) search, append-only supersession chains, and an `absorb` pipeline that deduplicates and links new facts against existing ones. This is inspired by the mem0/Memora approach to persistent agent memory.
@@ -414,6 +450,47 @@ event = "Stop"
 command = "/usr/local/bin/log-metrics"
 args = ["--session-end"]
 ```
+
+---
+
+### `[computer]`
+
+Computer use gives agents a browser (via Playwright) they can drive — navigate, click, type, screenshot, inspect accessibility trees. The computer service is an optional loopback Playwright service; with Docker, Fathom can provision one isolated computer per agent. Browser egress rejects localhost, private, link-local, multicast, and cloud-metadata targets by default.
+
+| Environment variable | Default | Description |
+|----------------------|---------|-------------|
+| `FATHOM_COMPUTER_SERVICE_URL` | `http://127.0.0.1:8765` | URL of the Playwright computer service, used by the server relay |
+| `COMPUTER_SERVICE_URL` | `http://127.0.0.1:8765` | Legacy alias for the same computer service URL |
+| `COMPUTER_TOKEN` | *(auto-generated)* | Authentication token for computer service requests |
+| `COMPUTER_IMAGE` | `ghcr.io/fathom/computer:latest` | Docker image for per-agent computer containers |
+| `COMPUTER_NETWORK` | `fathom-computer` | Docker network for computer containers |
+| `COMPUTER_BASE_PORT` | `9200` | Base port for per-agent loopback ports; agent `i` gets `base_port + i` |
+| `COMPUTER_ALLOW_PRIVATE_HOSTS` | `false` | Allow localhost/private targets (development only; never bypasses metadata/multicast denies) |
+
+**Service URL selection.** `FATHOM_COMPUTER_SERVICE_URL` is the canonical variable used by the server relay. `COMPUTER_SERVICE_URL` is a legacy alias — set both if you need compatibility with older tooling; the canonical one wins when both are set. When neither is set, the server defaults to `http://127.0.0.1:8765`.
+
+**Authentication.** The `COMPUTER_TOKEN` shared secret authenticates relay requests to the computer service. When the Docker supervisor is configured, the same token is injected into provisioned per-agent containers. Without a token configured, the supervisor is unavailable and the server falls back to the single-service URL mode.
+
+**Docker per-agent computers.** Set `COMPUTER_IMAGE`, `COMPUTER_NETWORK`, `COMPUTER_TOKEN`, and `COMPUTER_BASE_PORT` to let the supervisor provision one isolated container per agent, each with its own workspace/profile volumes, loopback ports (`base_port + agent_index`), restrictive capabilities, and health checks. Containers are stopped and removed on agent completion or cancellation.
+
+**Egress policy.** `COMPUTER_ALLOW_PRIVATE_HOSTS=true` permits localhost and private ranges for development. It **never** bypasses hard denies for cloud-metadata endpoints (e.g. 169.254.169.254) or multicast addresses. Keep it `false` in production.
+
+See [COMPUTER-USE.md](COMPUTER-USE.md) for the full protocol and container lifecycle details.
+
+### `[server]`
+
+HTTP API server settings for `fathom serve`. When bound to a non-loopback address, API keys are **required**.
+
+| Environment variable | Default | Description |
+|----------------------|---------|-------------|
+| `FATHOM_API_KEYS` | *(unset = open access)* | Comma-separated API keys for non-loopback binds; all `/api/v1/*` requests require a key when set |
+| `FATHOM_RATE_LIMIT` | `120` | Per-client rate limit, requests per minute |
+
+**Authentication.** When `FATHOM_API_KEYS` (comma-separated) is set, every `/api/v1/*` request must present a valid key via `X-API-Key` header or Bearer token. Each configured key is registered with a human-readable name derived from a hash, which is used for rate-limiting and logging. Public endpoints (`/health`, `/metrics`, `/dashboard`) stay open, but the dashboard fetches data only through protected endpoints.
+
+**Non-loopback binds.** `fathom serve --host 0.0.0.0` (or any non-loopback address) is **rejected at startup** unless `FATHOM_API_KEYS` is set. Loopback binds default to open access; set `FATHOM_API_KEYS` to enable auth locally too.
+
+**Rate limiting.** Sliding-window limit per client identity (the authenticated principal name, or the client IP when auth is disabled). Each client's window is tracked independently. Exceeding the limit returns `429 Too Many Requests`. See [HTTP-API.md](HTTP-API.md) for details.
 
 ---
 

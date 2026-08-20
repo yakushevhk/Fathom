@@ -15,6 +15,7 @@ pub mod truncate;
 pub mod memory_tool;
 pub mod memory_kb;
 pub mod browser;
+pub mod computer;
 pub mod git;
 pub mod pdf;
 pub mod repl;
@@ -40,6 +41,7 @@ pub mod daemon;
 pub mod coordination;
 
 pub use registry::*;
+pub use computer::*;
 pub use search::*;
 pub use truncate::*;
 pub use shell::is_destructive_command;

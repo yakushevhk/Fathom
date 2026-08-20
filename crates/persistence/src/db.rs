@@ -1,6 +1,7 @@
 use pr_core::{AgentRecord, AgentStatus, Finding, SessionId, AgentId};
 use rusqlite::{Connection, params};
 use rusqlite::OptionalExtension;
+use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -14,7 +15,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 const POOL_SIZE: usize = 4;
 
 /// Round-robin pool over SQLite connections.
-struct ConnPool {
+pub(crate) struct ConnPool {
     slots: Vec<Mutex<Connection>>,
     next: AtomicUsize,
 }
@@ -27,7 +28,7 @@ impl ConnPool {
         }
     }
 
-    fn lock(&self) -> std::sync::MutexGuard<'_, Connection> {
+    pub(crate) fn lock(&self) -> std::sync::MutexGuard<'_, Connection> {
         let idx = self.next.fetch_add(1, Ordering::Relaxed) % self.slots.len();
         self.slots[idx].lock().unwrap()
     }
@@ -38,7 +39,7 @@ impl ConnPool {
 }
 
 pub struct Persistence {
-    conn: ConnPool,
+    pub(crate) conn: ConnPool,
 }
 
 impl Persistence {
@@ -178,6 +179,73 @@ impl Persistence {
             CREATE INDEX IF NOT EXISTS idx_findings_agent ON findings(agent_id);
             CREATE INDEX IF NOT EXISTS idx_subtasks_session ON subtasks(session_id);
             CREATE INDEX IF NOT EXISTS idx_file_changes_session ON file_changes(session_id);
+
+            CREATE TABLE IF NOT EXISTS coworkers (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                title TEXT NOT NULL,
+                role TEXT NOT NULL,
+                prompt TEXT NOT NULL,
+                visibility TEXT NOT NULL DEFAULT 'private',
+                active INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS channels (
+                id TEXT PRIMARY KEY,
+                coworker_id TEXT NOT NULL REFERENCES coworkers(id) ON DELETE CASCADE,
+                title TEXT NOT NULL,
+                session_id TEXT REFERENCES sessions(id) ON DELETE SET NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_coworkers_active ON coworkers(active);
+            CREATE INDEX IF NOT EXISTS idx_coworkers_updated ON coworkers(updated_at);
+            CREATE INDEX IF NOT EXISTS idx_channels_coworker ON channels(coworker_id);
+            CREATE INDEX IF NOT EXISTS idx_channels_session ON channels(session_id);
+            CREATE INDEX IF NOT EXISTS idx_channels_updated ON channels(updated_at);
+
+            CREATE TABLE IF NOT EXISTS audit_events (
+                id TEXT PRIMARY KEY,
+                timestamp TEXT NOT NULL,
+                agent TEXT NOT NULL,
+                session TEXT NOT NULL,
+                tool TEXT NOT NULL,
+                args TEXT NOT NULL,
+                url TEXT,
+                element TEXT,
+                file TEXT,
+                intent TEXT,
+                mcp_metadata TEXT,
+                decision TEXT NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_audit_events_timestamp ON audit_events(timestamp);
+            CREATE INDEX IF NOT EXISTS idx_audit_events_session ON audit_events(session);
+            CREATE INDEX IF NOT EXISTS idx_audit_events_agent ON audit_events(agent);
+            CREATE INDEX IF NOT EXISTS idx_audit_events_decision ON audit_events(decision);
+
+            CREATE TABLE IF NOT EXISTS replay_actions (
+                id TEXT PRIMARY KEY,
+                agent TEXT NOT NULL,
+                session TEXT NOT NULL,
+                tool TEXT NOT NULL,
+                args_redacted TEXT NOT NULL,
+                decision TEXT NOT NULL,
+                started_at TEXT NOT NULL,
+                completed_at TEXT,
+                duration_ms INTEGER,
+                result_redacted TEXT,
+                screenshot_before TEXT,
+                screenshot_after TEXT,
+                policy_version TEXT NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_replay_actions_started ON replay_actions(started_at);
+            CREATE INDEX IF NOT EXISTS idx_replay_actions_session ON replay_actions(session);
+            CREATE INDEX IF NOT EXISTS idx_replay_actions_agent ON replay_actions(agent);
         "#)?;
 
         // Migrate databases created before these columns existed.
@@ -947,6 +1015,70 @@ impl Persistence {
             Err(e) => Err(e.into()),
         }
     }
+
+    // ── Governance audit ───────────────────────────────────────────────
+
+    /// Persist a redacted governance decision. JSON fields are stored as
+    /// strings so this crate remains independent of the governance crate.
+    pub fn record_audit_event(&self, event: &AuditEventRow) -> anyhow::Result<()> {
+        let conn = self.conn.lock();
+        conn.execute(
+            "INSERT OR REPLACE INTO audit_events
+             (id, timestamp, agent, session, tool, args, url, element, file, intent, mcp_metadata, decision)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+            params![
+                event.id, event.timestamp, event.agent, event.session, event.tool,
+                event.args, event.url, event.element, event.file, event.intent,
+                event.mcp_metadata, event.decision,
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// Return all audit events in chronological order.
+    pub fn list_audit_events(&self) -> anyhow::Result<Vec<AuditEventRow>> {
+        self.list_audit_events_limited(None)
+    }
+
+    /// Return at most `limit` audit events when a limit is useful to callers.
+    pub fn list_audit_events_limited(&self, limit: Option<usize>) -> anyhow::Result<Vec<AuditEventRow>> {
+        let conn = self.conn.lock();
+        let sql = match limit {
+            Some(_) => "SELECT id, timestamp, agent, session, tool, args, url, element, file, intent, mcp_metadata, decision FROM audit_events ORDER BY timestamp ASC LIMIT ?1",
+            None => "SELECT id, timestamp, agent, session, tool, args, url, element, file, intent, mcp_metadata, decision FROM audit_events ORDER BY timestamp ASC",
+        };
+        let mut stmt = conn.prepare(sql)?;
+        let map_row = |row: &rusqlite::Row<'_>| -> rusqlite::Result<AuditEventRow> {
+            Ok(AuditEventRow {
+                id: row.get(0)?, timestamp: row.get(1)?, agent: row.get(2)?, session: row.get(3)?,
+                tool: row.get(4)?, args: row.get(5)?, url: row.get(6)?, element: row.get(7)?,
+                file: row.get(8)?, intent: row.get(9)?, mcp_metadata: row.get(10)?, decision: row.get(11)?,
+            })
+        };
+        let rows = match limit {
+            Some(n) => stmt.query_map(params![n as i64], map_row)?.collect::<rusqlite::Result<Vec<_>>>()?,
+            None => stmt.query_map([], map_row)?.collect::<rusqlite::Result<Vec<_>>>()?,
+        };
+        Ok(rows)
+    }
+}
+
+/// A serializable, persistence-only representation of a governance audit event.
+/// `args` and `mcp_metadata` contain redacted JSON text, never raw credentials.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AuditEventRow {
+    pub id: String,
+    pub timestamp: String,
+    pub agent: String,
+    pub session: String,
+    pub tool: String,
+    pub args: String,
+    pub url: Option<String>,
+    pub element: Option<String>,
+    pub file: Option<String>,
+    pub intent: Option<String>,
+    pub mcp_metadata: Option<String>,
+    pub decision: String,
 }
 
 /// A planned sub-task row (Goal Mode light).
@@ -1351,6 +1483,22 @@ mod tests {
         let db = Persistence::in_memory().unwrap();
         let resolved = db.resolve_short_id("nonexist").unwrap();
         assert!(resolved.is_none());
+    }
+
+    #[test]
+    fn audit_event_roundtrip() {
+        let db = Persistence::in_memory().unwrap();
+        let event = AuditEventRow {
+            id: "evt-1".into(), timestamp: "2026-01-01T00:00:00Z".into(),
+            agent: "agent".into(), session: "session".into(), tool: "browser.click".into(),
+            args: r#"{"value":"[REDACTED]"}"#.into(), url: Some("https://example.com".into()),
+            element: Some("e1".into()), file: None, intent: Some("read".into()),
+            mcp_metadata: None, decision: "deny".into(),
+        };
+        db.record_audit_event(&event).unwrap();
+        let rows = db.list_audit_events().unwrap();
+        assert_eq!(rows, vec![event]);
+        assert_eq!(db.list_audit_events_limited(Some(1)).unwrap().len(), 1);
     }
 
     #[test]

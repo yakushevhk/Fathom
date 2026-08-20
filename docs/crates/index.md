@@ -1,12 +1,12 @@
 # Fathom — Crate Documentation
 
-> Complete technical documentation for each of the **10 crates** in the Fathom workspace. Each document describes **every function** with a full algorithm, SQL queries, edge cases, and interactions with other modules. This index page provides an architectural overview, the dependency graph, CLI entry points, and the design rationale behind the crate decomposition.
+> Complete technical documentation for each of the **12 crates** in the Fathom workspace. Each document describes **every function** with a full algorithm, SQL queries, edge cases, and interactions with other modules. This index page provides an architectural overview, the dependency graph, CLI entry points, and the design rationale behind the crate decomposition.
 
 ---
 
 ## Project Architecture
 
-The project is a **Cargo workspace** (`resolver = "2"`) containing 10 crates, each with a well-defined responsibility. The crate boundaries are drawn to enforce dependency direction: `pr-core` sits at the bottom as a zero-dependency foundation, and everything flows upward through `pr-llm`, `pr-tools`, `pr-persistence`, and `pr-memory` into `pr-agent`, with `pr-server`, `pr-tui`, and `pr-lsp` providing the user-facing interfaces on top.
+The project is a **Cargo workspace** (`resolver = "2"`) containing 12 crates, each with a well-defined responsibility. The crate boundaries are drawn to enforce dependency direction: `pr-core` sits at the bottom as a zero-dependency foundation, and everything flows upward through `pr-llm`, `pr-tools`, `pr-persistence`, and `pr-memory` into `pr-agent`, with `pr-server`, `pr-tui`, and `pr-lsp` providing the user-facing interfaces on top. Two standalone crates — `pr-governance` and `pr-supervisor` — provide policy enforcement and Docker lifecycle management respectively, consumed by `pr-agent` and `pr-server`.
 
 ```
 fathom/
@@ -17,14 +17,17 @@ fathom/
 │   ├── agent/     → docs/crates/agent.md         # Agent loop, Coordinator, compaction, IPC, process manager
 │   ├── tools/     → docs/crates/tools.md         # 44+ tools (web, search, files, OSINT, browser, git, memory, verification)
 │   ├── mcp/       → docs/crates/mcp.md           # MCP client (stdio + HTTP), MCP server, bridge adapter
-│   ├── persistence/ → docs/crates/persistence.md # SQLite/PostgreSQL, contacts, session history, jobs
+│   ├── persistence/ → docs/crates/persistence.md # SQLite/PostgreSQL, contacts, session history, jobs, audit events
 │   ├── memory/    → docs/crates/../MEMORY-KB.md  # Long-term semantic memory: embeddings, entity graph, distillation, GC
 │   ├── server/    → docs/crates/server.md        # HTTP API (axum), auth, rate limiting, SSE, Prometheus metrics
 │   ├── tui/       → docs/crates/tui.md           # Terminal interface (ratatui), streaming, agent tree
-│   └── lsp/       → docs/crates/../lsp/          # Language Server Protocol integration (IDE support)
+│   ├── lsp/       → docs/crates/../lsp/          # Language Server Protocol integration (IDE support)
+│   ├── governance/ → docs/crates/governance.md   # Policy engine (allow/deny, fail-closed), audit decision records
+│   └── supervisor/ → docs/crates/supervisor.md   # Docker per-agent computer provisioning, health checks, lifecycle
 └── docs/
     ├── crates/    # ← you are here
     ├── ARCHITECTURE.md
+    ├── OPENBOT_ARCHITECTURE.md
     ├── CONFIGURATION.md
     ├── TOOLS.md
     ├── USAGE.md

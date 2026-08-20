@@ -1,6 +1,6 @@
 # Architecture
 
-Fathom is a modular system of **10 crates** in a Cargo workspace. The core is built around an async agent loop on `tokio` with a broadcast-channel event bus, a pluggable tool execution pipeline, and a coordinator that decomposes work across sub-agents. Every component is designed for observability, crash recovery, and graceful degradation.
+Fathom is a modular system of **12 crates** in a Cargo workspace. The core is built around an async agent loop on `tokio` with a broadcast-channel event bus, a pluggable tool execution pipeline, and a coordinator that decomposes work across sub-agents. Every component is designed for observability, crash recovery, and graceful degradation. On top of research and outreach, Fathom is a universal autonomous AI worker: it can operate a real browser (computer use), enforce governed policy with an audit trail, and run as persistent scheduled coworkers.
 
 ---
 
@@ -12,13 +12,15 @@ fathom/
 │   ├── core/          # Fundamental types and domain logic
 │   ├── llm/           # LLM provider abstraction
 │   ├── agent/         # Agent runtime, coordination, control plane
-│   ├── tools/         # 51+5 tools (51 core + 5 browser)
+│   ├── tools/         # 63 tools (57 built-in + 6 computer)
 │   ├── memory/        # Long-term semantic memory + entity graph
 │   ├── mcp/           # Model Context Protocol (client and server)
 │   ├── persistence/   # Data storage (SQLite, connection pool, jobs)
 │   ├── server/        # HTTP API
 │   ├── tui/           # Terminal interface
-│   └── lsp/           # Language server protocol (editor integration)
+│   ├── lsp/           # Language server protocol (editor integration)
+│   ├── governance/    # Policy engine — allow/deny rules, audit decision records
+│   └── supervisor/    # Docker per-agent computer provisioning
 └── src/main.rs        # CLI entry point
 ```
 
@@ -30,9 +32,12 @@ core  ←──  llm  ←──  agent  ←──  server
   └── tools ─┴── mcp ───┴── tui ────┘
        ↑          └── persistence ──┘
        └── memory ──┘ (depends on core + llm)
+
+governance ──── agent (hooks into tool execution)
+supervisor ──── server (provisions Docker containers for computer use)
 ```
 
-`core` depends on nothing (foundation). `agent` combines `llm`, `tools`, `memory`, `persistence`. The dependency graph is a strict DAG — there are no circular dependencies, which keeps compilation fast and makes each crate independently testable. The `lsp` crate provides editor integration via the Language Server Protocol, allowing IDEs to inspect sessions, memory, and submit queries from within the editor.
+`core` depends on nothing (foundation). `agent` combines `llm`, `tools`, `memory`, `persistence`, and hooks into `governance` for policy enforcement. `supervisor` provides Docker-based computer provisioning to `server`. The dependency graph is a strict DAG — there are no circular dependencies, which keeps compilation fast and makes each crate independently testable. The `lsp` crate provides editor integration via the Language Server Protocol, allowing IDEs to inspect sessions, memory, and submit queries from within the editor.
 
 ---
 
@@ -139,7 +144,8 @@ The heart of the system — the agent runtime. This crate orchestrates the LLM c
 
 4. **LLM call** — The runtime calls `stream()` on the active provider. Every text delta is forwarded to the event bus as `LlmStreamChunk` events (consumed by the TUI and HTTP SSE endpoints). Tool-call fragments are assembled incrementally — if the model emits a partial tool call (e.g., function name first, then arguments), the runtime collects fragments until the call is complete. If streaming fails mid-response, the runtime falls back to `complete()`.
 
-5. **Gates** — Before any tool call is executed, it passes through three gates in order:
+5. **Gates** — Before any tool call is executed, it passes through four gates in order:
+   - **Governance policy** — the policy engine evaluates `<tool, target>` against allow/deny rules; a `deny` verdict or an unmatched (fail-closed) pair blocks the call and is written to the audit trail
    - **Role deny** — per-role deny lists from `[agent.role_deny]` config (e.g., a `researcher` may not run `shell`)
    - **Approval** — tools listed in `[agent] approval_tools` require operator approval before execution
    - **PreToolUse hooks** — subprocess hooks that can deny the call with a reason
@@ -265,7 +271,7 @@ When the process crashes or is killed, sessions remain in the database with stat
 
 ## crates/tools
 
-**51 core tools** (+5 browser), all implement the `Tool` trait:
+**57 built-in tools + 6 computer tools** (= 63 total), all implement the `Tool` trait:
 
 ```rust
 #[async_trait]
@@ -282,6 +288,7 @@ Categories (details in [TOOLS.md](TOOLS.md)):
 - **Files**: file_read, file_write, file_edit, glob, grep
 - **Exec**: shell, python_exec, node_exec
 - **Browser (CDP)**: browser_navigate, browser_screenshot, browser_click, browser_type, browser_extract
+- **Computer use (Playwright)**: computer_snapshot, computer_navigate, computer_click, computer_type, computer_key, computer_screenshot — operate a real browser via the loopback computer service (see [COMPUTER-USE.md](COMPUTER-USE.md))
 - **Vision**: analyze_image
 - **Git**: git_status, git_diff, git_log, git_add, git_commit, git_push
 - **PDF**: pdf_extract
@@ -333,7 +340,7 @@ Long-term semantic memory (mem0/Memora model, detailed in [MEMORY-KB.md](MEMORY-
 Model Context Protocol — enables the agent to expose its tools to external MCP clients and to consume tools from external MCP servers.
 
 - **Client**: stdio + Streamable HTTP transports, OAuth client-credentials flow, dynamic tool discovery (discovers tools from remote MCP servers at runtime), reconnect with exponential backoff
-- **Server**: `fathom mcp-serve` — exposes all 51+5 tools externally via the MCP protocol. Each tool call is serialized and executed through the existing `ToolExecutor`, so MCP clients get the same behavior as in-process agents
+- **Server**: `fathom mcp-serve` — exposes all 63 tools externally via the MCP protocol. Each tool call is serialized and executed through the existing `ToolExecutor`, so MCP clients get the same behavior as in-process agents
 
 The MCP bridge allows the agent to be embedded in IDEs (via the `lsp` crate), CI/CD pipelines, or custom frontends that speak the MCP protocol.
 
@@ -357,7 +364,7 @@ Axum HTTP API (details in [HTTP-API.md](HTTP-API.md)):
 
 | Endpoint | Purpose |
 |----------|---------|
-| `POST /api/v1/sessions` | Create a research session |
+|| `POST /api/v1/sessions` | Create a research session |
 | `GET /api/v1/sessions` | List all sessions |
 | `GET /api/v1/sessions/:id` | Get session status |
 | `GET /api/v1/sessions/:id/results` | Get session results |
@@ -375,6 +382,34 @@ Axum HTTP API (details in [HTTP-API.md](HTTP-API.md)):
 | `GET /api/v1/jobs/:id/log` | Tail the job log |
 | `DELETE /api/v1/jobs/:id` | Cancel an active job |
 | `POST /api/v1/jobs/:id/rerun` | Re-run a finished/stale job |
+| `GET /api/v1/computers/:agent_id/*` | Computer use relay (snapshot, navigate, click, type, key, screenshot, screen, files, control, ensure, stop, reset) |
+| `GET /api/v1/credentials` | List credential metadata |
+| `POST /api/v1/credentials` | Store a credential |
+| `GET /api/v1/credentials/:id` | Retrieve a credential |
+| `DELETE /api/v1/credentials/:id` | Delete a credential |
+| `GET /api/v1/coworkers` | List coworkers |
+| `POST /api/v1/coworkers` | Create a coworker |
+| `GET /api/v1/coworkers/:id` | Get coworker details |
+| `PUT /api/v1/coworkers/:id` | Update coworker |
+| `DELETE /api/v1/coworkers/:id` | Delete coworker |
+| `POST /api/v1/coworkers/:id/run` | Trigger a coworker run |
+| `GET /api/v1/channels` | List channels |
+| `POST /api/v1/channels` | Create a channel |
+| `GET /api/v1/channels/:id` | Get channel details |
+| `PUT /api/v1/channels/:id` | Update channel |
+| `DELETE /api/v1/channels/:id` | Delete channel |
+| `GET /api/v1/schedules` | List schedules |
+| `POST /api/v1/schedules` | Create a schedule |
+| `GET /api/v1/schedules/:id` | Get schedule details |
+| `PUT /api/v1/schedules/:id` | Update schedule |
+| `DELETE /api/v1/schedules/:id` | Delete schedule |
+| `POST /api/v1/schedules/claim` | Atomic claim a schedule |
+| `GET /governance/audit` | Stream audit records |
+| `GET /governance/decide` | Real-time decision logs |
+| `GET /api/v1/observability/summary` | Cluster-wide observability summary |
+| `POST /api/v1/notifications/test` | Send a test notification |
+| `GET /ag-ui/events` | AG-UI versioned event stream |
+| `GET /ag-ui/health` | AG-UI health check |
 | `GET /health` | Health check |
 | `GET /metrics` | Prometheus metrics |
 | `GET /dashboard` | Embedded single-file live dashboard |
@@ -385,6 +420,49 @@ Axum HTTP API (details in [HTTP-API.md](HTTP-API.md)):
 - **Control plane** — The `POST /api/v1/sessions/:id/answer` and `POST /api/v1/sessions/:id/approve` endpoints resolve pending `question` and `approval` requests by sending the operator's response through the oneshot channel to the waiting agent.
 - **Auth** — API key authentication via `X-API-Key` header, rate limiting (default 120 requests/minute per client, configurable via `FATHOM_RATE_LIMIT` env var), Prometheus metrics for request duration, total requests, and in-flight sessions.
 - **Embedded dashboard** — A single-file HTML dashboard (`assets/dashboard.html`) is served at `GET /dashboard`. It provides a read-only live view of all sessions, agents, events, and memory state, consuming the same REST/SSE API that external clients use.
+- **AG-UI stream** — `GET /ag-ui/events` exposes versioned AG-UI event envelopes with bounded reconnect replay via `Last-Event-ID`; `GET /ag-ui/health` is the liveness probe.
+- **Computer relay** — `GET/POST /api/v1/computers/:agent_id/*` proxies the computer service (snapshot, navigate, click, type, key, screenshot, screen, files, control, ensure, stop, reset) and routes to the right Docker container per agent via the supervisor.
+- **Governance** — `GET /governance/audit` and `GET /governance/decide` expose the immutable audit trail of authorization decisions; `/api/v1/credentials` manages the AES-256-GCM encrypted credentials vault (operator-only, plaintext never returned).
+- **Coworkers / channels / schedules** — full lifecycle management of persistent autonomous workers: lifelong profiles (`/coworkers`), symbolic delivery channels (`/channels`), and cron-like timers with atomic claim (`/schedules`, `/schedules/claim`).
+- **Observability** — `GET /api/v1/observability/summary` aggregates cluster-wide state; `POST /api/v1/notifications/test` exercises notification channels.
+
+---
+
+## crates/governance
+
+Policy engine and audit trail — see [GOVERNANCE.md](GOVERNANCE.md) for the full reference.
+
+| Module | Purpose |
+|--------|---------|
+| `policy` | `PolicyEngine` — loads allow/deny rules from `policy.toml`, evaluates `<tool, target>` pairs, fail-closed on no match |
+| `audit` | `AuditTrail` — immutable append-only SQLite-backed decision log with secret redaction and queryable by tool/agent/verdict/date-range |
+| `vault` | `CredentialsVault` — AES-256-GCM encrypted secret store, operator-only access, no secret-input tool in the agent registry |
+| `relay` | `ServerRelay` — intercepts tool calls that need authentication, injects vault credentials, adds `x-fathom-operator` claim |
+
+**Key architectural decisions:**
+- **Deny wins** — if any matching rule denies, the call is blocked regardless of any allow rules that also match
+- **Fail-closed** — unmatched tool+target pairs are denied by default
+- **Redact on write** — secret-like values (API keys, tokens, PEM, base64) are detected by regex and replaced with `[REDACTED]` before audit persistence
+- **No credential exposure** — the agent registry has no tool for reading or writing credentials; only the operator relay injects them
+
+---
+
+## crates/supervisor
+
+Docker per-agent computer provisioning — see [COMPUTER-USE.md](COMPUTER-USE.md) for the full reference.
+
+| Module | Purpose |
+|--------|---------|
+| `provision` | `Provisioner` — pulls the computer image, creates per-agent containers with persistent workspace volumes and browser profiles |
+| `network` | `NetworkManager` — manages the Docker network, loopback port mapping, and restrictive capabilities |
+| `health` | `HealthChecker` — liveness probe on the computer service port, timeout-based container recycling |
+| `lifecycle` | `ContainerLifecycle` — create, start, stop, remove containers with RAII cleanup |
+
+**Key architectural decisions:**
+- **One container per agent** — each agent gets an isolated computer with its own workspace, browser profile, and network namespace
+- **Loopback isolation** — containers are mapped to unique ports (`COMPUTER_BASE_PORT + agent_index`) so agents never share state
+- **Restrictive by default** — no `--privileged`, no host networking, no read-write host mounts, limited syscalls via seccomp
+- **Auto-cleanup** — containers are stopped and removed when the agent finishes or is cancelled (via cancellation token propagation)
 
 ---
 
@@ -414,16 +492,22 @@ Coordinator ──plans──► [sub-task 1, sub-task 2, ...]
     │
     ├──spawn──► AgentRuntime (researcher) ──tools──► web_search, web_fetch, extract_contacts
     ├──spawn──► AgentRuntime (researcher) ──tools──► parse_corporate_site, enrich_person
-    └──spawn──► AgentRuntime (analyst)    ──tools──► file_read, python_exec
+    ├──spawn──► AgentRuntime (analyst)    ──tools──► file_read, python_exec
+    └──spawn──► AgentRuntime (computer)   ──tools──► computer_snapshot, computer_click, computer_type
     │
     │  ◄──── budget-capped summaries ────
     ▼
 Synthesize ──► summary.md + findings/
     │
     ├──► Long-term memory (absorb contacts and results)
+    │
+    ├──► Governance audit (every tool call authorized + redacted
+    │     decision record appended to the audit trail)
     ▼
 Export (PDF/HTML/JSON) + Notify (webhook/email/Telegram) + CRM sync
 ```
+
+**Computer use flow.** When a sub-task requires operating a real browser, the runtime routes the `computer_*` tools through the server relay to a supervisor-provisioned Docker container running the Playwright loopback service (`apps/computer`). The agent receives accessibility-tree snapshots with opaque refs, interacts via refs, and a human operator can take over at any time over `/control/ws` or watch the live stream over `/screen` (details in [COMPUTER-USE.md](COMPUTER-USE.md)).
 
 **The event bus ties everything together.** Every component publishes and subscribes to `AgentEvent` via a `tokio::sync::broadcast` channel:
 
@@ -493,8 +577,8 @@ The system is wired together through three shared primitives:
 
 1. **`tokio::sync::broadcast`** — The event bus. Every subsystem that needs observability subscribes to the broadcast channel. The channel is bounded (capacity 1024) and drops the oldest event if a slow subscriber can't keep up — this ensures a slow TUI or HTTP client can't block the agent loop.
 
-2. **`Persistence` (Arc-shared)** — All stateful operations (sessions, agents, messages, findings, jobs, memory) go through the persistence layer. The connection pool ensures concurrent access doesn't serialize.
+2. **`Persistence` (Arc-shared)** — All stateful operations (sessions, agents, messages, findings, jobs, memory, coworkers, credentials, schedules) go through the persistence layer. The connection pool ensures concurrent access doesn't serialize.
 
 3. **`CancellationToken` (tokio_util)** — Every agent and job receives a cancellation token. When the user cancels a session (via HTTP, TUI, or CLI), the token is triggered, and all in-flight operations (LLM calls, tool executions, agent loops) are cancelled at their next await point.
 
-The `AppState` struct in the server crate holds Arc references to the persistence layer, the broadcast sender, and the control-plane channels. The TUI holds similar references, allowing both frontends to operate on the same running sessions interchangeably.
+The `AppState` struct in the server crate holds Arc references to the persistence layer, the broadcast sender, the control-plane channels, the governance policy engine, and the supervisor provisioner. The TUI holds similar references, allowing both frontends to operate on the same running sessions interchangeably. The **Tauri v2 desktop app** (`apps/desktop`) and the **Next.js 16 web dashboard** (`apps/web`) are separate frontends that consume the HTTP/SSE surface: live screens and agent trees, human takeover, masked secret entry, policy editing, audit review, and computer lifecycle states.

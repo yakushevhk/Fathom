@@ -9,7 +9,7 @@ use tokio::sync::broadcast;
 use tracing_subscriber::EnvFilter;
 
 #[derive(Parser)]
-#[command(name = "fathom", about = "Autonomous research agent with hierarchical sub-agents")]
+#[command(name = "fathom", about = "Universal autonomous AI worker — research, outreach, code, computer use")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,

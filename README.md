@@ -4,45 +4,58 @@
 
 <p align="center">
   <strong>Fathom</strong>
-  <strong>— autonomous research agent for OSINT, lead generation, and deep-dive analysis.</strong>
+  <strong>— universal autonomous AI worker. Research, outreach, code, computer use — any task, autonomously.</strong>
 </p>
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/Rust-2021-DEA584?style=flat&colorA=222222&logo=rust&logoColor=white" alt="Rust"></a>
-  <a href="#"><img src="https://img.shields.io/badge/LOC-72k-blue?style=flat&colorA=222222" alt="LOC"></a>
+  <a href="#"><img src="https://img.shields.io/badge/LOC-72k+-blue?style=flat&colorA=222222" alt="LOC"></a>
   <a href="#"><img src="https://img.shields.io/badge/tests-1407%20passed-3FB950?style=flat&colorA=222222" alt="Tests"></a>
-  <a href="#"><img src="https://img.shields.io/badge/tools-51+5%20browser-58A6FF?style=flat&colorA=222222" alt="Tools"></a>
-  <a href="#"><img src="https://img.shields.io/badge/crates-10-3178C6?style=flat&colorA=222222" alt="Crates"></a>
+  <a href="#"><img src="https://img.shields.io/badge/tools-63-58A6FF?style=flat&colorA=222222" alt="Tools"></a>
+  <a href="#"><img src="https://img.shields.io/badge/crates-12-3178C6?style=flat&colorA=222222" alt="Crates"></a>
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-58A6FF?style=flat&colorA=222222" alt="License"></a>
 </p>
 
 ---
 
-**Fathom** is an autonomous research agent written in Rust. It accepts a natural-language query, decomposes it into sub-tasks with hierarchical sub-agents, and uses 51 tools — across 7 search backends, OSINT extraction, browser automation, shell execution, and semantic memory — to gather, verify, and persist information.
+**Fathom** is a universal autonomous AI worker written in Rust. It accepts a natural-language task, decomposes it into sub-tasks with hierarchical sub-agents, and executes them autonomously — **research, outreach, code development, computer use, data processing, scheduled operations, lead generation, or anything you can describe in plain language**.
 
 > Sub-agents spawn sub-agents. Coordinators plan, researchers gather, analysts cross-reference, verifiers fact-check, writers produce output. All in one binary.
 
-Unlike a single-shot LLM prompt, Fathom treats research as an **ongoing, parallel process**: it plans, branches out across search backends and browser sessions, cross-references findings, fact-checks them against memory and live sources, and finally writes a structured report — all while streaming progress to a TUI, HTTP dashboard, or background job log. Everything is memory-backed, so knowledge accumulates between runs.
+Fathom is your **virtual remote AI assistant and employee**: deploy it on a server, give it tasks via CLI, HTTP API, TUI, background jobs, or cron schedules — and it works autonomously, with a governed policy engine, an encrypted credentials vault, scheduled runs, notification channels, and a **real browser-based computer it can operate just like a human**. Everything is memory-backed, so knowledge accumulates between runs.
 
 ## How it works
 
-1. **Submit** a natural-language query via CLI, TUI, HTTP API, or background job.
-2. **Plan** — a coordinator agent decomposes the query into sub-tasks and spawns hierarchical sub-agents.
-3. **Gather** — researchers fan out across 7 search backends, browser automation, and OSINT extraction tools in parallel.
-4. **Verify** — analyst and verifier agents cross-reference findings, check contradictions, and confirm facts.
-5. **Persist** — verified facts are absorbed into long-term semantic memory and written to the contact database.
-6. **Deliver** — the writer produces the final report in PDF, HTML, JSON, DOCX, or Markdown, optionally pushed to your CRM.
+1. **Submit** a natural-language task via CLI, TUI, HTTP API, background job, or scheduled cron.
+2. **Plan** — a coordinator agent decomposes the task into sub-tasks and spawns hierarchical sub-agents (`spawn_agent` tool).
+3. **Execute** — researchers, coders, and outreach agents fan out across search backends, browser automation (CDP), computer use (Playwright), shell execution, code analysis, and OSINT extraction tools — all in parallel.
+4. **Verify** — analyst and verifier agents cross-reference findings, check contradictions, and confirm facts against live sources.
+5. **Persist** — verified facts, contacts, and notes are absorbed into long-term semantic memory and databases.
+6. **Deliver** — the writer produces a report, code, an exported contact list, or a notification — in PDF, HTML, JSON, DOCX, Markdown, or pushed straight to your CRM.
+
+Unlike a single-shot LLM prompt, Fathom treats work as an **ongoing, parallel process**: it plans, branches out across search backends, browser sessions, computer use, and shell commands, cross-references results, and delivers — all while streaming progress to a TUI, an HTTP dashboard, or a background job log.
+
+## Capabilities
+
+| Area | What Fathom can do |
+|------|--------------------|
+| **Research** | 7 search backends, web scraping, browser automation, PDF extraction, OSINT, lead generation, company/person enrichment |
+| **Outreach** | Email/phone verification, contact extraction, CRM push (amoCRM, Bitrix24, HubSpot), Telegram notifications, scheduled campaigns |
+| **Code** | Git operations, AST code analysis, file editing, shell execution, Python/Node REPL, codebase mapping |
+| **Computer use** | Playwright browser automation, screen snapshots, click/type/navigate, file workspace, human takeover, screen sharing |
+| **Scheduling** | Cron-like autonomous runs, scheduled harvesting, atomic claim, retries with exponential backoff |
+| **Governance** | Allow/deny policy engine, audit trail, AES-256-GCM credentials vault, operator-only secret entry |
+| **Memory** | Long-term semantic memory, hybrid search (vectors + BM25), entity graph, knowledge accumulation across sessions |
 
 ## Metrics
 
 | metric | value |
 |---|---|
-| **Rust LOC** (source) | **67,588** |
-| **Rust LOC** (tests) | **4,443** |
-| **Total** | **72,031** |
-| **Rust files** | **141** |
-| **Crates** | **10** |
-| **Tools** | **51 + 5 browser** (CDP) |
+| **Rust LOC** (source) | **67,588+** |
+| **Rust LOC** (tests) | **4,443+** |
+| **Rust files** | **141+** |
+| **Crates** | **12** |
+| **Tools** | **63** (57 built-in + 6 computer) |
 | **Search backends** | 7 (Linkup, Exa, Tavily, Serper, Brave, Parallel.ai, DuckDuckGo) |
 | **Test annotations** | **204** (`#[test]` / `#[tokio::test]` / `#[proptest]`) |
 | **Test files** | **22** |
@@ -72,11 +85,11 @@ Unlike a single-shot LLM prompt, Fathom treats research as an **ongoing, paralle
 
 ### 01 · Hierarchical sub-agents — tree of agents, broadcast bus, parallel execution
 
-When you submit a query, Fathom doesn't just feed it to a single LLM call. A **coordinator agent** first analyzes the request, decomposes it into discrete sub-tasks, and spawns **researcher agents** via the `spawn_agent` tool. Each researcher can itself spawn child agents (depth-limited to prevent runaway recursion), forming a live tree of agents that work in parallel.
+When you submit a task, Fathom doesn't just feed it to a single LLM call. A **coordinator agent** first analyzes the request, decomposes it into discrete sub-tasks, and spawns **worker agents** via the `spawn_agent` tool. Each worker can itself spawn child agents (depth-limited to prevent runaway recursion), forming a live tree of agents that work in parallel.
 
 Under the hood, this is powered by a **`JoinSet`-based runtime**: every spawned agent runs as a tokio task, and the coordinator awaits their results concurrently. Communication happens over a **broadcast message bus** — agents emit typed events (plans, findings, errors, completions) that any parent or sibling can subscribe to. Background agents deliver results as structured notifications rather than blocking the parent.
 
-The architecture is designed for **branching research**: one branch searches the web, another scrapes specific pages, a third queries a database — all simultaneously. The coordinator merges results, detects conflicts, and hands off to analyst or verifier agents as needed.
+The architecture is designed for **branching work**: one branch searches the web, another scrapes specific pages, a third edits code, a fourth operates a browser — all simultaneously. The coordinator merges results, detects conflicts, and hands off to analyst or verifier agents as needed.
 
 ### 02 · 7 search backends, one unified interface
 
@@ -105,21 +118,22 @@ All extracted contacts are written to a **deduplicated contact database** (SQLit
 
 **Goal Mode** is the crown jewel of OSINT workflows. An LLM judge evaluates the completeness of gathered data against a goal specification (e.g., "find CEO email and LinkedIn at Acme Corp"). If the goal is unmet, the system runs **gap-filling rounds**: the judge identifies what's missing, and agents re-focus their search on the gaps. This continues until the goal is satisfied or the maximum round limit is reached. The result is a structured report showing what was found, what's still missing, and the confidence level for each field.
 
-### 04 · 51 tools (+5 browser) — extensible tool registry
+### 04 · 63 tools — extensible tool registry
 
-Fathom ships with **51 built-in tools** plus **5 browser automation tools** (CDP-based), all managed through a central **tool registry** with typed schemas, validation, and automatic documentation generation.
+Fathom ships with **57 built-in tools** plus **6 computer-use tools**, all managed through a central **tool registry** with typed schemas, validation, and automatic documentation generation.
 
 **Tool categories:**
 
 | Category | Tools |
 |---|---|
 | **Web search** | `web_search`, `web_fetch`, `web_crawl`, `web_feed` |
-| **Browser** | `browser_navigate`, `browser_click`, `browser_type`, `browser_extract`, `browser_screenshot` (CDP) |
+| **Browser (CDP)** | `browser_navigate`, `browser_click`, `browser_type`, `browser_extract`, `browser_screenshot` |
+| **Computer use** | `computer_snapshot`, `computer_navigate`, `computer_click`, `computer_type`, `computer_key`, `computer_screenshot` |
 | **File system** | `file_read`, `file_write`, `file_edit`, `glob`, `grep` |
 | **Shell** | `shell` (sandboxed) |
 | **Code analysis** | `code_symbols`, `repo_map` (AST-based codebase understanding) |
 | **OSINT** | `verify_email`, `suggest_emails`, `verify_phone`, `verify_social_profile`, `search_social`, `search_business_directory`, `find_leads`, `enrich_company`, `enrich_person`, `extract_contacts`, `parse_corporate_site`, `search_news` |
-| **Memory** | `memory_absorb`, `memory_search`, `memory_digest`, `memory_boost`, `memory_link`, `memory_graph`, `memory` (basic) |
+| **Memory** | `memory_absorb`, `memory_search`, `memory_digest`, `memory_boost`, `memory_link`, `memory_graph`, `memory` |
 | **Data** | `parse_html`, `extract_json` |
 | **Vision** | `analyze_image` (image understanding via LLM) |
 | **Git** | `git_status`, `git_diff`, `git_log`, `git_add`, `git_commit`, `git_push` |
@@ -131,11 +145,40 @@ Fathom ships with **51 built-in tools** plus **5 browser automation tools** (CDP
 
 Each tool declares its JSON schema, a natural-language description, and cost/rate-limit metadata. The LLM sees these schemas as tool definitions and can invoke any tool in the same turn. Tool dispatch overhead is ~0.75 µs per call — negligible even in complex chains.
 
-The browser tools control a **headless Chromium** instance via the Chrome DevTools Protocol (CDP), enabling JavaScript-rendered page interaction, screenshot capture, PDF generation, and form filling — crucial for sites that require client-side rendering.
+### 05 · Computer use (Playwright) — a real browser the agent operates
 
-### 05 · Long-term semantic memory — hybrid search, entity graph, absorb pipeline
+Beyond headless CDP scraping, Fathom can **operate a full real browser** — a loopback Playwright service (`apps/computer`) that controls a persistent Chromium profile:
 
-Fathom's memory system persists knowledge across sessions, building a growing knowledge base from every research run. It's powered by a **hybrid search engine** combining:
+- **Accessibility-tree snapshots** with opaque refs — the agent "sees" the page like a screen-reader and interacts via refs, never brittle CSS.
+- **Multiple tab-scoped snapshots**, stale-ref rejection, `navigate` / `click` / `type` / `key` / `screenshot`.
+- **Screen streaming** (`/screen` WebSocket) and **human takeover** over `/control/ws` — a human can grab control at any time to unblock the agent.
+- **Confined file workspace** — bounded, path-confined reads/writes.
+
+**Browser egress is guarded**: localhost, private, link-local, multicast, and metadata targets are rejected by default. `COMPUTER_ALLOW_PRIVATE_HOSTS=true` is for local development only and never bypasses metadata/multicast denies.
+
+With `crates/supervisor` and Docker, Fathom provisions **one isolated computer per agent** — persistent workspace/profile volumes, loopback ports, restrictive capabilities, health checks.
+
+### 06 · Governance & safety — policy engine, audit trail, encrypted secrets
+
+Fathom's agent runtime is **governed by an explicit policy engine** (`crates/governance`):
+
+- **Allow/deny rules** on tool + target (e.g., allow `browser.*` on `example.com`, deny `browser.type` on `/admin/*`). Deny wins; an empty or unmatched policy **fails closed**.
+- **Every tool call is authorized** before execution; redacted authorization events are persisted to an immutable audit trail (`/governance/audit`, `/governance/decide`).
+- **Credentials vault** — secrets are stored AES-256-GCM encrypted via `/api/v1/credentials`; list responses never include plaintext, and there is **no secret-input tool** in the agent registry. Operators enter secrets through the UI; the relay adds an `x-fathom-operator` claim.
+- Secret-like values are redacted before audit persistence.
+
+### 07 · Coworkers & schedules — autonomous recurring workers
+
+Fathom can run as **persistent remote employees**:
+
+- **Coworkers** are durable profiles (persisted in SQLite) — each with its own identity, goals, and optional linked Fathom session / channel.
+- **Channels** link coworkers to surfaces (CLI, HTTP, messaging) where they can be addressed.
+- **Schedules** trigger coworker runs on cron-like timers (`/api/v1/schedules`), **atomically claimed** so concurrent runners never execute the same task twice.
+- **Notifications** deliver results to configured symbolic channels (Telegram, email, webhooks).
+
+### 08 · Long-term semantic memory — hybrid search, entity graph, absorb pipeline
+
+Fathom's memory system persists knowledge across sessions, building a growing knowledge base from every run. It's powered by a **hybrid search engine** combining:
 
 - **Vector similarity** (embeddings via the configured LLM) — for semantic search ("companies that use Rust")
 - **BM25 text ranking** — for keyword precision ("CEO email Acme Corp")
@@ -150,13 +193,13 @@ The **absorb pipeline** processes new facts before storage:
 
 The **entity graph** stores typed relationships between entities: `works_at`, `leads`, `reports_to`, `invests_in`, `competes_with`, and custom relation types. The `memory_graph` tool returns subgraph visualizations showing connections between entities.
 
-**Digest** runs before each research session: the system summarizes the most relevant facts from memory into the agent's context window, giving it a running-start knowledge of the domain. **GC** periodically prunes stale facts (configurable TTL, default 90 days) and merges duplicate entity records.
+**Digest** runs before each session: the system summarizes the most relevant facts from memory into the agent's context window, giving it a running-start knowledge of the domain. **GC** periodically prunes stale facts (configurable TTL, default 90 days) and merges duplicate entity records.
 
 Memory operations are fast: absorb takes 94–1020 µs per fact, hybrid search at 1K facts runs in 1.6–2.3 ms, and a full digest completes in ~4.8 ms.
 
-### 06 · Durable background jobs — survive restarts, retry, full HTTP API
+### 09 · Durable background jobs — survive restarts, retry, full HTTP API
 
-Long-running research tasks don't need to block the terminal. Fathom's **durable job system** lets you submit, monitor, and manage asynchronous research operations.
+Long-running tasks don't need to block the terminal. Fathom's **durable job system** lets you submit, monitor, and manage asynchronous operations.
 
 ```
 fathom jobs submit "Analyze market X"
@@ -167,13 +210,11 @@ fathom jobs cancel <id>
 fathom jobs rerun <id>
 ```
 
-Jobs are **SQLite-backed** — they survive process restarts, server reboots, and crashes. The scheduler uses **attack-count retries** with exponential backoff: if a job fails, it's retried up to the configured limit with increasing delays between attempts.
+Jobs are **SQLite-backed** — they survive process restarts, server reboots, and crashes. The scheduler uses **attempt-count retries with exponential backoff**: if a job fails, it's retried up to the configured limit with increasing delays. From the second attempt on, the agent receives the original task **plus the previous failure** — so it can diagnose its partial workspace and fix its own mistake instead of blindly rerunning.
 
 Each job tracks its full lifecycle: `queued → running → completed / failed / cancelled`. The job log captures every agent event, tool call, and output chunk, streamable via `jobs logs`.
 
-The same job system is exposed over the **HTTP API** (`POST /jobs`, `GET /jobs/:id`, `DELETE /jobs/:id`), enabling external tools (cron, CI/CD, dashboards) to schedule research programmatically.
-
-### 07 · MCP (Model Context Protocol) — client and server
+### 10 · MCP (Model Context Protocol) — client and server
 
 Fathom implements the **Model Context Protocol** (MCP), making it both a consumer and provider of MCP-compatible tools.
 
@@ -184,51 +225,51 @@ Fathom implements the **Model Context Protocol** (MCP), making it both a consume
 - Automatic reconnection on transport failure
 - OAuth token refresh for authenticated servers
 
-**MCP Server** (`mcp-serve`) — Fathom can expose its own 51-tool arsenal to external MCP clients. Run `fathom mcp-serve` to start an MCP server that any MCP-compatible host (IDE agents, automation platforms, other AI systems) can connect to and use. This turns Fathom into a **research backend** for other AI tools.
+**MCP Server** (`mcp-serve`) — Fathom can expose its whole toolbox to external MCP clients. Run `fathom mcp-serve` and any MCP-compatible host (IDE agents, automation platforms, other AI systems) can connect and use it. This turns Fathom into an **agent backend** for other AI tools.
 
-### 08 · HTTP API + dashboard — real-time streaming, mid-run steering, approvals
+### 11 · HTTP API + dashboard — real-time streaming, steering, approvals, observability
 
 Fathom's HTTP server is built on **Axum** with a full REST API, real-time event streaming, and operational controls.
 
 **API features:**
 
-- **Authentication** — API key or JWT-based auth with role-based access control
-- **Rate limiting** — per-key and per-IP rate limiting with configurable windows
-- **Prometheus metrics** — `/metrics` endpoint exposing tool call counts, latency histograms, agent spawn rates, memory hit rates, and error counters
-- **SSE streaming** — `GET /sessions/:id/stream` pushes agent events to connected clients in real-time: plans, tool calls, results, errors, completions. Each event is JSON with typed payloads.
-- **Mid-run steering** — `POST /sessions/:id/steer` lets you inject instructions into a running session. The agent receives your steer as a high-priority message and adjusts its plan accordingly.
-- **Approval endpoints** — tools can be configured as "approval-required." When an agent tries to use one, the server pauses, sends an approval request via SSE, and waits for `POST /approve/:id` or `POST /reject/:id` before proceeding.
-- **Question/answer** — agents can emit questions to the user mid-run via the `ask_user` mechanism. The server exposes `GET /sessions/:id/questions` and `POST /sessions/:id/answer/:question_id`.
+- **Authentication** — API key or JWT-based auth with role-based access control; non-loopback binds require `FATHOM_API_KEYS`.
+- **Rate limiting** — per-key and per-IP rate limiting with configurable windows (`FATHOM_RATE_LIMIT`).
+- **Prometheus metrics** — `/metrics` endpoint exposing tool call counts, latency histograms, agent spawn rates, memory hit rates, and error counters.
+- **SSE streaming** — `GET /sessions/:id/events` pushes agent events to connected clients in real-time: plans, tool calls, results, errors, completions. **AG-UI** (`/ag-ui/events`) provides versioned event envelopes with bounded reconnect replay via `Last-Event-ID`.
+- **Mid-run steering** — `POST /sessions/:id/steer` lets you inject instructions into a running session.
+- **Approval endpoints** — tools can be approval-required; the server pauses, emits an approval request via SSE, and waits for `POST /sessions/:id/approve` or `/reject` before proceeding.
+- **Question/answer** — agents emit questions mid-run via the `ask_user` mechanism.
+- **Coworkers / channels / schedules / credentials / replay / observability** — full lifecycle management of autonomous workers under `/api/v1/…`.
+- **Computer relay** — `/api/v1/computers/:agent_id/*` proxies the computer service (snapshot, click, type, key, screen, files, control) and routes to the right Docker container per agent.
 
-The **dashboard** is a bundled web UI (Astro-based) showing live session trees, agent status, token usage, and search results — accessible at `http://localhost:8080/dashboard`.
+The bundled **Astro dashboard** (`/dashboard`), the **Tauri v2 desktop app** (`apps/desktop`), and the **Next.js 16 web panel** (`apps/web`) provide live screens, agent trees, human takeover, masked secret entry, policy editing, audit review, and computer lifecycle states.
 
-### 09 · TUI (ratatui) — interactive tree view, live streaming, session replay
+### 12 · TUI (ratatui) — interactive tree view, live streaming, session replay
 
-For terminal-first users, Fathom provides a full **TUI** built with **ratatui** (the Rust terminal UI framework).
+For terminal-first users, Fathom provides a full **TUI** built with **ratatui**.
 
 **TUI features:**
 
-- **Tree view** — see the full agent hierarchy as an interactive tree. Each node shows the agent's role, status, token count, and elapsed time. Navigate with arrow keys, expand/collapse branches with `+`/`-`.
-- **Token sparkline** — a real-time sparkline chart showing token consumption per agent, helping you spot runaway agents before they hit budgets.
-- **Live streaming** — select any agent node to see its output stream in real-time: tool calls, results, LLM reasoning. The stream updates as events arrive.
-- **Session replay** — saved sessions (from `jobs log` or `sessions archive`) can be replayed in the TUI, stepping through the timeline of events at your own pace.
-- **Color-coded roles** — coordinators in blue, researchers in green, analysts in yellow, verifiers in red, writers in cyan. At a glance you know who's doing what.
+- **Tree view** — the full agent hierarchy as an interactive tree: role, status, token count, elapsed time per node.
+- **Token sparkline** — real-time token consumption per agent, so you spot runaway agents before they hit budgets.
+- **Live streaming** — select any agent node to see its output stream in real-time.
+- **Session replay** — saved sessions replayed in the TUI, stepping through the timeline at your own pace.
+- **Color-coded roles** — coordinators blue, researchers green, analysts yellow, verifiers red, writers cyan.
 
-The TUI runs alongside active research and can be detached and re-attached, making it suitable for long-running SSH sessions.
-
-### 10 · Context management — token budgets, stall detection, compaction, CJK-aware
+### 13 · Context management — token budgets, stall detection, compaction, CJK-aware
 
 LLM context windows are the bottleneck of any agent system. Fathom's context management subsystem ensures you get the most out of every token.
 
-**CJK-aware token counting** — uses `tiktoken-rs` with configured encoding (cl100k_base by default). Chinese, Japanese, and Korean characters are counted correctly, so mixed-language queries don't silently overflow.
+**CJK-aware token counting** — uses `tiktoken-rs` with configured encoding (cl100k_base by default).
 
-**Tool output truncation** — when a tool returns a large result (e.g., a full web page), the system truncates it intelligently: it keeps the beginning and end (where important content typically lives), removes redundant whitespace, and strips HTML tags. Truncation is CJK-aware and respects word boundaries.
+**Tool output truncation** — large tool results are truncated intelligently (keep head/tail, strip redundant whitespace and HTML), CJK-aware and word-boundary respecting.
 
-**Hermes-style compaction** — inspired by the Hermes project, Fathom can compact conversation history by summarizing older turns into a condensed representation. The LLM generates a compact summary of the conversation so far, which replaces the full history in the context window. This preserves semantic continuity while dramatically reducing token usage.
+**Hermes-style compaction** — conversation history is condensed into LLM-generated summaries, replacing older turns while preserving semantic continuity.
 
-**Per-session token budgets** — each session has a configurable token budget (default 128K tokens). When the budget is near exhaustion, the system enters "economy mode": fewer parallel branches, shorter tool outputs, aggressive compaction. If the budget is exceeded, the coordinator is forced to wrap up.
+**Per-session token budgets** — default 128K tokens; near exhaustion the system enters "economy mode" (fewer branches, shorter outputs, aggressive compaction).
 
-**Stall detection** — agents that produce no output or tool calls for a configurable period (default 60s) are flagged. The system first warns the agent ("You haven't produced output in 60s. Please continue."). If the stall persists, the agent is killed and its parent notified. This prevents deadlocked agents from consuming resources indefinitely.
+**Stall detection** — agents silent for a configurable period are warned, then killed and reported to their parent.
 
 ## Quick start
 
@@ -245,7 +286,7 @@ cargo build --release
 # HTTP API server — REST endpoints, SSE streaming, Prometheus metrics, dashboard
 ./target/release/fathom serve --port 8080
 
-# MCP server — expose all 51 tools to external MCP clients (IDE agents, other AI)
+# MCP server — expose all 63 tools to external MCP clients (IDE agents, other AI)
 ./target/release/fathom mcp-serve
 
 # Semantic memory — search, inspect, and manage the knowledge base
@@ -258,9 +299,12 @@ cargo build --release
 
 # Background jobs — submit, monitor, cancel, rerun durable research tasks
 ./target/release/fathom jobs submit "Analyze market X"
+
+# Profiling — personas for different kinds of work (hunter, analyst, validator…)
+./target/release/fathom profiles list
 ```
 
-## OSINT example
+## OSINT / outreach example
 
 ```bash
 ./target/release/fathom run \
@@ -275,11 +319,38 @@ This single command triggers the full pipeline: a coordinator decomposes the req
 
 | Role | Description | Can spawn children? |
 |------|-------------|-------------------|
-| `coordinator` | Plans the research strategy, decomposes the query into sub-tasks, delegates to researchers, and synthesizes final output. The brain of the operation. | Yes (fan-out) |
-| `researcher` | Executes searches across backends, scrapes pages, runs browser automation, and gathers raw data. Each researcher owns a focused sub-task. | Yes (depth-limited) |
-| `analyst` | Cross-references findings from multiple researchers, identifies contradictions, enriches entities with additional context, and produces structured observations. | Yes (depth-limited) |
-| `verifier` | Fact-checks claims against live sources and memory, flags unverifiable statements, and assigns confidence scores to each finding. | No |
+| `coordinator` | Plans the strategy, decomposes the task into sub-tasks, delegates to workers, and synthesizes final output. The brain of the operation. | Yes (fan-out) |
+| `researcher` | Executes searches across backends, scrapes pages, runs browser automation, and gathers raw data. | Yes (depth-limited) |
+| `analyst` | Cross-references findings from multiple workers, identifies contradictions, enriches entities, and produces structured observations. | Yes (depth-limited) |
+| `verifier` | Fact-checks claims against live sources and memory, flags unverifiable statements, and assigns confidence scores. | No |
 | `writer` | Produces the final deliverable — PDF, HTML, JSON, DOCX, or Markdown — with citations, structured sections, and executive summary. | No |
+
+## Repo structure
+
+```
+Fathom/
+├── src/                       # CLI entry point (clap) — run | tui | serve | mcp-serve | memory | contacts | jobs | profiles | sessions | config
+├── crates/                    # 12-crate Cargo workspace (strict DAG, no circular deps)
+│   ├── core/                  # shared types: IDs, messages, events, findings, config, skills, export, notify, CRM
+│   ├── llm/                   # LlmProvider trait, OpenAI-compatible providers, retry/backoff
+│   ├── agent/                 # agent runtime, coordinator, tool executor, compaction, budgets, hooks, resume
+│   ├── tools/                 # 63 tools, registry, SSRF guard, injection defense, computer client
+│   ├── memory/                # long-term semantic memory — hybrid search, entity graph, absorb pipeline
+│   ├── mcp/                   # MCP client + server (stdio / HTTP / OAuth2)
+│   ├── persistence/           # SQLite + PostgreSQL — jobs, sessions, contacts, coworkers, credentials, schedules
+│   ├── server/                # Axum HTTP API — auth, SSE, approvals, metrics, dashboard, AG-UI, computer relay
+│   ├── tui/                   # ratatui terminal interface
+│   ├── lsp/                   # Language Server Protocol integration
+│   ├── governance/            # policy engine — allow/deny rules, audit decision records
+│   └── supervisor/            # Docker per-agent computer provisioning
+├── apps/
+│   ├── computer/              # Playwright loopback computer service (isolated browser + workspace)
+│   ├── desktop/               # Tauri v2 desktop app — live screen, human takeover, policy, audit
+│   └── web/                   # Next.js 16 web dashboard — chat, agents, jobs, memory, events
+├── docs/                      # full documentation set
+├── website/                   # marketing/docs site (Astro)
+└── Cargo.toml                 # workspace manifest
+```
 
 ## Documentation
 
@@ -287,38 +358,19 @@ This single command triggers the full pipeline: a coordinator decomposes the req
 |----------|-------------|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Crate design, data flow, message bus — how the pieces fit together |
 | [docs/INSTALLATION.md](docs/INSTALLATION.md) | Setup, build, Docker, systemd deployment |
-| [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Full configuration reference — LLM, memory, tools, server, memory TTLs |
+| [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Full configuration reference — LLM, memory, tools, server, governance, computer |
 | [docs/USAGE.md](docs/USAGE.md) | CLI commands and real-world examples |
-| [docs/TOOLS.md](docs/TOOLS.md) | All 51 tools reference with schemas and usage |
-| [docs/HTTP-API.md](docs/HTTP-API.md) | HTTP API reference — auth, sessions, streaming, approvals |
+| [docs/TOOLS.md](docs/TOOLS.md) | All tools reference with schemas and usage |
+| [docs/HTTP-API.md](docs/HTTP-API.md) | HTTP API reference — auth, sessions, streaming, approvals, coworkers, computer |
+| [docs/COMPUTER-USE.md](docs/COMPUTER-USE.md) | Computer use — Playwright service, snapshots, human takeover, Docker supervisor |
+| [docs/GOVERNANCE.md](docs/GOVERNANCE.md) | Policy engine, audit trail, credentials vault — safety and compliance |
 | [docs/OSINT-LEADGEN.md](docs/OSINT-LEADGEN.md) | OSINT and lead generation guide — extraction, verification, CRM push |
+| [docs/COWORKERS.md](docs/COWORKERS.md) | Coworkers, channels, schedules — autonomous recurring workers |
 | [docs/MEMORY-KB.md](docs/MEMORY-KB.md) | Semantic memory — absorb pipeline, hybrid search, entity graph |
+| [docs/MCP-GUIDE.md](docs/MCP-GUIDE.md) | MCP client & server guide |
 | [docs/BENCHMARKS.md](docs/BENCHMARKS.md) | Performance benchmarks and methodology |
 | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Development guide — workspace layout, testing, contributing |
-
-## Repo structure
-
-```
-Fathom/
-├── src/                    # CLI entry point (4227 LOC) — parses commands, dispatches to crates
-├── crates/                 # 10-crate workspace
-│   ├── core/               # Types, config, memory, skills, export, CRM — foundational types and shared infrastructure
-│   ├── llm/                # LLM abstraction, providers, retry, streaming — unified interface to DeepSeek, OpenAI, etc.
-│   ├── agent/              # Agent loop, coordinator, goal mode, IPC — the brain: plan, spawn, monitor, steer
-│   ├── tools/              # 51 tools (web, file, shell, browser, OSINT…) — tool registry, schema, dispatch
-│   ├── memory/             # Semantic memory + entity graph — hybrid search, absorb pipeline, GC
-│   ├── mcp/                # MCP client (stdio/HTTP/OAuth) + server — connect to or expose tools via Model Context Protocol
-│   ├── persistence/        # SQLite, contact DB, session history — durable storage for jobs, contacts, sessions
-│   ├── server/             # Axum HTTP API, dashboard, metrics — REST, SSE streaming, Prometheus
-│   ├── tui/                # TUI (ratatui) — interactive tree view, live streaming, session replay
-│   └── lsp/                # LSP client integration — language server protocol for IDE-based agent interaction
-├── tests/                  # E2E + integration tests
-├── docs/                   # Architecture, config, benchmarks, guides
-├── website/                # Astro website (project landing)
-├── Dockerfile              # Multi-stage Docker build
-└── Cargo.toml              # Workspace manifest
-```
+| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues and fixes |
 
 ## License
-
 MIT

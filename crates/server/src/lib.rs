@@ -26,8 +26,18 @@
 
 pub mod auth;
 pub mod metrics;
+pub mod observability;
+pub mod notifications_api;
+pub mod agui;
+mod computers_api;
 mod jobs_api;
 mod memory_api;
+mod coworkers_api;
+mod governance_api;
+mod replay_api;
+mod supervisor_api;
+mod schedules_api;
+mod credentials_api;
 
 use auth::{auth_middleware, rate_limit_middleware, ApiKeyAuth, RateLimiter};
 use axum::{
@@ -39,7 +49,7 @@ use axum::{
         sse::{Event, KeepAlive, Sse},
         IntoResponse, Response,
     },
-    routing::{get, post},
+    routing::{get, post, put},
     Json, Router,
 };
 use futures::stream::Stream;
@@ -48,6 +58,7 @@ use pr_agent::Coordinator;
 use pr_core::{AgentEvent, AppConfig, SessionId};
 use pr_llm::{DeepSeekProvider, LlmProvider};
 use pr_persistence::{JobsDb, Persistence, SessionRow};
+use pr_governance::{ActionContext, AuditEvent, Decision, Governance, PolicyConfig, PolicyEngine};
 use pr_tools::ToolRegistry;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -120,6 +131,11 @@ pub struct AppState {
     /// Operator control plane: pending questions/approvals keyed by
     /// request_id (answered via POST /sessions/:id/answer|approve).
     pub(crate) pending_controls: Arc<Mutex<HashMap<String, PendingControl>>>,
+    /// Runtime-shared policy engine. Disabled by default to preserve behavior.
+    pub(crate) governance: Arc<tokio::sync::RwLock<Governance>>,
+    pub(crate) governance_enabled: bool,
+    /// Optional Docker supervisor; absent when COMPUTER_TOKEN is not configured.
+    pub(crate) supervisor: Option<Arc<pr_supervisor::ComputerSupervisor>>,
 }
 
 /// A pending operator round-trip waiting for an HTTP answer.
@@ -182,6 +198,23 @@ impl AppState {
         } else {
             None
         };
+        let governance_enabled = std::env::var("FATHOM_GOVERNANCE_ENABLED")
+            .ok().and_then(|v| v.parse::<bool>().ok()).unwrap_or(false);
+        let policy = std::env::var("FATHOM_GOVERNANCE_POLICY")
+            .ok().and_then(|raw| serde_json::from_str::<PolicyConfig>(&raw).ok())
+            .unwrap_or_default();
+        let governance = Arc::new(tokio::sync::RwLock::new(
+            Governance::new(PolicyEngine::new(policy)),
+        ));
+        let supervisor = match pr_supervisor::ComputerSupervisor::from_env() {
+            Ok(value) => Some(Arc::new(value)),
+            Err(error) => {
+                if std::env::var_os("COMPUTER_TOKEN").is_some() {
+                    tracing::warn!("computer supervisor unavailable: {error}");
+                }
+                None
+            }
+        };
         Arc::new(Self {
             config,
             db,
@@ -200,6 +233,9 @@ impl AppState {
             job_spawner: default_job_spawner(),
             memory,
             pending_controls: Arc::new(Mutex::new(HashMap::new())),
+            governance,
+            governance_enabled,
+            supervisor,
         })
     }
 
@@ -208,6 +244,48 @@ impl AppState {
             .lock()
             .map(|map| map.contains_key(session_id))
             .unwrap_or(false)
+    }
+
+    pub(crate) async fn governance_snapshot(&self) -> (bool, PolicyConfig) {
+        let governance = self.governance.read().await;
+        (self.governance_enabled, governance.policy().config().clone())
+    }
+
+    pub(crate) async fn replace_governance(&self, policy: PolicyConfig) {
+        let mut governance = self.governance.write().await;
+        *governance = Governance::new(PolicyEngine::new(policy));
+    }
+
+    pub(crate) async fn governance_decide(&self, context: &ActionContext) -> Result<Decision, String> {
+        let governance = self.governance.read().await;
+        let decision = if self.governance_enabled { governance.authorize(context) } else { Decision::Allow };
+        let event = AuditEvent::new(context, decision);
+        let row = pr_persistence::AuditEventRow {
+            id: event.id,
+            timestamp: event.timestamp.to_rfc3339(),
+            agent: event.context.agent,
+            session: event.context.session,
+            tool: event.context.tool,
+            args: event.context.args.to_string(),
+            url: event.context.url,
+            element: event.context.element,
+            file: event.context.file,
+            intent: event.context.intent,
+            mcp_metadata: event.context.mcp_metadata.map(|v| v.to_string()),
+            decision: match event.decision { pr_governance::AuditDecision::Allow => "allow", pr_governance::AuditDecision::Deny => "deny" }.to_string(),
+        };
+        let denied = matches!(decision, Decision::Deny);
+        self.db.record_audit_event(&row).map_err(|e| e.to_string())?;
+        if denied {
+            tracing::warn!(
+                agent = %row.agent,
+                session = %row.session,
+                tool = %row.tool,
+                decision = "deny",
+                "governance policy denied action"
+            );
+        }
+        Ok(decision)
     }
 }
 
@@ -226,11 +304,94 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/sessions/:id/results", get(get_session_results))
         .route("/sessions/:id/events", get(session_events))
         .route("/events", get(global_events))
+        .route("/observability/summary", get(observability::summary))
+        .route("/notifications/test", post(notifications_api::test))
+        .route("/credentials", get(credentials_api::list).post(credentials_api::store))
+        .route("/credentials/:id", axum::routing::delete(credentials_api::delete))
+        .route("/ag-ui/events", get(agui::events))
+        .route("/ag-ui/health", get(agui::health))
         .route("/agents", get(list_agents))
         .route("/agents/:id", get(get_agent_status))
         .route(
+            "/governance/policy",
+            get(governance_api::get_policy).put(governance_api::put_policy),
+        )
+        .route("/governance/decide", post(governance_api::decide))
+        .route("/governance/audit", get(governance_api::audit))
+        .route("/replay", get(replay_api::list_replay))
+        // Computer relay routes. Unscoped forms preserve the desktop surface
+        // contract; agent-scoped forms support multi-agent clients.
+        .route("/computers/session", post(computers_api::start_session))
+        .route("/computers/health", get(computers_api::health_default))
+        .route("/computers/snapshot", get(computers_api::snapshot_default))
+        .route("/computers/tabs", get(computers_api::tabs))
+        .route("/computers/tabs/open", post(computers_api::tabs_open))
+        .route("/computers/tabs/:tab_id/activate", post(computers_api::tab_activate))
+        .route("/computers/tabs/:tab_id/close", post(computers_api::tab_close))
+        .route("/computers/screenshot", get(computers_api::screenshot_default))
+        .route("/computers/control/take", post(computers_api::take_control))
+        .route("/computers/control/release", post(computers_api::release_control))
+        .route("/computers/navigate", post(computers_api::navigate))
+        .route("/computers/:agent_id/health", get(computers_api::health_for_agent))
+        .route("/computers/:agent_id/snapshot", get(computers_api::snapshot_for_agent))
+        .route("/computers/:agent_id/screen", get(computers_api::screen))
+        .route("/computers/:agent_id/screenshot", get(computers_api::screenshot))
+        .route("/computers/:agent_id/control/take", post(computers_api::take_control_for_agent))
+        .route("/computers/:agent_id/control/release", post(computers_api::release_control_for_agent))
+        .route("/computers/:agent_id/navigate", post(computers_api::navigate_for_agent))
+        .route("/computers/click", post(computers_api::click))
+        .route("/computers/type", post(computers_api::type_text))
+        .route("/computers/secret", post(computers_api::secret))
+        .route("/computers/key", post(computers_api::key))
+        .route("/computers/:agent_id/click", post(computers_api::click_for_agent))
+        .route("/computers/:agent_id/type", post(computers_api::type_for_agent))
+        .route("/computers/:agent_id/key", post(computers_api::key_for_agent))
+        .route("/computers/files", get(computers_api::files).delete(computers_api::files_delete))
+        .route("/computers/files/read", get(computers_api::files_read))
+        .route("/computers/files/write", axum::routing::put(computers_api::files_write))
+        .route("/computers/:agent_id/files", get(computers_api::files_for_agent).delete(computers_api::files_delete_for_agent))
+        .route("/computers/:agent_id/files/read", get(computers_api::files_read_for_agent))
+        .route("/computers/:agent_id/files/write", axum::routing::put(computers_api::files_write_for_agent))
+        .route("/computers", get(supervisor_api::list))
+        .route("/computers/:agent_id/ensure", post(supervisor_api::ensure))
+        .route("/computers/:agent_id/stop", post(supervisor_api::stop))
+        .route("/computers/:agent_id/reset", post(supervisor_api::reset))
+        .route(
+            "/coworkers",
+            get(coworkers_api::list_coworkers).post(coworkers_api::create_coworker),
+        )
+        .route(
+            "/coworkers/:id",
+            get(coworkers_api::get_coworker)
+                .put(coworkers_api::update_coworker)
+                .patch(coworkers_api::update_coworker)
+                .delete(coworkers_api::delete_coworker),
+        )
+        .route(
+            "/channels",
+            get(coworkers_api::list_channels).post(coworkers_api::create_channel),
+        )
+        .route(
+            "/channels/:id",
+            put(coworkers_api::update_channel)
+                .patch(coworkers_api::update_channel)
+                .delete(coworkers_api::delete_channel),
+        )
+        .route(
             "/jobs",
             post(jobs_api::create_job).get(jobs_api::list_jobs),
+        )
+        .route(
+            "/schedules",
+            post(schedules_api::create_schedule).get(schedules_api::list_schedules),
+        )
+        .route("/schedules/claim", post(schedules_api::claim_schedules))
+        .route(
+            "/schedules/:id",
+            get(schedules_api::get_schedule)
+                .put(schedules_api::update_schedule)
+                .patch(schedules_api::update_schedule)
+                .delete(schedules_api::delete_schedule),
         )
         .route(
             "/jobs/:id",
@@ -325,11 +486,17 @@ pub async fn metrics_middleware(
     next: Next,
 ) -> Response {
     let start = Instant::now();
+    let method = request.method().clone();
+    let path = request.uri().path().to_string();
     let response = next.run(request).await;
+    let elapsed = start.elapsed();
+    if path.starts_with("/api/v1/computers") {
+        tracing::info!(method = %method, route = %path, latency_ms = elapsed.as_secs_f64() * 1000.0, status = response.status().as_u16(), "computer route completed");
+    }
     state
         .metrics
         .request_duration
-        .observe(start.elapsed().as_secs_f64());
+        .observe(elapsed.as_secs_f64());
     state.metrics.requests_total.inc();
     response
 }
@@ -608,6 +775,11 @@ fn spawn_session(
                 }
             });
 
+            let governance = if state.governance_enabled {
+                Some(Arc::new(state.governance.read().await.clone()))
+            } else {
+                None
+            };
             let mut coordinator = Coordinator::new(
                 session_id.clone(),
                 query,
@@ -618,8 +790,11 @@ fn spawn_session(
                 output_dir,
                 config,
             )
-            .with_steer_rx(steer_rx)
-            .with_control_plane(q_tx, a_tx);
+                .with_steer_rx(steer_rx)
+                .with_control_plane(q_tx, a_tx);
+            if let Some(governance) = governance {
+                coordinator = coordinator.with_governance(governance);
+            }
             coordinator.set_cancel_token(cancel.clone());
             if let Some(store) = contact_db {
                 coordinator = coordinator.with_contact_db(store);
@@ -991,7 +1166,16 @@ fn event_stream(
                                     continue;
                                 }
                             }
-                            let data = serde_json::to_string(&event).unwrap_or_default();
+                            let mut data = serde_json::to_value(&event).unwrap_or_default();
+                            pr_governance::redact_secrets(&mut data);
+                            if let serde_json::Value::Object(object) = &mut data {
+                                for key in ["args", "text", "value", "secret", "result_preview", "content", "question"] {
+                                    if object.contains_key(key) && matches!(&event, AgentEvent::ToolCallStarted { .. } | AgentEvent::ToolCallCompleted { .. } | AgentEvent::LlmStreamChunk { .. } | AgentEvent::QuestionAsked { .. }) {
+                                        object.insert(key.to_owned(), serde_json::Value::String("[REDACTED]".into()));
+                                    }
+                                }
+                            }
+                            let data = serde_json::to_string(&data).unwrap_or_default();
                             return Some((Ok(Event::default().data(data)), (rx, filter)));
                         }
                         Err(broadcast::error::RecvError::Lagged(n)) => {

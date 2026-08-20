@@ -30,3 +30,4 @@ __pycache__/
 
 # Research output (runtime data, not source)
 /research-output/
+/apps/computer/.computer-workspace

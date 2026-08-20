@@ -1,13 +1,14 @@
 # Tool Reference
 
-**51 tools** available to agents (+5 browser tools when Chrome is running with CDP). Each implements the `Tool` trait and is automatically registered in `ToolRegistry`.
+**57 tools** available to agents (+6 computer-use tools when the Playwright computer service is running). Each implements the `Tool` trait and is automatically registered in `ToolRegistry`.
 
 **Tool categories:**
 
 | Category | Tools |
 |---|---|
 | **Web search** | `web_search`, `web_fetch`, `web_crawl`, `web_feed` |
-| **Browser** | `browser_navigate`, `browser_click`, `browser_type`, `browser_extract`, `browser_screenshot` (CDP) |
+| **Browser (CDP)** | `browser_navigate`, `browser_click`, `browser_type`, `browser_extract`, `browser_screenshot` |
+| **Computer use** | `computer_snapshot`, `computer_navigate`, `computer_click`, `computer_type`, `computer_key`, `computer_screenshot` |
 | **File system** | `file_read`, `file_write`, `file_edit`, `glob`, `grep` |
 | **Shell** | `shell` (sandboxed) |
 | **Code analysis** | `code_symbols`, `repo_map` |
@@ -418,6 +419,56 @@ Types text into an element.
 Extracts the text content of the page (with JS rendering).
 
 **Returns**: page text (truncated to 50K).
+
+---
+
+## Computer Use (Playwright)
+
+Enabled when the loopback Playwright computer service (`apps/computer`) is running. The agent operates a **real browser** with a persistent Chromium profile/workspace through accessibility-tree snapshots with opaque refs — it never depends on brittle CSS selectors. The service also exposes `/screen` screenshot streaming, `/control/ws` input forwarding (with human bot/human control leases), and a confined `/files` workspace.
+
+Requires the computer service and configuration: `FATHOM_COMPUTER_SERVICE_URL` / `COMPUTER_SERVICE_URL` + `COMPUTER_TOKEN` (or `COMPUTER_IMAGE`/`COMPUTER_NETWORK`/`COMPUTER_BASE_PORT` for the Docker supervisor). See `docs/COMPUTER-USE.md`.
+
+### `computer_snapshot`
+Captures the current accessibility-tree snapshot of the active tab (or a tab). Returns structured UI elements with opaque refs for subsequent actions.
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| `tab` | string? | Tab id to snapshot |
+
+### `computer_navigate`
+Navigates the active tab (or a tab) to a URL. Egress guard rejects localhost/private/link-local/multicast/metadata targets by default.
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| `url` | string | URL to open |
+| `tab` | string? | Tab id (or open a new tab) |
+
+### `computer_click`
+Clicks a UI element by its opaque snapshot ref.
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| `ref` | string | Element ref from a snapshot |
+
+### `computer_type`
+Types text into a focused element (or one addressed by ref).
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| `text` | string | Text to type |
+| `ref` | string? | Element ref from a snapshot |
+
+### `computer_key`
+Sends a keyboard key / chord (Enter, Tab, Ctrl+C…).
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| `key` | string | Key name or chord |
+
+### `computer_screenshot`
+Takes a screenshot of the current page.
+
+**Returns**: base64 image in `metadata.base64`.
 
 ---
 

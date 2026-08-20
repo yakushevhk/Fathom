@@ -289,6 +289,18 @@ impl ToolRegistry {
         registry.register(Arc::new(crate::memory_kb::MemoryLinkTool));
         registry.register(Arc::new(crate::memory_kb::MemoryGraphTool));
 
+        // HTTP computer tools are selected explicitly with COMPUTER_URL. They
+        // are additive: the CDP browser tools below remain available as a
+        // local fallback when a browser is reachable.
+        if let Ok(Some(client)) = crate::computer::ComputerClient::from_env() {
+            registry.register(Arc::new(crate::computer::ComputerSnapshotTool { client: client.clone() }));
+            registry.register(Arc::new(crate::computer::ComputerNavigateTool { client: client.clone() }));
+            registry.register(Arc::new(crate::computer::ComputerClickTool { client: client.clone() }));
+            registry.register(Arc::new(crate::computer::ComputerTypeTool { client: client.clone() }));
+            registry.register(Arc::new(crate::computer::ComputerKeyTool { client: client.clone() }));
+            registry.register(Arc::new(crate::computer::ComputerScreenshotTool { client }));
+        }
+
         // Browser automation: only registered when a CDP endpoint is reachable.
         let cdp_endpoint = crate::browser::cdp_endpoint_from_env();
         if crate::browser::cdp_available(&cdp_endpoint) {
