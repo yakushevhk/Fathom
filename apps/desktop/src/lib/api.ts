@@ -101,6 +101,7 @@ export interface ComputerHealth {
   ok: boolean
   status?: string
   url?: string
+  control?: { owner?: 'bot' | 'human'; humanSince?: string }
   control_owner?: string | null
   [key: string]: unknown
 }
@@ -109,6 +110,7 @@ export interface ComputerSnapshot {
   url?: string
   title?: string
   screenshot?: string
+  control?: { owner?: 'bot' | 'human'; humanSince?: string }
   control_owner?: string | null
   refs?: Record<string, unknown>
   [key: string]: unknown
@@ -287,56 +289,25 @@ function pollStatus(cb: (status: DaemonStatus) => void): () => void {
 // ── SSE stream from fathom engine (direct, for live transcript) ─────────
 
 export function connectSSE(
-  baseUrl: string,
+  _baseUrl: string,
   endpoint: string,
   onEvent: (data: unknown) => void,
   onError?: (err: string) => void,
 ): AbortController {
   const controller = new AbortController()
+  const streamId = `sse-${Date.now()}-${Math.random().toString(36).slice(2)}`
+  let unlisten: (() => void) | undefined
 
-  const start = async () => {
-    try {
-      const headers: Record<string, string> = { Accept: 'text/event-stream' }
-      const key = typeof import.meta !== 'undefined' ? (import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_FATHOM_API_KEY : undefined
-      if (key) headers['X-Api-Key'] = key
-      const response = await fetch(`${baseUrl}${endpoint}`, {
-        signal: controller.signal,
-        headers,
-      })
-      if (!response.ok) {
-        onError?.(`SSE connection failed: ${response.status}`)
-        return
-      }
-      const reader = response.body?.getReader()
-      if (!reader) {
-        onError?.('No response body')
-        return
-      }
-      const decoder = new TextDecoder()
-      let buffer = ''
-      for (;;) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() ?? ''
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              onEvent(JSON.parse(line.slice(6)))
-            } catch {
-              // skip malformed frames
-            }
-          }
-        }
-      }
-    } catch (err) {
-      if (!controller.signal.aborted) {
-        onError?.(String(err))
-      }
-    }
-  }
+  void listen<unknown>(`engine:sse:${streamId}`, event => onEvent(event.payload))
+    .then(stop => { unlisten = stop; if (controller.signal.aborted) stop() })
+    .catch(error => onError?.(String(error)))
 
-  start()
+  void invoke('engine_sse_start', { streamId, path: endpoint })
+    .catch(error => { if (!controller.signal.aborted) onError?.(String(error)) })
+
+  controller.signal.addEventListener('abort', () => {
+    unlisten?.()
+    void invoke('engine_sse_stop', { streamId })
+  }, { once: true })
   return controller
 }

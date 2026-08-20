@@ -19,7 +19,7 @@ export default function App() {
   const [rightTab, setRightTab] = useState<'details' | 'computer' | 'governance'>('computer')
 
   useEffect(() => {
-    setActiveSession(current => current ? sessions.find(session => session.id === current.id) ?? current : current)
+    setActiveSession(current => current ? sessions.find(session => session.id === current.id) ?? null : current)
   }, [sessions])
 
   const handleStartEngine = async () => {

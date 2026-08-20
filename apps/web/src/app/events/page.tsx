@@ -156,9 +156,10 @@ export default function EventsPage() {
 }
 
 function eventToDisplay(event: AgentEvent): DisplayEvent {
-  const id = `${event.type}-${event.id ?? event.agent_id ?? Date.now()}-${Date.now()}`
+  const id = `${event.type}-${event.id ?? event.agent_id ?? event.request_id ?? 'event'}`
   const sessionId = event.session_id as string | undefined
-  const agentId = event.agent_id as string | undefined
+  const lifecycleEvent = event.type === 'agent_spawned' || event.type === 'agent_state_changed' || event.type === 'agent_completed' || event.type === 'agent_failed'
+  const agentId = (event.agent_id ?? (lifecycleEvent ? event.id : undefined)) as string | undefined
 
   let summary = ''
   let detail = ''
@@ -178,11 +179,11 @@ function eventToDisplay(event: AgentEvent): DisplayEvent {
       detail = String(event.task ?? '').slice(0, 300)
       break
     case 'agent_completed':
-      summary = `Agent completed: ${event.role as string}`
+      summary = `Agent completed: ${String(event.id ?? '').slice(0, 12)}`
       detail = String(event.summary ?? '').slice(0, 300)
       break
     case 'agent_failed':
-      summary = `Agent failed: ${event.role as string}`
+      summary = `Agent failed: ${String(event.id ?? '').slice(0, 12)}`
       detail = String(event.error ?? '')
       break
     case 'tool_call_started':

@@ -5,12 +5,21 @@
 
 use crate::types::DaemonStatus;
 use crate::AppState;
+use futures_util::StreamExt;
 use reqwest::Client;
 use serde_json::Value;
-use tauri::State;
+use std::collections::HashMap;
+use std::sync::{LazyLock, Mutex as StdMutex};
+use tauri::{AppHandle, Emitter, State};
+use tokio_util::sync::CancellationToken;
+
+static SSE_TASKS: LazyLock<StdMutex<HashMap<String, CancellationToken>>> = LazyLock::new(|| StdMutex::new(HashMap::new()));
 
 fn api_key() -> Option<String> {
-    std::env::var("FATHOM_API_KEY").ok().filter(|key| !key.trim().is_empty())
+    std::env::var("FATHOM_API_KEYS")
+        .ok()
+        .or_else(|| std::env::var("FATHOM_API_KEY").ok())
+        .and_then(|keys| keys.split(',').map(str::trim).find(|key| !key.is_empty()).map(str::to_owned))
 }
 
 async fn send_json(request: reqwest::RequestBuilder) -> Result<Value, String> {
@@ -98,6 +107,55 @@ pub async fn engine_request(
     };
     let request = if let Some(body) = body { request.json(&body) } else { request };
     send_json(authorized(request)).await
+}
+
+#[tauri::command]
+pub async fn engine_sse_start(
+    state: State<'_, Mutex<AppState>>,
+    app: AppHandle,
+    stream_id: String,
+    path: String,
+) -> Result<(), String> {
+    let base_url = {
+        let app_state = state.lock().await;
+        app_state.daemon.base_url().await.ok_or_else(|| "engine not running".to_string())?
+    };
+    let response = authorized(Client::new().get(format!("{base_url}{path}")))
+        .header(reqwest::header::ACCEPT, "text/event-stream")
+        .send().await.map_err(|e| format!("SSE request failed: {e}"))?;
+    if !response.status().is_success() {
+        return Err(format!("SSE request failed: HTTP {}", response.status()));
+    }
+    let cancel = CancellationToken::new();
+    SSE_TASKS.lock().map_err(|_| "SSE registry unavailable".to_string())?.insert(stream_id.clone(), cancel.clone());
+    tokio::spawn(async move {
+        let mut buffer = String::new();
+        let mut stream = response.bytes_stream();
+        while let Some(chunk) = tokio::select! {
+            _ = cancel.cancelled() => None,
+            value = stream.next() => value,
+        } {
+            let Ok(chunk) = chunk else { break };
+            buffer.push_str(&String::from_utf8_lossy(&chunk));
+            let lines: Vec<String> = buffer.split('\n').map(str::to_owned).collect();
+            buffer = lines.last().cloned().unwrap_or_default();
+            for line in lines.into_iter().take_while(|_| true).filter(|line| line.starts_with("data: ")) {
+                if let Ok(value) = serde_json::from_str::<Value>(&line[6..]) {
+                    let _ = app.emit(&format!("engine:sse:{stream_id}"), value);
+                }
+            }
+        }
+        if let Ok(mut tasks) = SSE_TASKS.lock() { tasks.remove(&stream_id); }
+        let _ = app.emit(&format!("engine:sse-end:{stream_id}"), ());
+    });
+    Ok(())
+}
+
+#[tauri::command]
+pub fn engine_sse_stop(stream_id: String) {
+    if let Ok(mut tasks) = SSE_TASKS.lock() {
+        if let Some(cancel) = tasks.remove(&stream_id) { cancel.cancel(); }
+    }
 }
 
 async fn engine_delete(state: &Mutex<AppState>, path: &str) -> Result<Value, String> {

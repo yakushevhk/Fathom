@@ -23,7 +23,10 @@ export default function ComputerPanel() {
     try {
       const [nextSnapshot, nextScreenshot] = await Promise.all([api.computers.snapshot(), api.computers.screenshot()])
       setSnapshot(nextSnapshot)
-      setScreenshot(nextScreenshot)
+      setScreenshot(previous => {
+        if (previous?.startsWith('blob:')) URL.revokeObjectURL(previous)
+        return nextScreenshot
+      })
       setOffline(false); setError(null)
     } catch (e) {
       setOffline(true)
@@ -31,7 +34,10 @@ export default function ComputerPanel() {
     }
   }, [])
 
-  useEffect(() => { refresh().finally(() => setLoading(false)) }, [refresh])
+  useEffect(() => {
+    void refresh().finally(() => setLoading(false))
+    return () => setScreenshot(previous => { if (previous?.startsWith('blob:')) URL.revokeObjectURL(previous); return null })
+  }, [refresh])
 
   const createSession = async () => {
     setWorking(true); setError(null)

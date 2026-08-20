@@ -261,6 +261,28 @@ function eventToMessage(event: AgentEvent): Message | null {
         requestId: event.request_id as string,
         controlKind: 'approval',
       }
+    case 'agent_state_changed':
+      return {
+        id: `state-${event.id as string}-${Date.now()}`,
+        type: 'system',
+        content: `Agent state: ${event.state ? JSON.stringify(event.state) : 'changed'}`,
+        timestamp: new Date(),
+        agentId: event.id as string,
+      }
+    case 'session_completed':
+      return {
+        id: `session-completed-${event.id as string}`,
+        type: 'system',
+        content: `Session completed: ${event.id as string || ''}`,
+        timestamp: new Date(),
+      }
+    case 'session_failed':
+      return {
+        id: `session-failed-${event.id as string}`,
+        type: 'system',
+        content: `Session failed: ${event.error as string || ''}`,
+        timestamp: new Date(),
+      }
     case 'finding':
       return {
         id: `finding-${event.agent_id as string}-${Date.now()}`,
@@ -277,19 +299,24 @@ function eventToMessage(event: AgentEvent): Message | null {
 function QuestionControl({ sessionId, requestId }: { sessionId: string; requestId: string }) {
   const [answer, setAnswer] = useState('')
   const [sent, setSent] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   if (sent) return <span className="text-muted">Answer sent</span>
   return <div className="control-actions">
     <input className="surface-input" value={answer} onChange={event => setAnswer(event.target.value)} placeholder="Your answer…" aria-label="Answer question" />
-    <button className="surface-button primary" disabled={!answer.trim()} onClick={() => { void api.sessions.answer(sessionId, requestId, answer.trim()).then(() => setSent(true)) }}>Answer</button>
+    <button className="surface-button primary" disabled={!answer.trim()} onClick={() => { void api.sessions.answer(sessionId, requestId, answer.trim()).then(() => setSent(true)).catch(e => setError(String(e))) }}>Answer</button>
+    {error && <small className="text-muted">{error}</small>}
   </div>
 }
 
 function ApprovalControl({ sessionId, requestId, toolName }: { sessionId: string; requestId: string; toolName?: string }) {
   const [decided, setDecided] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   if (decided) return <span className="text-muted">Decision sent</span>
+  const decide = (approved: boolean) => { void api.sessions.approve(sessionId, requestId, approved).then(() => setDecided(true)).catch(e => setError(String(e))) }
   return <div className="control-actions">
-    <button className="surface-button primary" onClick={() => { void api.sessions.approve(sessionId, requestId, true).then(() => setDecided(true)) }}>Approve{toolName ? ` ${toolName}` : ''}</button>
-    <button className="surface-button" onClick={() => { void api.sessions.approve(sessionId, requestId, false).then(() => setDecided(true)) }}>Deny</button>
+    <button className="surface-button primary" onClick={() => decide(true)}>Approve{toolName ? ` ${toolName}` : ''}</button>
+    <button className="surface-button" onClick={() => decide(false)}>Deny</button>
+    {error && <small className="text-muted">{error}</small>}
   </div>
 }
 

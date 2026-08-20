@@ -163,11 +163,11 @@ export default function HomePage() {
                   <div key={i} className="px-4 py-2.5 flex items-start gap-3 text-xs">
                     <span
                       className={`w-1.5 h-1.5 rounded-full mt-1 shrink-0 ${
-                        ev.type === 'agent_complete' || ev.type === 'session_complete'
+                        ev.type === 'agent_completed' || ev.type === 'session_completed'
                           ? 'bg-green-500'
-                          : ev.type === 'error' || ev.type === 'agent_error'
+                          : ev.type === 'session_failed' || ev.type === 'agent_failed'
                           ? 'bg-red-500'
-                          : ev.type === 'agent_start' || ev.type === 'session_start'
+                          : ev.type === 'agent_spawned' || ev.type === 'session_started'
                           ? 'bg-blue-400'
                           : 'bg-gray-600'
                       }`}

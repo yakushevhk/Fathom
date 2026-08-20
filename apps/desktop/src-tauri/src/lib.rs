@@ -54,6 +54,8 @@ pub fn run() {
             daemon_stop,
             engine_request,
             engine_screenshot,
+            engine_sse_start,
+            engine_sse_stop,
             list_sessions,
             create_session,
             get_session,

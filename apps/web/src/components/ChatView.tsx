@@ -345,7 +345,7 @@ function SessionHeader({ sessionId }: { sessionId: string }) {
       <span className="text-gray-500 mr-2">Session</span>
       <span className="font-mono text-gray-300">{sessionId.slice(0, 8)}</span>
       <a
-        href={`${typeof window !== 'undefined' ? localStorage.getItem('fathom_base_url') || 'http://127.0.0.1:8080' : ''}/dashboard`}
+        href={`${typeof window !== 'undefined' ? localStorage.getItem('fathom_base_url') || 'http://127.0.0.1:8080' : ''}/`}
         target="_blank"
         rel="noreferrer"
         className="ml-auto text-gray-500 hover:text-gray-300"

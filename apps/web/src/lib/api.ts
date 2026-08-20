@@ -414,7 +414,7 @@ export const api = {
     list: () => request<JobListResponse>('/api/v1/jobs'),
     get: (id: string) => request<Job>(`/api/v1/jobs/${id}`),
     log: (id: string) => request<{ lines: string[]; total_lines: number; returned: number }>(`/api/v1/jobs/${id}/log`),
-    create: (task: string, attempts = 1) =>
+    create: (task: string, attempts = 3) =>
       request<Job>('/api/v1/jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -492,7 +492,7 @@ export const api = {
 
   memories: {
     list: () => request<MemoryListResponse>('/api/v1/memories'),
-    get: (id: string) => request<Memory>(`/api/v1/memories/${id}`),
+    get: (id: string) => request<{ memories: Memory[] }>(`/api/v1/memories/${encodeURIComponent(id)}`),
     archive: (id: string) => request<{ archived: string }>(`/api/v1/memories/${id}`, { method: 'DELETE' }),
     absorb: (content: string, source = 'web') => request<unknown>('/api/v1/memories/absorb', {
       method: 'POST',

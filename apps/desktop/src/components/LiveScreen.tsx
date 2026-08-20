@@ -100,7 +100,8 @@ export function LiveScreen({ baseUrl = '/api/v1/computers' }: LiveScreenProps) {
     }
   }
 
-  const owner = snapshot?.control_owner ?? health?.control_owner
+  const owner = snapshot?.control?.owner ?? health?.control?.owner ?? snapshot?.control_owner ?? health?.control_owner
+  const humanControl = owner === 'human'
   const displayImage = imageUrl ?? snapshot?.screenshot
 
   return (
@@ -158,7 +159,7 @@ export function LiveScreen({ baseUrl = '/api/v1/computers' }: LiveScreenProps) {
           placeholder="Navigate to URL…"
           aria-label="Navigate to URL"
         />
-        <button className="surface-button" onClick={() => void navigate()} disabled={busy !== null || surfaceState !== 'online' || !urlInput.trim()}>
+        <button className="surface-button" onClick={() => void navigate()} disabled={busy !== null || surfaceState !== 'online' || humanControl || !urlInput.trim()}>
           {busy === 'navigate' ? '…' : 'Go'}
         </button>
       </div>
@@ -166,7 +167,7 @@ export function LiveScreen({ baseUrl = '/api/v1/computers' }: LiveScreenProps) {
       <div className="navigate-row secret-entry-row">
         <input className="surface-input" value={secretRef} onChange={event => setSecretRef(event.target.value)} placeholder="Element ref (e_…)" aria-label="Secret element ref" />
         <input className="surface-input" type="password" value={secretValue} onChange={event => setSecretValue(event.target.value)} placeholder="Secret value (never logged)" aria-label="Secret value" />
-        <button className="surface-button" onClick={() => void enterSecret()} disabled={busy !== null || surfaceState !== 'online' || !secretRef.trim() || !secretValue}>
+        <button className="surface-button" onClick={() => void enterSecret()} disabled={busy !== null || surfaceState !== 'online' || humanControl || !secretRef.trim() || !secretValue}>
           {busy === 'secret' ? 'Sending…' : 'Enter secret'}
         </button>
       </div>
