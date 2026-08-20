@@ -43,8 +43,8 @@ export default {
     mcp: {
       title: { en: 'Plus MCP', ru: 'Плюс MCP' },
       sub: {
-        en: 'All 51 built-ins + 5 conditional browser tools are exposed to external MCP clients via mcp-serve, and external MCP servers (stdio / HTTP / OAuth) are auto-discovered and made available to agents.',
-        ru: 'Все 51 встроенный инструмент и 5 браузерных инструментов при доступном CDP доступны внешним MCP-клиентам через mcp-serve, а внешние MCP-серверы (stdio / HTTP / OAuth) автоматически обнаруживаются и становятся доступны агентам.',
+        en: 'All 51 built-ins + 5 conditional browser tools are exposed to external MCP clients via mcp-serve, and external MCP servers over stdio or HTTP are auto-discovered and made available to agents.',
+        ru: 'Все 51 встроенный инструмент и 5 браузерных инструментов при доступном CDP доступны внешним MCP-клиентам через mcp-serve, а внешние MCP-серверы по stdio или HTTP автоматически обнаруживаются и становятся доступны агентам.',
       },
       docs: { en: 'Full tool docs', ru: 'Полная документация инструментов' },
       mcp: { en: 'MCP both ways', ru: 'MCP в обе стороны' },

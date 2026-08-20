@@ -42,7 +42,7 @@ const endpointGroups = [
       { m: 'GET', p: '/api/v1/memories/stats', d: 'Store size, scopes, graph stats' },
       { m: 'POST', p: '/api/v1/memories/distill', d: 'Distill run-facts into durable knowledge' },
       { m: 'POST', p: '/api/v1/memories/gc', d: 'Archive stale facts, compact scope groups' },
-      { m: 'GET / DELETE', p: '/api/v1/memories/:id', d: 'Inspect / tombstone a single memory' },
+      { m: 'GET / DELETE', p: '/api/v1/memories/:id', d: 'Inspect / archive a single memory' },
     ],
   },
   {
@@ -54,6 +54,31 @@ const endpointGroups = [
       { m: 'GET', p: '/api/v1/jobs/:id/log', d: 'stdout + stderr of all attempts' },
       { m: 'DELETE', p: '/api/v1/jobs/:id', d: 'Cancel an active job' },
       { m: 'POST', p: '/api/v1/jobs/:id/rerun', d: 'Re-run a finished/stuck job' },
+    ],
+  },
+  {
+    key: 'governance', name: 'Governance & collaboration',
+    endpoints: [
+      { m: 'GET / PUT', p: '/api/v1/governance/policy', d: 'Read or replace the governance policy' },
+      { m: 'POST', p: '/api/v1/governance/decide', d: 'Evaluate a governed action' },
+      { m: 'GET', p: '/api/v1/governance/audit', d: 'Read governance audit events' },
+      { m: 'GET / POST', p: '/api/v1/coworkers', d: 'List or create coworker records' },
+      { m: 'GET / POST', p: '/api/v1/channels', d: 'List or create collaboration channels' },
+      { m: 'GET', p: '/api/v1/ag-ui/events', d: 'Stream AG-UI events' },
+      { m: 'GET', p: '/api/v1/ag-ui/health', d: 'AG-UI health probe' },
+    ],
+  },
+  {
+    key: 'computer', name: 'Computer relay',
+    endpoints: [
+      { m: 'POST', p: '/api/v1/computers/session', d: 'Start a computer session' },
+      { m: 'GET', p: '/api/v1/computers/health', d: 'Check the default computer relay' },
+      { m: 'GET', p: '/api/v1/computers/snapshot', d: 'Read the current computer snapshot' },
+      { m: 'POST', p: '/api/v1/computers/navigate', d: 'Navigate the default computer relay' },
+      { m: 'POST', p: '/api/v1/computers/click', d: 'Click through the computer relay' },
+      { m: 'POST', p: '/api/v1/computers/type', d: 'Type through the computer relay' },
+      { m: 'POST', p: '/api/v1/computers/key', d: 'Send a keyboard action' },
+      { m: 'GET / POST', p: '/api/v1/computers', d: 'List computers or manage a supervisor-backed computer' },
     ],
   },
   {

@@ -33,22 +33,22 @@ import Layout from '../layouts/Layout.astro';
         <div class="api-card api-card--wide">
           <div class="api-icon">🔌</div>
           <div class="api-name" data-i18n="intPage.categories.mcp_client.name">MCP Client</div>
-          <p data-i18n="intPage.categories.mcp_client.desc">stdio and Streamable HTTP transports, OAuth 2.0 client-credentials flow, dynamic tool discovery at startup and after reconnects. External tools become native agent tools automatically.</p>
+          <p data-i18n="intPage.categories.mcp_client.desc">stdio and HTTP transports with dynamic tool discovery and reconnect handling. External tools become native agent tools automatically; configure them with the supported `name`, `transport`, `command`, `args`, and `url` fields.</p>
           <div class="api-tags">
             <span class="api-tag">stdio</span>
             <span class="api-tag">Streamable HTTP</span>
-            <span class="api-tag">OAuth 2.0</span>
+            <span class="api-tag">HTTP / stdio</span>
           </div>
         </div>
 
         <div class="api-card api-card--wide">
           <div class="api-icon">📡</div>
           <div class="api-name" data-i18n="intPage.categories.mcp_server.name">MCP Server</div>
-          <p data-i18n="intPage.categories.mcp_server.desc">mcp-serve exposes all 50+ built-in tools over Model Context Protocol. Schema-only mode for discovery, executor mode for real tool calls. Any MCP client can drive the full toolbox.</p>
+          <p data-i18n="intPage.categories.mcp_server.desc">mcp-serve exposes all 51 built-in tools over Model Context Protocol and executes real tool calls. Browser automation is added when CDP is reachable; any MCP client can drive the available toolbox.</p>
           <div class="api-tags">
             <span class="api-tag">51 built-ins + 5 browser via CDP</span>
-            <span class="api-tag">schema-only</span>
-            <span class="api-tag">executor</span>
+            <span class="api-tag">tools/list</span>
+            <span class="api-tag">tools/call</span>
           </div>
         </div>
 
@@ -147,7 +147,7 @@ args = ["-y", "@modelcontextprotocol/server-postgres"]
 name = "internal-api"
 transport = "http"
 url = "https://mcp.internal.corp"
-oauth = "client-credentials"
+# HTTP transport uses the configured URL
 
 [notifications]
 webhook_url = "https://hooks.slack.com/..."

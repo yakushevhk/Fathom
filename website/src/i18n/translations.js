@@ -700,7 +700,7 @@ export const translations = {
       "3": {
         "t": { "en": "MCP", "ru": "MCP" },
         "d": {
-          "en": "Client (stdio/HTTP/OAuth) + server mcp-serve.",
+          "en": "Client (stdio/HTTP) + server mcp-serve.",
           "ru": "Клиент (stdio/HTTP/OAuth) + сервер mcp-serve."
         }
       },

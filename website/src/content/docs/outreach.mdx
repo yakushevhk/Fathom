@@ -884,9 +884,9 @@ await agent.call_tool("save_contacts", {})\`}`}} /></pre>
       <div class="step">
         <h3>amoCRM v4</h3>
         <p>
-          OAuth 2.0 integration. Creates leads with contact and company entities. Supports
-          <code>crm_id</code> dedup — re-runs update existing leads instead of creating duplicates.
-          Custom fields mapped via <code>[crm].amocrm_field_map</code> config.
+          CRM API integration. Pushes verified contacts to the configured provider and tracks
+          the remote <code>crm_id</code> for idempotent re-runs, so repeated syncs do not create
+          duplicate contacts. Provider credentials and account settings come from the <code>[crm]</code> config section.
         </p>
       </div>
       <div class="step">

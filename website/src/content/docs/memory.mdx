@@ -873,7 +873,7 @@ Content-Type: application/json
     </div>
     <p>
       This is a soft delete — the record is moved to archived status and excluded from default
-      queries. Use <code>POST /api/v1/memories/mem_8f3a2b/restore</code> to un-archive.
+      queries. The archived row remains available through the memory history and CLI maintenance commands; the HTTP API exposes archive, not restore.
       Hard deletion is only available via the CLI <code>nuke</code> command.
     </p>
   </section>

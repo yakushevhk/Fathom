@@ -153,7 +153,7 @@ export default {
     client: {
       badge: { en: 'Client', ru: 'Клиент' },
       title: { en: 'Consume any MCP server', ru: 'Потребляйте любой MCP-сервер' },
-      sub: { en: 'stdio and Streamable HTTP transports, OAuth client-credentials, dynamic tool discovery and automatic reconnect. Tools of connected MCP servers become first-class agent tools — no code changes.', ru: 'Транспорты stdio и Streamable HTTP, OAuth client-credentials, динамическое обнаружение инструментов и авто-переподключение. Инструменты подключённых MCP-серверов становятся полноценными инструментами агента — без изменения кода.' },
+      sub: { en: 'stdio and HTTP transports, dynamic tool discovery and automatic reconnect. Tools of connected MCP servers become first-class agent tools — no code changes.', ru: 'Транспорты stdio и Streamable HTTP, OAuth client-credentials, динамическое обнаружение инструментов и авто-переподключение. Инструменты подключённых MCP-серверов становятся полноценными инструментами агента — без изменения кода.' },
     },
     server: {
       badge: { en: 'Server', ru: 'Сервер' },
@@ -163,7 +163,7 @@ export default {
     },
     cards: {
       transports: { name: { en: 'Transports', ru: 'Транспорты' }, d: { en: 'stdio for local servers, Streamable HTTP for remote — both client and server side.', ru: 'stdio для локальных серверов, Streamable HTTP для удалённых — на стороне и клиента, и сервера.' } },
-      oauth: { name: { en: 'OAuth', ru: 'OAuth' }, d: { en: 'client-credentials flow handled automatically for authenticated HTTP servers.', ru: 'поток client-credentials обрабатывается автоматически для аутентифицированных HTTP-серверов.' } },
+      oauth: { name: { en: 'OAuth', ru: 'OAuth' }, d: { en: 'HTTP authentication follows the configured transport and server endpoint.', ru: 'поток client-credentials обрабатывается автоматически для аутентифицированных HTTP-серверов.' } },
       discovery: { name: { en: 'Discovery', ru: 'Обнаружение' }, d: { en: 'Tools are discovered dynamically at startup and after reconnects.', ru: 'Инструменты обнаруживаются динамически при старте и после переподключений.' } },
       reconnect: { name: { en: 'Reconnect', ru: 'Переподключение' }, d: { en: 'Dropped stdio/HTTP servers are reconnected without restarting the agent.', ru: 'Упавшие stdio/HTTP-серверы переподключаются без перезапуска агента.' } },
     },

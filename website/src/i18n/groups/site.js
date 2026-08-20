@@ -37,7 +37,7 @@ export default {
       0: { enables: { en: 'PDF and DOCX report export (HTML / JSON export always works)', ru: 'Экспорт отчётов в PDF и DOCX (экспорт HTML / JSON работает всегда)' } },
       1: { enables: { en: 'speeds up the grep tool; built-in fallback when absent', ru: 'ускоряет инструмент grep; встроенный запасной вариант при отсутствии' } },
       2: { enables: { en: 'REPL and code-execution tools', ru: 'инструменты REPL и выполнения кода' } },
-      3: { enables: { en: '5 browser tools; auto-detected via FATHOM_CDP_ENDPOINT', ru: '5 браузерных инструментов; автодетекция через FATHOM_CDP_ENDPOINT' } },
+      3: { enables: { en: '5 browser tools; auto-detected via PARALLEL_CDP_ENDPOINT', ru: '5 браузерных инструментов; автодетекция через PARALLEL_CDP_ENDPOINT' } },
     },
     req: {
       badge: { en: 'Requirements', ru: 'Требования' },

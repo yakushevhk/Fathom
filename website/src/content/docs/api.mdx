@@ -778,6 +778,25 @@ pr_request_duration_seconds_bucket{le="0.1"} 120`}} /></pre>
         </div>
       </section>
 
+      {/* GOVERNANCE + COMPUTER ROUTES */}
+      <section id="governance-computer" class="api-section">
+        <h2 class="api-section-title">Governance, collaboration &amp; computer relay</h2>
+        <p class="api-text">Current servers may expose governance decisions, coworker/channel state, AG-UI events, and computer relay controls under the same authenticated <code>/api/v1</code> prefix.</p>
+        <div class="cli-table">
+          <div class="cli-row cli-row-header"><span>Route</span><span>Description</span></div>
+          <div class="cli-row"><code class="cli-cmd">GET /api/v1/governance/policy</code><span>Read the active governance policy.</span></div>
+          <div class="cli-row"><code class="cli-cmd">PUT /api/v1/governance/policy</code><span>Replace the governance policy.</span></div>
+          <div class="cli-row"><code class="cli-cmd">POST /api/v1/governance/decide</code><span>Evaluate a governed action.</span></div>
+          <div class="cli-row"><code class="cli-cmd">GET /api/v1/governance/audit</code><span>Read governance audit events.</span></div>
+          <div class="cli-row"><code class="cli-cmd">GET|POST /api/v1/coworkers</code><span>List or create coworker records.</span></div>
+          <div class="cli-row"><code class="cli-cmd">GET|POST /api/v1/channels</code><span>List or create collaboration channels.</span></div>
+          <div class="cli-row"><code class="cli-cmd">GET /api/v1/ag-ui/events</code><span>Stream AG-UI events.</span></div>
+          <div class="cli-row"><code class="cli-cmd">GET /api/v1/computers/health</code><span>Check the default computer relay.</span></div>
+          <div class="cli-row"><code class="cli-cmd">POST /api/v1/computers/navigate</code><span>Navigate the default computer relay.</span></div>
+          <div class="cli-row"><code class="cli-cmd">POST /api/v1/computers/click|type|key</code><span>Control the default computer relay.</span></div>
+        </div>
+      </section>
+
       {/* CLI COMMANDS */}
       <section id="cli-commands" class="api-section">
         <h2 class="api-section-title" data-i18n="docsApi.cliTitle">CLI Commands</h2>
