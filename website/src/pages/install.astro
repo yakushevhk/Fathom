@@ -44,7 +44,7 @@ const deps = [
   { name: 'pandoc', enables: 'PDF and DOCX report export (HTML / JSON export always works)' },
   { name: 'ripgrep', enables: 'speeds up the grep tool; built-in fallback when absent' },
   { name: 'python3 / node', enables: 'REPL and code-execution tools' },
-  { name: 'Chrome + CDP', enables: '5 browser tools; enabled only when a CDP endpoint is reachable' },
+  { name: 'Chrome + CDP', enables: 'up to 5 browser tools; enabled only when a CDP endpoint is reachable' },
 ];
 
 const envVars = [
@@ -136,7 +136,7 @@ google-chrome --remote-debugging-port=9222 --headless`}</code></pre>
         <h2 class="h3-sec" data-i18n="install.req.title">Small footprint, no surprises</h2>
       </div>
       <div class="chips">
-        <span class="chip">Rust stable · edition 2021</span>
+        <span class="chip">Rust 1.97+ · edition 2021</span>
         <span class="chip">macOS / Linux · Windows via WSL</span>
         <span class="chip">SQLite bundled (WAL)</span>
         <span class="chip">PostgreSQL optional · tokio-postgres</span>

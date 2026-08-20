@@ -122,7 +122,7 @@ impl Persistence {
 
     pub fn delete_coworker(&self, coworker_id: &str) -> anyhow::Result<bool> {
         let coworker_id = id(coworker_id)?;
-        let mut conn = self.conn.lock();
+        let conn = self.conn.lock();
         let tx = conn.unchecked_transaction()?;
         tx.execute("DELETE FROM channels WHERE coworker_id=?1", params![coworker_id])?;
         let deleted = tx.execute("DELETE FROM coworkers WHERE id=?1", params![coworker_id])? != 0;

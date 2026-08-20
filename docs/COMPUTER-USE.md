@@ -188,7 +188,7 @@ The screen stream is used by:
 Each computer has a **confined file workspace** — a bounded, path-confined directory where the agent can read and write files.
 
 - **Path confinement** — all file operations are restricted to the workspace directory; symlinks and path traversal attempts are blocked
-- **Size limits** — total workspace size is bounded (configurable, default 100 MB)
+- **Size limits** — per-file 1 MiB cap, max 1,000 entries per listing, max 8 levels of directory depth
 - **Persistence** — the workspace is persisted across agent restarts (within the same Docker container)
 
 ---
@@ -230,9 +230,9 @@ The supervisor crate (`crates/supervisor`) provisions **one isolated computer pe
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `COMPUTER_IMAGE` | `ghcr.io/fathom/computer:latest` | Docker image for the computer container |
+| `COMPUTER_IMAGE` | `fathom/computer:latest` | Docker image for the computer container |
 | `COMPUTER_NETWORK` | `fathom-computer` | Docker network for computer containers |
-| `COMPUTER_BASE_PORT` | `9200` | Base port for loopback mapping (each agent gets `base_port + agent_index`) |
+| `COMPUTER_BASE_PORT` | `19000` | Base port for loopback mapping (each agent gets `base_port + (hash % 1000)`, deterministic from agent ID) |
 | `COMPUTER_TOKEN` | *(auto-generated)* | Shared secret for authenticating computer service requests |
 
 ### Container lifecycle
@@ -265,12 +265,12 @@ The supervisor crate (`crates/supervisor`) provisions **one isolated computer pe
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `FATHOM_COMPUTER_SERVICE_URL` | `http://localhost:9100` | URL of the computer service (used by the server relay) |
-| `COMPUTER_SERVICE_URL` | `http://localhost:9100` | URL of the computer service (internal) |
+| `FATHOM_COMPUTER_SERVICE_URL` | `http://127.0.0.1:8765` | URL of the computer service (used by the server relay) |
+| `COMPUTER_SERVICE_URL` | `http://127.0.0.1:8765` | URL of the computer service (internal, legacy alias) |
 | `COMPUTER_TOKEN` | *(auto-generated)* | Authentication token for computer service requests |
-| `COMPUTER_IMAGE` | `ghcr.io/fathom/computer:latest` | Docker image for supervisor-provisioned containers |
+| `COMPUTER_IMAGE` | `fathom/computer:latest` | Docker image for supervisor-provisioned containers |
 | `COMPUTER_NETWORK` | `fathom-computer` | Docker network name |
-| `COMPUTER_BASE_PORT` | `9200` | Base port for loopback mapping |
+| `COMPUTER_BASE_PORT` | `19000` | Base port for loopback mapping |
 | `COMPUTER_ALLOW_PRIVATE_HOSTS` | `false` | Allow private/localhost targets (development only) |
 
 ---

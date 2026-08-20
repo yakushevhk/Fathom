@@ -36,9 +36,6 @@ pub struct DeepSeekProvider {
     /// "deepseek"; overridden when the provider is built from configuration
     /// (the wire protocol is OpenAI-compatible for all supported providers).
     provider_name: String,
-    /// Bounded per-model concurrency: a swarm fan-out queues instead of
-    /// self-inflicting 429s.
-    semaphore: crate::concurrency::ModelSemaphore,
     /// 429/5xx-aware cooldown so a rate-limited model isn't re-molten
     /// round after round.
     cooldown: crate::concurrency::FallbackCooldown,
@@ -57,7 +54,6 @@ impl DeepSeekProvider {
             model: model.to_string(),
             http,
             provider_name: "deepseek".to_string(),
-            semaphore: crate::concurrency::ModelSemaphore::default(),
             cooldown: crate::concurrency::FallbackCooldown::default(),
         }
     }

@@ -1,0 +1,7 @@
+# This is the reproducible build toolchain, not a claim about the minimum
+# Rust version accepted by every dependency in Cargo.lock. Fathom's source
+# MSRV and supported build baseline are Rust 1.97 (see Cargo.toml).
+[toolchain]
+channel = "1.97.1"
+components = ["rustfmt", "clippy"]
+profile = "minimal"

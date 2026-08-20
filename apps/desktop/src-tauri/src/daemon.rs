@@ -8,6 +8,7 @@ use std::path::PathBuf;
 use std::process::{Child, Stdio};
 use std::time::Duration;
 use tauri::{AppHandle, Emitter};
+use tokio::process::Command as AsyncCommand;
 use tokio::sync::Mutex;
 use tokio::time::sleep;
 use tracing::info;
@@ -180,12 +181,37 @@ impl DaemonManager {
     }
 
     async fn build_status(&self, url: String, port: u16, phase: &str) -> DaemonStatus {
+        let binary = Self::locate_binary();
+        let version = if let Some(path) = binary.as_ref() {
+            // The version probe is bounded and async so health/status calls never
+            // block the Tauri runtime. Keep the output exactly as reported by the
+            // managed engine (typically `fathom 0.3.0`).
+            match tokio::time::timeout(
+                Duration::from_secs(2),
+                AsyncCommand::new(path).arg("--version").output(),
+            )
+            .await
+            {
+                Ok(Ok(output)) if output.status.success() => {
+                    let value = if output.stdout.is_empty() {
+                        String::from_utf8_lossy(&output.stderr).trim().to_owned()
+                    } else {
+                        String::from_utf8_lossy(&output.stdout).trim().to_owned()
+                    };
+                    (!value.is_empty()).then_some(value)
+                }
+                _ => None,
+            }
+        } else {
+            None
+        };
+
         DaemonStatus {
             running: true,
             url: Some(url),
             port: Some(port),
-            binary: Self::locate_binary().map(|p| p.to_string_lossy().into()),
-            version: None, // TODO: fathom --version on startup
+            binary: binary.map(|p| p.to_string_lossy().into()),
+            version,
             phase: phase.into(),
             error: None,
         }

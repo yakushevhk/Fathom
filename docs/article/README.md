@@ -33,7 +33,7 @@ code.
 
 | File | About |
 |---|---|
-| [01-architecture.md](./01-architecture.md) | Architecture: 10 crates, research pipeline, agent model, guardrails |
+| [01-architecture.md](./01-architecture.md) | Architecture: 12 crates, research pipeline, agent model, guardrails |
 | [02-tool-calling.md](./02-tool-calling.md) | Tool-calling mechanics: registry, batches, partitioning, join_all vs spawn parallelism |
 | [03-benchmarks.md](./03-benchmarks.md) | Benchmarks: dispatch, parallel batches, parsing, live session statistics |
 | [04-parsing.md](./04-parsing.md) | Parsing guide: `parse_html`, `extract_json`, SSRF protection, cache |
@@ -44,7 +44,7 @@ code.
 Each file answers one question, and the answers build on each other:
 
 - **[01-architecture.md](./01-architecture.md)** answers *what is this system?*
-  It lays out the 8-crate workspace with its strict downward dependency rule,
+  It lays out the 12-crate workspace with its strict downward dependency rule,
   the request lifecycle (plan → spawn → research → synthesize → persist), the
   agent model (coordinator + parallel researchers + hierarchical sub-agents),
   and the full guardrail stack. It is the map for every other article: the
@@ -105,8 +105,8 @@ query and executes it with a **team of parallel LLM agents**:
 
 - planning and decomposition of the query into subtasks;
 - parallel execution of research agents;
-- **up to 51 built-in tools** (web search, HTML/JSON parsing, files, shell, git,
-  Python/Node REPL, OSINT verification of emails/phones/social media, CRM sync);
+- **up to 63 tools** (57 built-in + 6 computer: web search, HTML/JSON parsing, files, shell, git,
+  Python/Node REPL, OSINT verification of emails/phones/social media, CRM sync, computer use);
 - batched tool calling with true multi-threaded parallelism (`tokio::spawn`);
 - protection: SSRF guard, prompt-injection filters, file locks, cancellation on shell failure;
 - everything is written to SQLite: every tool call with duration — later analyzed
@@ -127,7 +127,7 @@ and SQLite tracing makes every session debuggable after the fact.
 
 | Metric | Value |
 |---|---|
-| Built-in tools | 38 (+5 browser CDP conditional, + MCP tools dynamic) |
+| Built-in tools | 57 (+6 computer CDP conditional, + MCP tools dynamic) |
 | Dispatch overhead for a 1-call batch | ~141 µs over raw call |
 | Per-call overhead in an 8-call batch | ≈0 µs (amortized) |
 | serde tool-argument speed | ~316 ns per round-trip |
@@ -136,7 +136,7 @@ and SQLite tracing makes every session debuggable after the fact.
 | parse_html throughput | ~900 000 lines/s on a ~1 MB document |
 | Peak parallelism in a live OSINT session | 13 concurrent calls |
 | Time saved by parallelism (OSINT, 285 calls) | **912 seconds (67% of busy time)** |
-| Tests in workspace | 900+ |
+| Tests in workspace | 1,499+ annotations |
 
 These figures appear throughout the series and are worth reading with their
 context: the dispatch overhead (~141 µs) is the argument from 02 that batch

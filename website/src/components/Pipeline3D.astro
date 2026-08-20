@@ -19,8 +19,9 @@
 </div>
 
 <script>
-  import * as THREE from 'three';
-
+  // Three.js is only needed for this interactive demo. Keep it out of the
+  // initial page bundle and load it after the browser has parsed the canvas.
+  import('three').then((THREE) => {
   // ——— пайплайн из 12 шагов (сетка 3×4) ———
   const STEPS = [
     { n: 'search',        met: 'urls',     max: 48, hue: 206 },
@@ -241,6 +242,9 @@
   function stop() { if (raf) { cancelAnimationFrame(raf); raf = null; } }
   if (reduced) { render(5.5 * STEP_MS); setPath('search→parse→extract→…→send'); }
   else { io || start(); }
+  }).catch((err) => {
+    if (pathEl) pathEl.textContent = 'ERR ' + err.message;
+  });
 </script>
 
 <style>

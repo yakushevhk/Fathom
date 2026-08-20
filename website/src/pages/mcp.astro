@@ -8,7 +8,7 @@ import Layout from '../layouts/Layout.astro';
       <div class="mcp-hero">
         <p class="eyebrow" data-i18n="mcpPage.hero.badge">MCP</p>
         <h1 class="h2-sec" data-i18n="mcpPage.hero.title">Both sides of the protocol.</h1>
-        <p class="copy-lg mx-auto" data-i18n="mcpPage.hero.sub">Fathom speaks Model Context Protocol in both directions: it consumes tools from external MCP servers and exposes its 51 built-in tools to external MCP clients; five browser tools are added when CDP is reachable.</p>
+        <p class="copy-lg mx-auto" data-i18n="mcpPage.hero.sub">Fathom speaks Model Context Protocol in both directions: it consumes tools from external MCP servers and exposes its 51 always-registered tools to external MCP clients; up to 5 browser tools are added when CDP is reachable and up to 6 computer tools when COMPUTER_URL is configured.</p>
       </div>
 
       <div class="feat">
@@ -36,7 +36,7 @@ url = "https://mcp.example.com"</code></pre>
         <div class="feat-copy">
           <p class="eyebrow" data-i18n="mcpPage.server.badge">Server</p>
           <h2 class="h3-sec" data-i18n="mcpPage.server.title">Expose the whole toolbox</h2>
-          <p class="copy-lg" data-i18n-html data-i18n="mcpPage.server.sub"><code class="ic">fathom mcp-serve</code> exposes all 51 built-in tools over MCP and actually executes <code class="ic">tools/call</code> — any MCP client can drive real web search, contact extraction and memory through Fathom; browser automation is available when CDP is reachable.</p>
+          <p class="copy-lg" data-i18n-html data-i18n="mcpPage.server.sub"><code class="ic">fathom mcp-serve</code> exposes the 51 always-registered tools over MCP and actually executes <code class="ic">tools/call</code> — any MCP client can drive real web search, contact extraction and memory through Fathom; browser automation is available when CDP is reachable.</p>
           <div class="more-links">
             <a href="/tools" class="btn btn-primary" data-i18n="mcpPage.server.browse">Browse the tools</a>
           </div>

@@ -88,6 +88,14 @@ export default defineConfig({
     },
   },
   vite: {
+    // Pipeline3D lazy-loads Three.js so the shared page entry stays small.
+    // The remaining vendor chunk is Three.js itself (~511 kB minified), which
+    // is the intentional WebGL runtime for the homepage demo; keep this
+    // narrowly scoped warning floor just above that measured asset rather
+    // than hiding unexpectedly large application chunks.
+    build: {
+      chunkSizeWarningLimit: 525,
+    },
     css: {
       preprocessorOptions: {},
     },

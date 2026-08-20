@@ -5,7 +5,7 @@
 //!   DEEPSEEK_API_KEY=sk-... cargo test -p pr-llm --test llm_live_provider \
 //!     -- --ignored --nocapture
 
-use pr_llm::{CompletionRequest, DeepSeekProvider, LlmProvider, StreamChunk};
+use pr_llm::{CompletionRequest, DeepSeekProvider, LlmProvider};
 use std::sync::Arc;
 
 fn api_key() -> String {

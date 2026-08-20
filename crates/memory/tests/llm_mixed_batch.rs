@@ -114,7 +114,7 @@ async fn mixed_batch_verdicts_with_llm() {
 #[ignore = "live API"]
 async fn parallel_searches_on_shared_store() {
     log_sep("Параллельный поиск: 12 одновременных hybrid_search");
-    let llm = make_llm();
+    let _llm = make_llm();
     let mem = Memory::in_memory(pr_core::MemoryConfig::default()).unwrap();
 
     let req = AbsorbRequest {

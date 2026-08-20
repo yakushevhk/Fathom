@@ -9,12 +9,12 @@ export default {
         ru: 'Инструменты',
       },
       title1: {
-        en: '51 built-in tools',
-        ru: '51 встроенный инструмент',
+        en: '51 always-registered tools',
+        ru: '51 всегда зарегистрированный инструмент',
       },
       titleSub: {
-        en: '(+5 browser via CDP)',
-        ru: '(+5 браузерных через CDP)',
+        en: '(+up to 5 CDP browser + up to 6 computer when configured)',
+        ru: '(+до 5 CDP-браузерных и до 6 компьютерных при настройке)',
       },
       sub: {
         en: 'Every tool implements a single Tool trait and runs in a parallel-safe registry. Read-only tools execute concurrently; writes serialize automatically.',
@@ -43,8 +43,8 @@ export default {
     mcp: {
       title: { en: 'Plus MCP', ru: 'Плюс MCP' },
       sub: {
-        en: 'All 51 built-ins + 5 conditional browser tools are exposed to external MCP clients via mcp-serve, and external MCP servers over stdio or HTTP are auto-discovered and made available to agents.',
-        ru: 'Все 51 встроенный инструмент и 5 браузерных инструментов при доступном CDP доступны внешним MCP-клиентам через mcp-serve, а внешние MCP-серверы по stdio или HTTP автоматически обнаруживаются и становятся доступны агентам.',
+        en: 'The 51 always-registered tools plus up to 5 CDP browser tools and up to 6 computer tools are exposed to external MCP clients via mcp-serve, and external MCP servers over stdio or HTTP are auto-discovered and made available to agents.',
+        ru: '51 всегда зарегистрированный инструмент, до 5 CDP-браузерных и до 6 компьютерных при настройке доступны внешним MCP-клиентам через mcp-serve, а внешние MCP-серверы по stdio или HTTP автоматически обнаруживаются и становятся доступны агентам.',
       },
       docs: { en: 'Full tool docs', ru: 'Полная документация инструментов' },
       mcp: { en: 'MCP both ways', ru: 'MCP в обе стороны' },

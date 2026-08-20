@@ -1,6 +1,6 @@
 # Crate Documentation `crates/llm`
 
-The `llm` crate is responsible for interacting with language models via the OpenAI-compatible chat-completions protocol. It includes typed request/response structures, a trait provider, a single `DeepSeekProvider` implementation (compatible with any OpenAI-compatible endpoint), a retry mechanism with exponential backoff, and a provider factory.
+The `llm` crate is responsible for interacting with language models via the OpenAI-compatible chat-completions protocol. It includes typed request/response structures, a trait provider, a single `DeepSeekProvider` implementation (compatible with any OpenAI-compatible endpoint), a retry mechanism with exponential backoff, and a provider factory. The default runtime model is `deepseek-chat`; the provider is OpenAI-compatible rather than a native Anthropic or Gemini adapter. Anthropic Messages API and Google Gemini API require separate provider implementations.
 
 ---
 
@@ -17,7 +17,7 @@ The `llm` crate is responsible for interacting with language models via the Open
 
 ## lib.rs
 
-The file [lib.rs](file:///Users/yakushev/Documents/GitHub/Parallel/research-agent/crates/llm/src/lib.rs) declares five public modules and re-exports all their contents via `pub use`:
+The file [lib.rs](../../crates/llm/src/lib.rs) declares five public modules and re-exports all their contents via `pub use`:
 
 ```rust
 pub mod provider;
@@ -39,7 +39,7 @@ This means consumers of the crate can write `use llm::LlmProvider`, `use llm::Co
 
 ## types.rs
 
-The file [types.rs](file:///Users/yakushev/Documents/GitHub/Parallel/research-agent/crates/llm/src/types.rs) defines four key structures and one enum that serve as the common currency (lingua franca) of the entire LLM layer.
+The file [types.rs](../../crates/llm/src/types.rs) defines four key structures and one enum that serve as the common currency (lingua franca) of the entire LLM layer.
 
 ### `CompletionRequest`
 
@@ -116,7 +116,7 @@ Enum with an internal `"type"` tag (serde attribute `#[serde(tag = "type")]`). E
 
 ## provider.rs
 
-The file [provider.rs](file:///Users/yakushev/Documents/GitHub/Parallel/research-agent/crates/llm/src/provider.rs) defines the `LlmProvider` trait — an abstraction for any LLM provider.
+The file [provider.rs](../../crates/llm/src/provider.rs) defines the `LlmProvider` trait — an abstraction for any LLM provider.
 
 ```rust
 #[async_trait]
@@ -144,7 +144,7 @@ The trait requires `Send + Sync`, which allows safe use of the provider from mul
 
 ## deepseek.rs
 
-The file [deepseek.rs](file:///Users/yakushev/Documents/GitHub/Parallel/research-agent/crates/llm/src/deepseek.rs) is the main and only implementation of `LlmProvider`. Despite the name, it works with any API compatible with OpenAI chat-completions.
+The file [deepseek.rs](../../crates/llm/src/deepseek.rs) is the main and only implementation of `LlmProvider`. Despite the name, it works with any API compatible with OpenAI chat-completions.
 
 ### Constants
 
@@ -363,7 +363,7 @@ Algorithm for parsing a single SSE line:
 
 ## retry.rs
 
-The file [retry.rs](file:///Users/yakushev/Documents/GitHub/Parallel/research-agent/crates/llm/src/retry.rs) implements a generic retry mechanism with exponential backoff.
+The file [retry.rs](../../crates/llm/src/retry.rs) implements a generic retry mechanism with exponential backoff.
 
 ### Global jitter counter
 
@@ -435,7 +435,7 @@ Step-by-step algorithm:
 
 ## factory.rs
 
-The file [factory.rs](file:///Users/yakushev/Documents/GitHub/Parallel/research-agent/crates/llm/src/factory.rs) provides a factory function for creating a provider from configuration.
+The file [factory.rs](../../crates/llm/src/factory.rs) provides a factory function for creating a provider from configuration.
 
 ### List of known providers
 

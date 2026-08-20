@@ -155,7 +155,7 @@ Each container receives a Docker `HealthConfig`:
 
 | Field | Value |
 |---|---|
-| `test` | `CMD-SHELL node -e "fetch('http://127.0.0.1:{port}/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"` |
+| `test` | `CMD-SHELL node -e "fetch('http://127.0.0.1:{container_port}/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"` |
 | `interval` | 5 seconds |
 | `timeout` | 2 seconds |
 | `retries` | 3 |

@@ -276,7 +276,7 @@ Nothing may print to stdout when the MCP server is running — the stdio protoco
 
 ---
 
-## `computer` — browser-based computer use
+## Computer use (browser automation via `apps/computer`)
 
 Fathom can operate a real browser via a loopback Playwright service (`apps/computer`). The agent uses accessibility-tree snapshots (opaque refs) to "see" the page like a screen-reader and interact via refs — never brittle CSS selectors.
 

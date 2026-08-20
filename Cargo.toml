@@ -1,8 +1,9 @@
 [package]
 name = "fathom"
-version = "0.1.0"
+version = "0.3.0"
 edition = "2021"
-license = "MIT"
+license = "Elastic-2.0"
+rust-version.workspace = true
 
 [[bin]]
 name = "fathom"
@@ -26,9 +27,21 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.3.0"
 edition = "2021"
-license = "MIT"
+# Project MSRV: source compatibility and supported builds are guaranteed from
+# Rust 1.97 onward. This is intentionally independent of the lower
+# rust-version values advertised by individual resolved dependencies.
+rust-version = "1.97"
+license = "Elastic-2.0"
+
+# Keep the support policy machine-readable for release and dependency audits.
+# `dependency-msrv-policy` is informational: dependency metadata (currently
+# reaching about 1.88) is not a promise that Fathom builds or is tested there.
+[package.metadata.fathom.toolchain]
+msrv = "1.97"
+supported-channel = "1.97.1"
+dependency-msrv-policy = "informational-only"
 
 [workspace.dependencies]
 tokio = { version = "1", features = ["full"] }

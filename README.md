@@ -9,11 +9,11 @@
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/Rust-2021-DEA584?style=flat&colorA=222222&logo=rust&logoColor=white" alt="Rust"></a>
-  <a href="#"><img src="https://img.shields.io/badge/LOC-72k+-blue?style=flat&colorA=222222" alt="LOC"></a>
-  <a href="#"><img src="https://img.shields.io/badge/tests-1407%20passed-3FB950?style=flat&colorA=222222" alt="Tests"></a>
-  <a href="#"><img src="https://img.shields.io/badge/tools-63-58A6FF?style=flat&colorA=222222" alt="Tools"></a>
+  <a href="#"><img src="https://img.shields.io/badge/LOC-115k-blue?style=flat&colorA=222222" alt="LOC"></a>
+  <a href="#"><img src="https://img.shields.io/badge/tests-1499%20annotations-3FB950?style=flat&colorA=222222" alt="Tests"></a>
+  <a href="#"><img src="https://img.shields.io/badge/tools-51%2B-58A6FF?style=flat&colorA=222222" alt="Tools"></a>
   <a href="#"><img src="https://img.shields.io/badge/crates-12-3178C6?style=flat&colorA=222222" alt="Crates"></a>
-  <a href="#"><img src="https://img.shields.io/badge/license-MIT-58A6FF?style=flat&colorA=222222" alt="License"></a>
+  <a href="#"><img src="https://img.shields.io/badge/license-Elastic%202.0-58A6FF?style=flat&colorA=222222" alt="License"></a>
 </p>
 
 ---
@@ -51,18 +51,19 @@ Unlike a single-shot LLM prompt, Fathom treats work as an **ongoing, parallel pr
 
 | metric | value |
 |---|---|
-| **Rust LOC** (source) | **67,588+** |
-| **Rust LOC** (tests) | **4,443+** |
-| **Rust files** | **141+** |
+| **Rust LOC** (workspace core: `crates/` + `src/` + `tests/`) | **82,218** |
+| **Rust LOC** (desktop Tauri, `apps/desktop/src-tauri`) | **32,931** |
+| **Rust LOC** (total) | **115,149** |
+| **Rust files** | **189** |
 | **Crates** | **12** |
-| **Tools** | **63** (57 built-in + 6 computer) |
+| **Tools** | **51 always + up to 5 CDP + up to 6 computer** |
 | **Search backends** | 7 (Linkup, Exa, Tavily, Serper, Brave, Parallel.ai, DuckDuckGo) |
-| **Test annotations** | **204** (`#[test]` / `#[tokio::test]` / `#[proptest]`) |
-| **Test files** | **22** |
-| **Assertions** | **3,735** |
+| **Test annotations** | **1,499** (`#[test]` / `#[tokio::test]` / `#[proptest]`) |
+| **Test files** | **23** |
+| **Assertions** | **4,202** |
 | **Agent roles** | 5 (coordinator, researcher, analyst, verifier, writer) |
 | **CRM integrations** | 3 (amoCRM, Bitrix24, HubSpot) |
-| **Export formats** | PDF, HTML, JSON, DOCX, Markdown |
+| **Export formats** | PDF, HTML, JSON, DOCX |
 | **LLM providers** | OpenAI-compatible (DeepSeek, any OpenAI API) |
 
 ## Benchmarks
@@ -118,9 +119,9 @@ All extracted contacts are written to a **deduplicated contact database** (SQLit
 
 **Goal Mode** is the crown jewel of OSINT workflows. An LLM judge evaluates the completeness of gathered data against a goal specification (e.g., "find CEO email and LinkedIn at Acme Corp"). If the goal is unmet, the system runs **gap-filling rounds**: the judge identifies what's missing, and agents re-focus their search on the gaps. This continues until the goal is satisfied or the maximum round limit is reached. The result is a structured report showing what was found, what's still missing, and the confidence level for each field.
 
-### 04 · 63 tools — extensible tool registry
+### 04 · Extensible tool registry
 
-Fathom ships with **57 built-in tools** plus **6 computer-use tools**, all managed through a central **tool registry** with typed schemas, validation, and automatic documentation generation.
+Fathom ships with **51 always-registered tools**, plus up to **5 CDP browser tools** and **6 computer-use tools** when their services are available. All are managed through a central **tool registry** with typed schemas, validation, and automatic documentation generation.
 
 **Tool categories:**
 
@@ -163,7 +164,7 @@ With `crates/supervisor` and Docker, Fathom provisions **one isolated computer p
 Fathom's agent runtime is **governed by an explicit policy engine** (`crates/governance`):
 
 - **Allow/deny rules** on tool + target (e.g., allow `browser.*` on `example.com`, deny `browser.type` on `/admin/*`). Deny wins; an empty or unmatched policy **fails closed**.
-- **Every tool call is authorized** before execution; redacted authorization events are persisted to an immutable audit trail (`/governance/audit`, `/governance/decide`).
+- **Every tool call is authorized** before execution; redacted authorization events are persisted to an immutable audit trail (`/api/v1/governance/audit`, `/api/v1/governance/decide`).
 - **Credentials vault** — secrets are stored AES-256-GCM encrypted via `/api/v1/credentials`; list responses never include plaintext, and there is **no secret-input tool** in the agent registry. Operators enter secrets through the UI; the relay adds an `x-fathom-operator` claim.
 - Secret-like values are redacted before audit persistence.
 
@@ -193,7 +194,7 @@ The **absorb pipeline** processes new facts before storage:
 
 The **entity graph** stores typed relationships between entities: `works_at`, `leads`, `reports_to`, `invests_in`, `competes_with`, and custom relation types. The `memory_graph` tool returns subgraph visualizations showing connections between entities.
 
-**Digest** runs before each session: the system summarizes the most relevant facts from memory into the agent's context window, giving it a running-start knowledge of the domain. **GC** periodically prunes stale facts (configurable TTL, default 90 days) and merges duplicate entity records.
+**Digest** runs before each session: the system summarizes the most relevant facts from memory into the agent's context window, giving it a running-start knowledge of the domain. **GC** periodically prunes stale run-scoped facts (configurable TTL, default 30 days) and merges duplicate entity records.
 
 Memory operations are fast: absorb takes 94–1020 µs per fact, hybrid search at 1K facts runs in 1.6–2.3 ms, and a full digest completes in ~4.8 ms.
 
@@ -286,7 +287,7 @@ cargo build --release
 # HTTP API server — REST endpoints, SSE streaming, Prometheus metrics, dashboard
 ./target/release/fathom serve --port 8080
 
-# MCP server — expose all 63 tools to external MCP clients (IDE agents, other AI)
+# MCP server — expose the registered tool set to external MCP clients (IDE agents, other AI)
 ./target/release/fathom mcp-serve
 
 # Semantic memory — search, inspect, and manage the knowledge base
@@ -334,7 +335,7 @@ Fathom/
 │   ├── core/                  # shared types: IDs, messages, events, findings, config, skills, export, notify, CRM
 │   ├── llm/                   # LlmProvider trait, OpenAI-compatible providers, retry/backoff
 │   ├── agent/                 # agent runtime, coordinator, tool executor, compaction, budgets, hooks, resume
-│   ├── tools/                 # 63 tools, registry, SSRF guard, injection defense, computer client
+│   ├── tools/                 # 51 base tools plus optional CDP/computer tools, registry and guards
 │   ├── memory/                # long-term semantic memory — hybrid search, entity graph, absorb pipeline
 │   ├── mcp/                   # MCP client + server (stdio / HTTP / OAuth2)
 │   ├── persistence/           # SQLite + PostgreSQL — jobs, sessions, contacts, coworkers, credentials, schedules
@@ -362,15 +363,19 @@ Fathom/
 | [docs/USAGE.md](docs/USAGE.md) | CLI commands and real-world examples |
 | [docs/TOOLS.md](docs/TOOLS.md) | All tools reference with schemas and usage |
 | [docs/HTTP-API.md](docs/HTTP-API.md) | HTTP API reference — auth, sessions, streaming, approvals, coworkers, computer |
+| [docs/TUI-GUIDE.md](docs/TUI-GUIDE.md) | TUI guide — interactive tree view, live streaming, session replay, operator approvals |
 | [docs/COMPUTER-USE.md](docs/COMPUTER-USE.md) | Computer use — Playwright service, snapshots, human takeover, Docker supervisor |
+| [docs/OPENBOT_ARCHITECTURE.md](docs/OPENBOT_ARCHITECTURE.md) | Governed computer architecture — OpenBot-style surface, policy enforcement, audit |
 | [docs/GOVERNANCE.md](docs/GOVERNANCE.md) | Policy engine, audit trail, credentials vault — safety and compliance |
 | [docs/OSINT-LEADGEN.md](docs/OSINT-LEADGEN.md) | OSINT and lead generation guide — extraction, verification, CRM push |
 | [docs/COWORKERS.md](docs/COWORKERS.md) | Coworkers, channels, schedules — autonomous recurring workers |
 | [docs/MEMORY-KB.md](docs/MEMORY-KB.md) | Semantic memory — absorb pipeline, hybrid search, entity graph |
+| [docs/MEMORY-SKILLS.md](docs/MEMORY-SKILLS.md) | Memory and skills system — file memory, semantic memory, SKILL.md workflows |
 | [docs/MCP-GUIDE.md](docs/MCP-GUIDE.md) | MCP client & server guide |
 | [docs/BENCHMARKS.md](docs/BENCHMARKS.md) | Performance benchmarks and methodology |
 | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Development guide — workspace layout, testing, contributing |
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues and fixes |
+| [docs/CHANGELOG.md](docs/CHANGELOG.md) | Changelog — all notable changes by release |
 
 ## License
-MIT
+[Elastic License 2.0 (ELv2)](LICENSE) — source-available. Free to use, copy, modify, and distribute. You may not provide Fathom as a hosted or managed service for third parties. See [LICENSE](LICENSE) for full terms.

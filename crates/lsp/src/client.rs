@@ -41,8 +41,6 @@ struct PendingRequest {
 pub struct LspClient {
     /// Channel to send requests to the writer task
     request_tx: mpsc::UnboundedSender<LspRequest>,
-    /// Pending requests waiting for responses
-    pending: Arc<Mutex<HashMap<u64, PendingRequest>>>,
     /// The child process (kept alive)
     _child: Child,
     /// Name of the LSP server command
@@ -162,9 +160,8 @@ impl LspClient {
         });
 
         let server_name = command.to_string();
-        let mut client = Self {
+        let client = Self {
             request_tx,
-            pending,
             _child: child,
             server_name,
         };

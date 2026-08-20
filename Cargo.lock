@@ -953,7 +953,7 @@ checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 
 [[package]]
 name = "fathom"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2330,7 +2330,7 @@ dependencies = [
 
 [[package]]
 name = "pr-agent"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2358,7 +2358,7 @@ dependencies = [
 
 [[package]]
 name = "pr-core"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2383,7 +2383,7 @@ dependencies = [
 
 [[package]]
 name = "pr-governance"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "chrono",
  "serde",
@@ -2395,7 +2395,7 @@ dependencies = [
 
 [[package]]
 name = "pr-llm"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2414,7 +2414,7 @@ dependencies = [
 
 [[package]]
 name = "pr-lsp"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2431,7 +2431,7 @@ dependencies = [
 
 [[package]]
 name = "pr-mcp"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2448,7 +2448,7 @@ dependencies = [
 
 [[package]]
 name = "pr-memory"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2470,7 +2470,7 @@ dependencies = [
 
 [[package]]
 name = "pr-persistence"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2493,7 +2493,7 @@ dependencies = [
 
 [[package]]
 name = "pr-server"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2525,7 +2525,7 @@ dependencies = [
 
 [[package]]
 name = "pr-supervisor"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "bollard",
  "serde",
@@ -2536,7 +2536,7 @@ dependencies = [
 
 [[package]]
 name = "pr-tools"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2572,7 +2572,7 @@ dependencies = [
 
 [[package]]
 name = "pr-tui"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "chrono",

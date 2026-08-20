@@ -238,7 +238,7 @@ NoNewPrivileges=true
 CapabilityBoundingSet=
 
 # Environment
-Environment=PARALLEL_LLM_API_KEY=sk-...
+# LLM API key is read from ~/.fathom/config.toml ([llm] api_key)
 Environment=RUST_LOG=info
 
 [Install]
@@ -272,7 +272,7 @@ To use true watch-mode diff detection with cron, persist the `--repeat` loop in 
 ```bash
 docker run -d --restart on-failure \
   --name fathom-watch \
-  -e PARALLEL_LLM_API_KEY="sk-..." \
+  -v ~/.fathom:/home/researcher/.fathom \
   -v fathom-data:/data \
   fathom \
   run "Find CTOs at European fintech startups" \
@@ -289,7 +289,7 @@ directory=/opt/fathom
 user=researcher
 autostart=true
 autorestart=true
-environment=PARALLEL_LLM_API_KEY="sk-...",RUST_LOG="info"
+environment=RUST_LOG="info"
 ```
 
 ---

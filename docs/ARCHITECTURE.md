@@ -12,7 +12,7 @@ fathom/
 │   ├── core/          # Fundamental types and domain logic
 │   ├── llm/           # LLM provider abstraction
 │   ├── agent/         # Agent runtime, coordination, control plane
-│   ├── tools/         # 63 tools (57 built-in + 6 computer)
+│   ├── tools/         # 51 always-registered + optional CDP/computer tools
 │   ├── memory/        # Long-term semantic memory + entity graph
 │   ├── mcp/           # Model Context Protocol (client and server)
 │   ├── persistence/   # Data storage (SQLite, connection pool, jobs)
@@ -57,6 +57,7 @@ Fundamental types and domain logic. **Does not depend on other crates.** Every o
 | `protected` | Protected tool/interaction mechanisms |
 | `profile` | Agent profile definitions |
 | `capability` | Capability registry — declared tool/interaction capabilities of an agent |
+| `contact` | `Contact`, `Company`, `SocialProfile` — contact data types with normalization, dedup, and validation (email, phone, social profile) |
 | `event` | `AgentEvent` — all events for the broadcast bus (session lifecycle, agent lifecycle, tool calls, LLM streaming, control-plane requests) |
 | `finding` | `Finding`, `Source` — structured research results with source attribution, confidence levels, and category tags |
 | `config` | `AppConfig` and all 10 config sections (agent, llm, tools, memory, persistence, server, tui, export, notify, crm) |
@@ -67,9 +68,10 @@ Fundamental types and domain logic. **Does not depend on other crates.** Every o
 | `crm` | `CrmSync` — amoCRM/Bitrix24/HubSpot CRM integration |
 | `session` | `SessionOutput` — session result structure consumed by export, notify, and CRM subsystems |
 | `token` | Accurate token counting (tiktoken cl100k_base) + CJK-aware heuristic fallback for models without BPE data |
+| `tool` | `ToolSchema`, `ToolOutput` — generic tool interface types used by the tool execution pipeline |
 | `error` | `PrError`, `PrResult` — unified error type with context (source location, chain of causes) |
 
-The `config` module loads from `~/.fathom/config.toml` (or a custom path via `--config`) and merges environment variable overrides for every section. Each config section maps to a subsystem and can be reloaded at runtime (the `server` and `tui` hosts watch for SIGHUP or config file changes).
+The `config` module loads from `~/.fathom/config.toml`, or from the path supplied through `PR_CONFIG`. Each config section maps to a subsystem and is loaded at process startup; runtime reload/SIGHUP is not part of the current configuration contract.
 
 ---
 
@@ -87,7 +89,7 @@ Abstraction of LLM providers. The crate defines a single `LlmProvider` trait tha
   - HTTP timeout (5 min) — configurable per provider
 - **`retry`** — generic `with_retry()` helper that retries on transient errors (network errors, 5xx, rate limits) with exponential backoff and jitter, while propagating permanent errors (4xx, auth failures) immediately
 
-The trait is designed so that adding a new provider (e.g., Anthropic, Google Gemini) requires implementing only two async methods. The `select_model_base()` function in `agent::prompt` chooses the appropriate system prompt template per model family.
+The trait is designed so that adding a new provider adapter requires implementing two async methods. The current factory exposes one DeepSeek implementation for OpenAI-compatible chat-completions endpoints; native Anthropic and Google Gemini adapters are not included. The `select_model_base()` function in `agent::prompt` chooses the appropriate system prompt template per model family.
 
 ---
 
@@ -100,6 +102,8 @@ The heart of the system — the agent runtime. This crate orchestrates the LLM c
 | `runtime` | `AgentRuntime` — the main loop: system prompt → LLM → tool calls → execute → repeat |
 | `lifecycle` | `AgentLifecycleManager` — park/revive agent lifecycle (suspend agent to disk and restore) |
 | `coordinator` | `Coordinator` — planning, fan-out, Goal Mode, synthesis, session lifecycle |
+| `task_tree` | `TaskTree` — shared durable blackboard (JSONL ledger) for the entire task tree; coordination records and typed child→parent beacons (partial_finding, milestone, blocker) for hierarchical swarm coordination |
+| `reflection` | `ReflectionEngine` — post-task reflection with bounded pattern register; merges recurring error classes, appends new ones, and produces an append-only reflection journal |
 | `compaction` | Hermes-style context compression (micro-compaction without LLM, full compaction with LLM summarization) |
 | `prompt` | `PromptBuilder` — 3 cache tiers (stable/context/volatile), role-specific prompts, model base selection |
 | `tool_executor` | Smart parallelism engine (read-only tools run concurrently, write tools serialize, path-overlap detection) |
@@ -108,6 +112,7 @@ The heart of the system — the agent runtime. This crate orchestrates the LLM c
 | `ipc` | IPC protocol for multi-process mode (Unix domain socket, JSON-line messages) |
 | `process_manager` | `ProcessManager` — spawn/monitor worker processes, socket lifecycle, kill-on-drop guarantees |
 | `doom_loop` | `DoomLoopDetector` — protection against infinite looping (3 consecutive identical tool calls) |
+| `improvement` | `ImprovementEngine` — durable improvement backlog; records candidate improvements keyed by stable fingerprint, deduplicates, and persists across restarts as human-readable Markdown |
 | `resume` | `SessionResumer` — session resumption after crash (reconstructs state from the database) |
 | `hooks` | PreToolUse/PostToolUse/Stop subprocess hooks (ZCode pattern, best-effort external policy enforcement) |
 
@@ -146,7 +151,7 @@ The heart of the system — the agent runtime. This crate orchestrates the LLM c
 
 5. **Gates** — Before any tool call is executed, it passes through four gates in order:
    - **Governance policy** — the policy engine evaluates `<tool, target>` against allow/deny rules; a `deny` verdict or an unmatched (fail-closed) pair blocks the call and is written to the audit trail
-   - **Role deny** — per-role deny lists from `[agent.role_deny]` config (e.g., a `researcher` may not run `shell`)
+   - **Role deny** — per-role deny lists from `[agent.deny_tools]` config (e.g., a `researcher` may not run `shell`)
    - **Approval** — tools listed in `[agent] approval_tools` require operator approval before execution
    - **PreToolUse hooks** — subprocess hooks that can deny the call with a reason
 
@@ -160,7 +165,7 @@ The heart of the system — the agent runtime. This crate orchestrates the LLM c
 
     Before the first turn, `register_with_bus()` advertises the agent on the IrcBus; after the final turn, `unregister_from_bus()` removes it.
 
-7. **Loop** — The runtime repeats until the model produces no tool calls, or `max_iterations` (configurable, default 30) is reached. Each iteration appends the tool results to the message list and rebuilds the volatile prompt tier.
+7. **Loop** — The runtime repeats until the model produces no tool calls, or `max_iterations` (configurable, default 50) is reached. Each iteration appends the tool results to the message list and rebuilds the volatile prompt tier.
 
 8. **Return** — The final text response is returned as the agent's output, along with total token usage, findings, and any collected contacts.
 
@@ -198,7 +203,7 @@ Export + Notify
 
 - **Reflection** — For lead-generation tasks, the coordinator runs a gap analysis: if the collected contacts fall short of the target, it spawns additional gap-filling sub-agents with refined queries.
 
-- **Goal Mode** — The coordinator compares the accumulated results against the original goal using an LLM judge. If gaps remain, it spawns new sub-tasks targeting specific missing information. This repeats up to `replan_rounds` (default 3).
+- **Goal Mode** — The coordinator compares the accumulated results against the original goal using an LLM judge. If gaps remain, it spawns new sub-tasks targeting specific missing information. This repeats up to `replan_rounds` (default 1).
 
 - **Synthesis** — All findings are merged into a structured report. The coordinator writes markdown files to the output directory (`index.md`, `summary.md`, `findings/`), absorbs contacts and findings into long-term memory, and triggers the export/notification pipeline.
 
@@ -271,7 +276,7 @@ When the process crashes or is killed, sessions remain in the database with stat
 
 ## crates/tools
 
-**57 built-in tools + 6 computer tools** (= 63 total), all implement the `Tool` trait:
+**51 always-registered tools**, plus up to 5 CDP browser tools and 6 computer tools when their services are available; all implement the `Tool` trait:
 
 ```rust
 #[async_trait]
@@ -339,8 +344,8 @@ Long-term semantic memory (mem0/Memora model, detailed in [MEMORY-KB.md](MEMORY-
 
 Model Context Protocol — enables the agent to expose its tools to external MCP clients and to consume tools from external MCP servers.
 
-- **Client**: stdio + Streamable HTTP transports, OAuth client-credentials flow, dynamic tool discovery (discovers tools from remote MCP servers at runtime), reconnect with exponential backoff
-- **Server**: `fathom mcp-serve` — exposes all 63 tools externally via the MCP protocol. Each tool call is serialized and executed through the existing `ToolExecutor`, so MCP clients get the same behavior as in-process agents
+- **Client**: stdio + Streamable HTTP transports, dynamic tool discovery, reconnect behavior, and programmatic OAuth client-credentials support. OAuth credentials are not currently configurable through `[[mcp.servers]]` TOML entries.
+- **Server**: `fathom mcp-serve` — exposes the tools registered for the current environment via MCP. Each tool call is serialized and executed through the existing registry, so MCP clients get the same tool behavior as in-process agents
 
 The MCP bridge allows the agent to be embedded in IDEs (via the `lsp` crate), CI/CD pipelines, or custom frontends that speak the MCP protocol.
 
@@ -404,8 +409,8 @@ Axum HTTP API (details in [HTTP-API.md](HTTP-API.md)):
 | `PUT /api/v1/schedules/:id` | Update schedule |
 | `DELETE /api/v1/schedules/:id` | Delete schedule |
 | `POST /api/v1/schedules/claim` | Atomic claim a schedule |
-| `GET /governance/audit` | Stream audit records |
-| `GET /governance/decide` | Real-time decision logs |
+| `GET /api/v1/governance/audit` | List audit records |
+| `POST /api/v1/governance/decide` | Evaluate an action against policy |
 | `GET /api/v1/observability/summary` | Cluster-wide observability summary |
 | `POST /api/v1/notifications/test` | Send a test notification |
 | `GET /ag-ui/events` | AG-UI versioned event stream |
@@ -419,10 +424,10 @@ Axum HTTP API (details in [HTTP-API.md](HTTP-API.md)):
 - **Mid-run steering** — The `POST /api/v1/sessions/:id/steer` endpoint injects a user instruction into a running session. The text reaches all agents at the next turn boundary via a `tokio::sync::mpsc` channel.
 - **Control plane** — The `POST /api/v1/sessions/:id/answer` and `POST /api/v1/sessions/:id/approve` endpoints resolve pending `question` and `approval` requests by sending the operator's response through the oneshot channel to the waiting agent.
 - **Auth** — API key authentication via `X-API-Key` header, rate limiting (default 120 requests/minute per client, configurable via `FATHOM_RATE_LIMIT` env var), Prometheus metrics for request duration, total requests, and in-flight sessions.
-- **Embedded dashboard** — A single-file HTML dashboard (`assets/dashboard.html`) is served at `GET /dashboard`. It provides a read-only live view of all sessions, agents, events, and memory state, consuming the same REST/SSE API that external clients use.
+- **Embedded dashboard** — The server serves its embedded dashboard page at `GET /dashboard`. It provides a read-only live view of sessions, agents, events, and memory state, consuming the same REST/SSE API that external clients use.
 - **AG-UI stream** — `GET /ag-ui/events` exposes versioned AG-UI event envelopes with bounded reconnect replay via `Last-Event-ID`; `GET /ag-ui/health` is the liveness probe.
 - **Computer relay** — `GET/POST /api/v1/computers/:agent_id/*` proxies the computer service (snapshot, navigate, click, type, key, screenshot, screen, files, control, ensure, stop, reset) and routes to the right Docker container per agent via the supervisor.
-- **Governance** — `GET /governance/audit` and `GET /governance/decide` expose the immutable audit trail of authorization decisions; `/api/v1/credentials` manages the AES-256-GCM encrypted credentials vault (operator-only, plaintext never returned).
+- **Governance** — `GET /api/v1/governance/audit` lists authorization decisions and `POST /api/v1/governance/decide` evaluates actions; `/api/v1/credentials` manages the AES-256-GCM encrypted credentials vault (operator-only, plaintext never returned).
 - **Coworkers / channels / schedules** — full lifecycle management of persistent autonomous workers: lifelong profiles (`/coworkers`), symbolic delivery channels (`/channels`), and cron-like timers with atomic claim (`/schedules`, `/schedules/claim`).
 - **Observability** — `GET /api/v1/observability/summary` aggregates cluster-wide state; `POST /api/v1/notifications/test` exercises notification channels.
 

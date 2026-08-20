@@ -1,7 +1,7 @@
 # Long-term semantic memory (pr-memory)
 
 An unlimited agent knowledge base in SQLite, built after the
-**mem0 / Memora** model (see `docs/mem0/` and `docs/memora/`). Complements the
+**mem0 / Memora** model. Complements the
 small file-based memory `MEMORY.md`/`USER.md` (see [MEMORY-SKILLS.md](MEMORY-SKILLS.md)):
 file-based memory is a stable "profile" of ~2 KB in the prompt, semantic memory is
 a searchable knowledge archive.
@@ -190,7 +190,7 @@ When absorbing, a fact can be marked with a durability class via the `memory_cla
 Durability classes let the caller express *how long a fact should matter* at
 write time, which GC then respects: durable facts are the permanent knowledge
 base, ephemeral facts are session noise that distillation promotes or archives,
-and expiring facts carry an explicit shelf life (either the 90-day default or a
+and expiring facts carry an explicit shelf life (either the 30-day default or a
 specific `metadata.expires_at` timestamp that GC honors).
 
 ### Cross-call consolidation

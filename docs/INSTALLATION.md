@@ -4,7 +4,8 @@
 
 ## Requirements
 
-- **Rust** 1.75+ (edition 2021)
+- **Rust** 1.97+ (edition 2021; the repository pins the supported build toolchain to 1.97.1 and the Dockerfile uses `rust:1.97-bookworm`)
+  - This is Fathom's declared MSRV and support baseline. Dependency metadata can advertise a lower floor (currently around 1.88), but that floor is informational and does not imply Fathom source compatibility or testing on older Rust releases.
 - **macOS / Linux** (Windows via WSL)
 - Optional: `pandoc` (for PDF/DOCX export), `ripgrep` (for grep), `python3`/`node` (for REPL), Chrome (for browser tools)
 
@@ -26,7 +27,7 @@ cargo build --release
 ./target/release/fathom --help
 ```
 
-The Rust workspace consists of 10 crates (`pr-core`, `pr-llm`, `pr-agent`, `pr-tools`, `pr-mcp`, `pr-persistence`, `pr-memory`, `pr-server`, `pr-tui`, `pr-lsp`) plus the root binary. The release profile uses LTO and symbol stripping for minimal binary size.
+The Rust workspace consists of 12 crates (`pr-core`, `pr-llm`, `pr-agent`, `pr-tools`, `pr-mcp`, `pr-persistence`, `pr-memory`, `pr-server`, `pr-tui`, `pr-lsp`, `pr-governance`, `pr-supervisor`) plus the root binary. The release profile uses LTO and symbol stripping for minimal binary size.
 
 ---
 
@@ -49,7 +50,7 @@ Edit `~/.fathom/config.toml`:
 provider = "deepseek"
 base_url = "https://api.deepseek.com"
 api_key = "sk-your-key"          # REQUIRED
-model = "deepseek-v4-flash"
+model = "deepseek-chat"
 ```
 
 The config uses TOML with all sections optional — missing fields take sensible defaults. See [CONFIGURATION.md](CONFIGURATION.md) for the full reference.
@@ -118,20 +119,32 @@ A profile overlay can override the system prompt, main/fast model, temperature, 
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `PARALLEL_LLM_API_KEY` | LLM API key | — |
 | `PARALLEL_CDP_ENDPOINT` | Chrome DevTools Protocol endpoint | `http://localhost:9222` |
 | `PARALLEL_VISION_API_BASE` | Vision model API base | `https://router.y7.hk/v1` |
 | `PARALLEL_VISION_API_KEY` | Vision API key | — |
 | `PARALLEL_VISION_MODEL` | Vision model | `qwen-vl-max` |
 | `FATHOM_API_KEYS` | API keys for HTTP API (comma-separated) | — (open access) |
+| `FATHOM_RATE_LIMIT` | HTTP API rate limit (requests per minute) | `120` |
+| `FATHOM_GOVERNANCE_ENABLED` | Enable governance policy engine | `false` |
+| `FATHOM_GOVERNANCE_POLICY` | Governance policy JSON | — |
+| `FATHOM_CREDENTIAL_KEY` | Encrypted credential vault key (32 bytes, 64 hex chars) | — |
+| `COMPUTER_TOKEN` | Computer service authentication token | — |
+| `COMPUTER_IMAGE` | Docker image for per-agent computer containers | `fathom/computer:latest` |
+| `COMPUTER_NETWORK` | Docker network for computer containers | `fathom-computer` |
+| `COMPUTER_BASE_PORT` | Base port for per-agent loopback ports | `19000` |
+| `FATHOM_COMPUTER_SERVICE_URL` | Computer service URL (server relay) | `http://127.0.0.1:8765` |
+| `COMPUTER_URL` | Computer service URL (agent tools) | `http://127.0.0.1:8765` |
+| `COMPUTER_ALLOW_PRIVATE_HOSTS` | Allow private/localhost targets (dev only) | `false` |
 | `RUST_LOG` | Logging level | `info` |
 | `PR_CONFIG` | Config file path | `~/.fathom/config.toml` |
 | `PR_MEMORY_DB` | Memory database path | `~/.fathom/memory.db` |
 | `PR_OUTPUT_DIR` | Research output directory | `./research-output` |
+| `PR_JOBS_DB` | Jobs registry database path | `~/.fathom/jobs.db` |
+| `PR_JOBS_DIR` | Per-job workspace root | `~/.fathom/jobs` |
 
 ### Notes on env vars
 
-- **`PARALLEL_LLM_API_KEY`** — overrides the `api_key` in `[llm]` config section. Set this instead of editing the config file in containerized environments.
+- **`PARALLEL_CDP_ENDPOINT`** — overrides the Chrome DevTools Protocol endpoint used by the CDP browser tools.
 - **`PR_CONFIG`** — absolute or relative path to a TOML config file. When set, the default `~/.fathom/config.toml` is ignored entirely.
 - **`PR_MEMORY_DB`** — path to the long-term memory SQLite database. When set, the `[memory] db_path` config field is ignored.
 - **`PR_OUTPUT_DIR`** — overrides `[output] dir` at runtime, useful for ad-hoc runs without editing config.
@@ -148,42 +161,43 @@ docker build -t fathom .
 ```
 
 The `Dockerfile` uses multi-stage build:
-- **Stage 1**: `rust:1.97-bookworm` — builds the release binary from source
+- **Stage 1**: `rust:1.97-bookworm` — builds the release binary from source on Fathom's supported Rust 1.97 baseline (the pinned local toolchain is 1.97.1)
 - **Stage 2**: `debian:bookworm-slim` — minimal runtime image with `ca-certificates` and a non-root `researcher` user (uid 1000)
 
 The runtime image contains only the binary, CA certificates, and the researcher home directory — no compiler toolchain, no package manager.
 
 ### Running
 
+The container reads `~/.fathom/config.toml` by default. Mount a config volume:
+
 ```bash
 docker run -it --rm \
-  -e PARALLEL_LLM_API_KEY="sk-your-key" \
+  -v ~/.fathom:/home/researcher/.fathom \
   -v research-data:/data \
   fathom \
   run "Your query" --output /data/results/
 ```
 
-The container's working directory is `/data` — research output and database files (contacts.db, memory.db) should be placed here. The config file is read from `/home/researcher/.fathom/config.toml`; mount a custom config:
+Or mount a custom config file:
 
 ```bash
 docker run -it --rm \
-  -e PARALLEL_LLM_API_KEY="sk-your-key" \
   -v ./my-config.toml:/home/researcher/.fathom/config.toml \
   -v research-data:/data \
   fathom \
   run "Your query" --output /data/results/
 ```
 
+The container's working directory is `/data` — research output and database files (contacts.db, memory.db) should be placed here.
+
 ### Docker Compose
 
-A `docker-compose.yml` file configures:
+If you create a `docker-compose.yml`, configure it with:
 - Port 8080 (HTTP API server)
 - Volumes: `research-data` (output + databases), `research-config` (config persistence)
-- Environment variables for the LLM API key and logging level
+- Environment variables for logging and API authentication; mount a Fathom config containing `[llm].api_key`
 
-```bash
-docker compose up -d
-```
+A compose file is not currently shipped in this repository; use the `docker run` examples above or provide your own compose definition.
 
 ### Exposed ports and volumes
 
@@ -199,7 +213,7 @@ docker compose up -d
 
 ## Systemd (Linux)
 
-Unit file: `fathom.service`
+The repository does not currently ship a `fathom.service` unit file. Create a unit that runs the release binary with your mounted config, then install it:
 
 ```bash
 # Installation
@@ -219,7 +233,7 @@ The service runs the HTTP API on port 8080 with:
 - **Auto-restart** on failure (`Restart=on-failure`) — the agent process recovers from crashes automatically
 - **Hardening** — `ProtectSystem=strict`, `PrivateTmp=true`, `NoNewPrivileges=true`, `CapabilityBoundingSet=` (empty) for a minimal attack surface
 - **Resource limits** — CPU and memory constraints configurable in the unit file
-- **Environment** — set `PARALLEL_LLM_API_KEY` and other variables in the unit's `[Service]` section
+- **Environment** — set `RUST_LOG`, `FATHOM_API_KEYS`, and other variables in the unit's `[Service]` section; the LLM API key is read from `~/.fathom/config.toml`
 
 ---
 
@@ -312,7 +326,7 @@ The LLM layer supports multiple models and providers through a factory pattern. 
 provider = "deepseek"
 base_url = "https://api.deepseek.com"
 api_key = "sk-your-key"
-model = "deepseek-v4-flash"       # Primary model for reasoning
+model = "deepseek-chat"       # Primary model for reasoning
 fast_model = "deepseek-chat"       # Cheap model for auxiliary calls
 ```
 

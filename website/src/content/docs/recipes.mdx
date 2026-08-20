@@ -171,23 +171,23 @@ export const automationRecipes = [
 export const apiRecipes = [
   {
     t: 'Create session via REST API and stream SSE',
-    d: `curl -X POST http://localhost:8080/api/sessions \\\n  -H "Content-Type: application/json" \\\n  -d '{"prompt":"Find CTOs at fintech startups in London"}' \\\n  | jq -r '.session_id' \\\n  | xargs -I{} curl -N http://localhost:8080/api/sessions/{}/stream`,
+    d: `curl -sS -X POST http://localhost:8080/api/v1/sessions \\\n  -H "Content-Type: application/json" \\\n  -d '{"query":"Find CTOs at fintech startups in London"}' \\\n  | jq -r '.id' \\\n  | xargs -I{} curl -N http://localhost:8080/api/v1/sessions/{}/events`,
     notes: 'First call creates the session and returns the session_id. Second call opens an SSE stream that yields real-time progress, sub-agent results, and the final synthesis. Each event is a JSON object.',
   },
   {
     t: 'Answer an agent\'s question programmatically',
-    d: `curl -X POST http://localhost:8080/api/sessions/{session_id}/answer \\\n  -H "Content-Type: application/json" \\\n  -d '{"question_id":"q_001","answer":"Yes, proceed with verification."}'`,
+    d: `curl -X POST http://localhost:8080/api/v1/sessions/{session_id}/answer \\\n  -H "Content-Type: application/json" \\\n  -d '{"request_id":"ctrl_001","text":"Yes, proceed with verification."}'`,
     notes: 'When an agent hits an approval gate or needs input, it pauses and exposes the question via the SSE stream. POST an answer to resume. Useful for building custom UIs or automated decision flows.',
   },
   {
     t: 'Approve tool calls via the API',
-    d: `curl -X POST http://localhost:8080/api/sessions/{session_id}/approve \\\n  -H "Content-Type: application/json" \\\n  -d '{"tool_call_id":"tc_042","decision":"approve"}'`,
-    notes: 'Tool approval is an optional safety gate. When enabled, agents pause before executing side-effect tools (CRM push, email send, etc.). The API lets you build approval queues and batch-approve safe operations.',
+    d: `curl -X POST http://localhost:8080/api/v1/sessions/{session_id}/approve \\\n  -H "Content-Type: application/json" \\\n  -d '{"request_id":"ctrl_042","approved":true}'`,
+    notes: 'Tool approval is an optional safety gate. When enabled, agents pause before executing side-effect tools (CRM push, email send, etc.). The API lets you build approval queues and approve or deny pending operations by request_id.',
   },
   {
     t: 'Export contacts to CSV via CLI',
-    d: `fathom contacts list -o ./contacts-export.csv`,
-    notes: 'Exports the full contact database to CSV. Use --fields to select specific columns. The --filter flag accepts expressions like "confidence>0.8 AND source=linkedin" to export subsets.',
+    d: `fathom contacts export --format csv --output ./contacts-export/`,
+    notes: 'Exports the full contact database to CSV, deduplicating rows at export time. Use --output to choose the destination directory.',
   },
   {
     t: 'Connect MCP server to Claude Desktop',
@@ -203,14 +203,14 @@ export const apiRecipes = [
 
 export const advancedRecipes = [
   {
-    t: 'Switch between hunter/analyst/validator modes',
+    t: 'Switch between hunter/analyst/validator profiles',
     d: `fathom run "..." --profile hunter\nfathom run "..." --profile analyst\nfathom run "..." --profile validator`,
     notes: 'Profiles are named presets that set model, tools, temperature, and approval policies. Hunter mode maximizes coverage. Analyst mode prioritizes depth and synthesis. Validator mode focuses on fact-checking and email verification.',
   },
   {
     t: 'Role-based model routing',
-    d: `fathom config set agent.role_models.writer "openai/gpt-4o"\nfathom config set agent.role_models.researcher "deepseek/deepseek-chat"\nfathom config set agent.role_models.validator "openai/gpt-4o-mini"`,
-    notes: 'Route different agent roles to different models. Writers use GPT-4o for polished output. Researchers use DeepSeek for cost-effective long-context exploration. Validators use GPT-4o-mini for fast checks.',
+    d: `fathom config set agent.role_models.writer "openai/gpt-4o"\nfathom config set agent.role_models.researcher "deepseek/deepseek-chat"\nfathom config set agent.role_models.verifier "openai/gpt-4o-mini"`,
+    notes: 'Route different agent roles to different models. Writers use GPT-4o for polished output. Researchers use DeepSeek for cost-effective long-context exploration. Verifiers use GPT-4o-mini for fast checks.',
   },
   {
     t: 'Set up approval gates for sensitive operations',
@@ -283,7 +283,7 @@ export const troubleshootingRecipes = [
 export const exportRecipes = [
   {
     t: 'Export contacts to HubSpot CSV format',
-    d: `fathom contacts export --format csv -o ./hubspot-import/`,
+    d: `fathom contacts export --format csv --output ./hubspot-import/`,
     notes: 'Exports contacts to CSV format.',
   },
   {
@@ -642,11 +642,11 @@ export const deploymentRecipes = [
       </div>
       <div class="step">
         <h3 data-i18n="docsRecipes.httpTitle">HTTP + dashboard</h3>
-        <p data-i18n="docsRecipes.httpSub"><code>fathom mcp-serve</code> — expose all 51 built-in tools plus five browser tools when CDP is reachable to any MCP client over stdio.</p>
+        <p data-i18n="docsRecipes.httpSub"><code>fathom mcp-serve</code> — expose 51 always-registered tools, plus up to 5 browser tools when CDP is reachable and up to 6 computer tools when COMPUTER_URL is configured to any MCP client over stdio.</p>
       </div>
       <div class="step">
         <h3 data-i18n="docsRecipes.mcpTitle">MCP for Claude/ZCode</h3>
-        <p data-i18n="docsRecipes.mcpSub"><code>fathom mcp-serve</code> — expose all 51 built-in tools plus five browser tools when CDP is reachable to any MCP client over stdio.</p>
+        <p data-i18n="docsRecipes.mcpSub"><code>fathom mcp-serve</code> — expose 51 always-registered tools, plus up to 5 browser tools when CDP is reachable and up to 6 computer tools when COMPUTER_URL is configured to any MCP client over stdio.</p>
       </div>
     </div>
   </section>
@@ -872,7 +872,7 @@ export const deploymentRecipes = [
           <div class="code-header"><span class="code-lang">bash</span></div>
           <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom config set agent.role_models.writer "openai/gpt-4o"
 fathom config set agent.role_models.researcher "deepseek/deepseek-chat"
-fathom config set agent.role_models.validator "openai/gpt-4o-mini"
+fathom config set agent.role_models.verifier "openai/gpt-4o-mini"
 fathom config set agent.role_models.default "openai/gpt-4o"\`}`}} /></pre>
         </div>
       </div>
@@ -1114,13 +1114,8 @@ fathom run "Using prior research, ..." -o ./follow-up\`}`}} /></pre>
           </tr>
           <tr>
             <td><code>DEEPSEEK_API_KEY</code></td>
-            <td>DeepSeek API key for DeepSeek Chat model</td>
+            <td>DeepSeek API key for the default OpenAI-compatible endpoint</td>
             <td><code>sk-...</code></td>
-          </tr>
-          <tr>
-            <td><code>ANTHROPIC_API_KEY</code></td>
-            <td>Anthropic API key for Claude models</td>
-            <td><code>sk-ant-...</code></td>
           </tr>
           <tr>
             <td><code>GITHUB_TOKEN</code></td>
@@ -1220,7 +1215,6 @@ FATHOM_API_KEYS=key-your_api_key_here
 # Model providers (at least one required)
 OPENAI_API_KEY=sk-proj-your_openai_key
 DEEPSEEK_API_KEY=sk-your_deepseek_key
-ANTHROPIC_API_KEY=sk-ant-your_anthropic_key
 
 # Optional: higher rate limits for source scraping
 GITHUB_TOKEN=ghp_your_github_token

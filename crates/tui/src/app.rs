@@ -1009,7 +1009,7 @@ impl App {
             .collect();
         roots.sort_by(|a, b| a.start_time.cmp(&b.start_time).then_with(|| a.id.0.cmp(&b.id.0)));
 
-        let mut children_of = |id: &AgentId| {
+        let children_of = |id: &AgentId| {
             let mut kids: Vec<&AgentInfo> = self
                 .agents
                 .values()

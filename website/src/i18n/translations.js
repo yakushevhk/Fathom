@@ -249,8 +249,8 @@ export const translations = {
       "ru": "Инструменты"
     },
     "tools_desc": {
-      "en": "51 built-ins + 5 conditional browser tools",
-      "ru": "51 встроенный инструмент + 5 условных браузерных инструментов"
+      "en": "51 always + up to 5 CDP + up to 6 computer tools",
+      "ru": "51 всегда зарегистрированный инструмент + до 5 CDP-браузерных + до 6 компьютерных"
     },
     "mcp_label": {
       "en": "MCP",
@@ -562,8 +562,8 @@ export const translations = {
       "ru": "Возможности"
     },
     "hero_mono": {
-      "en": "Rust · 51 built-ins + 5 conditional browser tools · one runtime",
-      "ru": "Rust · 51 встроенных инструментов + 5 условных браузерных · один рантайм"
+      "en": "Rust · 51 always + up to 5 CDP + up to 6 computer tools · one runtime",
+      "ru": "Rust · 51 всегда зарегистрированных + до 5 CDP-браузерных + до 6 компьютерных · один рантайм"
     },
     "t1name": { "en": "Sarah Kim", "ru": "Сара Ким" },
     "t1role": { "en": "VP of Sales, TechFlow", "ru": "Вице-президент по продажам, TechFlow" },
@@ -684,7 +684,7 @@ export const translations = {
     },
     "capc": {
       "1": {
-        "t": { "en": "51 built-ins + 5 conditional browser tools", "ru": "51 встроенный инструмент + 5 условных браузерных" },
+        "t": { "en": "51 always + up to 5 CDP + up to 6 computer tools", "ru": "51 всегда зарегистрированный инструмент + до 5 CDP-браузерных + до 6 компьютерных" },
         "d": {
           "en": "Web, files, exec, browser, vision, git, PDF, OSINT, memory.",
           "ru": "Веб, файлы, исполнение, браузер, vision, git, PDF, OSINT, память."

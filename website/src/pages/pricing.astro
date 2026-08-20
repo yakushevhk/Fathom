@@ -7,7 +7,7 @@ const tiers = [
     desc: 'For the individual researcher who wants the whole toolbox on one machine.',
     feats: [
       ['Seats', '1'],
-      ['Tools', '51 built-ins + 5 browser via CDP'],
+      ['Tools', '51 always + up to 5 CDP + up to 6 computer'],
       ['Search', '7 backends, smart fusion'],
       ['Memory', 'Local SQLite + embeddings'],
       ['Support', 'Community'],
@@ -42,7 +42,7 @@ const tiers = [
 const entChips = ['Zero Data Retention', 'SSO / SAML', 'DPA', 'On-prem', 'Custom models'];
 
 const faqs = [
-  ['How is it distributed?', 'Fathom Research is a closed product distributed individually — no public package registries or app stores. You receive a single static binary containing the CLI, TUI, HTTP server, dashboard, MCP server and worker processes. Every deployment is complete and identical: 51 built-ins + 5 conditional browser tools, 12 workspace crates, no usage metering.'],
+  ['How is it distributed?', 'Fathom Research is a closed product distributed individually — no public package registries or app stores. You receive a single static binary containing the CLI, TUI, HTTP server, dashboard, MCP server and worker processes. Every deployment is complete and identical: 51 always-registered tools + up to 5 CDP browser tools + up to 6 computer tools, 12 workspace crates, no usage metering.'],
   ['Do you store my data?', 'No. Everything — contacts, memory, jobs, reports — lives on your own infrastructure: local SQLite or your PostgreSQL. Nothing leaves your machines unless you push it to your own CRM, and there is no telemetry on your data.'],
   ['Which LLM providers are supported?', 'Any OpenAI-compatible endpoint: seven providers work out of the box, and you can plug in self-hosted or custom models. Per-role model routing lets each agent persona run on its own model.'],
   ['Can agents run air-gapped?', 'Yes. Offline TF-IDF embeddings (512 dimensions, no network), local models behind an OpenAI-compatible endpoint and on-device processing let the full pipeline run without any external calls.'],
@@ -55,7 +55,7 @@ const faqs = [
       <div class="pricing-hero">
         <p class="eyebrow" data-i18n="pricing.hero.badge">Pricing</p>
         <h1 class="h2-sec" data-i18n="pricing.hero.title">Distributed individually.</h1>
-        <p class="hero-mono" data-i18n="pricing.hero.sub">every deployment ships the full binary — 51 built-ins + 5 conditional browser tools, 12 workspace crates, no usage metering</p>
+        <p class="hero-mono" data-i18n="pricing.hero.sub">every deployment ships the full binary — 51 always-registered tools + up to 5 CDP browser tools + up to 6 computer tools, 12 workspace crates, no usage metering</p>
       </div>
 
       <!-- Tiers -->
@@ -92,7 +92,7 @@ const faqs = [
         <div class="sec-head">
           <p class="eyebrow" data-i18n="pricing.compare.badge">Compare</p>
           <h2 class="h3-sec" data-i18n="pricing.compare.title">Same binary, different scale</h2>
-          <p class="copy-lg" data-i18n="pricing.compare.sub">Every tier ships all 51 built-ins + 5 conditional browser tools — plans differ in seats, storage, integration depth and support, never in capability.</p>
+          <p class="copy-lg" data-i18n="pricing.compare.sub">Every tier ships all 51 always-registered tools + up to 5 CDP browser tools + up to 6 computer tools — plans differ in seats, storage, integration depth and support, never in capability.</p>
         </div>
         <div class="compute-tabs" id="cmpTabs">
           <button class="is-active" data-c="tools" data-i18n="pricing.compare.tab.tools">Tools</button>
@@ -131,7 +131,7 @@ const faqs = [
     tools: {
       hd: ['Capability', 'Starter', 'Team', 'Enterprise'],
       rows: [
-        ['Agent tools', '51 built-ins', '51 built-ins', '51 built-ins'],
+        ['Agent tools', '51 always + optional integrations', '51 always + optional integrations', '51 always + optional integrations'],
         ['Search backends', '7', '7', '7 + custom'],
         ['Browser automation (CDP)', 'Included', 'Included', 'Headless fleet'],
         ['OSINT suite — find_leads · extract_contacts', 'Included', 'Included', 'Included'],

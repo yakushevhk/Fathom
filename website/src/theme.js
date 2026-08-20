@@ -8,13 +8,13 @@ export function initTheme() {
     btn.addEventListener('click', () => {
       const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
       root.dataset.theme = next;
-      localStorage.setItem('parallel-theme', next);
+      localStorage.setItem('fathom-theme', next);
     });
   });
 
   const mq = window.matchMedia('(prefers-color-scheme: dark)');
   mq.addEventListener?.('change', (e) => {
-    if (!localStorage.getItem('parallel-theme')) {
+    if (!localStorage.getItem('fathom-theme')) {
       root.dataset.theme = e.matches ? 'dark' : 'light';
     }
   });

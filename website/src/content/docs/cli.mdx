@@ -220,13 +220,13 @@ fathom profiles new my-persona   # creates a template file\`}`}} /></pre>
 
   <section id="contacts">
     <h2 data-i18n="docsCli.contactsTitle">contacts</h2>
-    <p data-i18n-html="docsCli.contactsDesc">The OSINT contact database collected by <code>save_contacts</code>: list, export, deduplicate and push to the configured CRM (amoCRM, Bitrix24, HubSpot — dedup by <code>crm_id</code>, no duplicates on repeated pushes).</p>
+    <p data-i18n-html="docsCli.contactsDesc">The OSINT contact database collected by <code>save_contacts</code>: list, export, deduplicate and push to the configured CRM (amoCRM, Bitrix24, HubSpot).</p>
     <div class="mini-table-wrap">
       <table class="mini-table">
         <thead><tr><th data-i18n="docsCli.thSubcmd">Subcommand</th><th data-i18n="docsCli.thFlags">Flags</th><th data-i18n="docsCli.thDesc">Description</th></tr></thead>
         <tbody>
           <tr><td>list</td><td>--limit (default 50)</td><td data-i18n="docsCli.contacts.list">List stored contacts</td></tr>
-          <tr><td>export</td><td>--format csv|vcf|json|xlsx (default csv), -o &lt;DIR&gt;</td><td data-i18n="docsCli.contacts.export">Export contacts to a file</td></tr>
+          <tr><td>export</td><td>--format csv|vcf|json|xlsx (default csv), -o, --output &lt;DIR&gt;</td><td data-i18n="docsCli.contacts.export">Export contacts to a file</td></tr>
           <tr><td>dedup</td><td>--merge</td><td data-i18n="docsCli.contacts.dedup">Find duplicates (normalized email/phone); --merge folds each group into its most complete row</td></tr>
           <tr><td>push-crm</td><td>—</td><td data-i18n="docsCli.contacts.pushCrm">Push all stored contacts to the configured CRM</td></tr>
         </tbody>

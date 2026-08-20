@@ -1,6 +1,8 @@
 # syntax=docker/dockerfile:1
 
 # ── Build stage ──────────────────────────────────────────────────────────
+# Keep container builds on the supported Fathom toolchain baseline (Rust 1.97;
+# the dependency graph may advertise a lower informational rust-version floor).
 FROM rust:1.97-bookworm AS builder
 
 WORKDIR /build

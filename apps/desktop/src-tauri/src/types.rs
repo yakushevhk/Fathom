@@ -13,7 +13,7 @@ pub struct DaemonStatus {
     pub port: Option<u16>,
     /// Path to the fathom binary we manage.
     pub binary: Option<String>,
-    /// Engine version string reported by `fathom --version` when known.
+    /// Engine version string reported by the managed binary's `--version` probe when known.
     pub version: Option<String>,
     /// Human-readable phase: "starting" | "running" | "stopped" | "error".
     pub phase: String,

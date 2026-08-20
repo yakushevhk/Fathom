@@ -20,7 +20,7 @@ The config is broadly divided into: LLM provider routing, agent orchestration pa
 provider = "deepseek"
 base_url = "https://api.deepseek.com"
 api_key = "sk-your-key"
-model = "deepseek-v4-flash"
+model = "deepseek-chat"
 max_tokens = 8192
 temperature = 0.7
 
@@ -326,29 +326,24 @@ CRM integration pushes collected contacts to external CRM platforms. This is opt
 
 **Provider notes.** For **amoCRM** the `domain` is your subdomain (e.g. `mycompany` in `mycompany.amocrm.ru`). The `api_key` is the integration token from Settings → API Access. For **Bitrix24** the `domain` is your portal URL (e.g. `mycompany.bitrix24.com`). The `api_key` is a webhook secret or OAuth token. For **HubSpot** the `domain` field is unused; the `api_key` is a private app access token. Contacts are pushed asynchronously — the CRM sync runs in the background after the session completes, and failures are logged but do not block the session.
 
-### `[governance]`
+### Governance policy (environment-only)
 
-Governance enforces a policy engine that evaluates every agent action against an allow/deny ruleset before execution. When enabled, the system checks each tool call against the configured policy and blocks violations. Requires `FATHOM_GOVERNANCE_ENABLED=true` to activate.
+Governance is not an `AppConfig` TOML section. The server reads these environment variables at startup:
 
-| Field | Type | Default | Description |
-|------|-----|---------|----------|
-| `enabled` | bool | `false` | Master switch for the governance policy engine |
-| `policy` | string | `""` | JSON string of allow/deny rules (see [GOVERNANCE.md](GOVERNANCE.md) for format) |
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `FATHOM_GOVERNANCE_ENABLED` | bool | `false` | Enable policy enforcement. |
+| `FATHOM_GOVERNANCE_POLICY` | JSON string | *(empty)* | Inline allow/deny policy document. When enabled, an empty or unmatched policy fails closed. |
 
-**Environment variables.** These fields can also be set via environment variables:
+Example:
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `FATHOM_GOVERNANCE_ENABLED` | bool | Enable governance policy engine (`true`/`false`) |
-| `FATHOM_GOVERNANCE_POLICY` | JSON string | Inline JSON policy document with allow/deny rules |
-
-**Policy format.** The `policy` field (or `FATHOM_GOVERNANCE_POLICY` env var) accepts a JSON document of the form:
-
-```json
-{"rules":[{"effect":"allow","tool":"browser.*","host":"example.com"},{"effect":"deny","tool":"browser.type","path":"/admin/*"}]}
+```bash
+FATHOM_GOVERNANCE_ENABLED=true \
+FATHOM_GOVERNANCE_POLICY='{"rules":[{"effect":"allow","tool":"browser.*","host":"example.com"}]}' \
+fathom serve --port 8080
 ```
 
-When the policy is empty (default), governance still tracks actions but does not block them. See [GOVERNANCE.md](GOVERNANCE.md) for the full rule schema, audit log format, and best practices.
+See [GOVERNANCE.md](GOVERNANCE.md) for the full rule schema, audit format, and API routes.
 
 ### `[credentials]`
 
@@ -462,16 +457,16 @@ Computer use gives agents a browser (via Playwright) they can drive — navigate
 | `FATHOM_COMPUTER_SERVICE_URL` | `http://127.0.0.1:8765` | URL of the Playwright computer service, used by the server relay |
 | `COMPUTER_SERVICE_URL` | `http://127.0.0.1:8765` | Legacy alias for the same computer service URL |
 | `COMPUTER_TOKEN` | *(auto-generated)* | Authentication token for computer service requests |
-| `COMPUTER_IMAGE` | `ghcr.io/fathom/computer:latest` | Docker image for per-agent computer containers |
+| `COMPUTER_IMAGE` | `fathom/computer:latest` | Docker image for per-agent computer containers |
 | `COMPUTER_NETWORK` | `fathom-computer` | Docker network for computer containers |
-| `COMPUTER_BASE_PORT` | `9200` | Base port for per-agent loopback ports; agent `i` gets `base_port + i` |
+| `COMPUTER_BASE_PORT` | `19000` | Base port for per-agent loopback ports; agent gets `base_port + (hash % 1000)` (deterministic from agent ID) |
 | `COMPUTER_ALLOW_PRIVATE_HOSTS` | `false` | Allow localhost/private targets (development only; never bypasses metadata/multicast denies) |
 
 **Service URL selection.** `FATHOM_COMPUTER_SERVICE_URL` is the canonical variable used by the server relay. `COMPUTER_SERVICE_URL` is a legacy alias — set both if you need compatibility with older tooling; the canonical one wins when both are set. When neither is set, the server defaults to `http://127.0.0.1:8765`.
 
 **Authentication.** The `COMPUTER_TOKEN` shared secret authenticates relay requests to the computer service. When the Docker supervisor is configured, the same token is injected into provisioned per-agent containers. Without a token configured, the supervisor is unavailable and the server falls back to the single-service URL mode.
 
-**Docker per-agent computers.** Set `COMPUTER_IMAGE`, `COMPUTER_NETWORK`, `COMPUTER_TOKEN`, and `COMPUTER_BASE_PORT` to let the supervisor provision one isolated container per agent, each with its own workspace/profile volumes, loopback ports (`base_port + agent_index`), restrictive capabilities, and health checks. Containers are stopped and removed on agent completion or cancellation.
+**Docker per-agent computers.** Set `COMPUTER_IMAGE`, `COMPUTER_NETWORK`, `COMPUTER_TOKEN`, and `COMPUTER_BASE_PORT` to let the supervisor provision one isolated container per agent, each with its own workspace/profile volumes, loopback ports (`base_port + (hash % 1000)` — deterministic from agent ID), restrictive capabilities, and health checks. Containers are stopped and removed on agent completion or cancellation.
 
 **Egress policy.** `COMPUTER_ALLOW_PRIVATE_HOSTS=true` permits localhost and private ranges for development. It **never** bypasses hard denies for cloud-metadata endpoints (e.g. 169.254.169.254) or multicast addresses. Keep it `false` in production.
 

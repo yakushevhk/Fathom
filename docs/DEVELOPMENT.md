@@ -6,7 +6,7 @@ Developer guide: project structure, building, testing, adding tools, adding LLM 
 
 ## Project Structure
 
-The project is a Rust workspace organised into 10 crates (`crates/`), each with a single responsibility. The binary entry point is `src/main.rs`, which dispatches to CLI subcommands (`run`, `worker`, `tui`, `serve`, `config`, `jobs`, `profiles`, `contacts`, `sessions`, `memory`, `mcp-serve`, `bench`, `stats`).
+The project is a Rust workspace organised into 12 crates (`crates/`), each with a single responsibility. The binary entry point is `src/main.rs`, which dispatches to CLI subcommands (`run`, `worker`, `tui`, `serve`, `config`, `jobs`, `profiles`, `contacts`, `sessions`, `memory`, `mcp-serve`, `bench`, `stats`).
 
 ```
 fathom/
@@ -54,7 +54,7 @@ fathom/
 │   │       ├── task_tree.rs
 │   │       ├── improvement.rs
 │   │       └── reflection.rs
-│   ├── tools/              # 35+ tools
+│   ├── tools/              # 57 built-in + 6 computer tools = 63
 │   │   └── src/
 │   │       ├── registry.rs     # ToolRegistry, ToolContext
 │   │       ├── web.rs
@@ -103,10 +103,23 @@ fathom/
 │           ├── ui.rs           # Rendering
 │           ├── event.rs        # Event handling
 │           └── streaming.rs    # Streaming buffer
+│   ├── governance/         # Policy engine (allow/deny decisions)
+│   │   └── src/
+│   │       ├── lib.rs          # ActionContext, PolicyEngine, AuditEvent
+│   │       └── …
+│   └── supervisor/         # Per-agent Docker computer provisioning
+│       └── src/
+│           └── lib.rs          # SupervisorConfig, ComputerSupervisor
+├── apps/
+│   ├── computer/           # Playwright loopback computer service (Node/TS)
+│   ├── desktop/            # Tauri v2 desktop app (Rust + TypeScript)
+│   └── web/                # Next.js web dashboard (SSE, chat, agents, jobs)
 ├── tests/
 │   ├── e2e/                # End-to-end tests
 │   │   ├── basic_research.rs
-│   │   └── multi_agent.rs
+│   │   ├── multi_agent.rs
+│   │   ├── hub_messaging.rs
+│   │   └── real_tools.rs
 │   ├── integration/        # Integration tests
 │   │   ├── export_notify.rs
 │   │   └── history.rs
@@ -128,11 +141,13 @@ The workspace uses a strict layering strategy to minimise compilation units and 
 | **pr-core** | *(none)* | Fundamental types, config, error types, memory models, export, CRM, skills, notifications |
 | **pr-llm** | pr-core | `LlmProvider` trait, DeepSeek/OAI-compatible impl, retry, concurrency, factory |
 | **pr-persistence** | pr-core | SQLite (WAL) + PostgreSQL storage, session history, contact DB, jobs DB |
-| **pr-tools** | pr-core, pr-llm | 35+ tool implementations, registry, search engine (7 backends) |
+| **pr-tools** | pr-core, pr-llm | 57 built-in tool implementations + 6 computer tools, registry, search engine (7 backends) |
 | **pr-memory** | pr-core, pr-persistence | Long-term semantic memory (hybrid vector + BM25, mem0/Memora-inspired) |
 | **pr-mcp** | pr-core, pr-tools | Model Context Protocol client + server |
 | **pr-agent** | pr-core, pr-llm, pr-tools, pr-persistence, pr-memory | Agent runtime, coordinator, compaction, IPC, prompts, doom-loop detection, hooks, resume, budget |
-| **pr-server** | pr-core, pr-llm, pr-agent, pr-persistence | Axum HTTP API with auth and Prometheus metrics |
+| **pr-governance** | pr-core | Policy engine (ActionContext, PolicyRule, PolicyConfig, decide/allow/deny) |
+| **pr-supervisor** | *(none)* | Docker-based per-agent computer provisioning (SupervisorConfig, ComputerSupervisor, AgentContainer) |
+| **pr-server** | pr-core, pr-llm, pr-agent, pr-persistence, pr-governance, pr-supervisor | Axum HTTP API with auth and Prometheus metrics |
 | **pr-tui** | pr-core, pr-llm, pr-agent | Ratatui terminal UI |
 | **pr-lsp** | pr-core | LSP-based code intelligence tool |
 | **binary** | all crates + ratatui + crossterm | CLI entry point, contacts, jobs, sessions, memory, profiles, bench, stats |
@@ -145,7 +160,7 @@ The workspace uses a strict layering strategy to minimise compilation units and 
 
 ### Prerequisites
 
-- **Rust toolchain**: Install via [rustup](https://rustup.rs/) — the project targets stable Rust (edition 2021).
+- **Rust toolchain**: Install via [rustup](https://rustup.rs/). The project uses edition 2021 and declares Rust **1.97** as its MSRV and supported build baseline; `rust-toolchain.toml` pins reproducible local builds to **1.97.1**, while Docker uses `rust:1.97-bookworm`. Resolved dependencies may advertise a lower metadata floor (currently around 1.88); that floor is informational only and is not a supported Fathom toolchain.
 - **Cargo** (comes with rustup).
 - **pandoc** (optional, for PDF/DOCX export): `brew install pandoc` on macOS, `apt install pandoc` on Debian/Ubuntu.
 
@@ -218,19 +233,24 @@ The release profile uses `lto = true` and `strip = true` for minimal binary size
 
 ## Testing
 
-**624 tests** (all passing) across the workspace:
+**1,499 test annotations** (all passing) across the workspace:
 
 | Crate | Tests | What they cover |
 |-------|-------|-----------------|
-| pr-tools | 293 | Tool execution, search backends, browser automation, OSINT tools, contact extraction, file operations, schema validation |
-| pr-core | 108 | Config parsing, error handling, memory model, export formats, CRM sync, token accounting |
-| pr-agent | 107 | Runtime loop, coordinator, compaction, doom-loop detection, IPC, resume, hooks, budget, task tree, improvement, reflection |
-| pr-tui | 34 | UI rendering, event handling, streaming buffer |
-| pr-server | 29 | HTTP routes, authentication, rate limiting, metrics |
-| pr-persistence | 21 | SQLite WAL, PostgreSQL, session history, jobs DB, contact store |
-| pr-mcp | 16 | MCP client, server, tool discovery |
-| pr-llm | 9 | Provider factory, retry logic, concurrency, semaphore |
-| E2E + Integration | 7 | Full research pipeline, multi-agent coordination, export/notify, session history |
+| pr-tools | 457 | Tool execution, search backends, browser automation, OSINT tools, contact extraction, file operations, schema validation |
+| pr-core | 229 | Config parsing, error handling, memory model, export formats, CRM sync, token accounting |
+| pr-agent | 190 | Runtime loop, coordinator, compaction, doom-loop detection, IPC, resume, hooks, budget, task tree, improvement, reflection |
+| pr-memory | 135 | Memory absorb, dedup, classification, hybrid search, vector + BM25, GC |
+| pr-server | 123 | HTTP routes, authentication, rate limiting, metrics, computer relay |
+| pr-llm | 68 | Provider factory, retry logic, concurrency, semaphore, streaming |
+| pr-tui | 59 | UI rendering, event handling, streaming buffer |
+| pr-persistence | 57 | SQLite WAL, PostgreSQL, session history, jobs DB, contact store, credentials |
+| pr-lsp | 53 | LSP client, language server detection, code intelligence |
+| pr-mcp | 31 | MCP client, server, tool discovery |
+| pr-governance | 4 | Policy engine, rules, audit events |
+| pr-supervisor | 2 | Container lifecycle, config validation |
+| binary (`src/`) | 79 | CLI subcommands, config set, bench harness, session stats |
+| E2E + Integration | 12 | Full research pipeline, multi-agent coordination, hub messaging, real-tool execution, export/notify, session history |
 
 ### Running tests
 
@@ -258,7 +278,7 @@ PR_CDP_LIVE=1 cargo test -p pr-tools live_cdp -- --ignored
 
 1. **Unit tests** — inline in each module (`#[cfg(test)] mod tests { ... }`). Fast, deterministic, no network.
 2. **Integration tests** — `tests/integration/` — test export/notify pipelines and session history. Use a real SQLite database (tempfile).
-3. **E2E tests** — `tests/e2e/` — test the full research pipeline with `MockLlm`. `basic_research.rs` tests a single-agent flow; `multi_agent.rs` tests hierarchical delegation.
+3. **E2E tests** — `tests/e2e/` — test the full research pipeline with `MockLlm`. `basic_research.rs` tests a single-agent flow; `multi_agent.rs` tests hierarchical delegation; `hub_messaging.rs` tests inter-agent communication via the IrcBus; `real_tools.rs` tests the tool execution layer with real file system and network tools.
 4. **Live tests** — annotated with `#[ignore]`, run only with environment variables. They hit real APIs and require configured credentials.
 
 ### MockLlm for offline tests
@@ -358,7 +378,7 @@ pub mod my_tool;
 registry.register(Arc::new(crate::my_tool::MyTool));
 ```
 
-The `with_builtins()` method is the single registration point for all built-in tools. It currently registers 35+ tools across categories: web fetch/search, file I/O, shell, browser automation, vision, git, PDF, code REPLs, OSINT lead generation, contact extraction, memory, coordination, and hierarchical delegation.
+The `with_builtins()` method is the single registration point for all built-in tools. It currently registers 51 always-available tools, plus up to 5 CDP browser tools and 6 computer-use tools when their services are configured, across categories: web fetch/search, file I/O, shell, browser automation, computer use, vision, git, PDF, code REPLs, OSINT lead generation, contact extraction, memory, coordination, and hierarchical delegation.
 
 ### 4. Classify for parallelism
 
@@ -633,7 +653,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.97.1
       - run: cargo test --workspace
       - run: cargo clippy --workspace -- -D warnings
 
@@ -641,6 +661,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.97.1
       - run: cargo build --release
       - uses: actions/upload-artifact@v4
         with:
@@ -653,7 +674,7 @@ jobs:
 1. **Caching**: Use `Swatinem/rust-cache@v2` to cache `target/` and `~/.cargo/` between runs. This drops CI times from ~15 minutes to ~2 minutes for most changes.
 2. **Clippy deny**: `-D warnings` ensures no lint warnings slip through.
 3. **Formatting check**: Add `cargo fmt --check` to enforce consistent formatting.
-4. **MSRV check**: The project targets stable Rust. Add a matrix entry for `1.85` (or whatever the minimum supported version is) to avoid accidental regressions.
+4. **MSRV check**: The project declares Rust `1.97` as its MSRV. Keep a CI matrix entry for `1.97` (matching the `rust:1.97-bookworm` Docker build image) to avoid accidental regressions; do not use dependency metadata floors as a supported-toolchain claim.
 
 ### Docker deployment
 
@@ -674,7 +695,7 @@ The Docker image uses `rustls-tls` for HTTPS (no system CA bundle needed) and `m
 - **2GIS/Google Maps** require API keys for stability. The geocoding and directory search tools work without keys but at reduced reliability.
 - **PDF/DOCX export** requires pandoc installed on the system. HTML export works without any external dependencies.
 - **Vision model** requires `PARALLEL_VISION_API_KEY` environment variable. The `VisionTool` is disabled when this key is not set.
-- **Browser automation** requires a Chrome DevTools Protocol (CDP) endpoint. The `CHROME_CDP_URL` environment variable or `[browser] cdp_url` config key must point to a running Chrome/Chromium instance with `--remote-debugging-port`.
+- **Browser automation** requires a Chrome DevTools Protocol (CDP) endpoint. The `PARALLEL_CDP_ENDPOINT` environment variable or `[browser] cdp_url` config key must point to a running Chrome/Chromium instance with `--remote-debugging-port`.
 
 ---
 

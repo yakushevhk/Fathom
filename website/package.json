@@ -1,7 +1,7 @@
 {
-  "name": "parallel-astro",
+  "name": "@fathom/website",
   "type": "module",
-  "version": "1.0.0",
+  "version": "0.3.0",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build && node scripts/i18n-generate.mjs",

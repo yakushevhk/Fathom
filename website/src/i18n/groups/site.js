@@ -14,7 +14,7 @@ export default {
     api: {
       0: { d: { en: 'One-line installer. Builds the release binary, installs it to /usr/local/bin (or $PREFIX/bin), creates the default config directory — and optionally installs the systemd service unit with INSTALL_SYSTEMD=1.', ru: 'Установщик в одну строку. Собирает релизный бинарник, устанавливает его в /usr/local/bin (или $PREFIX/bin), создаёт каталог конфигурации по умолчанию — и по желанию устанавливает systemd-юнит с INSTALL_SYSTEMD=1.' } },
       1: { d: { en: 'Build from source with the Rust toolchain. Release builds are compiled with LTO and stripped — a slim, self-contained binary.', ru: 'Сборка из исходников с Rust-инструментарий. Релизные сборки компилируются с LTO и stripped — компактный автономный бинарник.' } },
-      2: { d: { en: 'Multi-stage image: rust:1.82-bookworm builder → debian:bookworm-slim runtime. Runs as a non-root user; output and databases live in /data.', ru: 'Многоступенчатый образ: builder rust:1.82-bookworm → рантайм debian:bookworm-slim. Запускается от non-root пользователя; выходные данные и базы живут в /data.' } },
+      2: { d: { en: 'Multi-stage image: rust:1.97-bookworm builder → debian:bookworm-slim runtime. Runs as a non-root user; output and databases live in /data.', ru: 'Многоступенчатый образ: builder rust:1.97-bookworm → рантайм debian:bookworm-slim. Запускается от non-root пользователя; выходные данные и базы живут в /data.' } },
       3: { d: { en: 'Publishes port 8080 with restart policy and named volumes: research-data for output, contacts and memory databases, research-config for config.toml.', ru: 'Публикует порт 8080 с политикой перезапуска и именованными томами: research-data для выходных данных, баз контактов и памяти, research-config для config.toml.' } },
     },
     systemd: {
@@ -37,7 +37,7 @@ export default {
       0: { enables: { en: 'PDF and DOCX report export (HTML / JSON export always works)', ru: 'Экспорт отчётов в PDF и DOCX (экспорт HTML / JSON работает всегда)' } },
       1: { enables: { en: 'speeds up the grep tool; built-in fallback when absent', ru: 'ускоряет инструмент grep; встроенный запасной вариант при отсутствии' } },
       2: { enables: { en: 'REPL and code-execution tools', ru: 'инструменты REPL и выполнения кода' } },
-      3: { enables: { en: '5 browser tools; auto-detected via PARALLEL_CDP_ENDPOINT', ru: '5 браузерных инструментов; автодетекция через PARALLEL_CDP_ENDPOINT' } },
+      3: { enables: { en: 'Up to 5 browser tools; auto-detected via PARALLEL_CDP_ENDPOINT, plus up to 6 computer tools via COMPUTER_URL', ru: 'До 5 браузерных через PARALLEL_CDP_ENDPOINT и до 6 компьютерных через COMPUTER_URL' } },
     },
     req: {
       badge: { en: 'Requirements', ru: 'Требования' },
@@ -87,7 +87,7 @@ export default {
     hero: {
       badge: { en: 'Pricing', ru: 'Цены' },
       title: { en: 'Distributed individually.', ru: 'Распространяется индивидуально.' },
-      sub: { en: 'every deployment ships the full binary — 51 built-ins + 5 conditional browser tools, 12 workspace crates, no usage metering', ru: 'каждый деплой поставляет полный бинарник — 51 встроенный инструмент + 5 браузерных при доступном CDP, 12 крейтов, без учёта использования' },
+      sub: { en: 'every deployment ships the full binary — 51 always-registered tools + up to 5 CDP browser tools + up to 6 computer tools, 12 workspace crates, no usage metering', ru: 'каждый деплой поставляет полный бинарник — 51 всегда зарегистрированный + до 5 CDP-браузерных + до 6 компьютерных, 12 крейтов, без учёта использования' },
     },
     requestAccess: { en: 'Request access', ru: 'Запросить доступ' },
     tier: {
@@ -97,7 +97,7 @@ export default {
         desc: { en: 'For the individual researcher who wants the whole toolbox on one machine.', ru: 'Для индивидуального исследователя, которому нужен весь набор инструментов на одной машине.' },
         feat: {
           0: { en: '<kbd>Seats</kbd> 1', ru: '<kbd>Места</kbd> 1' },
-          1: { en: '<kbd>Tools</kbd> 51 built-ins + 5 browser via CDP, no metering', ru: '<kbd>Инструменты</kbd> 51 встроенный + 5 браузерных при CDP, без учёта' },
+          1: { en: '<kbd>Tools</kbd> 51 always + up to 5 CDP + up to 6 computer, no metering', ru: '<kbd>Инструменты</kbd> 51 всегда + до 5 CDP + до 6 компьютерных, без учёта' },
           2: { en: '<kbd>Search</kbd> 7 backends, smart fusion', ru: '<kbd>Поиск</kbd> 7 бэкендов, умное слияние' },
           3: { en: '<kbd>Memory</kbd> Local SQLite + embeddings', ru: '<kbd>Память</kbd> Локальный SQLite + эмбеддинги' },
           4: { en: '<kbd>Support</kbd> Community', ru: '<kbd>Поддержка</kbd> Сообщество' },
@@ -147,8 +147,8 @@ export default {
       badge: { en: 'Compare', ru: 'Сравнение' },
       title: { en: 'Same binary, different scale', ru: 'Тот же бинарник, другой масштаб' },
       sub: {
-        en: 'Every tier ships all 51 built-ins + 5 conditional browser tools — plans differ in seats, storage, integration depth and support, never in capability.',
-        ru: 'Каждый тариф поставляет все 51 встроенный инструмент и 5 браузерных при доступном CDP — планы различаются местами, хранилищем, глубиной интеграции и поддержкой, но не функциональностью.',
+        en: 'Every tier ships all 51 always-registered tools + up to 5 CDP browser tools + up to 6 computer tools — plans differ in seats, storage, integration depth and support, never in capability.',
+        ru: 'Каждый тариф поставляет 51 всегда зарегистрированный инструмент, до 5 CDP-браузерных и до 6 компьютерных при настройке — планы различаются местами, хранилищем, глубиной интеграции и поддержкой, но не функциональностью.',
       },
       tab: {
         tools: { en: 'Tools', ru: 'Инструменты' },
@@ -163,8 +163,8 @@ export default {
       0: {
         q: { en: 'How is it distributed?', ru: 'Как это распространяется?' },
         a: {
-          en: 'Fathom Research is a closed product distributed individually — no public package registries or app stores. You receive a single static binary containing the CLI, TUI, HTTP server, dashboard, MCP server and worker processes. Every deployment is complete and identical: 51 built-ins + 5 conditional browser tools, 12 workspace crates, no usage metering.',
-          ru: 'Fathom Research — закрытый продукт, распространяемый индивидуально — без публичных реестров пакетов и app stores. Вы получаете единый статический бинарник, содержащий CLI, TUI, HTTP-сервер, дашборд, MCP-сервер и воркер-процессы. Каждый деплой полный и идентичный: 51 встроенный инструмент + 5 браузерных при доступном CDP, 12 крейтов, без учёта использования.',
+          en: 'Fathom Research is a closed product distributed individually — no public package registries or app stores. You receive a single static binary containing the CLI, TUI, HTTP server, dashboard, MCP server and worker processes. Every deployment is complete and identical: 51 always-registered tools + up to 5 CDP browser tools + up to 6 computer tools, 12 workspace crates, no usage metering.',
+          ru: 'Fathom Research — закрытый продукт, распространяемый индивидуально — без публичных реестров пакетов и app stores. Вы получаете единый статический бинарник, содержащий CLI, TUI, HTTP-сервер, дашборд, MCP-сервер и воркер-процессы. Каждый деплой полный и идентичный: 51 всегда зарегистрированный + до 5 CDP-браузерных + до 6 компьютерных, 12 крейтов, без учёта использования.',
         },
       },
       1: {

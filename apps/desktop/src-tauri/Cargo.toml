@@ -1,8 +1,15 @@
 [package]
 name = "fathom-desktop"
-version = "0.1.0"
+version = "0.3.0"
 description = "Fathom Desktop - control the Fathom research agent from your desktop"
 edition = "2021"
+# The desktop wrapper follows the repository's Rust 1.97 support baseline.
+rust-version = "1.97"
+
+[package.metadata.fathom.toolchain]
+msrv = "1.97"
+supported-channel = "1.97.1"
+dependency-msrv-policy = "informational-only"
 
 [workspace]
 

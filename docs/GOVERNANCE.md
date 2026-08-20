@@ -55,8 +55,8 @@ Each rule has three fields:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `FATHOM_GOVERNANCE_ENABLED` | `true` | Master switch for the governance subsystem. Set to `false` to disable all policy checks (not recommended for production). |
-| `FATHOM_GOVERNANCE_POLICY` | `~/.fathom/policy.toml` | Path to the policy configuration file. |
+| `FATHOM_GOVERNANCE_ENABLED` | `false` | Master switch for the governance subsystem. Set to `true` to enforce policy decisions. |
+| `FATHOM_GOVERNANCE_POLICY` | *(empty)* | Inline JSON policy document. An enabled empty or unmatched policy fails closed. |
 
 ---
 
@@ -68,8 +68,8 @@ Every authorization decision is recorded in an **immutable append-only audit tra
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/governance/audit` | Stream audit records with optional filters (tool, agent, verdict, date range) |
-| `GET` | `/governance/decide` | Real-time decision logs for tool calls as they happen |
+| `GET` | `/api/v1/governance/audit` | List audit records with optional filters (tool, agent, decision, session) |
+| `POST` | `/api/v1/governance/decide` | Evaluate an action against the active policy |
 
 ### Record format
 
@@ -107,7 +107,7 @@ The credentials vault stores sensitive values (API keys, tokens, passwords) encr
 ### Encryption
 
 - **Algorithm**: AES-256-GCM (Galois/Counter Mode)
-- **Key derivation**: The encryption key is derived from `FATHOM_CREDENTIAL_KEY` using PBKDF2 with a random salt
+- **Key material**: `FATHOM_CREDENTIAL_KEY` is decoded from 64-character hex or base64 into the 32-byte AES-256-GCM key
 - **Nonce**: A random 12-byte nonce per encryption operation
 - **Storage**: Encrypted blobs are stored in SQLite alongside metadata (label, scope, created_at, updated_at)
 
@@ -149,18 +149,18 @@ The server relay sits between the agent and external services, injecting credent
 
 ## Configuration
 
-```toml
-# ~/.fathom/config.toml
+Governance is configured through environment variables rather than an `[governance]` TOML section:
 
-[governance]
-enabled = true
-policy_path = "~/.fathom/policy.toml"
+```bash
+FATHOM_GOVERNANCE_ENABLED=true \
+FATHOM_GOVERNANCE_POLICY='{"rules":[{"effect":"allow","tool":"browser.*","host":"example.com"}]}' \
+fathom serve --port 8080
 ```
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `enabled` | bool | `true` | Master switch for governance subsystem |
-| `policy_path` | string | `"~/.fathom/policy.toml"` | Path to policy file |
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `FATHOM_GOVERNANCE_ENABLED` | bool | `false` | Enable policy enforcement. |
+| `FATHOM_GOVERNANCE_POLICY` | JSON string | *(empty)* | Inline policy document; enabled empty/unmatched policy fails closed. |
 
 ---
 

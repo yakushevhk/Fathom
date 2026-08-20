@@ -664,7 +664,7 @@ Policy engine for governing agent tool actions. Governed decisions are recorded 
 
 ### `POST /api/v1/governance/decide`
 
-Evaluate an action against the current policy. When governance is disabled, every action is allowed (but still audited).
+Evaluate an action against the current policy. When governance is disabled, policy enforcement is bypassed. When enabled, deny rules and unmatched actions are handled according to the active policy; audit records remain redacted.
 
 **Request:** an `ActionContext`:
 ```json
@@ -942,4 +942,4 @@ The metrics are recorded by a middleware that wraps all API routes. The `session
 
 ## CORS
 
-The API includes CORS middleware (all origins allowed by default). For production, configure allowed origins in code (`crates/server/src/lib.rs`).
+The API uses restrictive CORS when API-key authentication is disabled. When API keys are configured, the server enables permissive CORS for authenticated clients. Review the middleware in `crates/server/src/lib.rs` before exposing the API cross-origin.

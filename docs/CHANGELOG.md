@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Core architecture
-- **10-crate Rust workspace** (`pr-core`, `pr-llm`, `pr-agent`, `pr-tools`, `pr-mcp`, `pr-persistence`, `pr-memory`, `pr-server`, `pr-tui`, `pr-lsp`) with shared workspace versioning and dependency resolution.
+- **12-crate Rust workspace** (`pr-core`, `pr-llm`, `pr-agent`, `pr-tools`, `pr-mcp`, `pr-persistence`, `pr-memory`, `pr-server`, `pr-tui`, `pr-lsp`, `pr-governance`, `pr-supervisor`) with shared workspace versioning and dependency resolution.
 - **CLI entry point** (`src/main.rs`) with command routing via `clap` — `run`, `tui`, `serve`, `mcp-serve`, `memory`, `contacts`, `jobs` subcommands.
 - **TOML-based configuration system** (`pr-core`) covering LLM providers, agent parameters, search backends, memory, contacts, CRM, export, notifications, MCP, context management, and lifecycle hooks.
 - **Dotted-key config value access** (`set_config_value` / `lookup_value`) for runtime overrides.
@@ -44,9 +44,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `researcher` — executes searches, scrapes pages, runs browser automation (depth-limited spawning).
   - `analyst` — cross-references findings, identifies contradictions, enriches entities (depth-limited spawning).
   - `verifier` — fact-checks claims against live sources and memory, assigns confidence scores.
-  - `writer` — produces final deliverable (PDF, HTML, JSON, DOCX, Markdown).
+  - `writer` — produces final deliverable (PDF, HTML, JSON, or DOCX); Markdown is used as an internal report/source format rather than a configured `ExportFormat`.
 - **Goal Mode** — LLM judge evaluates completeness against a goal specification; runs gap-filling rounds (search → assess → re-focus) until the goal is satisfied or the round limit is reached.
-- **Stall detection** — agents that produce no output for a configurable period (default 60s) are warned, then killed if unresponsive.
+- **Stall detection** — agents that produce no output for a configurable period (default 450s warning / 1200s kill) are warned, then killed if unresponsive.
 - **Mid-run steering** — inject instructions into a running session at the next turn boundary.
 - **Agent IPC** — inter-process communication primitives for agent coordination.
 - **Task tree** — hierarchical tracking of sub-tasks, parent-child relationships, and completion status.
@@ -65,7 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Normalized result schema** — all backends return structured results with titles, snippets, URLs, and metadata.
 
 #### Tool system
-- **51 built-in tools** + **5 browser automation tools** (CDP-based), managed through a central `ToolRegistry` with typed schemas, validation, and automatic documentation generation.
+- **Conditional tool registry** — 51 always-registered built-in tools, plus up to 5 CDP browser tools when CDP is reachable and up to 6 computer-use tools when `COMPUTER_URL` is configured; LSP tools are optional and separately registered. All are managed through a central `ToolRegistry` with typed schemas and validation.
 - **Tool categories:**
   | Category | Tools |
   |---|---|
@@ -118,7 +118,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`memory_graph` tool** — subgraph visualizations of entity connections.
 - **Memory classes** — durability classes for fact retention.
 - **Digest** — pre-session summary of relevant facts into agent context.
-- **Garbage collection** — periodic pruning of stale facts (configurable TTL, default 90 days), merging of duplicate entity records, confidence decay.
+- **Garbage collection** — periodic pruning of stale facts (configurable TTL, default 30 days), merging of duplicate entity records, confidence decay.
 - **Memory operations:**
   - Absorb: 94–1020 µs/fact.
   - Hybrid search @ 1K facts: 1.6–2.3 ms.
@@ -129,7 +129,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tool output truncation** — intelligently keeps beginning and end, removes redundant whitespace, strips HTML tags; CJK-aware and word-boundary respecting.
 - **Hermes-style compaction** — summarizes older conversation turns into a condensed representation, replacing full history in the context window.
 - **Per-session token budgets** — configurable (default 128K tokens); "economy mode" when near exhaustion.
-- **Stall detection** — configurable warn/kill thresholds (default 60s warn, 120s kill).
+- **Stall detection** — configurable warn/kill thresholds (default 450s warn, 1200s kill).
 
 #### HTTP API and server
 - **Axum-based HTTP server** with full REST API:
@@ -186,7 +186,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Tool discovery and schema caching.
   - Automatic reconnection on transport failure.
   - OAuth token refresh for authenticated servers.
-- **MCP Server** (`mcp-serve`) — exposes all 51 tools to external MCP clients (IDE agents, automation platforms, other AI systems).
+- **MCP Server** (`mcp-serve`) — exposes the tools registered by the runtime to external MCP clients. The default registry has 51 always-registered tools, with up to 5 CDP browser tools when CDP is reachable and up to 6 computer tools when `COMPUTER_URL` is configured; LSP tools are optional and separately registered.
 
 #### LLM abstraction
 - **Unified LLM interface** (`pr-llm`) — pluggable provider abstraction.
@@ -207,13 +207,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **LLM-facing tool adapter** — wraps LSP tools for use by agents.
 
 #### Export and notifications
-- **Export formats**: PDF, HTML, JSON, DOCX, Markdown (`rust_xlsxwriter` for Excel, `pulldown-cmark` for Markdown).
+- **Export formats**: PDF, HTML, JSON, and DOCX (`ExportFormat`); Markdown is an internal report/source format, not a configured export variant.
 - **SMTP notifications** — configurable email alerts for session completion/failure.
 - **Lifecycle hooks** — configurable pre/post hooks with timeout (default 5000ms).
 - **Session output** — structured output with metadata, citations, and executive summary.
 
 #### Testing
-- **204 test annotations** across 22 test files (3,735 assertions).
+- **1,499 test annotations** across 23 test files (4,202 assertions).
 - **E2E tests**: `e2e_basic_research`, `e2e_multi_agent`, `e2e_real_tools`.
 - **Integration tests**: `integration_export_notify`, `integration_history`.
 - **Property-based testing** with `proptest`.
@@ -221,7 +221,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Documentation
 - **Comprehensive docs directory**: `ARCHITECTURE.md`, `INSTALLATION.md`, `CONFIGURATION.md`, `USAGE.md`, `TOOLS.md`, `HTTP-API.md`, `OSINT-LEADGEN.md`, `MEMORY-KB.md`, `BENCHMARKS.md`, `DEVELOPMENT.md`.
-- **Crate-level documentation**: `crates/agent/ARCHITECTURE.md`, `crates/llm/docs.md`, `crates/mcp/docs.md`, `crates/tools/TOOLS_DOCUMENTATION.md`.
+- **Crate-level documentation**: `docs/crates/agent.md`, `docs/crates/llm.md`, `docs/crates/mcp.md`, `docs/crates/tools.md`.
 - **Article series**: `docs/article/` — architecture, tool calling, benchmarks, parsing, case studies.
 
 ### Performance benchmarks
@@ -254,5 +254,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[0.3.0]: https://github.com/yakushevhk/Fathom/releases/tag/v0.3.0
 [0.2.0]: https://github.com/yakushevhk/Fathom/releases/tag/v0.2.0
 [0.1.0]: https://github.com/yakushevhk/Fathom/releases/tag/v0.1.0

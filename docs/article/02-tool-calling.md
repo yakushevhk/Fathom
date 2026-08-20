@@ -28,7 +28,7 @@ pub trait Tool: Send + Sync {
   contact database, LLM provider for LLM-assisted tools.
 
 The registry (`ToolRegistry`) is a simple `HashMap<String, Arc<dyn Tool>>` with
-`with_builtins()`, registering 38 tools. An unknown tool returns
+`with_builtins()`, registering 51 always-available tools plus conditional browser/computer tools. An unknown tool returns
 `ToolOutput::err("Unknown tool: …")`, not a panic — the LLM can read the
 error and correct itself.
 

@@ -1,6 +1,6 @@
 # 01. Architecture
 
-## Workspace: 10 crates
+## Workspace: 12 crates
 
 ```
 fathom (binary, src/main.rs + src/bench.rs)
@@ -12,13 +12,17 @@ fathom (binary, src/main.rs + src/bench.rs)
 ├── pr-agent         — the brain of the system: Coordinator, Runtime (agent loop),
 │                      ToolExecutor (batching and parallelism), prompts,
 │                      context budget, compaction, doom-loop protection
-├── pr-tools         — 51 built-in tools (plus 5 conditional browser tools) + registry + SSRF guard +
+├── pr-tools         — 51 always-available tools plus optional CDP/computer tools + registry + SSRF guard +
 │                      anti-injection + file locks + fetch cache
 ├── pr-mcp           — MCP client: dynamic connection of external tools
 ├── pr-persistence   — SQLite: session database (.research.db), contact
 │                      storage (contacts.db), finding history
+├── pr-memory        — Long-term semantic memory: hybrid search, entity graph
 ├── pr-server        — axum HTTP API + SSE events
-└── pr-tui           — terminal interface on ratatui
+├── pr-tui           — terminal interface on ratatui
+├── pr-lsp           — Language Server Protocol integration
+├── pr-governance    — Policy engine, audit trail, credentials vault
+└── pr-supervisor    — Docker per-agent computer provisioning
 ```
 
 Dependencies point strictly downward: `pr-tools` does not know about `pr-agent`,

@@ -137,7 +137,6 @@ mod tests {
 
     #[test]
     fn internal_ipv4_ranges() {
-        use std::net::Ipv4Addr;
         for ip in [
             "127.0.0.1",
             "127.8.9.10",

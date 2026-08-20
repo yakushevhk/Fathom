@@ -12,8 +12,6 @@ use pr_memory::{
     content_hash, AbsorbFact, AbsorbRequest, Memory, MemoryRow, Scope, ScopeFilter,
 };
 use serde_json::json;
-use std::sync::Arc;
-
 fn in_memory() -> Memory {
     Memory::in_memory(pr_core::MemoryConfig::default()).unwrap()
 }

@@ -140,7 +140,7 @@ const navSections: NavSection[] = [
     }} />
     <script is:inline>
       (function () {
-        var t = localStorage.getItem('parallel-theme');
+        var t = localStorage.getItem('fathom-theme');
         if (!t && window.matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
         if (t) document.documentElement.dataset.theme = t;
       })();
@@ -154,7 +154,7 @@ const navSections: NavSection[] = [
             <rect width="24" height="24" rx="5" fill="#181818"/>
             <rect x="6" y="6" width="12" height="12" rx="2" fill="#fcfbfa"/>
           </svg>
-          <span class="docs-logo-text">parallel</span>
+          <span class="docs-logo-text">Fathom</span>
         </a>
         <div class="docstop-links">
           <a href="/docs" class:list={[{ active: activePage === 'docs' }]}>Docs</a>

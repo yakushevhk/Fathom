@@ -254,9 +254,9 @@ impl CompactionEngine {
     /// Track whether the compaction pass was effective.
     fn update_effectiveness(&mut self, before: u32, after: u32) {
         let reduction = before.saturating_sub(after);
-        let threshold_5pct = before / 20; // 5%
+        let minimum_reduction = (before as f32 * USEFUL_REDUCTION_RATIO) as u32;
 
-        if reduction < threshold_5pct {
+        if reduction < minimum_reduction {
             self.ineffective_passes += 1;
             // Hysteresis: a useless pass suppresses further passes until the
             // transcript grows back, so we don't re-run compaction on a frame

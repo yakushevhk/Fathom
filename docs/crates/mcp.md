@@ -15,7 +15,7 @@ The `mcp` crate implements a client and server for the **MCP (Model Context Prot
 
 ## lib.rs
 
-File [lib.rs](file:///Users/yakushev/Documents/GitHub/Parallel/research-agent/crates/mcp/src/lib.rs) declares three public modules and re-exports all their contents:
+File [lib.rs](../../crates/mcp/src/lib.rs) declares three public modules and re-exports all their contents:
 
 ```rust
 pub mod client;
@@ -31,7 +31,7 @@ pub use bridge::*;
 
 ## client.rs
 
-File [client.rs](file:///Users/yakushev/Documents/GitHub/Parallel/research-agent/crates/mcp/src/client.rs) — the main MCP client supporting stdio and HTTP transports, OAuth authentication, tool caching, and reconnection.
+File [client.rs](../../crates/mcp/src/client.rs) — the main MCP client supporting stdio and HTTP transports, OAuth authentication, tool caching, and reconnection.
 
 ### Constants
 
@@ -476,7 +476,7 @@ Algorithm:
 
 ## server.rs
 
-File [server.rs](file:///Users/yakushev/Documents/GitHub/Parallel/research-agent/crates/mcp/src/server.rs) implements a simple MCP server running over stdio.
+File [server.rs](../../crates/mcp/src/server.rs) implements a simple MCP server running over stdio.
 
 ### Struct `McpServer`
 
@@ -572,7 +572,7 @@ Processing a single JSON-RPC request. Algorithm:
 
 ## bridge.rs
 
-File [bridge.rs](file:///Users/yakushev/Documents/GitHub/Parallel/research-agent/crates/mcp/src/bridge.rs) implements a bridge between MCP servers and the local agent tool registry. Remote MCP tools are wrapped in `McpBridgeTool`, which implements the `Tool` trait from `pr_tools`.
+File [bridge.rs](../../crates/mcp/src/bridge.rs) implements a bridge between MCP servers and the local agent tool registry. Remote MCP tools are wrapped in `McpBridgeTool`, which implements the `Tool` trait from `pr_tools`.
 
 ### Constants
 

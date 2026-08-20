@@ -169,7 +169,7 @@ A tool (shell command, Python script, Node.js snippet, web fetch, etc.) exceeded
 | `python`      | 30s             | `timeout` parameter |
 | `node`        | 30s             | `timeout` parameter |
 | `web_fetch`   | 30s             | Hardcoded in tool |
-| `git_*`       | 60s             | Hardcoded |
+| `git_*`       | 120s            | Hardcoded |
 | `browser_*`   | 30s             | Hardcoded |
 | Agent stall   | 450s (warn), 1200s (kill) | `[agent] stall_warn_seconds`, `stall_kill_seconds` |
 | Approval      | 300s            | `[agent] approval_timeout_seconds` |
@@ -393,16 +393,7 @@ Common failures:
    url = "https://mcp-server.example.com"
    ```
 
-3. **For HTTP servers with OAuth**, ensure the `oauth` section is configured correctly:
-
-   ```toml
-   [mcp.servers.my-server]
-   url = "https://mcp-server.example.com"
-   oauth_token_url = "https://auth.example.com/token"
-   oauth_client_id = "…"
-   oauth_client_secret = "…"
-   oauth_scopes = ["tools"]
-   ```
+3. **For HTTP servers with OAuth**, note that OAuth credentials are not currently configurable through `[[mcp.servers]]` TOML entries. Configure `OAuthConfig` programmatically in the MCP client integration, or use a server endpoint that does not require OAuth.
 
 4. **Check the server logs.** Fathom logs MCP connection attempts at `warn` level. Enable debug logging:
 
@@ -765,8 +756,8 @@ error: failed to run custom build command for 'openssl-sys'
 
 ### Root Cause
 
-- **Rust version mismatch** — Fathom requires Rust 1.97+ (as specified in the `Dockerfile`).
-- **Missing system libraries** — OpenSSL, libsqlite3, pkg-config.
+- **Rust version mismatch** — Fathom supports and declares Rust 1.97 as its MSRV. The pinned `rust-toolchain.toml` uses Rust 1.97.1, and Docker uses the matching `rust:1.97-bookworm` builder. Cargo dependency metadata may report a lower floor (currently around 1.88); that is an informational dependency floor only, not a supported Fathom toolchain or compatibility guarantee.
+- **Missing system libraries** — this workspace uses rustls for HTTPS and bundled SQLite; native OpenSSL/libsqlite3 are not required by the Rust build. Platform toolchains may still require standard compiler utilities.
 - **Out of memory** — the workspace is large; `cargo build --release` can need 4+ GB.
 - **Incremental compilation issues** — stale build artifacts.
 
@@ -779,18 +770,7 @@ error: failed to run custom build command for 'openssl-sys'
    rustc --version  # Should be 1.97+
    ```
 
-2. **Install system dependencies:**
-
-   ```bash
-   # macOS
-   brew install pkg-config openssl sqlite3
-
-   # Debian/Ubuntu
-   sudo apt-get install pkg-config libssl-dev libsqlite3-dev
-
-   # Arch Linux
-   sudo pacman -S pkg-config openssl sqlite3
-   ```
+2. **Install the standard Rust build toolchain.** The workspace uses rustls and bundled SQLite, so OpenSSL and a system SQLite library are not required. On Linux, install your distribution's C compiler/linker and certificate package if they are missing.
 
 3. **Clean and rebuild:**
 
@@ -829,15 +809,15 @@ error: failed to run custom build command for 'openssl-sys'
 
 ### Symptom
 
-Агент не отвечает на hub-сообщения, хотя был завершён.
+Agent does not respond to hub messages, despite having been completed.
 
 ### Root Cause
 
-Файл `~/.fathom/parked/<id>.json` повреждён, удалён, или reviver callback не зарегистрирован.
+The file `~/.fathom/parked/<id>.json` is corrupted, deleted, or the reviver callback is not registered.
 
 ### Resolution
 
-Удалить файл вручную, перезапустить сессию.
+Delete the file manually and restart the session.
 
 ---
 
@@ -845,17 +825,17 @@ error: failed to run custom build command for 'openssl-sys'
 
 ### Symptom
 
-Агент ждёт ответа от другого агента, но сообщение не доставлено.
+An agent is waiting for a reply from another agent, but the message is not delivered.
 
 ### Root Cause
 
-Адресат не зарегистрирован в IrcBus, припаркован, или mailbox переполнен.
+The recipient is not registered in IrcBus, is parked, or the mailbox is full.
 
 ### Resolution
 
-Проверить `fathom tui` — виден ли агент-адресат в дереве; если нет — он припаркован и должен быть revived автоматически.
+Check `fathom tui` — is the target agent visible in the tree? If not, it is parked and should be revived automatically.
 
-Приоритет сообщений: waiter (blocking wait) → agent channel → mailbox → reviver hook.
+Message priority: waiter (blocking wait) → agent channel → mailbox → reviver hook.
 
 ---
 
@@ -863,12 +843,12 @@ error: failed to run custom build command for 'openssl-sys'
 
 ### Symptom
 
-`daemon` tool возвращает ошибку или статус Failed.
+`daemon` tool returns an error or a Failed status.
 
 ### Root Cause
 
-Процесс упал, не стартовал в timeout, порт не открылся.
+The process crashed, did not start within the timeout, or the port did not open.
 
 ### Resolution
 
-Проверить лог процесса, увеличить timeout_secs, убедиться что команда корректна.
+Check the process log, increase `timeout_secs`, and verify the command is correct.

@@ -363,9 +363,6 @@ impl Tool for HubTool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pr_core::irc::AgentRef;
-    use pr_core::agent::AgentRole;
-    use chrono::Utc;
 
     #[test]
     fn test_hub_schema_is_valid() {
@@ -385,7 +382,7 @@ mod tests {
         });
         let params: HubParams = serde_json::from_value(json).unwrap();
         match params.command {
-            HubCommand::Send { to, message, await_reply, steer } => {
+            HubCommand::Send { to, message, await_reply, steer: _ } => {
                 assert_eq!(to, Some("agent-123".to_string()));
                 assert_eq!(message, "hello");
                 assert!(!await_reply);
