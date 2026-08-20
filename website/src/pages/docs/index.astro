@@ -1,0 +1,451 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+---
+
+<DocsLayout title="Documentation — Fathom" activePage="docs">
+  <div class="docs-hero">
+    <span class="docs-badge" data-i18n="docsIndex.badge">Documentation</span>
+    <h1 class="docs-hero-title">Fathom</h1>
+    <p class="docs-hero-subtitle" data-i18n="docsIndex.heroSub">
+      AI-powered research agent for deep web intelligence, lead generation, and automated outreach.
+      Written in Rust for maximum performance and reliability.
+    </p>
+  </div>
+
+  <div class="quick-start" id="quick-start">
+    <h2 data-i18n="docsIndex.qsTitle">Quick Start</h2>
+    <p data-i18n="docsIndex.qsSub">Get up and running in three steps.</p>
+
+    <div class="step-grid">
+      <div class="step-card">
+        <div class="step-number">1</div>
+        <h3 data-i18n="docsIndex.step1Title">Install</h3>
+        <p data-i18n="docsIndex.step1Desc">Install via the curl script or build from source with Cargo.</p>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">bash</span>
+          </div>
+          <pre><code>curl -sSf https://fathom.uz/install.sh | sh</code></pre>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-number">2</div>
+        <h3 data-i18n="docsIndex.step2Title">Configure</h3>
+        <p data-i18n="docsIndex.step2Desc">Add your API key and choose a search backend.</p>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">~/.fathom/config.toml</span>
+          </div>
+          <pre><code><span class="code-section">[llm]</span>
+provider = <span class="code-string">"deepseek"</span>
+api_key  = <span class="code-string">"sk-your-key"</span>
+model    = <span class="code-string">"deepseek-v4-flash"</span>
+
+<span class="code-section">[search]</span>
+backend  = <span class="code-string">"hybrid"</span></code></pre>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-number">3</div>
+        <h3 data-i18n="docsIndex.step3Title">Run</h3>
+        <p data-i18n="docsIndex.step3Desc">Launch a research session with a natural language query.</p>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">bash</span>
+          </div>
+          <pre><code>fathom run <span class="code-string">"Find B2B SaaS startups in Berlin with 10-50 employees"</span></code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="docs-section">
+    <h2 data-i18n="docsIndex.keyTitle">Key Sections</h2>
+    <p data-i18n="docsIndex.keySub">Explore the documentation to get the most out of Fathom.</p>
+
+    <div class="link-grid">
+      <a href="/docs/quickstart" class="link-card">
+        <div class="link-card-icon">⚡</div>
+        <h3 data-i18n="docsIndex.card1Title">Quickstart</h3>
+        <p data-i18n="docsIndex.card1Desc">Install, configure, and run your first research session in minutes.</p>
+        <span class="link-card-arrow">→</span>
+      </a>
+
+      <a href="/docs/configuration" class="link-card">
+        <div class="link-card-icon">⚙️</div>
+        <h3 data-i18n="docsIndex.card2Title">Configuration</h3>
+        <p data-i18n="docsIndex.card2Desc">Full reference for config.toml: LLM, search, agents, notifications, and more.</p>
+        <span class="link-card-arrow">→</span>
+      </a>
+
+      <a href="/docs/tools" class="link-card">
+        <div class="link-card-icon">🔧</div>
+        <h3 data-i18n="docsIndex.card3Title">Tools</h3>
+        <p data-i18n="docsIndex.card3Desc">51 built-in tools plus 5 conditional browser tools plus MCP/plugins: web, coding, browser CDP, security, memory, and file operations.</p>
+        <span class="link-card-arrow">→</span>
+      </a>
+
+      <a href="/docs/api" class="link-card">
+        <div class="link-card-icon">📡</div>
+        <h3 data-i18n="docsIndex.card4Title">API Reference</h3>
+        <p data-i18n="docsIndex.card4Desc">HTTP API, SSE event stream, and CLI commands for programmatic access.</p>
+        <span class="link-card-arrow">→</span>
+      </a>
+
+      <a href="/security" class="link-card">
+        <div class="link-card-icon">🛡</div>
+        <h3 data-i18n="docsIndex.card5Title">Security</h3>
+        <p data-i18n="docsIndex.card5Desc">SSRF guards, secret detection, sandboxed execution, prompt injection defense, and verification receipts.</p>
+        <span class="link-card-arrow">→</span>
+      </a>
+
+      <a href="/integrations" class="link-card">
+        <div class="link-card-icon">🔌</div>
+        <h3 data-i18n="docsIndex.card6Title">Integrations</h3>
+        <p data-i18n="docsIndex.card6Desc">CRM sync (amoCRM, Bitrix24, HubSpot), MCP client/server, browser automation, notifications, and export formats.</p>
+        <span class="link-card-arrow">→</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="docs-section">
+    <h2 data-i18n="docsIndex.whatTitle">What is Fathom?</h2>
+    <p data-i18n="docsIndex.what1">
+      Fathom is an autonomous AI agent that conducts deep web research, extracts contacts,
+      generates leads, and automates outreach — all from a single command-line interface.
+    </p>
+    <p data-i18n="docsIndex.what2">
+      Built in Rust for speed and reliability, it orchestrates multiple sub-agents that work in parallel,
+      using 51 built-in tools plus 5 conditional browser tools, with MCP/plugin extensions for web search, browser automation, OSINT pipelines, coding, and file operations.
+    </p>
+
+    <div class="feature-pills">
+      <span class="pill" data-i18n="docsIndex.pill1">🦀 Rust Core</span>
+      <span class="pill" data-i18n="docsIndex.pill2">51 Built-ins + 5 Browser Tools</span>
+      <span class="pill" data-i18n="docsIndex.pill3">Multi-Agent</span>
+      <span class="pill" data-i18n="docsIndex.pill4">OSINT Pipeline</span>
+      <span class="pill" data-i18n="docsIndex.pill5">TUI Interface</span>
+      <span class="pill" data-i18n="docsIndex.pill6">HTTP API</span>
+      <span class="pill" data-i18n="docsIndex.pill7">MCP Support</span>
+      <span class="pill" data-i18n="docsIndex.pill8">7 Search Backends</span>
+    </div>
+  </div>
+
+  <div class="docs-section">
+    <h2 data-i18n="docsIndex.modesTitle">Running Modes</h2>
+    <div class="modes-grid">
+      <div class="mode-card">
+        <h4>CLI</h4>
+        <div class="code-block compact">
+          <pre><code>fathom run <span class="code-string">"your query"</span></code></pre>
+        </div>
+        <p data-i18n="docsIndex.modeCliDesc">Headless, one-shot research from the terminal.</p>
+      </div>
+      <div class="mode-card">
+        <h4>TUI</h4>
+        <div class="code-block compact">
+          <pre><code>fathom tui</code></pre>
+        </div>
+        <p data-i18n="docsIndex.modeTuiDesc">Interactive terminal UI with real-time progress.</p>
+      </div>
+      <div class="mode-card">
+        <h4 data-i18n="docsIndex.modeHttpTitle">HTTP Server</h4>
+        <div class="code-block compact">
+          <pre><code>fathom serve</code></pre>
+        </div>
+        <p data-i18n="docsIndex.modeHttpDesc">REST API + SSE + dashboard at /dashboard.</p>
+      </div>
+      <div class="mode-card">
+        <h4 data-i18n="docsIndex.modeMcpTitle">MCP Server</h4>
+        <div class="code-block compact">
+          <pre><code>fathom mcp-serve</code></pre>
+        </div>
+        <p data-i18n="docsIndex.modeMcpDesc">Expose all tools to MCP clients (Claude, ZCode, etc.).</p>
+      </div>
+    </div>
+  </div>
+
+<style>
+  .docs-hero {
+    margin-bottom: 64px;
+    padding-bottom: 48px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .docs-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border-radius: var(--radius-full);
+    background: var(--accent-light);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin-bottom: 20px;
+  }
+
+  .docs-hero-title {
+    font-size: clamp(2.25rem, 5vw, 3.25rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+  }
+
+  .docs-hero-subtitle {
+    font-size: 1.125rem;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    max-width: 560px;
+  }
+
+  h2 {
+    font-size: 1.625rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .quick-start {
+    margin-bottom: 64px;
+  }
+
+  .quick-start > p {
+    color: var(--text-secondary);
+    margin-bottom: 32px;
+  }
+
+  .step-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  .step-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    transition: all var(--duration) var(--ease-out);
+  }
+
+  .step-card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--text-tertiary);
+    box-shadow: var(--shadow-md);
+  }
+
+  .step-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background: var(--accent);
+    color: var(--text-inverse);
+    font-weight: 700;
+    font-size: 0.875rem;
+    margin-bottom: 16px;
+  }
+
+  .step-card h3 {
+    margin-bottom: 8px;
+  }
+
+  .step-card > p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 20px;
+  }
+
+  .code-block {
+    background: var(--bg-dark);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .code-block.compact pre {
+    padding: 12px 16px;
+  }
+
+  .code-header {
+    padding: 8px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .code-lang {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .code-block pre {
+    padding: 16px;
+    overflow-x: auto;
+  }
+
+  .code-block code {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  :global(.code-string) {
+    color: #A8D8A8;
+  }
+
+  :global(.code-section) {
+    color: var(--accent);
+  }
+
+  .docs-section {
+    margin-bottom: 64px;
+  }
+
+  .docs-section > p {
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
+
+  .link-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .link-card {
+    display: block;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    position: relative;
+    transition: all var(--duration) var(--ease-out);
+  }
+
+  .link-card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--text-tertiary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .link-card-icon {
+    font-size: 1.5rem;
+    margin-bottom: 12px;
+  }
+
+  .link-card h3 {
+    margin-bottom: 6px;
+  }
+
+  .link-card p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  .link-card-arrow {
+    position: absolute;
+    top: 28px;
+    right: 28px;
+    font-size: 1.25rem;
+    color: var(--text-tertiary);
+    transition: all var(--duration) var(--ease-out);
+  }
+
+  .link-card:hover .link-card-arrow {
+    color: var(--accent);
+    transform: translateX(4px);
+  }
+
+  .feature-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--radius-full);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all var(--duration) var(--ease-out);
+  }
+
+  .pill:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  .modes-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .mode-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+  }
+
+  .mode-card h4 {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    margin-bottom: 12px;
+  }
+
+  .mode-card .code-block {
+    margin-bottom: 12px;
+  }
+
+  .mode-card p {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  @media (max-width: 768px) {
+    .step-grid,
+    .link-grid,
+    .modes-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .docs-hero-title {
+      font-size: 2rem;
+    }
+  }
+</style>
+</DocsLayout>

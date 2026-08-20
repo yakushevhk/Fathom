@@ -1,0 +1,206 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Memory & Graph — Fathom">
+  <main class="mem-page">
+    <div class="container">
+      <div class="mem-hero">
+        <p class="eyebrow" data-i18n="memoryPage.hero.badge">Memory &amp; Graph</p>
+        <h1 class="h2-sec" data-i18n-html data-i18n="memoryPage.hero.title">Knowledge that<br />outlives the session.</h1>
+        <p class="copy-lg mx-auto" data-i18n="memoryPage.hero.sub">An unlimited semantic knowledge base in SQLite, built on the mem0 / Memora model: hybrid search, append-only versioning, secret detection and a real-world entity graph — right next to the facts.</p>
+      </div>
+
+      <!-- What is stored -->
+      <div class="feat">
+        <div class="feat-copy">
+          <p class="eyebrow" data-i18n="memoryPage.stored.badge">What is stored</p>
+          <h2 class="h3-sec" data-i18n="memoryPage.stored.title">Self-contained facts, scoped</h2>
+          <p class="copy-lg" data-i18n-html data-i18n="memoryPage.stored.sub">Each record is a self-contained fact (50–500 chars) with scope isolation — <code class="ic">agent</code> (shared knowledge), <code class="ic">user</code> (about the client), <code class="ic">run</code> (session episode). Confidence, importance, tags, typed edges and a full change journal on top.</p>
+        </div>
+        <div class="mini-table-wrap">
+          <table class="mini-table">
+            <thead><tr><th>Field</th><th>Purpose</th></tr></thead>
+            <tbody>
+              <tr><td>content</td><td>the fact text</td></tr>
+              <tr><td>scope</td><td>agent · user · run</td></tr>
+              <tr><td>confidence</td><td>0.0–1.0 tie-breaker</td></tr>
+              <tr><td>importance</td><td>weight, grows via memory_boost</td></tr>
+              <tr><td>status</td><td>active · superseded · archived</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Principles -->
+      <div class="sec-head center">
+        <p class="eyebrow" data-i18n="memoryPage.principles.badge">Principles</p>
+        <h2 class="h3-sec" data-i18n="memoryPage.principles.title">Six ideas from mem0 / Memora</h2>
+      </div>
+
+      <div class="pr-grid">
+        <div class="pr-card">
+          <h3 data-i18n="memoryPage.principles.append.title">Append-only</h3>
+          <p data-i18n-html data-i18n="memoryPage.principles.append.d">Facts are never overwritten. A new version is a new record plus a <code class="ic">supersedes</code> edge; contradictions stay visible through <code class="ic">contradicts</code>. Read modes: active, latest, full_history.</p>
+        </div>
+        <div class="pr-card">
+          <h3 data-i18n="memoryPage.principles.absorb.title">Absorb, not create</h3>
+          <p data-i18n="memoryPage.principles.absorb.d">Secrets rejected → batch consolidation → hash dedup → cosine candidates → classification into one of 5 outcomes: duplicate · supersede · contradict · related · new. With dry_run.</p>
+        </div>
+        <div class="pr-card">
+          <h3 data-i18n="memoryPage.principles.hybrid.title">Hybrid search</h3>
+          <p data-i18n-html data-i18n="memoryPage.principles.hybrid.d"><code class="ic">score = 0.7·cosine + 0.3·BM25</code>, then linear freshness decay — 1% per day. ~2ms median latency in benchmarks.</p>
+        </div>
+        <div class="pr-card">
+          <h3 data-i18n="memoryPage.principles.digest.title">Digest before start</h3>
+          <p data-i18n="memoryPage.principles.digest.d">The top agent gets a deterministic digest in its system prompt: relevant memories + open TODOs + recent records, with real ids for verification.</p>
+        </div>
+        <div class="pr-card">
+          <h3 data-i18n="memoryPage.principles.rerank.title">Optional rerank</h3>
+          <p data-i18n-html data-i18n="memoryPage.principles.rerank.d"><code class="ic">[memory] rerank = true</code>: a second LLM pass re-orders the expanded result set (top_k×3) by relevance.</p>
+        </div>
+        <div class="pr-card">
+          <h3 data-i18n="memoryPage.principles.embed.title">Embeddings with fallback</h3>
+          <p data-i18n-html data-i18n="memoryPage.principles.embed.d">Auto mode: OpenAI-compatible <code class="ic">/embeddings</code> when a key exists, otherwise offline TF-IDF (512-dim, no network). Vectors of different models never mix.</p>
+        </div>
+      </div>
+
+      <!-- Three tiers -->
+      <div class="sec-head center">
+        <p class="eyebrow" data-i18n="memoryPage.tiers.badge">Three tiers</p>
+        <h2 class="h3-sec" data-i18n="memoryPage.tiers.title">Profile, skills, archive</h2>
+      </div>
+      <div class="api-grid api-grid--3">
+        <div class="api-card"><div class="api-name" data-i18n="memoryPage.tiers.profile.name">MEMORY.md / USER.md</div><p data-i18n="memoryPage.tiers.profile.d">A ~2 KB stable profile frozen into the system prompt for prefix-cache hits. Small, always present.</p></div>
+        <div class="api-card"><div class="api-name" data-i18n="memoryPage.tiers.skill.name">SKILL.md</div><p data-i18n-html data-i18n="memoryPage.tiers.skill.d">Procedural knowledge discovered from experience (<code class="ic">create_from_experience</code>), injected on demand via the <code class="ic">skill</code> tool.</p></div>
+        <div class="api-card"><div class="api-name" data-i18n="memoryPage.tiers.archive.name">Semantic archive</div><p data-i18n="memoryPage.tiers.archive.d">The unlimited SQLite knowledge base on this page — hybrid search, graph, versioning.</p></div>
+      </div>
+
+      <!-- Entity graph -->
+      <div class="feat feat-reverse" id="graph">
+        <div class="feat-copy">
+          <p class="eyebrow" data-i18n="memoryPage.graph.badge">Entity graph</p>
+          <h2 class="h3-sec" data-i18n="memoryPage.graph.title">person ↔ company ↔ location</h2>
+          <p class="copy-lg" data-i18n-html data-i18n="memoryPage.graph.sub">Alongside facts, the store maintains a real-world entity graph: nodes (person, company, project, technology, role, location, event, product) deduplicated by name+type, typed edges (<code class="ic">works_at</code>, <code class="ic">leads</code>, <code class="ic">founded</code>…) and multi-hop BFS up to 4 hops — "who leads X", "who works at companies in Kazan". Entities attach automatically during absorb.</p>
+          <p class="copy-lg"><code class="ic">memory_graph add · query · list</code></p>
+        </div>
+        <div class="graph-demo">
+          <div class="graph-node graph-node--company">Acme Corp</div>
+          <div class="graph-edge">works_at</div>
+          <div class="graph-node">Ivan Petrov</div>
+          <div class="graph-edge">leads</div>
+          <div class="graph-node graph-node--company">Engineering</div>
+          <div class="graph-edge">located_in</div>
+          <div class="graph-node graph-node--loc">Kazan</div>
+        </div>
+      </div>
+
+      <!-- OSINT integration -->
+      <div class="feat" id="osint">
+        <div class="feat-copy">
+          <p class="eyebrow" data-i18n="memoryPage.osint.badge">OSINT integration</p>
+          <h2 class="h3-sec" data-i18n="memoryPage.osint.title">Memory-powered lead intelligence</h2>
+          <p class="copy-lg" data-i18n="memoryPage.osint.sub">The entity graph connects people to companies, companies to locations, and locations to industries. Multi-hop queries answer questions like "who leads companies in Kazan" or "which CTOs use React". Absorbed contacts become queryable knowledge for future sessions.</p>
+        </div>
+        <div class="code-card">
+          <pre><code># After a lead-gen run, contacts are auto-absorbed
+fathom memory search "CTO fintech Moscow"
+# → Ivan Petrov, CTO, PayTech (conf 0.92)
+# → Maria Kozlova, CTO, FinBox (conf 0.87)
+
+# Entity graph queries are available to agents through memory_graph
+# memory_graph(action="query", query="companies in Kazan")
+# → Acme Corp → works_at → Ivan Petrov
+#   → leads → Engineering → located_in → Kazan</code></pre>
+        </div>
+      </div>
+
+      <!-- Tools -->
+      <div class="sec-head center">
+        <p class="eyebrow" data-i18n="memoryPage.tools.badge">Agent tools</p>
+        <h2 class="h3-sec" data-i18n="memoryPage.tools.title">Six tools, one store</h2>
+      </div>
+      <div class="api-grid">
+        <div class="api-card"><div class="api-name">memory_absorb</div><p data-i18n="memoryPage.tools.absorb.d">Ingest facts through the 5-outcome pipeline; autosave of discovered contacts happens without the model.</p></div>
+        <div class="api-card"><div class="api-name">memory_search</div><p data-i18n="memoryPage.tools.search.d">Hybrid vector + BM25 search with scopes, filters and freshness decay.</p></div>
+        <div class="api-card"><div class="api-name">memory_digest</div><p data-i18n="memoryPage.tools.digest.d">Build the pre-run digest (relevant + TODOs + recent).</p></div>
+        <div class="api-card"><div class="api-name">memory_boost</div><p data-i18n="memoryPage.tools.boost.d">Raise importance of facts that keep proving useful.</p></div>
+        <div class="api-card"><div class="api-name">memory_link</div><p data-i18n="memoryPage.tools.link.d">Create typed edges between records.</p></div>
+        <div class="api-card"><div class="api-name">memory_graph</div><p data-i18n="memoryPage.tools.graph.d">Add/query/list entities and relations.</p></div>
+      </div>
+
+      <!-- Ops: distill + gc -->
+      <div class="feat" id="ops">
+        <div class="feat-copy">
+          <p class="eyebrow" data-i18n="memoryPage.ops.badge">Housekeeping</p>
+          <h2 class="h3-sec" data-i18n="memoryPage.ops.title">Distill, GC — nothing deleted</h2>
+          <p class="copy-lg" data-i18n-html data-i18n="memoryPage.ops.sub">CLI <code class="ic">memory search / list / get / stats / rebuild / distill / nuke</code>. Distillation compresses run-facts into durable knowledge. GC archives expired and stale run-facts and compacts overgrown scope groups — nothing is ever destroyed.</p>
+          <div class="more-links">
+            <a href="/docs" class="btn btn-secondary" data-i18n="memoryPage.ops.docs">Docs</a>
+            <a href="/api" class="btn btn-primary" data-i18n="memoryPage.ops.api">Memory HTTP API</a>
+          </div>
+        </div>
+        <div class="code-card">
+          <pre><code>fathom memory search "fintech leads Kazan"
+fathom memory stats
+fathom memory distill
+fathom memory gc --dry-run</code></pre>
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .mem-page { padding: 70px 0 90px; }
+  .eyebrow { font-family: var(--font-mono); font-size: 13px; letter-spacing: .16px; text-transform: uppercase; color: var(--grey-600); }
+  .h3-sec { font-size: clamp(20px, 2.4vw, 34px); font-weight: 500; letter-spacing: -0.02em; margin: 12px 0 16px; }
+  .ic { font-family: var(--font-mono); font-size: .85em; background: var(--grey-100); border: 1px solid var(--grey-200); padding: 1px 6px; border-radius: 5px; }
+  .copy-lg { color: var(--grey-700); font-size: 17px; line-height: 1.55; max-width: 640px; }
+  .mx-auto { margin-left: auto; margin-right: auto; }
+
+  .mem-hero { max-width: 820px; margin: 0 auto 56px; text-align: center; padding: 0 24px; }
+  .mem-hero h1 { font-size: clamp(34px, 5vw, 68px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.02; margin-top: 12px; }
+  .mem-hero .copy-lg { margin-top: 20px; }
+
+  .feat { display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: center; padding: 56px 0; }
+  .feat-reverse { direction: rtl; }
+  .feat-reverse > * { direction: ltr; }
+  @media (max-width: 900px) { .feat, .feat-reverse { grid-template-columns: 1fr; gap: 28px; direction: ltr; } }
+
+  .mini-table-wrap { border: 1px solid var(--grey-200); border-radius: 8px; overflow: auto; background: var(--bg-card); }
+  .mini-table { width: 100%; border-collapse: collapse; font-size: 13px; font-family: var(--font-mono); }
+  .mini-table th { font-size: 10px; text-transform: uppercase; letter-spacing: .6px; color: var(--grey-600); text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--grey-200); background: var(--grey-50); }
+  .mini-table td { padding: 10px 14px; border-bottom: 1px solid var(--grey-100); color: var(--grey-800); }
+  .mini-table tr:last-child td { border-bottom: none; }
+
+  .sec-head { max-width: 720px; margin: 40px auto 32px; }
+  .sec-head.center { text-align: center; }
+
+  .pr-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .pr-card { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 24px; }
+  .pr-card:hover { border-color: var(--grey-400); box-shadow: var(--shadow-md); }
+  .pr-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 10px; }
+  .pr-card p { color: var(--grey-600); font-size: 13.5px; line-height: 1.6; }
+  @media (max-width: 900px) { .pr-grid { grid-template-columns: 1fr; } }
+
+  .graph-demo { display: flex; flex-direction: column; align-items: center; gap: 6px; background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 30px; }
+  .graph-node { font-family: var(--font-mono); font-size: 13px; border: 1px solid var(--grey-300); border-radius: var(--radius-md); padding: 10px 18px; background: var(--grey-50); }
+  .graph-node--company { border-color: #8fb6cc; background: rgba(143,182,204,.15); }
+  .graph-node--loc { border-color: #a8ccb0; background: rgba(168,204,176,.18); }
+  .graph-edge { font-family: var(--font-mono); font-size: 11px; color: var(--grey-500); }
+  .graph-edge::before { content: '│ '; }
+  .graph-edge::after { content: ' ↓'; }
+
+  .api-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: var(--grey-300); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--grey-300); }
+  .api-card { background: var(--bg-card); padding: 24px; display: flex; flex-direction: column; gap: 8px; }
+  .api-card .api-name { font-family: var(--font-mono); font-weight: 600; font-size: 14px; }
+  .api-card p { color: var(--grey-600); font-size: 13.5px; line-height: 1.55; }
+  @media (max-width: 800px) { .api-grid { grid-template-columns: 1fr; } }
+
+  .code-card { border: 1px solid var(--grey-200); border-radius: var(--radius-md); background: var(--bg-dark); overflow: hidden; box-shadow: var(--shadow-lg); }
+  .code-card pre { margin: 0; padding: 22px; overflow-x: auto; }
+  .code-card code { font-family: var(--font-mono); font-size: 13px; line-height: 1.8; color: var(--grey-100); white-space: pre; }
+
+  .more-links { display: flex; gap: 10px; margin-top: 24px; }
+</style>

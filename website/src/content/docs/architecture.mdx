@@ -1,0 +1,575 @@
+---
+title: "Architecture — Fathom"
+sidebarId: "architecture"
+---
+  
+export const crates = [
+  { name: 'core', d: 'The foundation — depends on nothing. IDs (UUID v7), messages & events, findings, AppConfig, export (PDF/HTML/JSON/DOCX), notifications, CRM sync, exact token counting.' },
+  { name: 'llm', d: 'Provider abstraction. LlmProvider trait with complete() and stream(), retry with exponential backoff, streaming fallback for large responses, response size limits.' },
+  { name: 'agent', d: 'The runtime itself: agent loop, coordinator, compaction, prompt builder, tool executor, result budgets, control plane, IPC, process manager, doom-loop detector, hooks, session resume.' },
+  { name: 'tools', d: '51 built-ins plus 5 conditional browser tools: web, files, shell, git, AST search/edit, DAP, persistent eval, browser CDP, security scan, computer, voice adapters, memory and coordination. Optional plugins and MCP add more.' },
+  { name: 'memory', d: 'Long-term semantic memory + entity graph (mem0 / Memora model): facts, FTS5, embeddings, 5-outcome absorb pipeline, hybrid search, distillation, secret detection.' },
+  { name: 'protocol', d: 'Versioned typed RPC/events over bounded NDJSON, plus ACP and authenticated collaboration adapters.' },
+  { name: 'mcp', d: 'Model Context Protocol client with bounded connection lifecycle, reconnect, circuit breaker, refresh, and graceful shutdown.' },
+  { name: 'persistence', d: 'SQLite in WAL mode with a 4-connection pool: sessions, agents, messages, findings, sub-tasks. Contact DB, durable jobs with self-healing retry, session history.' },
+  { name: 'server', d: 'Axum HTTP API: REST endpoints for sessions, agents, jobs and memory; control-plane answers/approvals; SSE streaming; API-key auth, rate limiting, Prometheus metrics.' },
+  { name: 'tui', d: 'Ratatui interface: multi-agent tree view, live streaming buffer, jobs and memory panels, operator control — answer questions, grant approvals, watch the fleet.' },
+];
+
+export const steps = [
+  { n: '01', t: 'Build the system prompt', d: 'PromptBuilder stacks three cache tiers — stable (identity, role, task), context (cwd, platform, model, date), volatile (tools, skills, memory). Depth-0 agents additionally receive the memory digest as a frozen snapshot, keeping the prefix cache warm.' },
+  { n: '02', t: 'Check the doom loop', d: 'DoomLoopDetector inspects recent history before another token is spent: three identical tool calls in a row stops the loop.' },
+  { n: '03', t: 'Estimate tokens → compact', d: 'Real BPE counting with tiktoken cl100k_base (CJK-aware heuristic fallback). When estimated tokens reach context_window × compact_threshold (default 0.50), compaction runs.' },
+  { n: '04', t: 'Call the LLM — streaming', d: 'Text deltas hit the UI live as events; tool calls are assembled from stream fragments. On stream failure the runtime falls back to a non-streaming complete() automatically.' },
+  { n: '05', t: 'Pass the gates', d: 'Role-based deny → approval flow for approval_tools (y/n in the TUI, POST /sessions/:id/approve via API) → PreToolUse subprocess hooks that can allow, deny or enrich.' },
+  { n: '06', t: 'Execute the batch', d: 'Read-only calls run in parallel, writes serialize. question goes to the operator, spawn_agent starts children, discovered contacts are autosaved and absorbed into memory, results are truncated and appended.' },
+  { n: '07', t: 'Loop', d: 'Repeat until the model stops issuing tool calls or max_iterations is reached.' },
+  { n: '08', t: 'Return', d: 'The final answer returns to the caller. At coordinator level this is where findings get synthesized into the report.' },
+];
+
+export const flow = [
+  { t: 'Plan', d: 'The LLM decomposes the query into sub-tasks; sub-tasks are persisted to the database before anything spawns.' },
+  { t: 'Fan-out', d: 'Sub-agents start as a JoinSet of tokio tasks — or as OS processes via ProcessManager when use_multiprocess = true.' },
+  { t: 'Collect', d: 'Results come back as budget-capped summaries, keeping the coordinator context small enough to reason over the fleet.' },
+  { t: 'Reflection', d: 'For lead generation, count-based: if the contact quota is missed, gap rounds run until the target is met.' },
+  { t: 'Goal Mode — LLM judge', d: 'A judge compares the result against the original goal; concrete gaps become new gap-filling sub-tasks, up to replan_rounds rounds.' },
+  { t: 'Synthesize', d: 'The LLM merges findings into a single report: index.md, summary.md and the findings/ directory.' },
+  { t: 'Export + Notify', d: 'Results are absorbed into long-term memory, exported to PDF/HTML/JSON/DOCX, and announced via webhook, email or Telegram.' },
+];
+
+export const contextStages = [
+  { t: 'BPE token counting', d: 'Exact counting with tiktoken cl100k_base; CJK-aware heuristic fallback. You cannot manage what you estimate wrong.' },
+  { t: 'Tool result truncation', d: '50 KB / 2000 lines per tool output, 200 KB per-turn budget. Overflow is persisted to disk with a pointer, so nothing is lost.' },
+  { t: 'Micro-compaction', d: 'Deduplicate tool results by hash and prune old outputs — fast, deterministic, no LLM call.' },
+  { t: 'Full compaction', d: 'Hermes-style: an LLM summarizes the middle of the conversation; head + summary + tail remain in context.' },
+  { t: 'Anti-thrashing cooldown', d: 'After an ineffective compression pass, the runtime backs off instead of compacting again and again.' },
+];
+
+<div class="doc-header">
+    <span class="doc-badge">Architecture</span>
+    <h1 data-i18n="docsArchitecture.title">Architecture</h1>
+    <p class="doc-lead">
+      Fathom is a modular Rust Cargo workspace with a typed event protocol, asynchronous agent loop on <code>tokio</code>, TUI, HTTP, sessions, plugins, MCP, and LSP integration. This page covers the crate map, lifecycle, subagent tree, context management and transport boundaries.
+    </p>
+  </div>
+
+  <section>
+    <h2 id="crate-map" data-i18n="docsArchitecture.crateMap">Crate Map</h2>
+    <p>The workspace layout. <code>core</code> depends on nothing; <code>agent</code> ties <code>llm</code>, <code>tools</code>, <code>memory</code> and <code>persistence</code> together; <code>server</code> and <code>tui</code> are the two outer shells.</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">workspace layout</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom/
+├── crates/
+│   ├── core/          # fundamental types & domain logic
+│   ├── llm/           # LLM provider abstraction
+│   ├── agent/         # agent runtime, coordination, control plane
+│   ├── tools/         # 51 built-ins plus 5 conditional browser tools + MCP/plugin tools
+│   ├── memory/        # long-term semantic memory + entity graph
+│   ├── mcp/           # Model Context Protocol (client and server)
+│   ├── persistence/   # storage (SQLite, connection pool, jobs)
+│   ├── server/        # HTTP API
+│   └── tui/           # terminal interface
+└── src/main.rs        # CLI entry point\`}`}} /></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">dependency graph</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`core  ←──  llm  ←──  agent  ←──  server
+  ↑          ↑          ↑           ↑
+  └── tools ─┴── mcp ───┴── tui ────┘
+       ↑          └── persistence ──┘
+       └── memory ──┘  (depends on core + llm)\`}`}} /></pre>
+    </div>
+
+    <div class="crate-grid">
+      {crates.map((c) => (
+        <div class="crate-card">
+          <div class="crate-name">crates/{c.name}</div>
+          <p>{c.d}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section>
+    <h2 id="lifecycle" data-i18n="docsArchitecture.lifecycle">Agent Lifecycle</h2>
+    <p>Every agent — top-level or spawned — runs the same eight-step loop. The loop is where caching, safety gates and budget discipline live.</p>
+
+    <div class="steps">
+      {steps.map((s) => (
+        <div class="step-card">
+          <div class="step-num">{s.n}</div>
+          <div>
+            <div class="step-title">{s.t}</div>
+            <p class="step-desc">{s.d}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section>
+    <h2 id="coordinator" data-i18n="docsArchitecture.coordinator">Coordinator Flow &amp; Goal Mode</h2>
+    <p>A research run is the same loop one level up: the <code>Coordinator</code> plans, fans out, collects under budgets, lets an LLM judge check the result against the goal, then synthesizes and ships.</p>
+
+    <div class="flow-list">
+      {flow.map((f, i) => (
+        <div class="flow-item">
+          <div class="flow-index">{String(i + 1).padStart(2, '0')}</div>
+          <div class="flow-body">
+            <div class="flow-title">{f.t}</div>
+            <p class="flow-desc">{f.d}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section>
+    <h2 id="multi-process" data-i18n="docsArchitecture.multiProcess">Multi-Process</h2>
+    <p>By default all agents run in one process as tokio tasks. The hidden <code>fathom worker …</code> mode is reserved for coordinator-managed process isolation and is not a user-facing command.</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">unix socket IPC</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`Coordinator (process 1)
+    │  Unix socket IPC (JSON lines)
+    ├──spawn──► Worker (process 2)  ── agent_id_1
+    ├──spawn──► Worker (process 3)  ── agent_id_2
+    └──spawn──► Worker (process 4)  ── agent_id_3
+
+events: progress · tool-call · completion\`}`}} /></pre>
+    </div>
+
+    <ul class="prop-list">
+      <li><strong>kill_on_drop</strong> — worker handles are spawned with <code>kill_on_drop(true)</code>: a dropped handle terminates the child, so no orphaned processes survive a cancelled run.</li>
+      <li><strong>30 s startup timeout</strong> — a worker must open its socket within 30 seconds or it is reaped and reported.</li>
+      <li><strong>SQLite WAL mode</strong> — concurrent access from every process against one database, pool of 4 connections.</li>
+      <li><strong>Isolation</strong> — one agent crashing never takes down the fleet; resource limits apply per process.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 id="context" data-i18n="docsArchitecture.contextManagement">Context Management</h2>
+    <p>Five stages keep the context window honest. Compaction triggers when <code>estimated_tokens ≥ context_window × compact_threshold</code> (default 0.50). Long-term memory complements all of it: relevant facts arrive as a prompt digest instead of living in session context.</p>
+
+    <div class="pr-grid">
+      {contextStages.map((c) => (
+        <div class="pr-card">
+          <h3>{c.t}</h3>
+          <p>{c.d}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section>
+    <h2 id="errors" data-i18n="docsArchitecture.errorHandling">Error Handling</h2>
+    <p>Failure modes are designed for, not patched onto the happy path:</p>
+
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>Failure mode</th><th>Defense</th></tr></thead>
+        <tbody>
+          <tr><td>Transient LLM failure</td><td>Retry with exponential backoff (3 attempts), Retry-After respected</td></tr>
+          <tr><td>Looping agent</td><td>Doom-loop detection: three identical tool calls → stop</td></tr>
+          <tr><td>Failed tool call</td><td>Cascading cancellation: a shell failure cancels sibling calls; cancellation tokens propagate through the whole agent tree</td></tr>
+          <tr><td>Destructive command</td><td>Guard blocks <code>rm -rf /</code>, <code>mkfs</code>, fork bombs before execution</td></tr>
+          <tr><td>Tool error</td><td>Graceful degradation: errors return to the model as tool results so it can adapt</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2 id="task-tree" data-i18n="docsArchitecture.taskTreeTitle">Task Tree Ledger</h2>
+    <p data-i18n="docsArchitecture.taskTreeDesc">A shared, durable, append-only JSONL journal for the whole task tree rooted at one session. The coordinator and every sub-agent read from and write to the same file. It serves two roles: (1) coordination records that keep a shared picture of swarm decisions, and (2) typed child-to-parent beacons ("letters home") that carry high-signal, attention-worthy signals.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th data-i18n="docsArchitecture.thRecordKind">Record Kind</th><th data-i18n="docsArchitecture.thType">Type</th><th data-i18n="docsArchitecture.thDesc">Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>contract</code></td><td data-i18n="docsArchitecture.ttCoord">Coordination</td><td data-i18n="docsArchitecture.ttContract">An agreement between agents about task division or interfaces</td></tr>
+          <tr><td><code>decision</code></td><td data-i18n="docsArchitecture.ttCoord">Coordination</td><td data-i18n="docsArchitecture.ttDecision">A recorded decision point with rationale</td></tr>
+          <tr><td><code>fact</code></td><td data-i18n="docsArchitecture.ttCoord">Coordination</td><td data-i18n="docsArchitecture.ttFact">A discovered fact shared across the tree</td></tr>
+          <tr><td><code>note</code></td><td data-i18n="docsArchitecture.ttCoord">Coordination</td><td data-i18n="docsArchitecture.ttNote">General annotation</td></tr>
+          <tr><td><code>milestone</code></td><td data-i18n="docsArchitecture.ttBeacon">Beacon</td><td data-i18n="docsArchitecture.ttMilestone">Progress marker — "I finished stage 2"</td></tr>
+          <tr><td><code>partial_finding</code></td><td data-i18n="docsArchitecture.ttBeacon">Beacon</td><td data-i18n="docsArchitecture.ttPartial">Intermediate result worth sharing early</td></tr>
+          <tr><td><code>blocker</code></td><td>Beacon ⚡</td><td data-i18n="docsArchitecture.ttBlocker">Wakes parent immediately — agent is stuck</td></tr>
+          <tr><td><code>question</code></td><td>Beacon ⚡</td><td data-i18n="docsArchitecture.ttQuestion">Wakes parent immediately — needs input</td></tr>
+          <tr><td><code>delegation_constraint</code></td><td>Beacon ⚡</td><td data-i18n="docsArchitecture.ttDelegation">Directive: halt_fanout, cap_children, require_lane, block_surface</td></tr>
+          <tr><td><code>interface_contract</code></td><td>Beacon</td><td>Defines interface boundaries between sub-agents.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p data-i18n-html="docsArchitecture.taskTreePath">Ledger path: <code>~/.fathom/ledger/task_tree/&lt;session_id&gt;.jsonl</code>. Text capped at 4,000 chars per row. Total file capped at 2 MiB. ⚡ = wakes parent immediately (attention kinds).</p>
+  </section>
+
+  <section>
+    <h2 id="improvement-backlog" data-i18n="docsArchitecture.improvementTitle">Self-Improvement Backlog</h2>
+    <p data-i18n="docsArchitecture.improvementDesc">A durable Markdown ledger where agents record candidate improvements. Re-triggering the same issue bumps a recurrence count instead of creating a duplicate. An optional LLM pass performs semantic dedup so reformulated ideas fold into existing entries.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th data-i18n="docsArchitecture.thField">Field</th><th data-i18n="docsArchitecture.thDesc">Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>fingerprint</code></td><td data-i18n="docsArchitecture.ibFingerprint">SHA-256 dedup key (first 24 hex chars of normalized summary|category|source)</td></tr>
+          <tr><td><code>status</code></td><td data-i18n-html="docsArchitecture.ibStatus"><code>open</code> or <code>done</code></td></tr>
+          <tr><td><code>priority</code></td><td data-i18n-html="docsArchitecture.ibPriority"><code>high</code>, <code>med</code>, or <code>low</code></td></tr>
+          <tr><td><code>kind</code></td><td data-i18n-html="docsArchitecture.ibKind"><code>bug</code>, <code>improvement</code>, or <code>capability_idea</code></td></tr>
+          <tr><td><code>count</code></td><td data-i18n="docsArchitecture.ibCount">Recurrence count (starts at 1, bumped on re-match)</td></tr>
+          <tr><td><code>summary</code></td><td data-i18n="docsArchitecture.ibSummary">Human-readable description</td></tr>
+          <tr><td><code>proposed_next_step</code></td><td data-i18n="docsArchitecture.ibNextStep">Suggested action</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p data-i18n-html="docsArchitecture.improvementPath">File path: <code>~/.fathom/ledger/improvement-backlog.md</code>. Grooming cap: 30 items. Semantic dedup candidate cap: 20 items. Digest format: <code>- [high] (x3 | verify_email) Fix MX fallback</code>.</p>
+  </section>
+
+  <section>
+    <h2 id="verification-receipts" data-i18n="docsArchitecture.receiptsTitle">Verification Receipt Ledger</h2>
+    <p data-i18n-html="docsArchitecture.receiptsDesc">An append-only JSONL ledger of typed verification receipts. Each receipt is keyed by <code>(kind, value)</code> so a PASS on one kind can never silence a FAIL on a different kind. The latest receipt per typed key wins.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th data-i18n="docsArchitecture.thReceiptKind">Receipt Kind</th><th data-i18n="docsArchitecture.thVerdicts">Verdicts</th><th data-i18n="docsArchitecture.thDesc">Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>email_syntax</code></td><td>Pass/Fail</td><td data-i18n="docsArchitecture.rkSyntax">RFC 5322 syntax validation</td></tr>
+          <tr><td><code>email_domain_mx</code></td><td>Pass/Fail/Inconclusive</td><td data-i18n="docsArchitecture.rkMx">DNS-over-HTTPS MX/A record lookup</td></tr>
+          <tr><td><code>email_smtp</code></td><td>Pass/Fail/Inconclusive</td><td data-i18n="docsArchitecture.rkSmtp">SMTP port 25 RCPT TO probe</td></tr>
+          <tr><td><code>email_disposable</code></td><td>Pass/Fail</td><td data-i18n="docsArchitecture.rkDisposable">Disposable email detection (50+ providers)</td></tr>
+          <tr><td><code>phone_normalize</code></td><td>Pass/Fail</td><td data-i18n="docsArchitecture.rkPhone">E.164 normalization via libphonenumber</td></tr>
+          <tr><td><code>social_profile</code></td><td>Pass/Fail/Inconclusive</td><td data-i18n="docsArchitecture.rkSocial">HTTP check of social profile URL</td></tr>
+          <tr><td><code>person_name</code></td><td>Pass/Fail</td><td data-i18n="docsArchitecture.rkPerson">Person name verification</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p data-i18n-html="docsArchitecture.receiptsPath">Verdict: <code>PossiblyLaundered</code> flags shell-piped checks (e.g. <code>| tail</code>) where exit codes may be masked. File path: <code>~/.fathom/ledger/verify_receipts.jsonl</code>. The autosave module gates <code>Verification::Verified</code> on SMTP PASS, <code>Partial</code> on syntax+MX PASS.</p>
+  </section>
+
+  {/* ============ DATA FLOW DIAGRAM ============ */}
+  <section id="data-flow">
+    <h2>Data Flow Diagram</h2>
+    <p>
+      This diagram shows how data moves through the system during a typical research run, from the initial
+      user query to the final synthesized output.
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">data flow</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`User Query
+    │
+    ▼
+┌─────────────┐
+│ Coordinator  │  Plans sub-tasks, assigns roles, selects models
+└──────┬──────┘
+       │  Fan-out (JoinSet of tokio tasks or OS processes)
+       ▼
+┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
+│ Researcher│ │ Researcher│ │ Analyst  │ │ Verifier │
+└────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘
+     │            │            │            │
+     ▼            ▼            ▼            ▼
+┌─────────────────────────────────────────────────┐
+│                  Tool Layer                      │
+│  web_search · web_fetch · exec · memory_search  │
+│  extract_contacts · verify_email · code_symbols │
+└────────────────────────┬────────────────────────┘
+                         │  Raw results (truncated)
+                         ▼
+┌─────────────────────────────────────────────────┐
+│              Findings Budget                     │
+│  Each sub-agent summarizes within its budget     │
+│  (context_window × 0.1 per agent)                │
+└────────────────────────┬────────────────────────┘
+                         │  Budget-capped summaries
+                         ▼
+┌─────────────┐
+│ Coordinator  │  Collects, runs Goal Mode judge
+└──────┬──────┘
+       │  Gap-filling rounds (replan_rounds)
+       ▼
+┌─────────────┐
+│  Synthesis   │  LLM merges findings into report
+└──────┬──────┘
+       │
+       ▼
+┌──────────────────────────────────────────────────┐
+│                   Output                          │
+│  index.md · summary.md · findings/ · sources.md  │
+│  + PDF / HTML / JSON / DOCX export               │
+│  + Memory absorb (long-term)                     │
+│  + Notifications (webhook / email / Telegram)     │
+└──────────────────────────────────────────────────┘\`}`}} /></pre>
+    </div>
+  </section>
+
+  {/* ============ SECURITY ARCHITECTURE ============ */}
+  <section id="security">
+    <h2>Security Architecture</h2>
+    <p>
+      Fathom has 12 security layers that run at different points in the agent lifecycle.
+      These are not optional features — they are always active and cannot be disabled.
+    </p>
+
+    <h3>All 12 security layers</h3>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>#</th><th>Layer</th><th>When it runs</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>SSRF guard</td><td>Before HTTP requests</td><td>Blocks requests to internal/private network addresses</td></tr>
+          <tr><td>2</td><td>Prompt injection detection</td><td>On all tool inputs</td><td>12 regex + heuristic patterns catch prompt injection attempts</td></tr>
+          <tr><td>3</td><td>Secret scanning</td><td>On all tool outputs</td><td>8 secret types detected and redacted before they enter context</td></tr>
+          <tr><td>4</td><td>Destructive command blocking</td><td>Before exec</td><td>8 shell patterns blocked (rm -rf /, mkfs, fork bombs, etc.)</td></tr>
+          <tr><td>5</td><td>Doom-loop detection</td><td>Before each LLM call</td><td>3 identical tool calls in a row stops the loop</td></tr>
+          <tr><td>6</td><td>Role-based deny list</td><td>Before tool execution</td><td>Profile-level tool denials (e.g. analyst can't save_contacts)</td></tr>
+          <tr><td>7</td><td>Approval flow</td><td>Before side effects</td><td>Human-in-the-loop for approval_tools via TUI or API</td></tr>
+          <tr><td>8</td><td>PreToolUse hooks</td><td>Before tool execution</td><td>External subprocess hooks can allow, deny or enrich tool calls</td></tr>
+          <tr><td>9</td><td>Tool output truncation</td><td>After tool execution</td><td>50 KB / 2000 lines per output; overflow persisted to disk</td></tr>
+          <tr><td>10</td><td>Protected surfaces</td><td>On file operations</td><td>config.toml, memory.db, .research.db cannot be modified by agents</td></tr>
+          <tr><td>11</td><td>API key authentication</td><td>On HTTP requests</td><td>Non-loopback binds require FATHOM_API_KEYS</td></tr>
+          <tr><td>12</td><td>Rate limiting</td><td>On HTTP requests</td><td>Per-key rate limits on the server API</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>SSRF guard</h3>
+    <p>
+      The SSRF guard intercepts every HTTP request before it leaves the process. It resolves the target hostname
+      and checks the resulting IP against a blocklist: <code>10.0.0.0/8</code>, <code>172.16.0.0/12</code>,
+      <code>192.168.0.0/16</code>, <code>127.0.0.0/8</code>, <code>169.254.0.0/16</code>, <code>::1</code>,
+      <code>fc00::/7</code>. DNS rebinding is mitigated by resolving before connecting and verifying the
+      resolved address before the TCP handshake completes.
+    </p>
+
+    <h3>Prompt injection defense</h3>
+    <p>
+      Twelve patterns detect prompt injection attempts in tool outputs and user inputs:
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">detected patterns</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`1.  "ignore previous instructions"
+2.  "you are now a ..."
+3.  "system: " or "[system]" prefix injection
+4.  Base64-encoded instruction blocks
+5.  "disregard all prior"
+6.  Invisible Unicode direction overrides (BiDi)
+7.  Markdown link injection with javascript: URIs
+8.  Nested tool_call JSON in tool outputs
+9.  "IMPORTANT:" overrides in scraped page content
+10. Repeated newlines followed by instruction blocks
+11. XML/CDATA wrapping to break output parsing
+12. Unicode homoglyph substitution in keywords\`}`}} /></pre>
+    </div>
+    <p>
+      When a pattern is detected, the output is sanitized and a warning is logged. The agent receives
+      a cleaned version of the content.
+    </p>
+
+    <h3>Secret scanning</h3>
+    <p>
+      Every tool output passes through a secret scanner before entering the context window. Eight types
+      are detected and redacted with a <code>[REDACTED:type]</code> marker:
+    </p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>Secret type</th><th>Pattern</th></tr></thead>
+        <tbody>
+          <tr><td>AWS Access Key</td><td><code>AKIA...</code></td></tr>
+          <tr><td>AWS Secret Key</td><td>40-char base64 after aws_secret_access_key</td></tr>
+          <tr><td>GitHub Token</td><td><code>gh[pousr]_...</code></td></tr>
+          <tr><td>Slack Token</td><td><code>xox[bpoas]-...</code></td></tr>
+          <tr><td>Private Key</td><td><code>-----BEGIN (RSA|EC|OPENSSH) PRIVATE KEY-----</code></td></tr>
+          <tr><td>JWT</td><td><code>eyJ...</code> (3-part base64 with dots)</td></tr>
+          <tr><td>Generic API Key</td><td><code>api_key=</code>, <code>apikey:</code>, <code>Authorization: Bearer</code></td></tr>
+          <tr><td>Password in URL</td><td><code>://user:password@host</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Destructive command blocking</h3>
+    <p>
+      The <code>exec</code> tool has a pre-execution guard that blocks 8 categories of destructive commands:
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">blocked patterns</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`1.  rm -rf /          — recursive root deletion
+2.  mkfs / dd if=     — filesystem destruction
+3.  :(){ :|:& };:    — fork bombs
+4.  chmod -R 777 /    — permission escalation
+5.  wget | sh / curl | sh — remote code execution
+6.  > /dev/sda        — raw disk writes
+7.  shutdown / reboot / halt — system control
+8.  iptables -F       — firewall flush\`}`}} /></pre>
+    </div>
+
+    <h3>Protected surfaces</h3>
+    <p>
+      These files and directories are read-only to agents — they can be read but never written or deleted
+      by any tool call:
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">protected paths</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`~/.fathom/config.toml      # main configuration
+~/.fathom/memory.db        # long-term memory database
+~/.fathom/profiles/        # profile definitions
+<output_dir>/.research.db             # session database
+<output_dir>/index.md                 # generated index\`}`}} /></pre>
+    </div>
+  </section>
+
+  {/* ============ CONTEXT WINDOW MANAGEMENT ============ */}
+  <section id="context-window">
+    <h2>Context Window Management</h2>
+    <p>
+      The context window is the most constrained resource in any agent system. Fathom manages it through
+      five stages, each progressively more aggressive. The goal: keep the agent productive without losing
+      critical information.
+    </p>
+
+    <h3>The five stages in detail</h3>
+    <div class="steps">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div>
+          <div class="step-title">BPE token counting</div>
+          <p class="step-desc">Exact counting with tiktoken cl100k_base; CJK-aware heuristic fallback for non-Latin scripts. The counter runs before every LLM call. You cannot manage what you estimate wrong — this is why approximate char/4 counting is not used.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div>
+          <div class="step-title">Tool result truncation</div>
+          <p class="step-desc">Each tool output is capped at <code>tool_output_max_bytes</code> (default 50 KB) or 2000 lines. The per-turn budget is <code>turn_budget_bytes</code> (default 200 KB). Overflow is persisted to disk with a pointer, so the agent can reference it later without bloating the context.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div>
+          <div class="step-title">Micro-compaction</div>
+          <p class="step-desc">Deduplicate tool results by content hash and prune older outputs that have been superseded. This is fast and deterministic — no LLM call required. Runs automatically when context fills up.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">04</div>
+        <div>
+          <div class="step-title">Full compaction (Hermes-style)</div>
+          <p class="step-desc">An LLM summarizes the middle of the conversation. The context becomes: head (system prompt + first messages) + summary (compressed middle) + tail (recent messages). This is the only stage that costs tokens.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">05</div>
+        <div>
+          <div class="step-title">Anti-thrashing cooldown</div>
+          <p class="step-desc">After a full compaction pass that fails to free enough space, the runtime enters a cooldown period instead of compacting again immediately. This prevents the pathological case of spending all tokens on compaction without making progress.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Configuration</h3>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>Setting</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>context_window</code></td><td>model default</td><td>Maximum tokens for the model (128K or 256K)</td></tr>
+          <tr><td><code>compact_threshold</code></td><td>0.50</td><td>Trigger compaction at this fraction of context_window</td></tr>
+          <tr><td><code>tool_output_max_bytes</code></td><td>50 KB</td><td>Per-tool output cap</td></tr>
+          <tr><td><code>turn_budget_bytes</code></td><td>200 KB</td><td>Total per-turn budget for all tool outputs</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Window profiles</h3>
+    <p>
+      Two profiles are available depending on the model's context window size:
+    </p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>Profile</th><th>context_window</th><th>compact_threshold</th><th>Best for</th></tr></thead>
+        <tbody>
+          <tr><td><code>low</code></td><td>128K tokens</td><td>0.50 (64K)</td><td>GPT-4o-mini, Claude Haiku, cheaper models</td></tr>
+          <tr><td><code>max</code></td><td>256K tokens</td><td>0.50 (128K)</td><td>Claude Sonnet, GPT-4o, Gemini Pro</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Long-term memory complements all of it: relevant facts arrive as a prompt digest instead of living
+      in session context. This means the agent can "remember" thousands of facts without consuming context
+      window space.
+    </p>
+  </section>
+
+  {/* ============ MULTI-PROCESS ARCHITECTURE ============ */}
+  <section id="multiprocess-detail">
+    <h2>Multi-Process Architecture</h2>
+    <p>
+      By default all agents run as tokio tasks within a single process. With <code>use_multiprocess = true</code>
+      in <code>config.toml</code>, each sub-agent becomes its own OS process with full isolation.
+    </p>
+
+    <h3>How use_multiprocess works</h3>
+    <div class="steps">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div>
+          <div class="step-title">Coordinator spawns workers</div>
+          <p class="step-desc">When process isolation is enabled, the coordinator may launch the hidden <code>fathom worker</code> mode as a child process; users should start work with <code>fathom run</code> or <code>fathom tui</code>.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div>
+          <div class="step-title">Unix socket connection</div>
+          <p class="step-desc">Each worker connects back to the coordinator over a Unix domain socket. Messages are newline-delimited JSON (JSONL). The protocol supports: progress events, tool-call events, completion events, and error events.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div>
+          <div class="step-title">Independent agent loop</div>
+          <p class="step-desc">Each worker runs its own complete agent loop: prompt building, LLM calls, tool execution, context management. It shares nothing with other workers except the SQLite database (WAL mode, 4-connection pool).</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">04</div>
+        <div>
+          <div class="step-title">Result collection</div>
+          <p class="step-desc">When a worker finishes, it sends a completion event over the socket. The coordinator collects the result and feeds it into the synthesis step.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Unix socket IPC protocol</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">IPC message format</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`→ Coordinator → Worker:   {"type":"start","task":"...","tools":[...]}
+← Worker → Coordinator:   {"type":"progress","agent_id":"...","msg":"searching..."}
+← Worker → Coordinator:   {"type":"tool_call","tool":"web_search","args":{...},"ms":342}
+← Worker → Coordinator:   {"type":"completion","agent_id":"...","result":"..."}
+← Worker → Coordinator:   {"type":"error","agent_id":"...","error":"timeout"}\`}`}} /></pre>
+    </div>
+
+    <h3>kill_on_drop safety</h3>
+    <p>
+      Worker handles are wrapped in <code>tokio::process::Command::kill_on_drop(true)</code>. This means:
+    </p>
+    <ul class="prop-list">
+      <li>If the coordinator process crashes, all workers are killed automatically by the OS.</li>
+      <li>If a worker handle is dropped (cancelled task), the child process is terminated immediately.</li>
+      <li>No orphaned worker processes can survive a cancelled run or a panic.</li>
+      <li>A 30-second startup timeout ensures dead workers are reaped quickly.</li>
+    </ul>
+
+    <h3>When to use multi-process vs single-process</h3>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>Aspect</th><th>Single-process (default)</th><th>Multi-process</th></tr></thead>
+        <tbody>
+          <tr><td>Overhead</td><td>Low — tokio tasks are lightweight</td><td>Higher — OS processes with IPC</td></tr>
+          <tr><td>Isolation</td><td>Shared memory, one panic kills all</td><td>Full process isolation</td></tr>
+          <tr><td>Resource limits</td><td>Per-task (soft)</td><td>Per-process (OS-enforced)</td></tr>
+          <tr><td>Debugging</td><td>Harder to isolate issues</td><td>Easier — each worker has its own stderr</td></tr>
+          <tr><td>Best for</td><td>Small swarms (≤4 agents), development</td><td>Large swarms (6+ agents), production</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>

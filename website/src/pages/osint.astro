@@ -1,0 +1,291 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const sources = [
+  { name: 'Business registries', tool: 'search_business_directory', d: 'Business registry aggregators (Russia) — rusprofile.ru, list-org.com, sbis.ru, companies.rbc.ru: registry data, INN/OGRN, founders and executives.' },
+  { name: 'Maps & directories', tool: 'find_leads', d: '2GIS (CIS), Yandex Maps (Russia/CIS), Yellow Pages (international) — companies with addresses, phones and opening hours.' },
+  { name: 'Corporate sites', tool: 'parse_corporate_site', d: 'Team and about pages, contacts, press releases — plus Schema.org markup and JSON-LD blocks structured for extraction.' },
+  { name: 'Social networks', tool: 'search_social', d: 'LinkedIn profiles and company pages, X/Twitter search, Telegram channels and users — with anti-bot limits handled honestly.' },
+  { name: 'News & mentions', tool: 'search_news', d: 'Serper News API and Google News RSS — funding rounds, hires and launches that tell you who to contact next.' },
+];
+
+const stages = [
+  { n: '01', t: 'Plan', d: 'The coordinator decomposes the query into parallel subtasks: registries, socials, corporate sites, databases.' },
+  { n: '02', t: 'Extract', d: 'extract_contacts pulls emails, phones, socials, persons and companies from every fetched page.' },
+  { n: '03', t: 'Verify', d: 'verify_email, verify_phone and verify_social_profile filter the noise and score confidence.' },
+  { n: '04', t: 'Enrich', d: 'enrich_company and enrich_person add industry, size, location, role and buying signals.' },
+  { n: '05', t: 'ContactDb', d: 'SQLite or PostgreSQL store; dedup and merge on normalized emails and phones.' },
+  { n: '06', t: 'CRM', d: 'Sync into amoCRM, Bitrix24 or HubSpot — dedup by crm_id, no duplicates on re-runs.' },
+  { n: '07', t: 'Report', d: 'summary.md plus a contact table, exported to CSV, vCard, JSON or Excel.' },
+];
+
+const schema = [
+  ['contacts', 'id, email, phone, name, title, company, source, timestamps'],
+  ['social_profiles', 'contact_id, platform, url, username'],
+  ['companies', 'name, website, industry, size, location'],
+  ['tags', 'contact_id, tag'],
+  ['notes', 'contact_id, note'],
+];
+
+const verification = [
+  { t: 'Syntax + MX + SMTP', d: 'Every email passes syntax, MX-record and SMTP handshake checks. Disposable domains and role-based addresses (info@, admin@) are flagged with lower confidence.' },
+  { t: 'E.164 phone validation', d: 'Phones are normalized to E.164 via libphonenumber — country, line type and carrier are extracted before a confidence score is assigned.' },
+  { t: 'Deobfuscation', d: 'Obfuscated addresses like name [at] domain [dot] com are decoded automatically and scored lower than plain addresses.' },
+  { t: 'Append-only receipts', d: 'Every verification gate emits a typed receipt into an append-only JSONL ledger. A PASS from one gate cannot mask a FAIL from another — the identity key is (kind, value), so syntax_pass + mx_pass + smtp_fail is faithfully recorded as smtp_fail.' },
+];
+
+const ethics = [
+  { t: 'GDPR & Law 152-FZ', d: 'Personal data is processed in line with GDPR and Russia\'s Federal Law 152-FZ on Personal Data: lawful basis, scoped purpose, deletion on request.' },
+  { t: 'Public data only', d: 'Agents read open, publicly available sources — nothing scraped behind logins, paywalls or private APIs.' },
+  { t: 'robots.txt & rate limits', d: 'Crawling respects robots.txt and built-in throttling; bot-blocked pages (403) are skipped gracefully, never hammered.' },
+  { t: 'Honest statuses', d: 'Uncertainty is explicit: "requires verification", "not found", "HTTP 999", "low-confidence match" — never silent guesses.' },
+  { t: 'LinkedIn HTTP 999', d: 'LinkedIn answers bots with HTTP 999. Stable parsing needs proxies/cookies; agents surface the block instead of inventing data.' },
+  { t: 'No spam', d: 'Extracted contacts are for qualified outreach and research — not bulk unsolicited mailings. Confidence scores help you filter.' },
+];
+---
+
+<Layout title="OSINT Playbook — Fathom Research">
+  <main class="osint-page">
+    <div class="container">
+      <div class="osint-hero">
+        <p class="eyebrow" data-i18n="osint.hero.badge">OSINT Playbook</p>
+        <h1 class="h2-sec" data-i18n-html data-i18n="osint.hero.title">Every lead, sourced<br />and verified.</h1>
+        <p class="copy-lg mx-auto" data-i18n="osint.hero.sub">An automated OSINT pipeline: parallel agents source companies and people across registries, maps, corporate sites and social networks, extract and verify every email and phone, then merge it all into one clean contact database — synced straight to your CRM.</p>
+      </div>
+
+      <!-- Data sources -->
+      <div class="sec-head">
+        <p class="eyebrow" data-i18n="osint.sources.badge">Data sources</p>
+        <h2 class="h3-sec" data-i18n="osint.sources.title">Where the leads come from</h2>
+      </div>
+      <div class="api-grid">
+        {sources.map((s, i) => (
+          <div class="api-card">
+            <div class="api-name">{s.tool}</div>
+            <h3 data-i18n={'osint.sources.' + i + '.name'}>{s.name}</h3>
+            <p data-i18n={'osint.sources.' + i + '.desc'}>{s.d}</p>
+          </div>
+        ))}
+      </div>
+
+      <!-- Pipeline -->
+      <div class="sec-head">
+        <p class="eyebrow" data-i18n="osint.pipeline.badge">Pipeline</p>
+        <h2 class="h3-sec" data-i18n="osint.pipeline.title">Seven stages, one query</h2>
+      </div>
+      <div class="stages">
+        {stages.map((s, i) => (
+          <div class="stage">
+            <div class="stage-num">{s.n}</div>
+            <h3 data-i18n={'osint.stage.' + i + '.title'}>{s.t}</h3>
+            <p data-i18n={'osint.stage.' + i + '.desc'}>{s.d}</p>
+          </div>
+        ))}
+      </div>
+
+      <!-- Verification: email -->
+      <div class="feat">
+        <div class="feat-copy">
+          <p class="eyebrow" data-i18n="osint.verify.badge">Verification</p>
+          <h2 class="h3-sec" data-i18n="osint.verify.title">Nothing unverified gets saved</h2>
+          <p class="copy-lg" data-i18n-html data-i18n="osint.verify.email">Bounced emails and dead numbers burn outreach budget. Every candidate passes MX checks, disposable-domain and role-based filters before it earns a confidence score — and obfuscated addresses like <code class="ic">name [at] domain [dot] com</code> are decoded automatically, with a lower score than plain ones.</p>
+        </div>
+        <div class="code-card">
+          <pre><code>{`verify_email("info@company.com")
+→ is_valid_syntax: true
+→ domain_exists:   true
+→ mx_records:      ["mx1.company.com"]
+→ is_disposable:   false
+→ is_role_based:   true      # info@ admin@ support@
+→ confidence:      0.85
+
+# deobfuscation
+"name [at] company [dot] com"
+→ info@company.com           # confidence 0.70
+"info@company.com"           # plain → confidence 0.95`}</code></pre>
+        </div>
+      </div>
+
+      <!-- Verification: phones + suggest -->
+      <div class="feat feat-reverse">
+        <div class="feat-copy">
+          <p class="eyebrow" data-i18n="osint.phones.badge">Phones &amp; patterns</p>
+          <h2 class="h3-sec" data-i18n="osint.phones.title">E.164 phones, inferred emails</h2>
+          <p class="copy-lg" data-i18n-html data-i18n="osint.phones.desc">Phones are normalized to E.164 via libphonenumber with country and mobile/landline detection. When only a name and a domain are known, <code class="ic">suggest_emails</code> builds candidate addresses from name permutations and the domain's existing pattern — up to 9 variants to verify.</p>
+        </div>
+        <div class="code-card">
+          <pre><code>{`verify_phone("+7 (495) 710-75-80")
+→ normalized:   "+74957107580"    # E.164
+→ country_code: "RU"
+→ is_valid:     true
+→ is_mobile:    false             # landline
+
+suggest_emails("John Doe", "acme.com")
+→ john.doe@acme.com
+→ j.doe@acme.com
+→ john@acme.com  …
+→ up to 9 candidates: name permutations
+  × observed domain pattern`}</code></pre>
+        </div>
+      </div>
+
+      <!-- ContactDb -->
+      <div class="feat">
+        <div class="feat-copy">
+          <p class="eyebrow" data-i18n="osint.storage.badge">Storage</p>
+          <h2 class="h3-sec" data-i18n="osint.storage.title">ContactDb — one canonical record</h2>
+          <p class="copy-lg" data-i18n="osint.storage.desc">Contacts land in SQLite out of the box — or PostgreSQL for large bases, same interface. Dedup and merge run on normalized emails and phones, so re-runs and overlapping sources never create double records. Tags and notes attach per contact; the whole schema is yours to query.</p>
+          <p class="copy-lg"><code class="ic">save_contacts</code> · <code class="ic">db_path = "./contacts.db"</code> · <code class="ic">pg_url = "postgres://…"</code></p>
+        </div>
+        <div class="mini-table-wrap">
+          <table class="mini-table">
+            <thead><tr><th data-i18n="osint.schema.table">Table</th><th data-i18n="osint.schema.columns">Columns</th></tr></thead>
+            <tbody>
+              {schema.map((r) => (
+                <tr><td>{r[0]}</td><td>{r[1]}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Query examples -->
+      <div class="sec-head">
+        <p class="eyebrow" data-i18n="osint.queries.badge">Query examples</p>
+        <h2 class="h3-sec" data-i18n="osint.queries.title">One command, a folder of leads</h2>
+      </div>
+      <div class="q-grid">
+        <div class="q-card">
+          <div class="q-label" data-i18n="osint.queries.0.label">Moscow — IT CEOs</div>
+          <div class="code-card">
+            <pre><code>{`fathom run \\
+  "Find contacts of CEOs and CTOs at
+   small IT companies in Moscow.
+   Extract emails, phones and
+   LinkedIn profiles." \\
+  --output ./leads/
+
+# agents fan out over rusprofile,
+# list-org and sbis, parse corporate
+# sites, enrich persons
+# → INN/OGRN table + emails + phones
+#   + LinkedIn candidates (CSV, md)`}</code></pre>
+          </div>
+        </div>
+        <div class="q-card">
+          <div class="q-label" data-i18n="osint.queries.1.label">Berlin — SaaS Series A–B</div>
+          <div class="code-card">
+            <pre><code>{`fathom run \\
+  "Find 20 SaaS companies,
+   Series A–B, Berlin. Collect
+   emails and LinkedIn of founders
+   and CTOs." \\
+  --output ./berlin-saas/
+
+# → 20 companies × founder/CTO
+#   contacts, verified emails +
+#   LinkedIn URLs, exported to
+#   CSV / vCard`}</code></pre>
+          </div>
+        </div>
+        <div class="q-card">
+          <div class="q-label" data-i18n="osint.queries.2.label">Dubai — fintech market</div>
+          <div class="code-card">
+            <pre><code>{`fathom run \\
+  "Research the Dubai fintech
+   startup market. For the top-10
+   companies find decision-maker
+   contacts." \\
+  --output ./dubai-fintech/
+
+# → market overview + top-10
+#   companies with decision-maker
+#   contacts, CSV / vCard export`}</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ethics -->
+      <div class="sec-head center">
+        <p class="eyebrow" data-i18n="osint.ethics.badge">Ethics &amp; compliance</p>
+        <h2 class="h3-sec" data-i18n="osint.ethics.title">Responsible by default</h2>
+      </div>
+      <div class="pr-grid">
+        {ethics.map((e, i) => (
+          <div class="pr-card">
+            <h3 data-i18n={'osint.ethics.' + i + '.title'}>{e.t}</h3>
+            <p data-i18n={'osint.ethics.' + i + '.desc'}>{e.d}</p>
+          </div>
+        ))}
+      </div>
+
+      <div class="cta-strip">
+        <h2 data-i18n="osint.cta.title">See the full lead-generation workflow</h2>
+        <a href="/features/lead-generation" class="btn btn-primary" data-i18n="osint.cta.start">Lead generation →</a>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .osint-page { padding: 70px 0 90px; }
+  .eyebrow { font-family: var(--font-mono); font-size: 13px; letter-spacing: .16px; text-transform: uppercase; color: var(--grey-600); }
+  .h3-sec { font-size: clamp(20px, 2.4vw, 34px); font-weight: 500; letter-spacing: -0.02em; margin: 12px 0 0; }
+  .copy-lg { color: var(--grey-700); font-size: 17px; line-height: 1.55; max-width: 640px; }
+  .mx-auto { margin-left: auto; margin-right: auto; }
+  .ic { font-family: var(--font-mono); font-size: .85em; background: var(--grey-100); border: 1px solid var(--grey-200); padding: 1px 6px; border-radius: 5px; }
+
+  .osint-hero { max-width: 820px; margin: 0 auto 48px; text-align: center; padding: 0 24px; }
+  .osint-hero h1 { font-size: clamp(34px, 5vw, 68px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.02; margin-top: 12px; }
+  .osint-hero .copy-lg { margin-top: 20px; }
+
+  .sec-head { max-width: 720px; margin: 60px 0 28px; }
+  .sec-head.center { margin-left: auto; margin-right: auto; text-align: center; }
+
+  .api-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .api-card { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 24px; display: flex; flex-direction: column; gap: 8px; transition: box-shadow .25s, transform .25s var(--ease-out), border-color .25s; }
+  .api-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--grey-400); }
+  .api-card .api-name { font-family: var(--font-mono); font-weight: 600; font-size: 13px; color: var(--grey-600); }
+  .api-card h3 { font-size: 16px; font-weight: 600; }
+  .api-card p { color: var(--grey-600); font-size: 13.5px; line-height: 1.55; }
+
+  .stages { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; }
+  .stage { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 18px; }
+  .stage-num { font-family: var(--font-mono); font-size: 12px; color: var(--grey-400); margin-bottom: 10px; display: block; }
+  .stage h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .stage p { font-size: 12.5px; color: var(--grey-600); line-height: 1.5; }
+  @media (max-width: 1200px) { .stages { grid-template-columns: repeat(4, 1fr); } }
+  @media (max-width: 720px) { .stages { grid-template-columns: repeat(2, 1fr); } }
+
+  .feat { display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: center; padding: 48px 0; }
+  .feat-reverse { direction: rtl; }
+  .feat-reverse > * { direction: ltr; }
+  .feat-copy .copy-lg + .copy-lg { margin-top: 14px; }
+  @media (max-width: 900px) { .feat, .feat-reverse { grid-template-columns: 1fr; gap: 28px; direction: ltr; } }
+
+  .code-card { border: 1px solid var(--grey-200); border-radius: var(--radius-md); background: var(--bg-dark); overflow: hidden; box-shadow: var(--shadow-lg); }
+  .code-card pre { margin: 0; padding: 22px; overflow-x: auto; }
+  .code-card code { font-family: var(--font-mono); font-size: 13px; line-height: 1.7; color: var(--grey-100); white-space: pre; }
+
+  .mini-table-wrap { border: 1px solid var(--grey-200); border-radius: 8px; overflow: auto; background: var(--bg-card); }
+  .mini-table { width: 100%; border-collapse: collapse; font-size: 13px; font-family: var(--font-mono); }
+  .mini-table th { font-size: 10px; text-transform: uppercase; letter-spacing: .6px; color: var(--grey-600); text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--grey-200); background: var(--grey-50); }
+  .mini-table td { padding: 10px 14px; border-bottom: 1px solid var(--grey-100); color: var(--grey-800); vertical-align: top; }
+  .mini-table tr:last-child td { border-bottom: none; }
+
+  .q-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start; }
+  .q-label { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--grey-500); margin-bottom: 10px; }
+  .q-card .code-card { box-shadow: none; }
+  @media (max-width: 1000px) { .q-grid { grid-template-columns: 1fr; } }
+
+  .pr-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .pr-card { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 24px; }
+  .pr-card:hover { border-color: var(--grey-400); box-shadow: var(--shadow-md); }
+  .pr-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 10px; }
+  .pr-card p { color: var(--grey-600); font-size: 13.5px; line-height: 1.6; }
+  @media (max-width: 900px) { .pr-grid { grid-template-columns: 1fr; } }
+
+  .cta-strip { margin-top: 64px; background: var(--bg-dark); border-radius: var(--radius-xl); padding: 48px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+  .cta-strip h2 { color: #fff; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; }
+  .cta-strip .btn-primary { background: var(--bg-card); color: var(--grey-900); }
+</style>

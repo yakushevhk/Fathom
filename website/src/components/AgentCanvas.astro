@@ -1,0 +1,490 @@
+---
+// AgentCanvas — 3D dotted-orb agent animations.
+// Inspired by thinking-orbs: Fibonacci-lattice sphere, depth-sorted dots,
+// per-mode motion (orbits, globe scan, rubik twist, wave, sweep, trail, morph).
+// Pure 2D canvas arcs — no WebGL, no filters, identical in all browsers.
+//
+// Props:
+//   agents — массив { name, mode, hue, lit? },
+//   compact — уменьшенный размер canvas (для тизер-секций)
+
+const {
+  agents,
+  compact = false,
+} = Astro.props;
+
+const STATUS = {
+  researcher: 'breathing · scanning sources',
+  extracting: 'pulse · pulling fields',
+  structuring: 'firing · building schema',
+  searching: 'globe · 7 backends',
+  cleaning: 'sweep · dedup pass',
+  memoring: 'trail · absorbing facts',
+  outreach: 'in flight · composing',
+};
+---
+
+<div class="agent-grid" data-compact={compact ? 'true' : 'false'}>
+  {
+    agents.map((a) =>
+      a.href ? (
+        <a href={a.href} class="agent-card agent-card--link">
+          <div class="agent-canvas">
+            <canvas data-mode={a.mode} data-hue={a.hue} data-lit={a.lit ?? 55} role="img" aria-label={`${a.name} agent animation`}></canvas>
+          </div>
+          <span class="agent-name">{a.name}</span>
+          <span class="agent-status">{STATUS[a.mode] ?? 'active'}</span>
+        </a>
+      ) : (
+        <div class="agent-card">
+          <div class="agent-canvas">
+            <canvas data-mode={a.mode} data-hue={a.hue} data-lit={a.lit ?? 55} role="img" aria-label={`${a.name} agent animation`}></canvas>
+          </div>
+          <span class="agent-name">{a.name}</span>
+          <span class="agent-status">{STATUS[a.mode] ?? 'active'}</span>
+        </div>
+      )
+    )
+  }
+</div>
+
+<script define:vars={{ agents }}>
+  const SIZE = 128;
+  const SCALE = 2;
+
+  // ===================== 3D MATH =====================
+
+  function fibDir(i, n) {
+    const golden = Math.PI * (3 - Math.sqrt(5));
+    const y = 1 - (2 * (i + 0.5)) / n;
+    const rad = Math.sqrt(1 - y * y);
+    const a = i * golden;
+    return [rad * Math.cos(a), y, rad * Math.sin(a)];
+  }
+
+  function makeProj(yaw, tilt, cx, cy, scale) {
+    const st = Math.sin(tilt), ct = Math.cos(tilt);
+    const sy = Math.sin(yaw), cyw = Math.cos(yaw);
+    return (x, y, z) => {
+      const x1 = x * cyw + z * sy;
+      const z1 = -x * sy + z * cyw;
+      const y1 = y * ct - z1 * st;
+      const z2 = y * st + z1 * ct;
+      return [cx + x1 * scale, cy - y1 * scale, z2];
+    };
+  }
+
+  function hashD(a, b) {
+    const h = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453;
+    return h - Math.floor(h);
+  }
+
+  function lerp(a, b, f) { return a + (b - a) * f; }
+
+  function smoothstep(x) { return x * x * (3 - 2 * x); }
+
+  // ===================== PAINT =====================
+
+  function paintDot(ctx, x, y, r, hue, sat, lit, alpha) {
+    if (alpha < 0.015) return;
+    const a = Math.max(0, Math.min(1, alpha));
+    ctx.fillStyle = `hsla(${((hue % 360) + 360) % 360} ${sat}% ${lit}% / ${a})`;
+    ctx.beginPath();
+    ctx.arc(x, y, Math.max(0.4, r), 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function paintGlow(ctx, x, y, r, hue, alpha) {
+    if (alpha < 0.15) return;
+    const a = Math.max(0, Math.min(1, alpha * 0.5));
+    ctx.fillStyle = `hsla(${((hue % 360) + 360) % 360} 80% 65% / ${a})`;
+    ctx.beginPath();
+    ctx.arc(x, y, r * 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function clear(ctx) {
+    ctx.fillStyle = '#0a0a0a';
+    ctx.fillRect(0, 0, SIZE, SIZE);
+  }
+
+  // ===================== MODES =====================
+
+  const DOT_N = 54;
+  const R = SIZE * 0.38;
+  const cx = SIZE / 2, cy = SIZE / 2;
+
+  // Fib lattice indices — precomputed once
+  const fibDots = [];
+  for (let i = 0; i < DOT_N; i++) fibDots.push(fibDir(i, DOT_N));
+
+  const MODES = {
+    // ---------- researcher: breathing sphere + orbiting particles ----------
+    researcher(ctx, cfg, t) {
+      const yaw = t * 0.15;
+      const tilt = 0.35 + 0.1 * Math.sin(t * 0.4);
+      const pt = makeProj(yaw, tilt, cx, cy, 1);
+      const hue = cfg.hue;
+      const breath = 0.92 + 0.08 * Math.sin(t * 0.8);
+
+      const dots = [];
+      for (let i = 0; i < DOT_N; i++) {
+        const d = fibDots[i];
+        const r3 = R * breath;
+        const [px, py, z] = pt(d[0] * r3, d[1] * r3, d[2] * r3);
+        const depth = (z / R + 1) / 2;
+        dots.push({ px, py, z, depth, i });
+      }
+      dots.sort((a, b) => a.z - b.z);
+      for (const d of dots) {
+        const r = (1.2 + 2.2 * d.depth) * (SIZE / 128);
+        const a = 0.25 + 0.75 * d.depth;
+        const lit = cfg.lit + d.depth * 18;
+        paintDot(ctx, d.px, d.py, r, hue, 65, lit, a);
+        if (d.depth > 0.65) paintGlow(ctx, d.px, d.py, r, hue, (d.depth - 0.5) * 1.4);
+      }
+
+      // orbiting particle
+      for (let m = 0; m < 3; m++) {
+        const a = t * 1.2 + m * 2.094;
+        const orbR = R * (0.55 + 0.12 * m);
+        const [px, py, z] = pt(Math.cos(a) * orbR, Math.sin(a * 0.3) * orbR * 0.4, Math.sin(a) * orbR);
+        const depth = (z / R + 1) / 2;
+        const pr = (2.5 + 2 * depth) * (SIZE / 128);
+        paintGlow(ctx, px, py, pr, hue, 0.7);
+        paintDot(ctx, px, py, pr, hue, 75, cfg.lit + 25, 0.95);
+      }
+    },
+
+    // ---------- extracting: expanding pulse rings on sphere ----------
+    extracting(ctx, cfg, t) {
+      const yaw = t * 0.2;
+      const tilt = 0.3;
+      const pt = makeProj(yaw, tilt, cx, cy, 1);
+      const hue = cfg.hue;
+      const phase = t * 1.5;
+
+      const dots = [];
+      for (let i = 0; i < DOT_N; i++) {
+        const d = fibDots[i];
+        const [px, py, z] = pt(d[0] * R, d[1] * R, d[2] * R);
+        const depth = (z / R + 1) / 2;
+        // spherical distance-based pulse
+        const lat = Math.asin(d[1]);
+        const lon = Math.atan2(d[2], d[0]);
+        const ring = Math.abs(lat) + Math.abs(lon);
+        const pulse = Math.pow(Math.max(0, Math.sin(ring * 2.5 - phase)), 2);
+        dots.push({ px, py, z, depth, pulse, i });
+      }
+      dots.sort((a, b) => a.z - b.z);
+      for (const d of dots) {
+        const r = (1.0 + 1.5 * d.depth + 2.5 * d.pulse) * (SIZE / 128);
+        const a = 0.2 + 0.6 * d.depth + 0.5 * d.pulse;
+        const lit = cfg.lit + d.pulse * 20;
+        paintDot(ctx, d.px, d.py, r, hue, 70, lit, a);
+        if (d.pulse > 0.3) paintGlow(ctx, d.px, d.py, r, hue, d.pulse * 0.6);
+      }
+    },
+
+    // ---------- structuring: scrambled band segments ----------
+    structuring(ctx, cfg, t) {
+      const yaw = t * 0.25;
+      const tilt = 0.4 + 0.1 * Math.sin(t * 0.6);
+      const pt = makeProj(yaw, tilt, cx, cy, 1);
+      const hue = cfg.hue;
+      const seed = Math.floor(t / 500);
+
+      const dots = [];
+      for (let i = 0; i < DOT_N; i++) {
+        const d = fibDots[i];
+        const rnd = hashD(i, seed + 0.3);
+        const active = rnd < 0.6;
+        const [px, py, z] = pt(d[0] * R, d[1] * R, d[2] * R);
+        const depth = (z / R + 1) / 2;
+        dots.push({ px, py, z, depth, active, rnd, i });
+      }
+      dots.sort((a, b) => a.z - b.z);
+      for (const d of dots) {
+        const wave = 0.5 + 0.5 * Math.sin(t * 1.8 + d.i * 0.9);
+        const flicker = d.active ? wave : 0.08;
+        const r = (1.0 + 2.0 * d.depth + (d.active ? 1.5 * wave : 0)) * (SIZE / 128);
+        const a = 0.1 + 0.9 * flicker * (0.3 + 0.7 * d.depth);
+        const lit = cfg.lit + (d.active ? wave * 22 : 0);
+        paintDot(ctx, d.px, d.py, r, hue, 65, lit, a);
+        if (d.active && wave > 0.6) paintGlow(ctx, d.px, d.py, r, hue, wave * 0.4);
+      }
+    },
+
+    // ---------- searching: globe with scanning meridian ----------
+    searching(ctx, cfg, t) {
+      const spin = 0.5;
+      const yaw = t * spin;
+      const tilt = 0.4 + 0.06 * Math.sin(t * 0.35);
+      const pt = makeProj(yaw, tilt, cx, cy, 1);
+      const hue = cfg.hue;
+      const scan = t * (spin + 1.2);
+
+      const dots = [];
+      for (let i = 0; i < DOT_N; i++) {
+        const d = fibDots[i];
+        const [px, py, z] = pt(d[0] * R, d[1] * R, d[2] * R);
+        const depth = (z / R + 1) / 2;
+        const lon = Math.atan2(d[2], d[0]);
+        const dlon = Math.atan2(Math.sin(lon + yaw - scan), Math.cos(lon + yaw - scan));
+        const boost = Math.exp(-(dlon * dlon) / 0.18) * Math.max(0, z / R);
+        const dimBase = 0.35;
+        dots.push({ px, py, z, depth, boost, dimBase, i });
+      }
+      dots.sort((a, b) => a.z - b.z);
+      for (const d of dots) {
+        const r = (1.0 + 2.5 * d.depth + 2.5 * d.boost) * (SIZE / 128);
+        const a = d.dimBase + (1 - d.dimBase) * Math.min(1, d.boost * 3);
+        const lit = cfg.lit + d.boost * 25;
+        const hShift = d.boost * 30;
+        paintDot(ctx, d.px, d.py, r, hue + hShift, 80, lit, a);
+        if (d.boost > 0.15) paintGlow(ctx, d.px, d.py, r, hue + hShift, d.boost * 1.2);
+      }
+    },
+
+    // ---------- cleaning: sweep beam across sphere ----------
+    cleaning(ctx, cfg, t) {
+      const yaw = t * 0.18;
+      const tilt = 0.3;
+      const pt = makeProj(yaw, tilt, cx, cy, 1);
+      const hue = cfg.hue;
+      const sweepPos = ((t * 0.6) % (Math.PI * 2)) - Math.PI;
+
+      const dots = [];
+      for (let i = 0; i < DOT_N; i++) {
+        const d = fibDots[i];
+        const [px, py, z] = pt(d[0] * R, d[1] * R, d[2] * R);
+        const depth = (z / R + 1) / 2;
+        const lon = Math.atan2(d[2], d[0]);
+        let dist = lon - sweepPos;
+        dist = Math.atan2(Math.sin(dist), Math.cos(dist));
+        const core = Math.exp(-(dist * dist) / 0.15);
+        const trail = dist > 0 && dist < 1.5 ? Math.exp(-dist * 2.5) * 0.4 : 0;
+        dots.push({ px, py, z, depth, core, trail, i });
+      }
+      dots.sort((a, b) => a.z - b.z);
+      for (const d of dots) {
+        const intensity = Math.max(0.06, d.core + d.trail);
+        const r = (1.0 + 1.8 * d.depth + 2.0 * d.core) * (SIZE / 128);
+        const a = 0.1 + 0.9 * intensity * (0.4 + 0.6 * d.depth);
+        const lit = cfg.lit + d.core * 20;
+        paintDot(ctx, d.px, d.py, r, hue, 60, lit, a);
+        if (d.core > 0.3) paintGlow(ctx, d.px, d.py, r, hue, d.core * 0.7);
+      }
+    },
+
+    // ---------- memoring: wave rippling through sphere ----------
+    memoring(ctx, cfg, t) {
+      const yaw = t * 0.12;
+      const tilt = 0.35;
+      const pt = makeProj(yaw, tilt, cx, cy, 1);
+      const hue = cfg.hue;
+
+      const dots = [];
+      for (let i = 0; i < DOT_N; i++) {
+        const d = fibDots[i];
+        const [px, py, z] = pt(d[0] * R, d[1] * R, d[2] * R);
+        const depth = (z / R + 1) / 2;
+        const lat = Math.asin(d[1]);
+        const wave = Math.pow(0.5 + 0.5 * Math.sin(lat * 4 - t * 1.8 + d[0] * 1.2), 3);
+        dots.push({ px, py, z, depth, wave, i });
+      }
+      dots.sort((a, b) => a.z - b.z);
+      for (const d of dots) {
+        const r = (1.0 + 2.0 * d.depth + 1.5 * d.wave) * (SIZE / 128);
+        const a = 0.15 + 0.85 * d.wave * (0.4 + 0.6 * d.depth);
+        const lit = cfg.lit + d.wave * 20;
+        paintDot(ctx, d.px, d.py, r, hue, 60, lit, a);
+        if (d.wave > 0.5) paintGlow(ctx, d.px, d.py, r, hue, (d.wave - 0.3) * 0.6);
+      }
+    },
+
+    // ---------- outreach: plane + trail particles ----------
+    outreach(ctx, cfg, t) {
+      const yaw = t * 0.2;
+      const tilt = 0.3;
+      const pt = makeProj(yaw, tilt, cx, cy, 1);
+      const hue = cfg.hue;
+      const ph = t * 0.8;
+
+      // ghost sphere dots
+      const dots = [];
+      for (let i = 0; i < DOT_N; i++) {
+        const d = fibDots[i];
+        const [px, py, z] = pt(d[0] * R, d[1] * R, d[2] * R);
+        const depth = (z / R + 1) / 2;
+        dots.push({ px, py, z, depth, type: 'ghost', i });
+      }
+
+      // the plane body — a few bright dots forming a shape
+      const planeX = Math.cos(ph * 0.3) * R * 0.7;
+      const planeY = Math.sin(ph * 0.15) * R * 0.3;
+      const planeZ = Math.sin(ph * 0.3) * R * 0.7;
+      const ang = Math.atan2(Math.cos(ph * 0.3) * 0.3, -Math.sin(ph * 0.3) * 0.3);
+
+      // nose
+      dots.push({ x3: planeX, y3: planeY, z3: planeZ, type: 'nose' });
+      // wings
+      const wx = Math.cos(ang + Math.PI / 2), wz = Math.sin(ang + Math.PI / 2);
+      dots.push({ x3: planeX - wx * R * 0.3, y3: planeY, z3: planeZ - wz * R * 0.3, type: 'wing' });
+      dots.push({ x3: planeX + wx * R * 0.3, y3: planeY, z3: planeZ + wz * R * 0.3, type: 'wing' });
+      // tail
+      dots.push({ x3: planeX - Math.cos(ang) * R * 0.4, y3: planeY, z3: planeZ - Math.sin(ang) * R * 0.4, type: 'tail' });
+
+      // trail particles
+      for (let m = 0; m < 6; m++) {
+        const tf = m / 6;
+        const tx = planeX - Math.cos(ang) * R * (0.5 + tf * 0.8);
+        const ty = planeY + Math.sin(t * 3 + m) * R * 0.08;
+        const tz = planeZ - Math.sin(ang) * R * (0.5 + tf * 0.8);
+        dots.push({ x3: tx, y3: ty, z3: tz, type: 'trail', tf });
+      }
+
+      // project and render
+      const rendered = [];
+      for (const d of dots) {
+        if (d.type === 'ghost') {
+          const [px, py, z] = pt(fibDots[d.i][0] * R, fibDots[d.i][1] * R, fibDots[d.i][2] * R);
+          const depth = (z / R + 1) / 2;
+          rendered.push({ px, py, z, r: (1.0 + 1.5 * depth) * (SIZE / 128), hue, lit: cfg.lit, a: 0.1 + 0.2 * depth, glow: false });
+        } else {
+          const [px, py, z] = pt(d.x3, d.y3, d.z3);
+          const depth = (z / R + 1) / 2;
+          const isNose = d.type === 'nose';
+          const isTrail = d.type === 'trail';
+          const r = (isNose ? 4 : isTrail ? 1.8 + (1 - d.tf) * 2 : 2.5) * (SIZE / 128);
+          const a = isTrail ? 0.3 * (1 - d.tf) : 0.9;
+          const lit = isNose ? cfg.lit + 25 : cfg.lit + (isTrail ? 10 : 15);
+          rendered.push({ px, py, z, r, hue: hue + (isNose ? 15 : 0), lit, a, glow: isNose || (!isTrail) });
+        }
+      }
+      rendered.sort((a, b) => a.z - b.z);
+      for (const d of rendered) {
+        paintDot(ctx, d.px, d.py, d.r, d.hue, 70, d.lit, d.a);
+        if (d.glow && d.a > 0.3) paintGlow(ctx, d.px, d.py, d.r, d.hue, d.a * 0.5);
+      }
+    },
+  };
+
+  const CONFIGS = {
+    researcher: { speed: 1 },
+    extracting: { speed: 1 },
+    structuring: { speed: 1 },
+    searching: { speed: 1 },
+    cleaning: { speed: 1 },
+    memoring: { speed: 1 },
+    outreach: { speed: 1 },
+  };
+
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const items = Array.from(document.querySelectorAll('.agent-canvas canvas')).map((cv, idx) => {
+    const a = agents[idx];
+    cv.width = SIZE * SCALE;
+    cv.height = SIZE * SCALE;
+    const ctx = cv.getContext('2d');
+    ctx.scale(SCALE, SCALE);
+    return {
+      ctx,
+      mode: MODES[a.mode],
+      cfg: { ...CONFIGS[a.mode], hue: a.hue, lit: a.lit ?? 55 },
+    };
+  });
+
+  function drawAll(t) {
+    for (const it of items) {
+      clear(it.ctx);
+      it.mode(it.ctx, it.cfg, t / 1000 * (it.cfg.speed || 1));
+    }
+  }
+
+  const io = 'IntersectionObserver' in window
+    ? new IntersectionObserver((entries) => {
+        let anyVisible = false;
+        for (const e of entries) if (e.isIntersecting) anyVisible = true;
+        if (anyVisible) start(); else stop();
+      }, { rootMargin: '40px' })
+    : null;
+  const grid = document.querySelector('.agent-grid');
+  io && grid && io.observe(grid);
+
+  let raf = null;
+  function loop() { drawAll(performance.now()); raf = requestAnimationFrame(loop); }
+  function start() { if (!raf && !reduced) loop(); }
+  function stop() { if (raf) { cancelAnimationFrame(raf); raf = null; } }
+
+  if (reduced) {
+    drawAll(600);
+  } else {
+    io || start();
+  }
+</script>
+
+<style>
+  .agent-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 14px;
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+
+  .agent-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    background: #111;
+    border: 1px solid #222;
+    border-radius: 14px;
+    padding: 20px 12px 16px;
+    transition: border-color 0.25s, transform 0.25s var(--ease-out);
+  }
+
+  .agent-card:hover {
+    border-color: #3d3d3d;
+  }
+
+  a.agent-card--link {
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  a.agent-card--link:hover {
+    border-color: #555;
+    transform: translateY(-2px);
+  }
+
+  .agent-canvas canvas {
+    width: 96px;
+    height: 96px;
+    display: block;
+    border-radius: 10px;
+  }
+
+  .agent-name {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #bdbdbd;
+    text-align: center;
+  }
+
+  .agent-status {
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    color: #6f6f78;
+    text-align: center;
+    margin-top: -4px;
+  }
+
+  .agent-grid[data-compact="true"] .agent-card { padding: 12px 8px; }
+  .agent-grid[data-compact="true"] .agent-canvas canvas { width: 56px; height: 56px; }
+  .agent-grid[data-compact="true"] .agent-status { display: none; }
+</style>

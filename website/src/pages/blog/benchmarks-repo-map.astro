@@ -1,0 +1,124 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="The benchmark that caught a 31× slowdown — Fathom Research">
+  <article class="article-wrap">
+    <nav class="breadcrumb">
+      <a href="/blog" data-i18n="postBench.crumb.blog">Blog</a>
+      <span class="sep">›</span>
+      <span data-i18n="postBench.crumb.cat">Benchmarks</span>
+      <span class="sep">›</span>
+      <span data-i18n="postBench.crumb.sub">repo_map, 31×</span>
+    </nav>
+
+    <div class="article-date" data-i18n="postBench.hero.date">August 8, 2026 · 6 min read</div>
+    <span class="article-tag" data-i18n="postBench.hero.tag">Benchmarks</span>
+    <h1 class="article-title" data-i18n="postBench.hero.title">The benchmark that caught a 31× slowdown</h1>
+
+    <p class="article-intro" data-i18n-html data-i18n="postBench.hero.intro">Fathom Research ships its own benchmark harness: <code>fathom bench</code>. It is not a showcase of flattering numbers — it is an instrument the tool layer runs against itself. In its short life it has already caught two real regressions: a 31× slowdown hiding in the repository-map builder, and four tools that had silently fallen back to one-at-a-time execution.</p>
+
+    <div class="highlights">
+      <h4 data-i18n="postBench.hl.title">Highlights</h4>
+      <ul>
+        <li data-i18n-html data-i18n="postBench.hl.item.0">repo_map got 31× faster after a benchmark exposed per-file regex compilation</li>
+        <li data-i18n-html data-i18n="postBench.hl.item.1">Four tools were silently serialized — caught only because the harness printed 1.00×</li>
+        <li data-i18n-html data-i18n="postBench.hl.item.2">Executor overhead amortizes to 753 µs per call in an 8-call batch</li>
+        <li data-i18n-html data-i18n="postBench.hl.item.3">~531k rows/s for HTML selectors, ~1.1M items/s for RSS parsing</li>
+        <li data-i18n="postBench.hl.item.4">No network, no LLM — the benchmark suite runs in CI</li>
+      </ul>
+    </div>
+
+    <div class="article-body">
+      <h2 data-i18n="postBench.h2.0">A benchmark is an instrument, not a showcase</h2>
+      <p data-i18n-html data-i18n="postBench.p.1">The LLM decides <em>what</em> to do; the tools do the work. In between sits the <code>ToolExecutor</code> — parallel-safe vs sequential classification, path-conflict detection, cascading cancellation, and the serde machinery around every <code>ToolCall</code>. This layer runs on every step of every agent, so its characteristics directly define how long a research run takes.</p>
+      <p data-i18n-html data-i18n="postBench.p.2">That is why the harness is built into the product. Fixtures are created automatically in a temp directory and removed after; each scenario repeats 5–10 times with a warm-up call, and the numbers below are one run on macOS, 10 cores, release build. No network, no LLM — the memory scenario uses an offline TF-IDF embedder, so the whole suite can run in CI.</p>
+
+      <h2 data-i18n="postBench.h2.1">31× from a regex cache</h2>
+      <p data-i18n-html data-i18n="postBench.p.3">The first version of <code>extract_symbols</code> compiled two regular expressions (<code>regex::Regex::new</code>) <em>per file</em>. For <code>code_symbols</code> with its limit that was tolerable — the loop stops after the first ~25 files. For <code>repo_map</code>, which honestly walks the whole tree, it was a catastrophe: DFA compilation dominated the runtime.</p>
+      <p data-i18n-html data-i18n="postBench.p.4">The fix moved the regexes into <code>OnceLock</code> statics (compiled once per process) and parallelized file reads in <code>repo_map</code> via <code>tokio::spawn</code> + <code>join_all</code>, preserving order. An A/B run over 240 synthetic Rust files:</p>
+
+      <table class="mini-table">
+        <thead><tr><th data-i18n="postBench.t2.col0">Version</th><th data-i18n="postBench.t2.col1">Wall time</th></tr></thead>
+        <tbody>
+          <tr><td data-i18n="postBench.t2.r0">Before (regex per file + sequential reads)</td><td>902.0 ms</td></tr>
+          <tr><td data-i18n="postBench.t2.r1">After (OnceLock cache + spawned reads)</td><td>29.5 ms</td></tr>
+        </tbody>
+      </table>
+
+      <p data-i18n-html data-i18n="postBench.p.5">That is a 31× improvement on a debug build; in release the same tree takes 6.6 ms. The live reference point: before the fix, <code>repo_map</code> over this very project's repository (103 files) took 106 ms in release. After the fix — single-digit milliseconds.</p>
+
+      <h2 data-i18n="postBench.h2.2">The silent serialization</h2>
+      <p data-i18n-html data-i18n="postBench.p.6">The second catch was subtler. <code>ToolExecutor</code> splits tools into parallel-safe and sequential; a tool missing from the classification goes sequential "just in case". When <code>web_crawl</code>, <code>web_feed</code>, <code>code_symbols</code> and <code>repo_map</code> landed, nobody added them to the classification — and any batch of several such calls <em>silently ran one at a time</em>, with no errors and no warnings.</p>
+      <p data-i18n-html data-i18n="postBench.p.7">The harness showed it in numbers: a spawn batch of 8 × <code>web_feed</code> produced 1.00× — exactly what sequential execution produces — while <code>parse_html</code> under the same conditions produced ~3×. After adding the tools to <code>parallel_safe</code> (and a classification test to keep them there):</p>
+
+      <table class="mini-table">
+        <thead><tr><th data-i18n="postBench.t3.col0">Batch</th><th data-i18n="postBench.t3.col1">Spawn, before</th><th data-i18n="postBench.t3.col2">Spawn, after</th></tr></thead>
+        <tbody>
+          <tr><td>8 × web_feed</td><td>~1.00×</td><td>1.25×</td></tr>
+          <tr><td>8 × code_symbols</td><td>~1.00×</td><td>3.04×</td></tr>
+        </tbody>
+      </table>
+
+      <blockquote data-i18n-html data-i18n="postBench.quote">
+        Every new read-only tool must ship with a classification test — otherwise parallelism disappears without a trace.
+        <cite>— Fathom Research, benchmark notes</cite>
+      </blockquote>
+
+      <h2 data-i18n="postBench.h2.3">The rest of the scoreboard</h2>
+      <p data-i18n-html data-i18n="postBench.p.8">The same run measures the machinery around the tools. Serializing a <code>ToolCall</code>'s arguments costs ~750 ns; the executor's overhead over raw registry dispatch is ~2.5 ms for a single-call batch and amortizes to <strong>753 µs per call</strong> in an 8-call batch. The execution layer disappears against the work the tools do.</p>
+      <p data-i18n-html data-i18n="postBench.p.9">For CPU-bound batches the difference between execution modes is dramatic: 8 × <code>parse_html</code> of a ~1 MB table runs <strong>3.78×</strong> faster under <code>execute_batch_spawn</code> (tokio tasks spread across cores) than sequentially, while <code>join_all</code> — which polls futures on one thread — only helps for I/O waits. HTML selector throughput peaks at ~531k rows/s on small documents (~350k rows/s on large ones), and the quick-xml RSS parser sustains ~1.1M items/s.</p>
+      <p data-i18n-html data-i18n="postBench.p.10">A realistic mixed turn — four reads, three writes and a grep in one batch — is partitioned automatically: five calls run concurrently, three serialize, and the result vector still matches the original call order. Total wall time: 70.9 ms.</p>
+
+      <h2 data-i18n="postBench.h2.4">Run it in CI</h2>
+      <p data-i18n-html data-i18n="postBench.p.11">Everything above reproduces with one command — <code>fathom bench --scenario all</code> — with fixtures that create and clean themselves. The scenarios: dispatch, parallel-io, parallel-cpu, mixed, parse-scale, extract-json, feed-parse, code-map and memory. Because nothing touches the network and nothing calls an LLM, the suite runs in CI on every build — which is exactly how the next silent regression gets caught.</p>
+      <p data-i18n-html data-i18n="postBench.p.12">And because synthetic numbers are only half the story, <code>fathom stats</code> reads the SQLite tracing of a real session and reports per-tool p50/p95 durations and the batching coefficient from production runs.</p>
+    </div>
+
+    <div class="related-posts">
+      <h3 data-i18n="postBench.related.title">Related Posts</h3>
+      <div class="related-grid">
+        <a class="related-card" href="/blog/memory-that-remembers" data-i18n="postBench.related.0">A memory that remembers: append-only knowledge for research agents</a>
+        <a class="related-card" href="/blog/anatomy-of-fan-out" data-i18n="postBench.related.1">Anatomy of a fan-out: one question, a fleet of agents</a>
+      </div>
+    </div>
+  </article>
+</Layout>
+
+<style>
+  .article-wrap { max-width: 720px; margin: 0 auto; padding: 80px 24px; }
+
+  .breadcrumb { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 13px; color: var(--grey-600); margin-bottom: 32px; flex-wrap: wrap; }
+  .breadcrumb a { color: var(--grey-600); transition: color .15s; }
+  .breadcrumb a:hover { color: var(--grey-900); }
+  .breadcrumb .sep { color: var(--grey-400); }
+
+  .article-date { font-size: 15px; color: var(--grey-600); margin-bottom: 14px; }
+  .article-tag { display: inline-block; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--grey-600); background: var(--grey-100); border: 1px solid var(--grey-200); padding: 4px 12px; border-radius: 100px; margin-bottom: 20px; }
+  .article-title { font-size: clamp(28px, 4vw, 44px); line-height: 1.1; letter-spacing: -.025em; font-weight: 500; }
+  .article-intro { margin-top: 28px; font-size: 18px; line-height: 1.65; color: var(--grey-700); }
+
+  .highlights { margin: 36px 0; background: var(--grey-50); border: 1px solid var(--grey-200); border-radius: 10px; padding: 24px 28px; }
+  .highlights h4 { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--grey-600); margin-bottom: 14px; }
+  .highlights ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .highlights li { position: relative; padding-left: 18px; font-size: 15px; line-height: 1.55; color: var(--grey-800); }
+  .highlights li::before { content: ""; position: absolute; left: 0; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--grey-900); }
+
+  .article-body h2 { font-size: clamp(20px, 2.8vw, 28px); margin: 48px 0 16px; letter-spacing: -.02em; line-height: 1.15; }
+  .article-body p { font-size: 16px; line-height: 1.7; color: var(--grey-800); margin-bottom: 18px; }
+  .article-body code { font-family: var(--font-mono); font-size: .85em; background: var(--grey-100); border: 1px solid var(--grey-200); padding: 1px 6px; border-radius: 5px; }
+
+  .article-body .mini-table { width: 100%; border-collapse: collapse; font-size: 13px; font-family: var(--font-mono); background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: 8px; overflow: hidden; margin: 24px 0; display: table; }
+  .article-body .mini-table th { font-size: 10px; text-transform: uppercase; letter-spacing: .6px; color: var(--grey-600); text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--grey-200); background: var(--grey-50); }
+  .article-body .mini-table td { padding: 10px 14px; border-bottom: 1px solid var(--grey-100); color: var(--grey-800); }
+  .article-body .mini-table tr:last-child td { border-bottom: none; }
+
+  .article-body blockquote { margin: 40px 0; padding: 28px 32px; border-left: 3px solid #181818; background: var(--bg-card); border-radius: 0 10px 10px 0; font-size: 17px; line-height: 1.6; color: var(--grey-800); font-style: italic; }
+  .article-body blockquote cite { display: block; margin-top: 18px; font-style: normal; font-family: var(--font-mono); font-size: 13px; color: var(--grey-600); }
+
+  .related-posts { margin-top: 56px; padding-top: 32px; border-top: 1px solid var(--grey-200); }
+  .related-posts h3 { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--grey-600); margin-bottom: 16px; }
+  .related-grid { display: flex; flex-direction: column; gap: 12px; }
+  .related-card { display: block; border: 1px solid var(--grey-200); border-radius: 10px; padding: 18px 20px; background: var(--bg-card); font-size: 15px; line-height: 1.5; color: var(--grey-800); transition: border-color .15s, color .15s; }
+  .related-card:hover { border-color: var(--grey-500); color: var(--grey-900); }
+</style>

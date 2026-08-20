@@ -1,0 +1,33 @@
+---
+title: "LSP & IDE Integration"
+description: "Connect Fathom to language servers and IDE tooling through the built-in LSP integration."
+sidebarId: "protocol-gui"
+sidebarGroup: "API Reference"
+order: 4
+---
+
+<div class="doc-header">
+  <span class="doc-badge">Integration</span>
+  <h1>LSP &amp; IDE Integration</h1>
+  <p class="doc-lead">Fathom combines the TUI and HTTP/MCP interfaces with language-server code intelligence for repository work.</p>
+</div>
+
+## LSP integration
+
+Fathom includes an `lsp` tool for code intelligence. It detects the project
+language, checks for the matching language server, and connects over stdio.
+Supported operations include document symbols, go-to-definition, find
+references, hover information, and workspace symbol search.
+
+The integration currently maps common project languages to these servers:
+
+| Language | Server |
+| --- | --- |
+| Rust | `rust-analyzer` |
+| Python | `pyright-langserver --stdio` |
+| JavaScript / TypeScript | `typescript-language-server --stdio` |
+
+When a server is missing, Fathom attempts the available package-manager or
+`rustup` installation path, then reports a clear error if it cannot be found.
+The tool is registered with the normal tool registry and can be used from
+`fathom run`, `fathom tui`, `fathom serve`, or `fathom mcp-serve`.

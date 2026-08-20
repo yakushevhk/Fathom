@@ -1,0 +1,151 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const panels = [
+  { key: 'sessions', name: 'Sessions', d: 'All research sessions with status badges, agent count, token usage and query preview. Click to drill into agent tree.' },
+  { key: 'agents', name: 'Agent tree', d: 'Hierarchical view of all agents grouped by parent — role badges, status, task description and token count. Indentation shows parent-child relationships.' },
+  { key: 'memory', name: 'Memory stats', d: 'Embedding model, scope counts (agent/user/run active, superseded, archived), entity graph node and edge counts.' },
+  { key: 'jobs', name: 'Background jobs', d: 'Durable job queue — task description, status badge, attempt counter (current/max). Submit, cancel and rerun from the UI.' },
+  { key: 'events', name: 'Live events', d: 'Real-time SSE event stream — agent spawn, tool calls, findings, state changes. Monospace log viewer with auto-scroll, capped at 200 entries.' },
+];
+
+const features = [
+  { key: 'auth', name: 'API key auth', d: 'Set a key from <code class="ic">FATHOM_API_KEYS</code> to protect API requests; the dashboard keeps it in localStorage for convenience.' },
+  { key: 'refresh', name: 'Auto-refresh', d: 'All panels poll the API every 5 seconds. SSE events arrive instantly.' },
+  { key: 'responsive', name: 'Responsive', d: 'Two-column grid collapses to single column below 900px. Works on tablets and phones.' },
+  { key: 'dark', name: 'Dark theme', d: 'GitHub-dark color palette. Single-file HTML — no external CSS or JS dependencies.' },
+];
+---
+
+<Layout title="Web Dashboard — Fathom">
+  <main class="dash-page">
+    <div class="container">
+
+      <div class="dash-hero">
+        <p class="eyebrow" data-i18n="dashboardPage.hero.badge">Web Dashboard</p>
+        <h1 class="h2-sec" data-i18n-html data-i18n="dashboardPage.hero.title">One screen,<br />full visibility.</h1>
+        <p class="copy-lg mx-auto" data-i18n="dashboardPage.hero.sub">A single-file HTML dashboard embedded in the server binary — sessions, agent tree, memory stats, background jobs and a live SSE event feed. No external dependencies.</p>
+      </div>
+
+      <!-- Panels -->
+      <div class="sec-head center reveal">
+        <p class="eyebrow" data-i18n="dashboardPage.panels.badge">Five panels</p>
+        <h2 class="h2-sec" data-i18n-html data-i18n="dashboardPage.panels.title">Everything at a glance</h2>
+      </div>
+
+      <div class="dash-grid">
+        {panels.map((p) => (
+          <div class="dash-card">
+            <div class="dash-name" data-i18n={'dashboardPage.panels.' + p.key + '.name'}>{p.name}</div>
+            <p data-i18n={'dashboardPage.panels.' + p.key + '.d'}>{p.d}</p>
+          </div>
+        ))}
+      </div>
+
+      <!-- Features -->
+      <div class="sec-head center reveal" style="margin-top:64px">
+        <p class="eyebrow" data-i18n="dashboardPage.features.badge">Features</p>
+        <h2 class="h2-sec" data-i18n-html data-i18n="dashboardPage.features.title">Built for operators</h2>
+      </div>
+
+      <div class="dash-feat-grid">
+        {features.map((f) => (
+          <div class="dash-feat-card">
+            <div class="dash-feat-name" data-i18n={'dashboardPage.features.' + f.key + '.name'}>{f.name}</div>
+            <p data-i18n={'dashboardPage.features.' + f.key + '.d'}>{f.d}</p>
+          </div>
+        ))}
+      </div>
+
+      <!-- Access -->
+      <div class="sec-head center reveal" style="margin-top:64px">
+        <p class="eyebrow" data-i18n="dashboardPage.code.badge">Access</p>
+        <h2 class="h2-sec" data-i18n-html data-i18n="dashboardPage.code.title">One endpoint, zero config</h2>
+        <p class="copy-lg mx-auto" data-i18n-html data-i18n="dashboardPage.code.sub">The embedded single-file dashboard is served at GET /dashboard when you run <code class="ic">fathom serve</code>. No separate Astro build, npm install, or CDN is needed.</p>
+      </div>
+
+      <div class="code-card" style="max-width:640px; margin:0 auto;">
+        <pre><code># Start the server
+fathom serve --port 8080
+
+# Open in browser
+open http://localhost:8080/dashboard
+
+# The dashboard auto-connects to:
+#   GET  /api/v1/sessions     — session list
+#   GET  /api/v1/agents       — agent tree
+#   GET  /api/v1/memories/stats — memory stats
+#   GET  /api/v1/jobs         — background jobs
+#   GET  /api/v1/events       — SSE live feed</code></pre>
+      </div>
+
+      <!-- CTA -->
+      <div class="dash-cta">
+        <div class="bench-card-lg">
+          <h3 data-i18n="dashboardPage.cta.title">Try the dashboard</h3>
+          <p class="bench-sub" data-i18n="dashboardPage.cta.sub">Install Fathom, start the server and open /dashboard in your browser.</p>
+          <div class="code-card" style="max-width:480px">
+            <pre><code>curl -sSf https://fathom.uz/install.sh | sh
+fathom serve</code></pre>
+          </div>
+          <div style="margin-top:16px">
+            <a href="/api" class="btn btn-outline" data-i18n="dashboardPage.cta.docs">API reference</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Playground cross-link -->
+      <div class="dash-cta" style="margin-top:24px">
+        <div class="bench-card-lg">
+          <h3 data-i18n="dashboardPage.cta.playground">Open Playground</h3>
+          <p class="bench-sub" data-i18n="dashboardPage.cta.playgroundNote">Want to run research interactively? The Playground launches sessions, streams agent progress live and renders the report — right in the site.</p>
+          <div style="margin-top:16px">
+            <a href="/playground" class="btn btn-primary" data-i18n="dashboardPage.cta.playground">Open Playground</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .dash-page { padding: 70px 0 90px; }
+  .eyebrow { font-family: var(--font-mono); font-size: 13px; letter-spacing: .16px; text-transform: uppercase; color: var(--grey-600); }
+  .copy-lg { color: var(--grey-700); font-size: 17px; line-height: 1.55; max-width: 640px; }
+  .mx-auto { margin-left: auto; margin-right: auto; }
+  .center { text-align: center; }
+
+  .dash-hero { max-width: 820px; margin: 0 auto 48px; text-align: center; padding: 0 24px; }
+  .dash-hero h1 { font-size: clamp(34px, 5vw, 68px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.02; margin-top: 12px; }
+  .dash-hero .copy-lg { margin-top: 20px; }
+
+  .sec-head { max-width: 820px; margin: 0 auto 32px; padding: 0 24px; }
+  .h2-sec { font-size: clamp(26px, 3.5vw, 48px); font-weight: 500; letter-spacing: -0.025em; line-height: 1.08; margin-top: 12px; }
+
+  .dash-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .dash-card { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 24px; transition: box-shadow .25s, transform .25s var(--ease-out), border-color .25s; }
+  .dash-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--grey-400); }
+  .dash-name { font-family: var(--font-mono); font-weight: 600; font-size: 14px; margin-bottom: 10px; }
+  .dash-card p { color: var(--grey-600); font-size: 14px; line-height: 1.55; }
+
+  .dash-feat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .dash-feat-card { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 20px; text-align: center; }
+  .dash-feat-name { font-family: var(--font-mono); font-weight: 600; font-size: 13px; margin-bottom: 8px; }
+  .dash-feat-card p { color: var(--grey-600); font-size: 13px; line-height: 1.5; }
+  @media (max-width: 800px) { .dash-feat-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 500px) { .dash-feat-grid { grid-template-columns: 1fr; } }
+
+  .code-card { border: 1px solid var(--grey-200); border-radius: var(--radius-md); background: var(--grey-900); overflow: hidden; }
+  .code-card pre { padding: 20px 24px; margin: 0; overflow-x: auto; }
+  .code-card code { color: var(--grey-200); font-family: var(--font-mono); font-size: 13px; line-height: 1.7; white-space: pre; }
+
+  .btn { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 13px; font-weight: 600; padding: 10px 20px; border-radius: var(--radius-sm); transition: all .15s; }
+  .btn-outline { border: 1px solid var(--grey-300); color: var(--grey-800); }
+  .btn-outline:hover { border-color: var(--grey-500); background: var(--grey-100); }
+
+  .dash-cta { max-width: 900px; margin: 48px auto 0; }
+  .bench-card-lg { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 28px; }
+  .bench-card-lg h3 { font-size: 22px; font-weight: 500; }
+  .bench-sub { color: var(--grey-600); font-size: 14px; margin: 8px 0 18px; line-height: 1.6; }
+</style>

@@ -1,0 +1,767 @@
+---
+title: "Cli — Fathom"
+sidebarId: "cli"
+---
+  
+export const tuiKeys = [
+  { k: 'q', d: 'Quit (also Ctrl+C)', i: 'docsCli.keyQuit' },
+  { k: 'i', d: 'Insert mode — type a query', i: 'docsCli.keyInsert' },
+  { k: 'Enter', d: 'Submit the query (insert mode)', i: 'docsCli.keySubmit' },
+  { k: 'Shift+Enter', d: 'Newline in the input', i: 'docsCli.keyNewline' },
+  { k: 'Esc', d: 'Leave insert mode / back to the input panel', i: 'docsCli.keyEsc' },
+  { k: 'Tab / BackTab', d: 'Cycle panels', i: 'docsCli.keyTab' },
+  { k: 'Up / Down', d: 'Scroll — or move the agent cursor in the Agents panel; input history in the input', i: 'docsCli.keyUpDown' },
+  { k: 'Left / Right', d: 'Collapse / expand an agent subtree (Agents panel)', i: 'docsCli.keyLeftRight' },
+  { k: 't', d: 'Toggle the thinking panel', i: 'docsCli.keyThinking' },
+  { k: 'c', d: 'Clear output', i: 'docsCli.keyClear' },
+  { k: 'y / n', d: 'Approve / deny a pending side-effect tool call', i: 'docsCli.keyApprove' },
+  { k: '?', d: 'Keymap help overlay', i: 'docsCli.keyHelp' },
+  { k: 'Ctrl+V', d: 'Paste mode (bracketed paste)', i: 'docsCli.keyPaste' },
+];
+
+export const panels = [
+  { name: 'Agents', d: 'Live agent tree: coordinator, sub-agents, statuses. Cursor navigation, subtrees collapse with Left/Right.', i: 'docsCli.panelAgents' },
+  { name: 'Output', d: 'The final assembled output, streamed token-by-token as the writer produces it.', i: 'docsCli.panelOutput' },
+  { name: 'Log', d: 'Event log: agent spawns, tool calls with timings, warnings and findings.', i: 'docsCli.panelLog' },
+  { name: 'Jobs', d: 'Durable background jobs submitted via jobs submit — state and attempts at a glance.', i: 'docsCli.panelJobs' },
+  { name: 'Memory', d: 'Recent records from the semantic memory store, refreshed live.', i: 'docsCli.panelMemory' },
+  { name: 'Input', d: 'Query input with history navigation (Up/Down) and a dedicated paste mode.', i: 'docsCli.panelInput' },
+];
+
+export const benchScenarios = ['dispatch', 'parallel-io', 'parallel-cpu', 'mixed', 'parse-scale', 'extract-json', 'feed-parse', 'code-map', 'memory', 'all'];
+
+<div class="doc-header">
+    <span class="doc-badge" data-i18n="docsCli.badge">CLI Reference</span>
+    <h1 data-i18n="docsCli.title">CLI Reference</h1>
+    <p class="doc-lead" data-i18n-html="docsCli.lead">
+      One binary, every runtime: headless runs, interactive TUI, HTTP server, MCP endpoint and maintenance tools. All commands and flags of <code>fathom</code>.
+    </p>
+  </div>
+
+  <section id="overview">
+    <h2 data-i18n="docsCli.overviewTitle">Command overview</h2>
+    <div class="code-card">
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom <COMMAND>
+
+run         Run a research task (headless)
+tui         Interactive TUI
+serve       HTTP API server + dashboard
+mcp-serve   Expose the agent tools over MCP (stdio)
+memory      Semantic memory: search / list / stats / distill / gc
+sessions    Browse past sessions
+resume      Resume an interrupted session
+config      Show or set configuration values
+profiles    List / show / create personas
+contacts    Contact database: list / export / dedup / push-crm
+jobs        Durable background jobs
+bench       Benchmark the tool-execution layer
+stats       Tool-call statistics for a recorded session\`}`}} /></pre>
+    </div>
+  </section>
+
+  <section id="run">
+    <h2 data-i18n="docsCli.runTitle">run</h2>
+    <p data-i18n-html="docsCli.runDesc">Headless research. A coordinator decomposes the query into sub-agents, synthesizes their results and writes a structured report. The query can be passed as a positional argument <code>[QUERY]</code> or read from a file with <code>--task-file</code>. With <code>--repeat</code> it becomes watch mode: each run is diffed against the previous one and new contacts trigger alerts.</p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th data-i18n="docsCli.thFlag">Flag</th><th data-i18n="docsCli.thDesc">Description</th></tr></thead>
+        <tbody>
+          <tr><td>-o, --output &lt;DIR&gt;</td><td data-i18n="docsCli.run.output">Output directory for results (default: from config)</td></tr>
+          <tr><td>--repeat &lt;SECS&gt;</td><td data-i18n="docsCli.run.repeat">Watch mode — re-run every N seconds, diff runs, alert on new contacts</td></tr>
+          <tr><td>--profile &lt;NAME&gt;</td><td data-i18n="docsCli.run.profile">Persona: hunter | analyst | validator | a file in ~/.fathom/profiles/ | path to a .toml</td></tr>
+          <tr><td>--task-file &lt;FILE&gt;</td><td data-i18n="docsCli.run.taskFile">Read task from a file instead of the positional argument</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="code-card">
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom run "Compare Rust and Go for backend services" --output ./research/
+
+# watch mode: re-collect every 6 hours, alert on new contacts
+fathom run "Acme leadership team" --repeat 21600
+
+# with a persona
+fathom run --profile hunter "Find the CTO of Acme"\`}`}} /></pre>
+    </div>
+  </section>
+
+  <section id="tui">
+    <h2 data-i18n="docsCli.tuiTitle">tui</h2>
+    <p data-i18n-html="docsCli.tuiDesc">Interactive terminal interface (ratatui): live agent tree, streaming output, event log, jobs and memory panels, approval flow. See <a href="#tui-interface">TUI interface</a> for keys and panels.</p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th data-i18n="docsCli.thFlag">Flag</th><th data-i18n="docsCli.thDesc">Description</th></tr></thead>
+        <tbody>
+          <tr><td>[QUERY]</td><td data-i18n="docsCli.tui.query">Optional initial query</td></tr>
+          <tr><td>--profile &lt;NAME&gt;</td><td data-i18n="docsCli.tui.profile">Persona applied to sessions started from the TUI</td></tr>
+          <tr><td>--replay &lt;SESSION-ID&gt;</td><td data-i18n="docsCli.tui.replay">Replay a stored session instead of a live run (prefix match accepted)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="code-card">
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom tui
+fathom tui "Find VPs of Engineering at fintech startups" --profile analyst
+fathom tui --replay 3f9c2a   # browse a saved session\`}`}} /></pre>
+    </div>
+  </section>
+
+  <section id="serve">
+    <h2 data-i18n="docsCli.serveTitle">serve</h2>
+    <p data-i18n-html="docsCli.serveDesc">Axum HTTP server: session and job management, SSE event streams, memory API, Prometheus metrics and the web dashboard at <code>/dashboard</code>. Listens on loopback by default.</p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th data-i18n="docsCli.thFlag">Flag</th><th data-i18n="docsCli.thDesc">Description</th></tr></thead>
+        <tbody>
+          <tr><td>--port &lt;PORT&gt;</td><td data-i18n="docsCli.serve.port">Listen port (default: 8080)</td></tr>
+          <tr><td>--host &lt;HOST&gt;</td><td data-i18n="docsCli.serve.host">Bind address (default: 127.0.0.1)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout" data-i18n-html="docsCli.serveCallout">Binding a non-loopback address (<code>--host 0.0.0.0</code>) requires <code>FATHOM_API_KEYS</code> to be set — otherwise startup is refused. Keys are passed via <code>Authorization: Bearer</code> or <code>X-Api-Key</code>. The per-client request limit is configured with <code>FATHOM_RATE_LIMIT</code>.</div>
+    <div class="code-card">
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom serve --port 8080
+fathom serve --host 0.0.0.0   # requires FATHOM_API_KEYS\`}`}} /></pre>
+    </div>
+  </section>
+
+  <section id="mcp-serve">
+    <h2 data-i18n="docsCli.mcpTitle">mcp-serve</h2>
+    <p data-i18n="docsCli.mcpDesc">Exposes all agent tools to external MCP clients (Claude, ZCode, …) over stdio. Tool calls are executed through the same registry the agents use. Logging goes to stderr so stdout stays clean JSON-RPC.</p>
+    <div class="code-card">
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom mcp-serve\`}`}} /></pre>
+    </div>
+    <p data-i18n="docsCli.mcpAddText">Add it to your MCP client config:</p>
+    <div class="code-card">
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`{ "command": "fathom", "args": ["mcp-serve"] }\`}`}} /></pre>
+    </div>
+  </section>
+
+  <section id="memory">
+    <h2 data-i18n="docsCli.memoryTitle">memory</h2>
+    <p data-i18n="docsCli.memoryDesc">Maintain the long-term semantic knowledge base without running an agent: hybrid search (vectors + BM25), append-only version chains, distillation and GC. Nothing is ever silently deleted.</p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th data-i18n="docsCli.thSubcmd">Subcommand</th><th data-i18n="docsCli.thFlags">Flags</th><th data-i18n="docsCli.thDesc">Description</th></tr></thead>
+        <tbody>
+          <tr><td>search &lt;query&gt;</td><td>--top-k (default 10), --scope agent|user|run|all</td><td data-i18n="docsCli.memory.search">Hybrid semantic + keyword search</td></tr>
+          <tr><td>list</td><td>--scope, --status active|superseded|archived|all, -n</td><td data-i18n="docsCli.memory.list">List stored facts, newest first</td></tr>
+          <tr><td>get &lt;id&gt;</td><td>--follow active|latest|full_history</td><td data-i18n="docsCli.memory.get">One record plus its version chain</td></tr>
+          <tr><td>stats</td><td>—</td><td data-i18n="docsCli.memory.stats">Counts by scope/status, entity graph, DB size</td></tr>
+          <tr><td>rebuild</td><td>—</td><td data-i18n="docsCli.memory.rebuild">Re-embed all facts with the current embedding model</td></tr>
+          <tr><td>distill</td><td>--session &lt;key&gt;, --dry-run</td><td data-i18n="docsCli.memory.distill">Distill run-scoped session facts into durable knowledge</td></tr>
+          <tr><td>gc</td><td>--ttl-days &lt;N&gt;, --dry-run</td><td data-i18n="docsCli.memory.gc">Archive stale run facts, compact oversized scope groups</td></tr>
+          <tr><td>nuke</td><td>--scope, --yes</td><td data-i18n="docsCli.memory.nuke">Hard-delete a scope's records; requires explicit --yes</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="code-card">
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom memory search "email of the director of Acme" --top-k 10
+fathom memory list --scope agent --status active -n 20
+fathom memory get 7f31 --follow full_history
+fathom memory stats
+fathom memory distill --dry-run
+fathom memory gc --ttl-days 30 --dry-run\`}`}} /></pre>
+    </div>
+  </section>
+
+  <section id="sessions">
+    <h2 data-i18n="docsCli.sessionsTitle">sessions</h2>
+    <p data-i18n="docsCli.sessionsDesc">Browse session history stored in the database.</p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th data-i18n="docsCli.thSubcmd">Subcommand</th><th data-i18n="docsCli.thFlags">Flags</th><th data-i18n="docsCli.thDesc">Description</th></tr></thead>
+        <tbody>
+          <tr><td>list</td><td>-n &lt;LIMIT&gt; (default 20), -s, --search &lt;SUBSTR&gt;</td><td data-i18n="docsCli.sessions.list">Recent sessions, newest first; optional query substring filter</td></tr>
+          <tr><td>show &lt;id&gt;</td><td>—</td><td data-i18n="docsCli.sessions.show">One session in detail: agents + findings (unique prefix accepted)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="code-card">
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom sessions list -n 10 --search "fintech"
+fathom sessions show 3f9c2a\`}`}} /></pre>
+    </div>
+  </section>
+
+  <section id="resume">
+    <h2 data-i18n="docsCli.resumeTitle">resume</h2>
+    <p data-i18n-html="docsCli.resumeDesc">Resume an interrupted session: re-runs its unfinished sub-tasks from the persisted state in <code>.research.db</code>.</p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th data-i18n="docsCli.thFlag">Flag</th><th data-i18n="docsCli.thDesc">Description</th></tr></thead>
+        <tbody>
+          <tr><td>-o, --output &lt;DIR&gt;</td><td data-i18n="docsCli.resume.output">Session output directory (contains .research.db); default: configured output dir</td></tr>
+          <tr><td>-s, --session-id &lt;ID&gt;</td><td data-i18n="docsCli.resume.sessionId">Session to resume; default: the most recent interrupted one</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="code-card">
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom resume --output ./results/\`}`}} /></pre>
+    </div>
+  </section>
+
+  <section id="config">
+    <h2 data-i18n="docsCli.configTitle">config</h2>
+    <p data-i18n-html="docsCli.configDesc">Show or edit <code>~/.fathom/config.toml</code> from the command line. Keys use dot notation: <code>section.field</code>.</p>
+    <div class="code-card">
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom config show
+fathom config set agent.max_depth 3
+fathom config set agent.max_agents 30\`}`}} /></pre>
+    </div>
+  </section>
+
+  <section id="profiles">
+    <h2 data-i18n="docsCli.profilesTitle">profiles</h2>
+    <p data-i18n-html="docsCli.profilesDesc">Personas for <code>run --profile</code> and <code>tui --profile</code>: a ready system prompt plus optional overrides for model, temperature, depth, agent count and denied tools. Built-ins: <code>hunter</code>, <code>analyst</code>, <code>validator</code>; your own TOML files live in <code>~/.fathom/profiles/</code>.</p>
+    <div class="code-card">
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom profiles list
+fathom profiles show hunter
+fathom profiles new my-persona   # creates a template file\`}`}} /></pre>
+    </div>
+  </section>
+
+  <section id="contacts">
+    <h2 data-i18n="docsCli.contactsTitle">contacts</h2>
+    <p data-i18n-html="docsCli.contactsDesc">The OSINT contact database collected by <code>save_contacts</code>: list, export, deduplicate and push to the configured CRM (amoCRM, Bitrix24, HubSpot — dedup by <code>crm_id</code>, no duplicates on repeated pushes).</p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th data-i18n="docsCli.thSubcmd">Subcommand</th><th data-i18n="docsCli.thFlags">Flags</th><th data-i18n="docsCli.thDesc">Description</th></tr></thead>
+        <tbody>
+          <tr><td>list</td><td>--limit (default 50)</td><td data-i18n="docsCli.contacts.list">List stored contacts</td></tr>
+          <tr><td>export</td><td>--format csv|vcf|json|xlsx (default csv), -o &lt;DIR&gt;</td><td data-i18n="docsCli.contacts.export">Export contacts to a file</td></tr>
+          <tr><td>dedup</td><td>--merge</td><td data-i18n="docsCli.contacts.dedup">Find duplicates (normalized email/phone); --merge folds each group into its most complete row</td></tr>
+          <tr><td>push-crm</td><td>—</td><td data-i18n="docsCli.contacts.pushCrm">Push all stored contacts to the configured CRM</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="code-card">
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom contacts list
+fathom contacts export --format csv
+fathom contacts dedup           # dry run: list groups
+fathom contacts dedup --merge   # actually merge them
+fathom contacts push-crm\`}`}} /></pre>
+    </div>
+  </section>
+
+  <section id="jobs">
+    <h2 data-i18n="docsCli.jobsTitle">jobs</h2>
+    <p data-i18n="docsCli.jobsDesc">Durable background jobs in SQLite: attempts with self-healing retry (the task is re-submitted augmented with the previous error), survive restarts.</p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th data-i18n="docsCli.thSubcmd">Subcommand</th><th data-i18n="docsCli.thFlags">Flags</th><th data-i18n="docsCli.thDesc">Description</th></tr></thead>
+        <tbody>
+          <tr><td>submit &lt;task&gt;</td><td>--attempts (default 3)</td><td data-i18n="docsCli.jobs.submit">Run a task detached in the background</td></tr>
+          <tr><td>list</td><td>—</td><td data-i18n="docsCli.jobs.list">List all jobs</td></tr>
+          <tr><td>status &lt;id&gt;</td><td>--watch &lt;SECS&gt;</td><td data-i18n="docsCli.jobs.status">Detailed status; --watch refreshes until a terminal state</td></tr>
+          <tr><td>logs &lt;id&gt;</td><td>-n &lt;LINES&gt; (default 50)</td><td data-i18n="docsCli.jobs.logs">stdout + stderr of all attempts</td></tr>
+          <tr><td>cancel &lt;id&gt;</td><td>—</td><td data-i18n="docsCli.jobs.cancel">Cancel a queued or running job</td></tr>
+          <tr><td>rerun &lt;id&gt;</td><td>—</td><td data-i18n="docsCli.jobs.rerun">Re-run a finished/cancelled/stale job from scratch</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="code-card">
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom jobs submit "Analyze the market of AI agents" --attempts 3
+fathom jobs list
+fathom jobs status 9b2e --watch 5
+fathom jobs logs 9b2e
+fathom jobs cancel 9b2e
+fathom jobs rerun 9b2e\`}`}} /></pre>
+    </div>
+  </section>
+
+  <section id="bench">
+    <h2 data-i18n="docsCli.benchTitle">bench</h2>
+    <p data-i18n="docsCli.benchDesc">Benchmark the tool-execution layer — no network, no LLM; fixtures are generated automatically. Nine scenarios cover dispatch overhead, parallel batches, parser scaling and semantic memory.</p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th data-i18n="docsCli.thFlag">Flag</th><th data-i18n="docsCli.thDesc">Description</th></tr></thead>
+        <tbody>
+          <tr><td>-s, --scenario &lt;NAME&gt;</td><td data-i18n="docsCli.bench.scenario">Scenario to run (default: all)</td></tr>
+          <tr><td>-n &lt;N&gt;</td><td data-i18n="docsCli.bench.n">Fathom-safe calls / data files in batch scenarios (default: 16)</td></tr>
+          <tr><td>--save &lt;FILE&gt;</td><td data-i18n="docsCli.bench.save">Also write the markdown report to a file</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="chips">
+      {benchScenarios.map((s) => <span class="chip">{s}</span>)}
+    </div>
+    <div class="code-card code-card--gap">
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom bench                    # all scenarios
+fathom bench -s feed-parse      # feed parsing (quick-xml)
+fathom bench -s code-map        # code_symbols / repo_map
+fathom bench -s memory          # absorb / search / digest\`}`}} /></pre>
+    </div>
+  </section>
+
+  <section id="stats">
+    <h2 data-i18n="docsCli.statsTitle">stats</h2>
+    <p data-i18n-html="docsCli.statsDesc">Per-tool call statistics — p50/p95 latencies — computed from a real recorded session (<code>.research.db</code>).</p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th data-i18n="docsCli.thFlag">Flag</th><th data-i18n="docsCli.thDesc">Description</th></tr></thead>
+        <tbody>
+          <tr><td>-o, --output &lt;DIR&gt;</td><td data-i18n="docsCli.stats.output">Session output directory; default: configured output dir</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="code-card">
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom stats -o ./results/\`}`}} /></pre>
+    </div>
+  </section>
+
+  <section id="worker">
+    <h2 data-i18n="docsCli.workerTitle">worker</h2>
+    <p data-i18n-html="docsCli.workerDesc">Internal worker mode — spawned automatically by the coordinator when <code>use_multiprocess = true</code>. Not intended for direct invocation.</p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th data-i18n="docsCli.thFlag">Flag</th><th data-i18n="docsCli.thDesc">Description</th></tr></thead>
+        <tbody>
+          <tr><td>--session-id &lt;ID&gt;</td><td data-i18n="docsCli.worker.sessionId">Session id (required)</td></tr>
+          <tr><td>--agent-id &lt;ID&gt;</td><td data-i18n="docsCli.worker.agentId">Agent id (required)</td></tr>
+          <tr><td>--task &lt;TEXT&gt;</td><td data-i18n="docsCli.worker.task">Task description (required)</td></tr>
+          <tr><td>--socket &lt;PATH&gt;</td><td data-i18n="docsCli.worker.socket">Unix socket path for IPC with coordinator (required)</td></tr>
+          <tr><td>--role &lt;ROLE&gt;</td><td data-i18n="docsCli.worker.role">Agent role: coordinator, researcher, analyst, verifier, writer (default: researcher)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="tui-interface">
+    <h2 data-i18n="docsCli.tuiInterfaceTitle">TUI interface</h2>
+    <p data-i18n-html="docsCli.tuiInterfaceDesc">The header shows the session id, elapsed time and a sparkline of token spend over the session. In replay mode the header is marked <code>[REPLAY]</code> and the saved agent tree loads with final statuses.</p>
+
+    <h3 id="tui-keys" data-i18n="docsCli.tuiKeysTitle">Keys</h3>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th data-i18n="docsCli.thKey">Key</th><th data-i18n="docsCli.thAction">Action</th></tr></thead>
+        <tbody>
+          {tuiKeys.map((r) => (
+            <tr>
+              <td>{r.k}</td>
+              <td data-i18n={r.i}>{r.d}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="tui-panels" data-i18n="docsCli.tuiPanelsTitle">Panels</h3>
+    <div class="ops-grid">
+      {panels.map((p) => (
+        <div class="ops-card">
+          <div class="ops-name" data-i18n={p.name === 'Agents' ? 'docsCli.panelAgentsName' : p.name === 'Output' ? 'docsCli.panelOutputName' : p.name === 'Log' ? 'docsCli.panelLogName' : p.name === 'Jobs' ? 'docsCli.panelJobsName' : p.name === 'Memory' ? 'docsCli.panelMemoryName' : 'docsCli.panelInputName'}>{p.name}</div>
+          <p data-i18n={p.i}>{p.d}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section id="output-structure">
+    <h2 data-i18n="docsCli.outputTitle">Output structure</h2>
+    <p data-i18n="docsCli.outputDesc">Every run writes the same layout into its output directory — plus optional PDF/HTML/JSON/DOCX exports when configured.</p>
+    <div class="code-card">
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`output/
+├── index.md           # table of contents + metadata
+├── summary.md         # final synthesis
+├── findings/          # findings per subtask
+│   ├── finding-1.md
+│   ├── finding-2.md
+│   └── finding-3.md
+├── sources.md         # source list
+└── .research.db       # session SQLite database\`}`}} /></pre>
+    </div>
+  </section>
+
+  {/* ============ COMMON WORKFLOWS ============ */}
+  <section id="workflows">
+    <h2>Common Workflows</h2>
+    <p>
+      These multi-step workflows show how to combine CLI commands for real-world use cases.
+    </p>
+
+    <h3>Workflow 1 — Research → Export → Push to CRM</h3>
+    <p>
+      The standard end-to-end pipeline: run a research task, export contacts, deduplicate, and push to your CRM.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">pipeline</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`# 1. Run the research with the hunter profile
+fathom run --profile hunter "Find VPs of Engineering at Series B startups" -o ./fintech-vps/
+
+# 2. Review the results
+fathom sessions show --output ./fintech-vps/
+
+# 3. Export contacts to CSV
+fathom contacts export --format csv -o ./fintech-vps/
+
+# 4. Deduplicate (dry run first, then merge)
+fathom contacts dedup
+fathom contacts dedup --merge
+# 5. Push to your configured CRM
+fathom contacts push-crm\`}`}} /></pre>
+    </div>
+
+    <h3>Workflow 2 — Resume crashed session</h3>
+    <p>
+      If a long-running session was interrupted (network drop, system restart), you can resume from
+      where it left off using the persisted state in <code>.research.db</code>.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">resume</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`# 1. Find the interrupted session
+fathom sessions list -n 5
+
+# 2. Resume it (defaults to most recent interrupted session)
+fathom resume --output ./fintech-vps/
+
+# 3. Check the completed results
+fathom sessions show --output ./fintech-vps/
+fathom stats -o ./fintech-vps/\`}`}} /></pre>
+    </div>
+
+    <h3>Workflow 3 — Memory management</h3>
+    <p>
+      Keep the long-term memory store clean and useful: search, review, boost important facts,
+      distill session-scoped knowledge into durable records, and garbage-collect stale entries.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">memory maintenance</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`# 1. Check what's in memory
+fathom memory stats
+
+# 2. Search for specific knowledge
+fathom memory search "CTO of Acme Corp" --top-k 5
+
+# 3. View a record and its version history
+fathom memory get 7f31 --follow full_history
+
+# 4. Distill session facts into durable knowledge
+fathom memory distill --session a3f2 --dry-run
+fathom memory distill --session a3f2
+
+# 5. Garbage-collect stale run-scoped facts (older than 30 days)
+fathom memory gc --ttl-days 30 --dry-run
+fathom memory gc --ttl-days 30
+
+# 6. Rebuild embeddings after upgrading the embedding model
+fathom memory rebuild\`}`}} /></pre>
+    </div>
+
+    <h3>Workflow 4 — Job management</h3>
+    <p>
+      Submit long-running tasks as durable background jobs that survive restarts and self-heal on failure.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">jobs</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`# 1. Submit a job (detached, runs in background)
+fathom jobs submit "Analyze the AI agent market landscape" --attempts 3
+
+# 2. List all jobs and their states
+fathom jobs list
+
+# 3. Watch a job until it completes (refreshes every 5 seconds)
+fathom jobs status 9b2e --watch 5
+
+# 4. View the job's stdout/stderr logs
+fathom jobs logs 9b2e -n 100
+
+# 5. If it failed, re-run it
+fathom jobs rerun 9b2e
+
+# 6. Cancel a stuck job
+fathom jobs cancel 9b2e\`}`}} /></pre>
+    </div>
+
+    <h3>Workflow 5 — Profile-based campaigns</h3>
+    <p>
+      Create a custom profile for a specific campaign type, then reuse it across multiple runs.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">campaign</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`# 1. Create a new profile from template
+fathom profiles new series-b-outreach
+
+# 2. Edit the profile (set prompt, model, temperature)
+#    vim ~/.fathom/profiles/series-b-outreach.toml
+
+# 3. Verify the profile
+fathom profiles show series-b-outreach
+
+# 4. Run with the profile
+fathom run --profile series-b-outreach "Find CTOs at Series B companies in fintech"
+
+# 5. Reuse for a different vertical
+fathom run --profile series-b-outreach "Find CTOs at Series B companies in healthtech"\`}`}} /></pre>
+    </div>
+  </section>
+
+  {/* ============ TUI DEEP DIVE ============ */}
+  <section id="tui-deep-dive">
+    <h2>TUI Deep Dive</h2>
+    <p>
+      The TUI (Terminal User Interface) is built with <code>ratatui</code> and provides a real-time view
+      into the agent swarm. Here's a detailed look at each panel and feature.
+    </p>
+
+    <h3>Panel details</h3>
+    <div class="ops-grid">
+      <div class="ops-card">
+        <div class="ops-name">Agents</div>
+        <p>Live agent tree showing the coordinator at the root and sub-agents as children. Each agent displays its status (running, complete, failed), current tool call, and elapsed time. Use Up/Down to move the cursor, Left/Right to collapse/expand subtrees. The selected agent's details appear in the Output panel.</p>
+      </div>
+      <div class="ops-card">
+        <div class="ops-name">Output</div>
+        <p>The final assembled output, streamed token-by-token as the writer produces it. In replay mode, this shows the complete saved output. When multiple writers run in parallel, their outputs are interleaved with agent-id markers.</p>
+      </div>
+      <div class="ops-card">
+        <div class="ops-name">Log</div>
+        <p>Event log showing: agent spawns with task descriptions, tool calls with argument summaries and execution time in milliseconds, warnings (compaction events, truncation), and findings as they're discovered. Each entry is timestamped relative to session start.</p>
+      </div>
+      <div class="ops-card">
+        <div class="ops-name">Tools</div>
+        <p>Active and recent tool calls with their arguments, execution status, and timing. Shows which tools are running in parallel and which are serialized. Pending approval calls are highlighted — press <code>y</code> or <code>n</code> to act.</p>
+      </div>
+      <div class="ops-card">
+        <div class="ops-name">Jobs</div>
+        <p>Durable background jobs submitted via <code>jobs submit</code>. Shows job state (queued, running, complete, failed), attempt count, and last error if any. Refreshes automatically.</p>
+      </div>
+      <div class="ops-card">
+        <div class="ops-name">Memory</div>
+        <p>Recent records from the semantic memory store. Shows new facts as they're absorbed during the run. Useful for verifying that the agent is remembering the right things.</p>
+      </div>
+    </div>
+
+    <h3>Header sparkline</h3>
+    <p>
+      The header bar shows three things: the session ID (first 8 chars), elapsed time (MM:SS format),
+      and a sparkline chart of token spend. The sparkline is a rolling 60-second window showing how many
+      tokens were consumed per second. A flat sparkline means the agent is waiting (blocked on a tool or
+      idle); a rising sparkline means active generation; a spike indicates a large tool output being processed.
+    </p>
+
+    <h3>Session browser (key 'b')</h3>
+    <p>
+      Press <code>b</code> to open the session browser — a list of all past sessions stored in the
+      database. Navigate with Up/Down, press Enter to load a session in replay mode. This is equivalent
+      to <code>tui --replay &lt;id&gt;</code> but accessible from inside the TUI. Sessions are sorted
+      newest-first and show: ID, query (truncated), status, and timestamp.
+    </p>
+
+    <h3>File reference mode (key '@')</h3>
+    <p>
+      In insert mode, type <code>@</code> followed by a path to reference a local file. The file content
+      is read and included as context for the agent. This is useful for:
+    </p>
+    <div class="check-list">
+      <div class="check-item"><span class="check-mark">✓</span><span>Passing a CSV of contacts for validation: <code>@./contacts.csv validate these contacts</code></span></div>
+      <div class="check-item"><span class="check-mark">✓</span><span>Providing a task file: <code>@./task.txt</code> reads the file as the query</span></div>
+      <div class="check-item"><span class="check-mark">✓</span><span>Including a research snippet: <code>@./notes.md summarize and expand on this</code></span></div>
+    </div>
+
+    <h3>Typical TUI session flow</h3>
+    <div class="steps">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div>
+          <div class="step-title">Launch</div>
+          <p class="step-desc"><code>fathom tui</code> — the TUI opens with the Input panel focused. Type your query and press Enter.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div>
+          <div class="step-title">Watch the swarm</div>
+          <p class="step-desc">Switch to the Agents panel (Tab) to watch sub-agents spawn and work. The Log panel shows tool calls in real-time.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div>
+          <div class="step-title">Approve side effects</div>
+          <p class="step-desc">When an approval prompt appears, press <code>y</code> to approve or <code>n</code> to deny. Switch to the Tools panel to see pending approvals.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">04</div>
+        <div>
+          <div class="step-title">Read the output</div>
+          <p class="step-desc">Switch to the Output panel to read the synthesized report as it streams in. Use Up/Down to scroll through history.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">05</div>
+        <div>
+          <div class="step-title">Follow up</div>
+          <p class="step-desc">Type a follow-up query in the Input panel to continue the research. The agent retains context from the previous run.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* ============ OUTPUT STRUCTURE GUIDE ============ */}
+  <section id="output-guide">
+    <h2>Output Structure Guide</h2>
+    <p>
+      Every research run produces a consistent output directory. Here's what each file contains and how to use it.
+    </p>
+
+    <h3>File-by-file breakdown</h3>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>File</th><th>Contents</th><th>How to use it</th></tr></thead>
+        <tbody>
+          <tr><td><code>index.md</code></td><td>Table of contents with links to all findings, run metadata (query, profile, timestamps, agent count)</td><td>Start here — it's the entry point to the report</td></tr>
+          <tr><td><code>summary.md</code></td><td>Executive summary produced by the coordinator's synthesis step. Key findings, recommendations, and contact highlights</td><td>Share this with stakeholders who don't need the details</td></tr>
+          <tr><td><code>findings/*.md</code></td><td>One file per sub-task. Contains the sub-agent's full research output with inline source citations</td><td>Dive deeper into specific topics or verify claims</td></tr>
+          <tr><td><code>sources.md</code></td><td>Deduplicated list of all source URLs referenced across all findings, with titles and last-seen dates</td><td>Fact-check the report or build a reading list</td></tr>
+          <tr><td><code>.research.db</code></td><td>SQLite database with full session state: agents, messages, tool calls, findings, contacts, jobs</td><td>Resume interrupted sessions, run stats, or export contacts</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Export formats</h3>
+    <p>
+      When configured, the run produces additional files in the output directory:
+    </p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>Format</th><th>File</th><th>Triggered by</th></tr></thead>
+        <tbody>
+          <tr><td>HTML</td><td><code>report.html</code></td><td><code>export.html = true</code> in config</td></tr>
+          <tr><td>PDF</td><td><code>report.pdf</code></td><td><code>export.pdf = true</code> in config</td></tr>
+          <tr><td>JSON</td><td><code>report.json</code></td><td><code>export.json = true</code> in config</td></tr>
+          <tr><td>DOCX</td><td><code>report.docx</code></td><td><code>export.docx = true</code> in config</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      All exports are generated from the same in-memory report structure, so they're always consistent
+      with the Markdown output. The JSON format includes the full source metadata and is ideal for
+      programmatic consumption.
+    </p>
+  </section>
+
+  {/* ============ CLI TIPS & TRICKS ============ */}
+  <section id="tips">
+    <h2>CLI Tips &amp; Tricks</h2>
+
+    <h3>Use --task-file for complex queries</h3>
+    <p>
+      For long or structured queries, write them to a file instead of passing as a positional argument.
+      This avoids shell escaping issues and lets you version-control your research prompts.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">task file</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`# task.txt
+Research the competitive landscape of AI coding assistants.
+Include:
+1. GitHub Copilot, Cursor, Codeium, Tabnine, Cody
+2. Pricing models and enterprise features
+3. Technical architecture (local vs cloud, model choices)
+4. Market share estimates and growth trajectories
+5. Key differentiators and weaknesses
+
+Format as a comparison table with a recommendation section.
+
+# Run with the task file
+fathom run --task-file task.txt -o ./ai-coding-tools/\`}`}} /></pre>
+    </div>
+
+    <h3>Use --repeat for monitoring loops</h3>
+    <p>
+      The <code>--repeat</code> flag turns <code>run</code> into a watch mode. Each cycle re-runs the
+      query, diffs results against the previous run, and alerts on new contacts or changed findings.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">monitoring</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`# Check for new Acme Corp signals every 6 hours
+fathom run "Acme Corp latest news and hiring" --repeat 21600
+
+# Monitor a job board every hour
+fathom run "New postings on careers.acme.com" --repeat 3600\`}`}} /></pre>
+    </div>
+
+    <h3>Use --profile for campaign-specific behavior</h3>
+    <p>
+      Combine profiles with the same query to get different perspectives. Run once with <code>hunter</code>
+      for contacts, then with <code>analyst</code> for deep research on the same companies.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">dual pass</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`# Pass 1: harvest contacts
+fathom run --profile hunter "Series B fintech companies" -o ./fintech/
+
+# Pass 2: deep analysis on the same topic
+fathom run --profile analyst "Series B fintech companies" -o ./fintech-analysis/\`}`}} /></pre>
+    </div>
+
+    <h3>Pipe output to other tools</h3>
+    <p>
+      The CLI writes structured Markdown and JSON that can be piped to other tools for further processing.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">pipes</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`# Export contacts and pipe to jq for filtering
+fathom contacts export --format json | jq '.[] | select(.title | contains("CTO"))'
+
+# Search memory and format as markdown links
+fathom memory search "fintech" --top-k 5 | grep -oP 'https?://\\\\S+' | sort -u
+
+# Run stats and save to file
+fathom stats -o ./results/ > stats-report.md\`}`}} /></pre>
+    </div>
+
+    <h3>Find past research with sessions</h3>
+    <p>
+      The <code>sessions</code> command is your research history. Use substring search to find past runs
+      by topic, company, or date.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">sessions</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`# Find all sessions about fintech
+fathom sessions list --search "fintech"
+
+# Show the last 5 sessions
+fathom sessions list -n 5
+
+# View details of a specific session (prefix match)
+fathom sessions show 3f9c2a\`}`}} /></pre>
+    </div>
+
+    <h3>Analyze tool performance with stats</h3>
+    <p>
+      The <code>stats</code> command shows per-tool call statistics from a recorded session: call counts,
+      p50/p95 latencies, and error rates. Use this to identify slow tools or optimize your research pipeline.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">stats</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`# Show stats for the most recent session
+fathom stats
+
+# Show stats for a specific output directory
+fathom stats -o ./fintech-vps/
+
+# Example output:
+# Tool             Calls   p50(ms)   p95(ms)   Errors
+# web_search         47      312      1840        2
+# web_fetch          89      245      3200        5
+# extract_contacts   23      180       420        0
+# verify_email       15      890      4500        1
+# memory_search      12       45       120        0\`}`}} /></pre>
+    </div>
+
+    <h3>Benchmark before deploying</h3>
+    <p>
+      Run the <code>bench</code> suite to verify your environment's performance before starting large campaigns.
+      This catches issues like slow DNS, memory constraints, or misconfigured embedding models.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">bench</span></div>
+      <pre><code dangerouslySetInnerHTML={{__html: `{\`# Run all benchmark scenarios
+fathom bench
+
+# Run a specific scenario and save the report
+fathom bench -s memory --save bench-report.md
+
+# Quick check on tool dispatch overhead
+fathom bench -s dispatch -n 32\`}`}} /></pre>
+    </div>
+  </section>
