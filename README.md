@@ -1,4 +1,8 @@
 <p align="center">
+  <img src="assets/fathom.png" alt="Fathom" width="75%">
+</p>
+
+<p align="center">
   <strong>Fathom</strong>
   <strong>— autonomous research agent for OSINT, lead generation, and deep-dive analysis.</strong>
 </p>
