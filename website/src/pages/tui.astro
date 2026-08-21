@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
 
 const features = [
   { key: 'live', name: 'Live worker events', d: 'Token deltas, tool calls, worker lifecycle changes and findings appear as the runtime publishes them.' },
@@ -20,12 +21,12 @@ const steps = [
 
 <Layout title="Terminal UI — Fathom">
   <main class="tui-page">
-    <div class="container">
-      <div class="tui-hero">
+        <PageHero cls="tui-hero">
         <p class="eyebrow" data-i18n="tuiPage.hero.badge">Terminal UI</p>
         <h1 class="h2-sec" data-i18n-html data-i18n="tuiPage.hero.title">Your terminal,<br />your <em class="it">research lab.</em></h1>
         <p class="copy-lg mx-auto" data-i18n="tuiPage.hero.sub">An interactive ratatui operator console for running autonomous workers locally: inspect the worker tree, follow live events, review memory and durable jobs, steer active runs, and handle questions or approval gates without leaving the terminal.</p>
-      </div>
+    </PageHero>
+    <div class="container">
 
       <!-- Features grid -->
       <div class="sec-head center reveal">

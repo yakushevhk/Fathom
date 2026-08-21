@@ -1,15 +1,16 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
 ---
 
 <Layout title="MCP — Fathom">
   <main class="mcp-page">
-    <div class="container">
-      <div class="mcp-hero">
+        <PageHero cls="mcp-hero">
         <p class="eyebrow" data-i18n="mcpPage.hero.badge">MCP</p>
         <h1 class="h2-sec" data-i18n-html data-i18n="mcpPage.hero.title">Both sides of <em class="it">the protocol.</em></h1>
         <p class="copy-lg mx-auto" data-i18n="mcpPage.hero.sub">Fathom speaks Model Context Protocol in both directions: workers can consume tools from configured external MCP servers and expose the currently registered built-in tools to MCP clients. Browser and computer tools appear only when their CDP or COMPUTER_URL integrations are configured and reachable.</p>
-      </div>
+    </PageHero>
+    <div class="container">
 
       <div class="feat">
         <div class="feat-copy">

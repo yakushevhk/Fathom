@@ -172,9 +172,22 @@ button {
    Global on purpose: translated HTML injected at build time
    carries no scoped attributes. */
 .it {
-  font-family: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  font-family: var(--font-serif);
   font-style: italic;
   font-weight: 400;
+}
+
+/* Wide code inside grid cards must not stretch tracks on narrow screens */
+.feat > *,
+.feat-reverse > *,
+.stage,
+.bench-card,
+.api-card,
+.q-card,
+.pr-card,
+.code-card,
+.card-code {
+  min-width: 0;
 }
 
 :focus-visible {

@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
 
 const workspaces = [
   {
@@ -43,12 +44,12 @@ const techStack = [
 
 <Layout title="Code & Tools - Fathom">
   <main class="code-page">
-    <div class="container">
-      <div class="code-hero">
+        <PageHero cls="code-hero">
         <p class="eyebrow">Source &amp; runtime map</p>
         <h1 class="h2-sec">Source &amp; runtime, <em class="it">mapped.</em></h1>
         <p class="copy-lg mx-auto">A current map of the Fathom binary, its 12 workspace crates, and the tools available at runtime.</p>
-      </div>
+    </PageHero>
+    <div class="container">
 
       <div class="stats-row">
         <div class="stat-card">

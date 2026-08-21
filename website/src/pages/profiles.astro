@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
 
 const profiles = [
   { key: 'hunter', name: 'hunter', tag: 'Broad collection workflow', d: 'An example profile for collection-heavy work. It prioritizes extracting and enriching contact records, saves results through the configured tools, and allows parallel delegation within its profile limits.' },
@@ -10,12 +11,12 @@ const profiles = [
 
 <Layout title="Profiles & Personas — Fathom">
   <main class="profiles-page">
-    <div class="container">
-      <div class="profiles-hero">
+        <PageHero cls="profiles-hero">
         <p class="eyebrow" data-i18n="profilesPage.hero.badge">Profiles & Personas</p>
         <h1 class="h2-sec" data-i18n-html data-i18n="profilesPage.hero.title">One agent,<br /><em class="it">many personas.</em></h1>
         <p class="copy-lg mx-auto" data-i18n="profilesPage.hero.sub">Profiles are named TOML overlays that shape how autonomous workers operate: prompts, model routing, depth and concurrency limits, denied tools, and other behavior controls. Use a built-in example or define the policy your workflow needs.</p>
-      </div>
+    </PageHero>
+    <div class="container">
 
       <!-- Built-in profiles -->
       <div class="sec-head center reveal">

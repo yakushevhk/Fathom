@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
 
 const blocks = [
   { key: 'jobs', name: 'Durable jobs', d: 'jobs submit/list/status/logs/cancel/rerun exposes persistent background work with recorded attempts and configured retry behavior. In-process async work can also be inspected through hub jobs.' },
@@ -38,12 +39,12 @@ const blocks = [
 
 <Layout title="Operations — Fathom">
   <main class="ops-page">
-    <div class="container">
-      <div class="ops-hero">
+        <PageHero cls="ops-hero">
         <p class="eyebrow" data-i18n="opsPage.hero.badge">Operations</p>
         <h1 class="h2-sec" data-i18n-html data-i18n="opsPage.hero.title">Built to run <em class="it">unattended.</em></h1>
         <p class="copy-lg mx-auto" data-i18n="opsPage.hero.sub">Beyond the agent loop: persistent coworkers, delegated jobs, memory, governance, optional computer use, configured notifications, durability, and observability for self-hosted runs you can inspect and steer.</p>
-      </div>
+    </PageHero>
+    <div class="container">
 
       <div class="ops-grid">
         {

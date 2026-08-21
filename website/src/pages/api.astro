@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
 
 const endpointGroups = [
   {
@@ -114,12 +115,12 @@ const endpointGroups = [
 
 <Layout title="API & Server — Fathom">
   <main class="api-page">
-    <div class="container">
-      <div class="api-hero">
+        <PageHero cls="api-hero">
         <p class="eyebrow" data-i18n="apiPage.hero.badge">API &amp; Server</p>
         <h1 class="h2-sec" data-i18n-html data-i18n="apiPage.hero.title">Run it headless.<br />Watch it <em class="it">live.</em></h1>
         <p class="copy-lg mx-auto" data-i18n="apiPage.hero.sub">A self-hosted Axum control plane for autonomous workers: start and steer sessions, inspect durable jobs and memory, apply governance, and integrate through REST, SSE and AG-UI event streams. Coworkers, schedules, notifications and computer relay controls are available when configured.</p>
-      </div>
+    </PageHero>
+    <div class="container">
 
       <!-- Auth -->
       <div class="feat">

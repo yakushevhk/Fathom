@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
 
 const categories = [
   {
@@ -97,12 +98,12 @@ const categories = [
 
 <Layout title="Tools — Fathom">
   <main class="tools-page">
-    <div class="container">
-      <div class="tools-hero">
+        <PageHero cls="tools-hero">
         <p class="eyebrow" data-i18n="tools.hero.badge">Tools</p>
         <h1 class="h2-sec" data-i18n-html data-i18n="tools.hero.title1">A composable worker toolset<br /><span class="muted">(browser and computer tools are optional, configured capabilities)</span></h1>
         <p class="copy-lg mx-auto" data-i18n="tools.hero.sub">Workers call tools through a shared <code class="inline-code">Tool</code> registry. Read-only work may run concurrently; writes are coordinated according to runtime policy and path overlap.</p>
-      </div>
+    </PageHero>
+    <div class="container">
 
       <div class="tools-grid">
         {

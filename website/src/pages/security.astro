@@ -1,16 +1,16 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
 ---
 
 <Layout title="Security — Fathom" description="Configurable safeguards for autonomous workers: SSRF guards, prompt-injection defenses, secret scanning, governance gates, and audit receipts.">
   <main class="security-page">
-    <div class="container">
-
-      <div class="sec-hero">
+        <PageHero cls="sec-hero">
         <p class="eyebrow" data-i18n="securityPage.hero.badge">Security</p>
         <h1 class="h2-sec" data-i18n-html data-i18n="securityPage.hero.title">Defense <em class="it">in depth.</em></h1>
         <p class="copy-lg mx-auto" data-i18n="securityPage.hero.sub">Autonomous workers can be run with layered safeguards — from network-level SSRF guards to prompt-injection detection, secret scanning, governance gates and append-only verification receipts.</p>
-      </div>
+    </PageHero>
+    <div class="container">
 
       <div class="sec-head">
         <p class="eyebrow" data-i18n="securityPage.layers.badge">Security Layers</p>

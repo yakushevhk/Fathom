@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
 
 const sources = [
   { name: 'Business registries', tool: 'search_business_directory', d: 'When configured, registry connectors can provide public company records, identifiers, founders and executives for a worker to inspect.' },
@@ -46,12 +47,12 @@ const ethics = [
 
 <Layout title="OSINT Workflow — Fathom">
   <main class="osint-page">
-    <div class="container">
-      <div class="osint-hero">
+        <PageHero cls="osint-hero">
         <p class="eyebrow" data-i18n="osint.hero.badge">OSINT workflow example</p>
         <h1 class="h2-sec" data-i18n-html data-i18n="osint.hero.title">Every lead, sourced<br />and <em class="it">verified.</em></h1>
         <p class="copy-lg mx-auto" data-i18n="osint.hero.sub">OSINT is one workflow a universal autonomous worker can run: plan subtasks, inspect configured public sources, preserve evidence in memory, and ask for review before saving or contacting anyone. Connectors and integrations are optional, not guaranteed.</p>
-      </div>
+    </PageHero>
+    <div class="container">
 
       <!-- Data sources -->
       <div class="sec-head">
@@ -256,7 +257,7 @@ suggest_emails("John Doe", "acme.com")
   @media (max-width: 1200px) { .stages { grid-template-columns: repeat(4, 1fr); } }
   @media (max-width: 720px) { .stages { grid-template-columns: repeat(2, 1fr); } }
 
-  .feat { display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: center; padding: 48px 0; }
+  .feat { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 48px; align-items: center; padding: 48px 0; }
   .feat-reverse { direction: rtl; }
   .feat-reverse > * { direction: ltr; }
   .feat-copy .copy-lg + .copy-lg { margin-top: 14px; }
@@ -272,8 +273,9 @@ suggest_emails("John Doe", "acme.com")
   .mini-table td { padding: 10px 14px; border-bottom: 1px solid var(--grey-100); color: var(--grey-800); vertical-align: top; }
   .mini-table tr:last-child td { border-bottom: none; }
 
-  .q-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start; }
+  .q-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start; }
   .q-label { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--grey-500); margin-bottom: 10px; }
+  .q-card { min-width: 0; }
   .q-card .code-card { box-shadow: none; }
   @media (max-width: 1000px) { .q-grid { grid-template-columns: 1fr; } }
 

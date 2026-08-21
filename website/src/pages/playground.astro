@@ -1,16 +1,17 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
 ---
 
 <Layout title="Playground — Fathom" description="Interactive console: launch autonomous tasks, watch workers live, browse memory, manage jobs and inspect metrics — all against your local Fathom server.">
   <main class="pg-page">
-    <div class="container">
       <!-- Hero -->
-      <div class="pg-hero">
+          <PageHero cls="pg-hero">
         <p class="eyebrow" data-i18n="playground.hero.badge">Playground</p>
         <h1 class="h2-sec" data-i18n="playground.hero.title">Autonomous work, live.</h1>
         <p class="copy-lg mx-auto" data-i18n="playground.hero.sub">Launch an autonomous task, watch the worker fleet operate in real time, steer it mid-run, browse long-term memory, manage background jobs and inspect live metrics — the whole platform in one console.</p>
-      </div>
+    </PageHero>
+    <div class="container">
 
       <!-- Console: connection + composer -->
       <section class="pg-console reveal">

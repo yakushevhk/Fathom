@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
 
 interface Entry {
   hash: string;
@@ -41,12 +42,12 @@ const entries: Entry[] = [
 
 <Layout title="Changelog — Fathom">
   <main class="cl-page">
-    <div class="container">
-      <div class="cl-hero">
+        <PageHero cls="cl-hero">
         <p class="eyebrow" data-i18n="changelog.hero.badge">Changelog</p>
         <h1 class="h2-sec" data-i18n="changelog.hero.title">Shipped, measured, logged.</h1>
         <p class="copy-lg mx-auto" data-i18n="changelog.hero.sub">What changed, when, and why — straight from the product repository. Fleet findings become phases, phases become batches, batches become releases.</p>
-      </div>
+    </PageHero>
+    <div class="container">
 
       <div class="cl-timeline">
         {

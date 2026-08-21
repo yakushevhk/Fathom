@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import PageHero from '../../components/PageHero.astro';
 
 const stages = [
   { n: '01', t: 'Find', d: 'find_leads, search_business_directory, search_social and search_news locate candidates across the open web.' },
@@ -14,12 +15,12 @@ const dataPoints = ['Work emails', 'Phone numbers', 'Social profiles (LinkedIn, 
 
 <Layout title="Lead Discovery Workflow — Fathom" description="Use autonomous workers to discover, verify, and organize contact context as a governed workflow with reviewable handoffs.">
   <main class="lg-page">
-    <div class="container">
-      <div class="lg-hero">
+        <PageHero cls="lg-hero">
         <p class="eyebrow"><a href="/features" class="crumb">Features</a> / <span data-i18n-html data-i18n="featuresLeadgen.hero.crumb">Lead Generation</span></p>
         <h1 class="h2-sec" data-i18n-html data-i18n="featuresLeadgen.hero.title">From a goal to a<br /><em class="it">verified operation.</em></h1>
         <p class="copy-lg mx-auto" data-i18n="featuresLeadgen.hero.sub">As one example workflow, a governed worker can search configured sources, verify evidence, deduplicate records, and prepare CRM handoffs for review.</p>
-      </div>
+    </PageHero>
+    <div class="container">
 
       <!-- Pipeline -->
       <div class="sec-head">

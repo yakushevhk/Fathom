@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
 
 const installers = [
   {
@@ -62,12 +63,12 @@ const envVars = [
 
 <Layout title="Installation — Fathom">
   <main class="inst-page">
-    <div class="container">
-      <div class="inst-hero">
+        <PageHero cls="inst-hero">
         <p class="eyebrow" data-i18n="install.hero.badge">Install</p>
         <h1 class="h2-sec" data-i18n="install.hero.title">One binary. Every runtime.</h1>
         <p class="copy-lg mx-auto" data-i18n="install.hero.sub">Fathom is a source-available, self-hosted runtime for autonomous work. Clone the public repository and build it with Cargo, or package that checkout in Docker — then operate it on infrastructure you control.</p>
-      </div>
+    </PageHero>
+    <div class="container">
 
       <!-- Installers -->
       <div class="api-grid">
@@ -215,8 +216,8 @@ curl http://localhost:8080/health`}</code></pre>
   .inst-hero h1 { font-size: clamp(34px, 5vw, 68px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.02; margin-top: 12px; }
   .inst-hero .copy-lg { margin-top: 20px; }
 
-  .api-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; background: var(--grey-300); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--grey-300); }
-  .api-card { background: var(--bg-card); padding: 26px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .api-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px; background: var(--grey-300); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--grey-300); }
+  .api-card { background: var(--bg-card); padding: 26px 24px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
   .api-card .api-name { font-family: var(--font-mono); font-weight: 600; font-size: 15px; }
   .api-card p { color: var(--grey-600); font-size: 14px; line-height: 1.55; }
   .card-code { margin-top: auto; background: var(--grey-900); border-radius: var(--radius-md); padding: 14px 16px; overflow-x: auto; }

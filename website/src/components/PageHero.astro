@@ -1,0 +1,58 @@
+---
+// PageHero — shared hero treatment matching the landing page:
+// subtle particle wave field, aurora glow, staggered entrance.
+// `cls` carries the page-specific hero class so existing page
+// styles (h1 sizes, copy widths) keep applying.
+import HeroField from './HeroField.astro';
+
+interface Props {
+  cls?: string;
+}
+const { cls = '' } = Astro.props;
+---
+
+<section class="phero">
+  <HeroField />
+  <div class="phero__glow" aria-hidden="true"></div>
+  <div class:list={['phero__inner container', cls]}><slot /></div>
+</section>
+
+<style>
+  .phero {
+    position: relative;
+    overflow: hidden;
+  }
+  .phero__glow {
+    position: absolute;
+    top: -240px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 780px;
+    height: 480px;
+    background: radial-gradient(closest-side, rgba(143, 182, 204, 0.17), transparent 72%);
+    filter: blur(46px);
+    pointer-events: none;
+  }
+  .phero__inner {
+    position: relative;
+    z-index: 1;
+    max-width: 880px;
+    text-align: center;
+    padding: 40px 24px 8px;
+  }
+  .phero__inner > * {
+    opacity: 0;
+    animation: pheroRise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  }
+  .phero__inner > *:nth-child(1) { animation-delay: 0.03s; }
+  .phero__inner > *:nth-child(2) { animation-delay: 0.09s; }
+  .phero__inner > *:nth-child(3) { animation-delay: 0.15s; }
+  .phero__inner > *:nth-child(4) { animation-delay: 0.21s; }
+  @keyframes pheroRise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .phero__inner > * { animation: none; opacity: 1; }
+  }
+</style>

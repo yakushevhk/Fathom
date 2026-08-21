@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
 
 const panels = [
   { key: 'sessions', name: 'Sessions', d: 'All research sessions with status badges, agent count, token usage and query preview. Click to drill into agent tree.' },
@@ -19,13 +20,12 @@ const features = [
 
 <Layout title="Web Dashboard — Fathom">
   <main class="dash-page">
-    <div class="container">
-
-      <div class="dash-hero">
+        <PageHero cls="dash-hero">
         <p class="eyebrow" data-i18n="dashboardPage.hero.badge">Web Dashboard</p>
         <h1 class="h2-sec" data-i18n-html data-i18n="dashboardPage.hero.title">One screen,<br /><em class="it">full visibility.</em></h1>
         <p class="copy-lg mx-auto" data-i18n="dashboardPage.hero.sub">A single-file HTML dashboard embedded in the server binary — sessions, agent tree, memory stats, background jobs and a live SSE event feed. No external dependencies.</p>
-      </div>
+    </PageHero>
+    <div class="container">
 
       <!-- Panels -->
       <div class="sec-head center reveal">

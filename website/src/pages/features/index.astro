@@ -1,15 +1,16 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import PageHero from '../../components/PageHero.astro';
 ---
 
 <Layout title="Capabilities — Fathom Autonomous AI Workers" description="Explore Fathom's autonomous worker capabilities: research, outreach, code, computer use, scheduling, memory, governance, and persistent operations.">
   <main class="fp-page">
-    <div class="container">
-      <div class="fp-hero">
+        <PageHero cls="fp-hero">
         <p class="eyebrow" data-i18n="featuresPivot.hero.badge">Autonomous worker capabilities</p>
         <h1 class="h2-sec" data-i18n-html data-i18n="featuresPivot.hero.title">One platform.<br /><em class="it">Every mission.</em></h1>
         <p class="copy-lg mx-auto" data-i18n="featuresPivot.hero.sub">Persistent workers turn plain-language goals into governed execution across research, code, computer use, outreach, and scheduled operations.</p>
-      </div>
+    </PageHero>
+    <div class="container">
 
       <div class="cap-grid">
         <a href="/features/research" class="cap-card">

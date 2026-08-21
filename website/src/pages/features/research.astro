@@ -1,15 +1,16 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import PageHero from '../../components/PageHero.astro';
 ---
 
 <Layout title="Research Workflow — Fathom" description="Use universal autonomous workers to plan research, delegate tools, preserve evidence in memory and synthesize reviewable findings.">
   <main class="fr-page">
-    <div class="container">
-      <div class="fr-hero">
+        <PageHero cls="fr-hero">
         <p class="eyebrow"><a href="/features" class="crumb">Features</a> / <span data-i18n-html data-i18n="featuresResearch.hero.crumb">Research</span></p>
         <h1 class="h2-sec" data-i18n-html data-i18n="featuresResearch.hero.title">Research workers,<br /><em class="it">multiplied.</em></h1>
         <p class="copy-lg mx-auto" data-i18n="featuresResearch.hero.sub">Universal autonomous workers can plan research, delegate configured tools, fetch and cross-reference evidence, persist memory and pause at governance gates before producing a cited, reviewable answer.</p>
-      </div>
+    </PageHero>
+    <div class="container">
 
       <!-- Capabilities -->
       <div class="sec-head">

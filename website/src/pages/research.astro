@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
 
 const pipeline = [
   { num: 1, key: 's1', t: 'Plan', d: 'A worker turns the request into a source-aware plan, then delegates discovery across the tools and services configured by the operator.' },
@@ -24,14 +25,13 @@ const techs = [
 
 <Layout title="Research Workflows — Fathom">
   <main class="research-page">
-    <div class="container">
-
       <!-- HERO -->
-      <div class="research-hero">
+          <PageHero cls="research-hero">
         <p class="eyebrow" data-i18n="researchPage.hero.badge">Research workflow</p>
         <h1 class="h2-sec" data-i18n-html data-i18n="researchPage.hero.title">From a goal to<br /><em class="it">reviewable findings.</em></h1>
         <p class="copy-lg mx-auto" data-i18n="researchPage.hero.sub">A universal autonomous worker plans the investigation, delegates source work, keeps evidence in memory and pauses for governance where configured. Research, contact discovery and reporting are workflows—not a separate research engine.</p>
-      </div>
+    </PageHero>
+    <div class="container">
 
       <!-- PIPELINE -->
       <div class="sec-head center reveal">
