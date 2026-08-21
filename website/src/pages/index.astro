@@ -4,7 +4,7 @@ import JsonLd from '../components/JsonLd.astro';
 import AgentCanvas from '../components/AgentCanvas.astro';
 import RunTimeline from '../components/RunTimeline.astro';
 import OceanField from '../components/OceanField.astro';
-import OrbScene from '../components/OrbScene.astro';
+import HeroField from '../components/HeroField.astro';
 
 const agents = [
   { name: 'Coordinator', mode: 'coordinator', hue: 206, href: '/profiles' },
@@ -83,6 +83,7 @@ const metrics = [
 
   <!-- ============ HERO ============ -->
   <section class="hero">
+    <HeroField />
     <div class="container hero__grid">
       <div class="hero__main">
         <p class="hero-badge">
@@ -101,8 +102,7 @@ const metrics = [
       </div>
 
       <div class="hero__visual">
-        <OrbScene hue={206} mode="coordinator" height={420} label="coordinator · 7 roles · one runtime" />
-        <div class="machine hero-term">
+        <div class="machine">
           <div class="machine__bar">
             <div class="machine__dots"><i></i><i></i><i></i></div>
             <span class="machine__url">fathom run</span>
@@ -501,23 +501,12 @@ const metrics = [
   }
 
   /* ---- Machine (terminal demo) ---- */
-  .hero__visual { position: relative; padding-bottom: 66px; }
+  .hero__visual { position: relative; }
   .hero__visual::before {
     content: ""; position: absolute; inset: 8% -6% -6% -6%;
     background: radial-gradient(60% 60% at 50% 40%, rgba(143, 182, 204, 0.28), transparent 75%);
     filter: blur(42px); pointer-events: none;
   }
-  .hero__visual :global(.orb-panel) { position: relative; z-index: 1; }
-
-  .hero-term {
-    position: absolute; z-index: 2;
-    left: -18px; bottom: 0;
-    width: min(430px, 92%);
-    font-size: 12px;
-  }
-  .hero-term .machine__body { padding: 16px; font-size: 12px; }
-  .hero-term .agent-lines { padding-left: 14px; }
-
   .machine {
     position: relative;
     border: 1px solid var(--grey-300); border-radius: var(--radius-lg);
@@ -751,8 +740,6 @@ const metrics = [
   }
   @media (max-width: 960px) {
     .hero__grid { grid-template-columns: 1fr; gap: 48px; }
-    .hero__visual { padding-bottom: 0; }
-    .hero-term { position: relative; left: 0; bottom: auto; width: 100%; margin-top: 20px; }
     .feat { grid-template-columns: 1fr; gap: 36px; }
   }
   @media (max-width: 720px) {
