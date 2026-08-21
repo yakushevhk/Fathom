@@ -2,7 +2,7 @@ export default {
   featuresPivot: {
     hero: {
       badge: { en: 'Autonomous worker capabilities', ru: 'Возможности автономных воркеров' },
-      title: { en: 'One platform.<br />Every mission.', ru: 'Одна платформа.<br />Любая задача.' },
+      title: { en: 'One platform.<br /><em class="it">Every mission.</em>', ru: 'Одна платформа.<br /><em class="it">Любая задача.</em>' },
       sub: { en: 'Persistent workers turn plain-language goals into governed execution across research, code, computer use, outreach, and scheduled operations.', ru: 'Постоянные воркеры превращают цели на обычном языке в управляемое исполнение: исследования, код, работа за компьютером, аутрич и операции по расписанию.' },
     },
     cap: {
@@ -37,7 +37,7 @@ export default {
   featuresResearch: {
     hero: {
       crumb: { en: 'Research', ru: 'Исследование' },
-      title: { en: 'Research workers,<br />multiplied.', ru: 'Исследовательские воркеры,<br />умноженные.' },
+      title: { en: 'Research workers,<br /><em class="it">multiplied.</em>', ru: 'Исследовательские воркеры,<br /><em class="it">умноженные.</em>' },
       sub: { en: 'Autonomous workers search, fetch, parse, and cross-reference sources — then hand you a cited answer grounded in memory, code, and browser context.', ru: 'Автономные воркеры ищут, загружают, разбирают и сопоставляют источники — затем выдают цитируемый ответ на основе памяти, кода и контекста браузера.' },
     },
     cap: {
@@ -92,7 +92,7 @@ export default {
   featuresLeadgen: {
     hero: {
       crumb: { en: 'Lead Generation', ru: 'Генерация лидов' },
-      title: { en: 'From a goal to a<br />verified operation.', ru: 'От цели к<br />проверенной операции.' },
+      title: { en: 'From a goal to a<br /><em class="it">verified operation.</em>', ru: 'От цели к<br /><em class="it">проверенной операции.</em>' },
       sub: { en: 'A governed worker pipeline finds contacts across the web, verifies each data point, deduplicates sources, and prepares approved CRM updates.', ru: 'Управляемый конвейер воркеров находит контакты в вебе, проверяет данные, устраняет дубликаты и готовит одобренные обновления CRM.' },
     },
     pipeline: { badge: { en: 'Pipeline', ru: 'Конвейер' }, title: { en: 'Five-stage lead pipeline', ru: 'Пятиступенчатый конвейер лидов' } },
@@ -155,7 +155,7 @@ export default {
   featuresOutreach: {
     hero: {
       crumb: { en: 'Auto Outreach', ru: 'Автообращение' },
-      title: { en: 'Operations workers<br />at scale.', ru: 'Операционные воркеры<br />в масштабе.' },
+      title: { en: 'Operations workers<br /><em class="it">at scale.</em>', ru: 'Операционные воркеры<br /><em class="it">в масштабе.</em>' },
       sub: { en: 'Workers write one message per recipient using fresh research and persistent memory. Batch-generate drafts, review side effects, then export or sync approved updates.', ru: 'Воркеры пишут отдельное сообщение каждому получателю на основе свежих исследований и постоянной памяти. Создавайте черновики пакетно, проверяйте побочные эффекты и экспортируйте или синхронизируйте одобренные обновления.' },
     },
     steps: {

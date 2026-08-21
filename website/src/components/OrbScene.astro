@@ -1,0 +1,315 @@
+---
+// OrbScene — Three.js "worker orb": a Fibonacci-lattice dot sphere,
+// the 3D evolution of the AgentCanvas motif. One component, many moods:
+// modes drive distinct motion (breathing, scan band, spikes, sweep,
+// ripples, absorption) and `coordinator` renders a core orb with
+// orbiting satellite rings for the hero.
+//
+// Props:
+//   hue    — HSL hue of the orb
+//   mode   — researcher | searching | extracting | structuring |
+//            cleaning | memoring | outreach | coordinator
+//   height — panel height in px
+//   label  — optional mono caption under the canvas
+
+interface Props {
+  hue?: number;
+  mode?: string;
+  height?: number;
+  label?: string;
+}
+
+const { hue = 206, mode = 'researcher', height = 340, label = '' } = Astro.props;
+---
+
+<div class="orb-panel">
+  <div class="orb-stage" style={`height:${height}px`}>
+    <canvas data-orb data-hue={hue} data-mode={mode} role="img" aria-label="Animated agent orb"></canvas>
+  </div>
+  {label && <p class="orb-caption">{label}</p>}
+</div>
+
+<style>
+  .orb-panel {
+    background: #0a0a0a;
+    border: 1px solid #232323;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    position: relative;
+  }
+  .orb-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(52% 48% at 50% 46%, color-mix(in srgb, var(--orb-tint, #8fb6cc) 9%, transparent), transparent 72%);
+    pointer-events: none;
+  }
+  .orb-stage { position: relative; }
+  .orb-stage canvas { width: 100%; height: 100%; display: block; }
+  .orb-caption {
+    position: relative;
+    border-top: 1px solid #1d1d1d;
+    padding: 10px 16px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #6f6f78;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .orb-caption::before {
+    content: "";
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #3f7a52;
+    animation: orbPulse 2.2s ease-out infinite;
+  }
+  @keyframes orbPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(63, 122, 82, 0.5); }
+    70%  { box-shadow: 0 0 0 7px rgba(63, 122, 82, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(63, 122, 82, 0); }
+  }
+</style>
+
+<script>
+  const canvases = document.querySelectorAll('[data-orb]');
+  if (canvases.length) import('three').then((THREE) => {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function dotTexture() {
+      const c = document.createElement('canvas');
+      c.width = c.height = 64;
+      const x = c.getContext('2d');
+      const g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+      g.addColorStop(0, 'rgba(255,255,255,1)');
+      g.addColorStop(0.35, 'rgba(255,255,255,.85)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      x.fillStyle = g;
+      x.fillRect(0, 0, 64, 64);
+      return new THREE.CanvasTexture(c);
+    }
+
+    function glowTexture(hue) {
+      const c = document.createElement('canvas');
+      c.width = c.height = 256;
+      const x = c.getContext('2d');
+      const g = x.createRadialGradient(128, 128, 0, 128, 128, 128);
+      g.addColorStop(0, `hsla(${hue}, 45%, 62%, 0.55)`);
+      g.addColorStop(0.5, `hsla(${hue}, 45%, 55%, 0.14)`);
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      x.fillStyle = g;
+      x.fillRect(0, 0, 256, 256);
+      return new THREE.CanvasTexture(c);
+    }
+
+    const DOT = dotTexture();
+    const N = 460;
+
+    // Fibonacci lattice directions
+    const dirs = [];
+    const golden = Math.PI * (3 - Math.sqrt(5));
+    for (let i = 0; i < N; i++) {
+      const y = 1 - (2 * (i + 0.5)) / N;
+      const r = Math.sqrt(1 - y * y);
+      const a = i * golden;
+      dirs.push(new THREE.Vector3(r * Math.cos(a), y, r * Math.sin(a)));
+    }
+    const hashes = dirs.map((_, i) => {
+      const h = Math.sin(i * 12.9898 + 78.233) * 43758.5453;
+      return h - Math.floor(h);
+    });
+
+    function initOrb(canvas) {
+      const wrap = canvas.parentElement;
+      const hue = Number(canvas.dataset.hue || 206);
+      const mode = canvas.dataset.mode || 'researcher';
+
+      let W = Math.max(200, wrap.clientWidth);
+      let H = Math.max(200, wrap.clientHeight);
+
+      let renderer;
+      try {
+        renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      } catch {
+        wrap.remove();
+        return;
+      }
+      renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+      renderer.setSize(W, H, false);
+      renderer.setClearColor(0x000000, 0);
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(42, W / H, 0.1, 30);
+      camera.position.set(0, 0.12, 3.1);
+      camera.lookAt(0, 0, 0);
+
+      const base = new THREE.Color().setHSL(hue / 360, 0.42, 0.62);
+      const dim = new THREE.Color().setHSL(hue / 360, 0.3, 0.3);
+      const hot = new THREE.Color().setHSL(hue / 360, 0.55, 0.78);
+
+      const geo = new THREE.BufferGeometry();
+      const pos = new Float32Array(N * 3);
+      const col = new Float32Array(N * 3);
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+
+      const mat = new THREE.PointsMaterial({
+        size: 0.045, map: DOT, transparent: true, opacity: 0.95,
+        depthWrite: false, blending: THREE.AdditiveBlending, vertexColors: true,
+      });
+      const points = new THREE.Points(geo, mat);
+      scene.add(points);
+
+      const glow = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: glowTexture(hue), transparent: true, opacity: 0.5,
+        depthWrite: false, blending: THREE.AdditiveBlending,
+      }));
+      glow.scale.set(3.4, 3.4, 1);
+      scene.add(glow);
+
+      // coordinator extras: rings + satellites
+      let rings = [], sats = null;
+      if (mode === 'coordinator') {
+        const ringTilts = [
+          { rx: 1.15, ry: 0.3, r: 1.45 },
+          { rx: -0.6, ry: 0.9, r: 1.62 },
+          { rx: 0.35, ry: -0.7, r: 1.3 },
+        ];
+        rings = ringTilts.map((t) => {
+          const pts = [];
+          for (let i = 0; i <= 96; i++) {
+            const a = (i / 96) * Math.PI * 2;
+            pts.push(new THREE.Vector3(Math.cos(a) * t.r, 0, Math.sin(a) * t.r));
+          }
+          const line = new THREE.LineLoop(
+            new THREE.BufferGeometry().setFromPoints(pts),
+            new THREE.LineBasicMaterial({ color: base, transparent: true, opacity: 0.22 })
+          );
+          line.rotation.set(t.rx, t.ry, 0);
+          scene.add(line);
+          return { line, ...t };
+        });
+        const sg = new THREE.BufferGeometry();
+        const sp = new Float32Array(6 * 3);
+        sg.setAttribute('position', new THREE.BufferAttribute(sp, 3));
+        sats = new THREE.Points(sg, new THREE.PointsMaterial({
+          size: 0.09, map: DOT, transparent: true, color: hot,
+          depthWrite: false, blending: THREE.AdditiveBlending,
+        }));
+        scene.add(sats);
+      }
+
+      const R = mode === 'coordinator' ? 0.78 : 1.02;
+      const tmp = new THREE.Vector3();
+      const view = new THREE.Vector3();
+      const cTmp = new THREE.Color();
+
+      function frame(t) {
+        const yaw = t * (mode === 'coordinator' ? 0.22 : 0.16);
+        const tilt = 0.24 + 0.08 * Math.sin(t * 0.35);
+        points.rotation.set(tilt, yaw, 0);
+
+        const p = geo.attributes.position.array;
+        const c = geo.attributes.color.array;
+
+        let scale = 1;
+        if (mode === 'researcher') scale = 1 + 0.05 * Math.sin(t * 1.15);
+
+        for (let i = 0; i < N; i++) {
+          const d = dirs[i];
+          let r = R * scale;
+          let glowK = 0;
+          let px = d.x, py = d.y, pz = d.z;
+
+          if (mode === 'extracting' && hashes[i] < 0.14) {
+            r += 0.3 * Math.abs(Math.sin(t * 2.1 + hashes[i] * 20));
+            glowK = 0.8;
+          } else if (mode === 'outreach') {
+            r += 0.1 * Math.sin(3.2 * Math.acos(d.y) - t * 2.4);
+          } else if (mode === 'structuring') {
+            const q = 0.16;
+            const k = 0.5 + 0.5 * Math.sin(t * 0.9);
+            const qx = Math.round(d.x / q) * q, qy = Math.round(d.y / q) * q, qz = Math.round(d.z / q) * q;
+            tmp.set(d.x + (qx - d.x) * k, d.y + (qy - d.y) * k, d.z + (qz - d.z) * k).normalize();
+            px = tmp.x; py = tmp.y; pz = tmp.z;
+          } else if (mode === 'memoring' && hashes[i] < 0.2) {
+            const cyc = (t * 0.35 + hashes[i] * 7) % 1;
+            r *= 1 + (1 - cyc) * 0.9;
+            glowK = cyc > 0.7 ? 0.7 : 0;
+          }
+
+          p[i * 3] = px * r;
+          p[i * 3 + 1] = py * r;
+          p[i * 3 + 2] = pz * r;
+
+          // depth shade in view space
+          view.set(p[i * 3], p[i * 3 + 1], p[i * 3 + 2]).applyEuler(points.rotation);
+          const depth = Math.min(1, Math.max(0, (view.z + R) / (2 * R)));
+          cTmp.copy(dim).lerp(base, 0.25 + 0.75 * depth);
+
+          if (mode === 'searching') {
+            const sweep = Math.sin(t * 0.8) * 1.1;
+            if (Math.abs(d.y * R - sweep) < 0.16) cTmp.lerp(hot, 0.85);
+          } else if (mode === 'cleaning') {
+            const sweep = Math.sin(t * 0.7) * 1.3;
+            if (Math.abs(view.x - sweep) < 0.14) cTmp.lerp(hot, 0.8);
+          }
+          if (glowK > 0) cTmp.lerp(hot, glowK);
+
+          c[i * 3] = cTmp.r; c[i * 3 + 1] = cTmp.g; c[i * 3 + 2] = cTmp.b;
+        }
+        geo.attributes.position.needsUpdate = true;
+        geo.attributes.color.needsUpdate = true;
+
+        if (mode === 'coordinator' && sats) {
+          const sp = sats.geometry.attributes.position.array;
+          rings.forEach((ring, ri) => {
+            for (let s = 0; s < 2; s++) {
+              const a = t * (0.5 + ri * 0.14) + s * Math.PI + ri;
+              tmp.set(Math.cos(a) * ring.r, 0, Math.sin(a) * ring.r);
+              tmp.applyEuler(ring.line.rotation);
+              const idx = (ri * 2 + s) * 3;
+              sp[idx] = tmp.x; sp[idx + 1] = tmp.y; sp[idx + 2] = tmp.z;
+            }
+          });
+          sats.geometry.attributes.position.needsUpdate = true;
+        }
+
+        glow.material.opacity = 0.42 + 0.1 * Math.sin(t * 1.3);
+        renderer.render(scene, camera);
+      }
+
+      let raf = 0, running = false, visible = true;
+      const start = performance.now();
+      function loop() {
+        if (!running) return;
+        frame((performance.now() - start) / 1000);
+        raf = requestAnimationFrame(loop);
+      }
+      function startLoop() { if (!running && visible) { running = true; raf = requestAnimationFrame(loop); } }
+      function stopLoop() { running = false; cancelAnimationFrame(raf); }
+
+      if (reduced) {
+        frame(1.7);
+      } else {
+        new IntersectionObserver((es) => {
+          visible = es[0].isIntersecting;
+          if (visible) startLoop(); else stopLoop();
+        }, { rootMargin: '140px' }).observe(wrap);
+        startLoop();
+      }
+
+      new ResizeObserver(() => {
+        W = Math.max(200, wrap.clientWidth);
+        H = Math.max(200, wrap.clientHeight);
+        camera.aspect = W / H;
+        camera.updateProjectionMatrix();
+        renderer.setSize(W, H, false);
+        if (reduced) frame(1.7);
+      }).observe(wrap);
+    }
+
+    canvases.forEach(initOrb);
+  });
+</script>

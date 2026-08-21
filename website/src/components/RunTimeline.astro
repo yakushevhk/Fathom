@@ -1,0 +1,290 @@
+---
+// RunTimeline — "one run, end to end". Replaces the old Pipeline3D grid
+// with an explicit, readable timeline: a goal travels through seven
+// named stages, a pulse moves along the rail, per-stage metrics count
+// up, and a live log narrates each step. Pure DOM + tiny JS loop —
+// paused off-screen, static under prefers-reduced-motion.
+
+const stages = [
+  { k: 'landing.run.s1', met: '1', unit: 'goal' },
+  { k: 'landing.run.s2', met: '4', unit: 'tasks' },
+  { k: 'landing.run.s3', met: '48', unit: 'urls' },
+  { k: 'landing.run.s4', met: '31', unit: 'ok' },
+  { k: 'landing.run.s5', met: '1', unit: 'gate' },
+  { k: 'landing.run.s6', met: '31', unit: 'facts' },
+  { k: 'landing.run.s7', met: '3', unit: 'channels' },
+];
+
+const logs = [
+  'landing.run.log1', 'landing.run.log2', 'landing.run.log3', 'landing.run.log4',
+  'landing.run.log5', 'landing.run.log6', 'landing.run.log7',
+];
+---
+
+<div class="rt-wrap" data-rt>
+  <div class="rt-rail">
+    {
+      stages.map((s, i) => (
+        <div class="rt-node">
+          <div class="rt-dotrow">
+            {i > 0 && <span class="rt-line"></span>}
+            <span class="rt-dot" data-rt-dot={i}></span>
+            {i < stages.length - 1 && <span class="rt-line"></span>}
+          </div>
+          <span class="rt-label" data-i18n={s.k}>Stage</span>
+          <span class="rt-met">
+            <b data-rt-met={i}>0</b>
+            <i>{s.unit}</i>
+          </span>
+        </div>
+      ))
+    }
+  </div>
+
+  <div class="rt-log">
+    <div class="rt-log-bar">
+      <span class="rt-log-dot"></span>
+      <span class="rt-log-title">fathom · session log</span>
+      <span class="rt-log-status" data-rt-status>running</span>
+    </div>
+    <div class="rt-log-body" data-rt-log>
+      {
+        logs.map((l, i) => (
+          <div class="rt-log-line" data-rt-line={i}>
+            <span class="rt-log-t" data-rt-t={i}>00:00</span>
+            <span class="rt-log-txt" data-i18n={l}>log line</span>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</div>
+
+<style>
+  .rt-wrap { max-width: 1040px; margin: 0 auto; }
+
+  .rt-rail {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 8px 4px 0;
+  }
+  .rt-node {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .rt-dotrow {
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+  .rt-line {
+    flex: 1;
+    height: 1px;
+    background: var(--grey-300);
+    transition: background 0.4s;
+  }
+  .rt-node.done .rt-line { background: var(--grey-500); }
+  .rt-dot {
+    width: 13px; height: 13px; flex: none;
+    border-radius: 50%;
+    border: 2px solid var(--grey-400);
+    background: var(--bg-primary);
+    transition: all 0.35s var(--ease-out);
+  }
+  .rt-node.active .rt-dot {
+    border-color: var(--grey-900);
+    background: var(--grey-900);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--grey-900) 14%, transparent);
+  }
+  .rt-node.done .rt-dot {
+    border-color: var(--grey-900);
+    background: var(--grey-900);
+  }
+  .rt-label {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--grey-500);
+    text-align: center;
+    transition: color 0.3s;
+    white-space: nowrap;
+  }
+  .rt-node.active .rt-label,
+  .rt-node.done .rt-label { color: var(--grey-900); }
+  .rt-met {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--grey-500);
+    display: flex;
+    gap: 5px;
+    align-items: baseline;
+  }
+  .rt-met b { font-weight: 600; font-size: 15px; color: var(--grey-600); transition: color 0.3s; }
+  .rt-node.active .rt-met b { color: var(--grey-900); }
+  .rt-met i { font-style: normal; }
+
+  .rt-log {
+    margin-top: 34px;
+    background: #0d0d0d;
+    border: 1px solid #242424;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .rt-log-bar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 16px;
+    border-bottom: 1px solid #1d1d1d;
+  }
+  .rt-log-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #e8d49a;
+    animation: rtBlink 1.6s ease-in-out infinite;
+  }
+  @keyframes rtBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+  .rt-log-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #6f6f78;
+  }
+  .rt-log-status {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: #3f7a52;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .rt-log-body {
+    padding: 18px 20px 20px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 2.05;
+    min-height: 208px;
+  }
+  .rt-log-line {
+    display: flex;
+    gap: 14px;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: opacity 0.4s var(--ease-out), transform 0.4s var(--ease-out);
+  }
+  .rt-log-line.on { opacity: 1; transform: none; }
+  .rt-log-t { color: #55555e; flex: none; }
+  .rt-log-txt { color: #b8b8bf; }
+  .rt-log-line.on .rt-log-txt { color: #d9d9de; }
+
+  @media (max-width: 860px) {
+    .rt-rail { flex-direction: column; gap: 0; align-items: stretch; }
+    .rt-node { flex-direction: row; align-items: center; gap: 14px; padding: 9px 0; }
+    .rt-dotrow { width: auto; flex-direction: column; height: 44px; }
+    .rt-dotrow .rt-line { width: 1px; height: auto; flex: 1; }
+    .rt-label { white-space: normal; text-align: left; }
+    .rt-met { margin-left: auto; }
+    .rt-log-body { min-height: 0; }
+  }
+</style>
+
+<script>
+  const wrap = document.querySelector('[data-rt]');
+  if (wrap) {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const nodes = [...wrap.querySelectorAll('.rt-node')];
+    const mets = [...wrap.querySelectorAll('[data-rt-met]')];
+    const lines = [...wrap.querySelectorAll('.rt-log-line')];
+    const times = [...wrap.querySelectorAll('[data-rt-t]')];
+    const status = wrap.querySelector('[data-rt-status]');
+    const targets = mets.map((m) => parseInt(m.textContent, 10) || Number(m.closest('.rt-node')?.querySelector('.rt-met b')?.textContent) || 0);
+
+    const STAGE_MS = 1700;
+    const HOLD_MS = 3200;
+    let idx = 0;
+    let stageStart = 0;
+    let holding = false;
+    let timer = 0;
+    let running = false;
+
+    function fmt(sec) {
+      const s = Math.floor(sec);
+      return `00:${String(s).padStart(2, '0')}`;
+    }
+
+    function setStage(i) {
+      nodes.forEach((n, j) => {
+        n.classList.toggle('active', j === i);
+        n.classList.toggle('done', j < i);
+      });
+    }
+
+    function reveal(i, elapsed) {
+      lines[i]?.classList.add('on');
+      if (times[i]) times[i].textContent = fmt(elapsed);
+    }
+
+    function reset() {
+      idx = 0;
+      holding = false;
+      nodes.forEach((n) => n.classList.remove('active', 'done'));
+      lines.forEach((l) => l.classList.remove('on'));
+      mets.forEach((m) => { m.textContent = '0'; });
+      if (status) { status.textContent = 'running'; status.style.color = '#3f7a52'; }
+      stageStart = performance.now();
+      setStage(0);
+    }
+
+    function tick() {
+      if (!running) return;
+      const now = performance.now();
+
+      if (holding) {
+        if (now - stageStart > HOLD_MS) reset();
+        timer = requestAnimationFrame(tick);
+        return;
+      }
+
+      const local = Math.min(1, (now - stageStart) / STAGE_MS);
+      const target = targets[idx] || 0;
+      if (mets[idx]) mets[idx].textContent = String(Math.round(target * local));
+
+      if (local >= 1) {
+        reveal(idx, ((idx + 1) * STAGE_MS) / 1000);
+        idx += 1;
+        stageStart = now;
+        if (idx >= nodes.length) {
+          holding = true;
+          if (status) { status.textContent = 'complete'; status.style.color = '#8fb6cc'; }
+          nodes.forEach((n) => { n.classList.add('done'); n.classList.remove('active'); });
+        } else {
+          setStage(idx);
+        }
+      }
+      timer = requestAnimationFrame(tick);
+    }
+
+    function start() { if (!running) { running = true; stageStart = performance.now(); setStage(idx); timer = requestAnimationFrame(tick); } }
+    function stop() { running = false; cancelAnimationFrame(timer); }
+
+    if (reduced) {
+      nodes.forEach((n) => n.classList.add('done'));
+      mets.forEach((m, i) => { m.textContent = String(targets[i] || 0); });
+      lines.forEach((l, i) => { l.classList.add('on'); if (times[i]) times[i].textContent = fmt(((i + 1) * STAGE_MS) / 1000); });
+      if (status) { status.textContent = 'complete'; status.style.color = '#8fb6cc'; }
+    } else {
+      // metric targets come from the server-rendered final values
+      mets.forEach((m) => { m.dataset.final = m.textContent; m.textContent = '0'; });
+      targets.forEach((_, i) => { targets[i] = parseInt(mets[i].dataset.final, 10) || 0; });
+      new IntersectionObserver((es) => {
+        if (es[0].isIntersecting) start(); else stop();
+      }, { rootMargin: '100px' }).observe(wrap);
+    }
+  }
+</script>

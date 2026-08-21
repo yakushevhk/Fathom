@@ -2,8 +2,9 @@
 import Layout from '../layouts/Layout.astro';
 import JsonLd from '../components/JsonLd.astro';
 import AgentCanvas from '../components/AgentCanvas.astro';
-import Pipeline3D from '../components/Pipeline3D.astro';
+import RunTimeline from '../components/RunTimeline.astro';
 import OceanField from '../components/OceanField.astro';
+import OrbScene from '../components/OrbScene.astro';
 
 const agents = [
   { name: 'Coordinator', mode: 'coordinator', hue: 206, href: '/profiles' },
@@ -100,7 +101,8 @@ const metrics = [
       </div>
 
       <div class="hero__visual">
-        <div class="machine">
+        <OrbScene hue={206} mode="coordinator" height={420} label="coordinator · 7 roles · one runtime" />
+        <div class="machine hero-term">
           <div class="machine__bar">
             <div class="machine__dots"><i></i><i></i><i></i></div>
             <span class="machine__url">fathom run</span>
@@ -316,16 +318,16 @@ const metrics = [
     </div>
   </section>
 
-  <!-- ============ LIVE PIPELINE DEMO ============ -->
+  <!-- ============ ONE RUN, END TO END ============ -->
   <section class="section pipeline-sec">
     <div class="container">
       <div class="sec-head center reveal">
-        <p class="eyebrow"><span class="eyebrow__num">07</span><span data-i18n="landing.pipe_label">One live pipeline</span></p>
-        <h2 class="h2-sec" data-i18n-html data-i18n="landing.pipe_title">A live run you can <em class="it">inspect</em></h2>
-        <p class="copy-lg mx-auto" data-i18n="landing.pipe_sub">Watch a goal travel through the engine: workers plan, use tools, write findings to memory, pause for approvals, and deliver a report or action with notifications.</p>
+        <p class="eyebrow"><span class="eyebrow__num">07</span><span data-i18n="landing.pipe_label">One live run</span></p>
+        <h2 class="h2-sec" data-i18n-html data-i18n="landing.pipe_title">Watch one run, <em class="it">end to end</em></h2>
+        <p class="copy-lg mx-auto" data-i18n="landing.pipe_sub">The same honest path every time: goal → plan → tools → verification → approval → memory → delivery. Every stage is visible, every number is real.</p>
       </div>
 
-      <Pipeline3D />
+      <RunTimeline />
     </div>
   </section>
 
@@ -499,12 +501,23 @@ const metrics = [
   }
 
   /* ---- Machine (terminal demo) ---- */
-  .hero__visual { position: relative; }
+  .hero__visual { position: relative; padding-bottom: 66px; }
   .hero__visual::before {
     content: ""; position: absolute; inset: 8% -6% -6% -6%;
     background: radial-gradient(60% 60% at 50% 40%, rgba(143, 182, 204, 0.28), transparent 75%);
     filter: blur(42px); pointer-events: none;
   }
+  .hero__visual :global(.orb-panel) { position: relative; z-index: 1; }
+
+  .hero-term {
+    position: absolute; z-index: 2;
+    left: -18px; bottom: 0;
+    width: min(430px, 92%);
+    font-size: 12px;
+  }
+  .hero-term .machine__body { padding: 16px; font-size: 12px; }
+  .hero-term .agent-lines { padding-left: 14px; }
+
   .machine {
     position: relative;
     border: 1px solid var(--grey-300); border-radius: var(--radius-lg);
@@ -738,6 +751,8 @@ const metrics = [
   }
   @media (max-width: 960px) {
     .hero__grid { grid-template-columns: 1fr; gap: 48px; }
+    .hero__visual { padding-bottom: 0; }
+    .hero-term { position: relative; left: 0; bottom: auto; width: 100%; margin-top: 20px; }
     .feat { grid-template-columns: 1fr; gap: 36px; }
   }
   @media (max-width: 720px) {

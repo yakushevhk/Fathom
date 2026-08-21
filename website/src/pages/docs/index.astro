@@ -232,7 +232,7 @@ backend  = <span class="code-string">"hybrid"</span></code></pre>
 
   .step-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 20px;
   }
 
@@ -241,6 +241,7 @@ backend  = <span class="code-string">"hybrid"</span></code></pre>
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: 28px;
+    min-width: 0;
     transition: all var(--duration) var(--ease-out);
   }
 

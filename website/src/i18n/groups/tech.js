@@ -2,7 +2,7 @@ export default {
   apiPage: {
     hero: {
       badge: { en: 'API & Server', ru: 'API и сервер' },
-      title: { en: 'Run it headless.<br />Watch it live.', ru: 'Запуск без интерфейса.<br />Наблюдение вживую.' },
+      title: { en: 'Run it headless.<br />Watch it <em class="it">live.</em>', ru: 'Запуск без интерфейса.<br />Наблюдение <em class="it">вживую.</em>' },
       sub: { en: 'An Axum HTTP server with auth, rate limiting, SSE event streaming, mid-run steering and a built-in web dashboard — all in one binary.', ru: 'HTTP-сервер на Axum с аутентификацией, rate limiting, SSE-стримингом событий, управлением в процессе выполнения и встроенным веб-дашбордом — всё в одном бинарнике.' },
     },
     auth: {
@@ -47,9 +47,9 @@ export default {
   memoryPage: {
     hero: {
       badge: { en: 'Memory & Graph', ru: 'Память и граф' },
-      title: { en: 'Knowledge that<br />outlives the session.', ru: 'Знания, которые<br />переживают сессию.' },
+      title: { en: 'Worker memory<br />beyond <em class="it">a single run.</em>', ru: 'Память воркера —<br /><em class="it">дальше</em> одной сессии.' },
       sub: {
-        en: 'A durable semantic knowledge base in SQLite, influenced by mem0 / Memora patterns: hybrid search, append-only versioning, secret detection and an entity graph alongside the facts.',
+        en: 'A self-hosted semantic store in SQLite, influenced by mem0 / Memora patterns: scoped hybrid search, append-only versioning, secret detection and an entity graph that workers can use across runs.',
         ru: 'Долговечная семантическая база знаний на SQLite по мотивам подходов mem0 / Memora: гибридный поиск, append-only-версионирование, детекция секретов и граф сущностей рядом с фактами.',
       },
     },
@@ -63,7 +63,7 @@ export default {
     },
     principles: {
       badge: { en: 'Principles', ru: 'Принципы' },
-      title: { en: 'Five ideas from mem0 / Memora', ru: 'Пять идей из mem0 / Memora' },
+      title: { en: 'Patterns for <em class="it">durable</em> worker context', ru: 'Паттерны <em class="it">долговечного</em> контекста' },
       append: { title: { en: 'Append-only', ru: 'Append-only' }, d: { en: 'Facts are never overwritten. A new version is a new record plus a <code class="ic">supersedes</code> edge; contradictions stay visible through <code class="ic">contradicts</code>. Read modes: active, latest, full_history.', ru: 'Факты никогда не перезаписываются. Новая версия — новая запись плюс ребро <code class="ic">supersedes</code>; противоречия видны через <code class="ic">contradicts</code>. Режимы чтения: active, latest, full_history.' } },
       absorb: { title: { en: 'Absorb, not create', ru: 'Absorb, а не create' }, d: { en: 'Secrets rejected → batch consolidation → hash dedup → cosine candidates → classification into one of 5 outcomes: duplicate · supersede · contradict · related · new. With dry_run.', ru: 'Секреты отклоняются → консолидация батча → дедуп по hash → cosine-кандидаты → классификация в один из 5 исходов: duplicate · supersede · contradict · related · new. Есть dry_run.' } },
       hybrid: { title: { en: 'Hybrid search', ru: 'Гибридный поиск' }, d: { en: '<code class="ic">score = 0.7·cosine + 0.3·BM25</code>, then a linear freshness decay — 1% per day. ~2ms median latency in benchmarks.', ru: '<code class="ic">score = 0.7·cosine + 0.3·BM25</code>, затем линейный распад свежести — 1% в день. Медианная задержка ~2 мс в бенчмарках.' } },
@@ -112,7 +112,7 @@ export default {
   opsPage: {
     hero: {
       badge: { en: 'Operations', ru: 'Операции' },
-      title: { en: 'Built to run unattended.', ru: 'Создан для автономной работы.' },
+      title: { en: 'Built to run <em class="it">unattended.</em>', ru: 'Создан для <em class="it">автономной работы.</em>' },
       sub: { en: 'Beyond the agent loop: durability, isolation, safety and observability — everything needed to leave the fleet running overnight.', ru: 'Помимо агентного цикла: долговечность, изоляция, безопасность и наблюдаемость — всё, чтобы оставить флот работать всю ночь.' },
     },
     cta: {
@@ -147,7 +147,7 @@ export default {
   mcpPage: {
     hero: {
       badge: { en: 'MCP', ru: 'MCP' },
-      title: { en: 'Both sides of the protocol.', ru: 'Обе стороны протокола.' },
+      title: { en: 'Both sides of <em class="it">the protocol.</em>', ru: 'Обе стороны <em class="it">протокола.</em>' },
       sub: { en: 'Fathom speaks Model Context Protocol in both directions: workers consume tools from external MCP servers and expose their own tools to external MCP clients.', ru: 'Fathom говорит на Model Context Protocol в обе стороны: воркеры используют инструменты внешних MCP-серверов и отдают собственные инструменты внешним MCP-клиентам.' },
     },
     client: {
@@ -171,7 +171,7 @@ export default {
   tuiPage: {
     hero: {
       badge: { en: 'Terminal UI', ru: 'Терминальный интерфейс' },
-      title: { en: 'Your terminal,<br />your research lab.', ru: 'Ваш терминал —<br />ваша исследовательская лаборатория.' },
+      title: { en: 'Your terminal,<br />your <em class="it">research lab.</em>', ru: 'Ваш терминал —<br />ваша <em class="it">исследовательская лаборатория.</em>' },
       sub: { en: 'An interactive ratatui-based interface with live event streaming, session replay, memory panel, jobs panel and mid-run steering — all without leaving the terminal.', ru: 'Интерактивный интерфейс на ratatui с живым стримингом событий, реплеем сессий, панелью памяти, панелью задач и управлением mid-run — не покидая терминал.' },
     },
     features: {
@@ -206,7 +206,7 @@ export default {
   profilesPage: {
     hero: {
       badge: { en: 'Profiles & Personas', ru: 'Профили и персоны' },
-      title: { en: 'One agent,<br />many personas.', ru: 'Один агент —<br />много персон.' },
+      title: { en: 'One agent,<br /><em class="it">many personas.</em>', ru: 'Один агент —<br /><em class="it">много персон.</em>' },
       sub: { en: 'Ready-made profiles tune the entire agent fleet for a class of tasks — model, temperature, depth, tool sets and behavioral prompts, all in one TOML overlay.', ru: 'Готовые профили настраивают весь флот агентов под класс задач — модель, температуру, глубину, наборы инструментов и поведенческие промпты в одном TOML-оверлее.' },
     },
     builtin: {
@@ -239,7 +239,7 @@ export default {
   researchPage: {
     hero: {
       badge: { en: 'Research workflow', ru: 'Исследовательский сценарий' },
-      title: { en: 'From a goal to<br />reviewable findings.', ru: 'От цели к<br />проверяемым результатам.' },
+      title: { en: 'From a goal to<br /><em class="it">reviewable findings.</em>', ru: 'От цели к<br /><em class="it">проверяемым результатам.</em>' },
       sub: { en: 'A worker can plan source work, use configured search and parsing tools, preserve evidence in memory, and deliver a reviewable result. Contact discovery is one example, not the runtime identity.', ru: 'Воркер может спланировать работу с источниками, использовать настроенные инструменты поиска и разбора, сохранить свидетельства в памяти и выдать проверяемый результат. Поиск контактов — лишь один пример, а не идентичность рантайма.' },
     },
     pipeline: {
@@ -320,7 +320,7 @@ export default {
   dashboardPage: {
     hero: {
       badge: { en: 'Web Dashboard', ru: 'Веб-дашборд' },
-      title: { en: 'One screen,<br />full visibility.', ru: 'Один экран —<br />полная видимость.' },
+      title: { en: 'One screen,<br /><em class="it">full visibility.</em>', ru: 'Один экран —<br /><em class="it">полная видимость.</em>' },
       sub: { en: 'A single-file HTML dashboard embedded in the server binary — sessions, agent tree, memory stats, background jobs and a live SSE event feed. No external dependencies.', ru: 'Одностраничный HTML-дашборд, встроенный в серверный бинарник — сессии, дерево агентов, статистика памяти, фоновые задачи и живая лента SSE-событий. Без внешних зависимостей.' },
     },
     panels: {
@@ -354,7 +354,7 @@ export default {
     },
   },
   securityPage: {
-    hero: { badge: { en: 'Security', ru: 'Безопасность' }, title: { en: 'Defense in depth.', ru: 'Защита в глубину.' }, sub: { en: 'Every agent action passes through multiple safety layers — from network-level SSRF guards to prompt injection detection, secret scanning, and append-only verification receipts.', ru: 'Каждое действие агента проходит через несколько уровней защиты — от SSRF-защиты до детекции prompt-инъекций и сканирования секретов.' } },
+    hero: { badge: { en: 'Security', ru: 'Безопасность' }, title: { en: 'Defense <em class="it">in depth.</em>', ru: 'Защита <em class="it">в глубину.</em>' }, sub: { en: 'Every agent action passes through multiple safety layers — from network-level SSRF guards to prompt injection detection, secret scanning, and append-only verification receipts.', ru: 'Каждое действие агента проходит через несколько уровней защиты — от SSRF-защиты до детекции prompt-инъекций и сканирования секретов.' } },
     layers: {
       badge: { en: 'Security Layers', ru: 'Уровни защиты' }, title: { en: '12 layers of protection', ru: '12 слоёв защиты' }, sub: { en: 'Every outbound request, tool call, and memory write is validated before execution. Failures are never silent.', ru: 'Каждый исходящий запрос, вызов инструмента и запись в память проверяются. Отказы никогда не бывают тихими.' },
       ssrf: { name: { en: 'SSRF Guard', ru: 'SSRF-защита' }, desc: { en: 'Blocks loopback, RFC1918, link-local, CGNAT, and metadata IPs. Per-hop redirect validation, max 5 hops.', ru: 'Блокирует loopback, RFC1918, link-local, CGNAT и метаданные IP. Проверка редиректов, макс. 5 хопов.' } },
@@ -375,7 +375,7 @@ export default {
     cta: { title: { en: 'Security is not optional', ru: 'Безопасность — не опция' }, sub: { en: 'The runtime provides layered controls; enable governance and optional services according to your deployment policy.', ru: 'Рантайм предоставляет многоуровневые контроли; включайте governance и опциональные сервисы согласно политике деплоя.' }, docs: { en: 'Read the docs', ru: 'Читать документацию' }, arch: { en: 'View architecture', ru: 'Смотреть архитектуру' } },
   },
   intPage: {
-    hero: { badge: { en: 'Integrations', ru: 'Интеграции' }, title: { en: 'Connect to your stack.', ru: 'Подключите свой стек.' }, sub: { en: 'CRM, MCP, browser automation, notifications, search backends, and export formats.', ru: 'CRM, MCP, браузерная автоматизация, уведомления, поисковые бэкенды и форматы экспорта.' } },
+    hero: { badge: { en: 'Integrations', ru: 'Интеграции' }, title: { en: 'Connect to <em class="it">your stack.</em>', ru: 'Подключите <em class="it">свой стек.</em>' }, sub: { en: 'CRM, MCP, browser automation, notifications, search backends, and export formats.', ru: 'CRM, MCP, браузерная автоматизация, уведомления, поисковые бэкенды и форматы экспорта.' } },
     categories: { badge: { en: 'Integration Categories', ru: 'Категории интеграций' }, title: { en: 'One runtime, many integrations', ru: 'Один рантайм, множество интеграций' }, sub: { en: 'Built-in tools and optional MCP integrations share one governed runtime.', ru: 'Встроенные инструменты и опциональные MCP-интеграции работают в одном управляемом рантайме.' }, crm: { name: { en: 'CRM Sync', ru: 'CRM-синхронизация' }, desc: { en: 'amoCRM, Bitrix24, HubSpot. Automatic dedup by crm_id, 4 parallel syncs.', ru: 'amoCRM, Bitrix24, HubSpot. Авто-дедупликация, 4 параллельные синхронизации.' } }, mcp_client: { name: { en: 'MCP Client', ru: 'MCP-клиент' }, desc: { en: 'stdio/HTTP transports, OAuth 2.0, dynamic tool discovery. External tools become native.', ru: 'stdio/HTTP транспорты, OAuth 2.0, динамическое обнаружение. Внешние инструменты — нативные.' } }, mcp_server: { name: { en: 'MCP Server', ru: 'MCP-сервер' }, desc: { en: 'mcp-serve exposes 50+ built-in tools over MCP. Schema-only or executor mode.', ru: 'mcp-serve раскрывает 50+ инструментов через MCP. Режим схемы или исполнителя.' } }, browser: { name: { en: 'Browser Automation', ru: 'Браузерная автоматизация' }, desc: { en: 'CDP with 5 tools: navigate, screenshot, click, type, extract. Drive real Chrome.', ru: 'CDP с 5 инструментами: navigate, screenshot, click, type, extract. Управляйте Chrome.' } }, notifications: { name: { en: 'Notifications', ru: 'Уведомления' }, desc: { en: 'Webhook, Email (SMTP), Telegram Bot API. Fan-out to all channels simultaneously.', ru: 'Webhook, Email (SMTP), Telegram Bot API. Fan-out во все каналы.' } }, lsp: { name: { en: 'LSP Integration', ru: 'LSP-интеграция' }, desc: { en: 'document_symbols, goto_definition, find_references, hover, workspace_symbols.', ru: 'document_symbols, goto_definition, find_references, hover, workspace_symbols.' } }, search: { name: { en: 'Search Backends', ru: 'Поисковые бэкенды' }, desc: { en: '7 backends: Linkup, Exa, Tavily, Serper, Brave, Fathom.uz, DuckDuckGo.', ru: '7 бэкендов: Linkup, Exa, Tavily, Serper, Brave, Fathom.uz, DuckDuckGo.' } }, export: { name: { en: 'Export Formats', ru: 'Форматы экспорта' }, desc: { en: 'CSV, vCard 3.0, JSON, XLSX, PDF, HTML, DOCX. Streamable, any structured output.', ru: 'CSV, vCard 3.0, JSON, XLSX, PDF, HTML, DOCX. Потоковый, любой структурированный вывод.' } } },
     config: { badge: { en: 'Configuration', ru: 'Конфигурация' }, title: { en: 'One file, all integrations', ru: 'Один файл, все интеграции' }, sub: { en: 'Every integration is configured in ~/.fathom/config.toml. CRM, MCP, notifications, search.', ru: 'Все интеграции настраиваются в ~/.fathom/config.toml. CRM, MCP, уведомления, поиск.' }, docs: { en: 'Full documentation', ru: 'Полная документация' } },
     cta: { title: { en: 'Plug in and go', ru: 'Подключи и работай' }, sub: { en: 'Configure only the services you need, then start a worker with the corresponding capabilities.', ru: 'Настройте только нужные сервисы и запустите воркера с соответствующими возможностями.' }, docs: { en: 'Read the docs', ru: 'Читать документацию' }, tools: { en: 'Browse tools', ru: 'Смотреть инструменты' } },

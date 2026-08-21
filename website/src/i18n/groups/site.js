@@ -82,7 +82,7 @@ export default {
   pricing: {
     hero: {
       badge: { en: 'Self-hosting', ru: 'Self-hosting' },
-      title: { en: 'Run it where you work.', ru: 'Запускайте там, где работаете.' },
+      title: { en: 'Run it <em class="it">where you work.</em>', ru: 'Запускайте там, <em class="it">где работаете.</em>' },
       sub: { en: 'Fathom is source-available and self-hosted — choose a local machine, your own server or an isolated environment, then budget for infrastructure and the services you connect.', ru: 'Fathom доступен по исходному коду и предназначен для self-hosting — выберите локальную машину, собственный сервер или изолированную среду и учтите инфраструктуру и подключаемые сервисы.' },
     },
     requestAccess: { en: 'View source', ru: 'Открыть исходный код' },

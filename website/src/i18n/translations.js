@@ -1131,17 +1131,17 @@ export const translations = {
         }
       },
       "pipe_label": {
-        "en": "One live pipeline",
-        "ru": "Живой пайплайн"
+        "en": "One live run",
+        "ru": "Один живой запуск"
       },
       "pipe_title": {
-        "en": "A live run you can <em class=\"it\">inspect</em>",
-        "ru": "Запуск, который можно <em class=\"it\">разглядеть</em>"
+        "en": "Watch one run, <em class=\"it\">end to end</em>",
+        "ru": "Запуск от начала <em class=\"it\">до конца</em>"
       },
       "pipe_sub": {
-        "en": "Watch a goal travel through the engine: workers plan, use tools, write findings to memory, pause for approvals, and deliver a report or action with notifications.",
-        "ru": "Смотрите, как цель проходит через движок: воркеры планируют, используют инструменты, пишут находки в память, останавливаются на одобрении и доставляют отчёт или действие с уведомлениями."
-      },
+      "en": "The same honest path every time: goal → plan → tools → verification → approval → memory → delivery. Every stage is visible, every number is real.",
+      "ru": "Каждый раз один и тот же честный путь: цель → план → инструменты → верификация → одобрение → память → доставка. Каждый этап виден, каждая цифра настоящая."
+    },
       "cta_title": {
         "en": "Put a worker on it <em class=\"it\">today</em>",
         "ru": "Посадите воркера на задачу <em class=\"it\">уже сегодня</em>"
@@ -1219,6 +1219,22 @@ export const translations = {
     "ocean_mono": {
       "en": "1 fathom = 1.829 m · depth of work",
       "ru": "1 fathom = 1,829 м · глубина работы"
+    },
+    "run": {
+      "s1": { "en": "Goal", "ru": "Цель" },
+      "s2": { "en": "Plan", "ru": "План" },
+      "s3": { "en": "Research", "ru": "Ресёрч" },
+      "s4": { "en": "Verify", "ru": "Верификация" },
+      "s5": { "en": "Approve", "ru": "Одобрение" },
+      "s6": { "en": "Memory", "ru": "Память" },
+      "s7": { "en": "Deliver", "ru": "Доставка" },
+      "log1": { "en": "goal registered → \"Find 50 fintech CTOs in the EU\"", "ru": "цель принята → «Найти 50 CTO финтеха в ЕС»" },
+      "log2": { "en": "plan: 4 sub-tasks · token budget 240k", "ru": "план: 4 подзадачи · бюджет 240k токенов" },
+      "log3": { "en": "research: 7 backends → 48 urls → 120 pages parsed", "ru": "ресёрч: 7 бэкендов → 48 url → 120 страниц разобрано" },
+      "log4": { "en": "verify: 38 emails → 31 passed five gates", "ru": "верификация: 38 email → 31 прошёл пять шлюзов" },
+      "log5": { "en": "save_contacts paused → operator approved ✓", "ru": "save_contacts на паузе → оператор одобрил ✓" },
+      "log6": { "en": "memory: 31 facts absorbed · entity graph +9", "ru": "память: 31 факт усвоен · граф сущностей +9" },
+      "log7": { "en": "delivered: report + CRM sync · webhook · telegram", "ru": "доставлено: отчёт + синк CRM · webhook · telegram" }
     }
     },
   "lang_aria": {

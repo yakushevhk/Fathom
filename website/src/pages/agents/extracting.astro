@@ -1,11 +1,10 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import AgentCanvas from '../../components/AgentCanvas.astro';
+import AgentPage from '../../components/AgentPage.astro';
 
-const fleet = [
+const crew = [
   { name: 'Researcher', href: '/agents/researcher' },
   { name: 'Searching', href: '/agents/searching' },
-  { name: 'Extracting', href: '/agents/extracting', active: true },
+  { name: 'Extracting', href: '/agents/extracting', current: true },
   { name: 'Structuring', href: '/agents/structuring' },
   { name: 'Cleaning', href: '/agents/cleaning' },
   { name: 'Memoring', href: '/agents/memoring' },
@@ -13,12 +12,12 @@ const fleet = [
 ];
 
 const caps = [
-  { tool: 'extract_contacts', t: 'Everything in one pass', d: 'Emails, phones, social profiles, persons and companies from text, HTML or a URL — each item carrying a confidence score (0.0–1.0) and a source label: text, mailto link, tel link, html:alt.' },
-  { tool: 'deobfuscation', t: 'Anti-scraping defeated', d: '"name [at] domain [dot] com", (at), {at}, HTML entities &#64; / &#46; and even word forms like "bob at acme dot com" are reconstructed into real addresses — tagged 0.70 confidence vs 0.95 for plain ones.' },
-  { tool: 'parse_corporate_site', t: 'Company sites, decoded', d: 'Fetches the homepage, locates contact / team / about pages by path hints, reads Schema.org JSON-LD (Organization name, description, size) and harvests team member cards.' },
-  { tool: 'parse_html', t: 'Fast structured parsing', d: 'CSS-selector extraction in five modes — texts, html, attr, links, tables. The same parser turns pages, exports, and documents into structured inputs for downstream workers.' },
-  { tool: 'extract_json', t: 'Structured API inputs', d: 'Dot-path queries over JSON: data.items.0.name for deep access, results[*].email to iterate every element. REST responses and exports become inputs for any worker.' },
-  { tool: 'analyze_image', t: 'Contacts inside pictures', d: 'A vision model OCRs screenshots, banners and rendered images; img alt/title attributes are scanned too. Emails hidden from plain-text scrapers still surface.' },
+  { tool: 'extract_contacts', name: 'Everything in one pass', d: 'Emails, phones, social profiles, persons and companies from text, HTML or a URL — each item carrying a confidence score (0.0–1.0) and a source label: text, mailto link, tel link, html:alt.' },
+  { tool: 'deobfuscation', name: 'Anti-scraping defeated', d: '"name [at] domain [dot] com", (at), {at}, HTML entities &#64; / &#46; and even word forms like "bob at acme dot com" are reconstructed into real addresses — tagged 0.70 confidence vs 0.95 for plain ones.' },
+  { tool: 'parse_corporate_site', name: 'Company sites, decoded', d: 'Fetches the homepage, locates contact / team / about pages by path hints, reads Schema.org JSON-LD (Organization name, description, size) and harvests team member cards.' },
+  { tool: 'parse_html', name: 'Fast structured parsing', d: 'CSS-selector extraction in five modes — texts, html, attr, links, tables. The same parser turns pages, exports, and documents into structured inputs for downstream workers.' },
+  { tool: 'extract_json', name: 'Structured API inputs', d: 'Dot-path queries over JSON: data.items.0.name for deep access, results[*].email to iterate every element. REST responses and exports become inputs for any worker.' },
+  { tool: 'analyze_image', name: 'Contacts inside pictures', d: 'A vision model OCRs screenshots, banners and rendered images; img alt/title attributes are scanned too. Emails hidden from plain-text scrapers still surface.' },
 ];
 
 const flow = [
@@ -34,9 +33,9 @@ const hood = [
   ['Email confidence ladder', 'mailto link 0.98 · plain text 0.95 · raw HTML/JSON-LD 0.90 · obfuscated 0.70'],
   ['Email plausibility', 'local part ≤ 64 chars, total ≤ 254, asset TLDs rejected (png, jpg, svg, woff2, mp4, pdf…)'],
   ['Obfuscation forms', '[at] (at) {at} &#64; and [dot] (dot) {.} &#46; · word forms need whitespace, so prose like "look at this" never matches'],
-  ['Phone candidates', '7–15 digits · dates, IPs and round figures rejected · E.164 via libphonenumber · regions tried RU → US → DE → GB (US first for parenthesized area codes)'],
+  ['Phone candidates', '7–15 digits · dates, IPs and round figures rejected · E.164 via libphonenumber · regions tried RU → US → DE → GB'],
   ['Phone confidence', '+-prefixed valid 0.9 · local valid 0.8 · tel: link 0.98 · invalid parse 0.35'],
-  ['Social profiles', 'LinkedIn, X/Twitter, Instagram, Telegram, Facebook · reserved paths filtered (share, explore, login…) · @handles read a ±60-char context window: keyword → 0.8, bare handle → 0.4'],
+  ['Social profiles', 'LinkedIn, X/Twitter, Instagram, Telegram, Facebook · reserved paths filtered · @handles read a ±60-char context window'],
   ['LLM entity pass', '12,000-char input cap · temperature 0.0 · strict JSON with code fences tolerated · prompt-injection defense on untrusted web text'],
   ['Team detection', '14 card selectors (.team-member, [class*="person-card"], [class*="team"] li…) · names ≤ 6 words and ≥ 70% letters'],
   ['Limits', 'parse_html caps each call at 500 items; selectors and output shapes stay explicit for predictable handoffs'],
@@ -45,89 +44,37 @@ const hood = [
 const tools = ['extract_contacts', 'parse_html', 'extract_json', 'parse_corporate_site', 'analyze_image'];
 ---
 
-<Layout title="Extraction Worker — Fathom" description="Extraction worker that turns web pages, documents, and browser output into structured data for autonomous workflows.">
-  <main class="ag-page">
-    <div class="container">
-      <div class="ag-hero">
-        <p class="eyebrow" data-i18n="agents.extracting.hero.eyebrow">AGENT 02 / 07</p>
-        <h1 class="h2-sec" data-i18n="agents.extracting.hero.title">Extracting</h1>
-        <p class="copy-lg mx-auto" data-i18n="agents.extracting.hero.sub">The extraction worker turns pages, documents, and browser output into structured data — contacts when you need them, or clean inputs for any downstream workflow.</p>
-        <div class="hero-canvas">
-          <AgentCanvas agents={[{ name: 'Extracting', mode: 'extracting', hue: 25 }]} />
-        </div>
-      </div>
-
-      <!-- Cross-nav -->
-      <div class="chips nav-chips">
-        {fleet.map((a) => (
-          <a href={a.href} class:list={['chip', a.active && 'chip--active']}>{a.name}</a>
-        ))}
-      </div>
-
-      <!-- What it does -->
-      <div class="sec-head">
-        <p class="eyebrow" data-i18n="agents.extracting.what.eyebrow">What it does</p>
-        <h2 class="h3-sec" data-i18n="agents.extracting.what.title">Raw sources in, structured outputs out</h2>
-      </div>
-      <div class="api-grid">
-        {caps.map((c) => (
-          <div class="api-card">
-            <div class="api-name">{c.tool}</div>
-            <h3>{c.t}</h3>
-            <p>{c.d}</p>
-          </div>
-        ))}
-      </div>
-
-      <!-- How it works -->
-      <div class="sec-head">
-        <p class="eyebrow" data-i18n="agents.extracting.how.eyebrow">How it works</p>
-        <h2 class="h3-sec" data-i18n="agents.extracting.how.title">Six passes over every source</h2>
-      </div>
-      <div class="flow">
-        {flow.map((s, i) => (
-          <div class="flow-step">
-            <span class="flow-num">{i + 1}</span>
-            <h3 data-i18n={`agents.extracting.flow.${i}.t`}>{s.t}</h3>
-            <p>{s.d}</p>
-          </div>
-        ))}
-      </div>
-
-      <!-- Under the hood -->
-      <div class="sec-head">
-        <p class="eyebrow" data-i18n="agents.extracting.hood.eyebrow">Under the hood</p>
-        <h2 class="h3-sec" data-i18n="agents.extracting.hood.title">Regexes, thresholds and confidence</h2>
-      </div>
-      <div class="mini-table-wrap">
-        <table class="mini-table">
-          <thead><tr><th data-i18n="agents.extracting.hood.keyCol">Mechanism</th><th data-i18n="agents.extracting.hood.detailCol">Detail</th></tr></thead>
-          <tbody>
-            {hood.map((r) => (
-              <tr><td>{r[0]}</td><td>{r[1]}</td></tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Tools -->
-      <div class="sec-head">
-        <p class="eyebrow" data-i18n="agents.extracting.tools.eyebrow">Tools</p>
-        <h2 class="h3-sec" data-i18n="agents.extracting.tools.title">The extraction toolbox</h2>
-      </div>
-      <div class="chips">
-        {tools.map((t) => <span class="chip chip--mono">{t}</span>)}
-      </div>
-
-      <!-- Feeds downstream workers -->
-      <div class="feat">
-        <div class="feat-copy">
-          <p class="eyebrow" data-i18n="agents.extracting.feeds.eyebrow">Feeds downstream workers</p>
-          <h2 class="h3-sec" data-i18n="agents.extracting.feeds.title">Structured output is reusable fuel</h2>
-          <p class="copy-lg">Every extracted value leaves with a confidence score and source, so downstream workers know what to trust and what to verify. The runtime autosaves results as soon as the extraction tool returns — nothing evaporates when the session ends. Other workers can validate, write, or act on the same structured output.</p>
-        </div>
-        <div class="code-card">
-          <pre><code>{`extract_contacts(url: "https://acme.io/team")
+<AgentPage
+  pageTitle="Extraction Worker — Fathom"
+  pageDesc="Turns pages, documents, and browser output into structured data with confidence scores and provenance."
+  k="agents.extracting"
+  index="03"
+  title="Extracting"
+  sub="The extraction worker turns pages, documents, and browser output into structured data — contacts when you need them, or clean inputs for any downstream workflow."
+  mode="extracting"
+  hue={25}
+  crew={crew}
+  caps={caps}
+  capsTitle="Raw sources in, structured outputs out"
+  flow={flow}
+  flowTitle="Six passes over every source"
+  hood={hood}
+  hoodTitle="Regexes, thresholds and confidence"
+  tools={tools}
+  toolsTitle="The extraction toolbox"
+  ctaTitle="From raw sources to worker-ready outputs"
+  prev={{ href: '/agents/searching', label: '← Searching' }}
+  middle={{ href: '/features/auto-outreach', label: 'Auto outreach' }}
+  next={{ href: '/agents/structuring', label: 'Structuring →' }}
+>
+  <div slot="posttools" class="feat">
+    <div class="feat-copy">
+      <p class="feat-eyebrow">Feeds downstream workers</p>
+      <h2>Structured output is reusable fuel</h2>
+      <p class="feat-body">Every extracted value leaves with a confidence score and source, so downstream workers know what to trust and what to verify. The runtime autosaves results as soon as the extraction tool returns — nothing evaporates when the session ends. Other workers can validate, write, or act on the same structured output.</p>
+    </div>
+    <div class="code-card">
+      <pre><code>{`extract_contacts(url: "https://acme.io/team")
 → emails:  ann@acme.io        0.98  mailto link
 → phones:  +74957107580       0.90  RU · E.164
 → socials: linkedin.com/in/ann  0.9
@@ -138,81 +85,17 @@ const tools = ['extract_contacts', 'parse_html', 'extract_json', 'parse_corporat
 # → Structuring dedups into one record
 # → Cleaning verifies quality and confidence
 # → Operations prepares the next governed action`}</code></pre>
-        </div>
-      </div>
-
-      <div class="cta-strip">
-        <h2 data-i18n="agents.extracting.cta.title">From raw sources to worker-ready outputs</h2>
-        <div class="more-links">
-          <a href="/agents/searching" class="btn btn-secondary">← Searching</a>
-          <a href="/agents/structuring" class="btn btn-secondary">Structuring →</a>
-          <a href="/features/auto-outreach" class="btn btn-primary" data-i18n="agents.extracting.cta.auto">Auto outreach</a>
-        </div>
-      </div>
     </div>
-  </main>
-</Layout>
+  </div>
+</AgentPage>
 
 <style>
-  .ag-page { padding: 70px 0 90px; }
-  .eyebrow { font-family: var(--font-mono); font-size: 13px; letter-spacing: .16px; text-transform: uppercase; color: var(--grey-600); }
-  .h3-sec { font-size: clamp(20px, 2.4vw, 34px); font-weight: 500; letter-spacing: -0.02em; margin: 12px 0 0; }
-  .copy-lg { color: var(--grey-700); font-size: 17px; line-height: 1.55; max-width: 640px; }
-  .mx-auto { margin-left: auto; margin-right: auto; }
-  .ic { font-family: var(--font-mono); font-size: .85em; background: var(--grey-100); border: 1px solid var(--grey-200); padding: 1px 6px; border-radius: 5px; }
-
-  .ag-hero { max-width: 820px; margin: 0 auto 32px; text-align: center; padding: 0 24px; }
-  .ag-hero h1 { font-size: clamp(34px, 5vw, 68px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.02; margin-top: 12px; }
-  .ag-hero .copy-lg { margin-top: 20px; }
-
-  .hero-canvas { max-width: 320px; margin: 34px auto 0; background: #0a0a0a; border: 1px solid #222; border-radius: var(--radius-xl); padding: 26px 20px; }
-  .hero-canvas :global(.agent-grid) { max-width: none; }
-
-  .nav-chips { justify-content: center; margin: 8px 0 8px; }
-
-  .sec-head { max-width: 720px; margin: 60px auto 28px; text-align: center; }
-
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chip { font-family: var(--font-mono); font-size: 13px; background: var(--bg-card); border: 1px solid var(--grey-200); padding: 8px 14px; border-radius: 100px; color: var(--grey-700); text-decoration: none; transition: border-color .2s, color .2s; }
-  a.chip:hover { border-color: var(--grey-400); color: var(--grey-900); }
-  .chip--active { background: var(--grey-900); border-color: var(--grey-900); color: #fff; }
-  .chip--mono { cursor: default; }
-
-  .api-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  .api-card { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 24px; display: flex; flex-direction: column; gap: 8px; transition: box-shadow .25s, transform .25s var(--ease-out), border-color .25s; }
-  .api-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--grey-400); }
-  .api-card .api-name { font-family: var(--font-mono); font-weight: 600; font-size: 13px; color: var(--grey-600); }
-  .api-card h3 { font-size: 16px; font-weight: 600; }
-  .api-card p { color: var(--grey-600); font-size: 13.5px; line-height: 1.55; }
-  @media (max-width: 1000px) { .api-grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 680px) { .api-grid { grid-template-columns: 1fr; } }
-
-  .flow { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
-  .flow-step { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 20px; }
-  .flow-num { display: inline-flex; width: 26px; height: 26px; align-items: center; justify-content: center; border-radius: 50%; background: var(--grey-900); color: #fff; font-family: var(--font-mono); font-size: 12px; margin-bottom: 12px; }
-  .flow-step h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
-  .flow-step p { font-size: 12.5px; color: var(--grey-600); line-height: 1.5; }
-  @media (max-width: 1100px) { .flow { grid-template-columns: repeat(3, 1fr); } }
-  @media (max-width: 680px) { .flow { grid-template-columns: repeat(2, 1fr); } }
-
-  .mini-table-wrap { border: 1px solid var(--grey-200); border-radius: 8px; overflow: auto; background: var(--bg-card); }
-  .mini-table { width: 100%; border-collapse: collapse; font-size: 13px; font-family: var(--font-mono); }
-  .mini-table th { font-size: 10px; text-transform: uppercase; letter-spacing: .6px; color: var(--grey-600); text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--grey-200); background: var(--grey-50); }
-  .mini-table td { padding: 10px 14px; border-bottom: 1px solid var(--grey-100); color: var(--grey-800); vertical-align: top; }
-  .mini-table td:first-child { white-space: nowrap; color: var(--grey-600); }
-  .mini-table tr:last-child td { border-bottom: none; }
-
-  .feat { display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: center; padding: 48px 0; }
-  @media (max-width: 900px) { .feat { grid-template-columns: 1fr; gap: 28px; } }
-
-  .code-card { border: 1px solid var(--grey-200); border-radius: var(--radius-md); background: var(--bg-dark); overflow: hidden; box-shadow: var(--shadow-lg); }
+  .feat { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 48px; align-items: center; margin-top: 72px; }
+  .feat-eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--grey-600); margin-bottom: 14px; }
+  .feat-copy h2 { font-size: clamp(24px, 3vw, 38px); font-weight: 500; letter-spacing: -0.025em; line-height: 1.1; margin-bottom: 16px; }
+  .feat-body { color: var(--grey-600); font-size: 15px; line-height: 1.6; max-width: 56ch; }
+  .code-card { border: 1px solid #242424; border-radius: var(--radius-lg); background: #0d0d0d; overflow: hidden; box-shadow: var(--shadow-lg); }
   .code-card pre { margin: 0; padding: 22px; overflow-x: auto; }
-  .code-card code { font-family: var(--font-mono); font-size: 13px; line-height: 1.7; color: var(--grey-100); white-space: pre; }
-
-  .cta-strip { margin-top: 64px; background: var(--bg-dark); border-radius: var(--radius-xl); padding: 48px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
-  .cta-strip h2 { color: #fff; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; }
-  .cta-strip .btn-primary { background: var(--bg-card); color: var(--grey-900); }
-  .cta-strip .btn-secondary { border-color: rgba(255,255,255,.25); color: rgba(255,255,255,.85); }
-  .cta-strip .btn-secondary:hover { border-color: rgba(255,255,255,.5); color: #fff; }
-  .more-links { display: flex; gap: 10px; flex-wrap: wrap; }
+  .code-card code { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.85; color: #c9c9cf; white-space: pre; }
+  @media (max-width: 900px) { .feat { grid-template-columns: 1fr; gap: 28px; } }
 </style>

@@ -1,6 +1,5 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import AgentCanvas from '../../components/AgentCanvas.astro';
+import AgentPage from '../../components/AgentPage.astro';
 
 const crew = [
   { name: 'Researcher', href: '/agents/researcher', current: true },
@@ -13,12 +12,12 @@ const crew = [
 ];
 
 const capabilities = [
-  { n: 'The agent loop', d: 'LLM → tools → repeat, up to 50 iterations per agent — with true token streaming: text deltas arrive live, tool calls are assembled from stream fragments, and a broken stream falls back to a plain completion instead of failing.' },
-  { n: 'Mission workflow, codified', d: 'A worker can compose a fixed arc: discover context → gather and inspect sources → verify key details → persist structured outputs. Research is one use case; the same loop supports code, operations, and knowledge work.' },
-  { n: 'Hierarchical fan-out', d: 'spawn_agent grows a tree of sub-agents up to max_depth, with explicit context handoff and inherited token budgets. background mode detaches a child and delivers its result later as a notice — the parent keeps working.' },
-  { n: 'Cite or it did not happen', d: 'A source-quality hierarchy ranks academic above official above news above blogs above forums. Every finding records its URL; sources.md dedupes citations across the whole fleet.' },
-  { n: 'Multi-format intake', d: 'web_fetch and web_crawl for pages, web_feed for RSS / Atom / sitemaps, analyze_image for screenshots and documents, pdf_extract for filings, code_symbols + repo_map for codebases.' },
-  { n: 'Untrusted by design', d: 'Fetched pages are framed as untrusted data and scanned for prompt-injection patterns before entering context; the SSRF guard blocks internal IPs on every fetch and every redirect hop.' },
+  { name: 'The agent loop', d: 'LLM → tools → repeat, up to 50 iterations per agent — with true token streaming: text deltas arrive live, tool calls are assembled from stream fragments, and a broken stream falls back to a plain completion instead of failing.' },
+  { name: 'Mission workflow, codified', d: 'A worker can compose a fixed arc: discover context → gather and inspect sources → verify key details → persist structured outputs. Research is one use case; the same loop supports code, operations, and knowledge work.' },
+  { name: 'Hierarchical fan-out', d: 'spawn_agent grows a tree of sub-agents up to max_depth, with explicit context handoff and inherited token budgets. Background mode detaches a child and delivers its result later as a notice — the parent keeps working.' },
+  { name: 'Cite or it did not happen', d: 'A source-quality hierarchy ranks academic above official above news above blogs above forums. Every finding records its URL; sources.md dedupes citations across the whole fleet.' },
+  { name: 'Multi-format intake', d: 'web_fetch and web_crawl for pages, web_feed for RSS / Atom / sitemaps, analyze_image for screenshots and documents, pdf_extract for filings, code_symbols + repo_map for codebases.' },
+  { name: 'Untrusted by design', d: 'Fetched pages are framed as untrusted data and scanned for prompt-injection patterns before entering context; the SSRF guard blocks internal IPs on every fetch and every redirect hop.' },
 ];
 
 const flow = [
@@ -51,177 +50,51 @@ const tools = [
 ];
 ---
 
-<Layout title="Research & Analysis Worker — Fathom" description="A reusable worker for source-aware analysis, code inspection, and durable handoffs across autonomous workflows.">
-  <main class="ag-page">
-    <div class="container">
-      <!-- Hero -->
-      <div class="ag-hero">
-        <p class="eyebrow" data-i18n="agents.researcher.hero.eyebrow">AGENT 01 / 07</p>
-        <h1 class="h2-sec" data-i18n="agents.researcher.hero.title">Researcher</h1>
-        <p class="copy-lg mx-auto" data-i18n="agents.researcher.hero.sub">A general-purpose worker for the fleet. It gathers context, inspects sources and code, and returns cited findings that any downstream task can use; web research is one mission among many.</p>
-        <div class="hero-canvas">
-          <AgentCanvas agents={[{ name: 'Researcher', mode: 'researcher', hue: 206 }]} />
-        </div>
-      </div>
-
-      <!-- Cross-nav -->
-      <div class="chips chips-nav">
-        {
-          crew.map((a) =>
-            a.current ? (
-              <span class="chip chip--on">{a.name}</span>
-            ) : (
-              <a class="chip" href={a.href}>{a.name}</a>
-            )
-          )
-        }
-      </div>
-
-      <!-- What it does -->
-      <div class="sec-head">
-        <p class="eyebrow" data-i18n="agents.researcher.what.eyebrow">What it does</p>
-        <h2 class="h3-sec" data-i18n="agents.researcher.what.title">One loop, built to gather truth</h2>
-      </div>
-      <div class="api-grid">
-        {capabilities.map((c, i) => (
-          <div class="api-card">
-            <div class="api-name" data-i18n={`agents.researcher.cap.${i}.n`}>{c.n}</div>
-            <p data-i18n={`agents.researcher.cap.${i}.d`}>{c.d}</p>
-          </div>
-        ))}
-      </div>
-
-      <!-- How it works -->
-      <div class="sec-head">
-        <p class="eyebrow" data-i18n="agents.researcher.how.eyebrow">How it works</p>
-        <h2 class="h3-sec" data-i18n="agents.researcher.how.title">From mission to durable findings</h2>
-      </div>
-      <div class="flow">
-        {flow.map((s, i) => (
-          <div class="flow-step">
-            <span class="flow-num">{i + 1}</span>
-            <h3 data-i18n={`agents.researcher.flow.${i}.t`}>{s.t}</h3>
-            <p data-i18n={`agents.researcher.flow.${i}.d`}>{s.d}</p>
-          </div>
-        ))}
-      </div>
-
-      <!-- Under the hood -->
-      <div class="sec-head">
-        <p class="eyebrow" data-i18n="agents.researcher.hood.eyebrow">Under the hood</p>
-        <h2 class="h3-sec" data-i18n="agents.researcher.hood.title">The runtime underneath</h2>
-      </div>
-      <div class="mini-table-wrap">
-        <table class="mini-table">
-          <thead><tr><th data-i18n="agents.researcher.hood.keyCol">Key</th><th data-i18n="agents.researcher.hood.detailCol">Detail</th></tr></thead>
-          <tbody>
-            {hood.map((r, i) => (
-              <tr>
-                <td data-i18n={`agents.researcher.hood.${i}.k`}>{r[0]}</td>
-                <td data-i18n={`agents.researcher.hood.${i}.d`}>{r[1]}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Tools -->
-      <div class="sec-head">
-        <p class="eyebrow" data-i18n="agents.researcher.tools.eyebrow">Tools</p>
-        <h2 class="h3-sec" data-i18n="agents.researcher.tools.title">What the Researcher can call</h2>
-      </div>
-      <div class="chips">
-        {tools.map((t) => (
-          <span class="chip chip--tool">{t}</span>
-        ))}
-      </div>
-
-      <!-- Feeds downstream workers -->
-      <div class="feat">
-        <div class="feat-copy">
-          <p class="eyebrow" data-i18n="agents.researcher.feeds.eyebrow">Feeds downstream workers</p>
-          <h2 class="h3-sec" data-i18n="agents.researcher.feeds.title">Cited findings become reusable context</h2>
-          <p class="copy-lg" data-i18n="agents.researcher.feeds.body">Everything the Researcher gathers is reusable context: cited facts, source URLs, code references, and structured outputs with provenance. Findings persist to memory so an outreach, coding, or operations worker can act on the same evidence without starting from zero.</p>
-        </div>
-        <div class="code-card">
-          <pre><code>{`finding #7   person: Jane Doe — CTO, Acme
+<AgentPage
+  pageTitle="Research & Analysis Worker — Fathom"
+  pageDesc="A reusable worker for source-aware analysis, code inspection, and durable handoffs across autonomous workflows."
+  k="agents.researcher"
+  index="01"
+  title="Researcher"
+  sub="A general-purpose worker for the fleet. It gathers context, inspects sources and code, and returns cited findings that any downstream task can use; web research is one mission among many."
+  mode="researcher"
+  hue={180}
+  crew={crew}
+  caps={capabilities}
+  capsTitle="One loop, built to gather truth"
+  flow={flow}
+  flowTitle="From mission to durable findings"
+  hood={hood}
+  tools={tools}
+  toolsTitle="What the Researcher can call"
+  ctaTitle="Grounded context in. Durable work out."
+  prev={{ href: '/agents/outreach', label: '← Outreach' }}
+  middle={{ href: '/features/auto-outreach', label: 'Auto outreach →' }}
+  next={{ href: '/agents/searching', label: 'Searching →' }}
+>
+  <div slot="posttools" class="feat">
+    <div class="feat-copy">
+      <p class="feat-eyebrow">Feeds downstream workers</p>
+      <h2>Cited findings become reusable context</h2>
+      <p class="feat-body">Everything the Researcher gathers is reusable context: cited facts, source URLs, code references, and structured outputs with provenance. Findings persist to memory so an outreach, coding, or operations worker can act on the same evidence without starting from zero.</p>
+    </div>
+    <div class="code-card">
+      <pre><code>{`finding #7   person: Jane Doe — CTO, Acme
 email        jane@acme.com  [verified: MX + SMTP 250]
 sources      acme.com/team · news: "Acme closes Series B"
 signal       hiring 6 platform engineers (posted Aug 3)
 status       saved to contacts → CRM (dedup by crm_id)`}</code></pre>
-        </div>
-      </div>
-
-      <!-- CTA -->
-      <div class="cta-strip">
-        <h2 data-i18n="agents.researcher.cta.title">Grounded context in. Durable work out.</h2>
-        <div class="cta-links">
-          <a href="/agents/outreach" class="btn btn-secondary" data-i18n="agents.researcher.cta.prev">&larr; Outreach</a>
-          <a href="/features/auto-outreach" class="btn btn-primary" data-i18n="agents.researcher.cta.auto">Auto outreach →</a>
-          <a href="/agents/searching" class="btn btn-secondary" data-i18n="agents.researcher.cta.next">Searching &rarr;</a>
-        </div>
-      </div>
     </div>
-  </main>
-</Layout>
+  </div>
+</AgentPage>
 
 <style>
-  .ag-page { padding: 70px 0 90px; }
-  .eyebrow { font-family: var(--font-mono); font-size: 13px; letter-spacing: .16px; text-transform: uppercase; color: var(--grey-600); }
-  .h3-sec { font-size: clamp(20px, 2.4vw, 34px); font-weight: 500; letter-spacing: -0.02em; margin: 12px 0 0; }
-  .ic { font-family: var(--font-mono); font-size: .85em; background: var(--grey-100); border: 1px solid var(--grey-200); padding: 1px 6px; border-radius: 5px; }
-  .copy-lg { color: var(--grey-700); font-size: 17px; line-height: 1.55; max-width: 640px; }
-  .mx-auto { margin-left: auto; margin-right: auto; }
-
-  .ag-hero { max-width: 820px; margin: 0 auto 40px; text-align: center; padding: 0 24px; }
-  .ag-hero h1 { font-size: clamp(34px, 5vw, 68px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.02; margin-top: 12px; }
-  .ag-hero .copy-lg { margin-top: 20px; }
-
-  /* dark canvas panel (both themes) */
-  .hero-canvas { background: #0a0a0a; border: 1px solid #222; border-radius: var(--radius-xl); padding: 26px 20px; max-width: 320px; margin: 34px auto 0; }
-  .hero-canvas :global(.agent-grid) { max-width: none; }
-
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chips-nav { justify-content: center; margin: 0 auto 8px; max-width: 860px; }
-  .chip { font-family: var(--font-mono); font-size: 12.5px; color: var(--grey-700); background: var(--bg-card); border: 1px solid var(--grey-300); border-radius: var(--radius-full); padding: 7px 14px; transition: border-color .2s, color .2s; }
-  a.chip:hover { border-color: var(--grey-500); color: var(--grey-900); }
-  .chip--on { background: var(--grey-900); border-color: var(--grey-900); color: #fff; }
-  .chip--tool { color: var(--grey-800); cursor: default; }
-
-  .sec-head { max-width: 720px; margin: 60px auto 28px; text-align: center; }
-
-  .api-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; background: var(--grey-300); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--grey-300); }
-  .api-card { background: var(--bg-card); padding: 24px; display: flex; flex-direction: column; gap: 8px; }
-  .api-card .api-name { font-family: var(--font-mono); font-weight: 600; font-size: 14px; }
-  .api-card p { color: var(--grey-600); font-size: 14px; line-height: 1.55; }
-  @media (max-width: 800px) { .api-grid { grid-template-columns: 1fr; } }
-
-  .flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-  .flow-step { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 20px; }
-  .flow-num { display: inline-flex; width: 26px; height: 26px; align-items: center; justify-content: center; border-radius: 50%; background: var(--grey-900); color: #fff; font-family: var(--font-mono); font-size: 12px; margin-bottom: 12px; }
-  .flow-step h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
-  .flow-step p { font-size: 13px; color: var(--grey-600); line-height: 1.55; }
-  @media (max-width: 1000px) { .flow { grid-template-columns: repeat(2, 1fr); } }
-
-  .mini-table-wrap { border: 1px solid var(--grey-200); border-radius: 8px; overflow: auto; background: var(--bg-card); }
-  .mini-table { width: 100%; border-collapse: collapse; font-size: 13px; font-family: var(--font-mono); }
-  .mini-table th { font-size: 10px; text-transform: uppercase; letter-spacing: .6px; color: var(--grey-600); text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--grey-200); background: var(--grey-50); }
-  .mini-table td { padding: 10px 14px; border-bottom: 1px solid var(--grey-100); color: var(--grey-800); vertical-align: top; }
-  .mini-table td:first-child { white-space: nowrap; color: var(--grey-900); font-weight: 600; }
-  .mini-table tr:last-child td { border-bottom: none; }
-
-  .feat { display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: center; padding: 56px 0 0; }
-  @media (max-width: 900px) { .feat { grid-template-columns: 1fr; gap: 28px; } }
-  .feat .h3-sec { margin-bottom: 16px; }
-
-  .code-card { border: 1px solid var(--grey-200); border-radius: var(--radius-md); background: var(--bg-dark); overflow: hidden; box-shadow: var(--shadow-lg); }
+  .feat { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 48px; align-items: center; margin-top: 72px; }
+  .feat-eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--grey-600); margin-bottom: 14px; }
+  .feat-copy h2 { font-size: clamp(24px, 3vw, 38px); font-weight: 500; letter-spacing: -0.025em; line-height: 1.1; margin-bottom: 16px; }
+  .feat-body { color: var(--grey-600); font-size: 15px; line-height: 1.6; max-width: 56ch; }
+  .code-card { border: 1px solid #242424; border-radius: var(--radius-lg); background: #0d0d0d; overflow: hidden; box-shadow: var(--shadow-lg); }
   .code-card pre { margin: 0; padding: 22px; overflow-x: auto; }
-  .code-card code { font-family: var(--font-mono); font-size: 13px; line-height: 1.8; color: var(--grey-100); white-space: pre; }
-
-  .cta-strip { margin-top: 64px; background: var(--bg-dark); border-radius: var(--radius-xl); padding: 48px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
-  .cta-strip h2 { color: #fff; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; }
-  .cta-links { display: flex; gap: 10px; flex-wrap: wrap; }
-  .cta-strip .btn-primary { background: var(--bg-card); color: var(--grey-900); }
-  .cta-strip .btn-secondary { border-color: rgba(255,255,255,.25); color: rgba(255,255,255,.85); }
-  .cta-strip .btn-secondary:hover { border-color: rgba(255,255,255,.5); color: #fff; }
+  .code-card code { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.85; color: #c9c9cf; white-space: pre; }
+  @media (max-width: 900px) { .feat { grid-template-columns: 1fr; gap: 28px; } }
 </style>

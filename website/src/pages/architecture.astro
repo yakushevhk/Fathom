@@ -1,273 +1,174 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import '../styles/global.css';
+
+const crates = {
+  core: { label: 'core', desc: 'config · bootstrap · errors' },
+  mid: [
+    { label: 'llm', desc: 'provider abstraction · streaming' },
+    { label: 'agent', desc: 'loop · fan-out · goal mode' },
+    { label: 'tools', desc: '51 built-in + browser + computer' },
+  ],
+  base: [
+    { label: 'mcp', desc: 'client + server' },
+    { label: 'persistence', desc: 'SQLite WAL' },
+    { label: 'server', desc: 'HTTP · SSE' },
+    { label: 'tui', desc: 'terminal UI' },
+    { label: 'memory', desc: 'semantic store' },
+  ],
+};
+
+const modules = [
+  { t: 'Multi-Agent Orchestration', d: 'A coordinator agent decomposes complex research tasks into parallel sub-tasks. Specialized researcher agents run concurrently, each exploring a different data source. A writer agent synthesizes findings into a unified, structured report.', tag: 'Coordinator → Researcher × N → Writer' },
+  { t: 'Context Management', d: 'Two-phase compaction keeps context windows clean: micro-deduplication removes redundant tool outputs, then LLM-powered summarization compresses long histories. An anti-thrashing cooldown prevents rapid token oscillation between turns.', tag: 'Micro dedup → LLM summarize → Cooldown' },
+  { t: 'Safety & Security', d: 'Built-in SSRF guards block internal network access. Prompt injection detection neutralizes adversarial inputs. Destructive command blocking prevents accidental data loss. Doom loop detection halts runaway agents.', tag: 'SSRF · Injection · Destructive · Doom loop' },
+  { t: 'Persistent State', d: 'SQLite with WAL mode provides crash-safe persistence. All contacts, messages, and research artifacts survive restarts. TOCTOU-safe contact deduplication ensures no duplicates even under concurrent writes.', tag: 'SQLite WAL · Crash recovery · TOCTOU-safe' },
+  { t: 'Extensibility', d: 'MCP (Model Context Protocol) lets you plug in external tools and data sources. Lifecycle hooks let you intercept agent actions. Custom search backends swap in your proprietary knowledge bases.', tag: 'MCP · Hooks · Custom backends' },
+  { t: 'Observability', d: 'Prometheus-compatible metrics expose latency, token usage, and success rates. Structured JSON logging captures every agent action. SSE event streaming gives real-time visibility into running tasks.', tag: 'Prometheus · Structured logs · SSE' },
+  { t: 'Isolated Worker Processes', d: 'Every agent runs as its own OS process, not a thread. Workers talk over Unix sockets, are kill-on-drop safe, and a crash-resume path re-attaches to unfinished sub-tasks after a stall — so a failed run recovers instead of restarting from zero.', tag: 'OS processes · Unix IPC · crash resume' },
+  { t: 'Tool Batching', d: 'The executor automatically partitions tool calls into parallel-safe and sequential groups. File tools detect path overlaps to prevent write conflicts. CPU-heavy tools run on dedicated threads while I/O tools fan out across the async runtime.', tag: 'Auto-partition · Path overlap · Async I/O' },
+  { t: 'Fail-Closed Capability', d: 'Context window resolution tracks evidence quality: Confirmed (verified from API), Asserted (from config), Unknown. Budget allocation fails closed — if the model\'s true window cannot be proven, a conservative default is used instead of risking overflow.', tag: 'Confirmed · Asserted · Unknown · Fail-closed' },
+  { t: 'Durable Improvement Backlog', d: 'Workers can record improvement candidates in a durable ledger. Re-triggering an issue raises its recurrence count; an optional LLM pass can semantically deduplicate reformulated ideas.', tag: 'Durable ledger · Recurrence count · Optional dedup' },
+  { t: 'Reflection & Pattern Register', d: 'After every run, the coordinator reflects on what worked and what didn\'t. Patterns are recorded in a durable register and injected into future sessions. Lead-gen runs use count-based reflection to check quota progress and plan gap-filling rounds.', tag: 'Post-run reflection · Gap-filling · Durable register' },
+  { t: 'Goal Mode', d: 'An LLM judge evaluates partial results against the original goal, decides whether more data is needed, and launches additional rounds (replan_rounds, default 1). Agents do not stop until the goal is satisfied or the budget is exhausted.', tag: 'LLM judge · replan_rounds · Budget-aware' },
+  { t: 'Prompt Caching', d: 'Three prompt tiers — stable (system + tools), context (session history), volatile (latest turn) — are assembled so that stable prefixes reuse cached KV blocks across turns, cutting TTFT and cost on long sessions.', tag: 'Stable · Context · Volatile · KV reuse' },
+  { t: 'Coordination Runtime', d: 'The runtime connects agents through IrcBus, AgentRegistry and hub messaging. Operators can steer a run, park and revive agents, submit structured batch work, hand off sessions, and manage in-process async jobs or daemons.', tag: 'Hub · Steering · Park/revive · Jobs · Daemons' },
+];
+
+const stats = [
+  { v: '12', l: 'workspace crates' },
+  { v: '51+11', l: 'built-in + browser & computer tools' },
+  { v: '7', l: 'search backends' },
+  { v: '20', l: 'parallel agents max' },
+];
+
+const stack = [
+  'tokio', 'axum', 'ratatui', 'rusqlite (WAL)', 'tokio-postgres', 'scraper',
+  'quick-xml', 'tiktoken-rs', 'lopdf', 'phonenumber', 'lettre',
+  'reqwest-eventsource', 'schemars', 'uuid v7',
+];
 ---
 
 <Layout title="Architecture — Fathom Autonomous AI Workers" description="Fathom is a self-hosted Rust runtime for autonomous remote AI workers: coordination, tools, memory, governance, persistence, and HTTP/SSE interfaces in one workspace.">
 
-  <main>
-    <section class="hero section">
-      <div class="container text-center">
-        <div class="badge" data-i18n="arch.badge">Architecture</div>
-        <h1 class="hero-title" data-i18n="arch.hero_title">Engineered for Scale</h1>
-        <p class="hero-subtitle" data-i18n="arch.hero_subtitle">12 workspace crates, hierarchical coordination, durable runtime services</p>
-        <div class="hero-actions">
+  <main class="arch">
+    <!-- ===== Hero ===== -->
+    <section class="arch-hero">
+      <div class="container">
+        <p class="eyebrow" data-i18n="arch.badge">Architecture</p>
+        <h1 data-i18n-html data-i18n="arch.hero_title">The engine,<br /><em class="it">crate by crate.</em></h1>
+        <p class="arch-sub" data-i18n="arch.hero_subtitle">12 workspace crates, hierarchical coordination, durable runtime services — one self-hosted binary.</p>
+        <div class="arch-actions">
           <a href="/docs" class="btn btn-primary" data-i18n="arch.docs">Read the technical docs</a>
           <a href="#modules" class="btn btn-secondary" data-i18n="arch.explore">Explore modules</a>
         </div>
       </div>
     </section>
 
-    <section class="section section-diagram">
-      <div class="container text-center">
-        <div class="section-label" data-i18n="arch.overview_label">System Overview</div>
-        <h2 class="section-title" data-i18n="arch.title">12 crates, one runtime</h2>
-        <p class="section-subtitle mx-auto" data-i18n="arch.subtitle">Each layer is purpose-built. Together they form a self-hosted runtime for planning, delegation, tools, memory, governance, and operator interfaces.</p>
-
-        <div class="arch-diagram">
-          <div class="arch-row arch-row-top">
-            <div class="arch-box arch-core">
-              <span class="arch-box-label" data-i18n="arch.core_label">Core</span>
-              <span class="arch-box-desc" data-i18n="arch.core_desc">Config & bootstrap</span>
-            </div>
-          </div>
-
-          <div class="arch-connector-v"></div>
-
-          <div class="arch-row arch-row-mid">
-            <div class="arch-box arch-llm">
-              <span class="arch-box-label" data-i18n="arch.llm_label">LLM</span>
-              <span class="arch-box-desc" data-i18n="arch.llm_desc">Provider abstraction</span>
-            </div>
-            <div class="arch-box arch-agent">
-              <span class="arch-box-label" data-i18n="arch.agent_label">Agent</span>
-              <span class="arch-box-desc" data-i18n="arch.agent_desc">Agent orchestration</span>
-            </div>
-            <div class="arch-box arch-tools">
-              <span class="arch-box-label" data-i18n="arch.tools_label">Tools</span>
-              <span class="arch-box-desc" data-i18n="arch.tools_desc">51 always-registered tools + up to 5 CDP browser tools + up to 6 computer tools</span>
-            </div>
-          </div>
-
-          <div class="arch-connector-v"></div>
-
-          <div class="arch-row arch-row-bottom">
-            <div class="arch-box arch-mcp">
-              <span class="arch-box-label" data-i18n="arch.mcp_label">MCP</span>
-              <span class="arch-box-desc" data-i18n="arch.mcp_desc">Client and server integration</span>
-            </div>
-            <div class="arch-box arch-persistence">
-              <span class="arch-box-label" data-i18n="arch.pers_label">Persistence</span>
-              <span class="arch-box-desc" data-i18n="arch.pers_desc">SQLite WAL</span>
-            </div>
-            <div class="arch-box arch-server">
-              <span class="arch-box-label" data-i18n="arch.server_label">Server</span>
-              <span class="arch-box-desc" data-i18n="arch.server_desc">SSE event stream</span>
-            </div>
-            <div class="arch-box arch-tui">
-              <span class="arch-box-label" data-i18n="arch.tui_label">TUI</span>
-              <span class="arch-box-desc" data-i18n="arch.tui_desc">Terminal interface</span>
-            </div>
-            <div class="arch-box arch-memory">
-              <span class="arch-box-label" data-i18n="arch.memory_label">Memory</span>
-              <span class="arch-box-desc" data-i18n="arch.memory_desc">Semantic storage</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section section-modules" id="modules">
+    <!-- ===== Stats strip ===== -->
+    <section class="stats-strip">
       <div class="container">
-        <div class="text-center">
-          <div class="section-label" data-i18n="arch_mod.label">Deep Dive</div>
-          <h2 class="section-title" data-i18n="arch_mod.title">Runtime pillars</h2>
-        </div>
-
-        <div class="modules-grid">
-          <div class="card module-card">
-            <div class="module-header">
-              <div class="module-icon">🔀</div>
-              <h3 data-i18n="arch_mod.m1t">Multi-Agent Orchestration</h3>
-            </div>
-            <p data-i18n="arch_mod.m1d">A coordinator agent decomposes complex research tasks into parallel sub-tasks. Specialized researcher agents run concurrently, each exploring a different data source. A writer agent synthesizes findings into a unified, structured report.</p>
-            <div class="module-tag" data-i18n="arch_mod.m1tag">Coordinator → Researcher × N → Writer</div>
-          </div>
-
-          <div class="card module-card">
-            <div class="module-header">
-              <div class="module-icon">🧠</div>
-              <h3 data-i18n="arch_mod.m2t">Context Management</h3>
-            </div>
-            <p data-i18n="arch_mod.m2d">Two-phase compaction keeps context windows clean: micro-deduplication removes redundant tool outputs, then LLM-powered summarization compresses long histories. An anti-thrashing cooldown prevents rapid token oscillation between turns.</p>
-            <div class="module-tag" data-i18n="arch_mod.m2tag">Micro dedup → LLM summarize → Cooldown</div>
-          </div>
-
-          <div class="card module-card">
-            <div class="module-header">
-              <div class="module-icon">🛡️</div>
-              <h3 data-i18n="arch_mod.m3t">Safety & Security</h3>
-            </div>
-            <p data-i18n="arch_mod.m3d">Built-in SSRF guards block internal network access. Prompt injection detection neutralizes adversarial inputs. Destructive command blocking prevents accidental data loss. Doom loop detection halts runaway agents.</p>
-            <div class="module-tag" data-i18n="arch_mod.m3tag">SSRF · Injection · Destructive · Doom loop</div>
-          </div>
-
-          <div class="card module-card">
-            <div class="module-header">
-              <div class="module-icon">💾</div>
-              <h3 data-i18n="arch_mod.m4t">Persistent State</h3>
-            </div>
-            <p data-i18n="arch_mod.m4d">SQLite with WAL mode provides crash-safe persistence. All contacts, messages, and research artifacts survive restarts. TOCTOU-safe contact deduplication ensures no duplicates even under concurrent writes.</p>
-            <div class="module-tag" data-i18n="arch_mod.m4tag">SQLite WAL · Crash recovery · TOCTOU-safe</div>
-          </div>
-
-          <div class="card module-card">
-            <div class="module-header">
-              <div class="module-icon">🔌</div>
-              <h3 data-i18n="arch_mod.m5t">Extensibility</h3>
-            </div>
-            <p data-i18n="arch_mod.m5d">MCP (Model Context Protocol) lets you plug in external tools and data sources. Lifecycle hooks let you intercept agent actions. Custom search backends swap in your proprietary knowledge bases.</p>
-            <div class="module-tag" data-i18n="arch_mod.m5tag">MCP · Hooks · Custom backends</div>
-          </div>
-
-          <div class="card module-card">
-            <div class="module-header">
-              <div class="module-icon">📊</div>
-              <h3 data-i18n="arch_mod.m6t">Observability</h3>
-            </div>
-            <p data-i18n="arch_mod.m6d">Prometheus-compatible metrics expose latency, token usage, and success rates. Structured JSON logging captures every agent action. SSE event streaming gives real-time visibility into running tasks.</p>
-            <div class="module-tag" data-i18n="arch_mod.m6tag">Prometheus · Structured logs · SSE</div>
-          </div>
-
-          <div class="card module-card">
-            <div class="module-header">
-              <div class="module-icon">🔧</div>
-              <h3 data-i18n="arch_mod.m7t">Isolated Worker Processes</h3>
-            </div>
-            <p data-i18n="arch_mod.m7d">Every agent runs as its own OS process, not a thread. Workers talk over Unix sockets, are kill-on-drop safe, and a crash-resume path re-attaches to unfinished sub-tasks after a stall — so a failed run recovers instead of restarting from zero.</p>
-            <div class="module-tag" data-i18n="arch_mod.m7tag">OS processes · Unix IPC · crash resume</div>
-          </div>
-
-          <div class="card module-card">
-            <div class="module-header">
-              <div class="module-icon">⚡</div>
-              <h3 data-i18n="arch_mod.m8t">Tool Batching</h3>
-            </div>
-            <p data-i18n="arch_mod.m8d">The executor automatically partitions tool calls into parallel-safe and sequential groups. File tools detect path overlaps to prevent write conflicts. CPU-heavy tools run on dedicated threads while I/O tools fan out across the async runtime.</p>
-            <div class="module-tag" data-i18n="arch_mod.m8tag">Auto-partition · Path overlap · Async I/O</div>
-          </div>
-
-          <div class="card module-card">
-            <div class="module-header">
-              <div class="module-icon">🔒</div>
-              <h3 data-i18n="arch_mod.m9t">Fail-Closed Capability</h3>
-            </div>
-            <p data-i18n="arch_mod.m9d">Context window resolution tracks evidence quality: Confirmed (verified from API), Asserted (from config), Unknown. Budget allocation fails closed — if the model's true window cannot be proven, a conservative default is used instead of risking overflow.</p>
-            <div class="module-tag" data-i18n="arch_mod.m9tag">Confirmed · Asserted · Unknown · Fail-closed</div>
-          </div>
-
-          <div class="card module-card">
-            <div class="module-header">
-              <div class="module-icon">📝</div>
-              <h3 data-i18n="arch_mod.m10t">Durable Improvement Backlog</h3>
-            </div>
-            <p data-i18n="arch_mod.m10d">Workers can record improvement candidates in a durable ledger. Re-triggering an issue raises its recurrence count; an optional LLM pass can semantically deduplicate reformulated ideas.</p>
-            <div class="module-tag" data-i18n="arch_mod.m10tag">Durable ledger · Recurrence count · Optional dedup</div>
-          </div>
-
-          <div class="card module-card">
-            <div class="module-header">
-              <div class="module-icon">🪞</div>
-              <h3 data-i18n="arch_mod.m11t">Reflection & Pattern Register</h3>
-            </div>
-            <p data-i18n="arch_mod.m11d">After every run, the coordinator reflects on what worked and what didn't. Patterns are recorded in a durable register and injected into future sessions. Lead-gen runs use count-based reflection to check quota progress and plan gap-filling rounds.</p>
-            <div class="module-tag" data-i18n="arch_mod.m11tag">Post-run reflection · Gap-filling · Durable register</div>
-          </div>
-
-          <div class="card module-card">
-            <div class="module-header">
-              <div class="module-icon">🎯</div>
-              <h3 data-i18n="arch_mod.m12t">Goal Mode</h3>
-            </div>
-            <p data-i18n="arch_mod.m12d">An LLM judge evaluates partial results against the original goal, decides whether more data is needed, and launches additional rounds (replan_rounds, default 1). Agents do not stop until the goal is satisfied or the budget is exhausted.</p>
-            <div class="module-tag" data-i18n="arch_mod.m12tag">LLM judge · replan_rounds · Budget-aware</div>
-          </div>
-
-          <div class="card module-card">
-            <div class="module-header">
-              <div class="module-icon">⚡</div>
-              <h3 data-i18n="arch_mod.m13t">Prompt Caching</h3>
-            </div>
-            <p data-i18n="arch_mod.m13d">Three prompt tiers — stable (system + tools), context (session history), volatile (latest turn) — are assembled so that stable prefixes reuse cached KV blocks across turns, cutting TTFT and cost on long sessions.</p>
-            <div class="module-tag" data-i18n="arch_mod.m13tag">Stable · Context · Volatile · KV reuse</div>
-          </div>
-
-          <div class="card module-card">
-            <div class="module-header">
-              <div class="module-icon">🛰️</div>
-              <h3 data-i18n="arch_mod.m14t">Coordination Runtime</h3>
-            </div>
-            <p data-i18n="arch_mod.m14d">The runtime connects agents through IrcBus, AgentRegistry and hub messaging. Operators can steer a run, park and revive agents, submit structured batch work, hand off sessions, and manage in-process async jobs or daemons.</p>
-            <div class="module-tag" data-i18n="arch_mod.m14tag">Hub · Steering · Park/revive · Jobs · Daemons</div>
-          </div>
+        <div class="stats-grid">
+          {
+            stats.map((s) => (
+              <div class="stat">
+                <div class="stat-v">{s.v}</div>
+                <div class="stat-l">{s.l}</div>
+              </div>
+            ))
+          }
         </div>
       </div>
     </section>
 
-    <section class="section section-performance">
+    <!-- ===== Diagram ===== -->
+    <section class="section" id="diagram">
       <div class="container">
-        <div class="performance-grid">
-          <div class="card perf-card">
-            <div class="perf-value">51 + 5</div>
-            <div class="perf-label" data-i18n="arch_perf.l_tools">built-in tools</div>
+        <div class="sec-head center">
+          <p class="eyebrow"><span class="eyebrow__num">01</span><span data-i18n="arch.overview_label">System overview</span></p>
+          <h2 class="h2" data-i18n="arch.title">12 crates, one runtime</h2>
+          <p class="sec-sub mx-auto" data-i18n="arch.subtitle">Each layer is purpose-built. Together they form a self-hosted runtime for planning, delegation, tools, memory, governance, and operator interfaces.</p>
+        </div>
+
+        <div class="diagram">
+          <div class="d-row">
+            <div class="d-box d-box--core">
+              <span class="d-label">{crates.core.label}</span>
+              <span class="d-desc">{crates.core.desc}</span>
+            </div>
           </div>
-          <div class="card perf-card">
-            <div class="perf-value">MCP</div>
-            <div class="perf-label" data-i18n="arch_perf.l_search">external tools and servers</div>
+          <div class="d-conn"></div>
+          <div class="d-row">
+            {
+              crates.mid.map((c) => (
+                <div class="d-box">
+                  <span class="d-label">{c.label}</span>
+                  <span class="d-desc">{c.desc}</span>
+                </div>
+              ))
+            }
           </div>
-          <div class="card perf-card">
-            <div class="perf-value">SSE</div>
-            <div class="perf-label" data-i18n="arch_perf.l_context">streaming interface</div>
-          </div>
-          <div class="card perf-card">
-            <div class="perf-value">TUI</div>
-            <div class="perf-label" data-i18n="arch_perf.l_agents">operator interface</div>
+          <div class="d-conn"></div>
+          <div class="d-row">
+            {
+              crates.base.map((c) => (
+                <div class="d-box">
+                  <span class="d-label">{c.label}</span>
+                  <span class="d-desc">{c.desc}</span>
+                </div>
+              ))
+            }
           </div>
         </div>
       </div>
     </section>
 
-    <section class="section section-stack">
-      <div class="container text-center">
-        <div class="section-label">Built on</div>
-        <h2 class="section-title">Battle-tested Rust stack</h2>
+    <!-- ===== Modules ===== -->
+    <section class="section alt" id="modules">
+      <div class="container">
+        <div class="sec-head center">
+          <p class="eyebrow"><span class="eyebrow__num">02</span><span data-i18n="arch_mod.label">Deep dive</span></p>
+          <h2 class="h2" data-i18n-html data-i18n="arch_mod.title">The runtime <em class="it">pillars</em></h2>
+        </div>
+
+        <div class="mod-grid">
+          {
+            modules.map((m, i) => (
+              <div class="mod-card">
+                <div class="mod-top">
+                  <span class="mod-num">{String(i + 1).padStart(2, '0')}</span>
+                </div>
+                <h3 data-i18n={`arch_mod.m${i + 1}t`}>{m.t}</h3>
+                <p data-i18n={`arch_mod.m${i + 1}d`}>{m.d}</p>
+                <span class="mod-tag" data-i18n={`arch_mod.m${i + 1}tag`}>{m.tag}</span>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Stack ===== -->
+    <section class="section">
+      <div class="container">
+        <div class="sec-head center">
+          <p class="eyebrow"><span class="eyebrow__num">03</span><span>Built on</span></p>
+          <h2 class="h2">Battle-tested <em class="it">Rust</em> stack</h2>
+        </div>
         <div class="stack-chips">
-          <span class="stack-chip">tokio</span>
-          <span class="stack-chip">axum</span>
-          <span class="stack-chip">ratatui</span>
-          <span class="stack-chip">rusqlite (WAL)</span>
-          <span class="stack-chip">tokio-postgres</span>
-          <span class="stack-chip">scraper</span>
-          <span class="stack-chip">quick-xml</span>
-          <span class="stack-chip">tiktoken-rs</span>
-          <span class="stack-chip">lopdf</span>
-          <span class="stack-chip">phonenumber</span>
-          <span class="stack-chip">lettre</span>
-          <span class="stack-chip">reqwest-eventsource</span>
-          <span class="stack-chip">schemars</span>
-          <span class="stack-chip">uuid v7</span>
+          {stack.map((s) => <span class="stack-chip">{s}</span>)}
         </div>
-        <p class="section-subtitle mx-auto">Rust workspace · edition 2021 · release builds with LTO + strip · Elastic License 2.0</p>
+        <p class="sec-sub mx-auto stack-note">Rust workspace · edition 2021 · release builds with LTO + strip · Elastic License 2.0</p>
       </div>
     </section>
 
-    <section class="section section-cta">
-      <div class="container text-center">
-        <h2 class="section-title" data-i18n="arch_perf.cta_title">Ready to go deeper?</h2>
-        <p class="section-subtitle mx-auto" data-i18n="arch_perf.cta_subtitle">Explore the full technical documentation — architecture decisions, API reference, and deployment guides.</p>
-        <div class="cta-actions">
+    <!-- ===== CTA ===== -->
+    <section class="arch-cta">
+      <div class="container">
+        <h2 class="h2" data-i18n="arch_perf.cta_title">Ready to go deeper?</h2>
+        <p class="sec-sub mx-auto" data-i18n="arch_perf.cta_subtitle">Explore the full technical documentation — architecture decisions, API reference, and deployment guides.</p>
+        <div class="arch-cta-actions">
           <a href="/docs" class="btn btn-primary" data-i18n="arch.docs">Read the technical docs</a>
-          <a href="/benchmarks" class="btn btn-secondary" data-i18n="arch_perf.bench">See benchmarks</a>
+          <a href="/benchmarks" class="btn btn-cta-ghost" data-i18n="arch_perf.bench">See benchmarks</a>
         </div>
       </div>
     </section>
@@ -276,285 +177,142 @@ import '../styles/global.css';
 </Layout>
 
 <style>
-  .hero {
-    padding-top: 160px;
-    padding-bottom: 100px;
-    background: var(--bg-dark);
-    color: var(--text-inverse);
+  .eyebrow {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--grey-600);
+  }
+  .eyebrow__num { color: var(--grey-400); }
+  .h2 { font-size: clamp(30px, 4.2vw, 56px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.06; margin: 16px 0 12px; }
+  .h2 .it { font-weight: 400; }
+  .sec-sub { color: var(--grey-700); font-size: 17px; line-height: 1.6; max-width: 640px; }
+  .mx-auto { margin-left: auto; margin-right: auto; }
+  .section { padding: 100px 0; position: relative; }
+  .section.alt { background: var(--bg-card); border-top: 1px solid var(--grey-200); border-bottom: 1px solid var(--grey-200); }
+  .sec-head { max-width: 760px; margin: 0 auto 52px; }
+  .sec-head.center { text-align: center; }
+
+  /* ---- Hero ---- */
+  .arch-hero {
+    position: relative; overflow: hidden;
+    background: #0a0a0a; color: #ececec;
+    padding: 120px 0 110px; text-align: center;
+  }
+  .arch-hero::before {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(#161616 1px, transparent 1px),
+      linear-gradient(90deg, #161616 1px, transparent 1px);
+    background-size: 56px 56px;
+    -webkit-mask-image: radial-gradient(60% 70% at 50% 40%, #000 30%, transparent 100%);
+    mask-image: radial-gradient(60% 70% at 50% 40%, #000 30%, transparent 100%);
+  }
+  .arch-hero::after {
+    content: ""; position: absolute; inset: -20%;
+    background:
+      radial-gradient(38% 40% at 28% 20%, rgba(143, 182, 204, 0.2), transparent 70%),
+      radial-gradient(30% 36% at 78% 30%, rgba(167, 154, 201, 0.14), transparent 70%);
+    filter: blur(30px); pointer-events: none;
+    animation: archGlow 14s ease-in-out infinite alternate;
+  }
+  @keyframes archGlow {
+    0% { transform: translate3d(-3%, -2%, 0) scale(1); }
+    100% { transform: translate3d(3%, 2%, 0) scale(1.05); }
+  }
+  .arch-hero .container { position: relative; z-index: 1; }
+  .arch-hero .eyebrow { color: #8b8b94; }
+  .arch-hero h1 {
+    font-size: clamp(48px, 7vw, 104px); line-height: 0.98;
+    letter-spacing: -0.035em; font-weight: 470; margin-top: 24px; color: #ececec;
+  }
+  .arch-hero h1 .it { color: rgba(236, 236, 236, 0.95); }
+  .arch-sub { margin: 24px auto 0; max-width: 560px; color: #9a9a9f; font-size: 17px; line-height: 1.6; }
+  .arch-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 34px; }
+  .arch-hero .btn-primary { background: #fff; color: #101010; }
+  .arch-hero .btn-primary:hover { background: var(--grey-200); }
+  .arch-hero .btn-secondary { border-color: rgba(255,255,255,.25); color: rgba(255,255,255,.85); background: transparent; }
+  .arch-hero .btn-secondary:hover { border-color: rgba(255,255,255,.6); color: #fff; }
+
+  /* ---- Stats ---- */
+  .stats-strip { background: var(--bg-card); border-bottom: 1px solid var(--grey-200); }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
+  .stat { padding: 30px 24px; text-align: center; border-left: 1px solid var(--grey-200); }
+  .stat:first-child { border-left: none; }
+  .stat-v { font-size: 34px; font-weight: 500; letter-spacing: -0.03em; line-height: 1; }
+  .stat-l { font-family: var(--font-mono); font-size: 11.5px; color: var(--grey-600); margin-top: 9px; letter-spacing: 0.04em; }
+
+  /* ---- Diagram ---- */
+  .diagram { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
+  .d-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .d-conn { width: 1px; height: 34px; background: var(--grey-300); position: relative; }
+  .d-conn::after {
+    content: ""; position: absolute; bottom: -3px; left: 50%; transform: translateX(-50%);
+    width: 7px; height: 7px; border-radius: 50%; background: var(--grey-500);
+  }
+  .d-box {
+    display: flex; flex-direction: column; gap: 4px; align-items: center;
+    padding: 18px 26px; min-width: 150px;
+    background: var(--bg-card); border: 1px solid var(--grey-300); border-radius: var(--radius-md);
+    transition: border-color .25s, transform .25s var(--ease-out), box-shadow .25s;
+  }
+  .d-box:hover { border-color: var(--grey-500); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .d-box--core { border-color: var(--grey-900); border-width: 1.5px; }
+  .d-label { font-family: var(--font-mono); font-weight: 600; font-size: 15px; }
+  .d-desc { font-family: var(--font-mono); font-size: 11px; color: var(--grey-500); }
+
+  /* ---- Modules ---- */
+  .mod-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--grey-300); border: 1px solid var(--grey-300); border-radius: var(--radius-lg); overflow: hidden; }
+  .mod-card {
+    background: var(--bg-primary); padding: 30px 26px;
+    display: flex; flex-direction: column; gap: 12px;
+    transition: background .25s var(--ease-out);
+  }
+  .mod-card:hover { background: var(--bg-card-hover); }
+  .mod-num { font-family: var(--font-mono); font-size: 12px; color: var(--grey-400); letter-spacing: 0.08em; }
+  .mod-card h3 { font-size: 18px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.25; }
+  .mod-card p { color: var(--grey-600); font-size: 13.5px; line-height: 1.6; flex: 1; }
+  .mod-tag {
+    font-family: var(--font-mono); font-size: 11px; color: var(--grey-700);
+    background: var(--grey-100); border: 1px solid var(--grey-200);
+    border-radius: var(--radius-full); padding: 5px 12px; width: fit-content;
   }
 
-  .hero .badge {
-    background: rgba(255, 255, 255, 0.12);
-  }
-
-  .hero-title {
-    font-size: clamp(2.5rem, 5vw, 4rem);
-    font-weight: 800;
-    letter-spacing: -0.04em;
-    line-height: 1.1;
-    margin-top: 16px;
-    margin-bottom: 20px;
-    color: var(--text-inverse);
-  }
-
-  .hero-subtitle {
-    font-size: 1.25rem;
-    color: rgba(255,255,255,0.6);
-    max-width: 560px;
-    margin: 0 auto 32px;
-    line-height: 1.5;
-  }
-
-  .hero-actions {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
-  /* Architecture diagram */
-  .section-diagram {
-    background: var(--bg-secondary);
-  }
-
-  .arch-diagram {
-    margin-top: 56px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0;
-  }
-
-  .arch-row {
-    display: flex;
-    gap: 16px;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
-  .arch-connector-v {
-    width: 2px;
-    height: 32px;
-    background: var(--border);
-    margin: 0 auto;
-    position: relative;
-  }
-
-  .arch-connector-v::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--accent);
-  }
-
-  .arch-box {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 20px 28px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border);
-    background: var(--bg-primary);
-    min-width: 140px;
-    transition: all var(--duration) var(--ease-out);
-  }
-
-  .arch-box:hover {
-    border-color: var(--accent);
-    box-shadow: var(--shadow-glow);
-    transform: translateY(-2px);
-  }
-
-  .arch-box-label {
-    font-weight: 700;
-    font-size: 0.9375rem;
-    color: var(--text-primary);
-    margin-bottom: 2px;
-  }
-
-  .arch-box-desc {
-    font-size: 0.75rem;
-    color: var(--text-tertiary);
-    font-family: var(--font-mono);
-  }
-
-  .arch-core {
-    border-color: var(--accent);
-    background: var(--accent-light);
-  }
-
-  .arch-core .arch-box-label {
-    color: var(--accent);
-  }
-
-  .arch-agent {
-    min-width: 180px;
-    border-width: 2px;
-    border-color: var(--accent);
-  }
-
-  .arch-agent .arch-box-label {
-    color: var(--accent);
-  }
-
-  .arch-memory {
-    border-color: var(--accent);
-    background: var(--accent-light);
-  }
-
-  .arch-memory .arch-box-label {
-    color: var(--accent);
-  }
-
-  /* Modules grid */
-  .modules-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-    gap: 24px;
-    margin-top: 48px;
-  }
-
-  .module-card {
-    text-align: left;
-  }
-
-  .module-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-  }
-
-  .module-icon {
-    font-size: 1.5rem;
-  }
-
-  .module-card h3 {
-    font-size: 1.125rem;
-    font-weight: 700;
-  }
-
-  .module-card p {
-    font-size: 0.9375rem;
-    color: var(--text-secondary);
-    line-height: 1.6;
-    margin-bottom: 16px;
-  }
-
-  .module-tag {
-    display: inline-block;
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--accent);
-    background: var(--accent-light);
-    padding: 4px 12px;
-    border-radius: var(--radius-full);
-  }
-
-  /* Performance grid */
-  .section-performance {
-    background: var(--bg-dark);
-    padding: 80px 0;
-  }
-
-  .performance-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 24px;
-  }
-
-  .perf-card {
-    background: var(--bg-dark-card);
-    border-color: rgba(255,255,255,0.1);
-    text-align: center;
-    padding: 40px 24px;
-  }
-
-  .perf-card:hover {
-    border-color: rgba(255,255,255,0.4);
-    background: rgba(255, 255, 255, 0.05);
-  }
-
-  .perf-value {
-    font-size: clamp(2rem, 4vw, 3rem);
-    font-weight: 800;
-    letter-spacing: -0.04em;
-    color: #fff;
-    line-height: 1;
-    margin-bottom: 8px;
-  }
-
-  .perf-label {
-    font-size: 0.9375rem;
-    color: rgba(255,255,255,0.6);
-    font-weight: 500;
-  }
-
-  /* CTA */
-  .section-stack {
-    padding: 60px 0;
-  }
-
-  .stack-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: center;
-    margin: 28px 0 24px;
-  }
-
+  /* ---- Stack ---- */
+  .stack-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 860px; margin: 0 auto; }
   .stack-chip {
-    font-family: var(--font-mono);
-    font-size: 0.8125rem;
-    color: var(--text-secondary);
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    padding: 6px 14px;
-    border-radius: var(--radius-full);
-    transition: all var(--duration) var(--ease-out);
+    font-family: var(--font-mono); font-size: 12.5px; color: var(--grey-700);
+    background: var(--bg-card); border: 1px solid var(--grey-300);
+    padding: 7px 15px; border-radius: var(--radius-full);
+    transition: border-color .2s, transform .2s var(--ease-out);
   }
+  .stack-chip:hover { border-color: var(--grey-500); transform: translateY(-1px); }
+  .stack-note { margin-top: 28px; font-family: var(--font-mono); font-size: 12px; color: var(--grey-500); text-align: center; }
 
-  .stack-chip:hover {
-    border-color: var(--accent);
-    color: var(--text-primary);
+  /* ---- CTA ---- */
+  .arch-cta { background: var(--bg-dark); color: #fff; text-align: center; padding: 110px 24px; position: relative; overflow: hidden; }
+  .arch-cta::before {
+    content: ""; position: absolute; inset: auto -20% -60% -20%; height: 120%;
+    background: radial-gradient(50% 50% at 50% 100%, rgba(143, 182, 204, 0.2), transparent 70%);
+    filter: blur(40px); pointer-events: none;
   }
+  .arch-cta .container { position: relative; }
+  .arch-cta .h2 { color: #fff; }
+  .arch-cta .sec-sub { color: rgba(255,255,255,.7); margin-top: 16px; }
+  .arch-cta-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 32px; }
+  .arch-cta .btn-primary { background: #fff; color: #101010; }
+  .arch-cta .btn-primary:hover { background: var(--grey-200); }
+  .btn-cta-ghost { border: 1px solid rgba(255,255,255,.25); color: rgba(255,255,255,.9); background: transparent; }
+  .btn-cta-ghost:hover { border-color: rgba(255,255,255,.6); background: rgba(255,255,255,.06); }
 
-  .section-cta {
-    background: var(--bg-secondary);
-    padding: 100px 0;
+  @media (max-width: 960px) {
+    .mod-grid { grid-template-columns: 1fr 1fr; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .stat:nth-child(3) { border-left: none; }
+    .stat { border-top: 1px solid var(--grey-200); }
+    .stat:nth-child(-n+2) { border-top: none; }
   }
-
-  .cta-actions {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    margin-top: 32px;
-    flex-wrap: wrap;
-  }
-
-  @media (max-width: 768px) {
-    .arch-row {
-      gap: 8px;
-    }
-    .arch-box {
-      min-width: 100px;
-      padding: 14px 16px;
-    }
-    .arch-agent {
-      min-width: 120px;
-    }
-    .modules-grid {
-      grid-template-columns: 1fr;
-    }
-    .performance-grid {
-      grid-template-columns: 1fr 1fr;
-    }
+  @media (max-width: 640px) {
+    .mod-grid { grid-template-columns: 1fr; }
+    .d-box { min-width: 120px; padding: 14px 16px; }
   }
 </style>

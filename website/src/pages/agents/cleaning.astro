@@ -1,24 +1,23 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import AgentCanvas from '../../components/AgentCanvas.astro';
+import AgentPage from '../../components/AgentPage.astro';
 
-const fleet = [
+const crew = [
   { name: 'Researcher', href: '/agents/researcher' },
   { name: 'Searching', href: '/agents/searching' },
   { name: 'Extracting', href: '/agents/extracting' },
   { name: 'Structuring', href: '/agents/structuring' },
-  { name: 'Cleaning', href: '/agents/cleaning', active: true },
+  { name: 'Cleaning', href: '/agents/cleaning', current: true },
   { name: 'Memoring', href: '/agents/memoring' },
   { name: 'Outreach', href: '/agents/outreach' },
 ];
 
 const caps = [
-  { tool: 'verify_email', t: 'The email gauntlet', d: 'RFC 5322 syntax, MX lookup over DNS-over-HTTPS, disposable-domain and role-based filters, optional SMTP RCPT probe — every signal folded into one deliverability confidence score.' },
-  { tool: 'verify_phone', t: 'Numbers that dial', d: 'libphonenumber metadata turns "+7 (495) 710-75-80" into +74957107580 — E.164, country RU, and line type when metadata supports it.' },
-  { tool: 'verify_social_profile', t: 'Profiles that exist', d: 'GitHub verified through the public API; every other platform by page fetch with soft-404 content detection. Bot walls (401/403/429) are reported honestly, never guessed away.' },
-  { tool: 'suggest_emails', t: 'Fill the gaps', d: 'Up to 9 candidates from name permutations (first.last, flast, last.first…), ranked by the corporate pattern inferred from known colleague addresses — each scored by the same verification pipeline.' },
-  { tool: 'dedup & merge', t: 'One list, no twins', d: 'Duplicates are found on normalized keys — lower-cased email, digits-only phone — then merged atomically: blanks filled, socials/tags/notes moved over, the duplicate row deleted.' },
-  { tool: 'side-effect safety', t: 'Signals before action', d: 'Role addresses and disposable inboxes are flagged, and SMTP outcomes are kept as explicit evidence. Operators can review confidence before a worker performs a side effect.' },
+  { tool: 'verify_email', name: 'The email gauntlet', d: 'RFC 5322 syntax, MX lookup over DNS-over-HTTPS, disposable-domain and role-based filters, optional SMTP RCPT probe — every signal folded into one deliverability confidence score.' },
+  { tool: 'verify_phone', name: 'Numbers that dial', d: 'libphonenumber metadata turns "+7 (495) 710-75-80" into +74957107580 — E.164, country RU, and line type when metadata supports it.' },
+  { tool: 'verify_social_profile', name: 'Profiles that exist', d: 'GitHub verified through the public API; every other platform by page fetch with soft-404 content detection. Bot walls (401/403/429) are reported honestly, never guessed away.' },
+  { tool: 'suggest_emails', name: 'Fill the gaps', d: 'Up to 9 candidates from name permutations (first.last, flast, last.first…), ranked by the corporate pattern inferred from known colleague addresses — each scored by the same verification pipeline.' },
+  { tool: 'dedup & merge', name: 'One list, no twins', d: 'Duplicates are found on normalized keys — lower-cased email, digits-only phone — then merged atomically: blanks filled, socials/tags/notes moved over, the duplicate row deleted.' },
+  { tool: 'side-effect safety', name: 'Signals before action', d: 'Role addresses and disposable inboxes are flagged, and SMTP outcomes are kept as explicit evidence. Operators can review confidence before a worker performs a side effect.' },
 ];
 
 const flow = [
@@ -33,14 +32,14 @@ const flow = [
 const hood = [
   ['Confidence formula', 'invalid syntax 0.0 · base 0.5 + 0.4 live domain · capped 0.9 without SMTP · ≥ 0.95 SMTP-accepted · ≤ 0.2 SMTP-rejected · disposable −0.3'],
   ['Syntax rules', 'RFC 5322 subset: local part ≤ 64 chars, domain ≤ 253, no leading/trailing/consecutive dots, non-numeric TLD'],
-  ['MX lookup', 'DNS-over-HTTPS: dns.google → cloudflare-dns.com fallback, 5 s timeout · RFC 5321 A-record fallback · RFC 7505 null MX means "accepts no mail" · authoritative answers cached per session'],
+  ['MX lookup', 'DNS-over-HTTPS: dns.google → cloudflare-dns.com fallback, 5 s timeout · RFC 5321 A-record fallback · RFC 7505 null MX means "accepts no mail"'],
   ['Disposable domains', 'Configured disposable-domain rules are matched exactly or as wildcard subdomains; blocked or unknown checks remain visible'],
-  ['Role-based local parts', 'Department addresses such as info@, support@, admin@, sales@, and hr@ are flagged as non-personal records for operator review'],
-  ['SMTP probe', 'connect timeout 10 s, per-read 5 s · 250/251 = accepted, 5xx = rejected, 4xx = inconclusive (greylisting) · probe bails before DATA — no mail is ever sent'],
+  ['Role-based local parts', 'Department addresses such as info@, support@, admin@, sales@, and hr@ are flagged as non-personal records'],
+  ['SMTP probe', 'connect timeout 10 s, per-read 5 s · 250/251 = accepted, 5xx = rejected, 4xx = inconclusive · probe bails before DATA — no mail is ever sent'],
   ['E.164 phones', '"+7 (495) 710-75-80" → +74957107580 · RU · landline · 17 number types · default_country resolves national formats'],
-  ['suggest_emails', '9 patterns: first.last, firstlast, f.last, first.l, last.first, first_last, f_last, flast, first-last · separator + initial voting over known colleague addresses · pattern match +0.15, capped 0.95'],
+  ['suggest_emails', '9 patterns: first.last, firstlast, f.last, first.l, last.first, first_last, f_last, flast, first-last · pattern match +0.15, capped 0.95'],
   ['Social verification', 'soft-404 content scan on HTTP 200 · 404/410 dead · 401/403/429 reported as bot-blocked · og:title name + follower count when public'],
-  ['Dedup & merge', 'normalized email (trim + lowercase) and digits-only phone keys · atomic merge fills blanks and moves socials/tags/notes · duplicates deleted'],
+  ['Dedup & merge', 'normalized email (trim + lowercase) and digits-only phone keys · atomic merge fills blanks and moves socials/tags/notes'],
 ];
 
 const results = [
@@ -53,103 +52,54 @@ const results = [
 const tools = ['verify_email', 'verify_phone', 'verify_social_profile', 'suggest_emails'];
 ---
 
-<Layout title="Verification Worker — Fathom" description="Verification worker for checking email, phone, profile, and data quality before governed actions.">
-  <main class="ag-page">
-    <div class="container">
-      <div class="ag-hero">
-        <p class="eyebrow" data-i18n="agents.cleaning.hero.eyebrow">AGENT 05 / 07</p>
-        <h1 class="h2-sec" data-i18n="agents.cleaning.hero.title">Cleaning</h1>
-        <p class="copy-lg mx-auto" data-i18n="agents.cleaning.hero.sub">The verification worker checks email, phone, profile, and extracted data before it reaches a governed action — keeping downstream work grounded in records that actually exist.</p>
-        <div class="hero-canvas">
-          <AgentCanvas agents={[{ name: 'Cleaning', mode: 'cleaning', hue: 55 }]} />
-        </div>
-      </div>
-
-      <!-- Cross-nav -->
-      <div class="chips nav-chips">
-        {fleet.map((a) => (
-          <a href={a.href} class:list={['chip', a.active && 'chip--active']}>{a.name}</a>
-        ))}
-      </div>
-
-      <!-- What it does -->
-      <div class="sec-head">
-        <p class="eyebrow" data-i18n="agents.cleaning.what.eyebrow">What it does</p>
-        <h2 class="h3-sec" data-i18n="agents.cleaning.what.title">Verification before a governed action</h2>
-      </div>
-      <div class="api-grid">
-        {caps.map((c) => (
-          <div class="api-card">
-            <div class="api-name">{c.tool}</div>
-            <h3>{c.t}</h3>
-            <p>{c.d}</p>
+<AgentPage
+  pageTitle="Verification Worker — Fathom"
+  pageDesc="Checks email, phone, and profile data before it reaches a governed action — five gates, honest signals, reviewable evidence."
+  k="agents.cleaning"
+  index="05"
+  title="Cleaning"
+  sub="The verification worker checks email, phone, profile, and extracted data before it reaches a governed action — keeping downstream work grounded in records that actually exist."
+  mode="cleaning"
+  hue={160}
+  crew={crew}
+  caps={caps}
+  capsTitle="Verification before a governed action"
+  flow={flow}
+  flowTitle="Six gates between input and action"
+  hood={hood}
+  hoodTitle="Thresholds, filters and formulas"
+  tools={tools}
+  toolsTitle="The verification toolbox"
+  ctaTitle="Clear signals make governed actions safer"
+  prev={{ href: '/agents/structuring', label: '← Structuring' }}
+  middle={{ href: '/features/auto-outreach', label: 'Auto outreach' }}
+  next={{ href: '/agents/memoring', label: 'Memoring →' }}
+>
+  <div slot="pretools" class="results-sec">
+    <div class="sec-head">
+      <p class="eyebrow"><span class="eyebrow__num">03.5</span><span>Results</span></p>
+      <h2>What cleaning buys you</h2>
+    </div>
+    <div class="results-grid">
+      {
+        results.map((m) => (
+          <div class="result-card">
+            <div class="result-v">{m.v}</div>
+            <div class="result-c">{m.c}</div>
           </div>
-        ))}
-      </div>
+        ))
+      }
+    </div>
+  </div>
 
-      <!-- How it works -->
-      <div class="sec-head">
-        <p class="eyebrow" data-i18n="agents.cleaning.how.eyebrow">How it works</p>
-        <h2 class="h3-sec" data-i18n="agents.cleaning.how.title">Six gates between input and action</h2>
-      </div>
-      <div class="flow">
-        {flow.map((s, i) => (
-          <div class="flow-step">
-            <span class="flow-num">{i + 1}</span>
-            <h3 data-i18n={`agents.cleaning.flow.${i}.t`}>{s.t}</h3>
-            <p>{s.d}</p>
-          </div>
-        ))}
-      </div>
-
-      <!-- Under the hood -->
-      <div class="sec-head">
-        <p class="eyebrow" data-i18n="agents.cleaning.hood.eyebrow">Under the hood</p>
-        <h2 class="h3-sec" data-i18n="agents.cleaning.hood.title">Thresholds, filters and formulas</h2>
-      </div>
-      <div class="mini-table-wrap">
-        <table class="mini-table">
-          <thead><tr><th data-i18n="agents.cleaning.hood.keyCol">Mechanism</th><th data-i18n="agents.cleaning.hood.detailCol">Detail</th></tr></thead>
-          <tbody>
-            {hood.map((r) => (
-              <tr><td>{r[0]}</td><td>{r[1]}</td></tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Results -->
-      <div class="sec-head">
-        <p class="eyebrow" data-i18n="agents.cleaning.results.eyebrow">Results</p>
-        <h2 class="h3-sec" data-i18n="agents.cleaning.results.title">What cleaning buys you</h2>
-      </div>
-      <div class="bench-strip">
-        {results.map((m) => (
-          <div class="bench-card">
-            <div class="metric">{m.v}</div>
-            <div class="cap">{m.c}</div>
-          </div>
-        ))}
-      </div>
-
-      <!-- Tools -->
-      <div class="sec-head">
-        <p class="eyebrow" data-i18n="agents.cleaning.tools.eyebrow">Tools</p>
-        <h2 class="h3-sec" data-i18n="agents.cleaning.tools.title">The verification toolbox</h2>
-      </div>
-      <div class="chips">
-        {tools.map((t) => <span class="chip chip--mono">{t}</span>)}
-      </div>
-
-      <!-- Feeds downstream workers -->
-      <div class="feat">
-        <div class="feat-copy">
-          <p class="eyebrow" data-i18n="agents.cleaning.feeds.eyebrow">Feeds downstream workers</p>
-          <h2 class="h3-sec" data-i18n="agents.cleaning.feeds.title">Verified inputs keep actions safe</h2>
-          <p class="copy-lg">Downstream workers receive only validated values and explicit confidence signals. Bad addresses, malformed records, and disposable domains stay out of governed actions, whether the next step is outreach, a report, or an update to another system.</p>
-        </div>
-        <div class="code-card">
-          <pre><code>{`verify_email("ann@acme.io")
+  <div slot="posttools" class="feat">
+    <div class="feat-copy">
+      <p class="feat-eyebrow">Feeds downstream workers</p>
+      <h2>Verified inputs keep actions safe</h2>
+      <p class="feat-body">Downstream workers receive only validated values and explicit confidence signals. Bad addresses, malformed records, and disposable domains stay out of governed actions, whether the next step is outreach, a report, or an update to another system.</p>
+    </div>
+    <div class="code-card">
+      <pre><code>{`verify_email("ann@acme.io")
 → syntax: valid · domain: exists
 → disposable: no · role-based: no
 → confidence: 0.90   # LIKELY VALID
@@ -159,86 +109,29 @@ verify_phone("+7 (495) 710-75-80")
 
 # reviewable survivors reach the next worker —
 # governed actions use recorded evidence`}</code></pre>
-        </div>
-      </div>
-
-      <div class="cta-strip">
-        <h2 data-i18n="agents.cleaning.cta.title">Clear signals make governed actions safer</h2>
-        <div class="more-links">
-          <a href="/agents/structuring" class="btn btn-secondary">← Structuring</a>
-          <a href="/agents/memoring" class="btn btn-secondary">Memoring →</a>
-          <a href="/features/auto-outreach" class="btn btn-primary" data-i18n="agents.cleaning.cta.auto">Auto outreach</a>
-        </div>
-      </div>
     </div>
-  </main>
-</Layout>
+  </div>
+</AgentPage>
 
 <style>
-  .ag-page { padding: 70px 0 90px; }
-  .eyebrow { font-family: var(--font-mono); font-size: 13px; letter-spacing: .16px; text-transform: uppercase; color: var(--grey-600); }
-  .h3-sec { font-size: clamp(20px, 2.4vw, 34px); font-weight: 500; letter-spacing: -0.02em; margin: 12px 0 0; }
-  .copy-lg { color: var(--grey-700); font-size: 17px; line-height: 1.55; max-width: 640px; }
-  .mx-auto { margin-left: auto; margin-right: auto; }
+  .results-sec { margin-top: 72px; }
+  .results-sec .eyebrow { display: flex; align-items: center; gap: 12px; font-family: var(--font-mono); font-size: 12px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--grey-600); }
+  .results-sec .eyebrow__num { color: var(--grey-400); }
+  .results-sec .sec-head { max-width: 760px; margin-bottom: 30px; }
+  .results-sec h2 { font-size: clamp(26px, 3.4vw, 42px); font-weight: 500; letter-spacing: -0.025em; margin-top: 14px; }
+  .results-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .result-card { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 24px; transition: border-color .25s, transform .25s var(--ease-out), box-shadow .25s; }
+  .result-card:hover { border-color: var(--grey-400); transform: translateY(-3px); box-shadow: var(--shadow-md); }
+  .result-v { font-size: 34px; font-weight: 500; letter-spacing: -0.03em; line-height: 1; }
+  .result-c { font-family: var(--font-mono); font-size: 12px; color: var(--grey-600); margin-top: 10px; line-height: 1.5; }
+  @media (max-width: 900px) { .results-grid { grid-template-columns: 1fr 1fr; } }
 
-  .ag-hero { max-width: 820px; margin: 0 auto 32px; text-align: center; padding: 0 24px; }
-  .ag-hero h1 { font-size: clamp(34px, 5vw, 68px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.02; margin-top: 12px; }
-  .ag-hero .copy-lg { margin-top: 20px; }
-
-  .hero-canvas { max-width: 320px; margin: 34px auto 0; background: #0a0a0a; border: 1px solid #222; border-radius: var(--radius-xl); padding: 26px 20px; }
-  .hero-canvas :global(.agent-grid) { max-width: none; }
-
-  .nav-chips { justify-content: center; margin: 8px 0 8px; }
-
-  .sec-head { max-width: 720px; margin: 60px auto 28px; text-align: center; }
-
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chip { font-family: var(--font-mono); font-size: 13px; background: var(--bg-card); border: 1px solid var(--grey-200); padding: 8px 14px; border-radius: 100px; color: var(--grey-700); text-decoration: none; transition: border-color .2s, color .2s; }
-  a.chip:hover { border-color: var(--grey-400); color: var(--grey-900); }
-  .chip--active { background: var(--grey-900); border-color: var(--grey-900); color: #fff; }
-  .chip--mono { cursor: default; }
-
-  .api-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  .api-card { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 24px; display: flex; flex-direction: column; gap: 8px; transition: box-shadow .25s, transform .25s var(--ease-out), border-color .25s; }
-  .api-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--grey-400); }
-  .api-card .api-name { font-family: var(--font-mono); font-weight: 600; font-size: 13px; color: var(--grey-600); }
-  .api-card h3 { font-size: 16px; font-weight: 600; }
-  .api-card p { color: var(--grey-600); font-size: 13.5px; line-height: 1.55; }
-  @media (max-width: 1000px) { .api-grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 680px) { .api-grid { grid-template-columns: 1fr; } }
-
-  .flow { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
-  .flow-step { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 20px; }
-  .flow-num { display: inline-flex; width: 26px; height: 26px; align-items: center; justify-content: center; border-radius: 50%; background: var(--grey-900); color: #fff; font-family: var(--font-mono); font-size: 12px; margin-bottom: 12px; }
-  .flow-step h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
-  .flow-step p { font-size: 12.5px; color: var(--grey-600); line-height: 1.5; }
-  @media (max-width: 1100px) { .flow { grid-template-columns: repeat(3, 1fr); } }
-  @media (max-width: 680px) { .flow { grid-template-columns: repeat(2, 1fr); } }
-
-  .mini-table-wrap { border: 1px solid var(--grey-200); border-radius: 8px; overflow: auto; background: var(--bg-card); }
-  .mini-table { width: 100%; border-collapse: collapse; font-size: 13px; font-family: var(--font-mono); }
-  .mini-table th { font-size: 10px; text-transform: uppercase; letter-spacing: .6px; color: var(--grey-600); text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--grey-200); background: var(--grey-50); }
-  .mini-table td { padding: 10px 14px; border-bottom: 1px solid var(--grey-100); color: var(--grey-800); vertical-align: top; }
-  .mini-table td:first-child { white-space: nowrap; color: var(--grey-600); }
-  .mini-table tr:last-child td { border-bottom: none; }
-
-  .bench-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-  .bench-card { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 24px; }
-  .bench-card .metric { font-size: 34px; font-weight: 500; letter-spacing: -0.02em; line-height: 1; }
-  .bench-card .cap { font-family: var(--font-mono); font-size: 12px; color: var(--grey-600); margin-top: 10px; line-height: 1.5; }
-  @media (max-width: 900px) { .bench-strip { grid-template-columns: repeat(2, 1fr); } }
-
-  .feat { display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: center; padding: 48px 0; }
-  @media (max-width: 900px) { .feat { grid-template-columns: 1fr; gap: 28px; } }
-
-  .code-card { border: 1px solid var(--grey-200); border-radius: var(--radius-md); background: var(--bg-dark); overflow: hidden; box-shadow: var(--shadow-lg); }
+  .feat { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 48px; align-items: center; margin-top: 72px; }
+  .feat-eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--grey-600); margin-bottom: 14px; }
+  .feat-copy h2 { font-size: clamp(24px, 3vw, 38px); font-weight: 500; letter-spacing: -0.025em; line-height: 1.1; margin-bottom: 16px; }
+  .feat-body { color: var(--grey-600); font-size: 15px; line-height: 1.6; max-width: 56ch; }
+  .code-card { border: 1px solid #242424; border-radius: var(--radius-lg); background: #0d0d0d; overflow: hidden; box-shadow: var(--shadow-lg); }
   .code-card pre { margin: 0; padding: 22px; overflow-x: auto; }
-  .code-card code { font-family: var(--font-mono); font-size: 13px; line-height: 1.7; color: var(--grey-100); white-space: pre; }
-
-  .cta-strip { margin-top: 64px; background: var(--bg-dark); border-radius: var(--radius-xl); padding: 48px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
-  .cta-strip h2 { color: #fff; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; }
-  .cta-strip .btn-primary { background: var(--bg-card); color: var(--grey-900); }
-  .cta-strip .btn-secondary { border-color: rgba(255,255,255,.25); color: rgba(255,255,255,.85); }
-  .cta-strip .btn-secondary:hover { border-color: rgba(255,255,255,.5); color: #fff; }
-  .more-links { display: flex; gap: 10px; flex-wrap: wrap; }
+  .code-card code { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.85; color: #c9c9cf; white-space: pre; }
+  @media (max-width: 900px) { .feat { grid-template-columns: 1fr; gap: 28px; } }
 </style>
