@@ -90,7 +90,7 @@ export default function JobsPage() {
         <header>
           <p className="ops-kicker">Work queue</p>
           <h1 className="text-xl sm:text-2xl text-gray-100 font-medium tracking-tight mt-2">Dispatch and monitor jobs</h1>
-          <p className="text-sm text-gray-500 mt-2 max-w-2xl">Dispatch work to the remote worker runtime and follow each job from queue to completion.</p>
+          <p className="text-sm text-gray-500 mt-2 max-w-2xl">Dispatch work to the remote worker runtime and follow each job from queue to completion. Active jobs cannot be rerun until they finish or are cancelled.</p>
         </header>
 
         <section className="ops-panel" aria-labelledby="submit-task-heading">
@@ -106,7 +106,7 @@ export default function JobsPage() {
               id="new-task"
               value={task}
               onChange={e => setTask(e.target.value)}
-              placeholder="Describe work for a remote autonomous worker…"
+              placeholder="Describe work for a remote worker…"
               className="ops-input flex-1 min-w-0"
               disabled={creating}
             />
@@ -138,7 +138,7 @@ export default function JobsPage() {
           ) : fetchError ? (
             <div className="ops-panel text-xs text-gray-500">Task data is unavailable until the control plane reconnects.</div>
           ) : jobs.length === 0 ? (
-            <div className="ops-panel text-xs text-gray-500">No jobs yet. Dispatch work above to start the first autonomous run.</div>
+            <div className="ops-panel text-xs text-gray-500">No jobs yet. Dispatch work above to create the first queued job.</div>
           ) : (
             <div className="space-y-2">
               {jobs.map(j => (
@@ -151,7 +151,7 @@ export default function JobsPage() {
                     </div>
                     <div className="flex flex-wrap gap-1 sm:ml-auto" aria-label={`Actions for task ${j.id.slice(0, 8)}`}>
                       <button type="button" onClick={() => viewLog(j.id)} className="ops-button-secondary text-[10px] px-2 py-1">Log</button>
-                      <button type="button" onClick={() => handleRerun(j.id)} className="ops-button-secondary text-[10px] px-2 py-1">Rerun</button>
+                      {j.status !== 'running' && j.status !== 'queued' && <button type="button" onClick={() => handleRerun(j.id)} className="ops-button-secondary text-[10px] px-2 py-1">Rerun</button>}
                       {(j.status === 'running' || j.status === 'queued') && <button type="button" onClick={() => handleCancel(j.id)} className="text-[10px] text-red-400 hover:text-red-300 px-2 py-1 rounded border border-red-500/20 hover:border-red-500/40">Cancel</button>}
                     </div>
                   </div>

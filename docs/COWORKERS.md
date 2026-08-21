@@ -34,11 +34,12 @@ A **coworker** is a persistent agent profile stored in SQLite. Each coworker has
 | `GET` | `/api/v1/coworkers/:id` | Get coworker details |
 | `PUT` | `/api/v1/coworkers/:id` | Update coworker |
 | `DELETE` | `/api/v1/coworkers/:id` | Delete coworker |
-| `POST` | `/api/v1/coworkers/:id/run` | Trigger an immediate run |
 
 ### Run lifecycle
 
-When a coworker is triggered (via schedule or manual run):
+Coworkers and schedules are persisted configuration. The server exposes schedule claiming, but this endpoint does not spawn jobs; an external scheduler or operator must submit the resulting task through the session or jobs API.
+
+When an external runner starts a coworker task:
 
 1. The coworker's profile and prompt are loaded
 2. A new session is created from the configured coworker query/description

@@ -12,43 +12,29 @@ export default defineConfig({
     mdx(),
     sitemap({
       serialize: (entry) => {
-        const url = entry.url.replace(/\/$/, '');
+        // Normalize through URL.pathname so locale handling is independent of
+        // trailing slashes and never treats `/ru` as an English path.
+        const parsed = new URL(entry.url);
+        const pathname = parsed.pathname.replace(/\/+$/, '') || '/';
+        const locale = pathname === '/ru' || pathname.startsWith('/ru/') ? 'ru' : DEFAULT_LOCALE;
+        const cleanPath = locale === 'ru' ? (pathname.slice(3) || '/') : pathname;
+        const localizedPath = (lang) => {
+          const path = lang === 'ru' ? `/ru${cleanPath === '/' ? '' : cleanPath}` : cleanPath;
+          return `${SITE}${path === '/' ? '' : path}`;
+        };
+        const url = localizedPath(locale);
 
-        // Determine locale from URL
-        let locale = DEFAULT_LOCALE;
-        const pathPart = url.replace(SITE, '');
-        const match = pathPart.match(/^\/(ru)\//);
-        if (match) {
-          locale = match[1];
-        }
-
-        // Generate hreflang alternates for each locale
-        const links = [];
-        for (const [lang, hreflang] of Object.entries(LOCALES)) {
-          let alternateUrl;
-          if (lang === DEFAULT_LOCALE) {
-            // EN: no prefix
-            alternateUrl = url;
-          } else {
-            // Russian locale: /ru/path
-            if (pathPart === '' || pathPart === '/') {
-              alternateUrl = `${SITE}/${lang}`;
-            } else {
-              const cleanPath = pathPart.replace(/^\/(ru)/, '');
-              alternateUrl = `${SITE}/${lang}${cleanPath}`;
-            }
-          }
-          links.push({
-            url: alternateUrl,
-            lang: hreflang,
-          });
-        }
+        // Generate hreflang alternates for each locale from the same clean path.
+        const links = Object.entries(LOCALES).map(([lang, hreflang]) => ({
+          url: localizedPath(lang),
+          lang: hreflang,
+        }));
 
         // Priority map
         let priority = 0.5;
         let changefreq = 'monthly';
 
-        const cleanUrl = url.replace(/^\/(ru)/, '');
+        const cleanUrl = `${SITE}${cleanPath === '/' ? '' : cleanPath}`;
 
         if (cleanUrl === SITE || cleanUrl === `${SITE}/docs`) {
           priority = 1.0;
@@ -71,7 +57,7 @@ export default defineConfig({
         }
 
         return {
-          url: entry.url,
+          url,
           changefreq,
           priority,
           lastmod: new Date().toISOString().split('T')[0],

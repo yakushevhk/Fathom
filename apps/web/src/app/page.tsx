@@ -80,7 +80,6 @@ export default function HomePage() {
   }, [])
 
   const runningSessions = sessions.filter(s => s.status === 'running' || s.active)
-  const activeWorkers = runningSessions.reduce((total, session) => total + session.total_agents, 0)
   const completedWork = sessions.filter(s => s.status === 'completed').length
   const fleetState = healthError ? 'Offline' : health?.status === 'ok' ? 'Online' : health?.status ?? 'Checking'
 
@@ -108,9 +107,9 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="ops-panel">
-              <span className="ops-label">Workers active</span>
-              <strong className="block text-2xl text-gray-100 font-medium mt-2">{sessionsLoading ? '—' : activeWorkers}</strong>
-              <span className="text-[11px] text-gray-500">Across running work</span>
+              <span className="ops-label">Active sessions</span>
+              <strong className="block text-2xl text-gray-100 font-medium mt-2">{sessionsLoading ? '—' : (health?.active_sessions ?? runningSessions.length)}</strong>
+              <span className="text-[11px] text-gray-500">Engine-reported live sessions</span>
             </div>
             <div className="ops-panel">
               <span className="ops-label">Work in progress</span>

@@ -101,8 +101,8 @@ final  = score × max(0, 1 − 0.01·days_old)\`}`}} /></pre>
     <h2 data-i18n="docsMemory.gcTitle">Grows, then tidies itself</h2>
     <p data-i18n="docsMemory.gcBody">
       An automated garbage collector archives stale run-scoped facts after 30 days and compacts
-      crowded (scope, key) groups of 200+ active rows into one. Nothing is ever hard-deleted —
-      the archive is always recoverable.
+      crowded (scope, key) groups of 200+ active rows into one without hard-deleting them.
+      The explicit <code>fathom memory nuke --yes</code> command is destructive and is not recoverable.
     </p>
   </section>
 
@@ -114,7 +114,7 @@ final  = score × max(0, 1 − 0.01·days_old)\`}`}} /></pre>
       classify) but targets the agent scope instead of the run scope. Originals are archived. This way,
       facts discovered during a single session become permanent knowledge available to all future sessions
       — without manual copying. Run <code>fathom memory distill --session &lt;key&gt;</code> or
-      let <code>gc_auto = true</code> handle it on a background timer.
+      let <code>gc_auto = true</code> run hourly memory maintenance in the background (including GC and distillation); this is separate from the destructive <code>nuke</code> command.
     </p>
   </section>
 
@@ -122,25 +122,24 @@ final  = score × max(0, 1 − 0.01·days_old)\`}`}} /></pre>
   <section id="tools-reference">
     <h2>Memory Tools Reference</h2>
     <p>
-      Seven specialized tools let you read, write, search, link, and reason over memory.
-      Each tool is available to agents during research and can also be invoked from the CLI or REST API.
+      Seven specialized tools let agents read, write, search, link, and reason over memory.
+      File-backed memory is managed by the <code>memory</code> tool; semantic-memory operations have separate CLI and REST interfaces.
     </p>
 
     {/* — memory (file-backed) — */}
     <h3 id="tool-memory"><code>memory</code> — File-backed CRUD</h3>
     <p>
-      The primary tool for direct record management. Every action operates on a single memory record
-      identified by its UUID. Records belong to a scope and carry a key, content, and metadata.
+      The <code>memory</code> tool manages file-backed context in <code>MEMORY.md</code> and <code>USER.md</code>.
+      It applies text operations to the selected target file; semantic records are managed separately by
+      <code>memory_absorb</code>, <code>memory_search</code>, and the <code>fathom memory</code> CLI.
     </p>
     <table class="mini-table">
       <thead><tr><th>Action</th><th>Description</th><th>Example</th></tr></thead>
       <tbody>
-        <tr><td><code>list</code></td><td>Return all active records in a scope, newest first.</td><td><code>fathom memory list --scope agent</code></td></tr>
-        <tr><td><code>read</code></td><td>Fetch a single record by ID, including full history.</td><td><code>fathom memory get abc123</code></td></tr>
-        <tr><td><code>add</code></td><td>Create a new record with optional key and tags.</td><td><code>fathom memory search "Enterprise pricing" --scope run</code></td></tr>
-        <tr><td><code>update</code></td><td>Patch content or metadata on an existing record.</td><td><code>fathom memory get abc123 --follow full_history</code></td></tr>
-        <tr><td><code>delete</code></td><td>Soft-delete (archive) a record. Recoverable via restore.</td><td><code>fathom memory nuke --scope run --yes</code></td></tr>
-        <tr><td><code>archive</code></td><td>Explicitly archive without deleting — same effect as delete.</td><td><code>fathom memory gc --dry-run</code></td></tr>
+        <tr><td><code>add</code></td><td>Append content to <code>MEMORY.md</code> or <code>USER.md</code>.</td><td><code>action=add target=memory content=...</code></td></tr>
+        <tr><td><code>replace</code></td><td>Replace matching existing text.</td><td><code>action=replace old_text=... content=...</code></td></tr>
+        <tr><td><code>remove</code></td><td>Remove matching existing text.</td><td><code>action=remove old_text=...</code></td></tr>
+        <tr><td><code>batch</code></td><td>Apply a sequence of add, replace, or remove operations.</td><td><code>action=batch operations=[...]</code></td></tr>
         
       </tbody>
     </table>
@@ -475,14 +474,13 @@ company:Stripe   ──acquired──▶  company:Lemon Squeezy\`}`}} /></pre>
     <h3>Entity Deduplication</h3>
     <p>
       When the same entity is referenced from different sources (e.g., "Plaid" from a news article
-      and "Plaid Inc." from a CRM export), the graph merges them automatically. Deduplication uses
-      name normalization and fuzzy matching:
+      and "Plaid Inc." from a CRM export), the graph merges them by normalized name and entity type.
+      Review source context and conflicting attributes before export.
     </p>
     <ul class="check-list">
-      <li><strong>Name normalization</strong> — Strips suffixes like Inc., Ltd., Corp. before comparison.</li>
-      <li><strong>Fuzzy matching</strong> — Levenshtein distance ≤ 2 on normalized names triggers a merge candidate.</li>
-      <li><strong>Attribute merging</strong> — Conflicting attributes are kept as arrays; non-conflicting ones are unioned.</li>
-      <li><strong>Edge re-wiring</strong> — All edges from the duplicate entity are re-pointed to the canonical one.</li>
+      <li><strong>Name normalization</strong> — Whitespace and case normalization identify matching names by entity type.</li>
+      <li><strong>Attribute merging</strong> — Conflicting attributes remain visible for review while non-conflicting values can be combined.</li>
+      <li><strong>Edge re-wiring</strong> — Relations attached to a reused node remain connected to the canonical entity.</li>
     </ul>
 
     <h3>Graph Visualization Concept</h3>
@@ -534,7 +532,7 @@ for edge in edges:
         <tr><td><code>auto_digest</code></td><td>bool</td><td><code>true</code></td><td>Automatically inject a memory digest into the top-level agent's system prompt.</td></tr>
         <tr><td><code>llm_classify</code></td><td>bool</td><td><code>true</code></td><td>Use the LLM for absorb classification. When false, falls back to heuristic rules.</td></tr>
         <tr><td><code>rerank</code></td><td>bool</td><td><code>false</code></td><td>Enable a second-pass LLM reranker on search results. Adds latency but improves precision.</td></tr>
-        <tr><td><code>gc_auto</code></td><td>bool</td><td><code>false</code></td><td>Automatically run GC (including distillation) after each session completes.</td></tr>
+        <tr><td><code>gc_auto</code></td><td>bool</td><td><code>false</code></td><td>Run hourly background memory maintenance (GC and distillation) while sessions execute.</td></tr>
         <tr><td><code>gc_ttl_days</code></td><td>int</td><td><code>30</code></td><td>Run-scoped facts older than this are archived by the GC.</td></tr>
         <tr><td><code>gc_compact_above</code></td><td>int</td><td><code>200</code></td><td>When a (scope, key) group exceeds this many active rows, GC compacts them.</td></tr>
       </tbody>
@@ -600,9 +598,9 @@ fathom memory search "CEO background" --scope user\`}`}} /></pre>
 fathom memory list --scope agent --status archived -n 50
 fathom memory list --scope run\`}`}} /></pre>
     </div>
-    <p>
-      Lists records with optional filtering by scope, status (<code>active</code>, <code>archived</code>, <code>all</code>),
-      and key prefix. Results are ordered by most recently updated.
+      <p>
+      Lists records with optional filtering by scope, status (<code>active</code>, <code>superseded</code>, <code>archived</code>, <code>all</code>),
+      and a result limit. Results are ordered by most recently updated.
     </p>
 
     <h3>Get</h3>
@@ -687,8 +685,8 @@ fathom memory gc --compact-above 200\`}`}} /></pre>
 fathom memory nuke --scope all --yes\`}`}} /></pre>
     </div>
     <p>
-      Hard-deletes all records in the specified scope. Requires <code>--yes</code> as a safety
-      confirmation. <strong>This is the only command that performs irreversible deletion.</strong>
+      Permanently deletes all records in the specified scope. Requires <code>--yes</code> as a safety
+      confirmation. <strong>This is the destructive command; GC and archive operations are recoverable.</strong>
       Use <code>--scope all</code> to wipe the entire memory store — useful for starting fresh
       in development environments.
     </p>
@@ -916,7 +914,7 @@ Content-Type: application/json
       that the agent should always know.
     </p>
     <ul class="check-list">
-      <li><strong>Auto-distill</strong> — Enable <code>gc_auto = true</code> to distill after every session. Best for continuous research workflows.</li>
+      <li><strong>Auto-distill</strong> — Enable <code>gc_auto = true</code> to run the hourly maintenance loop that performs GC and distillation. Best for continuous workflows.</li>
       <li><strong>Manual distill</strong> — Use <code>--dry-run</code> first to review what would be promoted, then run without the flag. Best for high-stakes campaigns where you want control.</li>
       <li><strong>Seed knowledge</strong> — Use <code>memory_absorb</code> with scope <code>agent</code> to pre-load facts before running research. This gives the agent a head start.</li>
     </ul>
@@ -941,7 +939,7 @@ Content-Type: application/json
       <li><strong>Review contradictions</strong> — Run <code>fathom memory list --scope agent</code> periodically and look for records linked by <code>contradicts</code> edges. Resolve them by boosting the correct one and archiving the stale one.</li>
       <li><strong>Audit importance scores</strong> — Facts with high importance that are no longer relevant will dominate digests. Use <code>memory_boost</code> to dial them back when context changes.</li>
       <li><strong>Prune stale run facts</strong> — If <code>gc_auto</code> is disabled, run <code>fathom memory gc --dry-run</code> weekly to check for accumulation.</li>
-      <li><strong>Rebuild after model changes</strong> — Switching embedding models invalidates existing vectors. Always run <code>fathom memory rebuild --embeddings-only</code> after changing the <code>embeddings</code> config.</li>
+      <li><strong>Rebuild after model changes</strong> — Switching embedding models invalidates existing vectors. Run <code>fathom memory rebuild</code> after changing the <code>embeddings</code> config.</li>
       <li><strong>Monitor store size</strong> — Use <code>fathom memory stats</code> to track growth. Store size depends on workload; use `fathom memory stats` to monitor growth in your deployment.</li>
       <li><strong>Back up the database</strong> — The SQLite file at <code>db_path</code> contains everything. Include it in your backup rotation, especially before running <code>nuke</code>.</li>
     </ul>

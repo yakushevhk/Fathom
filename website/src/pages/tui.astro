@@ -86,8 +86,10 @@ fathom tui --profile hunter</code></pre>
           <h3 data-i18n="tuiPage.cta.title">Try the TUI now</h3>
           <p class="bench-sub" data-i18n="tuiPage.cta.sub">Install Fathom and launch the interactive terminal in one command.</p>
           <div class="code-card">
-            <pre><code>curl -sSf https://fathom.uz/install.sh | sh
-fathom tui</code></pre>
+            <pre><code>git clone https://github.com/yakushevhk/Fathom.git
+cd Fathom
+cargo build --release
+./target/release/fathom tui</code></pre>
           </div>
           <div style="margin-top: 16px;">
             <a href="/install" class="btn btn-outline" data-i18n="tuiPage.cta.install">Installation guide</a>

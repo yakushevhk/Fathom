@@ -5,7 +5,7 @@ const endpointGroups = [
   {
     key: 'sessions', name: 'Worker sessions',
     endpoints: [
-      { m: 'POST', p: '/api/v1/sessions', d: 'Start a worker session with task, profile, model and budget' },
+      { m: 'POST', p: '/api/v1/sessions', d: 'Start a worker session with query and optional output_dir (returns 202 Accepted)' },
       { m: 'GET', p: '/api/v1/sessions', d: 'List worker sessions with status and progress' },
       { m: 'GET', p: '/api/v1/sessions/:id', d: 'Session state, worker tree and token usage' },
       { m: 'GET', p: '/api/v1/sessions/:id/results', d: 'Completed worker output and exported artifacts' },
@@ -38,7 +38,7 @@ const endpointGroups = [
     key: 'memory', name: 'Memory',
     endpoints: [
       { m: 'GET', p: '/api/v1/memories', d: 'Search the semantic memory store' },
-      { m: 'POST', p: '/api/v1/memories/absorb', d: 'Ingest a fact (dedup + supersedes chains)' },
+      { m: 'POST', p: '/api/v1/memories/absorb', d: 'Ingest facts through the semantic memory pipeline (dedup + supersedes chains)' },
       { m: 'GET', p: '/api/v1/memories/stats', d: 'Store size, scopes, graph stats' },
       { m: 'POST', p: '/api/v1/memories/distill', d: 'Distill run-facts into durable knowledge' },
       { m: 'POST', p: '/api/v1/memories/gc', d: 'Archive stale facts, compact scope groups' },
@@ -98,7 +98,7 @@ const endpointGroups = [
       { m: 'GET / POST', p: '/api/v1/computers/tabs*', d: 'List, open, activate, or close tabs on a configured browser relay' },
       { m: 'POST', p: '/api/v1/computers/control/take|release', d: 'Take or release operator control of the configured relay' },
       { m: 'GET / PUT / DELETE', p: '/api/v1/computers/files*', d: 'List, read, write, or delete confined workspace files on the relay' },
-      { m: 'GET / POST', p: '/api/v1/computers', d: 'List configured computers or manage a supervisor-backed computer' },
+      { m: 'GET', p: '/api/v1/computers', d: 'List configured computers; supervisor lifecycle requires COMPUTER_TOKEN' },
     ],
   },
   {

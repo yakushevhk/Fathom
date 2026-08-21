@@ -3,18 +3,21 @@ import Layout from '../layouts/Layout.astro';
 
 const installers = [
   {
-    name: 'install.sh',
-    d: 'One-line installer for the public source-available project. It builds the Fathom release binary and installs it to /usr/local/bin (or $PREFIX/bin). A systemd unit is not shipped; configure one yourself when deploying on Linux.',
-    code: `curl -sSf https://fathom.uz/install.sh | sh`,
+    name: 'Cargo / source checkout',
+    d: 'Clone the public GitHub workspace and build the release binary with Rust 1.97 or newer. Run it from target/release or install it with Cargo.',
+    code: `git clone https://github.com/yakushevhk/Fathom.git
+cd Fathom
+cargo build --release
+./target/release/fathom --help`,
   },
   {
     name: 'Cargo',
-    d: 'Build the public GitHub workspace from source with Rust 1.97 or newer. A release build produces the self-contained Fathom binary.',
-    code: `cargo install --path .
+    d: 'From a Fathom source checkout, build or install the self-contained release binary with Rust 1.97 or newer.',
+    code: `cargo build --release
+./target/release/fathom --help
 
-# or build directly
-cargo build --release
-./target/release/fathom --help`,
+# optionally install into Cargo\'s bin directory
+cargo install --path .`,
   },
   {
     name: 'Docker',
@@ -27,7 +30,7 @@ docker run -it --rm \\
   fathom run "your query" --output /data/results/`,
   },
   {
-    name: 'Docker Compose',
+    name: 'Operator Compose (optional)',
     d: 'Compose is not shipped in this repository. Use the Docker image directly, or provide your own compose file with port 8080 and persistent state volumes.',
     code: `# Build and run the shipped image
 docker build -t fathom .
@@ -51,6 +54,7 @@ const envVars = [
   { name: 'PR_MEMORY_DB', purpose: 'Semantic memory SQLite database path override; default is ~/.fathom/memory.db.' },
   { name: 'FATHOM_CREDENTIAL_KEY', purpose: 'Encryption key for the credential vault (32 bytes, represented as 64 hex characters).' },
   { name: 'COMPUTER_URL', purpose: 'Computer service URL used by agent computer tools (default: http://127.0.0.1:8765).' },
+  { name: 'COMPUTER_TOKEN', purpose: 'Required when a supervised computer relay is enabled; shared token for relay and supervisor requests.' },
   { name: 'COMPUTER_ALLOW_PRIVATE_HOSTS', purpose: 'Allow private or localhost browser targets for development only (default: false).' },
   { name: 'RUST_LOG', purpose: 'Log level filter (default: info).' },
 ];
@@ -62,7 +66,7 @@ const envVars = [
       <div class="inst-hero">
         <p class="eyebrow" data-i18n="install.hero.badge">Install</p>
         <h1 class="h2-sec" data-i18n="install.hero.title">One binary. Every runtime.</h1>
-        <p class="copy-lg mx-auto" data-i18n="install.hero.sub">Fathom is a source-available, self-hosted runtime for autonomous work. Install the public build with curl, compile it with Cargo, or package it in Docker — then operate it on infrastructure you control.</p>
+        <p class="copy-lg mx-auto" data-i18n="install.hero.sub">Fathom is a source-available, self-hosted runtime for autonomous work. Clone the public repository and build it with Cargo, or package that checkout in Docker — then operate it on infrastructure you control.</p>
       </div>
 
       <!-- Installers -->
@@ -87,6 +91,7 @@ const envVars = [
         </div>
         <div class="code-card">
           <pre><code>{`# after creating /etc/systemd/system/fathom.service
+# The repository does not ship a unit file; set ExecStart and environment for your deployment.
 sudo systemctl daemon-reload
 sudo systemctl enable --now fathom
 

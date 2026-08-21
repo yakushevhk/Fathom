@@ -20,19 +20,21 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
       <div class="step-card">
         <div class="step-number">1</div>
         <h3 data-i18n="docsIndex.step1Title">Install</h3>
-        <p data-i18n="docsIndex.step1Desc">Install via the curl script or build from source with Cargo.</p>
+        <p data-i18n="docsIndex.step1Desc">Clone the source checkout and build the release binary with Cargo.</p>
         <div class="code-block">
           <div class="code-header">
             <span class="code-lang">bash</span>
           </div>
-          <pre><code>curl -sSf https://fathom.uz/install.sh | sh</code></pre>
+          <pre><code>git clone https://github.com/yakushevhk/Fathom.git
+cd Fathom
+cargo build --release</code></pre>
         </div>
       </div>
 
       <div class="step-card">
         <div class="step-number">2</div>
         <h3 data-i18n="docsIndex.step2Title">Configure</h3>
-        <p data-i18n="docsIndex.step2Desc">Add your API key and choose a search backend.</p>
+        <p data-i18n="docsIndex.step2Desc">Configure your LLM provider credentials and choose a search backend.</p>
         <div class="code-block">
           <div class="code-header">
             <span class="code-lang">~/.fathom/config.toml</span>

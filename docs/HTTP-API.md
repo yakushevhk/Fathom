@@ -80,19 +80,18 @@ Create a new autonomous task session. The server spawns a coordinator that manag
 ```json
 {
   "query": "Research the AI agent market",
-  "api_key": "sk-optional-key"
+  "output_dir": "./results"
 }
 ```
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `query` | string | ✅ | Natural-language task (non-empty) |
-| `api_key` | string | ❌ | Override LLM key for this session |
 | `output_dir` | string | ❌ | Single relative directory name override (sanitized: no path separators, no `..`, no absolute paths) |
 
 The `output_dir` field is validated to prevent directory traversal: it must be a single relative directory name with no slashes, backslashes, or `..` components. The server creates `<output_dir>/<session_id>` as the working directory. If omitted, the configured default output directory is used.
 
-**Response 201:**
+**Response 202:**
 ```json
 {
   "id": "019fd38a-9a7c-7322-a671-64427832f0eb",
@@ -104,7 +103,8 @@ The `output_dir` field is validated to prevent directory traversal: it must be a
 
 **Errors:**
 - `400` — empty query or invalid `output_dir`
-- `500` — LLM api_key not configured, or filesystem error creating the output directory
+- `503` — LLM api_key is not configured
+- `500` — filesystem error creating the output directory
 
 ---
 

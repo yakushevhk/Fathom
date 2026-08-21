@@ -66,10 +66,10 @@ Fathom can expose configured search backends through a single `web_search` inter
 
 Two operation modes give you control:
 
-- **Hybrid mode** — queries all backends simultaneously and merges results, deduplicating and ranking by relevance. This maximizes coverage for broad research.
-- **Smart mode** — analyzes the query type (news, company research, academic, technical) and selects the optimal backend. For example, Exa for neural semantic search, Tavily for real-time news, DuckDuckGo for lightweight fallback without API keys.
+- **Hybrid mode** — tries configured backends in priority order and returns the first non-empty result set, with fallback when a provider is unavailable.
+- **Smart mode** — queries configured backends concurrently and merges results with reciprocal-rank fusion (RRF), maximizing coverage for broad tasks.
 
-Each backend returns structured results with titles, snippets, URLs, and metadata. The tool normalizes these into a common schema, so agent code never touches backend-specific formats.
+Each backend returns normalized titles, snippets, and URLs. The tool normalizes these into a common schema, so agent code never touches backend-specific formats.
 
 ### 03 · OSINT / Lead generation — extract, deduplicate, enrich, push to CRM
 
@@ -112,7 +112,7 @@ Fathom ships with **51 always-registered tools**, plus up to **5 CDP browser too
 | **Agent control** | `spawn_agent`, `question`, `skill`, `scratchpad`, `undo` |
 | **Coordination** | `hub`, `daemon` |
 
-Each tool declares its JSON schema, a natural-language description, and cost/rate-limit metadata. The LLM sees these schemas as tool definitions and can invoke any tool in the same turn. Tool dispatch overhead is ~0.75 µs per call — negligible even in complex chains.
+Each tool declares its JSON schema, a natural-language description, and cost/rate-limit metadata. The LLM sees these schemas as tool definitions and can invoke any tool in the same turn. Tool dispatch overhead is ~0.75 ms per call in the measured batch benchmark — negligible relative to network and model work.
 
 ### 05 · Computer use (Playwright) — a real browser the agent operates
 

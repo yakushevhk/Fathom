@@ -111,7 +111,7 @@ sidebarId: "tools"
           <thead><tr><th data-i18n="docsTools.thParam">Parameter</th><th data-i18n="docsTools.thType">Type</th><th data-i18n="docsTools.thDesc">Description</th></tr></thead>
           <tbody>
             <tr><td><code>url</code></td><td><span class="type-badge">string</span></td><td data-i18n="docsTools.pFeedUrl">Feed URL</td></tr>
-            <tr><td><code>limit</code></td><td><span class="type-badge">u32?</span></td><td data-i18n="docsTools.pFeedLimit">Max items (default 20)</td></tr>
+            <tr><td><code>limit</code></td><td><span class="type-badge">u32?</span></td><td data-i18n="docsTools.pFeedLimit">Max items (default 50)</td></tr>
           </tbody>
         </table>
       </div>
@@ -825,7 +825,7 @@ sidebarId: "tools"
         <h3><code>save_contacts</code></h3>
         <span class="safety-badge sequential" data-i18n="docsTools.safeSequential">Sequential</span>
       </div>
-      <p data-i18n="docsTools.saveContactsDesc">Save harvested contacts into the persistent contact database (contacts.db), deduplicating against existing records, and optionally push to CRM (amoCRM/Bitrix24/HubSpot).</p>
+      <p data-i18n="docsTools.saveContactsDesc">Save harvested contacts into the persistent contact database (contacts.db), and optionally push to CRM (amoCRM/Bitrix24/HubSpot) when configured.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th data-i18n="docsTools.thParam">Parameter</th><th data-i18n="docsTools.thType">Type</th><th data-i18n="docsTools.thDesc">Description</th></tr></thead>
@@ -933,14 +933,16 @@ sidebarId: "tools"
         <h3><code>memory</code></h3>
         <span class="safety-badge parallel-safe" data-i18n="docsTools.safeContextDep">Context-dependent</span>
       </div>
-      <p data-i18n="docsTools.memoryToolDesc2">Manage persistent memory entries that persist across sessions (MEMORY.md / USER.md). Actions: list, read, add, update, delete, archive, restore.</p>
+      <p data-i18n="docsTools.memoryToolDesc2">Manage persistent memory entries stored in <code>MEMORY.md</code> and <code>USER.md</code> under <code>~/.fathom/memory/</code>. Actions: add, replace, remove, or batch.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th data-i18n="docsTools.thParam">Parameter</th><th data-i18n="docsTools.thType">Type</th><th data-i18n="docsTools.thDesc">Description</th></tr></thead>
           <tbody>
-            <tr><td><code>action</code></td><td><span class="type-badge">string</span></td><td data-i18n="docsTools.pMemoryAction">list | read | add | update | delete | archive | restore</td></tr>
-            <tr><td><code>content</code></td><td><span class="type-badge">string?</span></td><td data-i18n="docsTools.pContentToWrite">Content to write</td></tr>
-            <tr><td><code>id</code></td><td><span class="type-badge">string?</span></td><td data-i18n="docsTools.pMemoryId">Memory entry ID</td></tr>
+            <tr><td><code>action</code></td><td><span class="type-badge">string</span></td><td data-i18n="docsTools.pMemoryAction">add | replace | remove | batch</td></tr>
+            <tr><td><code>target</code></td><td><span class="type-badge">string?</span></td><td><code>memory</code> or <code>user</code> (default: <code>memory</code>)</td></tr>
+            <tr><td><code>content</code></td><td><span class="type-badge">string?</span></td><td data-i18n="docsTools.pContentToWrite">Content for add or replace</td></tr>
+            <tr><td><code>old_text</code></td><td><span class="type-badge">string?</span></td><td>Existing text for replace or remove</td></tr>
+            <tr><td><code>operations</code></td><td><span class="type-badge">array?</span></td><td>Batch of add, replace, or remove operations when <code>action</code> is <code>batch</code></td></tr>
           </tbody>
         </table>
       </div>
@@ -1044,7 +1046,7 @@ sidebarId: "tools"
         <h3><code>memory_graph</code></h3>
         <span class="safety-badge parallel-safe" data-i18n="docsTools.safeContextDep">Context-dependent</span>
       </div>
-      <p data-i18n="docsTools.memoryGraphDesc">Entity knowledge graph for persons, companies, and locations. Stores deduplicated entities and typed relations; answers multi-hop queries.</p>
+      <p data-i18n="docsTools.memoryGraphDesc">Entity knowledge graph for persons, companies, and locations. Stores entities and typed relations; answers multi-hop queries.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th data-i18n="docsTools.thParam">Parameter</th><th data-i18n="docsTools.thType">Type</th><th data-i18n="docsTools.thDesc">Description</th></tr></thead>
@@ -1088,7 +1090,7 @@ sidebarId: "tools"
           <tr>
             <td><span class="safety-badge context-dependent">Context-dependent</span></td>
             <td>memory (file-backed), memory_graph, scratchpad</td>
-            <td data-i18n="docsTools.parallelCtxBehavior">Depends on action (read=parallel, write=sequential)</td>
+            <td data-i18n="docsTools.parallelCtxBehavior">Context-dependent; file-memory writes are sequential</td>
           </tr>
         </tbody>
       </table>
@@ -1156,7 +1158,7 @@ sidebarId: "tools"
       </div>
       <div class="mode-card">
         <h4><code>smart</code></h4>
-        <p data-i18n="docsTools.smartDesc">Queries all configured backends in parallel. Deduplicates results by URL, then ranks using reciprocal rank fusion for optimal relevance.</p>
+        <p data-i18n="docsTools.smartDesc">Queries all configured backends in parallel, then ranks combined results using reciprocal rank fusion.</p>
       </div>
     </div>
   </section>

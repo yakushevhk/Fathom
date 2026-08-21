@@ -61,7 +61,7 @@ The key is missing, is empty, or is set to a placeholder.
 
 3. **If using a search API** (Parallel, LinkUp, Exa, Tavily, Serper, Brave), also configure those keys in their respective sections (`[parallel]`, `[linkup]`, `[exa]`, `[tavily]`, `[serper]`, `[brave]`).
 
-4. **Check environment variables** — some providers also support `$FATHOM_LLM_API_KEY`. If both are set, the config file takes precedence.
+4. **Check the config file** — the supported LLM credential is `[llm].api_key` in `~/.fathom/config.toml`; Fathom does not claim a `FATHOM_LLM_API_KEY` environment override.
 
 ---
 

@@ -1171,7 +1171,7 @@ enum StopVerdict { Stop, Continue(String) }
 ```json
 {
   "event": "post_tool_use",
-  "tool": "fetch_url",
+  "tool": "web_fetch",
   "args": {"url": "https://example.com"},
   "output": "<html>...</html>",
   "success": true,
@@ -1508,7 +1508,7 @@ Returns `replacement` if truncated, otherwise `original`.
        The full output was saved to disk at:
          {spill_path}
 
-       To access it, use the `read_file` tool with that path.
+       To access it, use the `file_read` tool with that path.
 
        First 500 characters:]
        {first_500_chars}
@@ -1719,28 +1719,15 @@ enum ResumeOption {
 
 ## 13. tool_executor.rs
 
-**File:** `src/tool_executor.rs` — the parallel tool executor. Classifies tool_calls into concurrent and sequential, runs parallel ones simultaneously with path-overlap detection.
+**File:** `src/tool_executor.rs` — the current batch executor. It classifies registered tool calls into `parallel_safe` and `sequential_only` sets, runs safe calls concurrently, and serializes overlapping file paths. The implementation uses the real tool names below; the remainder of this section is an implementation-oriented summary rather than a public API contract.
 
-### 13.1. The `ToolCategory` enum
+### 13.1. Classification sets
 
-```rust
-enum ToolCategory {
-    ReadOnly,   // search_code, fetch_url, read_file, get_contacts
-    Write,      // write_file, append_file, update_record
-    Shell,      // shell
-    Unknown,    // everything else
-}
-```
+The default `ToolExecutor` marks read-only tools such as `web_search`, `web_fetch`, `file_read`, `glob`, `grep`, `web_crawl`, `web_feed`, `code_symbols`, and `repo_map` as `parallel_safe`. State-changing tools such as `file_write`, `file_edit`, `shell`, `spawn_agent`, and `save_contacts` are `sequential_only`; unknown tools are sequential for safety.
 
-### 13.2. `classify_tool(name) -> ToolCategory`
+### 13.2. Path extraction and overlap
 
-**Algorithm:**
-1. Converts `name` to lowercase.
-2. Matches:
-   - `"search_code"` | `"fetch_url"` | `"read_file"` | `"get_contacts"` → `ReadOnly`
-   - `"write_file"` | `"append_file"` | `"update_record"` → `Write`
-   - `"shell"` → `Shell`
-   - `_` → `Unknown`
+`extract_file_path` inspects file-tool arguments and canonicalizes paths. If two otherwise parallel-safe calls address the same or overlapping path, the later call is demoted to the sequential group.
 
 ### 13.3. `extract_paths(tool_name, args) -> Vec<String>`
 
@@ -1778,14 +1765,10 @@ enum ToolCategory {
 ### 13.6. `partition_batch(tool_calls) -> PartitionedBatch`
 
 **Algorithm:**
-1. Classifies each `tool_call` via `classify_tool`.
-2. **Shell and Unknown** → always in `sequential`.
-3. **Write** — checks for conflicts:
-   - If `sequential` already contains a Write with overlapping paths — adds to `sequential`.
-   - Otherwise — adds to `concurrent`.
-4. **ReadOnly** → adds to `concurrent`.
-5. Builds `conflict_groups` from the `sequential` indices.
-6. Returns `PartitionedBatch`.
+1. Checks each call against the executor's `sequential_only` and `parallel_safe` name sets.
+2. **Sequential-only and unknown tools** → add to `sequential`.
+3. **Parallel-safe tools** → add to `concurrent`, unless path-overlap detection demotes a file call to `sequential`.
+4. Returns `PartitionedBatch` with the original call indices preserved.
 
 ### 13.7. `execute_parallel(tools, concurrent, tool_ctx) -> Vec<(usize, ToolOutput)>` — async
 

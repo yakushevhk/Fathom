@@ -197,8 +197,8 @@ function rewriteInternal(href, langRoot) {
       href.startsWith('tel:') || href.startsWith('#') || href.startsWith('data:') ||
       href.includes('google') || href.includes('fonts') || href.includes('github')) return href;
   if (href.startsWith('/assets/') || href.startsWith('/favicon') || href.startsWith('/_astro/')) return href;
-  // avoid double prefix
-  if (href.startsWith('/ru/')) return href;
+  // avoid double prefix, including the locale root without a trailing slash
+  if (href === '/ru' || href.startsWith('/ru/')) return href;
   return langRoot + (href.startsWith('/') ? href : '/' + href);
 }
 

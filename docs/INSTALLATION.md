@@ -226,8 +226,8 @@ A compose file is not currently shipped in this repository; use the `docker run`
 The repository does not currently ship a `fathom.service` unit file. Create a unit that runs the release binary with your mounted config, then install it:
 
 ```bash
-# Installation
-sudo cp fathom.service /etc/systemd/system/
+# Installation (after creating your own unit file)
+sudo cp /path/to/fathom.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable fathom
 sudo systemctl start fathom
@@ -378,18 +378,16 @@ Any unknown provider name is accepted with a trace warning — genuinely new pro
 
 ---
 
-## Install script
+## Install from source
+
+The repository does not ship an installer script. Build and install the binary with Cargo:
 
 ```bash
-./install.sh
+cargo install --path . --locked
+# or: cargo build --release
 ```
 
-The script:
-- Builds a release binary
-- Installs it to `/usr/local/bin/` (or `~/.local/bin/`)
-- Creates a default config
-- Does not install a systemd unit; create and enable one separately when deploying on systemd
-
+Create `~/.fathom/config.toml` from the documented configuration and run `fathom serve` or `fathom tui`.
 ---
 
 ## Optional dependencies

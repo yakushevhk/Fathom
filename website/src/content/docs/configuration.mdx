@@ -179,43 +179,43 @@ url       = <span class="code-string">"https://mcp.example.com"</span>`}} /></pr
             <td><code>provider</code></td>
             <td><span class="type-badge">string</span></td>
             <td><code>"deepseek"</code></td>
-            <td data-i18n="docsConfig.llm.provider">Provider name</td>
+            <td>Provider name</td>
           </tr>
           <tr>
             <td><code>base_url</code></td>
             <td><span class="type-badge">string</span></td>
             <td><code>"https://api.deepseek.com"</code></td>
-            <td data-i18n="docsConfig.llm.baseUrl">API endpoint</td>
+            <td>API endpoint</td>
           </tr>
           <tr>
             <td><code>api_key</code></td>
             <td><span class="type-badge">string</span></td>
             <td><code>""</code></td>
-            <td data-i18n-html="docsConfig.llm.apiKey"><strong>Required</strong> for operation</td>
+            <td><strong>Required</strong> for operation</td>
           </tr>
           <tr>
             <td><code>model</code></td>
             <td><span class="type-badge">string</span></td>
             <td><code>"deepseek-chat"</code></td>
-            <td data-i18n="docsConfig.llm.model">Model identifier</td>
+            <td>Model identifier</td>
           </tr>
           <tr>
             <td><code>fast_model</code></td>
             <td><span class="type-badge">string</span></td>
             <td><code>""</code></td>
-            <td data-i18n="docsConfig.llm.fastModel">Cheap/fast model for entity extraction, memory absorb, reranking. Empty = reuse model</td>
+            <td>Cheap/fast model for entity extraction, memory absorb, reranking. Empty = reuse model</td>
           </tr>
           <tr>
             <td><code>max_tokens</code></td>
             <td><span class="type-badge">u32</span></td>
             <td><code>8192</code></td>
-            <td data-i18n="docsConfig.llm.maxTokens">Max response tokens</td>
+            <td>Max response tokens</td>
           </tr>
           <tr>
             <td><code>temperature</code></td>
             <td><span class="type-badge">f32</span></td>
             <td><code>0.7</code></td>
-            <td data-i18n="docsConfig.llm.temperature">Generation temperature</td>
+            <td>Generation temperature</td>
           </tr>
         </tbody>
       </table>
@@ -240,31 +240,31 @@ url       = <span class="code-string">"https://mcp.example.com"</span>`}} /></pr
             <td><code>max_depth</code></td>
             <td><span class="type-badge">u32</span></td>
             <td><code>2</code></td>
-            <td data-i18n="docsConfig.agent.maxDepth">Max sub-agent nesting depth</td>
+            <td>Max sub-agent nesting depth</td>
           </tr>
           <tr>
             <td><code>max_agents</code></td>
             <td><span class="type-badge">u32</span></td>
             <td><code>20</code></td>
-            <td data-i18n="docsConfig.agent.maxAgents">Max agents per session</td>
+            <td>Max agents per session</td>
           </tr>
           <tr>
             <td><code>max_iterations</code></td>
             <td><span class="type-badge">u32</span></td>
             <td><code>50</code></td>
-            <td data-i18n="docsConfig.agent.maxIterations">Max LLM iterations per agent</td>
+            <td>Max LLM iterations per agent</td>
           </tr>
           <tr>
             <td><code>timeout_seconds</code></td>
             <td><span class="type-badge">u64</span></td>
             <td><code>600</code></td>
-            <td data-i18n="docsConfig.agent.timeout">Session timeout (seconds)</td>
+            <td>Session timeout (seconds)</td>
           </tr>
           <tr>
             <td><code>use_multiprocess</code></td>
             <td><span class="type-badge">bool</span></td>
             <td><code>false</code></td>
-            <td data-i18n="docsConfig.agent.useMultiprocess">Isolate agents in separate processes</td>
+            <td>Isolate agents in separate processes</td>
           </tr>
           <tr>
             <td><code>max_concurrent_children</code></td>
@@ -424,7 +424,7 @@ url       = <span class="code-string">"https://mcp.example.com"</span>`}} /></pr
             <td><code>context_window</code></td>
             <td><span class="type-badge">u32</span></td>
             <td><code>128000</code></td>
-            <td data-i18n="docsConfig.context.window">Context window size (tokens)</td>
+            <td>Context window size (tokens)</td>
           </tr>
           <tr>
             <td><code>context_window_profile</code></td>
@@ -436,25 +436,25 @@ url       = <span class="code-string">"https://mcp.example.com"</span>`}} /></pr
             <td><code>compact_threshold</code></td>
             <td><span class="type-badge">f32</span></td>
             <td><code>0.50</code></td>
-            <td data-i18n="docsConfig.context.compactThreshold">Compression trigger (fraction of window)</td>
+            <td>Compression trigger (fraction of window)</td>
           </tr>
           <tr>
             <td><code>tool_output_max_bytes</code></td>
             <td><span class="type-badge">u32</span></td>
             <td><code>50000</code></td>
-            <td data-i18n="docsConfig.context.toolBytes">Tool output limit (bytes)</td>
+            <td>Tool output limit (bytes)</td>
           </tr>
           <tr>
             <td><code>tool_output_max_lines</code></td>
             <td><span class="type-badge">u32</span></td>
             <td><code>2000</code></td>
-            <td data-i18n="docsConfig.context.toolLines">Tool output limit (lines)</td>
+            <td>Tool output limit (lines)</td>
           </tr>
           <tr>
             <td><code>turn_budget_bytes</code></td>
             <td><span class="type-badge">u32</span></td>
             <td><code>200000</code></td>
-            <td data-i18n="docsConfig.context.turnBudget">Aggregate budget per turn (bytes)</td>
+            <td>Aggregate budget per turn (bytes)</td>
           </tr>
         </tbody>
       </table>

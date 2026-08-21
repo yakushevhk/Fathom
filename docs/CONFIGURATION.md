@@ -1,8 +1,8 @@
 # Configuration
 
-The config is stored in `~/.fathom/config.toml` (TOML). All sections are optional — missing fields take default values. Old configs (without new sections) load without errors.
+The config is stored in `~/.fathom/config.toml` (TOML). Entire sections may be omitted and receive their section defaults. When a section is present, required fields for that section still must be supplied; consult the tables below before creating partial provider, MCP, or hook entries.
 
-The configuration file is the single source of truth for the entire system. It is loaded once at startup by `AppConfig::load()`, which reads the path resolved from the `PR_CONFIG` environment variable (if set) or `~/.fathom/config.toml` by default. Every config struct uses `#[serde(default)]` on all fields, so new sections and keys are always backward-compatible — older configs missing newer sections (e.g. `[memory]`, `[[mcp.servers]]`, `[[hooks]]`) load without errors and use Rust-level defaults.
+The configuration file is the single source of truth for the entire system. It is loaded once at startup by `AppConfig::load()`, which reads the path resolved from the `PR_CONFIG` environment variable (if set) or `~/.fathom/config.toml` by default. Most optional fields use Rust-level defaults, while provider, MCP-server, and hook entries retain required fields.
 
 The config is broadly divided into: LLM provider routing, agent orchestration parameters, search backends, context-management budgets, output & export, multi-channel notifications, contact database, CRM sync, governance policy engine, credentials vault, long-term semantic memory, MCP tool servers, lifecycle hooks, computer use (browser/Playwright), personality profiles, and HTTP server settings. This reflects Fathom's positioning as a **universal autonomous AI worker** — a virtual AI employee capable of research, outreach, code, and computer use.
 
@@ -345,17 +345,9 @@ fathom serve --port 8080
 
 See [GOVERNANCE.md](GOVERNANCE.md) for the full rule schema, audit format, and API routes.
 
-### `[credentials]`
+### Credentials vault (environment-only)
 
-The credentials vault provides encrypted storage for secrets (API keys, passwords, tokens) that agents can use during operation. All stored values are encrypted at rest using AES-256-GCM.
-
-| Environment variable | Description |
-|---------------------|-------------|
-| `FATHOM_CREDENTIAL_KEY` | 32-byte AES-256-GCM encryption key for the credentials vault. Must be exactly 32 bytes when decoded, encoded as 64 hex characters or base64. |
-
-**Key derivation.** The `FATHOM_CREDENTIAL_KEY` is used directly as the AES-256-GCM key (after hex/base64 decoding). A random 12-byte nonce is generated per encryption operation. Encrypted blobs are stored in SQLite alongside metadata (label, scope, timestamps). The vault is accessible via the HTTP API at `/api/v1/credentials` — list responses never include plaintext values.
-
-**Security.** Never commit the key to version control. In production, inject it via a secrets manager or environment variable. The key is read once at server startup; changing it requires a server restart and re-encryption of all stored credentials.
+The credentials vault is not an `AppConfig` TOML section. It stores API keys, passwords, and tokens encrypted at rest with AES-256-GCM. Set `FATHOM_CREDENTIAL_KEY` to a 32-byte key (64 hex characters or base64) before using credential storage. The vault is exposed through the HTTP API at `/api/v1/credentials`; list responses never include plaintext values. Never commit the key; changing it requires a server restart and re-encryption of stored credentials.
 
 ### `[memory]`
 
@@ -456,7 +448,7 @@ Computer use gives agents a browser (via Playwright) they can drive — navigate
 |----------------------|---------|-------------|
 | `FATHOM_COMPUTER_SERVICE_URL` | `http://127.0.0.1:8765` | URL of the Playwright computer service, used by the server relay |
 | `COMPUTER_SERVICE_URL` | `http://127.0.0.1:8765` | Legacy alias for the same computer service URL |
-| `COMPUTER_TOKEN` | *(auto-generated)* | Authentication token for computer service requests |
+| `COMPUTER_TOKEN` | *(required)* | Shared authentication token; supervisor is unavailable when unset |
 | `COMPUTER_IMAGE` | `fathom/computer:latest` | Docker image for per-agent computer containers |
 | `COMPUTER_NETWORK` | `fathom-computer` | Docker network for computer containers |
 | `COMPUTER_BASE_PORT` | `19000` | Base port for per-agent loopback ports; agent gets `base_port + (hash % 1000)` (deterministic from agent ID) |
@@ -561,4 +553,4 @@ PR_CONFIG=./scratch.toml fathom run "analyze competitor landscape"
 PR_MEMORY_DB=./scratch-memory.db fathom run "find contacts at Acme"
 ```
 
-All new sections have `#[serde(default)]`. Configs from older versions (only `[llm]`, `[agent]`, `[search]`) load correctly — new fields get default values.
+New optional sections can be omitted by older configs. Fields required by a section remain required when that section is present; validate provider, MCP, and hook entries when upgrading.

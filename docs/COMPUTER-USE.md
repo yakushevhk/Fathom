@@ -148,7 +148,7 @@ snapshot:
 
 ## Human / Bot Control Leases
 
-The control WebSocket at `/control/ws` allows a human operator to **take over** the browser at any time. This is a lease-based system:
+The control WebSocket at `/control/ws` allows a human operator to **take over** the browser at any time. The `POST /control/take` and `POST /control/release` routes acquire and release the lease. This is a lease-based system:
 
 1. **Agent mode** — the agent controls the browser exclusively
 2. **Human takeover** — the operator connects via `/control/ws`, acquires the lease, and the agent is notified
@@ -233,7 +233,7 @@ The supervisor crate (`crates/supervisor`) provisions **one isolated computer pe
 | `COMPUTER_IMAGE` | `fathom/computer:latest` | Docker image for the computer container |
 | `COMPUTER_NETWORK` | `fathom-computer` | Docker network for computer containers |
 | `COMPUTER_BASE_PORT` | `19000` | Base port for loopback mapping (each agent gets `base_port + (hash % 1000)`, deterministic from agent ID) |
-| `COMPUTER_TOKEN` | *(auto-generated)* | Shared secret for authenticating computer service requests |
+| `COMPUTER_TOKEN` | *(required)* | Shared secret for authenticating computer service requests; supervisor is unavailable when unset |
 
 ### Container lifecycle
 
@@ -254,7 +254,8 @@ The supervisor crate (`crates/supervisor`) provisions **one isolated computer pe
 | `POST` | `/api/v1/computers/:agent_id/screenshot` | Take a screenshot |
 | `GET` | `/api/v1/computers/:agent_id/screen` | Screen streaming WebSocket |
 | `GET/POST` | `/api/v1/computers/:agent_id/files/*` | File workspace operations |
-| `GET` | `/api/v1/computers/:agent_id/control` | Human takeover WebSocket |
+| `POST` | `/api/v1/computers/:agent_id/control/take` | Take human control |
+| `POST` | `/api/v1/computers/:agent_id/control/release` | Release human control |
 | `POST` | `/api/v1/computers/:agent_id/ensure` | Ensure the computer is running (start if not) |
 | `POST` | `/api/v1/computers/:agent_id/stop` | Stop the computer container |
 | `POST` | `/api/v1/computers/:agent_id/reset` | Reset the computer (clear workspace, restart browser) |
@@ -267,7 +268,7 @@ The supervisor crate (`crates/supervisor`) provisions **one isolated computer pe
 |----------|---------|-------------|
 | `FATHOM_COMPUTER_SERVICE_URL` | `http://127.0.0.1:8765` | URL of the computer service (used by the server relay) |
 | `COMPUTER_SERVICE_URL` | `http://127.0.0.1:8765` | URL of the computer service (internal, legacy alias) |
-| `COMPUTER_TOKEN` | *(auto-generated)* | Authentication token for computer service requests |
+| `COMPUTER_TOKEN` | *(required)* | Shared authentication token; supervisor is unavailable when unset |
 | `COMPUTER_IMAGE` | `fathom/computer:latest` | Docker image for supervisor-provisioned containers |
 | `COMPUTER_NETWORK` | `fathom-computer` | Docker network name |
 | `COMPUTER_BASE_PORT` | `19000` | Base port for loopback mapping |

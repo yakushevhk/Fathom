@@ -43,7 +43,7 @@ use auth::{auth_middleware, rate_limit_middleware, ApiKeyAuth, RateLimiter};
 use axum::{
     body::Body,
     extract::{Path, State},
-    http::{header, StatusCode},
+    http::{header, Method, StatusCode},
     middleware::{self, Next},
     response::{
         sse::{Event, KeepAlive, Sse},
@@ -69,7 +69,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tokio::sync::broadcast;
 use tokio::task::JoinHandle;
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{AllowOrigin, CorsLayer};
 use tower_http::trace::TraceLayer;
 
 /// Environment variable overriding the per-client rate limit
@@ -129,7 +129,8 @@ pub struct AppState {
     /// the store failed to open).
     pub(crate) memory: Option<Arc<pr_memory::Memory>>,
     /// Operator control plane: pending questions/approvals keyed by
-    /// request_id (answered via POST /sessions/:id/answer|approve).
+    /// request_id, with each entry recording its owning session (answered via
+    /// POST /sessions/:id/answer|approve).
     pub(crate) pending_controls: Arc<Mutex<HashMap<String, PendingControl>>>,
     /// Runtime-shared policy engine. Disabled by default to preserve behavior.
     pub(crate) governance: Arc<tokio::sync::RwLock<Governance>>,
@@ -140,8 +141,14 @@ pub struct AppState {
 
 /// A pending operator round-trip waiting for an HTTP answer.
 pub(crate) enum PendingControl {
-    Question(tokio::sync::oneshot::Sender<String>),
-    Approval(tokio::sync::oneshot::Sender<bool>),
+    Question {
+        session_id: String,
+        reply: tokio::sync::oneshot::Sender<String>,
+    },
+    Approval {
+        session_id: String,
+        reply: tokio::sync::oneshot::Sender<bool>,
+    },
 }
 
 impl AppState {
@@ -289,9 +296,45 @@ impl AppState {
     }
 }
 
+/// Allow browser dashboards served from loopback development origins without
+/// opening the API to arbitrary websites. The predicate intentionally accepts
+/// any loopback port because Next's dev server may select one when 3000 is in
+/// use, but never accepts a non-loopback host or a non-HTTP origin.
+fn dashboard_cors() -> CorsLayer {
+    CorsLayer::new()
+        .allow_origin(AllowOrigin::predicate(|origin, _| {
+            let Ok(origin) = origin.to_str() else { return false };
+            let Some(host_port) = origin.strip_prefix("http://") else { return false };
+            if host_port.is_empty() || host_port.contains('/') || host_port.contains('@') {
+                return false;
+            }
+            let host = if let Some(rest) = host_port.strip_prefix('[') {
+                let Some((host, suffix)) = rest.split_once(']') else { return false };
+                if !suffix.is_empty() && !suffix.starts_with(':') { return false }
+                host
+            } else {
+                host_port.split(':').next().unwrap_or_default()
+            };
+            matches!(host, "localhost" | "127.0.0.1" | "::1")
+        }))
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::PATCH,
+            Method::DELETE,
+            Method::OPTIONS,
+        ])
+        .allow_headers([
+            header::ACCEPT,
+            header::CONTENT_TYPE,
+            header::AUTHORIZATION,
+            header::HeaderName::from_static("x-api-key"),
+        ])
+}
+
 /// Build the axum router with all routes and middleware.
 pub fn build_router(state: Arc<AppState>) -> Router {
-    let auth_enabled = state.auth.is_enabled();
     // API routes sit behind authentication and rate limiting. The auth layer
     // is added last, so it runs first (outermost layer) and the rate limiter
     // can key off the authenticated principal.
@@ -427,15 +470,10 @@ pub fn build_router(state: Arc<AppState>) -> Router {
             metrics_middleware,
         ))
         .layer(TraceLayer::new_for_http())
-        // CORS: permissive only when API keys protect the surface. With auth
-        // off (local dev), cross-origin browser requests are blocked — a
-        // malicious web page must not be able to drive the agent fleet
-        // (fleet round 2 CRITICAL).
-        .layer(if auth_enabled {
-            CorsLayer::permissive()
-        } else {
-            CorsLayer::new()
-        })
+        // CORS is limited to loopback dashboard origins in both modes. API
+        // keys still protect keyed deployments, but authentication must not
+        // turn this agent API into a wildcard cross-origin surface.
+        .layer(dashboard_cors())
         .with_state(state)
 }
 
@@ -756,19 +794,32 @@ fn spawn_session(
             let (a_tx, mut a_rx) =
                 tokio::sync::mpsc::unbounded_channel::<pr_agent::ApprovalRequest>();
             let pending = state.pending_controls.clone();
+            let control_session_id = session_id.0.clone();
             let control_loop = tokio::spawn(async move {
                 loop {
                     tokio::select! {
                         q = q_rx.recv() => {
                             let Some(req) = q else { break };
                             if let Ok(mut m) = pending.lock() {
-                                m.insert(req.request_id.clone(), PendingControl::Question(req.reply));
+                                m.insert(
+                                    req.request_id.clone(),
+                                    PendingControl::Question {
+                                        session_id: control_session_id.clone(),
+                                        reply: req.reply,
+                                    },
+                                );
                             }
                         }
                         a = a_rx.recv() => {
                             let Some(req) = a else { break };
                             if let Ok(mut m) = pending.lock() {
-                                m.insert(req.request_id.clone(), PendingControl::Approval(req.reply));
+                                m.insert(
+                                    req.request_id.clone(),
+                                    PendingControl::Approval {
+                                        session_id: control_session_id.clone(),
+                                        reply: req.reply,
+                                    },
+                                );
                             }
                         }
                     }
@@ -956,23 +1007,30 @@ async fn steer_session(
 /// `POST /api/v1/sessions/:id/answer` — answer a pending `question` tool.
 async fn answer_question(
     State(state): State<Arc<AppState>>,
-    Path(_id): Path<String>,
+    Path(id): Path<String>,
     Json(body): Json<AnswerRequest>,
 ) -> Response {
     let pending = state
         .pending_controls
         .lock()
         .ok()
-        .and_then(|mut m| m.remove(&body.request_id));
+        .and_then(|mut m| match m.get(&body.request_id) {
+            Some(PendingControl::Question { session_id, .. })
+            | Some(PendingControl::Approval { session_id, .. })
+                if session_id == &id => m.remove(&body.request_id),
+            // A control owned by another session is deliberately treated as
+            // absent and left pending for its owner.
+            _ => None,
+        });
     match pending {
-        Some(PendingControl::Question(reply)) => match reply.send(body.text.clone()) {
+        Some(PendingControl::Question { reply, .. }) => match reply.send(body.text.clone()) {
             Ok(()) => json(
                 StatusCode::OK,
                 serde_json::json!({ "answered": true, "request_id": body.request_id }),
             ),
             Err(_) => error(StatusCode::GONE, "the agent stopped waiting for this answer"),
         },
-        Some(PendingControl::Approval(_)) => error(
+        Some(PendingControl::Approval { .. }) => error(
             StatusCode::BAD_REQUEST,
             "request_id belongs to an approval, use /approve",
         ),
@@ -984,16 +1042,23 @@ async fn answer_question(
 /// tool call.
 async fn approve_tool(
     State(state): State<Arc<AppState>>,
-    Path(_id): Path<String>,
+    Path(id): Path<String>,
     Json(body): Json<ApproveRequest>,
 ) -> Response {
     let pending = state
         .pending_controls
         .lock()
         .ok()
-        .and_then(|mut m| m.remove(&body.request_id));
+        .and_then(|mut m| match m.get(&body.request_id) {
+            Some(PendingControl::Question { session_id, .. })
+            | Some(PendingControl::Approval { session_id, .. })
+                if session_id == &id => m.remove(&body.request_id),
+            // A control owned by another session is deliberately treated as
+            // absent and left pending for its owner.
+            _ => None,
+        });
     match pending {
-        Some(PendingControl::Approval(reply)) => match reply.send(body.approved) {
+        Some(PendingControl::Approval { reply, .. }) => match reply.send(body.approved) {
             Ok(()) => json(
                 StatusCode::OK,
                 serde_json::json!({
@@ -1003,7 +1068,7 @@ async fn approve_tool(
             ),
             Err(_) => error(StatusCode::GONE, "the agent stopped waiting for this approval"),
         },
-        Some(PendingControl::Question(_)) => error(
+        Some(PendingControl::Question { .. }) => error(
             StatusCode::BAD_REQUEST,
             "request_id belongs to a question, use /answer",
         ),
@@ -1137,6 +1202,29 @@ async fn session_events(
     Sse::new(stream).keep_alive(KeepAlive::default()).into_response()
 }
 
+/// Serialize an event for SSE while preserving user-facing fields such as a
+/// question's text. Secret-like object keys are still recursively redacted,
+/// and tool/LLM payload fields are intentionally treated as sensitive.
+fn serialize_sse_event(event: &AgentEvent) -> String {
+    let mut data = serde_json::to_value(event).unwrap_or_default();
+    data = pr_governance::redact_secrets(&data);
+    if let serde_json::Value::Object(object) = &mut data {
+        for key in ["text", "value", "secret", "result_preview", "content"] {
+            if object.contains_key(key)
+                && matches!(
+                    event,
+                    AgentEvent::ToolCallStarted { .. }
+                        | AgentEvent::ToolCallCompleted { .. }
+                        | AgentEvent::LlmStreamChunk { .. }
+                )
+            {
+                object.insert(key.to_owned(), serde_json::Value::String("[REDACTED]".into()));
+            }
+        }
+    }
+    serde_json::to_string(&data).unwrap_or_default()
+}
+
 /// Build the SSE stream, optionally filtering events to one session.
 fn event_stream(
     rx: broadcast::Receiver<AgentEvent>,
@@ -1166,16 +1254,7 @@ fn event_stream(
                                     continue;
                                 }
                             }
-                            let mut data = serde_json::to_value(&event).unwrap_or_default();
-                            pr_governance::redact_secrets(&mut data);
-                            if let serde_json::Value::Object(object) = &mut data {
-                                for key in ["args", "text", "value", "secret", "result_preview", "content", "question"] {
-                                    if object.contains_key(key) && matches!(&event, AgentEvent::ToolCallStarted { .. } | AgentEvent::ToolCallCompleted { .. } | AgentEvent::LlmStreamChunk { .. } | AgentEvent::QuestionAsked { .. }) {
-                                        object.insert(key.to_owned(), serde_json::Value::String("[REDACTED]".into()));
-                                    }
-                                }
-                            }
-                            let data = serde_json::to_string(&data).unwrap_or_default();
+                            let data = serialize_sse_event(&event);
                             return Some((Ok(Event::default().data(data)), (rx, filter)));
                         }
                         Err(broadcast::error::RecvError::Lagged(n)) => {
@@ -1370,6 +1449,90 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn session_controls_are_scoped_to_the_url_session() {
+        let state = test_state();
+        let (question_tx, question_rx) = tokio::sync::oneshot::channel();
+        let (approval_tx, approval_rx) = tokio::sync::oneshot::channel();
+        if let Ok(mut controls) = state.pending_controls.lock() {
+            controls.insert(
+                "question-b".into(),
+                PendingControl::Question {
+                    session_id: "session-b".into(),
+                    reply: question_tx,
+                },
+            );
+            controls.insert(
+                "approval-b".into(),
+                PendingControl::Approval {
+                    session_id: "session-b".into(),
+                    reply: approval_tx,
+                },
+            );
+        } else {
+            panic!("pending control lock poisoned");
+        }
+
+        // A different session gets an indistinguishable not-found response;
+        // importantly, the controls remain available to their owner.
+        let (status, body) = send(
+            app(state.clone()),
+            post_json(
+                "/api/v1/sessions/session-a/answer",
+                serde_json::json!({"request_id": "question-b", "text": "secret"}),
+            ),
+        )
+        .await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+        assert_eq!(body["error"], "no pending question with this request_id");
+        assert!(state
+            .pending_controls
+            .lock()
+            .map(|controls| controls.contains_key("question-b"))
+            .unwrap_or(false));
+
+        let (status, body) = send(
+            app(state.clone()),
+            post_json(
+                "/api/v1/sessions/session-a/approve",
+                serde_json::json!({"request_id": "approval-b", "approved": true}),
+            ),
+        )
+        .await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+        assert_eq!(body["error"], "no pending approval with this request_id");
+        assert!(state
+            .pending_controls
+            .lock()
+            .map(|controls| controls.contains_key("approval-b"))
+            .unwrap_or(false));
+
+        // Matching session URLs preserve the existing successful behavior.
+        let (status, body) = send(
+            app(state.clone()),
+            post_json(
+                "/api/v1/sessions/session-b/answer",
+                serde_json::json!({"request_id": "question-b", "text": "secret"}),
+            ),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body["answered"], true);
+        assert_eq!(question_rx.await.unwrap(), "secret");
+
+        let (status, body) = send(
+            app(state),
+            post_json(
+                "/api/v1/sessions/session-b/approve",
+                serde_json::json!({"request_id": "approval-b", "approved": true}),
+            ),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body["approved"], true);
+        assert!(approval_rx.await.unwrap());
+    }
+
+    #[tokio::test]
     async fn health_returns_ok() {
         let (status, body) = send(app(test_state()), get_req("/health")).await;
         assert_eq!(status, StatusCode::OK);
@@ -1393,6 +1556,74 @@ mod tests {
         assert!(html.contains("Fathom"));
         assert!(html.contains("/api/v1/sessions") || html.contains("api/v1"));
         assert!(html.contains("EventSource"), "live SSE wiring present");
+    }
+
+    #[test]
+    fn sse_questions_keep_text_while_redacting_secret_fields() {
+        let event = AgentEvent::QuestionAsked {
+            agent_id: pr_core::AgentId::new(),
+            request_id: "request-1".into(),
+            question: "Which region should we research?".into(),
+        };
+        let data: serde_json::Value = serde_json::from_str(&serialize_sse_event(&event)).unwrap();
+        assert_eq!(data["question"], "Which region should we research?");
+
+        let event = AgentEvent::ToolCallStarted {
+            agent_id: pr_core::AgentId::new(),
+            tool: "http_request".into(),
+            args: serde_json::json!({"api_key": "top-secret", "query": "safe"}),
+        };
+        let data: serde_json::Value = serde_json::from_str(&serialize_sse_event(&event)).unwrap();
+        assert_eq!(data["args"]["api_key"], "[REDACTED]");
+        assert_eq!(data["args"]["query"], "safe");
+    }
+
+    #[tokio::test]
+    async fn cors_allows_local_dashboard_but_not_remote_origins() {
+        let router = app(test_state());
+        let local = Request::builder()
+            .uri("/api/v1/sessions")
+            .header(header::ORIGIN, "http://localhost:3000")
+            .body(Body::empty())
+            .unwrap();
+        let response = router.clone().oneshot(local).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response
+                .headers()
+                .get(header::ACCESS_CONTROL_ALLOW_ORIGIN)
+                .and_then(|value| value.to_str().ok()),
+            Some("http://localhost:3000")
+        );
+
+        let preflight = Request::builder()
+            .method(Method::OPTIONS)
+            .uri("/api/v1/sessions")
+            .header(header::ORIGIN, "http://127.0.0.1:3000")
+            .header(header::ACCESS_CONTROL_REQUEST_METHOD, Method::POST.as_str())
+            .header(header::ACCESS_CONTROL_REQUEST_HEADERS, "content-type,x-api-key")
+            .body(Body::empty())
+            .unwrap();
+        let response = router.clone().oneshot(preflight).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response
+                .headers()
+                .get(header::ACCESS_CONTROL_ALLOW_ORIGIN)
+                .and_then(|value| value.to_str().ok()),
+            Some("http://127.0.0.1:3000")
+        );
+
+        let remote = Request::builder()
+            .uri("/api/v1/sessions")
+            .header(header::ORIGIN, "https://example.com")
+            .body(Body::empty())
+            .unwrap();
+        let response = router.oneshot(remote).await.unwrap();
+        assert!(response
+            .headers()
+            .get(header::ACCESS_CONTROL_ALLOW_ORIGIN)
+            .is_none());
     }
 
     #[tokio::test]

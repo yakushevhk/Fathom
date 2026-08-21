@@ -16,7 +16,7 @@ sidebarId: "quickstart"
     <h2 data-i18n="docsQuickstart.prereqTitle">Prerequisites</h2>
     <p data-i18n="docsQuickstart.prereqSub">Before installing Fathom, make sure you have:</p>
     <ul class="check-list">
-      <li data-i18n-html="docsQuickstart.pre1"><strong>Rust 1.97</strong> — required for building from source (skip if using the curl installer)</li>
+      <li data-i18n-html="docsQuickstart.pre1"><strong>Rust 1.97</strong> — required for building from source</li>
       <li data-i18n-html="docsQuickstart.pre2"><strong>API key</strong> — for the DeepSeek OpenAI-compatible endpoint (or another OpenAI-compatible endpoint)</li>
       <li data-i18n-html="docsQuickstart.pre3"><strong>Optional:</strong> Chrome with <code>--remote-debugging-port=9222</code> for browser CDP tools; Python/Node for REPL</li>
     </ul>
@@ -34,27 +34,8 @@ sidebarId: "quickstart"
   <section id="installation">
     <h2 data-i18n="docsQuickstart.installTitle">Installation</h2>
 
-    <h3 id="install-curl" data-i18n="docsQuickstart.instOptionA">Option A: Curl Script (Recommended)</h3>
-    <p data-i18n="docsQuickstart.instADesc">The fastest way to install. The script builds a release binary and installs it to <code>/usr/local/bin</code> (or <code>~/.local/bin</code> when a user prefix is used).</p>
-    <div class="code-block">
-      <div class="code-header">
-        <span class="code-lang">bash</span>
-      </div>
-      <pre><code dangerouslySetInnerHTML={{__html: `curl -sSf https://fathom.uz/install.sh | sh`}} /></pre>
-    </div>
-    <p data-i18n-html="docsQuickstart.instAFoot">This installs the <code>fathom</code> binary to <code>~/.local/bin</code>. Make sure it's in your <code>PATH</code>.</p>
-
-    <h3 id="install-cargo" data-i18n="docsQuickstart.instOptionB">Option B: Cargo Install</h3>
-    <p data-i18n="docsQuickstart.instBDesc">Build from source using Cargo. Requires Rust toolchain.</p>
-    <div class="code-block">
-      <div class="code-header">
-        <span class="code-lang">bash</span>
-      </div>
-      <pre><code dangerouslySetInnerHTML={{__html: `cargo install --path .`}} /></pre>
-    </div>
-
-    <h3 id="install-source" data-i18n="docsQuickstart.instOptionC">Option C: Build from Source</h3>
-    <p data-i18n="docsQuickstart.instCDesc">Clone the repository and build locally for development.</p>
+    <h3 id="install-source" data-i18n="docsQuickstart.instOptionA">Build from Source (Recommended)</h3>
+    <p data-i18n="docsQuickstart.instADesc">Clone the public repository and build the release binary with Cargo. Requires the Rust toolchain.</p>
     <div class="code-block">
       <div class="code-header">
         <span class="code-lang">bash</span>
@@ -63,7 +44,26 @@ sidebarId: "quickstart"
 cd Fathom
 cargo build --release`}} /></pre>
     </div>
-    <p data-i18n-html="docsQuickstart.instCFoot">The binary will be at <code>./target/release/fathom</code>.</p>
+    <p data-i18n-html="docsQuickstart.instAFoot">Run <code>./target/release/fathom</code>, or optionally install the checkout with <code>cargo install --path .</code>.</p>
+
+    <h3 id="install-cargo" data-i18n="docsQuickstart.instOptionB">Option B: Cargo Install</h3>
+    <p data-i18n="docsQuickstart.instBDesc">From a Fathom source checkout, install the release binary with Cargo.</p>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">bash</span>
+      </div>
+      <pre><code dangerouslySetInnerHTML={{__html: `cargo install --path .`}} /></pre>
+    </div>
+
+    <h3 id="install-source-dev" data-i18n="docsQuickstart.instOptionC">Option C: Debug Build</h3>
+    <p data-i18n="docsQuickstart.instCDesc">Clone the repository and build locally for development.</p>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">bash</span>
+      </div>
+      <pre><code dangerouslySetInnerHTML={{__html: `cargo build`}} /></pre>
+    </div>
+    <p data-i18n-html="docsQuickstart.instCFoot">The debug binary will be at <code>./target/debug/fathom</code>.</p>
   </section>
 
   <section id="first-run">
@@ -76,7 +76,7 @@ cargo build --release`}} /></pre>
       <pre><code dangerouslySetInnerHTML={{__html: `fathom run <span class="code-string">"Find B2B SaaS startups in Berlin with 10-50 employees"</span>`}} /></pre>
     </div>
     <p data-i18n-html="docsQuickstart.firstRunFoot">
-      On first run, Fathom will prompt you for your API key if one isn't configured.
+      Configure the LLM provider before running; Fathom does not prompt interactively for API keys.
       Results are saved to <code>./research-output/</code> by default.
     </p>
   </section>

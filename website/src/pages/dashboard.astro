@@ -85,8 +85,10 @@ open http://localhost:8080/dashboard
           <h3 data-i18n="dashboardPage.cta.title">Try the dashboard</h3>
           <p class="bench-sub" data-i18n="dashboardPage.cta.sub">Install Fathom, start the server and open /dashboard in your browser.</p>
           <div class="code-card" style="max-width:480px">
-            <pre><code>curl -sSf https://fathom.uz/install.sh | sh
-fathom serve</code></pre>
+            <pre><code>git clone https://github.com/yakushevhk/Fathom.git
+cd Fathom
+cargo build --release
+./target/release/fathom serve</code></pre>
           </div>
           <div style="margin-top:16px">
             <a href="/api" class="btn btn-outline" data-i18n="dashboardPage.cta.docs">API reference</a>

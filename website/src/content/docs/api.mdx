@@ -112,7 +112,7 @@ X-Api-Key: &lt;your-api-key&gt;`}} /></pre>
       <section id="authentication" class="api-section">
         <h2 class="api-section-title" data-i18n="docsApi.authTitle">Authentication</h2>
         <p class="api-text" data-i18n-html="docsApi.authText">
-          All API requests (except <code>/health</code>, <code>/metrics</code>, and <code>/dashboard</code>) require a valid API key. Keys are configured via the <code>FATHOM_API_KEYS</code> environment variable as a comma-separated list.
+          When <code>FATHOM_API_KEYS</code> is configured, API requests under <code>/api/v1</code> require a matching Bearer token or <code>X-Api-Key</code> header. With no keys configured, loopback deployments allow open access; binding the server to a non-loopback address requires configuring keys.
         </p>
         <div class="code-block">
           <div class="code-header">
@@ -171,7 +171,7 @@ X-Api-Key: &lt;your-api-key&gt;`}} /></pre>
             </div>
           </div>
 
-          <h4 class="param-heading" data-i18n-html="docsApi.response201">Response — <code>201 Created</code></h4>
+          <h4 class="param-heading" data-i18n-html="docsApi.response202">Response — <code>202 Accepted</code></h4>
           <div class="code-block">
             <div class="code-header">
               <span class="code-lang">JSON</span>
@@ -829,7 +829,7 @@ pr_request_duration_seconds_bucket{le="0.1"} 120`}} /></pre>
           <div class="cli-row cli-row-header"><span>Route</span><span>Description</span></div>
           <div class="cli-row"><code class="cli-cmd">GET /api/v1/credentials</code><span>List metadata: id, name, kind and timestamps.</span></div>
           <div class="cli-row"><code class="cli-cmd">POST /api/v1/credentials</code><span>Store a credential with the fields <code>name</code>, <code>kind</code> and <code>secret</code>.</span></div>
-          <div class="cli-row"><code class="cli-cmd">DELETE /api/v1/credentials/:id</code><span>Delete a stored credential.</span></div>
+          <div class="cli-row"><code class="cli-cmd">DELETE /api/v1/credentials/:id</code><span>Delete a stored credential; secrets cannot be retrieved through the API.</span></div>
         </div>
       </section>
 
@@ -845,7 +845,7 @@ pr_request_duration_seconds_bucket{le="0.1"} 120`}} /></pre>
 
       <section id="computer-use" class="api-section">
         <h2 class="api-section-title">Computer-use relay</h2>
-        <p class="api-text">Computer routes proxy to the configured service (default loopback URL via <code>FATHOM_COMPUTER_SERVICE_URL</code>). They support browser navigation and accessibility snapshots without claiming a particular upstream request schema.</p>
+        <p class="api-text">Computer routes proxy to the configured service (default loopback URL via <code>FATHOM_COMPUTER_SERVICE_URL</code>). Browser actions use POST routes such as <code>/computers/navigate</code>, while health, snapshots, screenshots and tabs use GET; supervised agent routes additionally require <code>COMPUTER_TOKEN</code>.</p>
         <div class="cli-table">
           <div class="cli-row cli-row-header"><span>Route</span><span>Description</span></div>
           <div class="cli-row"><code class="cli-cmd">POST /api/v1/computers/session</code><span>Start or refresh a computer session.</span></div>
@@ -853,8 +853,8 @@ pr_request_duration_seconds_bucket{le="0.1"} 120`}} /></pre>
           <div class="cli-row"><code class="cli-cmd">POST /api/v1/computers/navigate|click|type|key|secret</code><span>Perform browser actions; <code>secret</code> avoids returning or logging the value.</span></div>
           <div class="cli-row"><code class="cli-cmd">POST /api/v1/computers/control/take|release</code><span>Hand control to or from an operator.</span></div>
           <div class="cli-row"><code class="cli-cmd">GET|DELETE /api/v1/computers/files</code><span>List or delete files in the confined workspace.</span></div>
-          <div class="cli-row"><code class="cli-cmd">GET /api/v1/computers/files/read · PUT /api/v1/computers/files/write</code><span>Read or write a confined workspace file.</span></div>
-          <div class="cli-row"><code class="cli-cmd">GET|POST /api/v1/computers/:agent_id/...</code><span>Agent-scoped relay and supervisor lifecycle routes are available for supervised computers.</span></div>
+          <div class="cli-row"><code class="cli-cmd">GET /api/v1/computers/files/read · PUT /api/v1/computers/files/write</code><span>Read or write a confined workspace file; DELETE /api/v1/computers/files removes one.</span></div>
+          <div class="cli-row"><code class="cli-cmd">GET|POST /api/v1/computers/:agent_id/...</code><span>Agent-scoped relay routes are available when a supervised computer is configured with <code>COMPUTER_TOKEN</code>.</span></div>
         </div>
       </section>
 

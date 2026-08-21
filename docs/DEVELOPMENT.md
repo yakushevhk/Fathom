@@ -126,10 +126,7 @@ fathom/
 │   └── support/
 │       └── mock_llm.rs     # MockLlm for offline tests
 ├── docs/                   # Documentation
-├── Dockerfile
-├── docker-compose.yml
-├── install.sh
-└── fathom.service
+└── Dockerfile
 ```
 
 ### Crate dependency graph
@@ -386,7 +383,7 @@ The `with_builtins()` method is the single registration point for all built-in t
 - **Read-only tools** → add to `parallel_safe` (`web_search`, `web_fetch`, `file_read`, `glob`, `grep`, all OSINT verification tools, `web_crawl`, `web_feed`, `code_symbols`, `repo_map`)
 - **Write/state tools** → add to `sequential_only` (`file_write`, `file_edit`, `shell`, `spawn_agent`, `save_contacts`)
 
-The `ToolExecutor` partitions each batch of tool calls into parallel-safe and sequential groups. Parallel-safe tools run concurrently (via `tokio::spawn`), while sequential tools run one at a time. The partitioner also detects overlapping file paths — if two parallel-safe calls touch the same file, the second is demoted to sequential to avoid data races.
+The current batch executor classifies calls using `parallel_safe` and `sequential_only` name sets. Parallel-safe tools run concurrently, while sequential-only and unknown tools run sequentially. Overlapping file paths demote otherwise parallel-safe file calls to sequential execution.
 
 Unknown tools default to sequential for safety.
 
@@ -399,9 +396,9 @@ cargo test -p pr-tools my_tool
 ### Tool execution flow
 
 1. The LLM returns a message with one or more tool calls.
-2. The `ToolExecutor` partitions calls into parallel-safe and sequential batches.
-3. **Phase 1**: All parallel-safe calls execute concurrently via `futures::future::join_all`.
-4. **Phase 2**: Sequential calls execute one at a time, in order.
+2. The batch executor partitions calls into parallel-safe and sequential groups.
+3. **Phase 1**: Parallel-safe calls execute concurrently.
+4. **Phase 2**: Sequential-only and unknown calls execute one at a time, in order.
 5. Results are collected, truncated (if they exceed `ContextConfig.tool_output_max_bytes`), and fed back to the LLM.
 6. If a tool returns an error, the error message is returned to the model as a tool result — it does **not** crash the agent loop.
 
@@ -499,7 +496,7 @@ The `concurrency.rs` module provides `ModelSemaphore` — a per-model concurrenc
 
 ## Adding a new search backend
 
-The search engine (`crates/tools/src/search.rs`) currently supports 7 backends: LinkUp, Parallel AI, Exa, Tavily, Serper, Brave, and a hybrid/smart mode that selects the best backend per query.
+The search engine (`crates/tools/src/search.rs`) currently supports seven named backends: LinkUp, Parallel AI, Exa, Tavily, Serper, Brave, and DuckDuckGo, plus `hybrid` and `smart` combination modes.
 
 1. Add config in `crates/core/src/config.rs`:
 ```rust
@@ -517,7 +514,7 @@ async fn search_my_backend(&self, query: &str, limit: u32) -> Vec<SearchResult> 
 }
 ```
 
-3. Add to `search()` dispatch in the `SearchEngine` enum and to the hybrid/smart mode selection logic.
+3. Add to `search()` dispatch and to both combination modes: `hybrid` tries configured backends sequentially and returns the first non-empty result; `smart` queries configured backends in parallel and merges them with reciprocal-rank fusion.
 
 ---
 
@@ -599,7 +596,7 @@ The coordinator manages hierarchical agent trees. Key debugging techniques:
 
 The `bench` subcommand (`src/bench.rs`) measures the tool-execution layer without any LLM or network involvement. It focuses on:
 
-- **Dispatch overhead**: serialising/deserialising tool arguments, routing through the registry.
+- **Dispatch overhead**: serialising/deserialising tool arguments and routing through the registry (benchmark baseline is approximately 753 µs, or 0.75 ms).
 - **Parallel vs sequential throughput**: how many parallel-safe tool calls can be dispatched per second.
 - **CPU-bound parsing throughput**: HTML parsing, JSON extraction, RSS/Atom feed parsing, code symbol extraction.
 - **Argument serde cost**: Schema generation and JSON round-trip overhead.
@@ -678,7 +675,7 @@ jobs:
 
 ### Docker deployment
 
-The `Dockerfile` and `docker-compose.yml` provide containerised deployment:
+The `Dockerfile` provides a containerised build; no compose file is shipped:
 
 ```bash
 docker build -t fathom .

@@ -392,14 +392,12 @@ Axum HTTP API (details in [HTTP-API.md](HTTP-API.md)):
 | `GET /api/v1/computers/:agent_id/*` | Computer use relay (snapshot, navigate, click, type, key, screenshot, screen, files, control, ensure, stop, reset) |
 | `GET /api/v1/credentials` | List credential metadata |
 | `POST /api/v1/credentials` | Store a credential |
-| `GET /api/v1/credentials/:id` | Retrieve a credential |
 | `DELETE /api/v1/credentials/:id` | Delete a credential |
 | `GET /api/v1/coworkers` | List coworkers |
 | `POST /api/v1/coworkers` | Create a coworker |
 | `GET /api/v1/coworkers/:id` | Get coworker details |
 | `PUT /api/v1/coworkers/:id` | Update coworker |
 | `DELETE /api/v1/coworkers/:id` | Delete coworker |
-| `POST /api/v1/coworkers/:id/run` | Trigger a coworker run |
 | `GET /api/v1/channels` | List channels |
 | `POST /api/v1/channels` | Create a channel |
 | `GET /api/v1/channels/:id` | Get channel details |
@@ -429,7 +427,7 @@ Axum HTTP API (details in [HTTP-API.md](HTTP-API.md)):
 - **Embedded dashboard** — The server serves its embedded dashboard page at `GET /dashboard`. It provides a read-only live view of sessions, agents, events, and memory state, consuming the same REST/SSE API that external clients use.
 - **AG-UI compatibility stream** — `GET /api/v1/ag-ui/events` exposes read-only versioned event envelopes with bounded reconnect replay via `Last-Event-ID`; `GET /api/v1/ag-ui/health` reports bridge capabilities.
 - **Computer relay** — `GET/POST /api/v1/computers/:agent_id/*` proxies the computer service (snapshot, navigate, click, type, key, screenshot, screen, files, control, ensure, stop, reset) and routes to the right Docker container per agent via the supervisor.
-- **Governance** — `GET /api/v1/governance/audit` lists authorization decisions and `POST /api/v1/governance/decide` evaluates actions; `/api/v1/credentials` manages the AES-256-GCM encrypted credentials vault (operator-only, plaintext never returned).
+- **Governance** — `GET /api/v1/governance/audit` lists authorization decisions and `POST /api/v1/governance/decide` evaluates actions; `/api/v1/credentials` manages the AES-256-GCM encrypted credentials vault behind the configured API-key boundary; plaintext is never returned.
 - **Coworkers / channels / schedules** — full lifecycle management of persistent autonomous workers: lifelong profiles (`/coworkers`), symbolic delivery channels (`/channels`), and cron-like timers with atomic claim (`/schedules`, `/schedules/claim`).
 - **Observability** — `GET /api/v1/observability/summary` aggregates cluster-wide state; `POST /api/v1/notifications/test` exercises notification channels.
 

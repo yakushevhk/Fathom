@@ -835,7 +835,6 @@ export default {
     thDesc: { en: 'Description', ru: 'Описание' },
     paramQuery: { en: 'Research query or task description', ru: 'Поисковый запрос или описание задачи' },
     paramOutputDir: { en: 'Directory to store results (optional)', ru: 'Каталог для хранения результатов (опционально)' },
-    response201: { en: 'Response — <code>201 Created</code>', ru: 'Ответ — <code>201 Created</code>' },
     response202: { en: 'Response — <code>202 Accepted</code>', ru: 'Ответ — <code>202 Accepted</code>' },
     responseLabel: { en: 'Response', ru: 'Ответ' },
     getSessionsDesc: { en: 'List all research sessions. Returns an array sorted by creation date (newest first).', ru: 'Перечислить все сессии исследования. Возвращает массив, отсортированный по дате создания (новейшие первыми).' },

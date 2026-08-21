@@ -1000,8 +1000,8 @@ export const translations = {
         "ru": "Какие поисковые системы поддерживаются?"
       },
       "a2": {
-        "en": "Configured search backends — including Linkup, Exa, Tavily, Serper, Brave and DuckDuckGo — can be combined with hybrid and smart modes and RRF ranking.",
-        "ru": "Настроенные поисковые бэкенды, включая Linkup, Exa, Tavily, Serper, Brave и DuckDuckGo, можно объединять в гибридном и smart-режимах с RRF-ранжированием."
+        "en": "Configured search backends — including Linkup, Exa, Tavily, Serper, Brave, Parallel.ai and DuckDuckGo — can be combined with hybrid and smart modes and RRF ranking.",
+        "ru": "Настроенные поисковые бэкенды, включая Linkup, Exa, Tavily, Serper, Brave, Parallel.ai и DuckDuckGo, можно объединять в гибридном и smart-режимах с RRF-ранжированием."
       },
       "q3": {
         "en": "Is my data stored on your servers?",

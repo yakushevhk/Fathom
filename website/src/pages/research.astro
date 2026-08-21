@@ -9,7 +9,7 @@ const pipeline = [
   { num: 5, key: 's5', t: 'Enrich', d: 'enrich_company and enrich_person add useful industry, technology, role and location context when matching public evidence is available.' },
   { num: 6, key: 's6', t: 'Verify', d: 'verify_email and verify_phone apply syntax, DNS and normalization checks. Optional SMTP probing depends on network access and operator configuration.' },
   { num: 7, key: 's7', t: 'Review', d: 'suggest_emails can propose domain patterns for a worker or human to review; confidence and missing evidence stay explicit rather than guessed.' },
-  { num: 8, key: 's8', t: 'Persist', d: 'save_contacts stores approved findings in SQLite or PostgreSQL with deduplication and verification receipts, subject to the configured policy and review gates.' },
+  { num: 8, key: 's8', t: 'Persist', d: 'save_contacts stores approved findings in SQLite or PostgreSQL with verification receipts, subject to the configured policy and review gates.' },
   { num: 9, key: 's9', t: 'Report', d: 'The worker summarizes evidence, remembers durable context and can export CSV, vCard, JSON or reports, or hand off to a configured CRM.' },
 ];
 
@@ -60,7 +60,7 @@ const techs = [
       <div class="src-grid">
         <div class="src-card src-card--wide">
           <div class="src-name" data-i18n="researchPage.sources.dirs.name">Business directories</div>
-          <p data-i18n="researchPage.sources.dirs.d">Configured directory connectors such as 2GIS, Google Maps, Yandex Maps or Yellow Pages can be queried in parallel, with cross-source deduplication when enabled.</p>
+          <p data-i18n="researchPage.sources.dirs.d">Configured directory connectors such as 2GIS, Google Maps, Yandex Maps or Yellow Pages can be queried in parallel; review overlapping results before export.</p>
         </div>
         <div class="src-card">
           <div class="src-name" data-i18n="researchPage.sources.social.name">Social platforms</div>
@@ -163,7 +163,7 @@ fathom run --repeat 86400 \
       <div class="sec-head center reveal" style="margin-top:72px">
 <p class="eyebrow" data-i18n="researchPage.crm.badge">Handoff and export</p>
         <h2 class="h2-sec" data-i18n-html data-i18n="researchPage.crm.title">Prepare findings for the next step</h2>
-        <p class="copy-lg mx-auto" data-i18n="researchPage.crm.sub">Export contacts and reports as CSV, vCard, JSON or Excel. A worker can hand findings to amoCRM, Bitrix24, HubSpot or another configured integration after deduplication and any required approval; integrations are not enabled by default.</p>
+        <p class="copy-lg mx-auto" data-i18n="researchPage.crm.sub">Export contacts and reports as CSV, vCard, JSON or Excel. A worker can hand findings to amoCRM, Bitrix24, HubSpot or another configured integration after review and any required approval; integrations are not enabled by default.</p>
       </div>
 
       <div class="export-strip">
@@ -191,8 +191,10 @@ fathom run --repeat 86400 \
           <h3 data-i18n="researchPage.cta.title">Run a research workflow</h3>
           <p class="bench-sub" data-i18n="researchPage.cta.sub">Install Fathom, configure the worker's tools and ask it to produce reviewable findings.</p>
           <div class="code-card" style="max-width:560px">
-            <pre><code>curl -sSf https://fathom.uz/install.sh | sh
-fathom run "Find CTOs at fintech startups in Berlin"</code></pre>
+            <pre><code>git clone https://github.com/yakushevhk/Fathom.git
+cd Fathom
+cargo build --release
+./target/release/fathom run "Find CTOs at fintech startups in Berlin"</code></pre>
           </div>
           <div style="margin-top:16px">
             <a href="/docs/outreach" class="btn btn-outline" data-i18n="researchPage.cta.docs">Outreach &amp; leads docs</a>

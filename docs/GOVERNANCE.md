@@ -117,15 +117,14 @@ The credentials vault stores sensitive values (API keys, tokens, passwords) encr
 |--------|------|-------------|
 | `GET` | `/api/v1/credentials` | List credential metadata (labels, scopes, timestamps). **Never returns plaintext.** |
 | `POST` | `/api/v1/credentials` | Store a new credential. Accepts `{ "label", "value", "scope" }`. |
-| `GET` | `/api/v1/credentials/:id` | Retrieve a credential by ID. Requires operator authentication. |
-| `DELETE` | `/api/v1/credentials/:id` | Delete a credential. |
+| `DELETE` | `/api/v1/credentials/:id` | Delete a stored credential by ID. Requires an authenticated API key. |
 
-### Operator-only access
+### Agent boundary
 
-- Credentials are **operator-only** — agents cannot read or write credentials directly
+- Agents cannot read or write credentials through the tool registry
+- HTTP credential endpoints require an authenticated API key; deployments that need operator-only access must enforce that distinction at their gateway or principal layer
 - There is **no secret-input tool** in the agent tool registry
-- Operators enter secrets through the UI (Tauri desktop, Next.js web dashboard, or CLI)
-- The relay injects credentials into tool calls by adding an `x-fathom-operator` claim to the request
+- Operators enter secrets through the UI (Tauri desktop or Next.js web dashboard)
 
 ### Environment variable
 

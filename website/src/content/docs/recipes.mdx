@@ -13,12 +13,12 @@ export const recipes = [
   {
     t: 'Re-run and alert on changes',
     d: `fathom run "..." --repeat 3600`,
-    notes: 'Watch mode re-runs every 3600s, diffs the contact DB, and pings email / Telegram / webhook when new verified leads appear.',
+    notes: 'Optional watch mode re-runs every 3600s. Diffing and email / Telegram / webhook notifications require the corresponding integrations to be configured.'
   },
   {
     t: 'Push a verified list to CRM',
     d: `fathom contacts push-crm`,
-    notes: 'Syncs contacts.db to amoCRM / Bitrix24 / HubSpot. Dedup by crm_id means re-runs never double-create.',
+    notes: 'Syncs contacts.db to amoCRM / Bitrix24 / HubSpot when those integrations are configured. Review the resulting CRM records according to your provider\'s matching policy.',
   },
   {
     t: 'Recover a crashed campaign',
@@ -46,7 +46,7 @@ export const osintRecipes = [
   {
     t: 'Build supplier list from business directories',
     d: `fathom run "Build a comprehensive list of industrial valve suppliers in the Gulf Cooperation Council region. Scrape business directories, trade association member lists, and exhibition exhibitor pages. De-duplicate by company name and website."`,
-    notes: 'Directory scraping respects robots.txt and rate limits automatically. The dedup engine uses fuzzy matching on company names and canonicalizes URLs before comparison.',
+    notes: 'Directory scraping respects robots.txt and rate limits automatically. Review repeated company names and URLs before using the list.',
   },
   {
     t: 'Find decision-makers at recently funded companies',
@@ -79,7 +79,7 @@ export const researchRecipes = [
   {
     t: 'Compare 5 competitors across 20 dimensions',
     d: `fathom run "Compare Datadog, New Relic, Dynatrace, Splunk, and Grafana Labs across these 20 dimensions: pricing model, free tier limits, APM capabilities, log management, infrastructure monitoring, alerting, dashboarding, API quality, SDK languages, cloud integrations, on-prem options, compliance certs, market share, revenue growth, employee count, engineering team size, open-source contributions, community size, documentation quality, and enterprise features." -o ./competitive/comparison`,
-    notes: 'The agent structures each dimension as a separate sub-task for parallel execution. The table output formats findings into a structured comparison grid. Each cell includes a confidence indicator.',
+    notes: 'The agent structures each dimension as a separate sub-task for parallel execution. The table output formats findings into a structured comparison grid with confidence indicators.',
   },
   {
     t: 'Track regulatory changes in an industry',
@@ -111,8 +111,8 @@ export const researchRecipes = [
 export const memoryRecipes = [
   {
     t: 'Build a knowledge base from research sessions',
-    d: `fathom memory rebuild`,
-    notes: 'Scans all completed sessions matching the topic tag, extracts key facts, entities, and relationships, and writes them into the memory graph. Subsequent sessions can reference this knowledge.',
+    d: `fathom memory distill --session latest`,
+    notes: 'Distills facts from the latest session into the configured memory graph. Memory commands require the memory subsystem to be enabled in configuration.',
   },
   {
     t: 'Search memory for company facts',
@@ -121,13 +121,13 @@ export const memoryRecipes = [
   },
   {
     t: 'Distill session facts into permanent knowledge',
-    d: `fathom memory distill --session-id latest --topic "competitor-analysis"`,
-    notes: 'Distillation takes raw session outputs and compresses them into structured knowledge entities. Redundant or contradictory facts are resolved. The distilled knowledge persists beyond session cleanup.',
+    d: `fathom memory distill --session latest`,
+    notes: 'Distillation promotes run-scoped facts into structured agent-scope knowledge. The distilled knowledge persists beyond session cleanup; review contradictory findings explicitly.',
   },
   {
     t: 'Run garbage collection on stale memories',
-    d: `fathom memory gc --older-than 90d --dry-run`,
-    notes: 'Dry-run mode shows what would be removed without actually deleting. Remove --dry-run to execute. Stale memories are those not referenced by any session in the given period and below a confidence threshold.',
+    d: `fathom memory gc --ttl-days 90 --dry-run`,
+    notes: 'Dry-run mode shows what would be archived without actually deleting. Memory maintenance is optional and follows the configured TTL and confidence thresholds.'
   },
   {
     t: 'Use memory to map relationships',
@@ -136,8 +136,8 @@ export const memoryRecipes = [
   },
   {
     t: 'Create a topic digest and inject into next session',
-    d: `fathom memory distill --session-id latest --topic "competitor-analysis"`,
-    notes: 'Generates a prose summary of all knowledge about a topic and prepends it to the next session\'s context. Useful for bootstrapping agents with prior knowledge.',
+    d: `fathom memory distill --session latest`,
+    notes: 'Use the semantic memory digest in the worker context to bootstrap a follow-up session with prior knowledge. Topic-specific retrieval is handled by the memory tools.',
   },
 ];
 
@@ -154,7 +154,7 @@ export const workerRecipes = [
     d: `curl -X POST http://localhost:8080/api/v1/schedules \\
   -H "Content-Type: application/json" \\
   -d '{"coworker_id":"<coworker-id>","cron_expression":"0 9 * * 1-5","timezone":"UTC","query":"Review new market signals","enabled":true}'`,
-    notes: 'Schedules require a coworker, validated cron expression, timezone and query. The scheduler claims due rows atomically.',
+    notes: 'Schedules are optional and require a coworker, validated cron expression, timezone and query. The scheduler claims due rows atomically; an external/operator scheduler must launch the claimed work.'
   },
 ];
 
@@ -162,7 +162,7 @@ export const automationRecipes = [
   {
     t: 'Daily monitoring loop for new leads',
     d: `fathom run "Find new VP-level executives at Series B+ fintech companies in EMEA who joined in the past 24 hours." --repeat 86400`,
-    notes: 'The diff engine compares each run against contacts.db. Only genuinely new contacts trigger alerts. Old contacts that reappear are ignored. The session persists across restarts.',
+    notes: 'The session persists across restarts. Configure notifications and review each run\'s findings before acting on changes.',
   },
   {
     t: 'Test a configured notification channel',
@@ -207,7 +207,7 @@ export const apiRecipes = [
   {
     t: 'Export contacts to CSV via CLI',
     d: `fathom contacts export --format csv --output ./contacts-export/`,
-    notes: 'Exports the full contact database to CSV, deduplicating rows at export time. Use --output to choose the destination directory.',
+    notes: 'Exports the full contact database to CSV. Use --output to choose the destination directory.',
   },
   {
     t: 'Connect MCP server to Claude Desktop',
@@ -257,7 +257,7 @@ export const advancedRecipes = [
 export const troubleshootingRecipes = [
   {
     t: 'Resume a crashed session',
-    d: `fathom resume --session-id {session_id}\nfathom resume  # picks up the most recent interrupted session`,
+    d: `fathom resume  # picks up the most recent interrupted session`,
     notes: 'The resume command inspects the session log, identifies which sub-agents completed, and re-runs only the pending ones. Final synthesis is re-triggered automatically. No data is lost.',
   },
   {
@@ -267,8 +267,8 @@ export const troubleshootingRecipes = [
   },
   {
     t: 'Fix memory database corruption',
-    d: `fathom memory rebuild --from-sessions ./research-output/`,
-    notes: 'Memory rebuild regenerates the entire memory graph from session logs.',
+    d: `fathom memory distill --session latest`,
+    notes: 'Distill facts from a persisted session into the configured memory graph; enable memory in configuration first.'
   },
   {
     t: 'Handle rate limiting from search backends',
@@ -280,8 +280,8 @@ export const troubleshootingRecipes = [
   },
   {
     t: 'Fix stuck session that won\'t complete',
-    d: `fathom sessions list --status running\nfathom sessions kill {session_id}\nfathom resume --session-id {session_id}`,
-    notes: 'First list running sessions to find the stuck one. Kill it cleanly (saves state), then resume. The resume command picks up from the last checkpoint and skips already-completed sub-agents.',
+    d: `fathom sessions list\nfathom resume`,
+    notes: 'Inspect stored sessions, then resume the most recent interrupted session. Resume picks up from the last checkpoint and skips already-completed sub-agents.',
   },
   {
     t: 'Clear corrupted contacts database',
@@ -295,8 +295,8 @@ export const troubleshootingRecipes = [
   },
   {
     t: 'Investigate high memory usage',
-    d: `fathom memory stats\nfathom memory gc --older-than 30d`,
-    notes: 'Memory stats shows database size, fact count, entity count, and relationship count. GC removes stale entries.',
+    d: `fathom memory stats\nfathom memory gc --ttl-days 30`,
+    notes: 'Memory stats reports store counts. GC archives stale entries according to the configured TTL; both commands require memory to be enabled.'
   },
 ];
 
@@ -416,7 +416,7 @@ export const deploymentRecipes = [
   },
   {
     t: 'Configure for CI/CD pipeline',
-    d: `# .github/workflows/research.yml\n# name: Weekly Research\n# on:\n#   schedule:\n#     - cron: '0 9 * * 1'\n# jobs:\n#   research:\n#     runs-on: ubuntu-latest\n#     steps:\n#       - uses: actions/checkout@v4\n#       - name: Install Fathom\n#         run: curl -sSL https://fathom.uz/install.sh | sh\n#       - name: Run research\n#         env:\n#           FATHOM_API_KEYS: \${{ secrets.FATHOM_API_KEYS }}\n#           OPENAI_API_KEY: \${{ secrets.OPENAI_API_KEY }}\n#         run: fathom run "weekly tasks" -o ./results/\n#       - name: Upload results\n#         uses: actions/upload-artifact@v4\n#         with:\n#           name: research-results\n#           path: ./results/`,
+    d: `# .github/workflows/research.yml\n# name: Weekly Research\n# on:\n#   schedule:\n#     - cron: '0 9 * * 1'\n# jobs:\n#   research:\n#     runs-on: ubuntu-latest\n#     steps:\n#       - uses: actions/checkout@v4\n#       - name: Build Fathom\n#         run: cargo build --release\n#       - name: Run research\n#         env:\n#           FATHOM_API_KEYS: \${{ secrets.FATHOM_API_KEYS }}\n#           OPENAI_API_KEY: \${{ secrets.OPENAI_API_KEY }}\n#         run: fathom run "weekly tasks" -o ./results/\n#       - name: Upload results\n#         uses: actions/upload-artifact@v4\n#         with:\n#           name: research-results\n#           path: ./results/`,
     notes: 'GitHub Actions runs the batch on a weekly schedule. Secrets store API keys securely. Results are uploaded as artifacts for download. Add a notification step (Slack webhook) to alert the team when the batch completes.',
   },
 ];
@@ -882,9 +882,9 @@ export const deploymentRecipes = [
             <td>None</td>
           </tr>
           <tr>
-            <td><code>--session-id &lt;id&gt;</code></td>
-            <td>Target a specific session (for resume, approve, answer)</td>
-            <td>Latest</td>
+            <td><code>&lt;session-id&gt;</code></td>
+            <td>Optional positional session identifier for resume</td>
+            <td>Latest interrupted</td>
           </tr>
           <tr>
             <td><code>--dry-run</code></td>
@@ -1088,7 +1088,7 @@ fathom run "Analyze top 20 from ./broad"\`}`}} /></pre>
 fathom run "..." -o ./research
 
 # Session 2: uses memory from session 1
-fathom memory distill --session-id latest
+fathom memory distill --session latest
 fathom run "Using prior research, ..." -o ./follow-up\`}`}} /></pre>
         </div>
         <p class="recipe-notes">Distilling session facts into memory makes them available to future sessions. The memory graph connects entities across sessions, so the second session benefits from all prior context.</p>
@@ -1118,12 +1118,8 @@ fathom run "Using prior research, ..." -o ./follow-up\`}`}} /></pre>
 
   <section id="docker-compose">
     <div class="section-header">
-      <h2>Docker Compose Template</h2>
-      <p>Copy this <code>docker-compose.yml</code> for a production-ready single-instance deployment with health checks and automatic restart.</p>
-    </div>
-    <div class="code-block">
-      <div class="code-header"><span class="code-lang">yaml</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{dockerComposeExample}`}} /></pre>
+      <h2>Docker deployment</h2>
+      <p>The repository does not ship a Docker Compose file. Build the image from the checkout and run it directly, or provide an operator-owned Compose definition for your environment.</p>
     </div>
   </section>
 
