@@ -2,7 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 ---
 
-<Layout title="The benchmark that caught a 31× slowdown — Fathom Research">
+<Layout title="The benchmark that caught a 31× slowdown — Fathom">
   <article class="article-wrap">
     <nav class="breadcrumb">
       <a href="/blog" data-i18n="postBench.crumb.blog">Blog</a>
@@ -16,7 +16,7 @@ import Layout from '../../layouts/Layout.astro';
     <span class="article-tag" data-i18n="postBench.hero.tag">Benchmarks</span>
     <h1 class="article-title" data-i18n="postBench.hero.title">The benchmark that caught a 31× slowdown</h1>
 
-    <p class="article-intro" data-i18n-html data-i18n="postBench.hero.intro">Fathom Research ships its own benchmark harness: <code>fathom bench</code>. It is not a showcase of flattering numbers — it is an instrument the tool layer runs against itself. In its short life it has already caught two real regressions: a 31× slowdown hiding in the repository-map builder, and four tools that had silently fallen back to one-at-a-time execution.</p>
+    <p class="article-intro" data-i18n-html data-i18n="postBench.hero.intro">The self-hosted runtime ships a benchmark harness: <code>fathom bench</code>. It is not a showcase of flattering numbers — it is an instrument the tool layer runs against itself. It catches regressions in worker orchestration, repository mapping, and tool parallelism before they affect autonomous runs.</p>
 
     <div class="highlights">
       <h4 data-i18n="postBench.hl.title">Highlights</h4>
@@ -24,14 +24,14 @@ import Layout from '../../layouts/Layout.astro';
         <li data-i18n-html data-i18n="postBench.hl.item.0">repo_map got 31× faster after a benchmark exposed per-file regex compilation</li>
         <li data-i18n-html data-i18n="postBench.hl.item.1">Four tools were silently serialized — caught only because the harness printed 1.00×</li>
         <li data-i18n-html data-i18n="postBench.hl.item.2">Executor overhead amortizes to 753 µs per call in an 8-call batch</li>
-        <li data-i18n-html data-i18n="postBench.hl.item.3">~531k rows/s for HTML selectors, ~1.1M items/s for RSS parsing</li>
+        <li data-i18n-html data-i18n="postBench.hl.item.3">Parser benchmarks cover HTML selectors and RSS ingestion without network or model variance</li>
         <li data-i18n="postBench.hl.item.4">No network, no LLM — the benchmark suite runs in CI</li>
       </ul>
     </div>
 
     <div class="article-body">
       <h2 data-i18n="postBench.h2.0">A benchmark is an instrument, not a showcase</h2>
-      <p data-i18n-html data-i18n="postBench.p.1">The LLM decides <em>what</em> to do; the tools do the work. In between sits the <code>ToolExecutor</code> — parallel-safe vs sequential classification, path-conflict detection, cascading cancellation, and the serde machinery around every <code>ToolCall</code>. This layer runs on every step of every agent, so its characteristics directly define how long a research run takes.</p>
+      <p data-i18n-html data-i18n="postBench.p.1">The LLM decides <em>what</em> to do; the tools do the work. In between sits the <code>ToolExecutor</code> — parallel-safe vs sequential classification, path-conflict detection, cascading cancellation, and the serde machinery around every <code>ToolCall</code>. This layer runs on every step of every worker, so its characteristics shape the latency and safety of any operation.</p>
       <p data-i18n-html data-i18n="postBench.p.2">That is why the harness is built into the product. Fixtures are created automatically in a temp directory and removed after; each scenario repeats 5–10 times with a warm-up call, and the numbers below are one run on macOS, 10 cores, release build. No network, no LLM — the memory scenario uses an offline TF-IDF embedder, so the whole suite can run in CI.</p>
 
       <h2 data-i18n="postBench.h2.1">31× from a regex cache</h2>
@@ -62,12 +62,12 @@ import Layout from '../../layouts/Layout.astro';
 
       <blockquote data-i18n-html data-i18n="postBench.quote">
         Every new read-only tool must ship with a classification test — otherwise parallelism disappears without a trace.
-        <cite>— Fathom Research, benchmark notes</cite>
+        <cite>— Fathom runtime benchmark notes</cite>
       </blockquote>
 
       <h2 data-i18n="postBench.h2.3">The rest of the scoreboard</h2>
       <p data-i18n-html data-i18n="postBench.p.8">The same run measures the machinery around the tools. Serializing a <code>ToolCall</code>'s arguments costs ~750 ns; the executor's overhead over raw registry dispatch is ~2.5 ms for a single-call batch and amortizes to <strong>753 µs per call</strong> in an 8-call batch. The execution layer disappears against the work the tools do.</p>
-      <p data-i18n-html data-i18n="postBench.p.9">For CPU-bound batches the difference between execution modes is dramatic: 8 × <code>parse_html</code> of a ~1 MB table runs <strong>3.78×</strong> faster under <code>execute_batch_spawn</code> (tokio tasks spread across cores) than sequentially, while <code>join_all</code> — which polls futures on one thread — only helps for I/O waits. HTML selector throughput peaks at ~531k rows/s on small documents (~350k rows/s on large ones), and the quick-xml RSS parser sustains ~1.1M items/s.</p>
+      <p data-i18n-html data-i18n="postBench.p.9">For CPU-bound batches the difference between execution modes is dramatic: 8 × <code>parse_html</code> of a ~1 MB table runs <strong>3.78×</strong> faster under <code>execute_batch_spawn</code> (tokio tasks spread across cores) than sequentially, while <code>join_all</code> — which polls futures on one thread — only helps for I/O waits. HTML selector and RSS parser throughput are measured in isolated fixtures, while the executor remains responsible for preserving ordering and concurrency semantics.</p>
       <p data-i18n-html data-i18n="postBench.p.10">A realistic mixed turn — four reads, three writes and a grep in one batch — is partitioned automatically: five calls run concurrently, three serialize, and the result vector still matches the original call order. Total wall time: 70.9 ms.</p>
 
       <h2 data-i18n="postBench.h2.4">Run it in CI</h2>
@@ -78,7 +78,7 @@ import Layout from '../../layouts/Layout.astro';
     <div class="related-posts">
       <h3 data-i18n="postBench.related.title">Related Posts</h3>
       <div class="related-grid">
-        <a class="related-card" href="/blog/memory-that-remembers" data-i18n="postBench.related.0">A memory that remembers: append-only knowledge for research agents</a>
+        <a class="related-card" href="/blog/memory-that-remembers" data-i18n="postBench.related.0">A memory that remembers: append-only knowledge for autonomous workers</a>
         <a class="related-card" href="/blog/anatomy-of-fan-out" data-i18n="postBench.related.1">Anatomy of a fan-out: one question, a fleet of agents</a>
       </div>
     </div>

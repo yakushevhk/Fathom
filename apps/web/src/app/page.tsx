@@ -87,19 +87,19 @@ export default function HomePage() {
   return (
     <div className="flex-1 flex flex-col min-w-0">
       <div className="h-9 flex items-center px-4 border-b border-white/[0.06] text-xs text-gray-400 shrink-0">
-        Operations Overview
+        Fathom Operations Overview
       </div>
       <main className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-6">
         <header className="max-w-3xl">
           <p className="ops-kicker">Control plane</p>
-          <h1 className="text-xl sm:text-2xl text-gray-100 font-medium tracking-tight mt-2">Autonomous work, at a glance</h1>
-          <p className="text-sm text-gray-500 mt-2">Monitor your worker fleet, follow running tasks, and take action when work needs attention.</p>
+          <h1 className="text-xl sm:text-2xl text-gray-100 font-medium tracking-tight mt-2">Autonomous workers, at a glance</h1>
+          <p className="text-sm text-gray-500 mt-2">Monitor remote workers, follow sessions and jobs, and intervene when governed work needs attention.</p>
         </header>
 
         <section aria-labelledby="fleet-status-heading">
           <div className="ops-panel-head">
             <div>
-              <p className="ops-kicker">Fleet / work</p>
+              <p className="ops-kicker">Worker fleet / sessions</p>
               <h2 id="fleet-status-heading">Current operating picture</h2>
             </div>
             <span className={`ops-status ${healthError ? 'ops-status-deny' : health?.status === 'ok' ? 'ops-status-allow' : 'text-gray-500 border-white/10'}`} aria-live="polite">
@@ -146,10 +146,10 @@ export default function HomePage() {
           <div className="ops-panel-head">
             <div>
               <p className="ops-kicker">Execution</p>
-              <h2 id="running-work-heading">Running work</h2>
+              <h2 id="running-work-heading">Running sessions</h2>
             </div>
             <div className="flex flex-wrap gap-3 text-[10px]">
-              <Link href="/jobs" className="text-gray-500 hover:text-gray-200 underline underline-offset-4">View tasks</Link>
+              <Link href="/jobs" className="text-gray-500 hover:text-gray-200 underline underline-offset-4">View jobs</Link>
               <Link href="/agents" className="text-gray-500 hover:text-gray-200 underline underline-offset-4">View workers</Link>
             </div>
           </div>
@@ -158,7 +158,7 @@ export default function HomePage() {
           ) : sessionsLoading ? (
             <div className="ops-panel text-xs text-gray-500">Loading running work…</div>
           ) : runningSessions.length === 0 ? (
-            <div className="ops-panel text-xs text-gray-500">No work is running. Submit a task from <Link href="/jobs" className="text-gray-300 underline underline-offset-4">Work</Link> or start one from the sidebar.</div>
+            <div className="ops-panel text-xs text-gray-500">No sessions are running. Submit a job from <Link href="/jobs" className="text-gray-300 underline underline-offset-4">Work</Link> or dispatch one from the sidebar.</div>
           ) : (
             <div className="space-y-2">
               {runningSessions.map(s => (
@@ -185,7 +185,7 @@ export default function HomePage() {
         <section aria-labelledby="activity-heading">
           <div className="ops-panel-head">
             <div>
-              <p className="ops-kicker">Observability</p>
+              <p className="ops-kicker">Events / observability</p>
               <h2 id="activity-heading">Recent activity</h2>
             </div>
             <Link href="/events" className="text-[10px] text-gray-500 hover:text-gray-200 underline underline-offset-4">Open activity</Link>

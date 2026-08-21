@@ -2,9 +2,9 @@
 import Layout from '../layouts/Layout.astro';
 
 const profiles = [
-  { key: 'hunter', name: 'hunter', tag: 'Lead harvesting', d: 'Aggressive contact extraction — maximizes verified contacts. Extracts name, role, company, email, phone. Always runs extract_contacts, enrich_entities, save_contacts. Spawns up to 6 parallel agents.' },
-  { key: 'analyst', name: 'analyst', tag: 'Deep research', d: 'Deep research with cross-checking, no side effects. Every claim needs a source URL; conflicting sources get both cited. Denies save_contacts and git_push tools.' },
-  { key: 'validator', name: 'validator', tag: 'Verify & enrich', d: 'Works through contact lists one by one — verify_email, verify_phone, verify_social. Enriches missing fields from primary sources. Denies spawn_agent to stay focused.' },
+  { key: 'hunter', name: 'hunter', tag: 'Broad collection workflow', d: 'An example profile for collection-heavy work. It prioritizes extracting and enriching contact records, saves results through the configured tools, and allows parallel delegation within its profile limits.' },
+  { key: 'analyst', name: 'analyst', tag: 'Read-only analysis', d: 'An example profile for sourced analysis with cross-checking and no configured side effects. It denies save_contacts and git_push while the worker produces evidence and open questions.' },
+  { key: 'validator', name: 'validator', tag: 'Focused verification', d: 'An example profile for checking and enriching an existing list. It uses verification tools and denies spawn_agent to keep this workflow in one focused worker loop.' },
 ];
 ---
 
@@ -13,15 +13,15 @@ const profiles = [
     <div class="container">
       <div class="profiles-hero">
         <p class="eyebrow" data-i18n="profilesPage.hero.badge">Profiles & Personas</p>
-        <h1 class="h2-sec" data-i18n-html data-i18n="profilesPage.hero.title">One agent,<br />many personas.</h1>
-        <p class="copy-lg mx-auto" data-i18n="profilesPage.hero.sub">Ready-made profiles tune the entire agent fleet for a class of tasks — model, temperature, depth, tool sets and behavioral prompts, all in one TOML overlay.</p>
+        <h1 class="h2-sec" data-i18n-html data-i18n="profilesPage.hero.title">One runtime,<br />many worker configurations.</h1>
+        <p class="copy-lg mx-auto" data-i18n="profilesPage.hero.sub">Profiles are named TOML overlays that shape how autonomous workers operate: prompts, model routing, depth and concurrency limits, denied tools, and other behavior controls. Use a built-in example or define the policy your workflow needs.</p>
       </div>
 
       <!-- Built-in profiles -->
       <div class="sec-head center reveal">
         <p class="eyebrow" data-i18n="profilesPage.builtin.badge">Built-in profiles</p>
-        <h2 class="h2-sec" data-i18n-html data-i18n="profilesPage.builtin.title">Three battle-tested presets</h2>
-        <p class="copy-lg mx-auto" data-i18n="profilesPage.builtin.sub">Each profile injects a specialized system prompt and overrides agent parameters — no config file needed.</p>
+        <h2 class="h2-sec" data-i18n-html data-i18n="profilesPage.builtin.title">Built-in workflow examples</h2>
+        <p class="copy-lg mx-auto" data-i18n="profilesPage.builtin.sub">These presets ship with the runtime as starting points. Each adds a system prompt and selected parameter overrides; inspect or replace them before using in your own operation.</p>
       </div>
 
       <div class="profiles-grid">
@@ -40,7 +40,7 @@ const profiles = [
       <div class="sec-head center reveal" style="margin-top:64px">
         <p class="eyebrow" data-i18n="profilesPage.custom.badge">Custom profiles</p>
         <h2 class="h2-sec" data-i18n-html data-i18n="profilesPage.custom.title">Your rules, your TOML</h2>
-        <p class="copy-lg mx-auto" data-i18n-html data-i18n="profilesPage.custom.sub">Create a TOML file in <code class="ic">~/.fathom/profiles/&lt;name&gt;.toml</code> — override model, fast_model, temperature, max_depth, max_agents, max_iterations, timeout_seconds, replan_rounds, and deny_tools. User files take priority over built-in presets.</p>
+        <p class="copy-lg mx-auto" data-i18n-html data-i18n="profilesPage.custom.sub">Create a TOML file in <code class="ic">~/.fathom/profiles/&lt;name&gt;.toml</code> to override model, fast_model, temperature, max_depth, max_agents, max_iterations, timeout_seconds, replan_rounds and deny_tools. A user file with the same name takes priority over the built-in preset.</p>
       </div>
 
       <div class="code-card" style="max-width:640px; margin:0 auto;">
@@ -49,11 +49,12 @@ const profiles = [
 model = "deepseek-chat"
 fast_model = "deepseek-chat"
 temperature = 0.3
+# Set limits that fit your deployment
 max_depth = 3
-max_agents = 8
-max_iterations = 50
+max_agents = 4
+max_iterations = 30
 timeout_seconds = 600
-replan_rounds = 2
+replan_rounds = 1
 deny_tools = ["git_push"]</code></pre>
       </div>
 
@@ -77,7 +78,7 @@ deny_tools = ["git_push"]</code></pre>
           <p data-i18n="profilesPage.cli.create">Create from template</p>
         </div>
         <div class="profiles-cli-card">
-          <code>fathom run --profile hunter "find leads at Acme"</code>
+          <code>fathom run --profile hunter "collect and verify records for Acme"</code>
           <p data-i18n="profilesPage.cli.run">Run with a profile</p>
         </div>
       </div>
@@ -85,8 +86,8 @@ deny_tools = ["git_push"]</code></pre>
       <!-- CTA -->
       <div class="profiles-cta">
         <div class="bench-card-lg">
-          <h3 data-i18n="profilesPage.cta.title">Personalize your agent</h3>
-          <p class="bench-sub" data-i18n="profilesPage.cta.sub">Read the full personalization guide — profiles, per-role models, tool deny lists and behavioral tuning.</p>
+          <h3 data-i18n="profilesPage.cta.title">Configure your workers</h3>
+          <p class="bench-sub" data-i18n="profilesPage.cta.sub">Use the personalization guide to define prompts, per-role models, tool deny lists and behavioral controls for your runtime.</p>
           <a href="/docs/personalization" class="btn btn-outline" data-i18n="profilesPage.cta.docs">Personalization docs</a>
         </div>
       </div>

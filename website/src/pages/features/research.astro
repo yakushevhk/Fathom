@@ -2,13 +2,13 @@
 import Layout from '../../layouts/Layout.astro';
 ---
 
-<Layout title="Research Workers — Fathom" description="Autonomous research workers search, fetch, parse, and synthesize cited findings with memory, code, and browser tools.">
+<Layout title="Research Workflow — Fathom" description="Use universal autonomous workers to plan research, delegate tools, preserve evidence in memory and synthesize reviewable findings.">
   <main class="fr-page">
     <div class="container">
       <div class="fr-hero">
         <p class="eyebrow"><a href="/features" class="crumb">Features</a> / <span data-i18n-html data-i18n="featuresResearch.hero.crumb">Research</span></p>
-        <h1 class="h2-sec" data-i18n-html data-i18n="featuresResearch.hero.title">Deep web research,<br />multiplied.</h1>
-        <p class="copy-lg mx-auto" data-i18n="featuresResearch.hero.sub">Autonomous workers search, fetch, parse, and cross-reference sources — then hand you a cited answer grounded in memory, code, and browser context.</p>
+        <h1 class="h2-sec" data-i18n-html data-i18n="featuresResearch.hero.title">Research is a workflow,<br />not a worker identity.</h1>
+        <p class="copy-lg mx-auto" data-i18n="featuresResearch.hero.sub">Universal autonomous workers can plan research, delegate configured tools, fetch and cross-reference evidence, persist memory and pause at governance gates before producing a cited, reviewable answer.</p>
       </div>
 
       <!-- Capabilities -->
@@ -17,18 +17,18 @@ import Layout from '../../layouts/Layout.astro';
         <h2 class="h3-sec" data-i18n="featuresResearch.cap.title">How Fathom researches the web</h2>
       </div>
       <div class="api-grid">
-        <div class="api-card"><div class="api-name">7 search backends</div><p data-i18n="featuresResearch.cap.backends">Linkup, Parallel.ai, Exa, Tavily, Serper, Brave, DuckDuckGo — with hybrid and smart modes and RRF ranking to fuse results.</p></div>
-        <div class="api-card"><div class="api-name">Hierarchical fan-out</div><p data-i18n="featuresResearch.cap.fanout">spawn_agent at any depth up to max_depth; batches of children run in parallel, background mode reports results as notifications.</p></div>
-        <div class="api-card"><div class="api-name">Deep fetch &amp; crawl</div><p data-i18n="featuresResearch.cap.fetch">web_fetch, web_crawl and web_feed pull full pages, follow sitemaps and parse RSS at up to 1.1M items/s.</p></div>
-        <div class="api-card"><div class="api-name">Structured parsing</div><p data-i18n="featuresResearch.cap.parsing">parse_html (531k rows/s) and extract_json turn any document into structured data.</p></div>
-        <div class="api-card"><div class="api-name">Browser &amp; vision</div><p data-i18n="featuresResearch.cap.vision">Real Chrome via CDP when the page fights back; analyze_image for screenshots, charts and documents.</p></div>
-        <div class="api-card"><div class="api-name">Code-aware workers</div><p data-i18n="featuresResearch.cap.code">code_symbols and repo_map map codebases; workers can combine repository context with web sources and PDF extraction.</p></div>
+        <div class="api-card"><div class="api-name">Configured search tools</div><p data-i18n="featuresResearch.cap.backends">Search services such as Linkup, Parallel.ai, Exa, Tavily or Serper can be enabled per deployment. Workers combine available results and retain source provenance.</p></div>
+        <div class="api-card"><div class="api-name">Delegated fan-out</div><p data-i18n="featuresResearch.cap.fanout">spawn_agent lets a coordinator delegate subtasks within configured depth and budget; background work can report through enabled notifications.</p></div>
+        <div class="api-card"><div class="api-name">Fetch &amp; crawl tools</div><p data-i18n="featuresResearch.cap.fetch">web_fetch, web_crawl and web_feed retrieve pages, sitemaps or RSS when the corresponding network access and connectors are configured.</p></div>
+        <div class="api-card"><div class="api-name">Structured parsing</div><p data-i18n="featuresResearch.cap.parsing">parse_html and extract_json turn fetched documents into structured evidence for worker reasoning and later review.</p></div>
+        <div class="api-card"><div class="api-name">Optional browser &amp; vision</div><p data-i18n="featuresResearch.cap.vision">A configured Chrome CDP session can handle interactive pages; analyze_image can inspect screenshots, charts and documents.</p></div>
+        <div class="api-card"><div class="api-name">Code-aware workers</div><p data-i18n="featuresResearch.cap.code">code_symbols and repo_map let workers combine repository context with web sources and document extraction when those tools are available.</p></div>
       </div>
 
       <!-- Comparison -->
       <div class="sec-head">
         <p class="eyebrow" data-i18n="featuresResearch.cmp.badge">Comparison</p>
-        <h2 class="h3-sec" data-i18n="featuresResearch.cmp.title">Fathom workers vs. manual work</h2>
+        <h2 class="h3-sec" data-i18n="featuresResearch.cmp.title">A worker workflow vs. manual work</h2>
       </div>
       <div class="cmp">
         <div class="cmp-col">
@@ -44,11 +44,11 @@ import Layout from '../../layouts/Layout.astro';
         <div class="cmp-col cmp-col--good">
           <h3 class="cmp-name" data-i18n="featuresResearch.cmp.parallel.head">Fathom</h3>
           <ul>
-            <li data-i18n="featuresResearch.cmp.parallel.0">Minutes per topic, parallel agents</li>
-            <li data-i18n="featuresResearch.cmp.parallel.1">7 backends fused with RRF ranking</li>
-            <li data-i18n="featuresResearch.cmp.parallel.2">Structured findings + exports</li>
-            <li data-i18n="featuresResearch.cmp.parallel.3">Verified contacts, cross-referenced facts</li>
-            <li data-i18n="featuresResearch.cmp.parallel.4">Semantic memory carries knowledge forward</li>
+            <li data-i18n="featuresResearch.cmp.parallel.0">Delegated subtasks within configured budgets</li>
+            <li data-i18n="featuresResearch.cmp.parallel.1">Available search tools with source provenance</li>
+            <li data-i18n="featuresResearch.cmp.parallel.2">Structured findings, memory and exports</li>
+            <li data-i18n="featuresResearch.cmp.parallel.3">Evidence gaps and reviewable confidence</li>
+            <li data-i18n="featuresResearch.cmp.parallel.4">Persisted context carries knowledge forward</li>
           </ul>
         </div>
       </div>
@@ -56,7 +56,7 @@ import Layout from '../../layouts/Layout.astro';
       <!-- Under the hood -->
       <div class="sec-head">
         <p class="eyebrow" data-i18n="featuresResearch.flow.badge">Under the hood</p>
-        <h2 class="h3-sec" data-i18n="featuresResearch.flow.title">Multi-agent fan-out explained</h2>
+        <h2 class="h3-sec" data-i18n="featuresResearch.flow.title">How a worker plans and delegates</h2>
       </div>
       <div class="flow">
         <div class="flow-step"><span class="flow-num">1</span><h3 data-i18n="featuresResearch.flow.0.title">Plan</h3><p data-i18n="featuresResearch.flow.0.desc">LLM decomposes the query into sub-tasks; subtasks persist in SQLite.</p></div>
@@ -69,32 +69,32 @@ import Layout from '../../layouts/Layout.astro';
       <!-- Agent roles -->
       <div class="sec-head">
         <p class="eyebrow" data-i18n="featuresResearch.roles.badge">Agent roles</p>
-        <h2 class="h3-sec" data-i18n="featuresResearch.roles.title">Five roles, one pipeline</h2>
+        <h2 class="h3-sec" data-i18n="featuresResearch.roles.title">Composable roles on one runtime</h2>
         <p class="copy-lg" data-i18n-html data-i18n="featuresResearch.roles.sub">Every agent runs a role-specific prompt on top of the same runtime. Roles can be overridden per deployment via <code class="ic">[agent.role_models]</code>.</p>
       </div>
       <div class="api-grid">
-        <div class="api-card"><div class="api-name">Coordinator</div><p data-i18n="featuresResearch.roles.0.desc">Decomposes the query into 2–5 sub-tasks, delegates, and synthesizes the final answer.</p></div>
-        <div class="api-card"><div class="api-name">Researcher</div><p data-i18n="featuresResearch.roles.1.desc">Web search + OSINT / lead-gen workflows with source citation.</p></div>
+        <div class="api-card"><div class="api-name">Coordinator</div><p data-i18n="featuresResearch.roles.0.desc">Decomposes the request into scoped subtasks, delegates within configured budgets and synthesizes a reviewable answer.</p></div>
+        <div class="api-card"><div class="api-name">Researcher</div><p data-i18n="featuresResearch.roles.1.desc">Runs web research, OSINT or lead-discovery workflows with source citation as configured examples.</p></div>
         <div class="api-card"><div class="api-name">Analyst</div><p data-i18n="featuresResearch.roles.2.desc">Cross-references findings, spots patterns and contradictions, assigns HIGH / MEDIUM / LOW confidence labels via the system prompt.</p></div>
         <div class="api-card"><div class="api-name">Verifier</div><p data-i18n="featuresResearch.roles.3.desc">Adversarial fact-checking: Verified / Partial / Unverified.</p></div>
         <div class="api-card"><div class="api-name">Writer</div><p data-i18n="featuresResearch.roles.4.desc">Structures the report: Summary / Findings / Analysis / Sources / Gaps.</p></div>
-        <div class="api-card"><div class="api-name">3-tier prompts</div><p data-i18n="featuresResearch.roles.5.desc">Stable / context / volatile prompt layers maximize prefix-cache hit rates across the fleet.</p></div>
+        <div class="api-card"><div class="api-name">Prompt layers</div><p data-i18n="featuresResearch.roles.5.desc">Stable, context and volatile prompt layers can keep role instructions separate from task state and runtime context.</p></div>
       </div>
 
       <!-- Use cases -->
       <div class="sec-head">
         <p class="eyebrow" data-i18n="featuresResearch.uc.badge">Use cases</p>
-        <h2 class="h3-sec" data-i18n="featuresResearch.uc.title">Built for real business scenarios</h2>
+        <h2 class="h3-sec" data-i18n="featuresResearch.uc.title">Research as one worker use case</h2>
       </div>
       <div class="uc-grid">
-        <div class="uc-card"><h3 data-i18n="featuresResearch.uc.0.title">Market &amp; competitor scans</h3><p data-i18n="featuresResearch.uc.0.desc">Track pricing, positioning and hiring across an industry — with diffs between runs.</p></div>
-        <div class="uc-card"><h3 data-i18n="featuresResearch.uc.1.title">Due diligence</h3><p data-i18n="featuresResearch.uc.1.desc">Company facts, news, filings and key people into one verified dossier.</p></div>
-        <div class="uc-card"><h3 data-i18n="featuresResearch.uc.2.title">Lead research</h3><p data-i18n="featuresResearch.uc.2.desc">Decision-makers at target companies, enriched and verified before outreach.</p></div>
-        <div class="uc-card"><h3 data-i18n="featuresResearch.uc.3.title">Tech scouting</h3><p data-i18n="featuresResearch.uc.3.desc">Map repos, extract symbols, summarize documentation with code_symbols + repo_map.</p></div>
+        <div class="uc-card"><h3 data-i18n="featuresResearch.uc.0.title">Market &amp; competitor scans</h3><p data-i18n="featuresResearch.uc.0.desc">Ask a worker to track pricing, positioning or hiring, then compare persisted findings between runs.</p></div>
+        <div class="uc-card"><h3 data-i18n="featuresResearch.uc.1.title">Due diligence</h3><p data-i18n="featuresResearch.uc.1.desc">Assemble company facts, news, filings and key people into a cited dossier with explicit gaps for review.</p></div>
+        <div class="uc-card"><h3 data-i18n="featuresResearch.uc.2.title">Lead research</h3><p data-i18n="featuresResearch.uc.2.desc">Identify decision-maker evidence at target companies; enrichment, verification and outreach remain configured workflows subject to approval.</p></div>
+        <div class="uc-card"><h3 data-i18n="featuresResearch.uc.3.title">Tech scouting</h3><p data-i18n="featuresResearch.uc.3.desc">Map repositories, extract symbols and summarize documentation with code_symbols and repo_map when available.</p></div>
       </div>
 
       <div class="cta-strip">
-        <h2 data-i18n="featuresResearch.cta.title">Start researching today</h2>
+        <h2 data-i18n="featuresResearch.cta.title">Compose a worker workflow</h2>
         <a href="/#cta" class="btn btn-primary" data-i18n="featuresResearch.cta.start">Get started →</a>
       </div>
     </div>

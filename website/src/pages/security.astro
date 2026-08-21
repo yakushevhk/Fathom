@@ -2,33 +2,33 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="Security — Fathom" description="Defense in depth — every worker action passes through multiple safety layers. SSRF guards, prompt injection defense, secret scanning, and more.">
+<Layout title="Security — Fathom" description="Configurable safeguards for autonomous workers: SSRF guards, prompt-injection defenses, secret scanning, governance gates, and audit receipts.">
   <main class="security-page">
     <div class="container">
 
       <div class="sec-hero">
         <p class="eyebrow" data-i18n="securityPage.hero.badge">Security</p>
         <h1 class="h2-sec" data-i18n="securityPage.hero.title">Defense in depth.</h1>
-        <p class="copy-lg mx-auto" data-i18n="securityPage.hero.sub">Every agent action passes through multiple safety layers — from network-level SSRF guards to prompt injection detection, secret scanning, and append-only verification receipts.</p>
+        <p class="copy-lg mx-auto" data-i18n="securityPage.hero.sub">Autonomous workers can be run with layered safeguards — from network-level SSRF guards to prompt-injection detection, secret scanning, governance gates and append-only verification receipts.</p>
       </div>
 
       <div class="sec-head">
         <p class="eyebrow" data-i18n="securityPage.layers.badge">Security Layers</p>
-        <h2 class="h3-sec" data-i18n="securityPage.layers.title">12 layers of protection</h2>
-        <p class="copy-lg" data-i18n="securityPage.layers.sub">Every outbound request, tool call, and memory write is validated before execution. Failures are never silent.</p>
+        <h2 class="h3-sec" data-i18n="securityPage.layers.title">Layered safeguards for worker actions</h2>
+        <p class="copy-lg" data-i18n="securityPage.layers.sub">Depending on runtime configuration and the operation, outbound requests, tool calls and memory writes can pass through validation and review gates. Rejections and errors are surfaced for operator inspection.</p>
       </div>
 
       <div class="api-grid api-grid--3">
         <div class="api-card">
           <div class="api-icon">🛡️</div>
           <div class="api-name" data-i18n="securityPage.layers.ssrf.name">SSRF Guard</div>
-          <p data-i18n="securityPage.layers.ssrf.desc">Blocks loopback, RFC1918, link-local, CGNAT, and metadata IPs. Per-hop redirect validation with a max of 5 hops prevents DNS rebinding and open-redirect abuse.</p>
+          <p data-i18n="securityPage.layers.ssrf.desc">Blocks loopback, RFC1918, link-local, CGNAT, and metadata IPs. Per-hop redirect validation with a configured hop limit helps reduce DNS rebinding and open-redirect abuse.</p>
         </div>
 
         <div class="api-card">
           <div class="api-icon">🧬</div>
           <div class="api-name" data-i18n="securityPage.layers.injection.name">Prompt Injection Defense</div>
-          <p data-i18n="securityPage.layers.injection.desc">12 detection patterns — ignore_previous, disregard_above, you_are_now, system_prompt_leak, and more. Untrusted content is wrapped with boundary markers before it enters the LLM context.</p>
+          <p data-i18n="securityPage.layers.injection.desc">Pattern-based checks cover phrases such as ignore_previous, disregard_above, you_are_now and system_prompt_leak. Untrusted content can be wrapped with boundary markers before it enters the LLM context.</p>
         </div>
 
         <div class="api-card">
@@ -46,19 +46,19 @@ import Layout from '../layouts/Layout.astro';
         <div class="api-card">
           <div class="api-icon">⛔</div>
           <div class="api-name" data-i18n="securityPage.layers.destructive.name">Destructive Command Blocking</div>
-          <p data-i18n="securityPage.layers.destructive.desc">8 regex patterns block rm -rf /, mkfs, fork bombs, dd of=/dev, chmod -R 777 /, and other catastrophic shell commands before they reach the executor.</p>
+          <p data-i18n="securityPage.layers.destructive.desc">Pattern checks can block rm -rf /, mkfs, fork bombs, dd of=/dev, chmod -R 777 /, and other catastrophic shell commands before they reach the executor.</p>
         </div>
 
         <div class="api-card">
           <div class="api-icon">🔄</div>
           <div class="api-name" data-i18n="securityPage.layers.doomloop.name">Doom Loop Detection</div>
-          <p data-i18n="securityPage.layers.doomloop.desc">3 identical consecutive tool calls trigger a warning. A repeated pattern forces a stop. Runaway agents are halted before they burn tokens or cause side effects.</p>
+          <p data-i18n="securityPage.layers.doomloop.desc">Repeated tool-call patterns can trigger warnings or stops according to configured thresholds, helping operators review runaway behavior before side effects accumulate.</p>
         </div>
 
         <div class="api-card">
           <div class="api-icon">📋</div>
           <div class="api-name" data-i18n="securityPage.layers.receipts.name">Verification Receipts</div>
-          <p data-i18n="securityPage.layers.receipts.desc">Append-only JSONL ledger with typed identity. Every verification step produces a receipt. A PASS never masks a preceding FAIL — full audit trail, always honest.</p>
+          <p data-i18n="securityPage.layers.receipts.desc">An append-only JSONL ledger can record typed verification receipts, giving operators an audit trail to inspect alongside failures and approvals.</p>
         </div>
 
         <div class="api-card">
@@ -70,13 +70,13 @@ import Layout from '../layouts/Layout.astro';
         <div class="api-card">
           <div class="api-icon">⏱️</div>
           <div class="api-name" data-i18n="securityPage.layers.ratelimit.name">Rate Limiting</div>
-          <p data-i18n="securityPage.layers.ratelimit.desc">Sliding window algorithm, 120 requests per minute per authenticated principal by default. Returns 429 with Retry-After headers when the limit is exceeded.</p>
+          <p data-i18n="securityPage.layers.ratelimit.desc">A sliding-window policy can limit requests per authenticated principal and return 429 with Retry-After headers when the configured limit is exceeded.</p>
         </div>
 
         <div class="api-card">
           <div class="api-icon">🌐</div>
           <div class="api-name" data-i18n="securityPage.layers.fetch.name">Fetch Safety</div>
-          <p data-i18n="securityPage.layers.fetch.desc">Response body capped at 2 MiB, text truncated at 50K characters. SSRF guard applied per-hop on every redirect. Prevents memory exhaustion and internal network exfiltration.</p>
+          <p data-i18n="securityPage.layers.fetch.desc">Configured response-size and text-length limits, together with per-hop SSRF checks on redirects, help reduce memory exhaustion and internal-network exfiltration.</p>
         </div>
 
         <div class="api-card">
@@ -95,8 +95,8 @@ import Layout from '../layouts/Layout.astro';
       <div class="feat">
         <div class="feat-copy">
           <p class="eyebrow" data-i18n="securityPage.pipeline.badge">Verification Pipeline</p>
-          <h2 class="h3-sec" data-i18n="securityPage.pipeline.title">5-gateway email verification</h2>
-          <p class="copy-lg" data-i18n="securityPage.pipeline.sub">Every email address passes through five sequential verification stages. Each gateway produces a typed receipt. A failure at any stage short-circuits the pipeline — no false positives, no silent passes.</p>
+          <h2 class="h3-sec" data-i18n="securityPage.pipeline.title">Sequential email verification</h2>
+          <p class="copy-lg" data-i18n="securityPage.pipeline.sub">A configured email-verification workflow can run through sequential stages, with typed receipts for review. Failures may short-circuit the pipeline according to its policy; results still require operator judgment.</p>
         </div>
         <div class="pipeline-visual">
           <div class="pipeline-step">
@@ -143,26 +143,26 @@ import Layout from '../layouts/Layout.astro';
 
       <div class="sec-stats">
         <div class="stat-card">
-          <div class="stat-value">12</div>
-          <div class="stat-label" data-i18n="securityPage.stats.patterns">injection patterns detected</div>
+          <div class="stat-value">Pattern-based</div>
+          <div class="stat-label" data-i18n="securityPage.stats.patterns">prompt-injection checks</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">8</div>
-          <div class="stat-label" data-i18n="securityPage.stats.destructive">destructive command patterns</div>
+          <div class="stat-value">Policy-driven</div>
+          <div class="stat-label" data-i18n="securityPage.stats.destructive">destructive-command checks</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">5</div>
-          <div class="stat-label" data-i18n="securityPage.stats.pipeline">verification gateways</div>
+          <div class="stat-value">Configurable</div>
+          <div class="stat-label" data-i18n="securityPage.stats.pipeline">verification stages</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">0</div>
-          <div class="stat-label" data-i18n="securityPage.stats.silent">silent failures</div>
+          <div class="stat-value">Auditable</div>
+          <div class="stat-label" data-i18n="securityPage.stats.silent">rejections and failures surfaced for review</div>
         </div>
       </div>
 
       <div class="sec-cta">
-        <h2 class="h3-sec" data-i18n="securityPage.cta.title">Security is not optional</h2>
-        <p class="copy-lg mx-auto" data-i18n="securityPage.cta.sub">Every layer is on by default. No opt-in flags, no configuration required. Read the full security architecture in the documentation.</p>
+        <h2 class="h3-sec" data-i18n="securityPage.cta.title">Make worker actions reviewable</h2>
+        <p class="copy-lg mx-auto" data-i18n="securityPage.cta.sub">Choose and configure the safeguards, authentication, rate limits and approval gates that fit your deployment. Read the security architecture and verify the active policy in the documentation.</p>
         <div class="cta-actions">
           <a href="/docs" class="btn btn-primary" data-i18n="securityPage.cta.docs">Read the docs</a>
           <a href="/architecture" class="btn btn-secondary" data-i18n="securityPage.cta.arch">View architecture</a>

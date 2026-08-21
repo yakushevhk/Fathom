@@ -3,24 +3,24 @@ import Layout from '../layouts/Layout.astro';
 
 const endpointGroups = [
   {
-    key: 'sessions', name: 'Sessions',
+    key: 'sessions', name: 'Worker sessions',
     endpoints: [
-      { m: 'POST', p: '/api/v1/sessions', d: 'Start an autonomous worker session (task, profile, model, budget)' },
-      { m: 'GET', p: '/api/v1/sessions', d: 'List sessions with status and progress' },
-      { m: 'GET', p: '/api/v1/sessions/:id', d: 'Session state, agent tree, token usage' },
-      { m: 'GET', p: '/api/v1/sessions/:id/results', d: 'Findings, contacts, exports' },
+      { m: 'POST', p: '/api/v1/sessions', d: 'Start a worker session with task, profile, model and budget' },
+      { m: 'GET', p: '/api/v1/sessions', d: 'List worker sessions with status and progress' },
+      { m: 'GET', p: '/api/v1/sessions/:id', d: 'Session state, worker tree and token usage' },
+      { m: 'GET', p: '/api/v1/sessions/:id/results', d: 'Completed worker output and exported artifacts' },
       { m: 'DELETE', p: '/api/v1/sessions/:id', d: 'Cancel a running session' },
     ],
   },
   {
-    key: 'agents', name: 'Agents',
+    key: 'agents', name: 'Worker tree',
     endpoints: [
       { m: 'GET', p: '/api/v1/agents', d: 'All agents across sessions (tree view)' },
       { m: 'GET', p: '/api/v1/agents/:id', d: 'Agent details, messages, tool calls' },
     ],
   },
   {
-    key: 'control', name: 'Control plane',
+    key: 'control', name: 'Operator control plane',
     endpoints: [
       { m: 'POST', p: '/api/v1/sessions/:id/steer', d: 'Mid-run steering — redirect a running session' },
       { m: 'POST', p: '/api/v1/sessions/:id/answer', d: 'Answer an agent `question` tool call' },
@@ -28,7 +28,7 @@ const endpointGroups = [
     ],
   },
   {
-    key: 'events', name: 'Events',
+    key: 'events', name: 'Live worker events',
     endpoints: [
       { m: 'GET', p: '/api/v1/events', d: 'Global SSE stream of all agent events' },
       { m: 'GET', p: '/api/v1/sessions/:id/events', d: 'Per-session SSE stream (deltas, tool calls, findings)' },
@@ -46,7 +46,7 @@ const endpointGroups = [
     ],
   },
   {
-    key: 'jobs', name: 'Jobs',
+    key: 'jobs', name: 'Durable jobs',
     endpoints: [
       { m: 'POST', p: '/api/v1/jobs', d: 'Submit a durable background job (task, attempts)' },
       { m: 'GET', p: '/api/v1/jobs', d: 'List jobs' },
@@ -57,7 +57,7 @@ const endpointGroups = [
     ],
   },
   {
-    key: 'governance', name: 'Governance & collaboration',
+    key: 'governance', name: 'Governance & worker collaboration',
     endpoints: [
       { m: 'GET / PUT', p: '/api/v1/governance/policy', d: 'Read or replace the governance policy' },
       { m: 'POST', p: '/api/v1/governance/decide', d: 'Evaluate a governed action' },
@@ -69,36 +69,36 @@ const endpointGroups = [
       { m: 'GET / POST', p: '/api/v1/schedules', d: 'List or create cron-like coworker schedules' },
       { m: 'GET / PUT / PATCH / DELETE', p: '/api/v1/schedules/:id', d: 'Inspect, update, or remove a schedule' },
       { m: 'POST', p: '/api/v1/schedules/claim', d: 'Atomically claim due schedules for a scheduler tick' },
-      { m: 'GET', p: '/api/v1/ag-ui/events', d: 'Stream AG-UI events' },
-      { m: 'GET', p: '/api/v1/ag-ui/health', d: 'AG-UI health probe' },
+      { m: 'GET', p: '/api/v1/ag-ui/events', d: 'Stream the Fathom AG-UI-compatible event subset over SSE' },
+      { m: 'GET', p: '/api/v1/ag-ui/health', d: 'Probe AG-UI bridge and advertised event-only capabilities' },
     ],
   },
   {
-    key: 'security', name: 'Credentials & audit',
+    key: 'security', name: 'Credentials, notifications & audit',
     endpoints: [
       { m: 'GET / POST', p: '/api/v1/credentials', d: 'List redacted credential metadata or store a secret' },
       { m: 'DELETE', p: '/api/v1/credentials/:id', d: 'Delete a stored credential' },
       { m: 'GET', p: '/api/v1/replay', d: 'List redacted governed actions; filter by session or agent' },
       { m: 'GET', p: '/api/v1/observability/summary', d: 'Read bounded live metrics and audit counts' },
-      { m: 'POST', p: '/api/v1/notifications/test', d: 'Send a bounded test through a configured notification channel' },
+      { m: 'POST', p: '/api/v1/notifications/test', d: 'Operator-triggered bounded test through one configured webhook, email or Telegram channel' },
     ],
   },
   {
-    key: 'computer', name: 'Computer relay',
+    key: 'computer', name: 'Configured computer relay',
     endpoints: [
-      { m: 'POST', p: '/api/v1/computers/session', d: 'Start a computer session' },
-      { m: 'GET', p: '/api/v1/computers/health', d: 'Check the default computer relay' },
-      { m: 'GET', p: '/api/v1/computers/snapshot', d: 'Read the current computer snapshot' },
-      { m: 'POST', p: '/api/v1/computers/navigate', d: 'Navigate the default computer relay' },
-      { m: 'POST', p: '/api/v1/computers/click', d: 'Click through the computer relay' },
-      { m: 'POST', p: '/api/v1/computers/type', d: 'Type through the computer relay' },
-      { m: 'POST', p: '/api/v1/computers/key', d: 'Send a keyboard action' },
-      { m: 'POST', p: '/api/v1/computers/secret', d: 'Enter a secret without returning or logging its value' },
-      { m: 'GET', p: '/api/v1/computers/screenshot', d: 'Capture a screenshot' },
-      { m: 'GET / POST', p: '/api/v1/computers/tabs*', d: 'List, open, activate, or close browser tabs' },
-      { m: 'POST', p: '/api/v1/computers/control/take|release', d: 'Take or release operator control' },
-      { m: 'GET / PUT / DELETE', p: '/api/v1/computers/files*', d: 'List, read, write, or delete confined workspace files' },
-      { m: 'GET / POST', p: '/api/v1/computers', d: 'List computers or manage a supervisor-backed computer' },
+      { m: 'POST', p: '/api/v1/computers/session', d: 'Start a session on a configured computer relay' },
+      { m: 'GET', p: '/api/v1/computers/health', d: 'Check whether the configured computer relay is reachable' },
+      { m: 'GET', p: '/api/v1/computers/snapshot', d: 'Read the current snapshot from a configured relay' },
+      { m: 'POST', p: '/api/v1/computers/navigate', d: 'Navigate the configured computer relay' },
+      { m: 'POST', p: '/api/v1/computers/click', d: 'Click through the configured computer relay' },
+      { m: 'POST', p: '/api/v1/computers/type', d: 'Type through the configured computer relay' },
+      { m: 'POST', p: '/api/v1/computers/key', d: 'Send a keyboard action through a configured relay' },
+      { m: 'POST', p: '/api/v1/computers/secret', d: 'Enter a secret through a configured relay without returning or logging its value' },
+      { m: 'GET', p: '/api/v1/computers/screenshot', d: 'Capture a screenshot from a configured relay' },
+      { m: 'GET / POST', p: '/api/v1/computers/tabs*', d: 'List, open, activate, or close tabs on a configured browser relay' },
+      { m: 'POST', p: '/api/v1/computers/control/take|release', d: 'Take or release operator control of the configured relay' },
+      { m: 'GET / PUT / DELETE', p: '/api/v1/computers/files*', d: 'List, read, write, or delete confined workspace files on the relay' },
+      { m: 'GET / POST', p: '/api/v1/computers', d: 'List configured computers or manage a supervisor-backed computer' },
     ],
   },
   {
@@ -106,7 +106,7 @@ const endpointGroups = [
     endpoints: [
       { m: 'GET', p: '/health', d: 'Liveness probe' },
       { m: 'GET', p: '/metrics', d: 'Prometheus metrics' },
-      { m: 'GET', p: '/dashboard', d: 'Single-file web dashboard: sessions, agent tree, memory, jobs, live SSE feed' },
+      { m: 'GET', p: '/dashboard', d: 'Read-only single-file view over sessions, worker tree, memory, jobs and live SSE events' },
     ],
   },
 ];
@@ -117,8 +117,8 @@ const endpointGroups = [
     <div class="container">
       <div class="api-hero">
         <p class="eyebrow" data-i18n="apiPage.hero.badge">API &amp; Server</p>
-        <h1 class="h2-sec" data-i18n-html data-i18n="apiPage.hero.title">Run it headless.<br />Watch it live.</h1>
-        <p class="copy-lg mx-auto" data-i18n="apiPage.hero.sub">An Axum HTTP control plane for autonomous workers: auth, rate limiting, SSE event streaming, mid-run steering, durable jobs, memory, governance, coworkers, schedules, computer use and an embedded dashboard — all in one binary.</p>
+        <h1 class="h2-sec" data-i18n-html data-i18n="apiPage.hero.title">Operate workers headless.<br />Watch every run.</h1>
+        <p class="copy-lg mx-auto" data-i18n="apiPage.hero.sub">A self-hosted Axum control plane for autonomous workers: start and steer sessions, inspect durable jobs and memory, apply governance, and integrate through REST, SSE and AG-UI event streams. Coworkers, schedules, notifications and computer relay controls are available when configured.</p>
       </div>
 
       <!-- Auth -->
@@ -126,7 +126,7 @@ const endpointGroups = [
         <div class="feat-copy">
           <p class="eyebrow" data-i18n="apiPage.auth.badge">Authentication</p>
           <h2 class="h3-sec" data-i18n="apiPage.auth.title">API keys + rate limiting</h2>
-          <p class="copy-lg" data-i18n-html data-i18n="apiPage.auth.sub">Set <code class="ic">FATHOM_API_KEYS</code> (comma-separated) and every <code class="ic">/api/v1/*</code> request requires a key — Bearer token or <code class="ic">X-Api-Key</code> header. Sliding-window rate limiting from <code class="ic">FATHOM_RATE_LIMIT</code> returns <code class="ic">429</code> when exceeded. Unset = open access for development.</p>
+          <p class="copy-lg" data-i18n-html data-i18n="apiPage.auth.sub">Set <code class="ic">FATHOM_API_KEYS</code> (comma-separated) to require a key on each <code class="ic">/api/v1/*</code> request — Bearer token or <code class="ic">X-Api-Key</code> header. Sliding-window rate limiting uses <code class="ic">FATHOM_RATE_LIMIT</code> requests per minute per principal and returns <code class="ic">429</code> when exhausted. If no keys are configured, the self-hosted server permits open access; add authentication before exposing it beyond a trusted network.</p>
         </div>
         <div class="code-card">
           <pre><code>curl -H "Authorization: Bearer $KEY" \
@@ -167,7 +167,7 @@ curl -H "X-Api-Key: $KEY" \
         <div class="feat-copy">
           <p class="eyebrow" data-i18n="apiPage.example.badge">Example</p>
           <h2 class="h3-sec" data-i18n="apiPage.example.title">Start a session, steer it mid-run</h2>
-          <p class="copy-lg" data-i18n="apiPage.example.sub">Sessions start asynchronously. Follow progress on the SSE stream, then steer or answer questions while agents are still running.</p>
+          <p class="copy-lg" data-i18n="apiPage.example.sub">Sessions start asynchronously. Follow worker progress on SSE, then steer, answer a question, or approve a governed side effect while the run is still active.</p>
           <div class="more-links">
             <a href="/docs/api" class="btn btn-primary" data-i18n="apiPage.example.docs">Full API reference</a>
           </div>
@@ -191,7 +191,7 @@ curl -X POST localhost:8080/api/v1/sessions/abc/steer \\
       <div class="sec-head">
         <p class="eyebrow" data-i18n="apiPage.observability.badge">Observability</p>
         <h2 class="h3-sec" data-i18n="apiPage.observability.title">Prometheus metrics</h2>
-        <p class="copy-lg" data-i18n-html data-i18n="apiPage.observability.sub">Scrape <code class="ic">/metrics</code> and graph the whole fleet. The authenticated API also exposes <code class="ic">/api/v1/observability/summary</code> for bounded live counters and audit totals.</p>
+        <p class="copy-lg" data-i18n-html data-i18n="apiPage.observability.sub">Scrape <code class="ic">/metrics</code> from your self-hosted runtime for request, session and tool telemetry. The authenticated API also exposes <code class="ic">/api/v1/observability/summary</code> for bounded live counters and governance-audit totals.</p>
       </div>
       <div class="mini-table-wrap">
         <table class="mini-table">
@@ -216,15 +216,15 @@ curl -X POST localhost:8080/api/v1/sessions/abc/steer \\
         </div>
         <div class="api-card">
           <div class="api-name" data-i18n="apiPage.ops.sse.name">SSE streaming</div>
-          <p data-i18n="apiPage.ops.sse.d">Token deltas, tool calls, agent spawn/finish and findings arrive as server-sent events — no polling.</p>
+          <p data-i18n="apiPage.ops.sse.d">Worker lifecycle events, tool calls and findings arrive as server-sent events; use SSE when you need live progress without polling.</p>
         </div>
         <div class="api-card">
           <div class="api-name" data-i18n="apiPage.ops.dashboard.name">Web dashboard</div>
-          <p data-i18n="apiPage.ops.dashboard.d">GET /dashboard serves the embedded single-file HTML dashboard: sessions, agent tree, memory, jobs, live event feed.</p>
+          <p data-i18n="apiPage.ops.dashboard.d">GET /dashboard serves the read-only single-file HTML view over the same API: sessions, worker tree, memory, jobs and live events. It uses your configured API key when auth is enabled.</p>
         </div>
         <div class="api-card">
           <div class="api-name" data-i18n="apiPage.ops.cors.name">CORS</div>
-          <p data-i18n="apiPage.ops.cors.d">Cross-origin access configurable via [server] config — restrict origins in production.</p>
+          <p data-i18n="apiPage.ops.cors.d">Cross-origin access is configurable via [server] settings; set an explicit allowlist when operators access the runtime from another origin.</p>
         </div>
       </div>
     </div>

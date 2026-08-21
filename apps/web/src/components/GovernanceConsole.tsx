@@ -94,7 +94,7 @@ export default function GovernanceConsole() {
     <div className="flex-1 overflow-y-auto bg-[#080909]">
       <header className="border-b border-white/[0.08] px-5 py-5 md:px-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div><p className="ops-kicker">Control / Governance</p><div className="mt-1 flex flex-wrap items-center gap-3"><h1 className="text-xl tracking-tight text-gray-100">Policy &amp; audit</h1>{policyEnabled !== null && <span className={`ops-status ${policyEnabled ? 'ops-status-allow' : 'ops-status-deny'}`} aria-live="polite">{policyEnabled ? 'ENABLED' : 'DISABLED'}</span>}</div><p className="mt-1 max-w-xl text-xs text-gray-500">Governance evaluates configured worker actions when enabled. Policy status is reported by the governance service.</p></div>
+          <div><p className="ops-kicker">Control / Governance</p><div className="mt-1 flex flex-wrap items-center gap-3"><h1 className="text-xl tracking-tight text-gray-100">Policy &amp; audit</h1>{policyEnabled !== null && <span className={`ops-status ${policyEnabled ? 'ops-status-allow' : 'ops-status-deny'}`} aria-live="polite">{policyEnabled ? 'ENABLED' : 'DISABLED'}</span>}</div><p className="mt-1 max-w-xl text-xs text-gray-500">Governance evaluates configured actions for remote workers when enabled. Policy status is reported by the governance service.</p></div>
           <button type="button" onClick={() => void load()} disabled={loading} className="ops-button-secondary">{loading ? 'Syncing…' : '↻ Refresh'}</button>
         </div>
       </header>
@@ -105,7 +105,7 @@ export default function GovernanceConsole() {
           <section className="ops-panel">
             <div className="ops-panel-head"><div><p className="ops-kicker">Configured rules · {enabledCount}</p><h2>Execution policy</h2></div><button type="button" onClick={addRule} className="ops-button-secondary">+ Add rule</button></div>
             <div className="hidden grid-cols-[minmax(0,1fr)_92px_minmax(0,1fr)_28px] gap-2 border-b border-white/[0.08] pb-2 text-[10px] uppercase tracking-widest text-gray-600 sm:grid"><span>Tool</span><span>Effect</span><span>Path</span><span /></div>
-            {loading ? <div className="ops-empty">Loading policy…</div> : rules.length === 0 ? <div className="ops-empty">No rules published. Add a rule to begin; behavior follows the server governance mode.</div> : rules.map((rule, index) => <RuleRow key={rule.id ?? `rule-${index}`} rule={rule} onChange={next => updateRule(index, next)} onRemove={() => setRules(current => current.filter((_, i) => i !== index))} />)}
+            {loading ? <div className="ops-empty">Loading policy…</div> : rules.length === 0 ? <div className="ops-empty">No policy rules published. Add a rule to govern worker actions; behavior follows the server governance mode.</div> : rules.map((rule, index) => <RuleRow key={rule.id ?? `rule-${index}`} rule={rule} onChange={next => updateRule(index, next)} onRemove={() => setRules(current => current.filter((_, i) => i !== index))} />)}
             <div className="mt-4 flex justify-end"><button type="button" onClick={save} disabled={saving || loading} className="ops-button-primary">{saving ? 'Publishing…' : 'Publish policy'}</button></div>
           </section>
           <section className="ops-panel">

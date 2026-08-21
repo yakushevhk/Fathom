@@ -2,7 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 ---
 
-<Layout title="Anatomy of a fan-out — Fathom Research">
+<Layout title="Anatomy of a fan-out — Fathom">
   <article class="article-wrap">
     <nav class="breadcrumb">
       <a href="/blog" data-i18n="postAnatomy.blog">Blog</a>
@@ -16,7 +16,7 @@ import Layout from '../../layouts/Layout.astro';
     <span class="article-tag" data-i18n="postAnatomy.tag">Architecture</span>
     <h1 class="article-title" data-i18n="postAnatomy.title">Anatomy of a fan-out: one question, a fleet of agents</h1>
 
-    <p class="article-intro" data-i18n="postAnatomy.intro">Give Fathom Research a research question and the coordinator decomposes it, fans it out to a fleet of sub-agents, collects their findings under token budgets, lets an LLM judge compare the result against the goal, and synthesizes a report. Here is the whole pipeline — and the failure modes it is built to survive.</p>
+    <p class="article-intro" data-i18n="postAnatomy.intro">Give Fathom a mission and the coordinator decomposes it, fans it out to a fleet of workers, collects their outputs under token budgets, lets an LLM judge compare the result against the goal, and synthesizes a deliverable. Research is one mission; the same pipeline supports code, operations, and knowledge work. Here is the whole pipeline — and the failure modes it is built to survive.</p>
 
     <div class="highlights">
       <h4 data-i18n="postAnatomy.highlightsTitle">Highlights</h4>
@@ -32,23 +32,23 @@ import Layout from '../../layouts/Layout.astro';
     <div class="article-body">
       <h2 data-i18n="postAnatomy.h2_1">Plan first, then fan out</h2>
       <p data-i18n-html="postAnatomy.p1">Every run starts with the <code>Coordinator</code>. The LLM decomposes the query into sub-tasks, and those sub-tasks are persisted to the database before anything spawns — so a run can be inspected, resumed, and audited. Only then does the fan-out begin: each sub-task gets its own <code>AgentRuntime</code>, either as a tokio task inside a <code>JoinSet</code> (the default — one process, lightweight) or, with <code>use_multiprocess = true</code>, as a separate OS process managed by the <code>ProcessManager</code> and talking over Unix domain sockets.</p>
-      <p data-i18n-html="postAnatomy.p1b">The fleet is not homogeneous on purpose. Researchers drive <code>web_search</code>, <code>web_fetch</code> and <code>extract_contacts</code>; analysts get <code>file_read</code> and <code>python_exec</code>; personas (<code>Researcher</code>, <code>analyst</code>, <code>Verifier</code> or your own TOML profile) pre-wire prompts, models and depth limits. Each depth-0 agent also receives a memory digest in its prompt, so the fleet starts with everything previous runs already learned.</p>
+      <p data-i18n-html="postAnatomy.p1b">The fleet is not homogeneous on purpose. Workers receive tools suited to the mission — web and document tools for research, file and code tools for engineering, or operator-defined profiles for other workflows. Personas and TOML profiles pre-wire prompts, models, and depth limits. Each depth-0 worker also receives a memory digest in its prompt, so the fleet starts with what previous runs already learned.</p>
 
       <h2 data-i18n="postAnatomy.h2_2">Collect with budgets, not transcripts</h2>
-      <p data-i18n="postAnatomy.p2">A fan-out is only as useful as its collection step. Sub-agents do not hand their full context back up — their results pass through a budget capper that trims them to summaries. That keeps the coordinator's own context small enough to reason over the whole fleet, while raw findings stay persisted in SQLite for verification. Ordering and attribution survive the trip: every summary is traceable to the sub-task and agent that produced it.</p>
+      <p data-i18n="postAnatomy.p2">A fan-out is only as useful as its collection and review steps. Sub-agents do not hand their full context back up — their results pass through a budget capper that trims them to summaries. That keeps the coordinator's own context small enough to reason over the whole fleet, while raw findings stay persisted in SQLite for verification. Ordering and attribution survive the trip: every summary is traceable to the sub-task and agent that produced it.</p>
 
       <h2 data-i18n="postAnatomy.h2_3">Reflection and the LLM judge</h2>
-      <p data-i18n-html="postAnatomy.p3">Collection is followed by reflection. For lead generation it is count-based: if the contact quota is missed, the coordinator runs gap rounds until the target is met or attempts run out. Then, if Goal Mode is on, an LLM judge compares the collected result against the <em>original goal</em> — not against the plan. Where it names concrete gaps, new gap-filling sub-tasks are spawned; the loop runs for up to <code>replan_rounds</code> rounds. The judge is what stops a run from "completing the plan" while missing the point.</p>
+      <p data-i18n-html="postAnatomy.p3">Collection is followed by reflection. For missions with explicit completion criteria, the coordinator can run bounded gap rounds when required outputs are missing. Then, if Goal Mode is on, an LLM judge compares the collected result against the <em>original goal</em> — not against the plan. Where it names concrete gaps, new gap-filling sub-tasks are spawned; the loop runs for up to <code>replan_rounds</code> rounds. The judge is what stops a run from "completing the plan" while missing the point.</p>
 
       <h2 data-i18n="postAnatomy.h2_4">Synthesize, export, notify</h2>
-      <p data-i18n-html="postAnatomy.p4">Finally the coordinator synthesizes: the LLM merges findings into a single report, written as <code>index.md</code>, <code>summary.md</code> and a <code>findings/</code> directory. The session summary and discovered contacts are absorbed into long-term memory — the next fan-out starts smarter. Then export (PDF, HTML, JSON, DOCX) and notification (webhook, email, Telegram), plus optional CRM sync. One query in; a deliverable out.</p>
+      <p data-i18n-html="postAnatomy.p4">Finally the coordinator synthesizes: the LLM merges findings into a single report, written as <code>index.md</code>, <code>summary.md</code> and a <code>findings/</code> directory. The session summary and discovered contacts are absorbed into long-term memory — the next fan-out starts smarter. Then optional export (PDF, HTML, JSON, DOCX), notification (webhook, email, Telegram), or integration sync can be operator-triggered. One mission in; an inspectable deliverable out.</p>
 
       <h2 data-i18n="postAnatomy.h2_5">Failure is part of the design</h2>
       <p data-i18n-html="postAnatomy.p5">Fleets fail in ways single agents do not, so the control plane assumes it. The <code>DoomLoopDetector</code> watches for three identical tool calls in a row and stops the loop before it burns the budget. Cancellation tokens propagate through the entire agent tree, so cancelling a run cancels every child; a shell failure cascades to sibling tool calls instead of leaving half-executed batches. In multiprocess mode each worker is an isolated OS process with <code>kill_on_drop</code> semantics — one crash never takes down the fleet — and the coordinator watches stall timeouts: warn at 450 seconds, kill at 1200.</p>
 
       <blockquote data-i18n-html="postAnatomy.quote">
         The coordinator's job is not to run agents. It is to keep a budget, hold the goal, and know when to stop — everything else is mechanics.
-        <cite>— Fathom Research, architecture notes</cite>
+        <cite>— Fathom runtime architecture notes</cite>
       </blockquote>
 
       <h2 data-i18n="postAnatomy.h2_6">The same loop, one level down</h2>
@@ -59,7 +59,7 @@ import Layout from '../../layouts/Layout.astro';
       <h3 data-i18n="postAnatomy.related">Related Posts</h3>
       <div class="related-grid">
         <a class="related-card" href="/blog/benchmarks-repo-map" data-i18n="postAnatomy.related1">The benchmark that caught a 31× slowdown</a>
-        <a class="related-card" href="/blog/memory-that-remembers" data-i18n="postAnatomy.related2">A memory that remembers: append-only knowledge for research agents</a>
+        <a class="related-card" href="/blog/memory-that-remembers" data-i18n="postAnatomy.related2">A memory that remembers: append-only knowledge for autonomous workers</a>
       </div>
     </div>
   </article>

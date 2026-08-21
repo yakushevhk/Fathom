@@ -13,8 +13,8 @@ const agentsNav = [
 ];
 
 const cards = [
-  { name: 'One message, one recipient', d: 'Role-aware, company-aware, grounded in what the pipeline actually found — a funding round, a hiring wave, a tech migration. No fill-in-the-blanks templates.' },
-  { name: 'Batch generation', d: 'Pass the whole lead list: every contact gets an individual message built from enriched context — title, company, notes, verification confidence.' },
+  { name: 'One artifact, one context', d: 'Role-aware and grounded in what the workflow actually found — a report, update, notification, or message. No fill-in-the-blanks templates.' },
+  { name: 'Batch generation', d: 'Pass a set of structured records: each artifact is built from enriched context, notes, provenance, and verification confidence.' },
   { name: 'Channel fit', d: 'Email subject + body, LinkedIn connection notes tuned to the channel’s limits, conversational Telegram openers for messaging-first markets.' },
   { name: 'Approval before side effects', d: 'save_contacts and git_push are approval-gated by default: y/n in the TUI, POST /sessions/:id/approve over the API — with timeout and headless fallback.' },
   { name: 'CRM push', d: 'amoCRM v4 · Bitrix24 REST · HubSpot CRM v3. Pushes run 4-at-a-time with one retry, and dedup by crm_id means re-runs never double-create.' },
@@ -22,11 +22,11 @@ const cards = [
 ];
 
 const flow = [
-  { n: '1', t: 'Ground', d: 'Load verified contacts plus the memory digest: past touches, verified emails, the person ↔ company graph.' },
-  { n: '2', t: 'Compose', d: 'One message per recipient, written from real context — role, company, recent findings, source URLs. Nothing invented.' },
+  { n: '1', t: 'Ground', d: 'Load verified records plus the memory digest: prior decisions, relevant entities, and current provenance.' },
+  { n: '2', t: 'Compose', d: 'Create the requested artifact from real context — records, recent findings, source URLs, and explicit constraints. Nothing invented.' },
   { n: '3', t: 'Approve', d: 'Side-effect tools pause and wait. Nothing leaves the pipeline without an explicit yes from the operator.' },
-  { n: '4', t: 'Deliver', d: 'save_contacts dedups and merges; the CRM push stores crm_id so the next run skips what is already synced; exports for any stack.' },
-  { n: '5', t: 'Watch', d: 'run --repeat 24 re-runs on a schedule and diffs the results — new emails, phones and persons trigger an alert.' },
+  { n: '4', t: 'Deliver', d: 'Persistence deduplicates and merges; configured integrations store remote ids for idempotent reruns; exports remain available for operator review.' },
+  { n: '5', t: 'Watch', d: 'An operator-triggered or configured schedule can rerun the workflow and diff results, sending notifications when tracked records change.' },
 ];
 
 const hood = [
@@ -87,7 +87,7 @@ const tools = [
       <!-- 3 · What it does -->
       <div class="sec-head">
         <p class="eyebrow" data-i18n="agents.outreach.what.eyebrow">What it does</p>
-        <h2 class="h3-sec" data-i18n="agents.outreach.what.title">From verified leads to ready drafts</h2>
+        <h2 class="h3-sec" data-i18n="agents.outreach.what.title">From verified context to ready drafts</h2>
       </div>
       <div class="api-grid">
         {
@@ -103,7 +103,7 @@ const tools = [
       <!-- 4 · How it works -->
       <div class="sec-head">
         <p class="eyebrow" data-i18n="agents.outreach.how.eyebrow">How it works</p>
-        <h2 class="h3-sec" data-i18n="agents.outreach.how.title">Five steps to a ready-to-send draft</h2>
+        <h2 class="h3-sec" data-i18n="agents.outreach.how.title">Five steps to a reviewable result</h2>
       </div>
       <div class="flow">
         {
@@ -163,8 +163,8 @@ const tools = [
 Hi Jane — saw Acme closed the Series B and opened
 6 platform roles. When we spoke in March you
 mentioned infra tooling was the bottleneck —
-we've since helped Globex cut lead-research time
-from hours to minutes. Worth a 15-min call?
+we've since documented a repeatable workflow
+for this kind of handoff. Worth a 15-min call?
 
 ────────────────────────────────────────────
 approval:    granted (operator, TUI)
@@ -177,7 +177,7 @@ notify:      telegram ✓  webhook ✓`}</code></pre>
 
       <!-- 8 · CTA -->
       <div class="cta-strip">
-        <h2 data-i18n="agents.outreach.cta.title">Run the whole pipeline — end with outreach</h2>
+        <h2 data-i18n="agents.outreach.cta.title">Run a governed operation from start to finish</h2>
         <div class="cta-links">
           <a href="/agents/memoring" class="btn btn-secondary">← Memoring</a>
           <a href="/#cta" class="btn btn-primary">Get started →</a>

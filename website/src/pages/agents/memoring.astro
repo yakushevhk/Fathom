@@ -18,7 +18,7 @@ const cards = [
   { name: 'memory_digest', d: 'Deterministic pre-task context: relevant memories + open TODOs + recent facts, with real ids you can verify. Loaded before work starts so nothing is re-done.' },
   { name: 'memory_boost', d: 'Raise (or lower) the importance of a memory that proved useful — default +0.5. Importance breaks ranking ties and shapes future digests.' },
   { name: 'memory_link', d: 'Typed edges between facts: related_to · implements · extends · references. supersedes and contradicts are created automatically by absorb.' },
-  { name: 'memory_graph', d: 'Entity graph person ↔ company ↔ location. Nodes dedup by name+type, typed relations, multi-hop BFS up to 4 hops — "who leads Acme".' },
+  { name: 'memory_graph', d: 'Entity graph for people, projects, systems, and organizations. Nodes dedup by name+type, with typed relations and multi-hop BFS up to 4 hops.' },
 ];
 
 const flow = [
@@ -32,7 +32,7 @@ const flow = [
 const tiers = [
   { name: 'MEMORY.md / USER.md', d: 'A ~2 KB stable profile frozen into the system prompt at session start — prefix-cache friendly, always present, refreshed next run.' },
   { name: 'SKILL.md', d: 'Procedural knowledge distilled from experience; injected on demand via the skill tool instead of burning prompt budget.' },
-  { name: 'Semantic archive', d: 'The unlimited SQLite knowledge base: hybrid search, typed edges, entity graph, supersession chains, history journal.' },
+  { name: 'Semantic archive', d: 'A durable SQLite knowledge base: hybrid search, typed edges, entity graph, supersession chains, and a history journal.' },
 ];
 
 const hood = [
@@ -41,7 +41,7 @@ const hood = [
   ['Freshness decay', 'score × max(0, 1 − 0.01·days) — 1% per day'],
   ['Scopes', 'agent (shared knowledge) · user (about the client) · run (session episode)'],
   ['Ids & reads', 'UUIDv7, shown as last 8 chars · follow active | latest | full_history'],
-  ['Auto-absorb', 'extract_contacts / find_leads results stored without the model — confidence 0.6, tags contact/lead · session summary at 0.7'],
+  ['Auto-absorb', 'Successful extraction and discovery results can be stored without another model call, retaining confidence, tags, and session provenance'],
   ['Digest', 'bounded prompt block with real ids — relevant memories, open TODOs, recent facts'],
   ['Embeddings', 'OpenAI-compatible endpoint, offline TF-IDF fallback (512-dim) · vectors of different models never mix'],
   ['Housekeeping', 'distill promotes run facts into agent knowledge · GC archives expired/stale rows and compacts groups > 200 — nothing is deleted'],

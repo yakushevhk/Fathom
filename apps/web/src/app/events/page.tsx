@@ -99,7 +99,7 @@ export default function EventsPage() {
     <div className="flex-1 flex flex-col min-w-0">
       {/* Header */}
       <div className="h-9 flex items-center px-4 border-b border-white/[0.06] text-xs text-gray-400 shrink-0">
-        <span className="text-gray-500 mr-2">Activity</span>
+        <span className="text-gray-500 mr-2">Worker events</span>
         <span aria-hidden="true" className={`w-1.5 h-1.5 rounded-full mr-1.5 ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
         <span role="status" className="text-gray-500">{connected ? 'Live' : connectionError ? 'Offline' : 'Connecting'}</span>
         <span className="ml-auto text-gray-500">{events.length} events</span>
@@ -107,10 +107,10 @@ export default function EventsPage() {
           <button
             onClick={handleClear}
             type="button"
-            aria-label="Clear activity events"
+            aria-label="Clear worker events"
             className="ml-3 px-2 py-0.5 rounded text-[10px] bg-white/[0.06] hover:bg-white/[0.1] text-gray-400 hover:text-gray-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gray-300 transition-colors"
           >
-            Clear
+            Clear events
           </button>
         )}
       </div>
@@ -123,7 +123,7 @@ export default function EventsPage() {
       >
         {events.length === 0 && (
           <div role={connectionError ? 'alert' : 'status'} className="flex items-center justify-center py-12 text-gray-600 text-xs">
-            {connectionError ? `Activity unavailable: ${connectionError}` : connected ? 'Waiting for activity...' : 'Connecting to activity stream...'}
+            {connectionError ? `Activity unavailable: ${connectionError}` : connected ? 'Waiting for worker events…' : 'Connecting to the live worker event stream…'}
           </div>
         )}
         <div className="divide-y divide-white/[0.03]">

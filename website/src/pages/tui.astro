@@ -2,19 +2,19 @@
 import Layout from '../layouts/Layout.astro';
 
 const features = [
-  { key: 'live', name: 'Live streaming', d: 'Token deltas, tool calls, agent spawn/finish and findings appear in real-time — no polling, no page refresh.' },
-  { key: 'replay', name: 'Session replay', d: 'Replay any past session with --replay — watch the full agent tree, tool calls and findings as if they were live.' },
-  { key: 'memory', name: 'Memory panel', d: 'Periodic snapshots of the semantic memory store — watch facts being absorbed, search results and entity graph updates live.' },
-  { key: 'jobs', name: 'Jobs panel', d: 'Browse durable background jobs: status, logs, cancel and rerun — all from the terminal.' },
-  { key: 'steering', name: 'Mid-run steering', d: 'Redirect a running session by typing additional instructions — agents adapt without restarting. Peer coordination remains available through hub messaging.' },
-  { key: 'control', name: 'Questions & approvals', d: 'Agents can ask you questions mid-task and request approval for side-effect tools — all handled inline in the TUI. Background work can continue as async jobs.' },
+  { key: 'live', name: 'Live worker events', d: 'Token deltas, tool calls, worker lifecycle changes and findings appear as the runtime publishes them.' },
+  { key: 'replay', name: 'Session replay', d: 'Use --replay to inspect a stored session: worker tree, tool calls and findings are rendered from persisted events.' },
+  { key: 'memory', name: 'Memory panel', d: 'Inspect the semantic memory store while a worker runs: absorbed facts, search results and durable knowledge updates.' },
+  { key: 'jobs', name: 'Durable jobs', d: 'Browse background jobs, inspect attempt logs, cancel active work and rerun completed or stuck jobs from the terminal.' },
+  { key: 'steering', name: 'Mid-run steering', d: 'Send additional instructions to redirect an active worker session without restarting it. Peer coordination remains available through hub messaging.' },
+  { key: 'control', name: 'Questions & approvals', d: 'Workers can pause for operator input or governance approval before a side effect. Handle the decision inline while other background jobs continue.' },
 ];
 
 const steps = [
-  { key: 's1', num: 1, t: 'Launch', d: 'fathom tui opens the interactive dashboard with input field, event log and agent tree.' },
-  { key: 's2', num: 2, t: 'Watch', d: 'Agents stream their progress live — tool calls, findings, token usage and state changes appear as they happen.' },
-  { key: 's3', num: 3, t: 'Steer', d: 'Type additional instructions to redirect agents. Answer questions or approve side-effect tools when prompted.' },
-  { key: 's4', num: 4, t: 'Export', d: 'Results, contacts and reports are saved automatically. Browse jobs and memory from the same interface.' },
+  { key: 's1', num: 1, t: 'Launch', d: 'fathom tui opens the operator console with task input, event log and worker tree.' },
+  { key: 's2', num: 2, t: 'Watch', d: 'Workers publish progress live — tool calls, findings, token usage and state changes appear as the runtime receives them.' },
+  { key: 's3', num: 3, t: 'Steer', d: 'Send instructions to redirect workers, then answer questions or approve governed side effects when prompted.' },
+  { key: 's4', num: 4, t: 'Review', d: 'Inspect persisted outputs, jobs and memory from the same interface; export or hand off results when your workflow requires it.' },
 ];
 ---
 
@@ -23,14 +23,14 @@ const steps = [
     <div class="container">
       <div class="tui-hero">
         <p class="eyebrow" data-i18n="tuiPage.hero.badge">Terminal UI</p>
-        <h1 class="h2-sec" data-i18n-html data-i18n="tuiPage.hero.title">Your terminal,<br />your research lab.</h1>
-        <p class="copy-lg mx-auto" data-i18n="tuiPage.hero.sub">An interactive ratatui-based interface with live event streaming, session replay, memory panel, jobs panel and mid-run steering — all without leaving the terminal.</p>
+        <h1 class="h2-sec" data-i18n-html data-i18n="tuiPage.hero.title">Your terminal,<br />your worker console.</h1>
+        <p class="copy-lg mx-auto" data-i18n="tuiPage.hero.sub">An interactive ratatui operator console for running autonomous workers locally: inspect the worker tree, follow live events, review memory and durable jobs, steer active runs, and handle questions or approval gates without leaving the terminal.</p>
       </div>
 
       <!-- Features grid -->
       <div class="sec-head center reveal">
         <p class="eyebrow" data-i18n="tuiPage.features.badge">Capabilities</p>
-        <h2 class="h2-sec" data-i18n="tuiPage.features.title">Six panels, one screen</h2>
+        <h2 class="h2-sec" data-i18n="tuiPage.features.title">Operate the worker from one screen</h2>
       </div>
 
       <div class="tui-grid">
@@ -62,7 +62,7 @@ const steps = [
       <div class="sec-head center reveal">
         <p class="eyebrow" data-i18n="tuiPage.code.badge">CLI flags</p>
         <h2 class="h2-sec" data-i18n-html data-i18n="tuiPage.code.title">One command, full control</h2>
-        <p class="copy-lg mx-auto" data-i18n="tuiPage.code.sub">The TUI wraps the same engine as the headless CLI — all tools, profiles and configs work identically.</p>
+        <p class="copy-lg mx-auto" data-i18n="tuiPage.code.sub">The TUI uses the same self-hosted worker runtime as headless runs — configured tools, profiles, governance and persistence apply consistently.</p>
       </div>
 
       <div class="code-card">

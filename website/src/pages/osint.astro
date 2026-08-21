@@ -2,21 +2,21 @@
 import Layout from '../layouts/Layout.astro';
 
 const sources = [
-  { name: 'Business registries', tool: 'search_business_directory', d: 'Business registry aggregators (Russia) — rusprofile.ru, list-org.com, sbis.ru, companies.rbc.ru: registry data, INN/OGRN, founders and executives.' },
-  { name: 'Maps & directories', tool: 'find_leads', d: '2GIS (CIS), Yandex Maps (Russia/CIS), Yellow Pages (international) — companies with addresses, phones and opening hours.' },
-  { name: 'Corporate sites', tool: 'parse_corporate_site', d: 'Team and about pages, contacts, press releases — plus Schema.org markup and JSON-LD blocks structured for extraction.' },
-  { name: 'Social networks', tool: 'search_social', d: 'LinkedIn profiles and company pages, X/Twitter search, Telegram channels and users — with anti-bot limits handled honestly.' },
-  { name: 'News & mentions', tool: 'search_news', d: 'Serper News API and Google News RSS — funding rounds, hires and launches that tell you who to contact next.' },
+  { name: 'Business registries', tool: 'search_business_directory', d: 'When configured, registry connectors can provide public company records, identifiers, founders and executives for a worker to inspect.' },
+  { name: 'Maps & directories', tool: 'find_leads', d: 'Optional map and directory connectors can add public addresses, phones and opening hours; availability depends on operator setup and source limits.' },
+  { name: 'Corporate sites', tool: 'parse_corporate_site', d: 'Workers can parse fetched team, about, contact and press pages, including Schema.org and JSON-LD where present.' },
+  { name: 'Social networks', tool: 'search_social', d: 'Configured public LinkedIn, X/Twitter or Telegram access can add context; blocked or unavailable sources remain explicit.' },
+  { name: 'News & mentions', tool: 'search_news', d: 'An enabled news connector can provide press, funding, hiring or launch context for the investigation.' },
 ];
 
 const stages = [
-  { n: '01', t: 'Plan', d: 'The coordinator decomposes the query into parallel subtasks: registries, socials, corporate sites, databases.' },
-  { n: '02', t: 'Extract', d: 'extract_contacts pulls emails, phones, socials, persons and companies from every fetched page.' },
-  { n: '03', t: 'Verify', d: 'verify_email, verify_phone and verify_social_profile filter the noise and score confidence.' },
-  { n: '04', t: 'Enrich', d: 'enrich_company and enrich_person add industry, size, location, role and buying signals.' },
-  { n: '05', t: 'ContactDb', d: 'SQLite or PostgreSQL store; dedup and merge on normalized emails and phones.' },
-  { n: '06', t: 'CRM', d: 'Sync into amoCRM, Bitrix24 or HubSpot — dedup by crm_id, no duplicates on re-runs.' },
-  { n: '07', t: 'Report', d: 'summary.md plus a contact table, exported to CSV, vCard, JSON or Excel.' },
+  { n: '01', t: 'Plan', d: 'A universal worker scopes the question, selects configured tools and delegates source-specific subtasks.' },
+  { n: '02', t: 'Extract', d: 'extract_contacts gathers public emails, phones, social profiles and entities while retaining provenance.' },
+  { n: '03', t: 'Verify', d: 'verify_email, verify_phone and verify_social_profile apply available checks and label confidence without guessing.' },
+  { n: '04', t: 'Enrich', d: 'enrich_company and enrich_person add context from matching evidence; missing fields stay marked as gaps.' },
+  { n: '05', t: 'Persist', d: 'SQLite or PostgreSQL can store worker findings, memory and review receipts with normalized deduplication.' },
+  { n: '06', t: 'Govern', d: 'Policy and approval gates can pause side effects such as CRM writes, outreach or notifications.' },
+  { n: '07', t: 'Report', d: 'The worker synthesizes a cited report and can export findings or hand off to configured integrations.' },
 ];
 
 const schema = [
@@ -30,8 +30,8 @@ const schema = [
 const verification = [
   { t: 'Syntax + MX + SMTP', d: 'Every email passes syntax, MX-record and SMTP handshake checks. Disposable domains and role-based addresses (info@, admin@) are flagged with lower confidence.' },
   { t: 'E.164 phone validation', d: 'Phones are normalized to E.164 via libphonenumber — country, line type and carrier are extracted before a confidence score is assigned.' },
-  { t: 'Deobfuscation', d: 'Obfuscated addresses like name [at] domain [dot] com are decoded automatically and scored lower than plain addresses.' },
-  { t: 'Append-only receipts', d: 'Every verification gate emits a typed receipt into an append-only JSONL ledger. A PASS from one gate cannot mask a FAIL from another — the identity key is (kind, value), so syntax_pass + mx_pass + smtp_fail is faithfully recorded as smtp_fail.' },
+  { t: 'Deobfuscation', d: 'When enabled, obfuscated addresses like name [at] domain [dot] com may be decoded and scored lower than plain addresses.' },
+  { t: 'Append-only receipts', d: 'Enabled verification gates can emit typed receipts into an append-only JSONL ledger. A PASS on one gate does not mask a FAIL on another, keeping review context intact.' },
 ];
 
 const ethics = [
@@ -44,19 +44,19 @@ const ethics = [
 ];
 ---
 
-<Layout title="OSINT Playbook — Fathom">
+<Layout title="OSINT Workflow — Fathom">
   <main class="osint-page">
     <div class="container">
       <div class="osint-hero">
-        <p class="eyebrow" data-i18n="osint.hero.badge">OSINT Playbook</p>
-        <h1 class="h2-sec" data-i18n-html data-i18n="osint.hero.title">Every lead, sourced<br />and verified.</h1>
-        <p class="copy-lg mx-auto" data-i18n="osint.hero.sub">An automated OSINT pipeline: parallel agents source companies and people across registries, maps, corporate sites and social networks, extract and verify every email and phone, then merge it all into one clean contact database — synced straight to your CRM.</p>
+        <p class="eyebrow" data-i18n="osint.hero.badge">OSINT workflow example</p>
+        <h1 class="h2-sec" data-i18n-html data-i18n="osint.hero.title">Investigate with a worker,<br />review every finding.</h1>
+        <p class="copy-lg mx-auto" data-i18n="osint.hero.sub">OSINT is one workflow a universal autonomous worker can run: plan subtasks, inspect configured public sources, preserve evidence in memory, and ask for review before saving or contacting anyone. Connectors and integrations are optional, not guaranteed.</p>
       </div>
 
       <!-- Data sources -->
       <div class="sec-head">
         <p class="eyebrow" data-i18n="osint.sources.badge">Data sources</p>
-        <h2 class="h3-sec" data-i18n="osint.sources.title">Where the leads come from</h2>
+        <h2 class="h3-sec" data-i18n="osint.sources.title">Where a configured worker can look</h2>
       </div>
       <div class="api-grid">
         {sources.map((s, i) => (
@@ -71,7 +71,7 @@ const ethics = [
       <!-- Pipeline -->
       <div class="sec-head">
         <p class="eyebrow" data-i18n="osint.pipeline.badge">Pipeline</p>
-        <h2 class="h3-sec" data-i18n="osint.pipeline.title">Seven stages, one query</h2>
+        <h2 class="h3-sec" data-i18n="osint.pipeline.title">A worker loop from plan to report</h2>
       </div>
       <div class="stages">
         {stages.map((s, i) => (
@@ -87,8 +87,8 @@ const ethics = [
       <div class="feat">
         <div class="feat-copy">
           <p class="eyebrow" data-i18n="osint.verify.badge">Verification</p>
-          <h2 class="h3-sec" data-i18n="osint.verify.title">Nothing unverified gets saved</h2>
-          <p class="copy-lg" data-i18n-html data-i18n="osint.verify.email">Bounced emails and dead numbers burn outreach budget. Every candidate passes MX checks, disposable-domain and role-based filters before it earns a confidence score — and obfuscated addresses like <code class="ic">name [at] domain [dot] com</code> are decoded automatically, with a lower score than plain ones.</p>
+          <h2 class="h3-sec" data-i18n="osint.verify.title">Make uncertainty visible before saving</h2>
+          <p class="copy-lg" data-i18n-html data-i18n="osint.verify.email">A worker can apply MX, disposable-domain and role-based checks when those network lookups are available. Obfuscated addresses such as <code class="ic">name [at] domain [dot] com</code> may be decoded and marked lower confidence; governance can require review before persistence or outreach.</p>
         </div>
         <div class="code-card">
           <pre><code>{`verify_email("info@company.com")
@@ -110,8 +110,8 @@ const ethics = [
       <div class="feat feat-reverse">
         <div class="feat-copy">
           <p class="eyebrow" data-i18n="osint.phones.badge">Phones &amp; patterns</p>
-          <h2 class="h3-sec" data-i18n="osint.phones.title">E.164 phones, inferred emails</h2>
-          <p class="copy-lg" data-i18n-html data-i18n="osint.phones.desc">Phones are normalized to E.164 via libphonenumber with country and mobile/landline detection. When only a name and a domain are known, <code class="ic">suggest_emails</code> builds candidate addresses from name permutations and the domain's existing pattern — up to 9 variants to verify.</p>
+          <h2 class="h3-sec" data-i18n="osint.phones.title">Normalize phones, propose candidates</h2>
+          <p class="copy-lg" data-i18n-html data-i18n="osint.phones.desc">Phones can be normalized to E.164 via libphonenumber when the tool is available. When only a name and domain are known, <code class="ic">suggest_emails</code> proposes candidates from observed naming patterns for a worker or human to review and verify.</p>
         </div>
         <div class="code-card">
           <pre><code>{`verify_phone("+7 (495) 710-75-80")
@@ -124,8 +124,8 @@ suggest_emails("John Doe", "acme.com")
 → john.doe@acme.com
 → j.doe@acme.com
 → john@acme.com  …
-→ up to 9 candidates: name permutations
-  × observed domain pattern`}</code></pre>
+→ additional candidates follow the observed
+  domain pattern and require review`}</code></pre>
         </div>
       </div>
 
@@ -133,8 +133,8 @@ suggest_emails("John Doe", "acme.com")
       <div class="feat">
         <div class="feat-copy">
           <p class="eyebrow" data-i18n="osint.storage.badge">Storage</p>
-          <h2 class="h3-sec" data-i18n="osint.storage.title">ContactDb — one canonical record</h2>
-          <p class="copy-lg" data-i18n="osint.storage.desc">Contacts land in SQLite out of the box — or PostgreSQL for large bases, same interface. Dedup and merge run on normalized emails and phones, so re-runs and overlapping sources never create double records. Tags and notes attach per contact; the whole schema is yours to query.</p>
+          <h2 class="h3-sec" data-i18n="osint.storage.title">Persist findings with memory and review</h2>
+          <p class="copy-lg" data-i18n="osint.storage.desc">Workers can persist findings in SQLite or PostgreSQL, depending on configuration. Normalized emails and phones support deduplication, while tags, notes, evidence and approval receipts keep context queryable across runs.</p>
           <p class="copy-lg"><code class="ic">save_contacts</code> · <code class="ic">db_path = "./contacts.db"</code> · <code class="ic">pg_url = "postgres://…"</code></p>
         </div>
         <div class="mini-table-wrap">
@@ -152,7 +152,7 @@ suggest_emails("John Doe", "acme.com")
       <!-- Query examples -->
       <div class="sec-head">
         <p class="eyebrow" data-i18n="osint.queries.badge">Query examples</p>
-        <h2 class="h3-sec" data-i18n="osint.queries.title">One command, a folder of leads</h2>
+        <h2 class="h3-sec" data-i18n="osint.queries.title">Prompt examples for a governed workflow</h2>
       </div>
       <div class="q-grid">
         <div class="q-card">
@@ -173,19 +173,18 @@ suggest_emails("John Doe", "acme.com")
           </div>
         </div>
         <div class="q-card">
-          <div class="q-label" data-i18n="osint.queries.1.label">Berlin — SaaS Series A–B</div>
+          <div class="q-label" data-i18n="osint.queries.1.label">Berlin — SaaS landscape</div>
           <div class="code-card">
             <pre><code>{`fathom run \\
-  "Find 20 SaaS companies,
-   Series A–B, Berlin. Collect
-   emails and LinkedIn of founders
-   and CTOs." \\
+  "Map SaaS companies in Berlin,
+   collect public evidence and
+   identify founders or CTOs where
+   sources support the match." \\
   --output ./berlin-saas/
 
-# → 20 companies × founder/CTO
-#   contacts, verified emails +
-#   LinkedIn URLs, exported to
-#   CSV / vCard`}</code></pre>
+# → cited company and contact findings
+#   with confidence, gaps and review
+#   status; export only after approval`}</code></pre>
           </div>
         </div>
         <div class="q-card">
@@ -193,14 +192,14 @@ suggest_emails("John Doe", "acme.com")
           <div class="code-card">
             <pre><code>{`fathom run \\
   "Research the Dubai fintech
-   startup market. For the top-10
-   companies find decision-maker
-   contacts." \\
+   startup market and identify
+   decision-maker evidence where
+   public sources support it." \\
   --output ./dubai-fintech/
 
-# → market overview + top-10
-#   companies with decision-maker
-#   contacts, CSV / vCard export`}</code></pre>
+# → market overview with cited evidence,
+#   contact hypotheses, gaps and review
+#   status; export or hand off when allowed`}</code></pre>
           </div>
         </div>
       </div>
@@ -220,8 +219,8 @@ suggest_emails("John Doe", "acme.com")
       </div>
 
       <div class="cta-strip">
-        <h2 data-i18n="osint.cta.title">See the full lead-generation workflow</h2>
-        <a href="/features/lead-generation" class="btn btn-primary" data-i18n="osint.cta.start">Lead generation →</a>
+        <h2 data-i18n="osint.cta.title">Use OSINT as one worker workflow</h2>
+        <a href="/features/lead-generation" class="btn btn-primary" data-i18n="osint.cta.start">Review workflow details →</a>
       </div>
     </div>
   </main>

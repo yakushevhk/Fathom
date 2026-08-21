@@ -13,20 +13,20 @@ const fleet = [
 ];
 
 const caps = [
-  { tool: 'save_contacts', t: 'Persist, never duplicate', d: 'Writes harvested contacts into SQLite or PostgreSQL, deduplicating against existing records: same normalized email or phone means a merge, not a second row. Optionally pushes straight to the CRM.' },
-  { tool: 'deterministic autosave', t: 'The model cannot forget', d: 'Prompt-only steering leaks yield whenever the LLM skips the save call. The runtime persists the metadata of every successful extract_contacts / find_leads itself — contacts reach the database no matter what the model does next.' },
+  { tool: 'save_contacts', t: 'Persist, never duplicate', d: 'Writes structured records into SQLite or PostgreSQL, deduplicating against existing data: the same normalized key means a merge, not a second row. Optional integrations can receive the canonical record.' },
+  { tool: 'deterministic autosave', t: 'The model cannot forget', d: 'Prompt-only steering can lose a handoff when a model skips a save call. The runtime persists metadata from successful extraction and discovery tools itself, so structured results survive the next turn.' },
   { tool: 'ContactDb schema', t: 'Five tables, one dossier', d: 'contacts, social_profiles, companies, tags and notes — with source provenance, timestamps and a crm_id column for idempotent CRM sync. WAL mode, foreign keys, indexed lookups.' },
   { tool: 'normalization', t: 'One spelling per contact', d: 'normalize_email trims and lower-cases ("Ann@Acme.io" → ann@acme.io); normalize_phone keeps ASCII digits only, stored in the indexed phone_norm column. These are the dedup keys.' },
   { tool: 'merge semantics', t: 'Records grow, never split', d: 'The older record wins: blank fields are filled from the new data, social profiles move over with NOT EXISTS dedup, tags append via UNIQUE(contact_id, tag), notes accumulate — the duplicate row is deleted.' },
-  { tool: 'entity graph', t: 'Person ↔ company ↔ location', d: 'Entities deduplicate by (name, type); typed relations like works_at, leads and located_in connect them. Multi-hop BFS up to depth 4 answers "who runs companies in sector X".' },
+  { tool: 'entity graph', t: 'Entities and relationships', d: 'Entities deduplicate by (name, type); typed relations connect people, projects, systems, and organizations. Multi-hop BFS up to depth 4 supports context-aware downstream work.' },
 ];
 
 const flow = [
-  { t: 'Trigger', d: 'extract_contacts or find_leads returns structured metadata: emails, phones, persons, leads with confidence scores.' },
-  { t: 'Autosave', d: 'The runtime converts every item into a contact row right after success — compaction cannot prune it, the model cannot forget it.' },
+  { t: 'Trigger', d: 'An extraction or discovery tool returns structured metadata with confidence and provenance for the current mission.' },
+  { t: 'Autosave', d: 'The runtime persists structured items right after success — compaction cannot prune the handoff, and the model cannot forget the result.' },
   { t: 'Normalize', d: 'Emails lower-cased, phones reduced to digits, provenance recorded: extract_contacts:mailto link:https://acme.io.' },
   { t: 'Find-or-insert', d: 'One atomic transaction: look up by normalized email, then phone_norm. Match → merge; no match → insert. Concurrent agents cannot double-insert.' },
-  { t: 'Graph', d: 'Persons, companies and locations upsert as nodes; relations become typed edges with confidence — the substrate for multi-hop OSINT questions.' },
+  { t: 'Graph', d: 'People, projects, systems, and organizations upsert as nodes; relations become typed edges with confidence for context-aware downstream work.' },
   { t: 'Sync', d: 'Contacts push to amoCRM, Bitrix24 or HubSpot four at a time with retry; the returned crm_id is stored so re-syncs update instead of duplicating.' },
 ];
 
@@ -35,9 +35,9 @@ const hood = [
   ['Storage', 'SQLite with WAL + busy_timeout 5000 out of the box · PostgreSQL behind the same interface via [contacts] pg_url'],
   ['Dedup keys', 'normalized email first, then digits-only phone_norm · lowest id wins — the oldest record survives'],
   ['Merge', 'blanks filled from new data · socials moved with NOT EXISTS · tags INSERT OR IGNORE · notes appended · temp row deleted, all inside one transaction'],
-  ['Atomicity', 'find-or-insert runs in a single locked transaction — two agents harvesting the same lead cannot both insert it (TOCTOU-safe)'],
+  ['Atomicity', 'find-or-insert runs in a single locked transaction — concurrent workers cannot both insert the same normalized record (TOCTOU-safe)'],
   ['Autosave', 'fires on extract_contacts / find_leads success regardless of the model · "[auto-persisted N contact(s): X new, Y merged]"'],
-  ['Provenance', 'source tags like extract_contacts:person:https://acme.io · lead confidence lands as a note: "lead confidence: 0.83"'],
+  ['Provenance', 'source tags identify the producing tool and source URL · confidence is retained as record metadata for review'],
   ['Lenient input', 'tags/notes accept a JSON array or a plain string; "; " and newlines split blobs — LLM shape drift never loses data'],
   ['Graph dedup', 'entity_nodes UNIQUE(name COLLATE NOCASE, entity_type) · edges UNIQUE(from, to, relation), default confidence 0.8'],
   ['Multi-hop', 'BFS depth clamped 1–4, simple paths only, inverse traversal marked ⁻¹ · "Ivan Petrov (person) --works_at--> Acme LLC (company)"'],
@@ -140,12 +140,12 @@ const tools = ['save_contacts', 'extract_contacts', 'find_leads', 'memory'];
 → added: 0 · merged_with_existing: 1
 
 # one canonical record =
-# one personal message, sent once`}</code></pre>
+# one consistent downstream handoff`}</code></pre>
         </div>
       </div>
 
       <div class="cta-strip">
-        <h2 data-i18n="agents.structuring.cta.title">Every message needs a canonical addressee</h2>
+        <h2 data-i18n="agents.structuring.cta.title">Every downstream task needs canonical context</h2>
         <div class="more-links">
           <a href="/agents/extracting" class="btn btn-secondary" data-i18n="agents.structuring.cta.prev">← Extracting</a>
           <a href="/agents/cleaning" class="btn btn-secondary" data-i18n="agents.structuring.cta.next">Cleaning →</a>

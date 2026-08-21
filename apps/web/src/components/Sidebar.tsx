@@ -174,7 +174,7 @@ export function Sidebar() {
           <button
             onClick={refresh}
             className="text-gray-500 hover:text-gray-300 transition-colors"
-            title="Refresh"
+            title="Refresh worker runtime"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5" />
@@ -182,33 +182,33 @@ export function Sidebar() {
           </button>
         </div>
 
-        {/* New task */}
+        {/* Dispatch a worker session */}
         <form onSubmit={handleCreate} className="p-3 border-b border-white/[0.06]">
           <label htmlFor="new-task" className="sr-only">Submit work to a worker</label>
           <input
             id="new-task"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Submit work to a worker…"
+            placeholder="Dispatch a worker session…"
             className="w-full p-2 rounded-md bg-[#141414] border border-white/[0.06] text-xs text-gray-200 placeholder-gray-600 outline-none focus:border-gray-500 transition-colors"
           />
         </form>
 
         {/* Search filter */}
         <div className="px-3 py-2 border-b border-white/[0.06]">
-          <label htmlFor="session-search" className="sr-only">Search submitted work</label>
+          <label htmlFor="session-search" className="sr-only">Search worker sessions</label>
           <input
             id="session-search"
             ref={searchRef}
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search submitted work…"
+            placeholder="Search worker sessions…"
             className="w-full p-1.5 rounded-md bg-[#141414] border border-white/[0.06] text-xs text-gray-200 placeholder-gray-600 outline-none focus:border-gray-500 transition-colors"
           />
         </div>
 
         {/* Session list */}
-        <nav aria-label="Submitted work" className="flex-1 overflow-y-auto py-1">
+        <nav aria-label="Remote worker sessions" className="flex-1 overflow-y-auto py-1">
           {error && (
             <div className="mx-3 my-2 ops-alert" role="alert">
               <span>WORKER CONNECTION ERROR</span>
@@ -242,7 +242,7 @@ export function Sidebar() {
                     className={`w-2 h-2 rounded-full flex-shrink-0 ${statusColor(s.status)} ${s.active ? 'animate-pulse' : ''}`}
                   />
                   <span className="min-w-0 flex-1">
-                    <span className="block text-xs text-gray-200 truncate">{s.query || 'Untitled task'}</span>
+                    <span className="block text-xs text-gray-200 truncate">{s.query || 'Untitled worker session'}</span>
                     <span className="block text-[10px] text-gray-600 mt-0.5">
                       {s.id.slice(0, 8)} · {s.status}
                       {s.total_agents > 0 && ` · ${s.total_agents} workers`}
@@ -254,8 +254,8 @@ export function Sidebar() {
                     type="button"
                     onClick={() => cancelSession(s.id)}
                     className="text-red-400 hover:text-red-300 text-xs transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
-                    aria-label={`Cancel task ${s.query || s.id.slice(0, 8)}`}
-                    title="Cancel task"
+                    aria-label={`Cancel worker session ${s.query || s.id.slice(0, 8)}`}
+                    title="Cancel worker session"
                   >
                     <span aria-hidden="true">✕</span>
                   </button>
@@ -265,7 +265,7 @@ export function Sidebar() {
           })}
           {!loading && !error && filtered.length === 0 && (
             <div className="text-center text-gray-600 text-xs py-8">
-              {searchQuery.trim() ? 'No matching submitted work' : 'No submitted work yet'}
+              {searchQuery.trim() ? 'No matching worker sessions' : 'No worker sessions yet'}
             </div>
           )}
         </nav>
@@ -275,13 +275,13 @@ export function Sidebar() {
           {[
             ['/', 'Overview'],
             ['/agents', 'Workers'],
-            ['/jobs', 'Work'],
+            ['/jobs', 'Jobs'],
             ['/memories', 'Memory'],
-            ['/events', 'Activity'],
-            ['/observability', 'Observe'],
+            ['/events', 'Events'],
+            ['/observability', 'Observability'],
             ['/governance', 'Control'],
-            ['/computers', 'Computer'],
-            ['/coworkers', 'Teams'],
+            ['/computers', 'Computers'],
+            ['/coworkers', 'Coworkers'],
           ].map(([href, label]) => {
             const active = pathname === href
             return (

@@ -1,5 +1,7 @@
 # Installation
 
+Fathom is a self-hosted Rust runtime: install the binary on a workstation or a server you control, configure an OpenAI-compatible LLM endpoint, and choose which interfaces and optional services to expose. A remote deployment is the same binary running under your process manager or container; there is no hosted Fathom service assumed by these instructions.
+
 ---
 
 ## Requirements
@@ -80,8 +82,16 @@ The value is parsed as bool / integer / float / string (in that order). Unknown 
 
 ### First run
 
+`run` accepts any natural-language task; research is only one workflow. Start with a harmless task after configuring the LLM endpoint:
+
 ```bash
-./target/release/fathom run "Test query" --output ./test/
+./target/release/fathom run "Summarize the files in this project" --output ./test/
+```
+
+For a remote worker, start the server on the host you control. Loopback is the default; binding beyond loopback requires `FATHOM_API_KEYS`:
+
+```bash
+./target/release/fathom serve --host 0.0.0.0 --port 8080
 ```
 
 ---
@@ -138,7 +148,7 @@ A profile overlay can override the system prompt, main/fast model, temperature, 
 | `RUST_LOG` | Logging level | `info` |
 | `PR_CONFIG` | Config file path | `~/.fathom/config.toml` |
 | `PR_MEMORY_DB` | Memory database path | `~/.fathom/memory.db` |
-| `PR_OUTPUT_DIR` | Research output directory | `./research-output` |
+| `PR_OUTPUT_DIR` | Default task output directory | `./research-output` |
 | `PR_JOBS_DB` | Jobs registry database path | `~/.fathom/jobs.db` |
 | `PR_JOBS_DIR` | Per-job workspace root | `~/.fathom/jobs` |
 
@@ -173,9 +183,9 @@ The container reads `~/.fathom/config.toml` by default. Mount a config volume:
 ```bash
 docker run -it --rm \
   -v ~/.fathom:/home/researcher/.fathom \
-  -v research-data:/data \
+  -v fathom-data:/data \
   fathom \
-  run "Your query" --output /data/results/
+  run "Your task" --output /data/results/
 ```
 
 Or mount a custom config file:
@@ -183,9 +193,9 @@ Or mount a custom config file:
 ```bash
 docker run -it --rm \
   -v ./my-config.toml:/home/researcher/.fathom/config.toml \
-  -v research-data:/data \
+  -v fathom-data:/data \
   fathom \
-  run "Your query" --output /data/results/
+  run "Your task" --output /data/results/
 ```
 
 The container's working directory is `/data` — research output and database files (contacts.db, memory.db) should be placed here.
@@ -272,7 +282,7 @@ The memory subsystem runs automatic GC based on configurable thresholds:
 
 ## Contacts database
 
-The contacts database stores people and companies collected during OSINT / lead generation research. It is a SQLite database created automatically at `./contacts.db` (or the path in `[contacts] db_path`).
+The optional contacts database stores people and companies collected by contact-oriented workflows (including OSINT / lead generation). It is a SQLite database created automatically at `./contacts.db` (or the path in `[contacts] db_path`).
 
 ### Schema
 
@@ -298,7 +308,7 @@ domain = "mycompany"      # Domain/subdomain (amoCRM, Bitrix24)
 api_key = "..."           # API key/token
 ```
 
-When configured, contacts saved during research are automatically pushed to the CRM. The sync runs as a best-effort post-processing step — failures are logged but do not fail the research run itself.
+When configured, contacts saved during a run may be pushed to the selected CRM adapter. The sync is a best-effort post-processing step — failures are logged but do not fail the run itself. No CRM account or delivery is provided by Fathom.
 
 ### Contacts CLI
 
@@ -378,7 +388,7 @@ The script:
 - Builds a release binary
 - Installs it to `/usr/local/bin/` (or `~/.local/bin/`)
 - Creates a default config
-- Optionally installs a systemd service (`INSTALL_SYSTEMD=1 ./install.sh`)
+- Does not install a systemd unit; create and enable one separately when deploying on systemd
 
 ---
 

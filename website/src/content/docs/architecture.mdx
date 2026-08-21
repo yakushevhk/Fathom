@@ -1,5 +1,6 @@
 ---
 title: "Architecture — Fathom"
+description: "Understand Fathom's Rust worker runtime: agent lifecycle, coordination, tools, memory, persistence, transports, safety gates, and observability."
 sidebarId: "architecture"
 ---
   
@@ -49,7 +50,7 @@ export const contextStages = [
     <span class="doc-badge">Architecture</span>
     <h1 data-i18n="docsArchitecture.title">Architecture</h1>
     <p class="doc-lead">
-      Fathom is a modular Rust Cargo workspace with a typed event protocol, asynchronous agent loop on <code>tokio</code>, TUI, HTTP, sessions, plugins, MCP, and LSP integration. This page covers the crate map, lifecycle, subagent tree, context management and transport boundaries.
+      Fathom is a modular Rust runtime for universal autonomous workers, with a typed event protocol, asynchronous agent loop on <code>tokio</code>, TUI, HTTP, sessions, plugins, MCP, and LSP integration. This page covers the crate map, lifecycle, subagent tree, context management and transport boundaries.
     </p>
   </div>
 

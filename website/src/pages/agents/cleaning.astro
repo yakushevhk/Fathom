@@ -14,11 +14,11 @@ const fleet = [
 
 const caps = [
   { tool: 'verify_email', t: 'The email gauntlet', d: 'RFC 5322 syntax, MX lookup over DNS-over-HTTPS, disposable-domain and role-based filters, optional SMTP RCPT probe — every signal folded into one deliverability confidence score.' },
-  { tool: 'verify_phone', t: 'Numbers that dial', d: 'Google libphonenumber metadata: "+7 (495) 710-75-80" becomes +74957107580 — E.164, country RU, landline classified. Mobile vs landline, dial code and carrier come with it.' },
+  { tool: 'verify_phone', t: 'Numbers that dial', d: 'libphonenumber metadata turns "+7 (495) 710-75-80" into +74957107580 — E.164, country RU, and line type when metadata supports it.' },
   { tool: 'verify_social_profile', t: 'Profiles that exist', d: 'GitHub verified through the public API; every other platform by page fetch with soft-404 content detection. Bot walls (401/403/429) are reported honestly, never guessed away.' },
   { tool: 'suggest_emails', t: 'Fill the gaps', d: 'Up to 9 candidates from name permutations (first.last, flast, last.first…), ranked by the corporate pattern inferred from known colleague addresses — each scored by the same verification pipeline.' },
   { tool: 'dedup & merge', t: 'One list, no twins', d: 'Duplicates are found on normalized keys — lower-cased email, digits-only phone — then merged atomically: blanks filled, socials/tags/notes moved over, the duplicate row deleted.' },
-  { tool: 'bounce control', t: 'Budget kept in the sequence', d: 'Role addresses and disposable inboxes are filtered before sending, dead mailboxes after SMTP probes are dropped. Cleaned lists bounce at ~2% instead of ~23%.' },
+  { tool: 'side-effect safety', t: 'Signals before action', d: 'Role addresses and disposable inboxes are flagged, and SMTP outcomes are kept as explicit evidence. Operators can review confidence before a worker performs a side effect.' },
 ];
 
 const flow = [
@@ -27,15 +27,15 @@ const flow = [
   { t: 'SMTP probe', d: 'Optional port-25 dialogue: banner, HELO, MAIL FROM, RCPT TO — never sends DATA. Accepted, rejected or inconclusive.' },
   { t: 'Phone checks', d: 'Parsed against region metadata, validated for length and type, normalized to E.164, classified mobile vs landline.' },
   { t: 'Social checks', d: 'Profile fetched with a browser UA; soft-404 content scans decide existence; blocked checks surface as notes.' },
-  { t: 'Rank & ship', d: 'Pattern-matched candidates get a confidence boost; only deliverable contacts keep their seat on the list Outreach receives.' },
+  { t: 'Rank & review', d: 'Pattern-matched candidates receive confidence signals; blocked and inconclusive records remain visible for operator review before any governed action.' },
 ];
 
 const hood = [
   ['Confidence formula', 'invalid syntax 0.0 · base 0.5 + 0.4 live domain · capped 0.9 without SMTP · ≥ 0.95 SMTP-accepted · ≤ 0.2 SMTP-rejected · disposable −0.3'],
   ['Syntax rules', 'RFC 5322 subset: local part ≤ 64 chars, domain ≤ 253, no leading/trailing/consecutive dots, non-numeric TLD'],
   ['MX lookup', 'DNS-over-HTTPS: dns.google → cloudflare-dns.com fallback, 5 s timeout · RFC 5321 A-record fallback · RFC 7505 null MX means "accepts no mail" · authoritative answers cached per session'],
-  ['Disposable domains', '~50 known providers (mailinator.com, yopmail.com, guerrillamail.com…) matched exactly or as wildcard subdomains'],
-  ['Role-based local parts', '37 department addresses — info@, support@, admin@, sales@, hr@… — flagged as "not a person" and kept out of personal sequences'],
+  ['Disposable domains', 'Configured disposable-domain rules are matched exactly or as wildcard subdomains; blocked or unknown checks remain visible'],
+  ['Role-based local parts', 'Department addresses such as info@, support@, admin@, sales@, and hr@ are flagged as non-personal records for operator review'],
   ['SMTP probe', 'connect timeout 10 s, per-read 5 s · 250/251 = accepted, 5xx = rejected, 4xx = inconclusive (greylisting) · probe bails before DATA — no mail is ever sent'],
   ['E.164 phones', '"+7 (495) 710-75-80" → +74957107580 · RU · landline · 17 number types · default_country resolves national formats'],
   ['suggest_emails', '9 patterns: first.last, firstlast, f.last, first.l, last.first, first_last, f_last, flast, first-last · separator + initial voting over known colleague addresses · pattern match +0.15, capped 0.95'],
@@ -44,10 +44,10 @@ const hood = [
 ];
 
 const results = [
-  { v: '23% → 2%', c: 'bounce rate on a typical raw harvest vs after the cleaning pass' },
-  { v: '0.95', c: 'confidence of an SMTP-confirmed mailbox — the top of the ladder' },
-  { v: '9', c: 'email candidates generated from one name and a domain' },
-  { v: '37', c: 'role-based local parts filtered out of personal sequences' },
+  { v: '0.95', c: 'maximum confidence assigned to an SMTP-confirmed mailbox' },
+  { v: '9', c: 'candidate patterns available to suggest_emails' },
+  { v: 'E.164', c: 'normalized phone representation for downstream tools' },
+  { v: 'Review', c: 'blocked, inconclusive, and role-based signals stay visible' },
 ];
 
 const tools = ['verify_email', 'verify_phone', 'verify_social_profile', 'suggest_emails'];
@@ -75,7 +75,7 @@ const tools = ['verify_email', 'verify_phone', 'verify_social_profile', 'suggest
       <!-- What it does -->
       <div class="sec-head">
         <p class="eyebrow" data-i18n="agents.cleaning.what.eyebrow">What it does</p>
-        <h2 class="h3-sec" data-i18n="agents.cleaning.what.title">Verification before a single send</h2>
+        <h2 class="h3-sec" data-i18n="agents.cleaning.what.title">Verification before a governed action</h2>
       </div>
       <div class="api-grid">
         {caps.map((c) => (
@@ -90,7 +90,7 @@ const tools = ['verify_email', 'verify_phone', 'verify_social_profile', 'suggest
       <!-- How it works -->
       <div class="sec-head">
         <p class="eyebrow" data-i18n="agents.cleaning.how.eyebrow">How it works</p>
-        <h2 class="h3-sec" data-i18n="agents.cleaning.how.title">Six gates between harvest and send</h2>
+        <h2 class="h3-sec" data-i18n="agents.cleaning.how.title">Six gates between input and action</h2>
       </div>
       <div class="flow">
         {flow.map((s, i) => (
@@ -157,13 +157,13 @@ const tools = ['verify_email', 'verify_phone', 'verify_social_profile', 'suggest
 verify_phone("+7 (495) 710-75-80")
 → +74957107580 · RU · landline · valid
 
-# only survivors reach the sequence —
-# outreach sends to people, not bounces`}</code></pre>
+# reviewable survivors reach the next worker —
+# governed actions use recorded evidence`}</code></pre>
         </div>
       </div>
 
       <div class="cta-strip">
-        <h2 data-i18n="agents.cleaning.cta.title">Clean lists convert. Dirty lists bounce.</h2>
+        <h2 data-i18n="agents.cleaning.cta.title">Clear signals make governed actions safer</h2>
         <div class="more-links">
           <a href="/agents/structuring" class="btn btn-secondary">← Structuring</a>
           <a href="/agents/memoring" class="btn btn-secondary">Memoring →</a>

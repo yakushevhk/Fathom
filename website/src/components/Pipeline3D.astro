@@ -201,7 +201,7 @@
     });
 
     const activePanel = panels[stepIdx];
-    if (isComplete) setPath('[complete] 47 contacts · 12 verified · 9 sent ✓');
+    if (isComplete) setPath('[complete] deliverable ready · review checkpoint reached ✓');
     else setPath(stepStatus(activePanel, '▸ ' + (stepIdx === total - 1 ? 'complete' : 'next ' + (stepIdx + 1))));
   }
 

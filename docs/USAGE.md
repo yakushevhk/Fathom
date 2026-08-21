@@ -1,12 +1,14 @@
 # CLI Usage
 
-The `fathom` binary is a **universal autonomous AI worker** — it accepts natural-language tasks, decomposes them into sub-tasks with hierarchical sub-agents, and executes them autonomously. Commands span headless investigation, interactive TUI, HTTP API serving, MCP tool exposure, memory management, background jobs, session history, contact/CRM operations, and browser-based computer use.
+The `fathom` binary is a **universal autonomous AI worker runtime**. It accepts a natural-language task, can decompose it into hierarchical sub-agent work, and executes through the configured tools and model. Research is one workflow; the same interfaces support code and data tasks, browser/computer work, recurring operations, and other tool-driven jobs. Fathom is self-hosted: you run the binary locally or on infrastructure you control.
+
+The runtime is available through the CLI and TUI, an HTTP API with SSE events and a read-only AG-UI compatibility stream, MCP, durable jobs, and persistent coworkers/channels/schedules. Memory, governance, credentials, notifications, replay, observability, and computer supervision are optional/configured capabilities.
 
 ```
 fathom <COMMAND>
 
 Commands:
-  run       Run an investigation (headless)
+  run       Run a natural-language task (headless)
   worker    Worker mode (internal, for multi-process)
   tui       Interactive TUI
   serve     HTTP API server
@@ -24,15 +26,15 @@ Commands:
 
 ---
 
-## `run` — headless investigation
+## `run` — headless autonomous task
 
-The primary mode. Launches a coordinator that decomposes the request into sub-agents, runs them in parallel, and synthesises the results.
+The primary mode. Launches a coordinator that can decompose the request into sub-agents, run independent work in parallel, and synthesize the result. Use it for research, code or data work, or any task supported by the configured tool registry.
 
 ```bash
 fathom run <QUERY> [OPTIONS]
 
 Arguments:
-  <QUERY>  Research query
+  <QUERY>  Natural-language task
 
 Options:
   -o, --output <DIR>      Directory for results (default: from config)
@@ -66,7 +68,7 @@ Goal Mode is especially valuable for lead-gen queries where partial results are 
 
 ### Watch mode (`--repeat`)
 
-Each run is compared against the previous one against the contacts database: new emails / phones / personas are printed as a diff and sent out as an alert via the `[notifications]` channels (webhook / Telegram / email, event `watch.new_contacts`). Session completion/crash notifications also work (`session.completed`, `session.failed`).
+For contact-oriented runs, watch mode compares the current contact keys with the previous run and reports newly observed entries. Configured notification channels may receive watch and session events; delivery depends on the relevant `[notifications]` settings and external transports.
 
 ```bash
 fathom run "Acme team" --repeat 21600   # every 6 hours
@@ -104,8 +106,8 @@ fathom run --profile analyst "Analyze Q3 market trends for electric vehicles"
 5. The coordinator runs the Goal Mode judge (up to `replan_rounds` gap-filling rounds)
 6. The coordinator synthesizes the results
 7. Writes `index.md`, `summary.md`, `findings/`, `sources.md`
-8. Exports (PDF/HTML/JSON/DOCX) and sends notifications
-9. CRM sync (if configured) pushes new contacts automatically
+8. Runs configured export and notification post-processing when available
+9. Contact persistence and CRM sync are optional and configuration-dependent
 
 ### Output structure
 
@@ -217,7 +219,7 @@ The TUI also shows a background jobs panel (when `fathom jobs submit` has been u
 
 ## `serve` — HTTP API server
 
-Launches an Axum server for programmatic control of research sessions.
+Launches an Axum server for programmatic control of autonomous task sessions, workers, memory, jobs, governance, and configured optional services.
 
 ```bash
 fathom serve [OPTIONS]
@@ -235,7 +237,7 @@ By default the server listens only on loopback. To bind to an external address
 (`--host 0.0.0.0`) you **must** set `FATHOM_API_KEYS`,
 otherwise startup will be rejected.
 
-The HTTP API supports creating sessions, polling status, and fetching results. It can be used for CI/CD pipelines, web dashboards, or integration with other tools.
+The HTTP API supports creating sessions, polling status, fetching results, steering and approvals, and consuming SSE events. A read-only AG-UI compatibility stream is available under `/api/v1/ag-ui/events`; use it from dashboards or other clients you run. Review [HTTP-API.md](HTTP-API.md) for the route contract.
 
 For API details — see [HTTP-API.md](HTTP-API.md).
 
@@ -261,7 +263,7 @@ curl http://localhost:8080/api/v1/sessions/<SESSION_ID>/results
 
 ## `mcp-serve` — MCP server
 
-Exposes all **63 agent tools** (57 built-in + 6 computer-use) to external MCP clients (Claude Desktop, ZCode, Cursor, etc.) over stdio. The server uses the shared `ToolRegistry` with all tools registered. External MCP servers configured in `[mcp.servers]` are **not** re-exported (to avoid loops).
+Exposes the currently registered built-in tools to external MCP clients over stdio. The set varies with configuration and optional services; externally configured MCP servers are not re-exported, avoiding loops.
 
 ```bash
 fathom mcp-serve
@@ -278,7 +280,7 @@ Nothing may print to stdout when the MCP server is running — the stdio protoco
 
 ## Computer use (browser automation via `apps/computer`)
 
-Fathom can operate a real browser via a loopback Playwright service (`apps/computer`). The agent uses accessibility-tree snapshots (opaque refs) to "see" the page like a screen-reader and interact via refs — never brittle CSS selectors.
+When the optional `apps/computer` service is running, Fathom can operate a real browser through its loopback Playwright API. The agent uses accessibility-tree snapshots (opaque refs) and interacts via refs; without the service, computer-use tools are unavailable.
 
 The computer service is started separately from the `apps/computer` directory:
 
@@ -316,7 +318,7 @@ For full details — see [COMPUTER-USE.md](COMPUTER-USE.md).
 
 ## `memory` — long-term semantic memory
 
-Manage the semantic knowledge base without running the agent. The memory subsystem stores facts with scopes (`agent`, `user`, `run`), supports versioning (active/superseded/archived), hybrid search (semantic + keyword), and automatic embedding.
+When `[memory] enabled = true`, manage the semantic knowledge base without running a new agent session. The subsystem stores facts with scopes (`agent`, `user`, `run`), supports versioning and hybrid search; embedding behavior depends on the configured endpoint and fallback.
 
 ```bash
 # Hybrid search (semantic + keyword)
@@ -403,7 +405,7 @@ The resumer loads the session's persisted subtasks from the database, identifies
 
 ## `jobs` — durable background jobs
 
-Submit research tasks that run detached from the terminal, check their status any time, read logs, and cancel or re-run them. Failed attempts are retried automatically with a self-healing task that carries the previous error context.
+Submit autonomous tasks that run detached from the terminal, check their status, read logs, and cancel or re-run them. Failed attempts can be retried with the previous error context; jobs are local durable records, not a hosted queue.
 
 ```bash
 # Submit a task to run in the background

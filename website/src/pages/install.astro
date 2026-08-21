@@ -4,12 +4,12 @@ import Layout from '../layouts/Layout.astro';
 const installers = [
   {
     name: 'install.sh',
-    d: 'One-line installer. Builds the Fathom release binary and installs it to /usr/local/bin (or $PREFIX/bin). A systemd unit is not shipped; create one from the documented service example when deploying on Linux.',
+    d: 'One-line installer for the public source-available project. It builds the Fathom release binary and installs it to /usr/local/bin (or $PREFIX/bin). A systemd unit is not shipped; configure one yourself when deploying on Linux.',
     code: `curl -sSf https://fathom.uz/install.sh | sh`,
   },
   {
     name: 'Cargo',
-    d: 'Build from source with the Rust toolchain. Release builds are compiled with LTO and stripped — a slim, self-contained binary.',
+    d: 'Build the public GitHub workspace from source with Rust 1.97 or newer. A release build produces the self-contained Fathom binary.',
     code: `cargo install --path .
 
 # or build directly
@@ -62,7 +62,7 @@ const envVars = [
       <div class="inst-hero">
         <p class="eyebrow" data-i18n="install.hero.badge">Install</p>
         <h1 class="h2-sec" data-i18n="install.hero.title">One binary. Every runtime.</h1>
-        <p class="copy-lg mx-auto" data-i18n="install.hero.sub">CLI, TUI, HTTP server, web dashboard and MCP endpoint ship in a single binary. Install with one command, build from source with Cargo, or run it in Docker — pick your path.</p>
+        <p class="copy-lg mx-auto" data-i18n="install.hero.sub">Fathom is a source-available, self-hosted runtime for autonomous work. Install the public build with curl, compile it with Cargo, or package it in Docker — then operate it on infrastructure you control.</p>
       </div>
 
       <!-- Installers -->
@@ -82,8 +82,8 @@ const envVars = [
       <div class="feat" id="systemd">
         <div class="feat-copy">
           <p class="eyebrow" data-i18n="install.systemd.badge">Linux service</p>
-          <h2 class="h3-sec" data-i18n="install.systemd.title">Run it under systemd</h2>
-          <p class="copy-lg" data-i18n-html data-i18n="install.systemd.sub">Fathom does not ship a systemd unit. Create one that starts <code class="ic">fathom serve</code> on port 8080 with <code class="ic">Restart=on-failure</code>; keep config and state under <code class="ic">~/.fathom</code> and set <code class="ic">FATHOM_API_KEYS</code> before exposing a non-loopback host.</p>
+          <h2 class="h3-sec" data-i18n="install.systemd.title">Configure systemd when needed</h2>
+          <p class="copy-lg" data-i18n-html data-i18n="install.systemd.sub">The installer does not ship a systemd unit. For a Linux server, create a unit for <code class="ic">fathom serve</code>, choose the service user and writable state directory, and set <code class="ic">FATHOM_API_KEYS</code> before exposing a non-loopback host. The example below is a starting point for your deployment.</p>
         </div>
         <div class="code-card">
           <pre><code>{`# after creating /etc/systemd/system/fathom.service
@@ -136,7 +136,7 @@ google-chrome --remote-debugging-port=9222 --headless`}</code></pre>
         <h2 class="h3-sec" data-i18n="install.req.title">Small footprint, no surprises</h2>
       </div>
       <div class="chips">
-        <span class="chip">Rust 1.97+ · edition 2021</span>
+        <span class="chip">Rust 1.97 · edition 2021 (source builds)</span>
         <span class="chip">macOS / Linux · Windows via WSL</span>
         <span class="chip">SQLite bundled (WAL)</span>
         <span class="chip">PostgreSQL optional · tokio-postgres</span>
@@ -187,7 +187,7 @@ curl http://localhost:8080/health`}</code></pre>
       <div class="cta-strip">
         <div class="cta-copy">
           <h3 data-i18n="install.cta.title">Installed? Run your first research.</h3>
-          <p data-i18n="install.cta.sub">Configure the LLM key, pick a search backend and launch a session in under five minutes.</p>
+          <p data-i18n="install.cta.sub">Configure the LLM endpoint and any optional integrations, then launch a self-hosted worker task.</p>
         </div>
         <div class="cta-actions">
           <a href="/docs/quickstart" class="cta-btn" data-i18n="install.cta.next">Next: quickstart →</a>

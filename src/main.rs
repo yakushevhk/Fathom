@@ -21,7 +21,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Run a research task (headless)
+    /// Run a task (headless, autonomous)
     Run {
         /// The research query (optional when --task-file is given)
         query: Option<String>,

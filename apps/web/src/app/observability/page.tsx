@@ -104,7 +104,7 @@ export default function ObservabilityPage() {
   return (
     <div className="flex-1 flex flex-col min-w-0">
       <div className="h-9 flex items-center justify-between gap-3 px-4 border-b border-white/[0.06] shrink-0">
-        <span className="text-xs text-gray-400">Observability &amp; controls</span>
+        <span className="text-xs text-gray-400">Observability / worker controls</span>
         <button type="button" className="ops-button-secondary" onClick={() => void load(true)} disabled={loading || refreshing}>
           {refreshing ? 'Refreshing…' : 'Refresh'}
         </button>
@@ -113,9 +113,9 @@ export default function ObservabilityPage() {
       <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-5">
         <header>
           <p className="ops-kicker">Worker operations</p>
-          <h1 className="mt-2 text-xl font-medium tracking-tight text-gray-100">Runtime visibility</h1>
+          <h1 className="mt-2 text-xl font-medium tracking-tight text-gray-100">Runtime visibility for remote workers</h1>
           <p className="mt-1 max-w-2xl text-xs leading-5 text-gray-500">
-            Live process counters, recorded governed actions, and encrypted credential metadata. Values come directly from the connected Fathom server.
+            Live session and worker counters, recorded governed actions, and credential metadata. Values come directly from the connected Fathom server.
           </p>
         </header>
 

@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import '../styles/global.css';
 ---
 
-<Layout title="Architecture — Fathom" description="A 12-crate Rust workspace for hierarchical coordination, durable runtime services and reviewable automation.">
+<Layout title="Architecture — Fathom Autonomous AI Workers" description="Fathom is a self-hosted Rust runtime for autonomous remote AI workers: coordination, tools, memory, governance, persistence, and HTTP/SSE interfaces in one workspace.">
 
   <main>
     <section class="hero section">
@@ -22,7 +22,7 @@ import '../styles/global.css';
       <div class="container text-center">
         <div class="section-label" data-i18n="arch.overview_label">System Overview</div>
         <h2 class="section-title" data-i18n="arch.title">12 crates, one runtime</h2>
-        <p class="section-subtitle mx-auto" data-i18n="arch.subtitle">Each layer is purpose-built. Together they form a research engine that scales from one query to thousands.</p>
+        <p class="section-subtitle mx-auto" data-i18n="arch.subtitle">Each layer is purpose-built. Together they form a self-hosted runtime for planning, delegation, tools, memory, governance, and operator interfaces.</p>
 
         <div class="arch-diagram">
           <div class="arch-row arch-row-top">
@@ -81,7 +81,7 @@ import '../styles/global.css';
       <div class="container">
         <div class="text-center">
           <div class="section-label" data-i18n="arch_mod.label">Deep Dive</div>
-          <h2 class="section-title" data-i18n="arch_mod.title">13 pillars of the architecture</h2>
+          <h2 class="section-title" data-i18n="arch_mod.title">Runtime pillars</h2>
         </div>
 
         <div class="modules-grid">
@@ -169,10 +169,10 @@ import '../styles/global.css';
           <div class="card module-card">
             <div class="module-header">
               <div class="module-icon">📝</div>
-              <h3 data-i18n="arch_mod.m10t">Self-Improvement Backlog</h3>
+              <h3 data-i18n="arch_mod.m10t">Durable Improvement Backlog</h3>
             </div>
-            <p data-i18n="arch_mod.m10d">Agents record durable improvement candidates in a Markdown ledger. Re-triggering the same issue bumps a recurrence count instead of writing a duplicate. An optional LLM pass performs semantic dedup so reformulated ideas fold into existing entries.</p>
-            <div class="module-tag" data-i18n="arch_mod.m10tag">Durable ledger · Recurrence count · Semantic dedup</div>
+            <p data-i18n="arch_mod.m10d">Workers can record improvement candidates in a durable ledger. Re-triggering an issue raises its recurrence count; an optional LLM pass can semantically deduplicate reformulated ideas.</p>
+            <div class="module-tag" data-i18n="arch_mod.m10tag">Durable ledger · Recurrence count · Optional dedup</div>
           </div>
 
           <div class="card module-card">
@@ -222,16 +222,16 @@ import '../styles/global.css';
             <div class="perf-label" data-i18n="arch_perf.l_tools">built-in tools</div>
           </div>
           <div class="card perf-card">
-            <div class="perf-value">7</div>
-            <div class="perf-label" data-i18n="arch_perf.l_search">search backends</div>
+            <div class="perf-value">MCP</div>
+            <div class="perf-label" data-i18n="arch_perf.l_search">external tools and servers</div>
           </div>
           <div class="card perf-card">
-            <div class="perf-value">128K</div>
-            <div class="perf-label" data-i18n="arch_perf.l_context">context window</div>
+            <div class="perf-value">SSE</div>
+            <div class="perf-label" data-i18n="arch_perf.l_context">streaming interface</div>
           </div>
           <div class="card perf-card">
-            <div class="perf-value">∞</div>
-            <div class="perf-label" data-i18n="arch_perf.l_agents">parallel agents</div>
+            <div class="perf-value">TUI</div>
+            <div class="perf-label" data-i18n="arch_perf.l_agents">operator interface</div>
           </div>
         </div>
       </div>
@@ -257,7 +257,7 @@ import '../styles/global.css';
           <span class="stack-chip">schemars</span>
           <span class="stack-chip">uuid v7</span>
         </div>
-        <p class="section-subtitle mx-auto">Rust 1.97 · edition 2021 · ~62k LOC · 1000+ tests · release with LTO + strip · Elastic License 2.0</p>
+        <p class="section-subtitle mx-auto">Rust workspace · edition 2021 · release builds with LTO + strip · Elastic License 2.0</p>
       </div>
     </section>
 

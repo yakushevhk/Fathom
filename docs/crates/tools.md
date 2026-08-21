@@ -382,7 +382,7 @@ x-api-key: {api_key}
 
 ```
 GET https://html.duckduckgo.com/html/?q={query}
-User-Agent: Mozilla/5.0 (compatible; ParallelResearch/0.1)
+User-Agent: Mozilla/5.0 (compatible; Fathom/0.3)
 ```
 
 **HTML parsing:**

@@ -5,7 +5,7 @@ import { Sidebar } from '@/components/Sidebar'
 
 export const metadata: Metadata = {
   title: 'Fathom | Autonomous Worker Control Plane',
-  description: 'Coordinate autonomous remote workers, submitted work, and execution activity from one control plane.',
+  description: 'Operate self-hosted autonomous remote workers across sessions, jobs, memory, governance, computers, and live events.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

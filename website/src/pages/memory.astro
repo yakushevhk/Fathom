@@ -7,8 +7,8 @@ import Layout from '../layouts/Layout.astro';
     <div class="container">
       <div class="mem-hero">
         <p class="eyebrow" data-i18n="memoryPage.hero.badge">Memory &amp; Graph</p>
-        <h1 class="h2-sec" data-i18n-html data-i18n="memoryPage.hero.title">Knowledge that<br />outlives the session.</h1>
-        <p class="copy-lg mx-auto" data-i18n="memoryPage.hero.sub">An unlimited semantic knowledge base in SQLite, built on the mem0 / Memora model: hybrid search, append-only versioning, secret detection and a real-world entity graph — right next to the facts.</p>
+        <h1 class="h2-sec" data-i18n-html data-i18n="memoryPage.hero.title">Worker memory beyond<br />a single run.</h1>
+        <p class="copy-lg mx-auto" data-i18n="memoryPage.hero.sub">A self-hosted semantic store in SQLite, influenced by mem0 / Memora patterns: scoped hybrid search, append-only versioning, secret detection and an entity graph that workers can use across runs.</p>
       </div>
 
       <!-- What is stored -->
@@ -16,7 +16,7 @@ import Layout from '../layouts/Layout.astro';
         <div class="feat-copy">
           <p class="eyebrow" data-i18n="memoryPage.stored.badge">What is stored</p>
           <h2 class="h3-sec" data-i18n="memoryPage.stored.title">Self-contained facts, scoped</h2>
-          <p class="copy-lg" data-i18n-html data-i18n="memoryPage.stored.sub">Each record is a self-contained fact (50–500 chars) with scope isolation — <code class="ic">agent</code> (shared knowledge), <code class="ic">user</code> (about the client), <code class="ic">run</code> (session episode). Confidence, importance, tags, typed edges and a full change journal on top.</p>
+          <p class="copy-lg" data-i18n-html data-i18n="memoryPage.stored.sub">Each record is a self-contained fact with scope isolation — <code class="ic">agent</code> (shared knowledge), <code class="ic">user</code> (about the client), <code class="ic">run</code> (session episode). Confidence, importance, tags, typed edges and a change journal help workers inspect and update context.</p>
         </div>
         <div class="mini-table-wrap">
           <table class="mini-table">
@@ -35,45 +35,45 @@ import Layout from '../layouts/Layout.astro';
       <!-- Principles -->
       <div class="sec-head center">
         <p class="eyebrow" data-i18n="memoryPage.principles.badge">Principles</p>
-        <h2 class="h3-sec" data-i18n="memoryPage.principles.title">Six ideas from mem0 / Memora</h2>
+        <h2 class="h3-sec" data-i18n="memoryPage.principles.title">Patterns for durable worker context</h2>
       </div>
 
       <div class="pr-grid">
         <div class="pr-card">
           <h3 data-i18n="memoryPage.principles.append.title">Append-only</h3>
-          <p data-i18n-html data-i18n="memoryPage.principles.append.d">Facts are never overwritten. A new version is a new record plus a <code class="ic">supersedes</code> edge; contradictions stay visible through <code class="ic">contradicts</code>. Read modes: active, latest, full_history.</p>
+          <p data-i18n-html data-i18n="memoryPage.principles.append.d">Append-only mode records a new version as a new record plus a <code class="ic">supersedes</code> edge; contradictions can remain visible through <code class="ic">contradicts</code>. Read modes include active, latest and full_history.</p>
         </div>
         <div class="pr-card">
           <h3 data-i18n="memoryPage.principles.absorb.title">Absorb, not create</h3>
-          <p data-i18n="memoryPage.principles.absorb.d">Secrets rejected → batch consolidation → hash dedup → cosine candidates → classification into one of 5 outcomes: duplicate · supersede · contradict · related · new. With dry_run.</p>
+          <p data-i18n="memoryPage.principles.absorb.d">Secrets can be rejected before consolidation, deduplication and similarity checks classify an item as duplicate, supersede, contradict, related or new. Use <code class="ic">dry_run</code> to inspect an absorb plan before writing.</p>
         </div>
         <div class="pr-card">
           <h3 data-i18n="memoryPage.principles.hybrid.title">Hybrid search</h3>
-          <p data-i18n-html data-i18n="memoryPage.principles.hybrid.d"><code class="ic">score = 0.7·cosine + 0.3·BM25</code>, then linear freshness decay — 1% per day. ~2ms median latency in benchmarks.</p>
+          <p data-i18n-html data-i18n="memoryPage.principles.hybrid.d"><code class="ic">score = 0.7·cosine + 0.3·BM25</code>, then freshness decay. Latency depends on the local store, embeddings configuration and workload; consult benchmarks for measured environments.</p>
         </div>
         <div class="pr-card">
           <h3 data-i18n="memoryPage.principles.digest.title">Digest before start</h3>
-          <p data-i18n="memoryPage.principles.digest.d">The top agent gets a deterministic digest in its system prompt: relevant memories + open TODOs + recent records, with real ids for verification.</p>
+          <p data-i18n="memoryPage.principles.digest.d">A worker can receive a deterministic digest in its system prompt: relevant memories, open TODOs and recent records with ids for verification.</p>
         </div>
         <div class="pr-card">
           <h3 data-i18n="memoryPage.principles.rerank.title">Optional rerank</h3>
-          <p data-i18n-html data-i18n="memoryPage.principles.rerank.d"><code class="ic">[memory] rerank = true</code>: a second LLM pass re-orders the expanded result set (top_k×3) by relevance.</p>
+          <p data-i18n-html data-i18n="memoryPage.principles.rerank.d"><code class="ic">[memory] rerank = true</code>: when configured with a compatible model, a second LLM pass can re-order an expanded result set by relevance.</p>
         </div>
         <div class="pr-card">
           <h3 data-i18n="memoryPage.principles.embed.title">Embeddings with fallback</h3>
-          <p data-i18n-html data-i18n="memoryPage.principles.embed.d">Auto mode: OpenAI-compatible <code class="ic">/embeddings</code> when a key exists, otherwise offline TF-IDF (512-dim, no network). Vectors of different models never mix.</p>
+          <p data-i18n-html data-i18n="memoryPage.principles.embed.d">Auto mode can use a configured OpenAI-compatible <code class="ic">/embeddings</code> endpoint; without one, the local TF-IDF fallback keeps indexing offline. Vectors from different models are kept separate.</p>
         </div>
       </div>
 
       <!-- Three tiers -->
       <div class="sec-head center">
-        <p class="eyebrow" data-i18n="memoryPage.tiers.badge">Three tiers</p>
+        <p class="eyebrow" data-i18n="memoryPage.tiers.badge">Memory tiers</p>
         <h2 class="h3-sec" data-i18n="memoryPage.tiers.title">Profile, skills, archive</h2>
       </div>
       <div class="api-grid api-grid--3">
-        <div class="api-card"><div class="api-name" data-i18n="memoryPage.tiers.profile.name">MEMORY.md / USER.md</div><p data-i18n="memoryPage.tiers.profile.d">A ~2 KB stable profile frozen into the system prompt for prefix-cache hits. Small, always present.</p></div>
+        <div class="api-card"><div class="api-name" data-i18n="memoryPage.tiers.profile.name">MEMORY.md / USER.md</div><p data-i18n="memoryPage.tiers.profile.d">A compact stable profile that can be included in the system prompt for consistent worker context and efficient caching.</p></div>
         <div class="api-card"><div class="api-name" data-i18n="memoryPage.tiers.skill.name">SKILL.md</div><p data-i18n-html data-i18n="memoryPage.tiers.skill.d">Procedural knowledge discovered from experience (<code class="ic">create_from_experience</code>), injected on demand via the <code class="ic">skill</code> tool.</p></div>
-        <div class="api-card"><div class="api-name" data-i18n="memoryPage.tiers.archive.name">Semantic archive</div><p data-i18n="memoryPage.tiers.archive.d">The unlimited SQLite knowledge base on this page — hybrid search, graph, versioning.</p></div>
+        <div class="api-card"><div class="api-name" data-i18n="memoryPage.tiers.archive.name">Semantic archive</div><p data-i18n="memoryPage.tiers.archive.d">The SQLite knowledge base on this page — hybrid search, graph and versioning, sized by local storage and operator policy.</p></div>
       </div>
 
       <!-- Entity graph -->
@@ -81,7 +81,7 @@ import Layout from '../layouts/Layout.astro';
         <div class="feat-copy">
           <p class="eyebrow" data-i18n="memoryPage.graph.badge">Entity graph</p>
           <h2 class="h3-sec" data-i18n="memoryPage.graph.title">person ↔ company ↔ location</h2>
-          <p class="copy-lg" data-i18n-html data-i18n="memoryPage.graph.sub">Alongside facts, the store maintains a real-world entity graph: nodes (person, company, project, technology, role, location, event, product) deduplicated by name+type, typed edges (<code class="ic">works_at</code>, <code class="ic">leads</code>, <code class="ic">founded</code>…) and multi-hop BFS up to 4 hops — "who leads X", "who works at companies in Kazan". Entities attach automatically during absorb.</p>
+          <p class="copy-lg" data-i18n-html data-i18n="memoryPage.graph.sub">Alongside facts, the store can maintain an entity graph: nodes (person, company, project, technology, role, location, event, product), typed edges (<code class="ic">works_at</code>, <code class="ic">leads</code>, <code class="ic">founded</code>…) and multi-hop queries. Entities may be attached during absorb when the relevant workflow is enabled.</p>
           <p class="copy-lg"><code class="ic">memory_graph add · query · list</code></p>
         </div>
         <div class="graph-demo">
@@ -99,8 +99,8 @@ import Layout from '../layouts/Layout.astro';
       <div class="feat" id="osint">
         <div class="feat-copy">
           <p class="eyebrow" data-i18n="memoryPage.osint.badge">OSINT integration</p>
-          <h2 class="h3-sec" data-i18n="memoryPage.osint.title">Memory-powered lead intelligence</h2>
-          <p class="copy-lg" data-i18n="memoryPage.osint.sub">The entity graph connects people to companies, companies to locations, and locations to industries. Multi-hop queries answer questions like "who leads companies in Kazan" or "which CTOs use React". Absorbed contacts become queryable knowledge for future sessions.</p>
+          <h2 class="h3-sec" data-i18n="memoryPage.osint.title">Memory for research workflows</h2>
+          <p class="copy-lg" data-i18n="memoryPage.osint.sub">When a configured research or lead-generation workflow opts in, the entity graph can connect people to companies, locations and industries. Multi-hop queries support questions like "who leads companies in Kazan". Absorbed contacts become queryable context for later worker runs.</p>
         </div>
         <div class="code-card">
           <pre><code># After a lead-gen run, contacts are auto-absorbed
@@ -118,10 +118,10 @@ fathom memory search "CTO fintech Moscow"
       <!-- Tools -->
       <div class="sec-head center">
         <p class="eyebrow" data-i18n="memoryPage.tools.badge">Agent tools</p>
-        <h2 class="h3-sec" data-i18n="memoryPage.tools.title">Six tools, one store</h2>
+        <h2 class="h3-sec" data-i18n="memoryPage.tools.title">Tools for one memory store</h2>
       </div>
       <div class="api-grid">
-        <div class="api-card"><div class="api-name">memory_absorb</div><p data-i18n="memoryPage.tools.absorb.d">Ingest facts through the 5-outcome pipeline; autosave of discovered contacts happens without the model.</p></div>
+        <div class="api-card"><div class="api-name">memory_absorb</div><p data-i18n="memoryPage.tools.absorb.d">Ingest facts through the absorb pipeline; configured workflows can save discovered contacts without requiring a model-generated write.</p></div>
         <div class="api-card"><div class="api-name">memory_search</div><p data-i18n="memoryPage.tools.search.d">Hybrid vector + BM25 search with scopes, filters and freshness decay.</p></div>
         <div class="api-card"><div class="api-name">memory_digest</div><p data-i18n="memoryPage.tools.digest.d">Build the pre-run digest (relevant + TODOs + recent).</p></div>
         <div class="api-card"><div class="api-name">memory_boost</div><p data-i18n="memoryPage.tools.boost.d">Raise importance of facts that keep proving useful.</p></div>
@@ -133,8 +133,8 @@ fathom memory search "CTO fintech Moscow"
       <div class="feat" id="ops">
         <div class="feat-copy">
           <p class="eyebrow" data-i18n="memoryPage.ops.badge">Housekeeping</p>
-          <h2 class="h3-sec" data-i18n="memoryPage.ops.title">Distill, GC — nothing deleted</h2>
-          <p class="copy-lg" data-i18n-html data-i18n="memoryPage.ops.sub">CLI <code class="ic">memory search / list / get / stats / rebuild / distill / nuke</code>. Distillation compresses run-facts into durable knowledge. GC archives expired and stale run-facts and compacts overgrown scope groups — nothing is ever destroyed.</p>
+          <h2 class="h3-sec" data-i18n="memoryPage.ops.title">Distill and manage retention</h2>
+          <p class="copy-lg" data-i18n-html data-i18n="memoryPage.ops.sub">CLI <code class="ic">memory search / list / get / stats / rebuild / distill / nuke</code>. Distillation can compress run facts into durable knowledge. GC can archive expired or stale run facts and compact scope groups according to retention settings; review destructive operations before running them.</p>
           <div class="more-links">
             <a href="/docs" class="btn btn-secondary" data-i18n="memoryPage.ops.docs">Docs</a>
             <a href="/api" class="btn btn-primary" data-i18n="memoryPage.ops.api">Memory HTTP API</a>

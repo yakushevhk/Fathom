@@ -100,13 +100,11 @@ Each file answers one question, and the answers build on each other:
 
 ## What is this project
 
-`fathom` is a CLI/TUI/HTTP tool that takes a natural language
-query and executes it with a **team of parallel LLM agents**:
+`fathom` is a self-hosted CLI/TUI/HTTP runtime for autonomous remote AI workers. It accepts a natural-language task and executes it with a **coordinated team of LLM workers**:
 
-- planning and decomposition of the query into subtasks;
-- parallel execution of research agents;
-- **up to 63 tools** (57 built-in + 6 computer: web search, HTML/JSON parsing, files, shell, git,
-  Python/Node REPL, OSINT verification of emails/phones/social media, CRM sync, computer use);
+- planning and decomposition of the task into subtasks;
+- parallel execution across research, code, data, and computer-use workflows;
+- **51 always-registered tools, plus up to 5 CDP and up to 6 computer tools when configured** (web, parsing, files, shell, git, REPL, memory, OSINT, and computer use);
 - batched tool calling with true multi-threaded parallelism (`tokio::spawn`);
 - protection: SSRF guard, prompt-injection filters, file locks, cancellation on shell failure;
 - everything is written to SQLite: every tool call with duration — later analyzed

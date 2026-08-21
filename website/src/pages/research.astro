@@ -2,15 +2,15 @@
 import Layout from '../layouts/Layout.astro';
 
 const pipeline = [
-  { num: 1, key: 's1', t: 'Discover', d: 'search_business_directory queries 2GIS, Google Maps, Yandex Maps and Yellow Pages in parallel. search_social scans Twitter/X, Telegram and LinkedIn. search_news finds press mentions.' },
-  { num: 2, key: 's2', t: 'Parse', d: 'parse_corporate_site extracts company name, industry, team members, contacts and social profiles from corporate websites via JSON-LD, Schema.org and 14 CSS selectors for team pages.' },
-  { num: 3, key: 's3', t: 'Generate', d: 'find_leads orchestrates the full pipeline: directories → corporate parsing (up to 6 sites concurrent) → social search → email attribution → confidence ranking.' },
-  { num: 4, key: 's4', t: 'Extract', d: 'extract_contacts pulls emails (3-pass deobfuscation incl. word forms), phones (E.164 via libphonenumber), social profiles (14 platforms) and LLM-assisted person/company entities.' },
-  { num: 5, key: 's5', t: 'Enrich', d: 'enrich_company detects 45+ technologies, extracts revenue, founding year, HQ and classifies industry from 18 categories. enrich_person finds title, company, bio and location.' },
-  { num: 6, key: 's6', t: 'Verify', d: 'verify_email runs syntax → DNS-over-HTTPS MX → disposable (50+ domains) → role-based (37 patterns) → optional SMTP probe on port 25. verify_phone normalizes to E.164.' },
-  { num: 7, key: 's7', t: 'Suggest', d: 'suggest_emails generates 9 corporate email patterns, detects domain patterns from colleague emails, and verifies each candidate via MX + optional SMTP.' },
-  { num: 8, key: 's8', t: 'Persist', d: 'save_contacts writes to SQLite/PostgreSQL with TOCTOU-safe dedup. Autosave fires automatically after extraction. Verification receipts gate the Verified/Partial/Unverified status.' },
-  { num: 9, key: 's9', t: 'Export', d: 'Contacts: CSV, vCard 3.0, JSON, Excel (XLSX) with export-time dedup. Reports: HTML, JSON, PDF, DOCX. Push to amoCRM, Bitrix24 or HubSpot.' },
+  { num: 1, key: 's1', t: 'Plan', d: 'A worker turns the request into a source-aware plan, then delegates discovery across the tools and services configured by the operator.' },
+  { num: 2, key: 's2', t: 'Discover', d: 'search_business_directory, search_social and search_news gather public company, people and press context when those connectors are enabled.' },
+  { num: 3, key: 's3', t: 'Parse', d: 'parse_corporate_site extracts structured company, team and contact context from fetched pages using JSON-LD, Schema.org and page content.' },
+  { num: 4, key: 's4', t: 'Extract', d: 'extract_contacts identifies emails, phones, social profiles and person/company entities, retaining source context for later review.' },
+  { num: 5, key: 's5', t: 'Enrich', d: 'enrich_company and enrich_person add useful industry, technology, role and location context when matching public evidence is available.' },
+  { num: 6, key: 's6', t: 'Verify', d: 'verify_email and verify_phone apply syntax, DNS and normalization checks. Optional SMTP probing depends on network access and operator configuration.' },
+  { num: 7, key: 's7', t: 'Review', d: 'suggest_emails can propose domain patterns for a worker or human to review; confidence and missing evidence stay explicit rather than guessed.' },
+  { num: 8, key: 's8', t: 'Persist', d: 'save_contacts stores approved findings in SQLite or PostgreSQL with deduplication and verification receipts, subject to the configured policy and review gates.' },
+  { num: 9, key: 's9', t: 'Report', d: 'The worker summarizes evidence, remembers durable context and can export CSV, vCard, JSON or reports, or hand off to a configured CRM.' },
 ];
 
 const techs = [
@@ -22,21 +22,21 @@ const techs = [
 ];
 ---
 
-<Layout title="Research Engine — Fathom">
+<Layout title="Research Workflows — Fathom">
   <main class="research-page">
     <div class="container">
 
       <!-- HERO -->
       <div class="research-hero">
-        <p class="eyebrow" data-i18n="researchPage.hero.badge">Research Engine</p>
-        <h1 class="h2-sec" data-i18n-html data-i18n="researchPage.hero.title">From a query to<br />verified contacts.</h1>
-        <p class="copy-lg mx-auto" data-i18n="researchPage.hero.sub">Nine automated stages — discover companies, parse sites, extract contacts, enrich data, verify emails/phones/socials, persist to DB, sync to CRM and export. All from one command.</p>
+        <p class="eyebrow" data-i18n="researchPage.hero.badge">Research workflow</p>
+        <h1 class="h2-sec" data-i18n-html data-i18n="researchPage.hero.title">From a question to<br />reviewable findings.</h1>
+        <p class="copy-lg mx-auto" data-i18n="researchPage.hero.sub">A universal autonomous worker plans the investigation, delegates source work, keeps evidence in memory and pauses for governance where configured. Research, contact discovery and reporting are workflows—not a separate research engine.</p>
       </div>
 
       <!-- PIPELINE -->
       <div class="sec-head center reveal">
-        <p class="eyebrow" data-i18n="researchPage.pipeline.badge">Nine-stage pipeline</p>
-        <h2 class="h2-sec" data-i18n-html data-i18n="researchPage.pipeline.title">Every lead, end to end</h2>
+        <p class="eyebrow" data-i18n="researchPage.pipeline.badge">Worker workflow</p>
+        <h2 class="h2-sec" data-i18n-html data-i18n="researchPage.pipeline.title">Plan, delegate, verify, remember</h2>
       </div>
 
       <div class="pipeline-grid">
@@ -53,30 +53,30 @@ const techs = [
 
       <!-- DATA SOURCES -->
       <div class="sec-head center reveal" style="margin-top:72px">
-        <p class="eyebrow" data-i18n="researchPage.sources.badge">Data sources</p>
-        <h2 class="h2-sec" data-i18n-html data-i18n="researchPage.sources.title">Four directories, three platforms, one news engine</h2>
+        <p class="eyebrow" data-i18n="researchPage.sources.badge">Configured sources</p>
+        <h2 class="h2-sec" data-i18n-html data-i18n="researchPage.sources.title">Choose the sources your worker can use</h2>
       </div>
 
       <div class="src-grid">
         <div class="src-card src-card--wide">
           <div class="src-name" data-i18n="researchPage.sources.dirs.name">Business directories</div>
-          <p data-i18n="researchPage.sources.dirs.d">2GIS, Google Maps, Yandex Maps, Yellow Pages — queried in parallel with cross-directory dedup by name+address.</p>
+          <p data-i18n="researchPage.sources.dirs.d">Configured directory connectors such as 2GIS, Google Maps, Yandex Maps or Yellow Pages can be queried in parallel, with cross-source deduplication when enabled.</p>
         </div>
         <div class="src-card">
           <div class="src-name" data-i18n="researchPage.sources.social.name">Social platforms</div>
-          <p data-i18n="researchPage.sources.social.d">Twitter/X (API v2 or web search fallback), Telegram (t.me preview enrichment), LinkedIn (site-restricted search). Dedup by (platform, URL).</p>
+          <p data-i18n="researchPage.sources.social.d">Configured Twitter/X, Telegram or site-restricted LinkedIn search can add public context where access permits. Findings retain platform and URL provenance for review.</p>
         </div>
         <div class="src-card">
           <div class="src-name" data-i18n="researchPage.sources.news.name">News & press</div>
-          <p data-i18n="researchPage.sources.news.d">Serper News endpoint + Google News RSS fallback. Heuristic entity extraction: persons (2-3 capitalized words) and companies (corporate suffixes, ALL-CAPS tokens).</p>
+          <p data-i18n="researchPage.sources.news.d">A configured news connector such as Serper or Google News RSS can provide press context. Entity extraction is heuristic, so workers keep source links and uncertainty visible.</p>
         </div>
       </div>
 
       <!-- VERIFICATION -->
       <div class="sec-head center reveal" style="margin-top:72px">
-        <p class="eyebrow" data-i18n="researchPage.verification.badge">Verification</p>
-        <h2 class="h2-sec" data-i18n-html data-i18n="researchPage.verification.title">Five gates before a contact is saved</h2>
-        <p class="copy-lg mx-auto" data-i18n="researchPage.verification.sub">Every email passes through syntax validation, DNS-over-HTTPS MX lookup, disposable detection (50+ providers), role-based flagging (37 patterns) and an optional SMTP probe on port 25. Results are recorded in an append-only verification receipt ledger.</p>
+        <p class="eyebrow" data-i18n="researchPage.verification.badge">Verification and review</p>
+        <h2 class="h2-sec" data-i18n-html data-i18n="researchPage.verification.title">Evidence gates before side effects</h2>
+        <p class="copy-lg mx-auto" data-i18n="researchPage.verification.sub">Workers can apply syntax and DNS checks, flag disposable or role-based addresses and—when network access is configured—probe SMTP. Receipts and confidence keep uncertainty visible; governance can require human approval before saving or syncing.</p>
       </div>
 
       <div class="verify-grid">
@@ -90,11 +90,11 @@ const techs = [
         </div>
         <div class="verify-card">
           <code class="verify-name" data-i18n="researchPage.verification.gates.disposable.name">Disposable</code>
-          <p data-i18n="researchPage.verification.gates.disposable.d">50+ known disposable providers (mailinator, yopmail, guerrillamail, tempmail). Subdomain matching included.</p>
+          <p data-i18n="researchPage.verification.gates.disposable.d">Configured lists of known disposable providers can flag domains such as mailinator, yopmail, guerrillamail or tempmail; subdomain matching may be included.</p>
         </div>
         <div class="verify-card">
           <code class="verify-name" data-i18n="researchPage.verification.gates.role.name">Role-based</code>
-          <p data-i18n="researchPage.verification.gates.role.d">37 department/functional patterns: admin, info, support, sales, noreply, hr, billing, etc.</p>
+          <p data-i18n="researchPage.verification.gates.role.d">Role and department patterns such as admin, info, support, sales, noreply, hr or billing can be flagged for review.</p>
         </div>
         <div class="verify-card">
           <code class="verify-name" data-i18n="researchPage.verification.gates.smtp.name">SMTP probe</code>
@@ -104,9 +104,9 @@ const techs = [
 
       <!-- ENRICHMENT -->
       <div class="sec-head center reveal" style="margin-top:72px">
-        <p class="eyebrow" data-i18n="researchPage.enrich.badge">Enrichment</p>
-        <h2 class="h2-sec" data-i18n-html data-i18n="researchPage.enrich.title">45+ technologies, 18 industries</h2>
-        <p class="copy-lg mx-auto" data-i18n="researchPage.enrich.sub">enrich_company reads HTML signatures to detect CMS, JS frameworks, analytics, payments and hosting. enrich_person cross-references web + LinkedIn to fill title, company, bio and location.</p>
+        <p class="eyebrow" data-i18n="researchPage.enrich.badge">Context enrichment</p>
+        <h2 class="h2-sec" data-i18n-html data-i18n="researchPage.enrich.title">Add context when evidence supports it</h2>
+        <p class="copy-lg mx-auto" data-i18n="researchPage.enrich.sub">enrich_company can inspect HTML signatures for CMS, JS frameworks, analytics, payments and hosting. enrich_person can compare public web evidence and configured social sources; workers preserve gaps instead of filling them with guesses.</p>
       </div>
 
       <div class="tech-grid">
@@ -122,7 +122,7 @@ const techs = [
       <div class="sec-head center reveal" style="margin-top:72px">
         <p class="eyebrow" data-i18n="researchPage.quality.badge">Quality tracking</p>
         <h2 class="h2-sec" data-i18n-html data-i18n="researchPage.quality.title">Append-only verification receipts</h2>
-        <p class="copy-lg mx-auto" data-i18n="researchPage.quality.sub">Every verification check writes a durable receipt to a JSONL ledger. Receipts are keyed by (kind, value) — a PASS on one kind can never silence a FAIL on a different kind. Latest receipt per key wins. Three status levels: Verified (SMTP accepted), Partial (syntax+MX ok), Unverified.</p>
+        <p class="copy-lg mx-auto" data-i18n="researchPage.quality.sub">Verification checks can write durable receipts to a JSONL ledger. Receipts are keyed by (kind, value), so a PASS on one check does not silence a FAIL on another. Reviewers and governance policies can use the resulting Verified, Partial or Unverified status before any external action.</p>
       </div>
 
       <div class="status-strip">
@@ -143,9 +143,9 @@ const techs = [
       <!-- SCHEDULED HARVESTING -->
       <div class="feat reveal" style="margin-top:72px">
         <div class="feat-copy">
-          <p class="eyebrow" data-i18n="researchPage.harvesting.badge">Scheduled harvesting</p>
-          <h2 class="h2-sec" data-i18n-html data-i18n="researchPage.harvesting.title">Run it again. Diff the results.</h2>
-          <p class="copy-lg" data-i18n="researchPage.harvesting.sub">The --repeat N flag re-runs the same query every N seconds, diffs the contact store between runs, and sends alerts about newly discovered contacts via webhook, Telegram or email.</p>
+          <p class="eyebrow" data-i18n="researchPage.harvesting.badge">Repeatable workflows</p>
+          <h2 class="h2-sec" data-i18n-html data-i18n="researchPage.harvesting.title">Schedule, compare, notify</h2>
+          <p class="copy-lg" data-i18n="researchPage.harvesting.sub">When the operator enables scheduling, <code class="ic">--repeat</code> can rerun a workflow and compare memory or stored findings. Notifications through a configured webhook, Telegram or email channel remain optional and policy-controlled.</p>
         </div>
         <div class="code-card">
           <pre><code># Run every 24 hours, alert on new contacts
@@ -153,19 +153,17 @@ fathom run --repeat 86400 \
   "Find VP Engineering at Series B startups in SF"
 
 # Watch mode output:
-# ── New contacts found (3) ──
-# • Jane Doe, VP Engineering, Acme Inc
-#   jane@acme.com · +1-555-0123
-# • Bob Smith, CTO, Beta Labs
-#   bob@beta.io · LinkedIn: /in/bobsmith</code></pre>
+# ── Findings changed since the previous run ──
+# Reviewable contacts, evidence and gaps are written
+# according to the configured output and approval policy.</code></pre>
         </div>
       </div>
 
       <!-- CRM & EXPORT -->
       <div class="sec-head center reveal" style="margin-top:72px">
-        <p class="eyebrow" data-i18n="researchPage.crm.badge">CRM & export</p>
-        <h2 class="h2-sec" data-i18n-html data-i18n="researchPage.crm.title">Zero-duplicate sync to your CRM</h2>
-        <p class="copy-lg mx-auto" data-i18n="researchPage.crm.sub">Push up to 4 contacts concurrently with one automatic retry. crm_id prevents re-pushing already-synced contacts. Export contacts as CSV, vCard 3.0, JSON or Excel.</p>
+<p class="eyebrow" data-i18n="researchPage.crm.badge">Handoff and export</p>
+        <h2 class="h2-sec" data-i18n-html data-i18n="researchPage.crm.title">Prepare findings for the next step</h2>
+        <p class="copy-lg mx-auto" data-i18n="researchPage.crm.sub">Export contacts and reports as CSV, vCard, JSON or Excel. A worker can hand findings to amoCRM, Bitrix24, HubSpot or another configured integration after deduplication and any required approval; integrations are not enabled by default.</p>
       </div>
 
       <div class="export-strip">
@@ -190,8 +188,8 @@ fathom run --repeat 86400 \
       <!-- CTA -->
       <div class="research-cta">
         <div class="bench-card-lg">
-          <h3 data-i18n="researchPage.cta.title">Run your first research</h3>
-          <p class="bench-sub" data-i18n="researchPage.cta.sub">Install Fathom and generate a verified lead list in minutes.</p>
+          <h3 data-i18n="researchPage.cta.title">Run a research workflow</h3>
+          <p class="bench-sub" data-i18n="researchPage.cta.sub">Install Fathom, configure the worker's tools and ask it to produce reviewable findings.</p>
           <div class="code-card" style="max-width:560px">
             <pre><code>curl -sSf https://fathom.uz/install.sh | sh
 fathom run "Find CTOs at fintech startups in Berlin"</code></pre>

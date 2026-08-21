@@ -21,10 +21,10 @@ export function SettingsPanel() {
 
   return (
     <div className="p-6 space-y-4">
-      <h2 className="text-sm font-semibold text-gray-300">Settings</h2>
+      <h2 className="text-sm font-semibold text-gray-300">Fathom connection settings</h2>
 
       <div className="space-y-1">
-        <label className="text-xs text-gray-500">Fathom Engine URL</label>
+        <label className="text-xs text-gray-500">Fathom worker runtime URL</label>
         <input value={url} onChange={e => setUrl(e.target.value)}
           className="w-full p-2 rounded-md bg-[#141414] border border-white/[0.06] text-sm text-gray-200 outline-none focus:border-gray-500" />
       </div>

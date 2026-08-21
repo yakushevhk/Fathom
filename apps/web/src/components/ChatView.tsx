@@ -96,7 +96,7 @@ export function ChatView({ sessionId }: ChatViewProps) {
           setMessages(prev => [...prev, {
             id: `question-${event.request_id}`,
             type: 'system',
-            content: `❓ Worker is asking: ${event.question as string}`,
+            content: `❓ Worker needs an operator answer: ${event.question as string}`,
             timestamp: new Date(),
             agentId: event.agent_id as string,
           }])
@@ -252,7 +252,7 @@ export function ChatView({ sessionId }: ChatViewProps) {
       {/* Pending approval banner */}
       {approval && (
         <div className="border-b border-yellow-500/20 bg-yellow-500/5 p-3 animate-fade-in shrink-0">
-          <div className="text-xs text-yellow-300 font-medium mb-1">Worker tool needs approval</div>
+          <div className="text-xs text-yellow-300 font-medium mb-1">Worker action needs operator approval</div>
           <div className="text-sm text-gray-200 font-mono mb-1">{approval.tool}</div>
           <div className="text-xs text-gray-400 font-mono bg-black/40 rounded p-2 mb-2 whitespace-pre-wrap max-h-20 overflow-y-auto">{approval.argsPreview}</div>
           <div className="flex gap-2">
@@ -302,7 +302,7 @@ export function ChatView({ sessionId }: ChatViewProps) {
         {/* Results */}
         {results && (
           <div className="py-4 animate-fade-in">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-green-500 mb-2">Final Report</div>
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-green-500 mb-2">Session result</div>
             <div className="rounded-lg border border-white/[0.08] bg-[#141414] p-4">
               <Markdown className="text-sm">{results.summary}</Markdown>
               {results.findings.length > 0 && (
@@ -339,7 +339,7 @@ export function ChatView({ sessionId }: ChatViewProps) {
               }
             }}
             aria-label="Send a message to the worker"
-            placeholder="Send a message or steer the worker..."
+            placeholder="Send guidance or steer this worker…"
             className="flex-1 p-2.5 rounded-md bg-[#141414] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 outline-none focus:border-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gray-300 transition-colors"
           />
           <button
@@ -359,7 +359,7 @@ export function ChatView({ sessionId }: ChatViewProps) {
 function SessionHeader({ sessionId }: { sessionId: string }) {
   return (
     <>
-      <span className="text-gray-500 mr-2">Session</span>
+      <span className="text-gray-500 mr-2">Worker session</span>
       <span className="font-mono text-gray-300">{sessionId.slice(0, 8)}</span>
       <a
         href={`${typeof window !== 'undefined' ? localStorage.getItem('fathom_base_url') || 'http://127.0.0.1:8080' : ''}/`}

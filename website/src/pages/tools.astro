@@ -5,7 +5,7 @@ const categories = [
   {
     key: 'web', name: 'Web',
     icon: '🌐',
-    desc: 'Multi-source search and fetching across 7 backends.',
+    desc: 'Multi-source search and fetching through configured backends.',
     tools: ['web_search', 'web_fetch', 'web_crawl', 'web_feed'],
   },
   {
@@ -35,7 +35,7 @@ const categories = [
   {
     key: 'browser', name: 'Browser (CDP)',
     icon: '🖥️',
-    desc: 'Drive a real Chrome via DevTools Protocol.',
+    desc: 'Drive a configured, reachable Chrome session through DevTools Protocol.',
     tools: ['browser_navigate', 'browser_screenshot', 'browser_click', 'browser_type', 'browser_extract'],
   },
   {
@@ -47,7 +47,7 @@ const categories = [
   {
     key: 'git', name: 'Git',
     icon: '🔀',
-    desc: 'Status, diffs, and safe commits/pushes.',
+    desc: 'Status, diffs, and commits or pushes subject to operator policy.',
     tools: ['git_status', 'git_diff', 'git_log', 'git_add', 'git_commit', 'git_push'],
   },
   {
@@ -100,8 +100,8 @@ const categories = [
     <div class="container">
       <div class="tools-hero">
         <p class="eyebrow" data-i18n="tools.hero.badge">Tools</p>
-        <h1 class="h2-sec" data-i18n-html data-i18n="tools.hero.title1">51 always-registered tools<br /><span class="muted">(+up to 5 CDP browser + up to 6 computer when configured)</span></h1>
-        <p class="copy-lg mx-auto" data-i18n="tools.hero.sub">Every tool implements a single <code class="inline-code">Tool</code> trait and runs in a parallel-safe registry. Read-only tools execute concurrently; writes serialize automatically.</p>
+        <h1 class="h2-sec" data-i18n-html data-i18n="tools.hero.title1">A composable worker toolset<br /><span class="muted">(browser and computer tools are optional, configured capabilities)</span></h1>
+        <p class="copy-lg mx-auto" data-i18n="tools.hero.sub">Workers call tools through a shared <code class="inline-code">Tool</code> registry. Read-only work may run concurrently; writes are coordinated according to runtime policy and path overlap.</p>
       </div>
 
       <div class="tools-grid">
@@ -127,10 +127,10 @@ const categories = [
 
       <div class="tools-cta">
         <div class="bench-card-lg">
-          <h3 data-i18n="tools.parallel.title">Fathom-safe by construction</h3>
-          <p class="bench-sub" data-i18n-html data-i18n="tools.parallel.sub">Each tool declares whether it is parallel-safe. Read-only tools (search, parse, fetch) run concurrently; writes serialize automatically with path-overlap detection. The <code class="inline-code">spawn_agent</code> tool supports batches of up to 8 tasks, optional <code class="inline-code">output_schema</code>, <code class="inline-code">isolated</code> execution and <code class="inline-code">handoff_to</code>.</p>
+          <h3 data-i18n="tools.parallel.title">Coordinate work with policy</h3>
+          <p class="bench-sub" data-i18n-html data-i18n="tools.parallel.sub">Each tool declares its concurrency and side-effect behavior. Read-only work may run concurrently; writes can be serialized and checked for path overlap. The <code class="inline-code">spawn_agent</code> tool supports task batches, optional <code class="inline-code">output_schema</code>, <code class="inline-code">isolated</code> execution and <code class="inline-code">handoff_to</code>, subject to configured limits and review gates.</p>
           <div class="more-links">
-            <a href="/benchmarks" class="btn btn-secondary" data-i18n="tools.parallel.numbers">See the numbers</a>
+            <a href="/benchmarks" class="btn btn-secondary" data-i18n="tools.parallel.numbers">See the benchmarks</a>
           </div>
         </div>
       </div>
@@ -138,7 +138,7 @@ const categories = [
       <div class="tools-cta">
         <div class="bench-card-lg">
           <h3 data-i18n="tools.mcp.title">Plus MCP</h3>
-          <p class="bench-sub" data-i18n-html data-i18n="tools.mcp.sub">The 51 always-registered tools are exposed to external MCP clients via <code class="inline-code">fathom mcp-serve</code>, and external MCP servers configured over stdio or HTTP are discovered and made available to agents.</p>
+          <p class="bench-sub" data-i18n-html data-i18n="tools.mcp.sub">The configured built-in tool registry is exposed to external MCP clients via <code class="inline-code">fathom mcp-serve</code>. External MCP servers configured over stdio or HTTP can be discovered and made available to workers.</p>
           <div class="more-links">
             <a href="/docs/tools" class="btn btn-primary" data-i18n="tools.mcp.docs">Full tool docs</a>
             <a href="/mcp" class="btn btn-secondary" data-i18n="tools.mcp.mcp">MCP both ways</a>

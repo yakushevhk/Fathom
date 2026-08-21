@@ -115,21 +115,22 @@ function translateHtml(html, lang, langRoot, pageUrl) {
     if (!node.tagName) return;
     const keys = node.attrs || [];
     const i18n = getAttr(node, 'data-i18n');
-    if (i18n) {
+    const htmlKey = getAttr(node, 'data-i18n-html');
+    if (htmlKey) {
+      // A bare data-i18n-html is a mode marker; use the paired data-i18n key.
+      const key = htmlKey.value || i18n?.value;
+      const val = key ? resolveKey(key, lang) : null;
+      if (val != null) {
+        node.childNodes = parse5.parseFragment(val).childNodes;
+      }
+      rmAttr(node, 'data-i18n-html');
+      rmAttr(node, 'data-i18n');
+    } else if (i18n) {
       const val = resolveKey(i18n.value, lang);
       if (val != null && val !== false) {
         replaceText(node, val);
       }
       rmAttr(node, 'data-i18n');
-    }
-    const htmlKey = getAttr(node, 'data-i18n-html');
-    if (htmlKey) {
-      const val = resolveKey(htmlKey.value, lang);
-      if (val != null) {
-        node.childNodes = [parse5.parseFragment(val)];
-      }
-      rmAttr(node, 'data-i18n-html');
-      rmAttr(node, 'data-i18n'); // safety
     }
     const ph = getAttr(node, 'data-i18n-placeholder');
     if (ph) {
@@ -149,9 +150,8 @@ function translateHtml(html, lang, langRoot, pageUrl) {
   }
 
   function replaceText(node, text) {
-    // keep child inline codes? For simplicity replace all children with text node.
-    const frag = parse5.parseFragment(text);
-    node.childNodes = frag.childNodes;
+    // Plain data-i18n values are text, not markup; parse5 serializes this node safely.
+    node.childNodes = [{ nodeName: '#text', value: String(text) }];
   }
 
   walkNodes(doc, (node) => {

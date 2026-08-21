@@ -2,27 +2,27 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="Integrations — Fathom" description="Connect Fathom to your existing stack — CRM, MCP, browser automation, notifications, search backends, and export formats.">
+<Layout title="Integrations — Fathom" description="Configure Fathom workers with CRM, MCP, optional browser and LSP services, notifications, search backends, and export formats.">
   <main class="integrations-page">
     <div class="container">
 
       <div class="int-hero">
         <p class="eyebrow" data-i18n="intPage.hero.badge">Integrations</p>
-        <h1 class="h2-sec" data-i18n="intPage.hero.title">Connect to your stack.</h1>
-        <p class="copy-lg mx-auto" data-i18n="intPage.hero.sub">CRM, MCP, browser automation, notifications, search backends, and export formats — Fathom plugs into the tools you already use.</p>
+        <h1 class="h2-sec" data-i18n="intPage.hero.title">Give workers the tools your stack already uses.</h1>
+        <p class="copy-lg mx-auto" data-i18n="intPage.hero.sub">Configure CRM, MCP, optional browser and LSP services, notifications, search backends, and export formats for self-hosted autonomous work.</p>
       </div>
 
       <div class="sec-head">
         <p class="eyebrow" data-i18n="intPage.categories.badge">Integration Categories</p>
-        <h2 class="h3-sec" data-i18n="intPage.categories.title">8 categories, one agent</h2>
-        <p class="copy-lg" data-i18n="intPage.categories.sub">Every integration is a first-class citizen. No plugins, no extensions — just configure and go.</p>
+        <h2 class="h3-sec" data-i18n="intPage.categories.title">Connectors for one worker runtime</h2>
+        <p class="copy-lg" data-i18n="intPage.categories.sub">Choose the connectors your deployment needs. Configure credentials and endpoints; workers discover available tools while governance controls side effects.</p>
       </div>
 
       <div class="api-grid api-grid--2col">
         <div class="api-card api-card--wide">
           <div class="api-icon">📊</div>
           <div class="api-name" data-i18n="intPage.categories.crm.name">CRM Sync</div>
-          <p data-i18n="intPage.categories.crm.desc">amoCRM (API v4), Bitrix24 (REST API), HubSpot (CRM v3). Automatic deduplication by crm_id, bounded concurrency of 4 parallel syncs, and retry with exponential backoff.</p>
+          <p data-i18n="intPage.categories.crm.desc">Configured amoCRM (API v4), Bitrix24 (REST API), and HubSpot (CRM v3) connectors let workers sync contacts and findings. Deduplication by crm_id and retry behavior depend on the connector configuration.</p>
           <div class="api-tags">
             <span class="api-tag">amoCRM</span>
             <span class="api-tag">Bitrix24</span>
@@ -33,7 +33,7 @@ import Layout from '../layouts/Layout.astro';
         <div class="api-card api-card--wide">
           <div class="api-icon">🔌</div>
           <div class="api-name" data-i18n="intPage.categories.mcp_client.name">MCP Client</div>
-          <p data-i18n="intPage.categories.mcp_client.desc">stdio and HTTP transports with dynamic tool discovery and reconnect handling. External tools become native agent tools automatically; configure them with the supported `name`, `transport`, `command`, `args`, and `url` fields.</p>
+          <p data-i18n="intPage.categories.mcp_client.desc">stdio and HTTP transports support dynamic tool discovery and reconnect handling. Configured external tools become available to workers subject to policy; define them with the supported `name`, `transport`, `command`, `args`, and `url` fields.</p>
           <div class="api-tags">
             <span class="api-tag">stdio</span>
             <span class="api-tag">Streamable HTTP</span>
@@ -44,9 +44,9 @@ import Layout from '../layouts/Layout.astro';
         <div class="api-card api-card--wide">
           <div class="api-icon">📡</div>
           <div class="api-name" data-i18n="intPage.categories.mcp_server.name">MCP Server</div>
-          <p data-i18n="intPage.categories.mcp_server.desc">mcp-serve exposes the 51 always-registered tools over Model Context Protocol and executes real tool calls. Up to 5 browser tools are added when CDP is reachable, and up to 6 computer tools when COMPUTER_URL is configured; any MCP client can drive the available toolbox.</p>
+          <p data-i18n="intPage.categories.mcp_server.desc">mcp-serve exposes the runtime's available tools over Model Context Protocol and executes real tool calls. Optional browser tools appear when a CDP endpoint is reachable, and computer tools appear when COMPUTER_URL is configured; MCP clients can drive the toolbox permitted by policy.</p>
           <div class="api-tags">
-            <span class="api-tag">51 always + up to 5 CDP + up to 6 computer</span>
+            <span class="api-tag">tools vary by configuration</span>
             <span class="api-tag">tools/list</span>
             <span class="api-tag">tools/call</span>
           </div>
@@ -55,7 +55,7 @@ import Layout from '../layouts/Layout.astro';
         <div class="api-card api-card--wide">
           <div class="api-icon">🖥️</div>
           <div class="api-name" data-i18n="intPage.categories.browser.name">Browser Automation</div>
-          <p data-i18n="intPage.categories.browser.desc">Chrome DevTools Protocol with 5 tools: navigate, screenshot, click, type, and extract. Drive a real Chrome instance for JS-heavy pages, SPAs, and authenticated sessions.</p>
+          <p data-i18n="intPage.categories.browser.desc">When an operator supplies a reachable Chrome DevTools Protocol endpoint, workers can use navigate, screenshot, click, type, and extract against that browser, including JS-heavy pages and authenticated sessions.</p>
           <div class="api-tags">
             <span class="api-tag">CDP</span>
             <span class="api-tag">navigate</span>
@@ -69,7 +69,7 @@ import Layout from '../layouts/Layout.astro';
         <div class="api-card api-card--wide">
           <div class="api-icon">📣</div>
           <div class="api-name" data-i18n="intPage.categories.notifications.name">Notifications</div>
-          <p data-i18n="intPage.categories.notifications.desc">Webhook (JSON POST), Email (SMTP via lettre), and Telegram Bot API. Fan-out delivery — send to all configured channels simultaneously. Best-effort with per-channel error isolation.</p>
+          <p data-i18n="intPage.categories.notifications.desc">Configured webhook (JSON POST), email (SMTP via lettre), or Telegram Bot API channels can receive run events. Fan-out and per-channel error isolation are runtime behaviors to verify in your deployment.</p>
           <div class="api-tags">
             <span class="api-tag">Webhook</span>
             <span class="api-tag">SMTP</span>
@@ -80,7 +80,7 @@ import Layout from '../layouts/Layout.astro';
         <div class="api-card api-card--wide">
           <div class="api-icon">🔍</div>
           <div class="api-name" data-i18n="intPage.categories.lsp.name">LSP Integration</div>
-          <p data-i18n="intPage.categories.lsp.desc">document_symbols, goto_definition, find_references, hover, and workspace_symbols via the Language Server Protocol. Auto-installs language servers for Rust, Python, TypeScript, and more.</p>
+          <p data-i18n="intPage.categories.lsp.desc">With a configured language-server command, workers can use document_symbols, goto_definition, find_references, hover, and workspace_symbols through LSP. Installation and supported languages remain operator-managed.</p>
           <div class="api-tags">
             <span class="api-tag">symbols</span>
             <span class="api-tag">definitions</span>
@@ -92,7 +92,7 @@ import Layout from '../layouts/Layout.astro';
         <div class="api-card api-card--wide">
           <div class="api-icon">🔎</div>
           <div class="api-name" data-i18n="intPage.categories.search.name">Search Backends</div>
-          <p data-i18n="intPage.categories.search.desc">7 backends out of the box: Linkup, Parallel.ai, Exa, Tavily, Serper, Brave, and DuckDuckGo. Switch per-query or set a default in config. Custom backends plug in via the SearchBackend trait.</p>
+          <p data-i18n="intPage.categories.search.desc">Configured search backends can include Linkup, Parallel.ai, Exa, Tavily, Serper, Brave, or DuckDuckGo. Select a default in config or per query where supported; custom implementations can use the SearchBackend trait.</p>
           <div class="api-tags">
             <span class="api-tag">Linkup</span>
             <span class="api-tag">Exa</span>
@@ -107,7 +107,7 @@ import Layout from '../layouts/Layout.astro';
         <div class="api-card api-card--wide">
           <div class="api-icon">📦</div>
           <div class="api-name" data-i18n="intPage.categories.export.name">Export Formats</div>
-          <p data-i18n="intPage.categories.export.desc">CSV (RFC 4180), vCard 3.0, JSON, XLSX, PDF, HTML, and DOCX. Every export is streamable and works with any tool that produces structured output — contacts, findings, research reports.</p>
+          <p data-i18n="intPage.categories.export.desc">Workers can export structured results as CSV (RFC 4180), vCard 3.0, JSON, XLSX, PDF, HTML, or DOCX where the corresponding exporter is enabled — contacts, findings, and reports included.</p>
           <div class="api-tags">
             <span class="api-tag">CSV</span>
             <span class="api-tag">vCard</span>
@@ -123,8 +123,8 @@ import Layout from '../layouts/Layout.astro';
       <div class="feat feat-reverse">
         <div class="feat-copy">
           <p class="eyebrow" data-i18n="intPage.config.badge">Configuration</p>
-          <h2 class="h3-sec" data-i18n="intPage.config.title">One file, all integrations</h2>
-          <p class="copy-lg" data-i18n="intPage.config.sub">Every integration is configured in ~/.fathom/config.toml. CRM credentials, MCP server definitions, notification channels, search backends — all in one place. No code changes required.</p>
+          <h2 class="h3-sec" data-i18n="intPage.config.title">Configure the runtime you operate</h2>
+          <p class="copy-lg" data-i18n="intPage.config.sub">The self-hosted runtime reads integration settings from ~/.fathom/config.toml where supported. Define CRM credentials, MCP servers, notification channels, and search defaults; some services also require their own endpoint or process.</p>
           <div class="more-links">
             <a href="/docs" class="btn btn-primary" data-i18n="intPage.config.docs">Full documentation</a>
           </div>
@@ -161,8 +161,8 @@ tavily_api_key = "..."</code></pre>
       </div>
 
       <div class="int-cta">
-        <h2 class="h3-sec" data-i18n="intPage.cta.title">Plug in and go</h2>
-        <p class="copy-lg mx-auto" data-i18n="intPage.cta.sub">Every integration works out of the box. Configure credentials, start the agent, and watch it sync contacts, notify channels, and export results automatically.</p>
+        <h2 class="h3-sec" data-i18n="intPage.cta.title">Connect deliberately, then run</h2>
+        <p class="copy-lg mx-auto" data-i18n="intPage.cta.sub">Configure only the credentials and services your workers need, start the runtime, and let governed tool calls sync contacts, notify channels, or export results under your operator policy.</p>
         <div class="cta-actions">
           <a href="/docs" class="btn btn-primary" data-i18n="intPage.cta.docs">Read the docs</a>
           <a href="/tools" class="btn btn-secondary" data-i18n="intPage.cta.tools">Browse tools</a>

@@ -12,13 +12,13 @@ const stages = [
 const dataPoints = ['Work emails', 'Phone numbers', 'Social profiles (LinkedIn, X, Telegram…)', 'Persons & roles', 'Companies & structure', 'Locations', 'Technologies & signals'];
 ---
 
-<Layout title="Lead Generation Workers — Fathom" description="Deploy autonomous workers to find, extract, verify, and organize contacts with reviewable CRM sync.">
+<Layout title="Lead Discovery Workflow — Fathom" description="Use autonomous workers to discover, verify, and organize contact context as a governed workflow with reviewable handoffs.">
   <main class="lg-page">
     <div class="container">
       <div class="lg-hero">
         <p class="eyebrow"><a href="/features" class="crumb">Features</a> / <span data-i18n-html data-i18n="featuresLeadgen.hero.crumb">Lead Generation</span></p>
-        <h1 class="h2-sec" data-i18n-html data-i18n="featuresLeadgen.hero.title">From a query to a<br />verified lead list.</h1>
-        <p class="copy-lg mx-auto" data-i18n="featuresLeadgen.hero.sub">A governed worker pipeline finds contacts across the web, verifies each data point, deduplicates sources, and prepares approved CRM updates.</p>
+        <h1 class="h2-sec" data-i18n-html data-i18n="featuresLeadgen.hero.title">A worker workflow for<br />contact discovery.</h1>
+        <p class="copy-lg mx-auto" data-i18n="featuresLeadgen.hero.sub">As one example workflow, a governed worker can search configured sources, verify evidence, deduplicate records, and prepare CRM handoffs for review.</p>
       </div>
 
       <!-- Pipeline -->
@@ -49,8 +49,8 @@ const dataPoints = ['Work emails', 'Phone numbers', 'Social profiles (LinkedIn, 
       <div class="feat">
         <div class="feat-copy">
           <p class="eyebrow" data-i18n="featuresLeadgen.verify.badge">Verification</p>
-          <h2 class="h3-sec" data-i18n="featuresLeadgen.verify.title">Every contact is verified</h2>
-          <p class="copy-lg" data-i18n="featuresLeadgen.verify.desc">Bounced emails and wrong numbers waste outreach budget. Fathom MX-validates every email, format-checks every phone and confirms social profiles exist before anything is saved.</p>
+          <h2 class="h3-sec" data-i18n="featuresLeadgen.verify.title">Evidence stays reviewable</h2>
+          <p class="copy-lg" data-i18n="featuresLeadgen.verify.desc">Workers can run syntax, DNS, phone-format and profile checks when those services are available. Confidence, receipts and policy gates keep uncertain data visible before a human-approved save or sync.</p>
         </div>
         <div class="mini-table-wrap">
           <table class="mini-table">
@@ -71,7 +71,7 @@ const dataPoints = ['Work emails', 'Phone numbers', 'Social profiles (LinkedIn, 
         <div class="feat-copy">
           <p class="eyebrow" data-i18n="featuresLeadgen.dedup.badge">Deduplication</p>
           <h2 class="h3-sec" data-i18n="featuresLeadgen.dedup.title">Smart merge across sources</h2>
-          <p class="copy-lg" data-i18n="featuresLeadgen.dedup.desc">The same person appears on LinkedIn, corporate sites and news. save_contacts normalizes emails and phones, merges records and keeps one canonical contact — re-runs never create duplicates.</p>
+          <p class="copy-lg" data-i18n="featuresLeadgen.dedup.desc">The same person can appear across sources. <code>save_contacts</code> normalizes emails and phones, merges records, and keeps one canonical contact for operator review.</p>
         </div>
         <div class="code-card">
           <pre><code>{`# deterministic autosave during runs
@@ -102,10 +102,10 @@ save_contacts {
         <h2 class="h3-sec" data-i18n="featuresLeadgen.results.title">What you get in 3 minutes</h2>
       </div>
       <div class="bench-strip">
-        <div class="bench-card"><div class="metric">47</div><div class="cap" data-i18n="featuresLeadgen.results.0">contacts per typical query</div></div>
-        <div class="bench-card"><div class="metric">12+</div><div class="cap" data-i18n-html data-i18n="featuresLeadgen.results.1">verified emails &amp; phones</div></div>
-        <div class="bench-card"><div class="metric">0</div><div class="cap" data-i18n="featuresLeadgen.results.2">duplicates after merge</div></div>
-        <div class="bench-card"><div class="metric">3</div><div class="cap" data-i18n="featuresLeadgen.results.3">CRMs supported out of the box</div></div>
+        <div class="bench-card"><div class="metric">Evidence</div><div class="cap" data-i18n="featuresLeadgen.results.0">source links and confidence metadata</div></div>
+        <div class="bench-card"><div class="metric">Review</div><div class="cap" data-i18n-html data-i18n="featuresLeadgen.results.1">approval before side effects</div></div>
+        <div class="bench-card"><div class="metric">Merge</div><div class="cap" data-i18n="featuresLeadgen.results.2">normalized records and deduplication</div></div>
+        <div class="bench-card"><div class="metric">Adapt</div><div class="cap" data-i18n="featuresLeadgen.results.3">optional CRM or file handoff</div></div>
       </div>
 
       <div class="cta-strip">

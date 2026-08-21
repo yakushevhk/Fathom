@@ -13,31 +13,31 @@ const crew = [
 ];
 
 const capabilities = [
-  { n: '7 search backends', d: 'Linkup, Parallel.ai, Exa, Tavily, Serper, Brave and key-free DuckDuckGo. Pick a single engine, or let hybrid and smart modes put all of them to work behind one web_search call.' },
-  { n: 'hybrid mode (default)', d: 'A priority chain: Linkup → Exa → Tavily → Serper → Brave → Parallel.ai → DuckDuckGo. Engines are tried in order and the first non-empty result set wins — resilient, cheap, always answered.' },
+  { n: 'Configurable search backends', d: 'Configured providers can be selected individually, or hybrid and smart modes can put available engines behind one web_search call. The runtime keeps the interface stable while deployments choose their providers.' },
+  { n: 'hybrid mode (default)', d: 'A priority chain tries configured engines in order and uses the first non-empty result set. The runtime reports when no configured source answers instead of inventing coverage.' },
   { n: 'smart mode + RRF', d: 'All configured engines run in parallel via tokio::join!. Results are deduped by normalized URL and ranked with reciprocal rank fusion (k=60), so pages confirmed by several engines end up on top.' },
-  { n: 'Social & news surfaces', d: 'search_social covers Twitter/X (API v2 or site-restricted web fallback), Telegram (t.me previews with bios and subscriber counts) and LinkedIn. search_news uses the Serper news endpoint or key-free Google News RSS, with heuristic person/company extraction.' },
-  { n: 'Directories & registries', d: 'search_business_directory queries 2GIS, Google Maps, Yandex Maps and Yellow Pages in parallel and merges the results: names, categories, addresses, phones, websites, emails, ratings and review counts.' },
-  { n: 'find_leads: full pipeline', d: 'One call chains business directories → corporate-site parsing (≤ 6 sites) → social role search (≤ 3 roles) → email attribution, deduplication and confidence ranking in [0, 1]. A ready-made outreach list.' },
+  { n: 'Social & news surfaces', d: 'search_social and search_news can use configured APIs or public web/RSS surfaces, with heuristic entity extraction and provenance retained for review.' },
+  { n: 'Directories & registries', d: 'search_business_directory can query configured directories in parallel and merge records such as names, categories, addresses, phones, websites, and provenance when those fields are available.' },
+  { n: 'Composable discovery pipeline', d: 'A worker can chain directory lookup, site parsing, social search, attribution, deduplication, and confidence ranking into a reusable workflow. Lead discovery is one downstream use, not the product identity.' },
 ];
 
 const flow = [
-  { t: 'Pick the surface', d: 'The agent decides where the answer lives: open web, social profiles, press coverage, business directories — or all of them at once via find_leads.' },
-  { t: 'Fan out to backends', d: 'Every configured engine runs in parallel with a 20s per-source timeout: six APIs plus key-free DuckDuckGo as the universal fallback.' },
+  { t: 'Pick the surface', d: 'The worker chooses the right source for the mission: open web, repositories, documents, social profiles, press coverage, or configured directories.' },
+  { t: 'Fan out to backends', d: 'Configured engines can run in parallel with per-source timeouts; unavailable providers are reported rather than hidden behind assumptions.' },
   { t: 'Guard & fetch', d: 'Each URL passes the SSRF guard — every resolved IP must be public. Redirects are followed manually, at most 5 hops, re-validated per hop.' },
   { t: 'Fuse & rank', d: 'smart mode normalizes URLs (case, fragment, trailing slash), dedupes and scores with RRF: each rank r contributes 1 / (60 + r) — multi-engine hits win.' },
   { t: 'Feed forward', d: 'Ranked results with source metadata go to fetching and extraction; the session’s fetch and MX caches (10-minute TTL) make follow-up reads instant.' },
 ];
 
 const hood = [
-  ['[search] backend', 'hybrid (default) · smart · linkup · parallel · exa · tavily · serper · brave · anything else → DuckDuckGo'],
-  ['hybrid order', 'Linkup → Exa → Tavily → Serper → Brave → Parallel.ai → DuckDuckGo; first non-empty result set wins'],
+  ['[search] backend', 'hybrid (default) · smart · or a selected configured engine; provider availability is surfaced to the operator'],
+  ['hybrid order', 'Configured engines are tried in priority order; the first non-empty result set wins and unavailable sources remain visible'],
   ['smart fusion', 'all configured engines in parallel; dedup by normalized URL; RRF score Σ 1 / (60 + rank)'],
   ['results', 'snippets capped at 1,000 chars; limit default 10, max 50; structured source metadata for sources.md'],
-  ['directories', '2GIS · Google Maps · Yandex Maps (API keys) · Yellow Pages US (key-free); ≤ 20 results per source, merged and deduped'],
-  ['news', 'Serper news endpoint with a key, Google News RSS without; ≤ 8 mentioned entities extracted per article'],
-  ['social', 'X API v2 or site-restricted web search · Telegram t.me previews (top 5 enriched) · LinkedIn site-restricted search'],
-  ['find_leads', '≤ 6 corporate sites parsed · ≤ 3 role queries · limit clamped 1–100 · confidence score in [0, 1]'],
+  ['directories', 'Configured directory sources are queried within their limits, then merged and deduplicated with provenance retained'],
+  ['news', 'Configured news APIs or public RSS; mentioned entities are extracted heuristically and kept with source provenance'],
+  ['social', 'Configured social APIs or public profile pages; blocked responses are reported and provenance remains attached'],
+  ['discovery pipeline', 'Configured sources can be composed for site parsing, role queries, attribution, and confidence scoring'],
   ['SSRF guard', 'loopback / RFC1918 / link-local / cloud-metadata IPs blocked on every resolved address; ≤ 5 redirects, each hop re-validated'],
   ['caches', 'session-shared fetch cache (64 entries) and MX cache (256 entries), TTL 10 minutes, inherited by every agent'],
 ];
@@ -77,7 +77,7 @@ const tools = [
       <!-- What it does -->
       <div class="sec-head">
         <p class="eyebrow" data-i18n="agents.searching.what.eyebrow">What it does</p>
-        <h2 class="h3-sec" data-i18n="agents.searching.what.title">Seven engines, one result set</h2>
+        <h2 class="h3-sec" data-i18n="agents.searching.what.title">Many sources, one result set</h2>
       </div>
       <div class="api-grid">
         {capabilities.map((c) => (
@@ -142,9 +142,9 @@ const tools = [
         </div>
         <div class="code-card">
           <pre><code>{`web_search "fintech CTO Berlin"   (smart mode)
-  linkup 10 · exa 8 · tavily 10 · serper 10
-  brave 9 · parallel 7 · duckduckgo: fallback only
-dedupe by normalized URL        54 → 38 unique
+  engine A 10 · engine B 8 · engine C 10 · engine D 10
+  configured fallback sources remain explicit
+ dedupe by normalized URL        54 → 38 unique
 RRF score  =  Σ 1 / (60 + rank)  across engines
 top-10 → fetch → extract → verify contacts`}</code></pre>
         </div>

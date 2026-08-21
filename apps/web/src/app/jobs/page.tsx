@@ -84,20 +84,20 @@ export default function JobsPage() {
   return (
     <div className="flex-1 flex flex-col min-w-0">
       <div className="h-9 flex items-center px-4 border-b border-white/[0.06] text-xs text-gray-400 shrink-0">
-        Work / Tasks
+        Work / Jobs
       </div>
       <main className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-6">
         <header>
           <p className="ops-kicker">Work queue</p>
-          <h1 className="text-xl sm:text-2xl text-gray-100 font-medium tracking-tight mt-2">Submit and monitor tasks</h1>
-          <p className="text-sm text-gray-500 mt-2 max-w-2xl">Send work to the autonomous worker fleet and follow each task from queue to completion.</p>
+          <h1 className="text-xl sm:text-2xl text-gray-100 font-medium tracking-tight mt-2">Dispatch and monitor jobs</h1>
+          <p className="text-sm text-gray-500 mt-2 max-w-2xl">Dispatch work to the remote worker runtime and follow each job from queue to completion.</p>
         </header>
 
         <section className="ops-panel" aria-labelledby="submit-task-heading">
           <div className="ops-panel-head">
             <div>
               <p className="ops-kicker">Dispatch</p>
-              <h2 id="submit-task-heading">Submit a task</h2>
+              <h2 id="submit-task-heading">Dispatch a job</h2>
             </div>
           </div>
           <form onSubmit={e => { e.preventDefault(); create() }} className="flex flex-col sm:flex-row gap-2">
@@ -106,12 +106,12 @@ export default function JobsPage() {
               id="new-task"
               value={task}
               onChange={e => setTask(e.target.value)}
-              placeholder="Describe work for an autonomous worker…"
+              placeholder="Describe work for a remote autonomous worker…"
               className="ops-input flex-1 min-w-0"
               disabled={creating}
             />
             <button type="submit" disabled={creating || !task.trim()} className="ops-button-primary w-full sm:w-auto justify-center">
-              {creating ? 'Submitting…' : 'Submit task'}
+              {creating ? 'Submitting…' : 'Dispatch job'}
             </button>
           </form>
           {createError && <div className="ops-alert mt-3" role="alert"><span>TASK NOT SUBMITTED</span>{createError}</div>}
@@ -129,7 +129,7 @@ export default function JobsPage() {
           <div className="ops-panel-head">
             <div>
               <p className="ops-kicker">Execution</p>
-              <h2 id="task-queue-heading">Task queue</h2>
+              <h2 id="task-queue-heading">Job queue</h2>
             </div>
             {!loading && !fetchError && <span className="text-[10px] text-gray-600">{jobs.length} {jobs.length === 1 ? 'task' : 'tasks'}</span>}
           </div>
@@ -138,7 +138,7 @@ export default function JobsPage() {
           ) : fetchError ? (
             <div className="ops-panel text-xs text-gray-500">Task data is unavailable until the control plane reconnects.</div>
           ) : jobs.length === 0 ? (
-            <div className="ops-panel text-xs text-gray-500">No tasks yet. Submit work above to dispatch your first task.</div>
+            <div className="ops-panel text-xs text-gray-500">No jobs yet. Dispatch work above to start the first autonomous run.</div>
           ) : (
             <div className="space-y-2">
               {jobs.map(j => (
@@ -160,7 +160,7 @@ export default function JobsPage() {
 
                   {logId === j.id && (
                     <div className="mt-3 border-t border-white/[0.06] pt-3">
-                      <div className="text-[10px] text-gray-500 mb-1">Task log</div>
+                      <div className="text-[10px] text-gray-500 mb-1">Job log</div>
                       <pre className="text-[10px] text-gray-400 font-mono bg-black/40 rounded p-2 max-h-48 overflow-y-auto whitespace-pre-wrap break-words">{logLoading ? 'Loading…' : logContent || '(empty)'}</pre>
                     </div>
                   )}

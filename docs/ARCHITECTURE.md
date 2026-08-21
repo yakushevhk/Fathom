@@ -1,6 +1,8 @@
 # Architecture
 
-Fathom is a modular system of **12 crates** in a Cargo workspace. The core is built around an async agent loop on `tokio` with a broadcast-channel event bus, a pluggable tool execution pipeline, and a coordinator that decomposes work across sub-agents. Every component is designed for observability, crash recovery, and graceful degradation. On top of research and outreach, Fathom is a universal autonomous AI worker: it can operate a real browser (computer use), enforce governed policy with an audit trail, and run as persistent scheduled coworkers.
+Fathom is a self-hosted Rust runtime for autonomous remote AI workers, organized as a modular **12-crate** Cargo workspace. The core combines a `tokio` agent loop, broadcast event bus, pluggable tool execution, persistence, and a coordinator that can delegate work to sub-agents. Research is one workflow, not the system boundary: the same runtime can plan tool-driven code, data, browser, or recurring tasks when the relevant tools and services are configured. HTTP/SSE/AG-UI, TUI, MCP, memory, governance, credentials, notifications, replay, observability, and optional computer supervision sit around that runtime.
+
+The diagrams and module notes below describe implemented boundaries rather than a hosted product. Integrations are optional and their behavior depends on configuration, credentials, and external service availability.
 
 ---
 
@@ -425,7 +427,7 @@ Axum HTTP API (details in [HTTP-API.md](HTTP-API.md)):
 - **Control plane** — The `POST /api/v1/sessions/:id/answer` and `POST /api/v1/sessions/:id/approve` endpoints resolve pending `question` and `approval` requests by sending the operator's response through the oneshot channel to the waiting agent.
 - **Auth** — API key authentication via `X-API-Key` header, rate limiting (default 120 requests/minute per client, configurable via `FATHOM_RATE_LIMIT` env var), Prometheus metrics for request duration, total requests, and in-flight sessions.
 - **Embedded dashboard** — The server serves its embedded dashboard page at `GET /dashboard`. It provides a read-only live view of sessions, agents, events, and memory state, consuming the same REST/SSE API that external clients use.
-- **AG-UI stream** — `GET /ag-ui/events` exposes versioned AG-UI event envelopes with bounded reconnect replay via `Last-Event-ID`; `GET /ag-ui/health` is the liveness probe.
+- **AG-UI compatibility stream** — `GET /api/v1/ag-ui/events` exposes read-only versioned event envelopes with bounded reconnect replay via `Last-Event-ID`; `GET /api/v1/ag-ui/health` reports bridge capabilities.
 - **Computer relay** — `GET/POST /api/v1/computers/:agent_id/*` proxies the computer service (snapshot, navigate, click, type, key, screenshot, screen, files, control, ensure, stop, reset) and routes to the right Docker container per agent via the supervisor.
 - **Governance** — `GET /api/v1/governance/audit` lists authorization decisions and `POST /api/v1/governance/decide` evaluates actions; `/api/v1/credentials` manages the AES-256-GCM encrypted credentials vault (operator-only, plaintext never returned).
 - **Coworkers / channels / schedules** — full lifecycle management of persistent autonomous workers: lifelong profiles (`/coworkers`), symbolic delivery channels (`/channels`), and cron-like timers with atomic claim (`/schedules`, `/schedules/claim`).

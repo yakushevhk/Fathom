@@ -24,7 +24,7 @@ export default {
       "2": { title: { en: 'Verify', ru: 'Проверка' }, desc: { en: 'verify_email, verify_phone and verify_social_profile filter the noise and score confidence.', ru: 'verify_email, verify_phone и verify_social_profile отсеивают шум и оценивают уверенность.' } },
       "3": { title: { en: 'Enrich', ru: 'Обогащение' }, desc: { en: 'enrich_company and enrich_person add industry, size, location, role and buying signals.', ru: 'enrich_company и enrich_person добавляют отрасль, размер, локацию, роль и сигналы спроса.' } },
       "4": { title: { en: 'ContactDb', ru: 'ContactDb' }, desc: { en: 'SQLite or PostgreSQL store; dedup and merge on normalized emails and phones.', ru: 'Хранилище SQLite или PostgreSQL; дедуп и слияние по нормализованным email и телефонам.' } },
-      "5": { title: { en: 'CRM', ru: 'CRM' }, desc: { en: 'Sync into amoCRM, Bitrix24 or HubSpot — dedup by crm_id, no duplicates on re-runs.', ru: 'Синхронизация в amoCRM, Bitrix24 или HubSpot — дедуп по crm_id, без дублей при повторных прогонах.' } },
+      "5": { title: { en: 'CRM', ru: 'CRM' }, desc: { en: 'When configured, hand off approved records to a CRM adapter with crm_id-aware deduplication.', ru: 'При настройке передавайте одобренные записи в CRM-адаптер с дедупликацией по crm_id.' } },
       "6": { title: { en: 'Report', ru: 'Отчёт' }, desc: { en: 'summary.md plus a contact table, exported to CSV, vCard, JSON or Excel.', ru: 'summary.md плюс таблица контактов, экспорт в CSV, vCard, JSON или Excel.' } },
     },
     verify: {
@@ -40,7 +40,7 @@ export default {
     storage: {
       badge: { en: 'Storage', ru: 'Хранилище' },
       title: { en: 'ContactDb — one canonical record', ru: 'ContactDb — одна каноническая запись' },
-      desc: { en: 'Contacts land in SQLite out of the box — or PostgreSQL for large bases, same interface. Dedup and merge run on normalized emails and phones, so re-runs and overlapping sources never create double records. Tags and notes attach per contact; the whole schema is yours to query.', ru: 'Контакты попадают в SQLite из коробки — или в PostgreSQL для больших баз, с тем же интерфейсом. Дедуп и слияние работают по нормализованным email и телефонам, так что повторные прогоны и пересекающиеся источники не создают дублей. Теги и заметки прикрепляются к контакту; вся схема открыта для запросов.' },
+      desc: { en: 'Contact-oriented workflows can persist records in SQLite; PostgreSQL is available behind the same interface when configured. Dedup and merge run on normalized emails and phones, so re-runs and overlapping sources never create double records. Tags and notes attach per contact; the whole schema is yours to query.', ru: 'Контакты попадают в SQLite из коробки — или в PostgreSQL для больших баз, с тем же интерфейсом. Дедуп и слияние работают по нормализованным email и телефонам, так что повторные прогоны и пересекающиеся источники не создают дублей. Теги и заметки прикрепляются к контакту; вся схема открыта для запросов.' },
     },
     schema: {
       table: { en: 'Table', ru: 'Таблица' },

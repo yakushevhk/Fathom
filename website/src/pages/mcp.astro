@@ -7,8 +7,8 @@ import Layout from '../layouts/Layout.astro';
     <div class="container">
       <div class="mcp-hero">
         <p class="eyebrow" data-i18n="mcpPage.hero.badge">MCP</p>
-        <h1 class="h2-sec" data-i18n="mcpPage.hero.title">Both sides of the protocol.</h1>
-        <p class="copy-lg mx-auto" data-i18n="mcpPage.hero.sub">Fathom speaks Model Context Protocol in both directions: it consumes tools from external MCP servers and exposes its 51 always-registered tools to external MCP clients; up to 5 browser tools are added when CDP is reachable and up to 6 computer tools when COMPUTER_URL is configured.</p>
+        <h1 class="h2-sec" data-i18n="mcpPage.hero.title">Connect workers to MCP.</h1>
+        <p class="copy-lg mx-auto" data-i18n="mcpPage.hero.sub">Fathom speaks Model Context Protocol in both directions: workers can consume tools from configured external MCP servers and expose the currently registered built-in tools to MCP clients. Browser and computer tools appear only when their CDP or COMPUTER_URL integrations are configured and reachable.</p>
       </div>
 
       <div class="feat">
@@ -36,7 +36,7 @@ url = "https://mcp.example.com"</code></pre>
         <div class="feat-copy">
           <p class="eyebrow" data-i18n="mcpPage.server.badge">Server</p>
           <h2 class="h3-sec" data-i18n="mcpPage.server.title">Expose the whole toolbox</h2>
-          <p class="copy-lg" data-i18n-html data-i18n="mcpPage.server.sub"><code class="ic">fathom mcp-serve</code> exposes the 51 always-registered tools over MCP and actually executes <code class="ic">tools/call</code> — any MCP client can drive real web search, contact extraction and memory through Fathom; browser automation is available when CDP is reachable.</p>
+          <p class="copy-lg" data-i18n-html data-i18n="mcpPage.server.sub"><code class="ic">fathom mcp-serve</code> exposes the registered built-in tools over MCP and executes <code class="ic">tools/call</code> — an MCP client can drive configured web, extraction and memory workflows through Fathom; browser automation is available when CDP is configured and reachable, with side effects subject to governance.</p>
           <div class="more-links">
             <a href="/tools" class="btn btn-primary" data-i18n="mcpPage.server.browse">Browse the tools</a>
           </div>
@@ -44,10 +44,10 @@ url = "https://mcp.example.com"</code></pre>
         <div class="code-card">
           <pre><code>fathom mcp-serve
 
-# tools/list → web_search, extract_contacts,
-#   memory_search, hub, daemon, …
-#   browser_* appears when CDP is reachable
-# tools/call → real execution, real results</code></pre>
+# tools/list → registered tools such as
+#   web_search, memory_search, hub, daemon, …
+#   browser_* appears when CDP is configured/reachable
+# tools/call → execution subject to policy and approvals</code></pre>
         </div>
       </div>
 
@@ -55,7 +55,7 @@ url = "https://mcp.example.com"</code></pre>
         <div class="api-card"><div class="api-name" data-i18n="mcpPage.cards.transports.name">Transports</div><p data-i18n="mcpPage.cards.transports.d">stdio for local servers, Streamable HTTP for remote — both client and server side.</p></div>
         <div class="api-card"><div class="api-name" data-i18n="mcpPage.cards.oauth.name">HTTP auth</div><p data-i18n="mcpPage.cards.oauth.d">Configured HTTP MCP servers can use the authentication settings supported by their transport.</p></div>
         <div class="api-card"><div class="api-name" data-i18n="mcpPage.cards.discovery.name">Discovery</div><p data-i18n="mcpPage.cards.discovery.d">Tools are discovered dynamically at startup and after reconnects.</p></div>
-        <div class="api-card"><div class="api-name" data-i18n="mcpPage.cards.reconnect.name">Reconnect</div><p data-i18n="mcpPage.cards.reconnect.d">Dropped stdio/HTTP servers are reconnected without restarting the agent.</p></div>
+        <div class="api-card"><div class="api-name" data-i18n="mcpPage.cards.reconnect.name">Reconnect</div><p data-i18n="mcpPage.cards.reconnect.d">Configured stdio/HTTP servers may reconnect after a drop, depending on transport and runtime settings.</p></div>
       </div>
     </div>
   </main>

@@ -14,18 +14,18 @@ const crew = [
 
 const capabilities = [
   { n: 'The agent loop', d: 'LLM → tools → repeat, up to 50 iterations per agent — with true token streaming: text deltas arrive live, tool calls are assembled from stream fragments, and a broken stream falls back to a plain completion instead of failing.' },
-  { n: 'OSINT workflow, codified', d: 'The Researcher role prompt runs a fixed arc: locate targets (search_business_directory, find_leads) → harvest (parse_corporate_site, extract_contacts, search_social) → verify (verify_email, verify_phone, suggest_emails) → persist (save_contacts).' },
+  { n: 'Mission workflow, codified', d: 'A worker can compose a fixed arc: discover context → gather and inspect sources → verify key details → persist structured outputs. Research is one use case; the same loop supports code, operations, and knowledge work.' },
   { n: 'Hierarchical fan-out', d: 'spawn_agent grows a tree of sub-agents up to max_depth, with explicit context handoff and inherited token budgets. background mode detaches a child and delivers its result later as a notice — the parent keeps working.' },
   { n: 'Cite or it did not happen', d: 'A source-quality hierarchy ranks academic above official above news above blogs above forums. Every finding records its URL; sources.md dedupes citations across the whole fleet.' },
-  { n: 'Multi-format intake', d: 'web_fetch and web_crawl for pages, web_feed for RSS / Atom / sitemaps (~1.1M items/s in the built-in bench), analyze_image for screenshots and documents, pdf_extract for filings, code_symbols + repo_map for codebases.' },
+  { n: 'Multi-format intake', d: 'web_fetch and web_crawl for pages, web_feed for RSS / Atom / sitemaps, analyze_image for screenshots and documents, pdf_extract for filings, code_symbols + repo_map for codebases.' },
   { n: 'Untrusted by design', d: 'Fetched pages are framed as untrusted data and scanned for prompt-injection patterns before entering context; the SSRF guard blocks internal IPs on every fetch and every redirect hop.' },
 ];
 
 const flow = [
-  { t: 'Plan', d: 'The coordinator decomposes the request into 2–5 non-overlapping subtasks and persists them; lead-gen queries get per-task contact quotas.' },
-  { t: 'Fan out', d: 'Each subtask becomes a Researcher — an in-process JoinSet task or an isolated OS worker process — with its share of the session token budget.' },
-  { t: 'Research loop', d: 'Search → fetch → extract → record the source URL, again and again. Children spawn via spawn_agent up to max_depth; background children report back as notices.' },
-  { t: 'Reflect', d: 'A count-based check closes lead-gen quotas with a gap-filling round; Goal Mode’s LLM judge replans up to replan_rounds times until the goal is covered.' },
+  { t: 'Plan', d: 'The coordinator decomposes the request into non-overlapping subtasks and persists them; each task receives explicit context, limits, and review requirements.' },
+  { t: 'Fan out', d: 'Each subtask becomes a role-aware worker — an in-process JoinSet task or an isolated OS worker process — with its share of the session token budget.' },
+  { t: 'Worker loop', d: 'Inspect → transform → verify → record, with tools selected for the mission. Children spawn via spawn_agent up to max_depth; background children report back as notices.' },
+  { t: 'Reflect', d: 'Goal Mode’s LLM judge compares the work with the original goal and can request bounded gap-filling rounds until the goal is covered.' },
   { t: 'Hand off', d: 'Budget-capped summaries, structured findings, and deduped sources flow into synthesis and memory — reusable context for any downstream operation.' },
 ];
 
@@ -51,14 +51,14 @@ const tools = [
 ];
 ---
 
-<Layout title="Research Worker — Fathom" description="Research worker for autonomous web investigation, cited findings, code-aware analysis, and durable handoffs.">
+<Layout title="Research & Analysis Worker — Fathom" description="A reusable worker for source-aware analysis, code inspection, and durable handoffs across autonomous workflows.">
   <main class="ag-page">
     <div class="container">
       <!-- Hero -->
       <div class="ag-hero">
         <p class="eyebrow" data-i18n="agents.researcher.hero.eyebrow">AGENT 01 / 07</p>
         <h1 class="h2-sec" data-i18n="agents.researcher.hero.title">Researcher</h1>
-        <p class="copy-lg mx-auto" data-i18n="agents.researcher.hero.sub">A general-purpose research worker for the fleet. It searches the open web, reads primary sources, inspects code, and returns cited findings that any downstream task can use.</p>
+        <p class="copy-lg mx-auto" data-i18n="agents.researcher.hero.sub">A general-purpose worker for the fleet. It gathers context, inspects sources and code, and returns cited findings that any downstream task can use; web research is one mission among many.</p>
         <div class="hero-canvas">
           <AgentCanvas agents={[{ name: 'Researcher', mode: 'researcher', hue: 206 }]} />
         </div>
@@ -94,7 +94,7 @@ const tools = [
       <!-- How it works -->
       <div class="sec-head">
         <p class="eyebrow" data-i18n="agents.researcher.how.eyebrow">How it works</p>
-        <h2 class="h3-sec" data-i18n="agents.researcher.how.title">From query to cited findings</h2>
+        <h2 class="h3-sec" data-i18n="agents.researcher.how.title">From mission to durable findings</h2>
       </div>
       <div class="flow">
         {flow.map((s, i) => (
@@ -154,7 +154,7 @@ status       saved to contacts → CRM (dedup by crm_id)`}</code></pre>
 
       <!-- CTA -->
       <div class="cta-strip">
-        <h2 data-i18n="agents.researcher.cta.title">Truth in. Personal message out.</h2>
+        <h2 data-i18n="agents.researcher.cta.title">Grounded context in. Durable work out.</h2>
         <div class="cta-links">
           <a href="/agents/outreach" class="btn btn-secondary" data-i18n="agents.researcher.cta.prev">&larr; Outreach</a>
           <a href="/features/auto-outreach" class="btn btn-primary" data-i18n="agents.researcher.cta.auto">Auto outreach →</a>

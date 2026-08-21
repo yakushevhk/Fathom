@@ -87,8 +87,8 @@ export const translations = {
   },
   "footer": {
     "desc": {
-      "en": "Autonomous AI workers for research, code, computer use, scheduled operations, memory, and governed automation.",
-      "ru": "Автономные ИИ-воркеры для исследований, кода, работы за компьютером, операций по расписанию, памяти и управляемой автоматизации."
+      "en": "Self-hosted autonomous AI workers for research, code, computer use, scheduled operations, durable memory, and governed automation.",
+      "ru": "Автономные ИИ-воркеры в вашем контуре для исследований, кода, работы за компьютером, операций по расписанию, долговечной памяти и управляемой автоматизации."
     },
     "product": {
       "en": "Product",
@@ -175,8 +175,8 @@ export const translations = {
       "ru": "Профили"
     },
     "research": {
-      "en": "Research Engine",
-      "ru": "Исследовательский движок"
+      "en": "Research workflow",
+      "ru": "Исследовательский сценарий"
     },
     "dashboard": {
       "en": "Dashboard",
@@ -217,8 +217,8 @@ export const translations = {
       "ru": "Один рантайм — любой интерфейс"
     },
     "subtitle": {
-      "en": "Each layer is purpose-built. Together they form a research engine that scales from one query to thousands.",
-      "ru": "Каждый слой создан под свою задачу. Вместе они образуют движок исследований, который масштабируется от одного запроса до тысяч."
+      "en": "Each layer is purpose-built. Together they form a self-hosted runtime for planning, delegation, tools, memory, governance, and operator interfaces.",
+      "ru": "Каждый слой создан под свою задачу. Вместе они образуют рантайм в вашем контуре для планирования, делегирования, инструментов, памяти, управления и интерфейсов оператора."
     },
     "core_label": {
       "en": "Core",
@@ -249,8 +249,8 @@ export const translations = {
       "ru": "Инструменты"
     },
     "tools_desc": {
-      "en": "51 always + up to 5 CDP + up to 6 computer tools",
-      "ru": "51 всегда зарегистрированный инструмент + до 5 CDP-браузерных + до 6 компьютерных"
+      "en": "Built-in tools plus optional CDP and computer services",
+      "ru": "Встроенные инструменты и опциональные CDP и компьютерные сервисы"
     },
     "mcp_label": {
       "en": "MCP",
@@ -307,7 +307,7 @@ export const translations = {
       "ru": "Мультиагентная оркестрация"
     },
     "m1d": {
-      "en": "A coordinator agent decomposes complex tasks into parallel sub-tasks. Specialized workers run concurrently across research, code, and computer-use steps, then synthesize a unified, structured result.",
+      "en": "A coordinator decomposes complex goals into parallel sub-tasks. Specialized workers can research, write code, use configured computer tools, and synthesize a structured result.",
       "ru": "Координатор разбивает сложные задачи на параллельные подзадачи. Специализированные воркеры одновременно выполняют исследования, пишут код и работают за компьютером, затем синтезируя единый структурированный результат."
     },
     "m1tag": {
@@ -471,6 +471,87 @@ export const translations = {
       "ru": "Hub · Управление · Пауза/возобновление · Задачи · Демоны"
     }
   },
+  "apiPage": {
+    "hero": {
+      "badge": { "en": "API & Server", "ru": "API и сервер" },
+      "title": { "en": "Operate workers headless.<br />Watch every run.", "ru": "Управляйте воркерами без интерфейса.<br />Наблюдайте каждый прогон." },
+      "sub": { "en": "A self-hosted control plane for autonomous workers: start and steer sessions, inspect durable jobs and memory, apply governance, and integrate through REST, SSE and AG-UI-compatible event streams. Coworkers, schedules, notifications and optional computer controls are available when configured.", "ru": "Панель управления автономными воркерами в вашем контуре: запускайте и направляйте сессии, изучайте устойчивые задачи и память, применяйте политики и подключайтесь через REST, SSE и совместимые с AG-UI потоки событий. Коллеги, расписания, уведомления и опциональное управление компьютером доступны при настройке." }
+    },
+    "auth": {
+      "badge": { "en": "Authentication", "ru": "Аутентификация" },
+      "title": { "en": "API keys + rate limiting", "ru": "API-ключи и ограничение частоты" },
+      "sub": { "en": "Set FATHOM_API_KEYS to require Bearer or X-Api-Key credentials for API requests. FATHOM_RATE_LIMIT enables sliding-window limits. Unset keys leave access open for development; configure authentication before exposing a runtime.", "ru": "Задайте FATHOM_API_KEYS, чтобы требовать Bearer или X-Api-Key для API-запросов. FATHOM_RATE_LIMIT включает ограничение в скользящем окне. Без ключей доступ открыт для разработки; перед публикацией рантайма настройте аутентификацию." }
+    },
+    "endpoints": {
+      "badge": { "en": "Endpoints", "ru": "Эндпоинты" },
+      "title": { "en": "A control surface for the worker lifecycle", "ru": "Панель управления жизненным циклом воркеров" },
+      "groups": {
+        "sessions": { "name": { "en": "Sessions", "ru": "Сессии" } },
+        "agents": { "name": { "en": "Agents", "ru": "Агенты" } },
+        "control": { "name": { "en": "Control plane", "ru": "Панель управления" } },
+        "events": { "name": { "en": "Events", "ru": "События" } },
+        "memory": { "name": { "en": "Memory", "ru": "Память" } },
+        "jobs": { "name": { "en": "Jobs", "ru": "Задачи" } },
+        "governance": { "name": { "en": "Governance & collaboration", "ru": "Управление и совместная работа" } },
+        "security": { "name": { "en": "Credentials & audit", "ru": "Секреты и аудит" } },
+        "computer": { "name": { "en": "Optional computer relay", "ru": "Опциональный компьютерный ретранслятор" } },
+        "system": { "name": { "en": "System", "ru": "Система" } }
+      }
+    },
+    "example": {
+      "badge": { "en": "Example", "ru": "Пример" },
+      "title": { "en": "Start a session, steer it mid-run", "ru": "Запустите сессию и направляйте её на ходу" },
+      "sub": { "en": "Sessions start asynchronously. Follow progress on SSE, then steer or answer questions while workers are still running.", "ru": "Сессии запускаются асинхронно. Следите за прогрессом через SSE, затем направляйте воркеров или отвечайте на вопросы во время работы." },
+      "docs": { "en": "Full API reference", "ru": "Полная справка API" }
+    },
+    "observability": {
+      "badge": { "en": "Observability", "ru": "Наблюдаемость" },
+      "title": { "en": "Metrics for the runtime you operate", "ru": "Метрики управляемого вами рантайма" },
+      "sub": { "en": "Scrape /metrics and use the authenticated observability summary for bounded live counters and audit totals. Event streams expose worker progress without polling.", "ru": "Считывайте /metrics и используйте защищённую сводку наблюдаемости для ограниченных текущих счётчиков и итогов аудита. Потоки событий показывают прогресс воркеров без опроса." }
+    },
+    "ops": {
+      "prom": { "name": { "en": "Prometheus", "ru": "Prometheus" }, "d": { "en": "Metrics expose request counts, latencies, and session and tool activity for dashboards.", "ru": "Метрики показывают количество запросов, задержки, а также активность сессий и инструментов для дашбордов." } },
+      "sse": { "name": { "en": "SSE streaming", "ru": "Потоки SSE" }, "d": { "en": "Token deltas, tool calls, worker lifecycle events and findings arrive as server-sent events.", "ru": "Изменения токенов, вызовы инструментов, события жизненного цикла и находки поступают как события, отправленные сервером." } },
+      "dashboard": { "name": { "en": "Web dashboard", "ru": "Веб-дашборд" }, "d": { "en": "The embedded dashboard shows sessions, worker trees, memory, jobs and the live event feed.", "ru": "Встроенный дашборд показывает сессии, деревья воркеров, память, задачи и ленту событий." } },
+      "cors": { "name": { "en": "CORS", "ru": "CORS" }, "d": { "en": "Configure cross-origin access in the server settings and restrict origins in production.", "ru": "Настройте междоменный доступ в параметрах сервера и ограничьте источники в рабочей среде." } }
+    }
+  },
+  "tuiPage": {
+    "hero": {
+      "badge": { "en": "Terminal UI", "ru": "Терминальный интерфейс" },
+      "title": { "en": "Your terminal,<br />your worker control room.", "ru": "Ваш терминал,<br />ваш центр управления воркерами." },
+      "sub": { "en": "An interactive ratatui interface with live events, session replay, durable memory and jobs, mid-run steering, questions and approvals — all without leaving the terminal.", "ru": "Интерактивный интерфейс на ratatui с событиями в реальном времени, реплеем сессий, долговечной памятью и задачами, управлением на ходу, вопросами и одобрениями — прямо в терминале." }
+    },
+    "features": {
+      "badge": { "en": "Capabilities", "ru": "Возможности" }, "title": { "en": "One screen for the worker lifecycle", "ru": "Один экран для жизненного цикла воркера" },
+      "live": { "name": { "en": "Live streaming", "ru": "Поток событий" }, "d": { "en": "Token deltas, tool calls, worker events and findings appear as they happen.", "ru": "Изменения токенов, вызовы инструментов, события воркеров и находки появляются по мере работы." } },
+      "replay": { "name": { "en": "Session replay", "ru": "Реплей сессий" }, "d": { "en": "Replay a past session and inspect its worker tree, tool calls and findings.", "ru": "Повторно просматривайте сессию и изучайте дерево воркеров, вызовы инструментов и находки." } },
+      "memory": { "name": { "en": "Memory panel", "ru": "Панель памяти" }, "d": { "en": "Inspect semantic memory snapshots, absorbed facts and entity graph updates.", "ru": "Изучайте снимки семантической памяти, сохранённые факты и обновления графа сущностей." } },
+      "jobs": { "name": { "en": "Jobs panel", "ru": "Панель задач" }, "d": { "en": "Browse durable jobs, logs, cancellation and reruns from the terminal.", "ru": "Просматривайте устойчивые задачи, логи, отменяйте и перезапускайте их из терминала." } },
+      "steering": { "name": { "en": "Mid-run steering", "ru": "Управление на ходу" }, "d": { "en": "Redirect a running session with additional instructions without restarting it.", "ru": "Направляйте работающую сессию дополнительными инструкциями без перезапуска." } },
+      "control": { "name": { "en": "Questions & approvals", "ru": "Вопросы и одобрения" }, "d": { "en": "Answer worker questions and approve governed side effects inline; background work can continue as jobs.", "ru": "Отвечайте на вопросы воркеров и одобряйте управляемые побочные эффекты; фоновая работа может продолжаться как задача." } }
+    },
+    "flow": {
+      "badge": { "en": "How it works", "ru": "Как это работает" }, "title": { "en": "Four modes, one binary", "ru": "Четыре режима, один бинарник" },
+      "s1": { "t": { "en": "Launch", "ru": "Запуск" }, "d": { "en": "fathom tui opens the interactive worker dashboard.", "ru": "fathom tui открывает интерактивный дашборд воркеров." } },
+      "s2": { "t": { "en": "Watch", "ru": "Наблюдение" }, "d": { "en": "Workers stream progress, tool calls and state changes live.", "ru": "Воркеры передают прогресс, вызовы инструментов и изменения состояния в реальном времени." } },
+      "s3": { "t": { "en": "Steer", "ru": "Управление" }, "d": { "en": "Redirect work, answer questions and approve side effects when prompted.", "ru": "Направляйте работу, отвечайте на вопросы и одобряйте побочные эффекты по запросу." } },
+      "s4": { "t": { "en": "Deliver", "ru": "Результат" }, "d": { "en": "Inspect results, durable jobs and memory from the same interface.", "ru": "Изучайте результаты, устойчивые задачи и память в том же интерфейсе." } }
+    },
+    "code": { "badge": { "en": "CLI flags", "ru": "Флаги CLI" }, "title": { "en": "One command, full control", "ru": "Одна команда — полный контроль" }, "sub": { "en": "The TUI uses the same runtime as the headless CLI, so configured tools, profiles and settings remain consistent.", "ru": "TUI использует тот же рантайм, что и CLI без интерфейса, поэтому настроенные инструменты, профили и параметры остаются согласованными." }, "docs": { "en": "CLI reference", "ru": "Справка CLI" } },
+    "cta": { "title": { "en": "Try the TUI", "ru": "Попробуйте TUI" }, "sub": { "en": "Install Fathom from the installation guide, then launch the interactive terminal.", "ru": "Установите Fathom по руководству, затем запустите интерактивный терминал." }, "install": { "en": "Installation guide", "ru": "Руководство по установке" } }
+  },
+  "profilesPage": {
+    "hero": { "badge": { "en": "Profiles & Personas", "ru": "Профили и персоны" }, "title": { "en": "One runtime,<br />many worker roles.", "ru": "Один рантайм,<br />много ролей воркеров." }, "sub": { "en": "Profiles tune a worker's model, depth, tool access and behavior for a class of tasks — in one TOML overlay.", "ru": "Профили настраивают модель, глубину, доступ к инструментам и поведение воркера для класса задач — в одном TOML-слое." } },
+    "builtin": { "badge": { "en": "Built-in profiles", "ru": "Встроенные профили" }, "title": { "en": "Start with a focused role", "ru": "Начните с определённой роли" }, "sub": { "en": "Presets provide starting points; define your own when the mission needs different boundaries.", "ru": "Предустановки дают отправную точку; создайте собственный профиль, если задаче нужны другие границы." },
+      "hunter": { "name": { "en": "hunter", "ru": "hunter" }, "tag": { "en": "Structured operations", "ru": "Структурированные операции" }, "d": { "en": "A focused profile for contact and record workflows with explicit tool boundaries and persistence.", "ru": "Профиль для работы с контактами и записями с явными границами инструментов и сохранением состояния." } },
+      "analyst": { "name": { "en": "analyst", "ru": "analyst" }, "tag": { "en": "Analysis", "ru": "Анализ" }, "d": { "en": "A research and reasoning profile that favors cross-checking and avoids side effects.", "ru": "Профиль исследования и рассуждений, ориентированный на перепроверку и без побочных эффектов." } },
+      "validator": { "name": { "en": "validator", "ru": "validator" }, "tag": { "en": "Verification", "ru": "Проверка" }, "d": { "en": "A focused profile for checking and enriching records from configured sources.", "ru": "Профиль для проверки и обогащения записей из настроенных источников." } }
+    },
+    "custom": { "badge": { "en": "Custom profiles", "ru": "Пользовательские профили" }, "title": { "en": "Your rules, your TOML", "ru": "Ваши правила, ваш TOML" }, "sub": { "en": "Create a profile under ~/.fathom/profiles/<name>.toml and override model, depth, budgets, retries and denied tools. User files take priority over built-ins.", "ru": "Создайте профиль в ~/.fathom/profiles/<name>.toml и переопределите модель, глубину, бюджеты, повторы и запрещённые инструменты. Пользовательские файлы имеют приоритет над встроенными." } },
+    "cli": { "badge": { "en": "CLI usage", "ru": "Использование CLI" }, "title": { "en": "List, show, create, run", "ru": "Список, просмотр, создание, запуск" }, "list": { "en": "List available profiles", "ru": "Показать доступные профили" }, "show": { "en": "Show profile details", "ru": "Показать сведения профиля" }, "create": { "en": "Create from a template", "ru": "Создать из шаблона" }, "run": { "en": "Run a goal with a profile", "ru": "Запустить цель с профилем" } },
+    "cta": { "title": { "en": "Shape a worker for your mission", "ru": "Настройте воркера под задачу" }, "sub": { "en": "Read the personalization guide for profiles, per-role models, denied tools and behavioral tuning.", "ru": "Изучите руководство по профилям, моделям ролей, запрещённым инструментам и настройке поведения." }, "docs": { "en": "Personalization docs", "ru": "Документация по персонализации" } }
+  },
   "docsNav":  {
     "start": { "en": "Getting Started", "ru": "Начало работы" },
     "quickstart": { "en": "Quickstart", "ru": "Быстрый старт" },
@@ -562,8 +643,8 @@ export const translations = {
       "ru": "Возможности"
     },
     "hero_mono": {
-      "en": "Rust · 51 always + up to 5 CDP + up to 6 computer tools · one runtime",
-      "ru": "Rust · 51 всегда зарегистрированных + до 5 CDP-браузерных + до 6 компьютерных · один рантайм"
+      "en": "Rust · built-in tools plus optional browser and computer services · one runtime",
+      "ru": "Rust · встроенные инструменты и опциональные браузерные и компьютерные сервисы · один рантайм"
     },
     "t1name": { "en": "Sarah Kim", "ru": "Сара Ким" },
     "t1role": { "en": "VP of Sales, TechFlow", "ru": "Вице-президент по продажам, TechFlow" },
@@ -579,28 +660,28 @@ export const translations = {
         "ru": "Запуск 4 параллельных агентов"
       },
       "a1": {
-        "en": "Searching LinkedIn & Crunchbase",
-        "ru": "Поиск в LinkedIn и Crunchbase"
+        "en": "Researching configured sources",
+        "ru": "Исследование настроенных источников"
       },
       "a2": {
-        "en": "Parsing corporate websites",
-        "ru": "Парсинг корпоративных сайтов"
+        "en": "Editing code in an isolated workspace",
+        "ru": "Изменение кода в изолированном рабочем пространстве"
       },
       "a3": {
-        "en": "Extracting social profiles",
-        "ru": "Извлечение соцпрофилей"
+        "en": "Checking a workflow with an optional computer service",
+        "ru": "Проверка рабочего процесса с опциональным компьютерным сервисом"
       },
       "a4": {
-        "en": "Verifying email addresses",
-        "ru": "Верификация email-адресов"
+        "en": "Saving findings to durable memory",
+        "ru": "Сохранение находок в долговечную память"
       },
       "done": {
-        "en": "Found 47 contacts, 12 verified",
-        "ru": "Найдено 47 контактов, 12 верифицированы"
+        "en": "Result ready for operator review",
+        "ru": "Результат готов к проверке оператором"
       },
       "save": {
-        "en": "Exporting to CSV + CRM sync",
-        "ru": "Экспорт в CSV + синхронизация с CRM"
+        "en": "Updating memory + configured notifications",
+        "ru": "Обновление памяти + настроенные уведомления"
       }
     },
     "marquee_label": {
@@ -628,17 +709,17 @@ export const translations = {
         }
       },
       "l": {
-        "t": { "en": "Lead Generation", "ru": "Генерация лидов" },
+        "t": { "en": "Code & computer use", "ru": "Код и работа за компьютером" },
         "d": {
-          "en": "Workers can find, verify and organize contacts, or apply the same governed pipeline to any structured operation.",
-          "ru": "Воркеры находят, проверяют и организуют контакты или применяют тот же управляемый конвейер к любой структурированной операции."
+          "en": "Run code, inspect repositories, and use an optional connected computer through explicit tools and approval boundaries.",
+          "ru": "Запускайте код, изучайте репозитории и используйте подключённый компьютер через явные инструменты и границы одобрения."
         }
       },
       "o": {
-        "t": { "en": "Auto Outreach", "ru": "Автообращение" },
+        "t": { "en": "Operations & outreach", "ru": "Операции и аутрич" },
         "d": {
-          "en": "Workers draft personalized actions, batch operations, and approved updates — with memory, schedules, notifications, and review before side effects.",
-          "ru": "Воркеры готовят персональные действия, пакетные операции и одобренные обновления — с памятью, расписаниями, уведомлениями и проверкой перед побочными эффектами."
+          "en": "Draft actions, sync approved records, schedule repeat runs, and notify operators when configured.",
+          "ru": "Готовьте действия, синхронизируйте одобренные записи, планируйте повторы и уведомляйте операторов при настройке."
         }
       }
     },
@@ -684,7 +765,7 @@ export const translations = {
     },
     "capc": {
       "1": {
-        "t": { "en": "51 always + up to 5 CDP + up to 6 computer tools", "ru": "51 всегда зарегистрированный инструмент + до 5 CDP-браузерных + до 6 компьютерных" },
+        "t": { "en": "Code + optional computer tools", "ru": "Код и опциональные компьютерные инструменты" },
         "d": {
           "en": "Web, files, exec, browser, vision, git, PDF, OSINT, memory.",
           "ru": "Веб, файлы, исполнение, браузер, vision, git, PDF, OSINT, память."
@@ -880,37 +961,22 @@ export const translations = {
         }
       }
     },
-    "testi_label": {
-      "en": "Testimonials",
-      "ru": "Отзывы"
-    },
-    "testi_title": {
-      "en": "Trusted by researchers & revenue teams",
-      "ru": "Нам доверяют исследователи и отделы продаж"
-    },
-    "t1": {
-      "en": "\"Fathom found 200 verified contacts for our DACH expansion in under an hour. What used to take our SDRs a full week.\"",
-      "ru": "«Fathom нашёл 200 верифицированных контактов для нашей экспансии в DACH меньше чем за час. Раньше у SDR на это уходила неделя.»"
-    },
-    "t2": {
-      "en": "\"The verification layer alone is worth it. Our bounce rate dropped from 23% to 2%.\"",
-      "ru": "«Один только слой верификации того стоит. Показатель отказов упал с 23% до 2%.»"
-    },
+
     "cta_title": {
       "en": "Start building with Fathom",
       "ru": "Начните работать с Fathom"
     },
     "cta_sub": {
-      "en": "Self-hosted and reviewable. No vendor lock-in. Give your workers access to the tools, memory, and schedules your team controls.",
-      "ru": "Самостоятельный и проверяемый. Без привязки к поставщику. Дайте воркерам доступ к инструментам, памяти и расписаниям под контролем вашей команды."
+      "en": "Self-hosted and reviewable. Give workers access to the tools, memory, and schedules your team controls, then inspect the result through the interface you choose.",
+      "ru": "В вашем контуре и с возможностью проверки. Дайте воркерам доступ к инструментам, памяти и расписаниям под контролем команды, а затем изучите результат через выбранный интерфейс."
     },
     "cta_mono": {
-      "en": "fathom bench · docs · request access",
-      "ru": "fathom bench · docs · запрос доступа"
+      "en": "fathom run · docs · installation",
+      "ru": "fathom run · docs · установка"
     },
     "cta_access": {
-      "en": "Request access →",
-      "ru": "Запросить доступ →"
+      "en": "Read installation guide →",
+      "ru": "Руководство по установке →"
     },
     "faq_label": {
       "en": "FAQ",
@@ -934,8 +1000,8 @@ export const translations = {
         "ru": "Какие поисковые системы поддерживаются?"
       },
       "a2": {
-        "en": "Multiple backends — including Linkup, Exa, Tavily, Serper, Brave and DuckDuckGo — are fused with hybrid and smart modes and RRF ranking, so workers can cover the web instead of relying on one result page.",
-        "ru": "Семь бэкендов — Linkup, Parallel, Exa, Tavily, Serper, Brave и DuckDuckGo — объединённые гибридным и smart-режимами и RRF-ранжированием, так что один запрос покрывает весь интернет, а не только первую страницу."
+        "en": "Configured search backends — including Linkup, Exa, Tavily, Serper, Brave and DuckDuckGo — can be combined with hybrid and smart modes and RRF ranking.",
+        "ru": "Настроенные поисковые бэкенды, включая Linkup, Exa, Tavily, Serper, Brave и DuckDuckGo, можно объединять в гибридном и smart-режимах с RRF-ранжированием."
       },
       "q3": {
         "en": "Is my data stored on your servers?",
@@ -946,12 +1012,12 @@ export const translations = {
         "ru": "Нет. Fathom распространяется как самодостаточный бинарник — сессии, контакты и память хранятся в ваших собственных базах SQLite/PostgreSQL на вашей инфраструктуре. Никакой привязки к облаку."
       },
       "q4": {
-        "en": "How accurate are the extracted emails and phones?",
-        "ru": "Насколько точны извлечённые email и телефоны?"
+        "en": "Which interfaces can operators use?",
+        "ru": "Какие интерфейсы доступны операторам?"
       },
       "a4": {
-        "en": "Every email passes syntax, MX-record and SMTP checks; phones are normalized to E.164 and cross-checked. Nothing unverified is saved — typical bounce rates drop from ~23% to ~2% after verification.",
-        "ru": "Каждый email проходит проверки синтаксиса, MX-записей и SMTP; телефоны нормализуются в E.164 и перепроверяются. Ничего неверифицированного не сохраняется — типичный процент отказов падает с ~23% до ~2% после верификации."
+        "en": "Use the CLI and TUI, or expose a configured runtime through HTTP/SSE, AG-UI compatibility, and MCP. The available surface depends on deployment and configuration.",
+        "ru": "Используйте CLI и TUI либо откройте настроенный рантайм через HTTP/SSE, совместимость с AG-UI и MCP. Доступная поверхность зависит от развёртывания и конфигурации."
       }
     }
   },

@@ -7,7 +7,7 @@ interface Props {
   description?: string;
 }
 
-const { title, description = 'Fathom is a universal autonomous AI worker platform for research, code, computer use, scheduled operations, memory, governance, and reviewable automation.' } = Astro.props;
+const { title, description = 'Fathom is a self-hosted Rust runtime for autonomous remote AI workers with planning, tools, durable memory, governance, scheduling, and operator interfaces.' } = Astro.props;
 const SITE = 'https://fathom.uz';
 const canonical = SITE + Astro.url.pathname;
 ---
@@ -78,8 +78,8 @@ const canonical = SITE + Astro.url.pathname;
         <div class="nav-links" id="navbarLinks">
           <a href="/#features" class="navitem" data-i18n="nav.features">Workers</a>
           <a href="/features" class="navitem" data-i18n="nav.usecases">Capabilities</a>
+          <a href="/architecture" class="navitem" data-i18n="nav.architecture">Architecture</a>
           <a href="/research" class="navitem" data-i18n="nav.research">Research</a>
-          <a href="/benchmarks" class="navitem" data-i18n="nav.benchmarks">Benchmarks</a>
           <a href="/tools" class="navitem" data-i18n="nav.tools">Tools</a>
           <a href="/tui" class="navitem" data-i18n="nav.tui">TUI</a>
           <a href="/profiles" class="navitem" data-i18n="nav.profiles">Profiles</a>
@@ -119,8 +119,8 @@ const canonical = SITE + Astro.url.pathname;
       <div class="mobile-menu-links">
         <a href="/#features" class="mobile-link" data-i18n="nav.features">Workers</a>
         <a href="/features" class="mobile-link" data-i18n="nav.usecases">Capabilities</a>
+        <a href="/architecture" class="mobile-link" data-i18n="nav.architecture">Architecture</a>
         <a href="/research" class="mobile-link" data-i18n="nav.research">Research</a>
-        <a href="/benchmarks" class="mobile-link" data-i18n="nav.benchmarks">Benchmarks</a>
         <a href="/tools" class="mobile-link" data-i18n="nav.tools">Tools</a>
         <a href="/tui" class="mobile-link" data-i18n="nav.tui">TUI</a>
         <a href="/profiles" class="mobile-link" data-i18n="nav.profiles">Profiles</a>
@@ -154,12 +154,12 @@ const canonical = SITE + Astro.url.pathname;
               </svg>
               <span class="brand-name">Fathom</span>
             </a>
-            <p class="footer-desc" data-i18n="footer.desc">Autonomous AI workers for research, code, computer use, scheduled operations, and governed automation.</p>
+            <p class="footer-desc" data-i18n="footer.desc">Self-hosted autonomous AI workers for research, code, computer use, scheduled operations, durable memory, and governed automation.</p>
           </div>
           <div class="foot-cols">
             <span class="c-title" data-i18n="footer.product">Product</span>
             <a href="/features" data-i18n="footer.features">Features</a>
-            <a href="/research" data-i18n="footer.research">Research Engine</a>
+            <a href="/research" data-i18n="footer.research">Research workflow</a>
             <a href="/benchmarks" data-i18n="nav.benchmarks">Benchmarks</a>
             <a href="/tools" data-i18n="nav.tools">Tools</a>
             <a href="/tui" data-i18n="footer.tui">Terminal UI</a>

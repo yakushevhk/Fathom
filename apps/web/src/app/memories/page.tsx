@@ -60,7 +60,7 @@ export default function MemoriesPage() {
   return (
     <div className="flex-1 flex flex-col min-w-0">
       <div className="h-9 flex items-center px-4 border-b border-white/[0.06] text-xs text-gray-400 shrink-0">
-        Worker Memory
+        Worker Memory Store
       </div>
       <div className="p-6 overflow-y-auto flex-1">
         {/* Stats + actions */}
@@ -73,8 +73,8 @@ export default function MemoriesPage() {
             </>
           )}
           <div className="ml-auto flex gap-1">
-            <label className="sr-only" htmlFor="memory-fact">Fact to absorb</label>
-            <input id="memory-fact" value={absorbContent} onChange={e => setAbsorbContent(e.target.value)} placeholder="Fact to absorb" className="px-2 py-1 rounded border border-white/[0.06] bg-transparent text-[10px] text-gray-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gray-300" />
+            <label className="sr-only" htmlFor="memory-fact">Memory to absorb</label>
+            <input id="memory-fact" value={absorbContent} onChange={e => setAbsorbContent(e.target.value)} placeholder="Memory to absorb" className="px-2 py-1 rounded border border-white/[0.06] bg-transparent text-[10px] text-gray-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gray-300" />
             <button type="button" aria-label="Absorb fact into worker memory" onClick={() => doAction('Absorb', async () => {
               const content = absorbContent.trim()
               if (!content) throw new Error('Enter fact content before absorbing')
@@ -110,7 +110,7 @@ export default function MemoriesPage() {
             <button type="button" onClick={load} className="mt-3 rounded border border-red-400/30 px-2 py-1 text-red-200 hover:bg-red-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-300">Retry</button>
           </div>
         ) : memories.length === 0 ? (
-          <p className="text-gray-600 text-xs">No worker memory yet</p>
+          <p className="text-gray-600 text-xs">No worker memories yet. Absorb context to give future runs durable memory.</p>
         ) : (
           <div className="space-y-2">
             {memories.map(m => (

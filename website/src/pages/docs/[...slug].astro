@@ -15,9 +15,12 @@ export async function getStaticPaths() {
 const { doc } = Astro.props;
 const { Content } = await render(doc);
 const activePage = doc.data.sidebarId || doc.id;
+const baseTitle = doc.data.title.replace(/ — Fathom(?: Research)?$/, '');
+const title = `${baseTitle} — Fathom`;
+const description = doc.data.description ?? `Fathom documentation for ${baseTitle.toLowerCase()} in the universal autonomous AI worker runtime.`;
 ---
 
-<DocsLayout title={doc.data.title.replace(/ — Fathom Research$/, '') + ' — Fathom Research'} description={doc.data.description} activePage={activePage}>
+<DocsLayout title={title} description={description} activePage={activePage}>
   <main class="doc-content">
     <Content />
   </main>

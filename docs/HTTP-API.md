@@ -1,6 +1,6 @@
 # HTTP API
 
-Fathom provides a REST API built on **Axum** for programmatic control of the universal autonomous AI worker. The API exposes session lifecycle management, agent inspection, live event streaming, operator-in-the-loop controls (steering, question/answer, tool-call approval), a long-term semantic memory store, a durable background jobs subsystem, computer-use relay, credential vault, persistent coworker profiles, cron-like scheduling, policy governance, redacted action replay, live observability counters, notification delivery, and an AG-UI compatibility bridge. All endpoints under `/api/v1` are protected by authentication and rate limiting when configured.
+Fathom provides a self-hosted REST API built on **Axum** for controlling autonomous worker sessions. It exposes session lifecycle and agent inspection, SSE event streams, steering and approvals, optional memory and jobs, optional computer relay, credentials, coworkers/channels/schedules, governance, redacted replay, observability, notifications, and a read-only AG-UI compatibility bridge. API-key authentication and rate limiting apply when configured; loopback is the default bind surface.
 
 Start:
 ```bash
@@ -13,7 +13,7 @@ Base URL: `http://localhost:8080`
 
 ## Authentication
 
-If `FATHOM_API_KEYS` (comma-separated list of keys) is set, all `/api/v1/*` requests require an API key. When multiple keys are configured, each key is registered with a human-readable name derived from a hash — the auth middleware validates the key, extracts the principal name, and attaches it to the request for rate-limiting and logging. Public endpoints (`/health`, `/metrics`, `/dashboard`) are not protected, but the dashboard's data fetches all go through the protected `/api/v1` endpoints.
+If `FATHOM_API_KEYS` (comma-separated list of keys) is set, `/api/v1/*` requests require one of those API keys. When it is unset, access is open for development; bind only to a trusted interface. Public endpoints (`/health`, `/metrics`, `/dashboard`) are not protected, while dashboard data requests use `/api/v1` routes.
 
 ```bash
 # Bearer token
@@ -68,13 +68,13 @@ pr_request_duration_seconds_bucket{le="1"} 200
 
 Built-in live dashboard (single HTML file, no build step): session and job tables, agent tree, memory panel, and a live event feed via `EventSource` (`GET /api/v1/events`). Data is polled every 5 seconds. If authorization is enabled (`FATHOM_API_KEYS`), enter the key in the header field — it is saved in localStorage and injected into `X-Api-Key`. The route lies outside `/api/v1`, the page itself is not authorized; all data is fetched only through protected endpoints.
 
-The dashboard provides a one-stop visual overview of the entire research cluster: which sessions are running/completed/failed, the agent tree for each session (depth, role, status, tokens consumed), a live event log that streams in real time, memory store contents, and the durable jobs queue with status and logs.
+The dashboard provides a local visual overview of worker sessions, agent trees, events, memory (when enabled), and durable jobs. It is a convenience surface for the self-hosted server, not a hosted control plane.
 
 ---
 
 ### `POST /api/v1/sessions`
 
-Create a new research session. The server spawns a coordinator that manages the agent tree, persists progress to SQLite, and streams events to subscribers. The session runs asynchronously — the response returns immediately with the session ID and status.
+Create a new autonomous task session. The server spawns a coordinator that manages the agent tree, persists progress to SQLite, and streams events to subscribers. The session runs asynchronously — the response returns immediately with the session ID and status.
 
 **Request:**
 ```json
@@ -86,7 +86,7 @@ Create a new research session. The server spawns a coordinator that manages the 
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `query` | string | ✅ | Research query (non-empty) |
+| `query` | string | ✅ | Natural-language task (non-empty) |
 | `api_key` | string | ❌ | Override LLM key for this session |
 | `output_dir` | string | ❌ | Single relative directory name override (sanitized: no path separators, no `..`, no absolute paths) |
 
@@ -546,7 +546,7 @@ An encrypted vault of named secrets. Secrets are encrypted with **AES-256-GCM** 
 
 ## Coworkers API
 
-Persistent desktop-agent coworker profiles. Coworkers have a name, role, system prompt, and visibility; channels link a coworker to one or more sessions. Routes are mounted under `/api/v1` and use the same authentication and rate limiting as the rest of the API.
+Persistent coworker profiles for recurring or operator-managed workers. Coworkers have a name, role, prompt, and visibility; channels link a coworker to sessions. These are local records in the self-hosted persistence layer and use the same API-key and rate-limit behavior as the rest of `/api/v1`.
 
 | Method | Path | Purpose |
 |--------|------|---------|
@@ -807,6 +807,8 @@ Safe, operator-triggered notification delivery through channels configured in th
 ## AG-UI compatibility bridge
 
 A narrow transport adapter exposing the existing agent event bus as versioned AG-UI-like SSE envelopes. It does not implement the complete AG-UI command or state protocol; events are read-only and payloads are redacted at the boundary before leaving the server.
+
+The bridge is a compatibility surface for clients you operate, not a hosted AG-UI service.
 
 | Method | Path | Purpose |
 |--------|------|---------|

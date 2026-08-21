@@ -5,40 +5,40 @@ import AgentCanvas from '../components/AgentCanvas.astro';
 import Pipeline3D from '../components/Pipeline3D.astro';
 
 const agents = [
-  { name: 'Researcher',  mode: 'researcher',  hue: 206, href: '/agents/researcher' },
-  { name: 'Searching',   mode: 'searching',   hue: 180, href: '/agents/searching' },
-  { name: 'Extracting',  mode: 'extracting',  hue: 25,  href: '/agents/extracting' },
-  { name: 'Structuring', mode: 'structuring', hue: 260, href: '/agents/structuring' },
-  { name: 'Cleaning',    mode: 'cleaning',    hue: 55,  href: '/agents/cleaning' },
-  { name: 'Memoring',    mode: 'memoring',    hue: 25,  href: '/agents/memoring' },
-  { name: 'Outreach',    mode: 'outreach',    hue: 205, href: '/agents/outreach' },
+  { name: 'Coordinator', mode: 'coordinator', hue: 206, href: '/profiles' },
+  { name: 'Researcher', mode: 'researcher', hue: 180, href: '/agents/researcher' },
+  { name: 'Coder', mode: 'coder', hue: 25, href: '/tools' },
+  { name: 'Operator', mode: 'operator', hue: 260, href: '/ops' },
+  { name: 'Browser', mode: 'browser', hue: 55, href: '/tools' },
+  { name: 'Memory keeper', mode: 'memoring', hue: 25, href: '/memory' },
+  { name: 'Reviewer', mode: 'reviewer', hue: 205, href: '/security' },
 ];
 
 const backends = ['Linkup', 'Exa', 'Tavily', 'Serper', 'Brave', 'DuckDuckGo'];
 const capabilities = [
-  { k: 'landing.cap.r', t: 'Research & analysis', d: 'Workers search, fetch, parse, cross-reference, and synthesize cited findings from the open web.', url: '/features/research' },
-  { k: 'landing.cap.l', t: 'Code & computer use', d: 'Run code, inspect repositories, and operate a connected browser through approval-aware tools.', url: '/tools' },
-  { k: 'landing.cap.o', t: 'Outreach & operations', d: 'Draft personalized outreach, sync approved records, schedule repeat runs, and notify your team.', url: '/features/auto-outreach' },
+  { k: 'landing.cap.r', t: 'Research & analysis', d: 'Workers search, fetch, parse, cross-reference, and synthesize findings from configured sources.', url: '/features/research' },
+  { k: 'landing.cap.l', t: 'Code & computer use', d: 'Run code, inspect repositories, and operate an optional connected computer through explicit tool boundaries.', url: '/tools' },
+  { k: 'landing.cap.o', t: 'Operations & outreach', d: 'Draft actions, sync approved records, schedule repeat runs, and notify your team when configured.', url: '/features/auto-outreach' },
 ];
 
 const capabilityRows = [
-  { k: 'landing.capc.1', t: 'Computer + code tools', d: 'Web, files, shell, code, browser, vision, Git, and verification; computer tools appear when the loopback service is reachable.' },
-  { k: 'landing.capc.2', t: 'Semantic memory', d: 'Vector + BM25 hybrid search, entity graph, and automatic absorption of worker findings.' },
-  { k: 'landing.capc.3', t: 'Persistent workers', d: 'Durable background jobs can continue across restarts and scheduled runs.' },
-  { k: 'landing.capc.4', t: 'Governance', d: 'Approval gates, policy hooks, protected surfaces, and secret scanning keep side effects reviewable.' },
+  { k: 'landing.capc.1', t: 'Code + optional computer tools', d: 'Web, files, shell, code, browser, vision, Git, and verification; computer tools appear when the optional service is configured.' },
+  { k: 'landing.capc.2', t: 'Durable semantic memory', d: 'Vector + BM25 hybrid search, entity graph, and worker findings that persist across sessions.' },
+  { k: 'landing.capc.3', t: 'Persistent workers and jobs', d: 'Durable background jobs can continue across restarts and scheduled runs.' },
+  { k: 'landing.capc.4', t: 'Governance and approvals', d: 'Approval gates, policy hooks, protected surfaces, and secret scanning keep side effects reviewable.' },
   { k: 'landing.capc.5', t: 'MCP integrations', d: 'Connect external tools over stdio or HTTP, and expose Fathom tools through mcp-serve.' },
-  { k: 'landing.capc.6', t: 'HTTP API + dashboard', d: 'SSE streaming, steering, session controls, and Prometheus metrics.' },
-  { k: 'landing.capc.7', t: 'Profiles & roles', d: 'Use built-in personas or define your own TOML worker profile.' },
-  { k: 'landing.capc.8', t: 'Scheduled operations', d: 'Repeat runs with diffs and notifications when new results arrive.' },
-  { k: 'landing.capc.9', t: 'TUI', d: 'Interactive terminal with live streaming, replay, steering, and memory views.' },
-  { k: 'landing.capc.10', t: 'Notifications', d: 'Webhook, email, and Telegram fan-out alerts on completion.' },
+  { k: 'landing.capc.6', t: 'HTTP, SSE, AG-UI, and TUI', d: 'Serve workers through HTTP/SSE and AG-UI compatibility, or operate them from the terminal.' },
+  { k: 'landing.capc.7', t: 'Profiles and roles', d: 'Use built-in personas or define your own TOML worker profile.' },
+  { k: 'landing.capc.8', t: 'Scheduled operations', d: 'Run repeatable work on a schedule and notify operators when configured.' },
+  { k: 'landing.capc.9', t: 'Replay and observability', d: 'Inspect sessions, replay events, and export Prometheus-compatible metrics.' },
+  { k: 'landing.capc.10', t: 'Operator notifications', d: 'Webhook, email, and Telegram fan-out alerts when configured and triggered.' },
 ];
 
 const steps = [
-  { k: 'landing.step.1', n: '01', t: 'Ask', d: 'Type a research goal in plain language. The coordinator decomposes it into sub-tasks.' },
-  { k: 'landing.step.2', n: '02', t: 'Research', d: 'Fathom agents search the web, parse sites, extract contacts, and spawn their own children.' },
-  { k: 'landing.step.3', n: '03', t: 'Verify', d: 'Every email MX-checked, phones validated, social profiles confirmed.' },
-  { k: 'landing.step.4', n: '04', t: 'Export', d: 'CSV, PDF, HTML, JSON, DOCX — or pushed to CRM with zero duplicates.' },
+  { k: 'landing.step.1', n: '01', t: 'Goal', d: 'Describe an outcome in plain language. The coordinator turns it into durable sub-tasks.' },
+  { k: 'landing.step.2', n: '02', t: 'Plan and act', d: 'Workers delegate, use configured tools, and coordinate research, code, computer, or operations work.' },
+  { k: 'landing.step.3', n: '03', t: 'Remember and review', d: 'Findings persist in memory; policies and approval gates make side effects reviewable.' },
+  { k: 'landing.step.4', n: '04', t: 'Deliver', d: 'Return a report, code change, approved update, or notification through the interface you choose.' },
 ];
 
 const metrics = [
@@ -64,7 +64,7 @@ const metrics = [
           <a href="#cta" class="btn btn-primary btn-lg" data-i18n="landing.cta1">Start building</a>
           <a href="#features" class="btn btn-secondary btn-lg" data-i18n="landing.cta2">Explore features</a>
         </div>
-        <p class="hero__mono" data-i18n="landing.hero_mono">Rust · 51 always + up to 5 CDP + up to 6 computer tools · one runtime</p>
+        <p class="hero__mono" data-i18n="landing.hero_mono">Rust · built-in tools plus optional browser and computer services · one runtime</p>
       </div>
 
       <div class="hero__visual">
@@ -306,40 +306,12 @@ const metrics = [
     </div>
   </section>
 
-  <!-- ============ TESTIMONIALS ============ -->
-  <section class="section">
-    <div class="container">
-      <div class="sec-head center reveal">
-        <p class="eyebrow" data-i18n="landing.testi_label">Testimonials</p>
-        <h2 class="h2-sec" data-i18n="landing.testi_title">Built for teams with work to delegate</h2>
-      </div>
-
-      <div class="quote">
-        <p class="quote__text" data-i18n="landing.t1">"Fathom found 200 verified contacts for our DACH expansion in under an hour. What used to take our SDRs a full week."</p>
-          <div class="quote__by">
-            <div class="quote__avatar"></div>
-            <div class="quote__name" data-i18n="landing.t1name">Sarah Kim</div>
-            <div class="quote__role" data-i18n="landing.t1role">VP of Sales, TechFlow</div>
-          </div>
-        </div>
-        <div class="quote">
-          <p class="quote__text" data-i18n="landing.t2">"The verification layer alone is worth it. Our bounce rate dropped from 23% to 2%."</p>
-          <div class="quote__by">
-            <div class="quote__avatar"></div>
-            <div class="quote__name" data-i18n="landing.t2name">Marco Rossi</div>
-            <div class="quote__role" data-i18n="landing.t2role">Head of Growth, DataPrime</div>
-          </div>
-        </div>
-    </div>
-  </section>
-
   <!-- ============ CTA ============ -->
   <section class="cta" id="cta">
     <div class="container">
       <h2 class="h2-sec" data-i18n="landing.cta_title">Start building with Fathom</h2>
       <p class="copy-lg mx-auto" data-i18n="landing.cta_sub">Self-hosted and reviewable. No vendor lock-in. Give your workers access to the tools, memory, and schedules your team controls.</p>
-      <div class="install-box"><code>curl -sSf https://fathom.uz/install.sh | sh</code></div>
-      <a href="mailto:hello@fathom.uz" class="btn btn-primary" data-i18n="landing.cta_access">Request access →</a>
+      <a href="/install" class="btn btn-primary" data-i18n="landing.cta_access">Read installation guide →</a>
       <p class="sub" data-i18n="landing.cta_mono">fathom bench · docs · request access</p>
     </div>
   </section>
@@ -365,8 +337,8 @@ const metrics = [
           <p data-i18n="landing.faq.a3">No. Fathom is distributed as a self-hosted binary — sessions, contacts and memory live in your own SQLite/PostgreSQL databases on your infrastructure. There is no cloud lock-in.</p>
         </details>
         <details class="faq-item">
-          <summary data-i18n="landing.faq.q4">How accurate are the extracted emails and phones?</summary>
-          <p data-i18n="landing.faq.a4">Every email passes syntax, MX-record and SMTP checks; phones are normalized to E.164 and cross-checked. Nothing unverified is saved — typical bounce rates drop from ~23% to ~2% after verification.</p>
+          <summary data-i18n="landing.faq.q4">Which interfaces can operators use?</summary>
+          <p data-i18n="landing.faq.a4">Use the CLI and TUI, or expose a configured runtime through HTTP/SSE, AG-UI compatibility, and MCP. The available surface depends on how you deploy and configure Fathom.</p>
         </details>
       </div>
     </div>
@@ -383,17 +355,6 @@ const metrics = [
     downloadUrl: 'https://fathom.uz/install',
     installUrl: 'https://fathom.uz/install',
     fileFormat: 'binary',
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'USD',
-      description: 'Self-hosted open-source research agent',
-    },
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '4.9',
-      ratingCount: '87',
-    },
     releaseNotes: 'https://fathom.uz/changelog',
   }} />
 
@@ -418,8 +379,8 @@ const metrics = [
       },
       {
         '@type': 'Question',
-        name: 'How accurate are the extracted emails and phones?',
-        acceptedAnswer: { '@type': 'Answer', text: 'Every email passes syntax, MX-record and SMTP checks; phones are normalized to E.164. Typical bounce rates drop from ~23% to ~2%.' },
+        name: 'Which interfaces can operators use?',
+        acceptedAnswer: { '@type': 'Answer', text: 'Use the CLI and TUI, or expose a configured runtime through HTTP/SSE, AG-UI compatibility, and MCP. The available surface depends on deployment and configuration.' },
       },
     ],
   }} />
@@ -615,14 +576,6 @@ const metrics = [
   .step p { font-size: 14px; color: var(--grey-600); line-height: 1.55; }
   .step-connector { color: var(--grey-400); font-size: 1.4rem; align-self: center; flex-shrink: 0; }
   @media (max-width: 900px) { .steps-grid { flex-direction: column; } .step-connector { transform: rotate(90deg); text-align: center; } }
-
-  /* ---- Quotes ---- */
-  .quote { max-width: 760px; margin: 0 auto; text-align: center; padding: 22px 24px; }
-  .quote__text { font-size: clamp(19px, 2.8vw, 28px); line-height: 1.35; font-weight: 400; letter-spacing: -0.01em; }
-  .quote__by { margin-top: 24px; }
-  .quote__avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--grey-300); margin: 0 auto 12px; }
-  .quote__name { font-weight: 600; }
-  .quote__role { font-size: 14px; color: var(--grey-600); }
 
   /* ---- CTA ---- */
   .cta { text-align: center; padding: 96px 24px; background: var(--bg-dark); color: #fff; }

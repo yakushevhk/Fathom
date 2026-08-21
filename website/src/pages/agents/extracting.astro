@@ -16,8 +16,8 @@ const caps = [
   { tool: 'extract_contacts', t: 'Everything in one pass', d: 'Emails, phones, social profiles, persons and companies from text, HTML or a URL — each item carrying a confidence score (0.0–1.0) and a source label: text, mailto link, tel link, html:alt.' },
   { tool: 'deobfuscation', t: 'Anti-scraping defeated', d: '"name [at] domain [dot] com", (at), {at}, HTML entities &#64; / &#46; and even word forms like "bob at acme dot com" are reconstructed into real addresses — tagged 0.70 confidence vs 0.95 for plain ones.' },
   { tool: 'parse_corporate_site', t: 'Company sites, decoded', d: 'Fetches the homepage, locates contact / team / about pages by path hints, reads Schema.org JSON-LD (Organization name, description, size) and harvests team member cards.' },
-  { tool: 'parse_html', t: 'Fast structured scraping', d: 'CSS-selector extraction in five modes — texts, html, attr, links, tables. Up to 531,915 rows/s in release builds, so even giant pricing tables become structured data in milliseconds.' },
-  { tool: 'extract_json', t: 'APIs as lead sources', d: 'Dot-path queries over any JSON: data.items.0.name for deep access, results[*].email to iterate every element. REST endpoints and exports become contact feeds.' },
+  { tool: 'parse_html', t: 'Fast structured parsing', d: 'CSS-selector extraction in five modes — texts, html, attr, links, tables. The same parser turns pages, exports, and documents into structured inputs for downstream workers.' },
+  { tool: 'extract_json', t: 'Structured API inputs', d: 'Dot-path queries over JSON: data.items.0.name for deep access, results[*].email to iterate every element. REST responses and exports become inputs for any worker.' },
   { tool: 'analyze_image', t: 'Contacts inside pictures', d: 'A vision model OCRs screenshots, banners and rendered images; img alt/title attributes are scanned too. Emails hidden from plain-text scrapers still surface.' },
 ];
 
@@ -26,7 +26,7 @@ const flow = [
   { t: 'Mine', d: 'Deterministic regex passes sweep visible text, mailto:/tel: links, alt/title attributes and raw markup — JSON-LD blocks included.' },
   { t: 'Deobfuscate', d: '[at]/(at)/{at}/&#64; tokens and word-form addresses are reconstructed; asset TLDs like .png and .woff2 are rejected as fake emails.' },
   { t: 'Normalize', d: 'Phones go to E.164 via libphonenumber with region fallback; socials are keyed by platform + handle. Duplicates drop — the highest confidence survives.' },
-  { t: 'Entities', d: 'Optional LLM pass: persons and companies returned as strict JSON at temperature 0.0, injection-guarded. Team cards fall to 14 CSS selector patterns first.' },
+  { t: 'Entities', d: 'Optional LLM pass returns strict JSON at temperature 0.0 with injection guards. Deterministic selectors run first when a page exposes recognizable cards.' },
   { t: 'Emit', d: 'Structured contacts with confidence and provenance flow on — and the runtime autosaves them to the contact DB before the model can move on.' },
 ];
 
@@ -39,7 +39,7 @@ const hood = [
   ['Social profiles', 'LinkedIn, X/Twitter, Instagram, Telegram, Facebook · reserved paths filtered (share, explore, login…) · @handles read a ±60-char context window: keyword → 0.8, bare handle → 0.4'],
   ['LLM entity pass', '12,000-char input cap · temperature 0.0 · strict JSON with code fences tolerated · prompt-injection defense on untrusted web text'],
   ['Team detection', '14 card selectors (.team-member, [class*="person-card"], [class*="team"] li…) · names ≤ 6 words and ≥ 70% letters'],
-  ['Throughput', 'parse_html: 531,915 rows/s on a 6 KB table (release build) · 500-item cap per call'],
+  ['Limits', 'parse_html caps each call at 500 items; selectors and output shapes stay explicit for predictable handoffs'],
 ];
 
 const tools = ['extract_contacts', 'parse_html', 'extract_json', 'parse_corporate_site', 'analyze_image'];
@@ -67,7 +67,7 @@ const tools = ['extract_contacts', 'parse_html', 'extract_json', 'parse_corporat
       <!-- What it does -->
       <div class="sec-head">
         <p class="eyebrow" data-i18n="agents.extracting.what.eyebrow">What it does</p>
-        <h2 class="h3-sec" data-i18n="agents.extracting.what.title">Raw pages in, structured contacts out</h2>
+        <h2 class="h3-sec" data-i18n="agents.extracting.what.title">Raw sources in, structured outputs out</h2>
       </div>
       <div class="api-grid">
         {caps.map((c) => (
@@ -136,13 +136,13 @@ const tools = ['extract_contacts', 'parse_html', 'extract_json', 'parse_corporat
 [auto-persisted 4 contact(s): 4 new, 0 merged]
 
 # → Structuring dedups into one record
-# → Cleaning verifies deliverability
-# → Outreach composes a message for Ann`}</code></pre>
+# → Cleaning verifies quality and confidence
+# → Operations prepares the next governed action`}</code></pre>
         </div>
       </div>
 
       <div class="cta-strip">
-        <h2 data-i18n="agents.extracting.cta.title">From raw pages to pipeline-ready contacts</h2>
+        <h2 data-i18n="agents.extracting.cta.title">From raw sources to worker-ready outputs</h2>
         <div class="more-links">
           <a href="/agents/searching" class="btn btn-secondary">← Searching</a>
           <a href="/agents/structuring" class="btn btn-secondary">Structuring →</a>

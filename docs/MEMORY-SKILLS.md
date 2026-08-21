@@ -5,7 +5,7 @@ Fathom has three systems for preserving knowledge between sessions:
 1. **File memory** (MEMORY.md/USER.md) — a stable "profile" of ~2 KB,
    always in the prompt (this document);
 2. **Long-term semantic memory** (SQLite, crate `pr-memory`) —
-   an unlimited knowledge archive with hybrid search, an entity graph, and
+   a durable knowledge archive with hybrid search, an entity graph, and
    fact versioning — see [MEMORY-KB.md](MEMORY-KB.md);
 3. **Skills** (SKILL.md) — reusable instructions.
 

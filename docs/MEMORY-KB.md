@@ -1,6 +1,6 @@
 # Long-term semantic memory (pr-memory)
 
-An unlimited agent knowledge base in SQLite, built after the
+A durable agent knowledge base in SQLite, built after the
 **mem0 / Memora** model. Complements the
 small file-based memory `MEMORY.md`/`USER.md` (see [MEMORY-SKILLS.md](MEMORY-SKILLS.md)):
 file-based memory is a stable "profile" of ~2 KB in the prompt, semantic memory is

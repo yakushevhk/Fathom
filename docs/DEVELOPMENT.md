@@ -54,7 +54,7 @@ fathom/
 │   │       ├── task_tree.rs
 │   │       ├── improvement.rs
 │   │       └── reflection.rs
-│   ├── tools/              # 57 built-in + 6 computer tools = 63
+│   ├── tools/              # 51 always + up to 5 CDP + up to 6 computer tools
 │   │   └── src/
 │   │       ├── registry.rs     # ToolRegistry, ToolContext
 │   │       ├── web.rs
@@ -141,7 +141,7 @@ The workspace uses a strict layering strategy to minimise compilation units and 
 | **pr-core** | *(none)* | Fundamental types, config, error types, memory models, export, CRM, skills, notifications |
 | **pr-llm** | pr-core | `LlmProvider` trait, DeepSeek/OAI-compatible impl, retry, concurrency, factory |
 | **pr-persistence** | pr-core | SQLite (WAL) + PostgreSQL storage, session history, contact DB, jobs DB |
-| **pr-tools** | pr-core, pr-llm | 57 built-in tool implementations + 6 computer tools, registry, search engine (7 backends) |
+| **pr-tools** | pr-core, pr-llm | 51 always-registered tools, optional CDP/computer tools, registry, search backends |
 | **pr-memory** | pr-core, pr-persistence | Long-term semantic memory (hybrid vector + BM25, mem0/Memora-inspired) |
 | **pr-mcp** | pr-core, pr-tools | Model Context Protocol client + server |
 | **pr-agent** | pr-core, pr-llm, pr-tools, pr-persistence, pr-memory | Agent runtime, coordinator, compaction, IPC, prompts, doom-loop detection, hooks, resume, budget |

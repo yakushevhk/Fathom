@@ -2,7 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 ---
 
-<Layout title="Five gates: email verification — Fathom Research Blog">
+<Layout title="Five gates: verification before side effects — Fathom Blog">
   <main class="article-page">
     <div class="article-wrap">
 
@@ -21,8 +21,8 @@ import Layout from '../../layouts/Layout.astro';
           <span data-i18n="postVerify.hero.readTime">7 min read</span>
         </div>
         <span class="article-tag" data-i18n="postVerify.hero.tag">Verification</span>
-        <h1 class="article-title" data-i18n-html data-i18n="postVerify.hero.title">Five gates: how we verify every email before it hits the CRM</h1>
-        <p class="article-intro" data-i18n="postVerify.hero.intro">Most lead-gen tools treat email verification as a checkbox. We built a five-stage pipeline with an append-only receipt ledger so you can prove — not just claim — that a contact was verified.</p>
+        <h1 class="article-title" data-i18n-html data-i18n="postVerify.hero.title">Five gates: verification before a governed side effect</h1>
+        <p class="article-intro" data-i18n="postVerify.hero.intro">Verification should be an auditable gate, not a checkbox. Fathom uses a five-stage pipeline with an append-only receipt ledger so workers and operators can distinguish evidence, uncertainty, and approval before a side effect.</p>
       </header>
 
       <!-- Highlights -->
@@ -45,10 +45,10 @@ import Layout from '../../layouts/Layout.astro';
         <p data-i18n="postVerify.s2.p1">The optional fifth gate connects to the best MX host on port 25 with a 10-second timeout. The dialogue: read the banner (220), say HELO, issue MAIL FROM, then RCPT TO — the actual deliverability signal. The server responds 250 (accepted) or 5xx (rejected). We never send message content — just the envelope. A 4xx response means greylisting, which we mark as inconclusive rather than false-negative.</p>
 
         <h2 data-i18n="postVerify.s3.title">The receipt ledger</h2>
-        <p data-i18n="postVerify.s3.p1">Every check writes a typed receipt to an append-only JSONL file. The key is (kind, value) — so a PASS on email_smtp can never mask a FAIL on email_domain_mx. When save_contacts runs, it consults the ledger: SMTP accepted? → Verified. Syntax+MX ok? → Partial. Otherwise → Unverified. This is how we guarantee honest status labels.</p>
+        <p data-i18n="postVerify.s3.p1">Every check writes a typed receipt to an append-only JSONL file. The key is (kind, value) — so a PASS on email_smtp can never mask a FAIL on email_domain_mx. When save_contacts runs, it consults the ledger: SMTP accepted? → Verified. Syntax+MX ok? → Partial. Otherwise → Unverified. This keeps status labels tied to recorded evidence rather than an unreviewed claim.</p>
 
         <h2 data-i18n="postVerify.s4.title">Auto-save: the safety net</h2>
-        <p data-i18n="postVerify.s4.p1">The LLM doesn't always remember to call save_contacts. So after every extract_contacts or find_leads call, the runtime automatically persists harvested contacts — with the same dedup and receipt-gated verification. Contacts reach the database even if the model gets distracted, context gets compacted, or the session crashes.</p>
+        <p data-i18n="postVerify.s4.p1">The LLM doesn't always remember to call save_contacts. So after every extract_contacts or find_leads call, the runtime automatically persists harvested contacts — with the same dedup and receipt-gated verification. Structured records can reach the database even when the model skips a save call or context is compacted, subject to the runtime's configured persistence path.</p>
       </div>
 
       <!-- Related -->
@@ -57,7 +57,7 @@ import Layout from '../../layouts/Layout.astro';
         <div class="related-grid">
           <a href="/blog/memory-that-remembers" class="related-card">
             <span class="related-cat">Memory</span>
-            <span class="related-name" data-i18n="postVerify.related.0">A memory that remembers: append-only knowledge for research agents</span>
+            <span class="related-name" data-i18n="postVerify.related.0">A memory that remembers: append-only knowledge for autonomous workers</span>
           </a>
           <a href="/blog/benchmarks-repo-map" class="related-card">
             <span class="related-cat">Benchmarks</span>

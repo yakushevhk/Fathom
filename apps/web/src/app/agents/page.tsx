@@ -37,7 +37,7 @@ export default function AgentsPage() {
   return (
     <div className="flex-1 flex flex-col min-w-0">
       <div className="h-9 flex items-center px-4 border-b border-white/[0.06] text-xs text-gray-400 shrink-0">
-        Workers — {agents.length} total
+        Worker runtime — {agents.length} total
       </div>
       <div className="p-6 overflow-y-auto flex-1">
         {loading ? (
@@ -52,7 +52,7 @@ export default function AgentsPage() {
             </button>
           </div>
         ) : Object.entries(grouped).length === 0 ? (
-          <p className="text-gray-600 text-xs">No workers yet</p>
+          <p className="text-gray-600 text-xs">No active workers yet. Dispatch a session or job to start runtime work.</p>
         ) : (
           <div className="space-y-4">
             {Object.entries(grouped).map(([sessionId, group]) => (

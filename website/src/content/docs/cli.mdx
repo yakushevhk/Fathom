@@ -1,5 +1,6 @@
 ---
-title: "Cli — Fathom"
+title: "CLI Reference — Fathom"
+description: "Use the Fathom CLI to run autonomous worker tasks, operate the TUI or server, manage memory and sessions, schedule jobs, and inspect runtime statistics."
 sidebarId: "cli"
 ---
   
@@ -61,7 +62,7 @@ stats       Tool-call statistics for a recorded session\`}`}} /></pre>
 
   <section id="run">
     <h2 data-i18n="docsCli.runTitle">run</h2>
-    <p data-i18n-html="docsCli.runDesc">Headless research. A coordinator decomposes the query into sub-agents, synthesizes their results and writes a structured report. The query can be passed as a positional argument <code>[QUERY]</code> or read from a file with <code>--task-file</code>. With <code>--repeat</code> it becomes watch mode: each run is diffed against the previous one and new contacts trigger alerts.</p>
+    <p data-i18n-html="docsCli.runDesc">Headless autonomous work. A coordinator decomposes the task into sub-agents, synthesizes their results and writes a structured output. The task can be passed as a positional argument <code>[QUERY]</code> or read from a file with <code>--task-file</code>. With <code>--repeat</code> it becomes watch mode: each run is diffed against the previous one and configured notifications can report changes.</p>
     <div class="mini-table-wrap">
       <table class="mini-table">
         <thead><tr><th data-i18n="docsCli.thFlag">Flag</th><th data-i18n="docsCli.thDesc">Description</th></tr></thead>

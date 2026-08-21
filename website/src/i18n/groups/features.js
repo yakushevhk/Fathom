@@ -100,8 +100,8 @@ export default {
       "0": { title: { en: 'Find', ru: 'Найти' }, desc: { en: 'find_leads, search_business_directory, search_social and search_news locate candidates across the open web.', ru: 'find_leads, search_business_directory, search_social и search_news находят кандидатов по открытому вебу.' } },
       "1": { title: { en: 'Extract', ru: 'Извлечь' }, desc: { en: 'extract_contacts and parse_corporate_site pull emails, phones, socials, persons and companies.', ru: 'extract_contacts и parse_corporate_site достают email, телефоны, соцсети, людей и компании.' } },
       "2": { title: { en: 'Verify', ru: 'Проверить' }, desc: { en: 'verify_email (MX + syntax), verify_phone, verify_social_profile and suggest_emails filter out noise.', ru: 'verify_email (MX + синтаксис), verify_phone, verify_social_profile и suggest_emails отсеивают лишнее.' } },
-      "3": { title: { en: 'Deduplicate', ru: 'Дедупликация' }, desc: { en: 'save_contacts merges across sources with normalization — no double records, ever.', ru: 'save_contacts сливает данные со всех источников с нормализацией — без двойных записей.' } },
-      "4": { title: { en: 'Push', ru: 'Отправить' }, desc: { en: 'Synced to SQLite/PostgreSQL and into amoCRM, Bitrix24 or HubSpot — dedup by crm_id.', ru: 'Синхронизация в SQLite/PostgreSQL и в amoCRM, Bitrix24 или HubSpot — дедуп по crm_id.' } },
+      "3": { title: { en: 'Deduplicate', ru: 'Дедупликация' }, desc: { en: 'save_contacts can merge normalized records across sources; review the resulting records before side effects.', ru: 'save_contacts сливает данные со всех источников с нормализацией — без двойных записей.' } },
+      "4": { title: { en: 'Push', ru: 'Отправить' }, desc: { en: 'Persist to local storage and, when configured, prepare an approved handoff to a CRM adapter.', ru: 'Сохраняйте в локальное хранилище и при настройке готовьте одобренную передачу в CRM-адаптер.' } },
     },
     dataPoint: {
       "0": { name: { en: 'Work emails', ru: 'Рабочие email' } },
@@ -115,8 +115,8 @@ export default {
     data: { badge: { en: 'Data points', ru: 'Точки данных' }, title: { en: 'What Fathom extracts for you', ru: 'Что Fathom извлекает за вас' } },
     verify: {
       badge: { en: 'Verification', ru: 'Верификация' },
-      title: { en: 'Every contact is verified', ru: 'Каждый контакт проверен' },
-      desc: { en: 'Bounced emails and wrong numbers waste outreach budget. Fathom MX-validates every email, format-checks every phone and confirms social profiles exist before anything is saved.', ru: 'Возвраты и неверные номера сжигают бюджет обращений. Fathom MX-валидирует каждый email, проверяет формат каждого телефона и подтверждает существование соцпрофилей до сохранения.' },
+      title: { en: 'Evidence before persistence', ru: 'Свидетельства перед сохранением' },
+      desc: { en: 'Bounced emails and wrong numbers waste outreach budget. Configured verification tools can check email syntax/MX, phone format, and social profile availability before a worker proposes persistence.', ru: 'Возвраты и неверные номера сжигают бюджет обращений. Настроенные инструменты верификации могут проверить синтаксис и MX email, формат телефона и доступность соцпрофиля до предложения сохранить запись.' },
     },
     table: {
       tool: { en: 'Tool', ru: 'Инструмент' },
@@ -130,22 +130,22 @@ export default {
     dedup: {
       badge: { en: 'Deduplication', ru: 'Дедупликация' },
       title: { en: 'Smart merge across sources', ru: 'Умное слияние по источникам' },
-      desc: { en: 'The same person appears on LinkedIn, corporate sites and news. save_contacts normalizes emails and phones, merges records and keeps one canonical contact — re-runs never create duplicates.', ru: 'Один и тот же человек встречается в LinkedIn, на сайтах компаний и в новостях. save_contacts нормализует email и телефоны, сливает записи и хранит один канонический контакт — повторные прогоны не создают дублей.' },
+      desc: { en: 'The same person can appear across sources. save_contacts normalizes emails and phones, merges records, and keeps one canonical contact for operator review.', ru: 'Один и тот же человек может встречаться в разных источниках. save_contacts нормализует email и телефоны, сливает записи и сохраняет один канонический контакт для проверки оператором.' },
     },
     crm: {
       badge: { en: 'CRM sync', ru: 'Синхронизация с CRM' },
       title: { en: 'One-click push to your CRM', ru: 'Отправка в CRM в один клик' },
-      amocrm: { en: 'Contacts and companies pushed with dedup by crm_id — no duplicates on repeated pushes.', ru: 'Контакты и компании отправляются с дедупликацией по crm_id — без дублей при повторных отправках.' },
-      bitrix: { en: 'Leads synced into Bitrix24 with the same dedup guarantees.', ru: 'Лиды синхронизируются в Bitrix24 с теми же гарантиями дедупликации.' },
+      amocrm: { en: 'When configured, contacts and companies can be handed off with crm_id-aware deduplication.', ru: 'При настройке контакты и компании можно передавать с дедупликацией по crm_id.' },
+      bitrix: { en: 'A configured Bitrix24 adapter can receive approved lead records.', ru: 'Настроенный адаптер Bitrix24 может получать одобренные записи лидов.' },
       hubspot: { en: 'Contacts created or updated idempotently from verified data.', ru: 'Контакты создаются или обновляются идемпотентно на основе проверенных данных.' },
     },
     results: {
       badge: { en: 'Results', ru: 'Результаты' },
-      title: { en: 'What you get in 3 minutes', ru: 'Что вы получаете за 3 минуты' },
-      0: { en: 'contacts per typical query', ru: 'контактов на типичный запрос' },
-      1: { en: 'verified emails & phones', ru: 'проверенных email и телефонов' },
-      2: { en: 'duplicates after merge', ru: 'дублей после слияния' },
-      3: { en: 'CRMs supported out of the box', ru: 'CRM «из коробки»' },
+      title: { en: 'What the workflow produces', ru: 'Что производит сценарий' },
+      0: { en: 'source links and confidence metadata', ru: 'ссылки на источники и метаданные уверенности' },
+      1: { en: 'approval before side effects', ru: 'одобрение перед побочными эффектами' },
+      2: { en: 'normalized records and deduplication', ru: 'нормализованные записи и дедупликация' },
+      3: { en: 'optional CRM or file handoff', ru: 'опциональная передача в CRM или файл' },
     },
     cta: {
       title: { en: 'Generate your first lead list', ru: 'Сформируйте свой первый список лидов' },
@@ -161,9 +161,9 @@ export default {
     steps: {
       badge: { en: 'How it works', ru: 'Как это работает' },
       title: { en: 'Three steps to pipeline', ru: 'Три шага до конвейера' },
-      0: { title: { en: 'Collect', ru: 'Сбор' }, desc: { en: 'The lead-gen pipeline delivers verified contacts with enriched context: role, company, recent activity, tech signals.', ru: 'Конвейер генерации лидов отдаёт проверенные контакты с обогащённым контекстом: роль, компания, недавняя активность, тех-сигналы.' } },
+      0: { title: { en: 'Collect', ru: 'Сбор' }, desc: { en: 'A configured contact workflow can provide evidence and context such as role, company, recent activity, or technical signals for review.', ru: 'Настроенный контактный сценарий может предоставить для проверки свидетельства и контекст: роль, компанию, недавнюю активность или технические сигналы.' } },
       1: { title: { en: 'Compose', ru: 'Составление' }, desc: { en: 'The LLM writes one message per recipient using that context — no fill-in-the-blanks templates.', ru: 'LLM пишет одно сообщение на получателя, используя этот контекст — без шаблонов с пропусками.' } },
-      2: { title: { en: 'Deliver', ru: 'Доставка' }, desc: { en: 'Export as CSV/DOCX or push to CRM; approval flow guards side effects before anything is sent.', ru: 'Экспорт в CSV/DOCX или отправка в CRM; процесс согласования предотвращает побочные эффекты до отправки.' } },
+      2: { title: { en: 'Deliver', ru: 'Доставка' }, desc: { en: 'Export a deliverable or prepare an approved CRM handoff; approval flow guards side effects before anything is sent.', ru: 'Экспорт в CSV/DOCX или отправка в CRM; процесс согласования предотвращает побочные эффекты до отправки.' } },
     },
       channels: {
       badge: { en: 'Outreach channels', ru: 'Каналы обращений' },
@@ -180,7 +180,7 @@ export default {
     crm: {
       badge: { en: 'CRM integration', ru: 'Интеграция с CRM' },
       title: { en: 'Push to pipeline, not spreadsheets', ru: 'В конвейер, а не в таблицы' },
-      desc: { en: 'amoCRM, Bitrix24 and HubSpot sync ships built-in — dedup by crm_id means re-runs never double-create contacts or deals.', ru: 'Синхронизация с amoCRM, Bitrix24 и HubSpot из коробки — дедупликация по crm_id гарантирует, что повторные прогоны не создадут контакты или сделки дважды.' },
+      desc: { en: 'When a supported CRM adapter is configured, approved records can be synced with crm_id-aware deduplication; availability depends on deployment.', ru: 'При настройке поддерживаемого CRM-адаптера одобренные записи можно синхронизировать с дедупликацией по crm_id; доступность зависит от деплоя.' },
       approval: { en: 'Approval flow & ops', ru: 'Согласование и операции' },
       start: { en: 'Get started', ru: 'Начать' },
       csv: { en: 'Universal exports for any stack.', ru: 'Универсальный экспорт для любого стека.' },

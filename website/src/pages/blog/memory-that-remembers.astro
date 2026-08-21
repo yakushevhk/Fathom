@@ -2,7 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 ---
 
-<Layout title="A memory that remembers — Fathom Research">
+<Layout title="A memory that remembers — Fathom">
   <article class="article-wrap">
     <nav class="breadcrumb">
       <a href="/blog" data-i18n="postMemory.blog">Blog</a>
@@ -14,9 +14,9 @@ import Layout from '../../layouts/Layout.astro';
 
     <div class="article-date" data-i18n="postMemory.date">August 9, 2026 · 7 min read</div>
     <span class="article-tag" data-i18n="postMemory.tag">Memory</span>
-    <h1 class="article-title" data-i18n="postMemory.title">A memory that remembers: append-only knowledge for research agents</h1>
+    <h1 class="article-title" data-i18n="postMemory.title">A memory that remembers: append-only knowledge for autonomous workers</h1>
 
-    <p class="article-intro" data-i18n="postMemory.intro">Fathom Research gives every agent an unlimited semantic knowledge base in SQLite, built on the mem0 / Memora model: append-only versioning, a six-outcome absorb pipeline, hybrid search with freshness decay, a frozen prompt snapshot that protects the prefix cache — and an entity graph of the real world right next to the facts.</p>
+    <p class="article-intro" data-i18n="postMemory.intro">Fathom's self-hosted runtime gives workers a durable semantic knowledge base in SQLite: append-only versioning, a six-outcome absorb pipeline, hybrid search with freshness decay, a frozen prompt snapshot that protects the prefix cache, and an entity graph alongside the facts.</p>
 
     <div class="highlights">
       <h4 data-i18n="postMemory.highlightsTitle">Highlights</h4>
@@ -30,7 +30,7 @@ import Layout from '../../layouts/Layout.astro';
     </div>
 
     <div class="article-body">
-      <h2 data-i18n="postMemory.h2_1">A small profile, an unlimited archive</h2>
+      <h2 data-i18n="postMemory.h2_1">A small profile, a durable archive</h2>
       <p data-i18n-html="postMemory.p1">There are two memories, deliberately. The file memory — <code>MEMORY.md</code> and <code>USER.md</code> — is a stable ~2 KB "profile" that sits in the prompt. The semantic memory is the archive: every record is a self-contained fact (50–500 characters recommended) with a scope — <code>agent</code> for shared knowledge, <code>user</code> for facts about the client, <code>run</code> for session episodes. Confidence and importance scores, tags, typed edges and a full change journal sit on top, all in SQLite with FTS5 and embeddings.</p>
 
       <h2 data-i18n="postMemory.h2_2">Append-only, with receipts</h2>
@@ -50,7 +50,7 @@ import Layout from '../../layouts/Layout.astro';
 
       <blockquote data-i18n-html="postMemory.quote">
         Nothing is ever deleted. Distillation compresses, GC archives, and the full history stays reachable by id — a memory you can audit is a memory you can trust.
-        <cite>— Fathom Research, memory design notes</cite>
+        <cite>— Fathom runtime memory design notes</cite>
       </blockquote>
 
       <h2 data-i18n="postMemory.h2_7">Housekeeping without deletion</h2>

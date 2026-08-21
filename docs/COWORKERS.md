@@ -1,8 +1,8 @@
 # Coworkers, Channels & Schedules
 
-> Persistent autonomous workers, cron-like scheduling, and notification channels for recurring AI operations.
+> Persistent worker profiles, cron-like scheduling, and configured notification channels for recurring autonomous operations.
 
-Fathom can run as **persistent remote employees** — coworkers with durable profiles, scheduled cron-like triggers, and notification channels. This turns Fathom from a single-session tool into an always-on autonomous workforce.
+Fathom can run workers on infrastructure you control: coworkers are durable profiles with schedules and channels. This extends a one-off session into recurring operations while keeping execution, credentials, and delivery in your deployment. It is not a hosted workforce service.
 
 ---
 
@@ -40,10 +40,12 @@ A **coworker** is a persistent agent profile stored in SQLite. Each coworker has
 
 When a coworker is triggered (via schedule or manual run):
 
-1. The coworker's profile and system prompt are loaded
-2. A new session is created with the coworker's description as the query
-3. Results are delivered to the coworker's linked channel
-4. The session ID is stored in the coworker record for result retrieval
+1. The coworker's profile and prompt are loaded
+2. A new session is created from the configured coworker query/description
+3. Results are delivered when a linked channel and its transport are configured
+4. The session ID is stored in the coworker record for retrieval
+
+A schedule or channel does not provision external infrastructure or credentials; those remain operator-managed configuration.
 
 ---
 
@@ -57,9 +59,9 @@ When a coworker is triggered (via schedule or manual run):
 |------|-------------|
 | `cli` | Command-line interface — results printed to stdout |
 | `http` | HTTP webhook — results POSTed to a URL |
-| `telegram` | Telegram bot — messages sent to a chat |
-| `email` | Email — results sent to an address |
-| `slack` | Slack webhook — messages posted to a channel |
+| `telegram` | Configured Telegram delivery |
+| `email` | Configured email delivery |
+| `slack` | Configured Slack/webhook delivery, when supported by the deployment |
 
 ### API
 
@@ -143,7 +145,7 @@ If the UPDATE affects 0 rows, another scheduler already claimed this task — th
 
 ## Notifications
 
-Notifications deliver results to configured symbolic channels. The notification system is separate from the `[notifications]` config section — it's a runtime system that routes messages to channels based on the coworker's channel configuration.
+Notifications deliver results to configured symbolic channels. Delivery still requires the corresponding `[notifications]` settings, credentials, and reachable external transport; Fathom does not provide those services.
 
 ### Notification types
 

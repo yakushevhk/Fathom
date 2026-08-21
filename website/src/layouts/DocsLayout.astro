@@ -8,7 +8,7 @@ interface Props {
   activePage?: string;
 }
 
-const { title, description = 'Fathom — Autonomous AI Workers documentation: tools, sessions, HTTP API, MCP, security, and architecture.', activePage = '' } = Astro.props;
+const { title, description = 'Fathom documentation for a universal autonomous AI worker runtime: tools, sessions, HTTP API, MCP, security, and architecture.', activePage = '' } = Astro.props;
 const SITE = 'https://fathom.uz';
 const canonical = SITE + Astro.url.pathname;
 const crumbLabel = title.replace(/ — Fathom(?: Research)?$/, '');
