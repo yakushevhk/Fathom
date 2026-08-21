@@ -50,10 +50,10 @@ export default {
       mcp: { en: 'MCP both ways', ru: 'MCP в обе стороны' },
     },
     parallel: {
-      title: { en: 'Fathom-safe by construction', ru: 'Fathom-безопасен по построению' },
+      title: { en: 'parallel-safe by construction', ru: 'parallel-безопасен по построению' },
       sub: {
         en: 'Each tool declares whether it is parallel-safe. Read-only tools run concurrently via execute_batch_spawn; writes serialize with path-overlap detection. That is how CPU batches hit 3.78×.',
-        ru: 'Каждый инструмент объявляет, Fathom-безопасен ли он. Read-only инструменты работают конкурентно через execute_batch_spawn; записи сериализуются с детекцией перекрытия путей. Так CPU-батчи достигают 3.78×.',
+        ru: 'Каждый инструмент объявляет, parallel-безопасен ли он. Read-only инструменты работают конкурентно через execute_batch_spawn; записи сериализуются с детекцией перекрытия путей. Так CPU-батчи достигают 3.78×.',
       },
       numbers: { en: 'See the numbers', ru: 'Смотреть цифры' },
     },

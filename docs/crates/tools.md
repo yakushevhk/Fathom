@@ -1,4 +1,4 @@
-# Documentation: `pr-tools` module — all Research Agent tools
+# Documentation: `pr-tools` module — all Runtime tools
 
 > Full documentation on the internal structure of each tool in `crates/tools/src/`.
 > Based on direct source code reading (~33 files, ~7000 lines).
@@ -135,7 +135,7 @@ pub struct ToolRegistry {
 | `enrich_person` | enrich_person.rs |
 | `extract_contacts` | extract.rs |
 | `save_contacts` | save_contacts.rs |
-| `load_skill` / `scratchpad` / `undo` | coordination.rs |
+| `skill` / `scratchpad` / `undo` | coordination.rs |
 | `spawn_agent` | spawn.rs |
 
 ---
@@ -1098,12 +1098,12 @@ The tool **does not create** the agent itself. It:
 
 **File:** `crates/tools/src/coordination.rs`
 
-### 15.1 `load_skill` (SkillTool)
+### 15.1 `skill` (SkillTool)
 
 **Input:** `{ "name": "skill_name" }`
 **Output:** Contents of the skill file (Markdown).
 
-**Algorithm:** Searches for the `{name}.md` file in the `.parallel/skills/` directory relative to working_dir. Reads and returns the contents.
+**Algorithm:** Searches for the `{name}.md` file in the `~/.fathom/skills/` directory relative to working_dir. Reads and returns the contents.
 
 ### 15.2 `scratchpad` (ScratchpadTool)
 
@@ -1117,7 +1117,7 @@ The tool **does not create** the agent itself. It:
 
 **Output:** Current contents of the scratchpad file.
 
-**Algorithm:** Works with the `.parallel/scratchpad.md` file in working_dir. Allows agents to exchange data through a shared file.
+**Algorithm:** Works with the `~/.fathom/scratchpad.md` file in working_dir. Allows agents to exchange data through a shared file.
 
 ### 15.3 `undo` (UndoTool)
 
@@ -1229,7 +1229,7 @@ Each tool runs the command via `tokio::process::Command::new("git")` in `ctx.wor
 
 **Output:** Current contents of the memory file.
 
-**Algorithm:** Works with the `.parallel/memory.md` file in working_dir. Allows the agent to save and retrieve intermediate data between iterations.
+**Algorithm:** Works with the `~/.fathom/memory.md` file in working_dir. Allows the agent to save and retrieve intermediate data between iterations.
 
 ---
 
@@ -1412,7 +1412,7 @@ File change history tracking system (for undo):
 - `track_edit(path)` — marks the file as tracked.
 - `make_snapshot()` — saves the current state of all tracked files.
 - `undo()` — restores the previous snapshot.
-- Stores snapshots in the `.parallel/history/` directory.
+- Stores snapshots in the `~/.fathom/history/` directory.
 
 ---
 
@@ -1436,7 +1436,7 @@ Async file lock manager:
 
 ### 31.1 Session state autosave
 
-Automatically saves the agent session state (scratchpad, memory, file history) to the `.parallel/autosave/` directory. Allows session recovery after a crash.
+Automatically saves the agent session state (scratchpad, memory, file history) to the `~/.fathom/autosave/` directory. Allows session recovery after a crash.
 
 ---
 

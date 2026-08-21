@@ -942,7 +942,7 @@ Content-Type: application/json
       <li><strong>Audit importance scores</strong> — Facts with high importance that are no longer relevant will dominate digests. Use <code>memory_boost</code> to dial them back when context changes.</li>
       <li><strong>Prune stale run facts</strong> — If <code>gc_auto</code> is disabled, run <code>fathom memory gc --dry-run</code> weekly to check for accumulation.</li>
       <li><strong>Rebuild after model changes</strong> — Switching embedding models invalidates existing vectors. Always run <code>fathom memory rebuild --embeddings-only</code> after changing the <code>embeddings</code> config.</li>
-      <li><strong>Monitor store size</strong> — Use <code>fathom memory stats</code> to track growth. A healthy store stays under 50MB for typical B2B outreach workloads.</li>
+      <li><strong>Monitor store size</strong> — Use <code>fathom memory stats</code> to track growth. Store size depends on workload; use `fathom memory stats` to monitor growth in your deployment.</li>
       <li><strong>Back up the database</strong> — The SQLite file at <code>db_path</code> contains everything. Include it in your backup rotation, especially before running <code>nuke</code>.</li>
     </ul>
   </section>

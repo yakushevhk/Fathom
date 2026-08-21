@@ -1061,7 +1061,7 @@ Returns a static string for each role:
 ### 6.1. `prompts/default.txt`
 
 The base prompt for most models (GPT-4, Claude, etc.). Contains:
-- Identification: "You are an autonomous research agent working within the Fathom system."
+- Identification: "You are an autonomous worker working within the Fathom system."
 - General instructions: use tools, do not fabricate, be precise, record problems.
 - Behavioral guidelines: think step by step, break tasks down, try alternatives, use markdown.
 

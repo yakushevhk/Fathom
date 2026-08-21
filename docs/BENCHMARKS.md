@@ -271,7 +271,7 @@ Offline TF-IDF embedder (no network, no LLM); in-memory SQLite.
 **How the memory system works.** The `pr-memory` crate implements a semantic
 memory store for agents. It uses TF-IDF vectorisation (term frequency–inverse
 document frequency, computed offline from the stored facts themselves), not an
-LLM or external embedding API. This means all operations are free, deterministic,
+LLM or external embedding API. This means all operations are free of external API cost, deterministic,
 and work offline. The store is backed by an in-memory SQLite database with two
 indexes: an FTS5 full-text index (for BM25 retrieval) and a separate embedding
 table (for cosine-similarity retrieval). The hybrid search combines both: it

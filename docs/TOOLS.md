@@ -1,6 +1,6 @@
 # Tool Reference
 
-**57 tools** available to agents (+6 computer-use tools when the Playwright computer service is running). Each implements the `Tool` trait and is automatically registered in `ToolRegistry`.
+**51 always-registered tools (+ up to 5 CDP + up to 6 computer)** available to agents (+6 computer-use tools when the Playwright computer service is running). Each implements the `Tool` trait and is automatically registered in `ToolRegistry`.
 
 **Tool categories:**
 

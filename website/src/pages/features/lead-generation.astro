@@ -5,8 +5,8 @@ const stages = [
   { n: '01', t: 'Find', d: 'find_leads, search_business_directory, search_social and search_news locate candidates across the open web.' },
   { n: '02', t: 'Extract', d: 'extract_contacts and parse_corporate_site pull emails, phones, socials, persons and companies from pages.' },
   { n: '03', t: 'Verify', d: 'verify_email (MX + syntax), verify_phone, verify_social_profile and suggest_emails discard invalid entries.' },
-  { n: '04', t: 'Deduplicate', d: 'save_contacts merges across sources with normalization — no double records, ever.' },
-  { n: '05', t: 'Push', d: 'Synced to SQLite/PostgreSQL and straight into amoCRM, Bitrix24 or HubSpot — dedup by crm_id.' },
+  { n: '04', t: 'Deduplicate', d: 'save_contacts merges normalized records across sources for operator review.' },
+  { n: '05', t: 'Push', d: 'Persist to local storage and, when configured, prepare an approved CRM handoff.' },
 ];
 
 const dataPoints = ['Work emails', 'Phone numbers', 'Social profiles (LinkedIn, X, Telegram…)', 'Persons & roles', 'Companies & structure', 'Locations', 'Technologies & signals'];
