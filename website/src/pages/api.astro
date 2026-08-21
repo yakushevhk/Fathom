@@ -5,7 +5,7 @@ const endpointGroups = [
   {
     key: 'sessions', name: 'Sessions',
     endpoints: [
-      { m: 'POST', p: '/api/v1/sessions', d: 'Start a research session (query, profile, model, budget)' },
+      { m: 'POST', p: '/api/v1/sessions', d: 'Start an autonomous worker session (task, profile, model, budget)' },
       { m: 'GET', p: '/api/v1/sessions', d: 'List sessions with status and progress' },
       { m: 'GET', p: '/api/v1/sessions/:id', d: 'Session state, agent tree, token usage' },
       { m: 'GET', p: '/api/v1/sessions/:id/results', d: 'Findings, contacts, exports' },
@@ -62,10 +62,25 @@ const endpointGroups = [
       { m: 'GET / PUT', p: '/api/v1/governance/policy', d: 'Read or replace the governance policy' },
       { m: 'POST', p: '/api/v1/governance/decide', d: 'Evaluate a governed action' },
       { m: 'GET', p: '/api/v1/governance/audit', d: 'Read governance audit events' },
-      { m: 'GET / POST', p: '/api/v1/coworkers', d: 'List or create coworker records' },
+      { m: 'GET / POST', p: '/api/v1/coworkers', d: 'List or create persistent coworker profiles' },
+      { m: 'GET / PUT / PATCH / DELETE', p: '/api/v1/coworkers/:id', d: 'Inspect or update a coworker profile' },
       { m: 'GET / POST', p: '/api/v1/channels', d: 'List or create collaboration channels' },
+      { m: 'PUT / PATCH / DELETE', p: '/api/v1/channels/:id', d: 'Update or remove a channel' },
+      { m: 'GET / POST', p: '/api/v1/schedules', d: 'List or create cron-like coworker schedules' },
+      { m: 'GET / PUT / PATCH / DELETE', p: '/api/v1/schedules/:id', d: 'Inspect, update, or remove a schedule' },
+      { m: 'POST', p: '/api/v1/schedules/claim', d: 'Atomically claim due schedules for a scheduler tick' },
       { m: 'GET', p: '/api/v1/ag-ui/events', d: 'Stream AG-UI events' },
       { m: 'GET', p: '/api/v1/ag-ui/health', d: 'AG-UI health probe' },
+    ],
+  },
+  {
+    key: 'security', name: 'Credentials & audit',
+    endpoints: [
+      { m: 'GET / POST', p: '/api/v1/credentials', d: 'List redacted credential metadata or store a secret' },
+      { m: 'DELETE', p: '/api/v1/credentials/:id', d: 'Delete a stored credential' },
+      { m: 'GET', p: '/api/v1/replay', d: 'List redacted governed actions; filter by session or agent' },
+      { m: 'GET', p: '/api/v1/observability/summary', d: 'Read bounded live metrics and audit counts' },
+      { m: 'POST', p: '/api/v1/notifications/test', d: 'Send a bounded test through a configured notification channel' },
     ],
   },
   {
@@ -78,6 +93,11 @@ const endpointGroups = [
       { m: 'POST', p: '/api/v1/computers/click', d: 'Click through the computer relay' },
       { m: 'POST', p: '/api/v1/computers/type', d: 'Type through the computer relay' },
       { m: 'POST', p: '/api/v1/computers/key', d: 'Send a keyboard action' },
+      { m: 'POST', p: '/api/v1/computers/secret', d: 'Enter a secret without returning or logging its value' },
+      { m: 'GET', p: '/api/v1/computers/screenshot', d: 'Capture a screenshot' },
+      { m: 'GET / POST', p: '/api/v1/computers/tabs*', d: 'List, open, activate, or close browser tabs' },
+      { m: 'POST', p: '/api/v1/computers/control/take|release', d: 'Take or release operator control' },
+      { m: 'GET / PUT / DELETE', p: '/api/v1/computers/files*', d: 'List, read, write, or delete confined workspace files' },
       { m: 'GET / POST', p: '/api/v1/computers', d: 'List computers or manage a supervisor-backed computer' },
     ],
   },
@@ -98,7 +118,7 @@ const endpointGroups = [
       <div class="api-hero">
         <p class="eyebrow" data-i18n="apiPage.hero.badge">API &amp; Server</p>
         <h1 class="h2-sec" data-i18n-html data-i18n="apiPage.hero.title">Run it headless.<br />Watch it live.</h1>
-        <p class="copy-lg mx-auto" data-i18n="apiPage.hero.sub">An Axum HTTP server with auth, rate limiting, SSE event streaming, mid-run steering and an embedded single-file dashboard — all in one binary.</p>
+        <p class="copy-lg mx-auto" data-i18n="apiPage.hero.sub">An Axum HTTP control plane for autonomous workers: auth, rate limiting, SSE event streaming, mid-run steering, durable jobs, memory, governance, coworkers, schedules, computer use and an embedded dashboard — all in one binary.</p>
       </div>
 
       <!-- Auth -->
@@ -171,7 +191,7 @@ curl -X POST localhost:8080/api/v1/sessions/abc/steer \\
       <div class="sec-head">
         <p class="eyebrow" data-i18n="apiPage.observability.badge">Observability</p>
         <h2 class="h3-sec" data-i18n="apiPage.observability.title">Prometheus metrics</h2>
-        <p class="copy-lg" data-i18n-html data-i18n="apiPage.observability.sub">Scrape <code class="ic">/metrics</code> and graph the whole fleet. Seven native metrics, no exporter needed.</p>
+        <p class="copy-lg" data-i18n-html data-i18n="apiPage.observability.sub">Scrape <code class="ic">/metrics</code> and graph the whole fleet. The authenticated API also exposes <code class="ic">/api/v1/observability/summary</code> for bounded live counters and audit totals.</p>
       </div>
       <div class="mini-table-wrap">
         <table class="mini-table">

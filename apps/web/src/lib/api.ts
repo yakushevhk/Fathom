@@ -106,6 +106,52 @@ export interface AgentEvent {
   [key: string]: unknown
 }
 
+export interface ObservabilitySummary {
+  active_sessions: number
+  sessions_total: number
+  agents_spawned: number
+  tool_calls: number
+  tokens_used: number
+  audit_events: number
+  audit_denials: number
+  audit_counts_truncated: boolean
+}
+
+/** Metadata returned by the credentials endpoint; the secret is never returned. */
+export interface Credential {
+  id: string
+  name: string
+  kind: string
+  created_at: string
+  updated_at: string
+}
+
+export interface StoreCredentialInput {
+  name: string
+  kind: string
+  secret: string
+}
+
+export interface ReplayAction {
+  id: string
+  agent: string
+  session: string
+  tool: string
+  args_redacted: string
+  decision: string
+  started_at: string
+  completed_at: string | null
+  duration_ms: number | null
+  result_redacted: string | null
+  screenshot_before: string | null
+  screenshot_after: string | null
+  policy_version: string
+}
+
+export interface ReplayListResponse {
+  actions: ReplayAction[]
+}
+
 // ── Coworker operations types ───────────────────────────────────────────
 
 export interface Coworker {
@@ -370,6 +416,33 @@ export const api = {
   events: {
     sessionUrl: (id: string) => `${apiBaseUrl()}/api/v1/sessions/${id}/events`,
     globalUrl: () => `${apiBaseUrl()}/api/v1/events`,
+  },
+
+  observability: {
+    summary: () => request<ObservabilitySummary>('/api/v1/observability/summary'),
+  },
+
+  credentials: {
+    list: () => request<Credential[]>('/api/v1/credentials'),
+    create: (input: StoreCredentialInput) =>
+      request<Credential>('/api/v1/credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+    delete: (id: string) =>
+      request<void>(`/api/v1/credentials/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  },
+
+  replay: {
+    list: (options?: { session?: string; agent?: string; limit?: number }) => {
+      const params = new URLSearchParams()
+      if (options?.session) params.set('session', options.session)
+      if (options?.agent) params.set('agent', options.agent)
+      if (options?.limit) params.set('limit', String(options.limit))
+      const query = params.toString()
+      return request<ReplayListResponse>(`/api/v1/replay${query ? `?${query}` : ''}`)
+    },
   },
 
   agents: {

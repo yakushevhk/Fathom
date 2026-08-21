@@ -13,6 +13,24 @@
   --success: #30a46c;
 }
 
+.skip-link {
+  background: var(--fg-primary);
+  color: var(--bg-surface);
+  left: 8px;
+  padding: 8px 12px;
+  position: fixed;
+  top: 8px;
+  transform: translateY(-150%);
+  transition: transform .15s ease;
+  z-index: 100;
+}
+.skip-link:focus { transform: translateY(0); }
+
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid #c0d4ce;
+  outline-offset: 2px;
+}
+
 body {
   margin: 0;
   background: var(--bg-surface);
@@ -44,6 +62,15 @@ body {
 .animate-fade-in { animation: fade-in 0.5s cubic-bezier(0.16,1,0.3,1); }
 .animate-pulse { animation: pulse 2.4s infinite; }
 .animate-spin { animation: spin 750ms linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}
 
 /* Operations console surfaces */
 .ops-kicker {

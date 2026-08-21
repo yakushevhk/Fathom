@@ -13,16 +13,16 @@ export const DEFAULT_LANG = "en";
 export const translations = {
   "nav": {
     "features": {
-      "en": "Features",
-      "ru": "Возможности"
+      "en": "Workers",
+      "ru": "Воркеры"
     },
     "how": {
       "en": "How It Works",
       "ru": "Как работает"
     },
     "usecases": {
-      "en": "Use Cases",
-      "ru": "Кейсы"
+      "en": "Capabilities",
+      "ru": "Возможности"
     },
     "docs": {
       "en": "Documentation",
@@ -87,8 +87,8 @@ export const translations = {
   },
   "footer": {
     "desc": {
-      "en": "An AI research agent for web intelligence, lead generation, and reviewable outreach.",
-      "ru": "ИИ-агент для веб-исследований, генерации лидов и аутрича с обязательной проверкой человеком."
+      "en": "Autonomous AI workers for research, code, computer use, scheduled operations, memory, and governed automation.",
+      "ru": "Автономные ИИ-воркеры для исследований, кода, работы за компьютером, операций по расписанию, памяти и управляемой автоматизации."
     },
     "product": {
       "en": "Product",
@@ -103,8 +103,8 @@ export const translations = {
       "ru": "Компания"
     },
     "features": {
-      "en": "Features",
-      "ru": "Возможности"
+      "en": "Worker capabilities",
+      "ru": "Возможности воркеров"
     },
     "how": {
       "en": "How It Works",
@@ -151,8 +151,8 @@ export const translations = {
       "ru": "Конфиденциальность"
     },
     "rights": {
-      "en": "© 2026 Fathom Research. All rights reserved.",
-      "ru": "© 2026 Fathom Research. Все права защищены."
+      "en": "© 2026 Fathom. All rights reserved.",
+      "ru": "© 2026 Fathom. Все права защищены."
     },
     "cli": {
       "en": "CLI Reference",
@@ -307,8 +307,8 @@ export const translations = {
       "ru": "Мультиагентная оркестрация"
     },
     "m1d": {
-      "en": "A coordinator agent decomposes complex research tasks into parallel sub-tasks. Specialized researcher agents run concurrently, each exploring a different data source. A writer agent synthesizes findings into a unified, structured report.",
-      "ru": "Координатор разбивает сложные исследовательские задачи на параллельные подзадачи. Специализированные агенты-исследователи работают одновременно, каждый изучает свой источник данных. Агент-автор синтезирует результаты в единый структурированный отчёт."
+      "en": "A coordinator agent decomposes complex tasks into parallel sub-tasks. Specialized workers run concurrently across research, code, and computer-use steps, then synthesize a unified, structured result.",
+      "ru": "Координатор разбивает сложные задачи на параллельные подзадачи. Специализированные воркеры одновременно выполняют исследования, пишут код и работают за компьютером, затем синтезируя единый структурированный результат."
     },
     "m1tag": {
       "en": "Coordinator → Researcher × N → Writer",
@@ -542,16 +542,16 @@ export const translations = {
   },
   "landing": {
     "badge": {
-      "en": "AI-Powered Research Agent",
-      "ru": "ИИ-агент для исследований"
+      "en": "Universal autonomous AI workers",
+      "ru": "Универсальные автономные ИИ-воркеры"
     },
     "title": {
-      "en": "Where agents<br />find answers.",
-      "ru": "Где агенты<br />находят ответы."
+      "en": "Remote workers<br />that get things done.",
+      "ru": "Удалённые воркеры<br />которые делают работу."
     },
     "subtitle": {
-      "en": "Fathom is an autonomous outreach engine: seven specialized agents research, extract, verify and remember your leads — then deliver verified contacts with enriched context and personalized drafts, synced to your CRM or exported for any stack.",
-      "ru": "Fathom — автономный движок аутрича: семь специализированных агентов исследуют, извлекают, верифицируют и запоминают лидов — затем отдают верифицированные контакты с обогащённым контекстом и персональные черновики, синхронизированные с вашей CRM или экспортированные в любой стек."
+      "en": "Fathom is a universal autonomous worker platform. Deploy persistent agents for research, outreach, code, computer use, and scheduled operations — with memory, governance, notifications, and human review built into one runtime.",
+      "ru": "Fathom — универсальная платформа автономных воркеров. Запускайте постоянных агентов для исследований, аутрича, кода, работы за компьютером и операций по расписанию — с памятью, управлением, уведомлениями и проверкой человеком в одном рантайме."
     },
     "cta1": {
       "en": "Start building",
@@ -604,41 +604,41 @@ export const translations = {
       }
     },
     "marquee_label": {
-      "en": "Search backends",
-      "ru": "Поисковые бэкенды"
+      "en": "Workers connect to your stack",
+      "ru": "Воркеры подключаются к вашему стеку"
     },
     "value_label": {
       "en": "What you get",
       "ru": "Что вы получаете"
     },
     "value_title": {
-      "en": "Three workflows, one runtime",
-      "ru": "Три сценария — один рантайм"
+      "en": "One worker, many missions",
+      "ru": "Один воркер — множество задач"
     },
     "value_sub": {
-      "en": "From a query to verified, enriched contacts and personalized outreach — without touching a spreadsheet.",
-      "ru": "От запроса до верифицированных контактов и персонального аутрича — без единой таблицы."
+      "en": "Give Fathom a goal and let autonomous workers research, write code, use a computer, and run repeatable operations with your approval.",
+      "ru": "Поставьте Fathom цель — и автономные воркеры исследуют, пишут код, работают за компьютером и выполняют повторяемые операции с вашим одобрением."
     },
     "cap": {
       "r": {
         "t": { "en": "Deep Research", "ru": "Глубокое исследование" },
         "d": {
-          "en": "7 search backends, hybrid & smart fusion, parallel fan-out across hierarchical sub-agents up to max_depth levels.",
-          "ru": "7 поисковых бэкендов, гибридный и интеллектуальный режимы, параллельное распределение задач по иерархии подагентов до max_depth уровней."
+          "en": "Search, fetch, parse and synthesize cited findings with hierarchical workers that can fan out and reflect.",
+          "ru": "Поиск, загрузка, разбор и синтез цитируемых находок с иерархическими воркерами, умеющими распределять задачи и анализировать результат."
         }
       },
       "l": {
         "t": { "en": "Lead Generation", "ru": "Генерация лидов" },
         "d": {
-          "en": "Automated OSINT pipeline: emails, phones, socials, corporate sites — verified before they reach your CRM.",
-          "ru": "Автоматический конвейер OSINT: email, телефоны, соцсети, корпоративные сайты — всё верифицируется до попадания в CRM."
+          "en": "Workers can find, verify and organize contacts, or apply the same governed pipeline to any structured operation.",
+          "ru": "Воркеры находят, проверяют и организуют контакты или применяют тот же управляемый конвейер к любой структурированной операции."
         }
       },
       "o": {
         "t": { "en": "Auto Outreach", "ru": "Автообращение" },
         "d": {
-          "en": "Personalized, role- and company-aware drafts, batch generated for entire lists — verified and ready for your review, CRM sync or export.",
-          "ru": "Персональные черновики с учётом роли и компании, пакетно для целых списков — верифицированные и готовые к просмотру, синхронизации с CRM или экспорту."
+          "en": "Workers draft personalized actions, batch operations, and approved updates — with memory, schedules, notifications, and review before side effects.",
+          "ru": "Воркеры готовят персональные действия, пакетные операции и одобренные обновления — с памятью, расписаниями, уведомлениями и проверкой перед побочными эффектами."
         }
       }
     },
@@ -647,16 +647,16 @@ export const translations = {
       "ru": "Подробнее →"
     },
     "agents_label": {
-      "en": "Agent types",
-      "ru": "Типы агентов"
+      "en": "Persistent worker roles",
+      "ru": "Роли постоянных воркеров"
     },
     "agents_title": {
-      "en": "Purpose-built agent roles",
-      "ru": "Специализированные роли агентов"
+      "en": "Specialists for every mission",
+      "ru": "Специалисты для любой задачи"
     },
     "agents_sub": {
-      "en": "One pipeline, seven roles. Each agent hands the next a cleaner signal — until the last one writes the message your lead actually wants to read.",
-      "ru": "Один конвейер, семь ролей. Каждый агент передаёт следующему более чистый сигнал — пока последний не напишет сообщение, которое лид действительно захочет прочитать."
+      "en": "Persistent workers compose into a team: coordinators plan, specialists use tools, memory carries context forward, and governance keeps operators in control.",
+      "ru": "Постоянные воркеры объединяются в команду: координаторы планируют, специалисты используют инструменты, память переносит контекст, а управление сохраняет контроль оператора."
     },
     "bench_label": {
       "en": "Performance",
@@ -831,52 +831,52 @@ export const translations = {
       "ru": "Память и граф"
     },
     "how_label": {
-      "en": "How the runtime works",
-      "ru": "Как работает рантайм"
+      "en": "How workers operate",
+      "ru": "Как работают воркеры"
     },
     "how_title": {
-      "en": "From question to verified contacts",
-      "ru": "От вопроса до верифицированных контактов"
+      "en": "From goal to governed execution",
+      "ru": "От цели к управляемому исполнению"
     },
     "pipe_label": {
-      "en": "One live pipeline",
-      "ru": "Один рабочий пайплайн"
+      "en": "A live worker run",
+      "ru": "Живой запуск воркера"
     },
     "pipe_title": {
-      "en": "From a query to ready-to-send leads",
-      "ru": "От запроса до готовых к отправке лидов"
+      "en": "A live run you can inspect",
+      "ru": "Живой запуск, который можно проверить"
     },
     "pipe_sub": {
-      "en": "Watch the request travel through the engine: search the web, parse the pages, enrich the team, segment the leads — then compose verified, personalized drafts ready for your review, CRM sync or export.",
-      "ru": "Смотрите, как запрос проходит через движок: поиск в вебе, парсинг страниц, обогащение команды, сегментация лидов — а затем составление верифицированных персональных черновиков, готовых к ревью, синхронизации с CRM или экспорту."
+      "en": "Watch a goal travel through the engine: workers plan, use tools, write findings to memory, pause for approvals, and deliver a report or action with notifications.",
+      "ru": "Смотрите, как цель проходит через движок: воркеры планируют, используют инструменты, записывают находки в память, ждут одобрения и выдают отчёт или действие с уведомлениями."
     },
     "step": {
       "1": {
         "t": { "en": "Ask", "ru": "Запрос" },
         "d": {
-          "en": "Type a research goal in plain language. The coordinator decomposes it into sub-tasks.",
-          "ru": "Опишите цель обычным языком — координатор разложит её на подзадачи."
+          "en": "Describe a goal in plain language. The coordinator decomposes it into durable sub-tasks.",
+          "ru": "Опишите цель обычным языком — координатор разложит её на устойчивые подзадачи."
         }
       },
       "2": {
         "t": { "en": "Research", "ru": "Исследование" },
         "d": {
-          "en": "Fathom agents search the web, parse sites, extract contacts, and spawn their own children.",
-          "ru": "Агенты Fathom ищут в вебе, парсят сайты, извлекают контакты и порождают дочерних агентов."
+          "en": "Workers search, write code, use a browser, call integrations, and spawn specialists when the goal needs them.",
+          "ru": "Воркеры ищут, пишут код, работают в браузере, вызывают интеграции и порождают специалистов, когда это нужно цели."
         }
       },
       "3": {
         "t": { "en": "Verify", "ru": "Проверка" },
         "d": {
-          "en": "Every email MX-checked, phones validated, social profiles confirmed.",
-          "ru": "Каждый email проверен по MX, телефоны валидированы, соцпрофили подтверждены."
+          "en": "Policy hooks and approval gates check side effects before they run; protected surfaces and secret scanning add another layer.",
+          "ru": "Хуки политик и шлюзы одобрения проверяют побочные эффекты до запуска; защищённые поверхности и поиск секретов добавляют ещё один уровень."
         }
       },
       "4": {
         "t": { "en": "Export", "ru": "Экспорт" },
         "d": {
-          "en": "CSV, PDF, HTML, JSON, DOCX — or pushed to CRM with zero duplicates.",
-          "ru": "CSV, PDF, HTML, JSON, DOCX — либо пуш в CRM без дубликатов."
+          "en": "Deliver a report, code change, approved update, or notification — with durable state for the next run.",
+          "ru": "Выдайте отчёт, изменение кода, одобренное обновление или уведомление — с устойчивым состоянием для следующего запуска."
         }
       }
     },
@@ -901,8 +901,8 @@ export const translations = {
       "ru": "Начните работать с Fathom"
     },
     "cta_sub": {
-      "en": "Distributed individually. No vendor lock-in. Full control over your research pipeline.",
-      "ru": "Распространяется индивидуально. Без привязки к поставщику. Полный контроль над конвейером исследований."
+      "en": "Self-hosted and reviewable. No vendor lock-in. Give your workers access to the tools, memory, and schedules your team controls.",
+      "ru": "Самостоятельный и проверяемый. Без привязки к поставщику. Дайте воркерам доступ к инструментам, памяти и расписаниям под контролем вашей команды."
     },
     "cta_mono": {
       "en": "fathom bench · docs · request access",
@@ -926,15 +926,15 @@ export const translations = {
         "ru": "Чем Fathom отличается от плагина ChatGPT?"
       },
       "a1": {
-        "en": "Fathom is a purpose-built research engine in Rust: it fans out hierarchical sub-agents in parallel, verifies every contact before saving, and remembers everything over weeks of campaigns — not a single-session chat context window.",
-        "ru": "Fathom — специализированный исследовательский движок на Rust: он параллельно запускает иерархических саб-агентов, верифицирует каждый контакт перед сохранением и помнит всё на протяжении недель кампаний — а не окно контекста одного чата."
+        "en": "Fathom is a universal autonomous worker runtime in Rust: it plans goals, coordinates sub-agents, uses code and computer tools, remembers context, and keeps side effects behind governance gates — not a single-session chat context window.",
+        "ru": "Fathom — универсальный рантайм автономных воркеров на Rust: он планирует цели, координирует саб-агентов, использует инструменты кода и компьютера, сохраняет контекст и держит побочные эффекты за шлюзами управления — а не в окне одного чата."
       },
       "q2": {
         "en": "Which search engines are supported?",
         "ru": "Какие поисковые системы поддерживаются?"
       },
       "a2": {
-        "en": "Seven backends — Linkup, Parallel, Exa, Tavily, Serper, Brave and DuckDuckGo — fused with hybrid and smart modes and RRF ranking, so one query spans the whole web, not just the first page.",
+        "en": "Multiple backends — including Linkup, Exa, Tavily, Serper, Brave and DuckDuckGo — are fused with hybrid and smart modes and RRF ranking, so workers can cover the web instead of relying on one result page.",
         "ru": "Семь бэкендов — Linkup, Parallel, Exa, Tavily, Serper, Brave и DuckDuckGo — объединённые гибридным и smart-режимами и RRF-ранжированием, так что один запрос покрывает весь интернет, а не только первую страницу."
       },
       "q3": {

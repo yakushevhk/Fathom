@@ -45,13 +45,13 @@ const hood = [
 const tools = ['extract_contacts', 'parse_html', 'extract_json', 'parse_corporate_site', 'analyze_image'];
 ---
 
-<Layout title="Extracting Agent — Fathom Research">
+<Layout title="Extraction Worker — Fathom" description="Extraction worker that turns web pages, documents, and browser output into structured data for autonomous workflows.">
   <main class="ag-page">
     <div class="container">
       <div class="ag-hero">
         <p class="eyebrow" data-i18n="agents.extracting.hero.eyebrow">AGENT 02 / 07</p>
         <h1 class="h2-sec" data-i18n="agents.extracting.hero.title">Extracting</h1>
-        <p class="copy-lg mx-auto" data-i18n="agents.extracting.hero.sub">Every page hides contacts. The Extracting agent pulls them out — emails, phones, social profiles, people, companies — and turns raw HTML into the structured fuel your outreach runs on. Nothing reaches your pipeline as prose.</p>
+        <p class="copy-lg mx-auto" data-i18n="agents.extracting.hero.sub">The extraction worker turns pages, documents, and browser output into structured data — contacts when you need them, or clean inputs for any downstream workflow.</p>
         <div class="hero-canvas">
           <AgentCanvas agents={[{ name: 'Extracting', mode: 'extracting', hue: 25 }]} />
         </div>
@@ -119,12 +119,12 @@ const tools = ['extract_contacts', 'parse_html', 'extract_json', 'parse_corporat
         {tools.map((t) => <span class="chip chip--mono">{t}</span>)}
       </div>
 
-      <!-- Feeds the outreach pipeline -->
+      <!-- Feeds downstream workers -->
       <div class="feat">
         <div class="feat-copy">
-          <p class="eyebrow" data-i18n="agents.extracting.feeds.eyebrow">Feeds the outreach pipeline</p>
-          <h2 class="h3-sec" data-i18n="agents.extracting.feeds.title">Extraction is outreach fuel</h2>
-          <p class="copy-lg">Every address leaves with a confidence score and a source, so downstream agents know what to trust and what to verify. The runtime autosaves the harvest the moment <code class="ic">extract_contacts</code> returns — nothing evaporates when the session ends. Structuring merges it into canonical records, Cleaning scores deliverability, Outreach writes the message.</p>
+          <p class="eyebrow" data-i18n="agents.extracting.feeds.eyebrow">Feeds downstream workers</p>
+          <h2 class="h3-sec" data-i18n="agents.extracting.feeds.title">Structured output is reusable fuel</h2>
+          <p class="copy-lg">Every extracted value leaves with a confidence score and source, so downstream workers know what to trust and what to verify. The runtime autosaves results as soon as the extraction tool returns — nothing evaporates when the session ends. Other workers can validate, write, or act on the same structured output.</p>
         </div>
         <div class="code-card">
           <pre><code>{`extract_contacts(url: "https://acme.io/team")

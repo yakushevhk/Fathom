@@ -56,6 +56,13 @@ sidebarId: "api"
           <a href="#delete-memory" class="sidebar-link" data-i18n="docsApi.sb.archiveMemory">Archive</a>
         </div>
         <div class="sidebar-section">
+          <h3 class="sidebar-heading">Worker Control Plane</h3>
+          <a href="#worker-control" class="sidebar-link">Coworkers, channels &amp; schedules</a>
+          <a href="#credentials" class="sidebar-link">Credentials</a>
+          <a href="#operations" class="sidebar-link">Replay, observability &amp; notifications</a>
+          <a href="#computer-use" class="sidebar-link">Computer use</a>
+        </div>
+        <div class="sidebar-section">
           <h3 class="sidebar-heading" data-i18n="docsApi.sb.system">System</h3>
           <a href="#health" class="sidebar-link" data-i18n="docsApi.sb.health">Health Check</a>
           <a href="#metrics" class="sidebar-link" data-i18n="docsApi.sb.metrics">Metrics</a>
@@ -74,7 +81,7 @@ sidebarId: "api"
         <span class="section-label" data-i18n="docsApi.sectionLabel">Developer API</span>
         <h1 class="api-title" data-i18n="docsApi.title">HTTP API Reference</h1>
         <p class="api-description" data-i18n="docsApi.desc">
-          Full reference for the Fathom REST API. Manage sessions, stream events, and control AI research agents programmatically.
+          Full reference for the Fathom REST API. Manage autonomous worker sessions, stream events, and operate coworkers, schedules, memory, governance and computer use programmatically.
         </p>
       </div>
 
@@ -82,7 +89,7 @@ sidebarId: "api"
       <section id="overview" class="api-section">
         <h2 class="api-section-title" data-i18n="docsApi.overviewTitle">Overview</h2>
         <p class="api-text" data-i18n="docsApi.overviewText">
-          The Fathom API is a RESTful interface for managing AI research sessions. All responses are JSON-encoded. Streaming endpoints use Server-Sent Events (SSE).
+          The Fathom API is a RESTful control plane for universal autonomous workers. It manages sessions, persistent coworkers, scheduled operations, memory, governance, computer use and notifications; research is one supported workflow. All responses are JSON-encoded. Streaming endpoints use Server-Sent Events (SSE).
         </p>
         <div class="info-block">
           <div class="info-label" data-i18n="docsApi.baseUrlLabel">Base URL</div>
@@ -133,7 +140,7 @@ X-Api-Key: &lt;your-api-key&gt;`}} /></pre>
             <span class="method-badge method-post">POST</span>
             <code class="endpoint-path">/api/v1/sessions</code>
           </div>
-          <p class="endpoint-desc" data-i18n="docsApi.postSessionsDesc">Create a new research session. The API spawns a coordinator agent that orchestrates sub-agents based on the query.</p>
+          <p class="endpoint-desc" data-i18n="docsApi.postSessionsDesc">Create a new worker session. The API spawns a coordinator that orchestrates sub-agents for the supplied task; research is one possible workflow.</p>
 
           <h4 class="param-heading" data-i18n="docsApi.requestBody">Request Body</h4>
           <div class="code-block">
@@ -695,7 +702,7 @@ pr_request_duration_seconds_bucket{le="0.1"} 120`}} /></pre>
             <span class="method-badge method-get">GET</span>
             <code class="endpoint-path">/dashboard</code>
           </div>
-          <p class="endpoint-desc">Embedded single-file HTML dashboard. Sessions, agent tree, memory stats, jobs, and live SSE event feed. No authentication required.</p>
+          <p class="endpoint-desc">Embedded single-file HTML dashboard. Sessions, agent tree, memory stats, jobs, and live SSE event feed. The page itself is public, while its API data requests use the configured API key when authentication is enabled.</p>
           <h4 class="param-heading">Response — <code>200 OK</code></h4>
           <p class="endpoint-desc"><code>text/html</code> — self-contained dashboard page. Open in a browser.</p>
         </article>
@@ -794,6 +801,59 @@ pr_request_duration_seconds_bucket{le="0.1"} 120`}} /></pre>
           <div class="cli-row"><code class="cli-cmd">GET /api/v1/computers/health</code><span>Check the default computer relay.</span></div>
           <div class="cli-row"><code class="cli-cmd">POST /api/v1/computers/navigate</code><span>Navigate the default computer relay.</span></div>
           <div class="cli-row"><code class="cli-cmd">POST /api/v1/computers/click|type|key</code><span>Control the default computer relay.</span></div>
+        </div>
+      </section>
+
+      {/* WORKER CONTROL PLANE */}
+      <section id="worker-control" class="api-section">
+        <h2 class="api-section-title">Coworkers, channels &amp; schedules</h2>
+        <p class="api-text">These authenticated routes persist worker identity and recurring operations. Request bodies are validated by the server; consult the root <code>docs/HTTP-API.md</code> for field-level contracts.</p>
+        <div class="cli-table">
+          <div class="cli-row cli-row-header"><span>Route</span><span>Description</span></div>
+          <div class="cli-row"><code class="cli-cmd">GET|POST /api/v1/coworkers</code><span>List or create persistent coworker profiles.</span></div>
+          <div class="cli-row"><code class="cli-cmd">GET|PUT|PATCH|DELETE /api/v1/coworkers/:id</code><span>Inspect or update a coworker. There is no separate coworker run route.</span></div>
+          <div class="cli-row"><code class="cli-cmd">GET /api/v1/channels?coworker_id=...</code><span>List channels for a coworker; the query parameter is required.</span></div>
+          <div class="cli-row"><code class="cli-cmd">POST /api/v1/channels</code><span>Create a channel linked to a coworker and optionally a session.</span></div>
+          <div class="cli-row"><code class="cli-cmd">PUT|PATCH|DELETE /api/v1/channels/:id</code><span>Update or delete a channel.</span></div>
+          <div class="cli-row"><code class="cli-cmd">GET|POST /api/v1/schedules</code><span>List or create cron-like schedules with a coworker, query, timezone and enabled flag.</span></div>
+          <div class="cli-row"><code class="cli-cmd">GET|PUT|PATCH|DELETE /api/v1/schedules/:id</code><span>Inspect, update or delete a schedule.</span></div>
+          <div class="cli-row"><code class="cli-cmd">POST /api/v1/schedules/claim</code><span>Atomically claim due schedules for a bounded scheduler tick.</span></div>
+        </div>
+      </section>
+
+      <section id="credentials" class="api-section">
+        <h2 class="api-section-title">Credentials vault</h2>
+        <p class="api-text">Credentials are encrypted at rest with the key configured by <code>FATHOM_CREDENTIAL_KEY</code>. Plaintext secrets are accepted only when storing and are never returned by list or create responses.</p>
+        <div class="cli-table">
+          <div class="cli-row cli-row-header"><span>Route</span><span>Description</span></div>
+          <div class="cli-row"><code class="cli-cmd">GET /api/v1/credentials</code><span>List metadata: id, name, kind and timestamps.</span></div>
+          <div class="cli-row"><code class="cli-cmd">POST /api/v1/credentials</code><span>Store a credential with the fields <code>name</code>, <code>kind</code> and <code>secret</code>.</span></div>
+          <div class="cli-row"><code class="cli-cmd">DELETE /api/v1/credentials/:id</code><span>Delete a stored credential.</span></div>
+        </div>
+      </section>
+
+      <section id="operations" class="api-section">
+        <h2 class="api-section-title">Replay, observability &amp; notifications</h2>
+        <div class="cli-table">
+          <div class="cli-row cli-row-header"><span>Route</span><span>Description</span></div>
+          <div class="cli-row"><code class="cli-cmd">GET /api/v1/replay</code><span>List redacted governed actions; optional <code>session</code>, <code>agent</code> and bounded <code>limit</code> filters.</span></div>
+          <div class="cli-row"><code class="cli-cmd">GET /api/v1/observability/summary</code><span>Read live counters and bounded governance audit counts.</span></div>
+          <div class="cli-row"><code class="cli-cmd">POST /api/v1/notifications/test</code><span>Test one configured symbolic channel: <code>webhook</code>, <code>email</code> or <code>telegram</code>. The request accepts only a <code>channel</code> field.</span></div>
+        </div>
+      </section>
+
+      <section id="computer-use" class="api-section">
+        <h2 class="api-section-title">Computer-use relay</h2>
+        <p class="api-text">Computer routes proxy to the configured service (default loopback URL via <code>FATHOM_COMPUTER_SERVICE_URL</code>). They support browser navigation and accessibility snapshots without claiming a particular upstream request schema.</p>
+        <div class="cli-table">
+          <div class="cli-row cli-row-header"><span>Route</span><span>Description</span></div>
+          <div class="cli-row"><code class="cli-cmd">POST /api/v1/computers/session</code><span>Start or refresh a computer session.</span></div>
+          <div class="cli-row"><code class="cli-cmd">GET /api/v1/computers/health|snapshot|screenshot|tabs</code><span>Inspect computer health, accessibility snapshot, screenshot or open tabs.</span></div>
+          <div class="cli-row"><code class="cli-cmd">POST /api/v1/computers/navigate|click|type|key|secret</code><span>Perform browser actions; <code>secret</code> avoids returning or logging the value.</span></div>
+          <div class="cli-row"><code class="cli-cmd">POST /api/v1/computers/control/take|release</code><span>Hand control to or from an operator.</span></div>
+          <div class="cli-row"><code class="cli-cmd">GET|DELETE /api/v1/computers/files</code><span>List or delete files in the confined workspace.</span></div>
+          <div class="cli-row"><code class="cli-cmd">GET /api/v1/computers/files/read · PUT /api/v1/computers/files/write</code><span>Read or write a confined workspace file.</span></div>
+          <div class="cli-row"><code class="cli-cmd">GET|POST /api/v1/computers/:agent_id/...</code><span>Agent-scoped relay and supervisor lifecycle routes are available for supervised computers.</span></div>
         </div>
       </section>
 

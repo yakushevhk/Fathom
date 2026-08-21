@@ -2,14 +2,14 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="Playground — Fathom Research" description="Interactive console: launch research, watch agents live, browse memory, manage jobs and inspect metrics — all against your local Fathom server.">
+<Layout title="Playground — Fathom" description="Interactive console: launch autonomous tasks, watch workers live, browse memory, manage jobs and inspect metrics — all against your local Fathom server.">
   <main class="pg-page">
     <div class="container">
       <!-- Hero -->
       <div class="pg-hero">
         <p class="eyebrow" data-i18n="playground.hero.badge">Playground</p>
-        <h1 class="h2-sec" data-i18n="playground.hero.title">Deep research, live.</h1>
-        <p class="copy-lg mx-auto" data-i18n="playground.hero.sub">Launch a research session, watch the agent fleet work in real time, steer it mid-run, browse long-term memory, manage background jobs and inspect live metrics — the whole platform in one console.</p>
+        <h1 class="h2-sec" data-i18n="playground.hero.title">Autonomous work, live.</h1>
+        <p class="copy-lg mx-auto" data-i18n="playground.hero.sub">Launch an autonomous task, watch the worker fleet operate in real time, steer it mid-run, browse long-term memory, manage background jobs and inspect live metrics — the whole platform in one console.</p>
       </div>
 
       <!-- Console: connection + composer -->
@@ -37,10 +37,10 @@ import Layout from '../layouts/Layout.astro';
         </div>
 
         <div class="pg-composer">
-          <textarea id="pg-query" rows="3" data-i18n-placeholder="playground.composer.placeholder" placeholder="What should we research? e.g. “Map the competitive landscape of AI research agents — pricing, features, traction”"></textarea>
+          <textarea id="pg-query" rows="3" data-i18n-placeholder="playground.composer.placeholder" placeholder="What should Fathom do? e.g. “Map the competitive landscape of AI agents — pricing, features, traction”"></textarea>
           <div class="pg-composer-actions">
             <span class="pg-endpoint">POST /api/v1/sessions</span>
-            <button class="btn btn-primary" id="pg-run" data-i18n="playground.composer.run">Run research</button>
+            <button class="btn btn-primary" id="pg-run" data-i18n="playground.composer.run">Run task</button>
           </div>
         </div>
       </section>
@@ -62,7 +62,7 @@ import Layout from '../layouts/Layout.astro';
             <button class="pg-ghost-btn" id="pg-refresh-sessions" title="Refresh">⟳</button>
           </div>
           <div class="pg-session-list" id="pg-session-list">
-            <div class="pg-empty" data-i18n="playground.sessions.empty">No sessions yet — run your first research above.</div>
+            <div class="pg-empty" data-i18n="playground.sessions.empty">No sessions yet — run your first task above.</div>
           </div>
         </aside>
 
@@ -131,7 +131,7 @@ import Layout from '../layouts/Layout.astro';
             <div class="pg-prompts" id="pg-prompts"></div>
 
             <div class="pg-steer" id="pg-steer" hidden>
-              <input id="pg-steer-input" type="text" data-i18n-placeholder="playground.steer.placeholder" placeholder="Steer the research — add instructions mid-run…" />
+              <input id="pg-steer-input" type="text" data-i18n-placeholder="playground.steer.placeholder" placeholder="Steer the task — add instructions mid-run…" />
               <button class="btn btn-primary" id="pg-steer-btn" data-i18n="playground.steer.send">Send</button>
             </div>
 
@@ -689,7 +689,7 @@ import Layout from '../layouts/Layout.astro';
       }).catch(function () { /* offline banner already shown */ });
     }
     function renderSessionList() {
-      if (!state.sessions.length) { els.sessionList.innerHTML = '<div class="pg-empty">No sessions yet — run your first research above.</div>'; return; }
+      if (!state.sessions.length) { els.sessionList.innerHTML = '<div class="pg-empty">No sessions yet — run your first task above.</div>'; return; }
       els.sessionList.innerHTML = state.sessions.map(function (s) {
         return '<div class="pg-session-item' + (s.id === state.current ? ' active' : '') + '" data-id="' + esc(s.id) + '">' +
           '<div class="pg-si-q">' + esc(s.query || '(no query)') + '</div>' +
@@ -715,7 +715,7 @@ import Layout from '../layouts/Layout.astro';
       api('/sessions', { method: 'POST', body: { query: q } }).then(function (s) {
         els.query.value = ''; refreshSessions(); switchTab('research'); openSession(s.id);
       }).catch(function (err) { alert('Failed to start session: ' + err.message); })
-        .finally(function () { els.run.disabled = false; els.run.textContent = 'Run research'; });
+        .finally(function () { els.run.disabled = false; els.run.textContent = 'Run task'; });
     }
 
     // ---------- open session ----------

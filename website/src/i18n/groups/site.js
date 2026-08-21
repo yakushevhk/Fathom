@@ -77,8 +77,8 @@ export default {
       cli: { en: 'CLI reference', ru: 'Справочник CLI' },
     },
     cta: {
-      title: { en: 'Installed? Run your first research.', ru: 'Установили? Запустите первое исследование.' },
-      sub: { en: 'Configure the LLM key, pick a search backend and launch a session in under five minutes.', ru: 'Настройте LLM-ключ, выберите поисковый бэкенд и запустите сессию меньше чем за пять минут.' },
+      title: { en: 'Installed? Run your first autonomous task.', ru: 'Установили? Запустите первую автономную задачу.' },
+      sub: { en: 'Configure the LLM key, choose the tools you need and launch a worker task in under five minutes.', ru: 'Настройте LLM-ключ, выберите нужные инструменты и запустите задачу воркера менее чем за пять минут.' },
       next: { en: 'Next: quickstart →', ru: 'Далее: быстрый старт →' },
       cli: { en: 'CLI reference', ru: 'Справочник CLI' },
     },

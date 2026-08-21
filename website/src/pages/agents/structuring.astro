@@ -47,13 +47,13 @@ const hood = [
 const tools = ['save_contacts', 'extract_contacts', 'find_leads', 'memory'];
 ---
 
-<Layout title="Structuring Agent — Fathom Research">
+<Layout title="Structuring Worker — Fathom" description="Structuring worker that normalizes, deduplicates, and links extracted data into canonical records for autonomous workflows.">
   <main class="ag-page">
     <div class="container">
       <div class="ag-hero">
         <p class="eyebrow" data-i18n="agents.structuring.hero.eyebrow">AGENT 03 / 07</p>
         <h1 class="h2-sec" data-i18n="agents.structuring.hero.title">Structuring</h1>
-        <p class="copy-lg mx-auto" data-i18n="agents.structuring.hero.sub">A lead you cannot address is noise. The Structuring agent turns extracted fragments into one canonical contact record — normalized, deduplicated, linked into an entity graph — so outreach always knows exactly who it is writing to.</p>
+        <p class="copy-lg mx-auto" data-i18n="agents.structuring.hero.sub">The structuring worker turns extracted fragments into canonical records — normalized, deduplicated, and linked in an entity graph so every worker can rely on the same context.</p>
         <div class="hero-canvas">
           <AgentCanvas agents={[{ name: 'Structuring', mode: 'structuring', hue: 260 }]} />
         </div>
@@ -121,12 +121,12 @@ const tools = ['save_contacts', 'extract_contacts', 'find_leads', 'memory'];
         {tools.map((t, i) => <span class="chip chip--mono" data-i18n={`agents.structuring.toolNames.${i}`}>{t}</span>)}
       </div>
 
-      <!-- Feeds the outreach pipeline -->
+      <!-- Feeds downstream workers -->
       <div class="feat feat-reverse">
         <div class="feat-copy">
-          <p class="eyebrow" data-i18n="agents.structuring.feeds.eyebrow">Feeds the outreach pipeline</p>
-          <h2 class="h3-sec" data-i18n="agents.structuring.feeds.title">A structured contact is an addressee</h2>
-          <p class="copy-lg" data-i18n="agents.structuring.feeds.body">Outreach never writes "to whom it may concern". It writes to Ann Petrova, CTO at Acme, ann@acme.io — with her LinkedIn for context, tags for segmentation and notes for the opening hook. Because Structuring merged every source into one record, the message lands once, in the right inbox — not three times in three spellings.</p>
+          <p class="eyebrow" data-i18n="agents.structuring.feeds.eyebrow">Feeds downstream workers</p>
+          <h2 class="h3-sec" data-i18n="agents.structuring.feeds.title">A canonical record is shared context</h2>
+          <p class="copy-lg" data-i18n="agents.structuring.feeds.body">Structured records give every worker the same reliable subject, source links, tags, and notes. A coding, research, or operations task can reuse the canonical entity without re-parsing every source or creating duplicates.</p>
         </div>
         <div class="code-card">
           <pre><code>{`save_contacts([{

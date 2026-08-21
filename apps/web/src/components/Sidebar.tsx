@@ -16,7 +16,7 @@ function statusColor(status: string): string {
 }
 
 export function Sidebar() {
-  const { sessions, loading, refresh, createSession, cancelSession } = useSessions()
+  const { sessions, loading, error, refresh, createSession, cancelSession } = useSessions()
   const pathname = usePathname()
   const router = useRouter()
   const [query, setQuery] = useState('')
@@ -25,6 +25,7 @@ export function Sidebar() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [engineOk, setEngineOk] = useState<boolean | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
+  const closeSidebar = () => setSidebarOpen(false)
 
   // Filter sessions by search query
   const filtered = searchQuery.trim()
@@ -44,6 +45,16 @@ export function Sidebar() {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [])
+
+  // Close the mobile navigation with Escape.
+  useEffect(() => {
+    if (!sidebarOpen) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeSidebar()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [sidebarOpen])
 
   // Poll engine health every 5s
   useEffect(() => {
@@ -74,15 +85,15 @@ export function Sidebar() {
     }
   }
 
-  const closeSidebar = () => setSidebarOpen(false)
-
   return (
     <>
       {/* Mobile toggle button */}
       <button
         onClick={() => setSidebarOpen(o => !o)}
         className="fixed top-3 left-3 z-50 md:hidden p-2 rounded-md bg-[#141414] border border-white/[0.06] text-gray-400 hover:text-gray-200 transition-colors"
-        aria-label="Toggle sidebar"
+        aria-label={sidebarOpen ? 'Close navigation' : 'Open navigation'}
+        aria-expanded={sidebarOpen}
+        aria-controls="primary-navigation"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           {sidebarOpen ? (
@@ -102,13 +113,17 @@ export function Sidebar() {
 
       {/* Overlay on mobile */}
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+        <button
+          type="button"
+          className="fixed inset-0 z-30 cursor-default bg-black/50 md:hidden"
           onClick={closeSidebar}
+          aria-label="Close navigation"
         />
       )}
 
       <aside
+        id="primary-navigation"
+        aria-label="Primary navigation"
         className={`
           w-64 min-w-64 h-full flex flex-col bg-[#060606] border-r border-white/[0.06]
           fixed md:relative z-40 transition-transform duration-200
@@ -126,6 +141,14 @@ export function Sidebar() {
           {/* Engine health indicator */}
           <div
             className="ml-auto flex items-center gap-1.5"
+            role="status"
+            aria-label={
+              engineOk === null
+                ? 'Checking worker service connection'
+                : engineOk
+                  ? 'Worker service online'
+                  : 'Worker service offline'
+            }
             title={
               engineOk === null
                 ? 'Checking engine…'
@@ -159,30 +182,43 @@ export function Sidebar() {
           </button>
         </div>
 
-        {/* New session */}
+        {/* New task */}
         <form onSubmit={handleCreate} className="p-3 border-b border-white/[0.06]">
+          <label htmlFor="new-task" className="sr-only">Submit work to a worker</label>
           <input
+            id="new-task"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="New research task…"
+            placeholder="Submit work to a worker…"
             className="w-full p-2 rounded-md bg-[#141414] border border-white/[0.06] text-xs text-gray-200 placeholder-gray-600 outline-none focus:border-gray-500 transition-colors"
           />
         </form>
 
         {/* Search filter */}
         <div className="px-3 py-2 border-b border-white/[0.06]">
+          <label htmlFor="session-search" className="sr-only">Search submitted work</label>
           <input
+            id="session-search"
             ref={searchRef}
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search sessions…"
+            placeholder="Search submitted work…"
             className="w-full p-1.5 rounded-md bg-[#141414] border border-white/[0.06] text-xs text-gray-200 placeholder-gray-600 outline-none focus:border-gray-500 transition-colors"
           />
         </div>
 
         {/* Session list */}
-        <nav className="flex-1 overflow-y-auto py-1">
-          {loading && sessions.length === 0 && (
+        <nav aria-label="Submitted work" className="flex-1 overflow-y-auto py-1">
+          {error && (
+            <div className="mx-3 my-2 ops-alert" role="alert">
+              <span>WORKER CONNECTION ERROR</span>
+              Unable to load submitted work. The worker service may be offline.
+              <button type="button" onClick={refresh} className="mt-2 underline underline-offset-2 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
+                Retry
+              </button>
+            </div>
+          )}
+          {loading && sessions.length === 0 && !error && (
             <div className="flex items-center justify-center py-8">
               <div className="w-4 h-4 rounded-full border border-white/10 border-t-white/60 animate-spin" />
             </div>
@@ -190,71 +226,71 @@ export function Sidebar() {
           {filtered.map(s => {
             const active = pathname === `/chat/${s.id}`
             return (
-              <div
-                key={s.id}
-                className={`group flex items-center gap-2.5 px-3 py-2.5 cursor-pointer transition-colors ${
-                  active
-                    ? 'bg-white/[0.06] border-l-2 border-gray-400'
-                    : 'hover:bg-white/[0.03] border-l-2 border-transparent'
-                }`}
-                onClick={() => { router.push(`/chat/${s.id}`); closeSidebar() }}
-              >
-                <span
-                  className={`w-2 h-2 rounded-full flex-shrink-0 ${statusColor(s.status)} ${s.active ? 'animate-pulse' : ''}`}
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs text-gray-200 truncate">{s.query || 'Untitled'}</div>
-                  <div className="text-[10px] text-gray-600 mt-0.5">
-                    {s.id.slice(0, 8)} · {s.status}
-                    {s.total_agents > 0 && ` · ${s.total_agents} agents`}
-                  </div>
-                </div>
+              <div key={s.id} className={`group flex items-center gap-2.5 px-3 py-2.5 transition-colors ${
+                active
+                  ? 'bg-white/[0.06] border-l-2 border-gray-400'
+                  : 'hover:bg-white/[0.03] border-l-2 border-transparent'
+              }`}>
+                <Link
+                  href={`/chat/${s.id}`}
+                  onClick={closeSidebar}
+                  aria-current={active ? 'page' : undefined}
+                  className="flex min-w-0 flex-1 items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/70"
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`w-2 h-2 rounded-full flex-shrink-0 ${statusColor(s.status)} ${s.active ? 'animate-pulse' : ''}`}
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xs text-gray-200 truncate">{s.query || 'Untitled task'}</span>
+                    <span className="block text-[10px] text-gray-600 mt-0.5">
+                      {s.id.slice(0, 8)} · {s.status}
+                      {s.total_agents > 0 && ` · ${s.total_agents} workers`}
+                    </span>
+                  </span>
+                </Link>
                 {s.active && (
                   <button
-                    onClick={e => { e.stopPropagation(); cancelSession(s.id) }}
-                    className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 text-xs transition-opacity"
-                    title="Cancel"
+                    type="button"
+                    onClick={() => cancelSession(s.id)}
+                    className="text-red-400 hover:text-red-300 text-xs transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+                    aria-label={`Cancel task ${s.query || s.id.slice(0, 8)}`}
+                    title="Cancel task"
                   >
-                    ✕
+                    <span aria-hidden="true">✕</span>
                   </button>
                 )}
               </div>
             )
           })}
-          {!loading && filtered.length === 0 && (
+          {!loading && !error && filtered.length === 0 && (
             <div className="text-center text-gray-600 text-xs py-8">
-              {searchQuery.trim() ? 'No matching sessions' : 'No sessions yet'}
+              {searchQuery.trim() ? 'No matching submitted work' : 'No submitted work yet'}
             </div>
           )}
         </nav>
 
         {/* Footer links */}
-        <div className="p-3 border-t border-white/[0.06] flex flex-wrap justify-center gap-x-3 gap-y-2 text-xs text-gray-500">
-          <Link href="/" className={pathname === '/' ? 'text-gray-200' : 'hover:text-gray-300'} onClick={closeSidebar}>
-            Chats
-          </Link>
-          <Link href="/agents" className={pathname === '/agents' ? 'text-gray-200' : 'hover:text-gray-300'} onClick={closeSidebar}>
-            Agents
-          </Link>
-          <Link href="/jobs" className={pathname === '/jobs' ? 'text-gray-200' : 'hover:text-gray-300'} onClick={closeSidebar}>
-            Jobs
-          </Link>
-          <Link href="/memories" className={pathname === '/memories' ? 'text-gray-200' : 'hover:text-gray-300'} onClick={closeSidebar}>
-            Memory
-          </Link>
-          <Link href="/events" className={pathname === '/events' ? 'text-gray-200' : 'hover:text-gray-300'} onClick={closeSidebar}>
-            Events
-          </Link>
-          <Link href="/governance" className={pathname === '/governance' ? 'text-gray-200' : 'hover:text-gray-300'} onClick={closeSidebar}>
-            Govern
-          </Link>
-          <Link href="/computers" className={pathname === '/computers' ? 'text-gray-200' : 'hover:text-gray-300'} onClick={closeSidebar}>
-            Browser
-          </Link>
-          <Link href="/coworkers" className={pathname === '/coworkers' ? 'text-gray-200' : 'hover:text-gray-300'} onClick={closeSidebar}>
-            Coworkers
-          </Link>
-        </div>
+        <nav aria-label="Control plane" className="p-3 border-t border-white/[0.06] flex flex-wrap justify-center gap-x-3 gap-y-2 text-xs text-gray-500">
+          {[
+            ['/', 'Overview'],
+            ['/agents', 'Workers'],
+            ['/jobs', 'Work'],
+            ['/memories', 'Memory'],
+            ['/events', 'Activity'],
+            ['/observability', 'Observe'],
+            ['/governance', 'Control'],
+            ['/computers', 'Computer'],
+            ['/coworkers', 'Teams'],
+          ].map(([href, label]) => {
+            const active = pathname === href
+            return (
+              <Link key={href} href={href} aria-current={active ? 'page' : undefined} className={active ? 'text-gray-200' : 'hover:text-gray-300'} onClick={closeSidebar}>
+                {label}
+              </Link>
+            )
+          })}
+        </nav>
       </aside>
     </>
   )

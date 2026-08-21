@@ -16,23 +16,27 @@ interface DisplayEvent {
 export default function EventsPage() {
   const [events, setEvents] = useState<DisplayEvent[]>([])
   const [connected, setConnected] = useState(false)
+  const [connectionError, setConnectionError] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const reconnectTimer = useRef<number | null>(null)
   const [autoScroll, setAutoScroll] = useState(true)
 
   // SSE connection
   useEffect(() => {
     const ctrl = new AbortController()
-    let reconnecting = false
 
-    const connect = async () => {
+    const connect = async (): Promise<void> => {
+      if (ctrl.signal.aborted) return
       try {
         const res = await fetch(api.events.globalUrl(), {
           signal: ctrl.signal,
           headers: { Accept: 'text/event-stream', ...apiKeyHeaders() },
         })
+        if (!res.ok) throw new Error(`Event stream returned ${res.status}`)
         setConnected(true)
+        setConnectionError(null)
         const reader = res.body?.getReader()
-        if (!reader) return
+        if (!reader) throw new Error('Event stream has no response body')
         const decoder = new TextDecoder()
         let buffer = ''
         for (;;) {
@@ -42,32 +46,38 @@ export default function EventsPage() {
           const lines = buffer.split('\n')
           buffer = lines.pop() ?? ''
           for (const line of lines) {
-            if (line.startsWith('data: ')) {
+            if (!line.startsWith('data: ')) continue
+            try {
               const raw = JSON.parse(line.slice(6)) as AgentEvent
               setEvents(prev => {
                 const display = eventToDisplay(raw)
-                // Deduplicate by id
-                if (display.id && prev.some(e => e.id === display.id)) return prev
+                if (prev.some(e => e.id === display.id)) return prev
                 return [...prev, display]
               })
+            } catch {
+              // Ignore malformed events while keeping the stream alive.
             }
           }
         }
-      } catch {
-        // aborted or connection lost
-      }
-      if (!ctrl.signal.aborted) {
+      } catch (e) {
+        if (ctrl.signal.aborted) return
+        setConnectionError(e instanceof Error ? e.message : 'Event stream unavailable')
+      } finally {
+        if (ctrl.signal.aborted) return
         setConnected(false)
-        // Reconnect after 2s
-        if (!reconnecting) {
-          reconnecting = true
-          setTimeout(() => { reconnecting = false; connect() }, 2000)
-        }
+        reconnectTimer.current = window.setTimeout(() => {
+          reconnectTimer.current = null
+          void connect()
+        }, 2000)
       }
     }
 
-    connect()
-    return () => { ctrl.abort() }
+    void connect()
+    return () => {
+      ctrl.abort()
+      if (reconnectTimer.current !== null) window.clearTimeout(reconnectTimer.current)
+      reconnectTimer.current = null
+    }
   }, [])
 
   // Auto-scroll
@@ -89,14 +99,16 @@ export default function EventsPage() {
     <div className="flex-1 flex flex-col min-w-0">
       {/* Header */}
       <div className="h-9 flex items-center px-4 border-b border-white/[0.06] text-xs text-gray-400 shrink-0">
-        <span className="text-gray-500 mr-2">Global Events</span>
-        <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
-        <span className="text-gray-500">{connected ? 'Connected' : 'Disconnected'}</span>
+        <span className="text-gray-500 mr-2">Activity</span>
+        <span aria-hidden="true" className={`w-1.5 h-1.5 rounded-full mr-1.5 ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
+        <span role="status" className="text-gray-500">{connected ? 'Live' : connectionError ? 'Offline' : 'Connecting'}</span>
         <span className="ml-auto text-gray-500">{events.length} events</span>
         {events.length > 0 && (
           <button
             onClick={handleClear}
-            className="ml-3 px-2 py-0.5 rounded text-[10px] bg-white/[0.06] hover:bg-white/[0.1] text-gray-400 hover:text-gray-200 transition-colors"
+            type="button"
+            aria-label="Clear activity events"
+            className="ml-3 px-2 py-0.5 rounded text-[10px] bg-white/[0.06] hover:bg-white/[0.1] text-gray-400 hover:text-gray-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gray-300 transition-colors"
           >
             Clear
           </button>
@@ -110,8 +122,8 @@ export default function EventsPage() {
         className="flex-1 overflow-y-auto"
       >
         {events.length === 0 && (
-          <div className="flex items-center justify-center py-12 text-gray-600 text-xs">
-            {connected ? 'Waiting for events...' : 'Connecting...'}
+          <div role={connectionError ? 'alert' : 'status'} className="flex items-center justify-center py-12 text-gray-600 text-xs">
+            {connectionError ? `Activity unavailable: ${connectionError}` : connected ? 'Waiting for activity...' : 'Connecting to activity stream...'}
           </div>
         )}
         <div className="divide-y divide-white/[0.03]">
@@ -138,9 +150,9 @@ export default function EventsPage() {
                 {e.agentId && (
                   <span className="text-[9px] text-gray-700 font-mono">agent:{e.agentId.slice(0, 6)}</span>
                 )}
-                <span className="ml-auto text-[10px] text-gray-600">
-                  {e.timestamp.toLocaleTimeString()}
-                </span>
+                <time className="ml-auto text-[10px] text-gray-600" dateTime={e.timestamp.toISOString()}>
+                  {e.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </time>
               </div>
               <div className="text-xs text-gray-300 leading-relaxed">{e.summary}</div>
               {e.detail && (
@@ -156,7 +168,8 @@ export default function EventsPage() {
 }
 
 function eventToDisplay(event: AgentEvent): DisplayEvent {
-  const id = `${event.type}-${event.id ?? event.agent_id ?? event.request_id ?? 'event'}`
+  const identity = event.id ?? event.request_id ?? event.agent_id ?? event.sequence ?? event.timestamp ?? event.created_at ?? JSON.stringify(event)
+  const id = `${event.type}-${String(identity).slice(0, 120)}`
   const sessionId = event.session_id as string | undefined
   const lifecycleEvent = event.type === 'agent_spawned' || event.type === 'agent_state_changed' || event.type === 'agent_completed' || event.type === 'agent_failed'
   const agentId = (event.agent_id ?? (lifecycleEvent ? event.id : undefined)) as string | undefined
@@ -175,15 +188,15 @@ function eventToDisplay(event: AgentEvent): DisplayEvent {
       summary = `Session failed: ${event.error ?? ''}`
       break
     case 'agent_spawned':
-      summary = `Agent spawned: ${event.role as string}`
+      summary = `Worker started: ${event.role as string}`
       detail = String(event.task ?? '').slice(0, 300)
       break
     case 'agent_completed':
-      summary = `Agent completed: ${String(event.id ?? '').slice(0, 12)}`
+      summary = `Worker completed: ${String(event.id ?? '').slice(0, 12)}`
       detail = String(event.summary ?? '').slice(0, 300)
       break
     case 'agent_failed':
-      summary = `Agent failed: ${String(event.id ?? '').slice(0, 12)}`
+      summary = `Worker failed: ${String(event.id ?? '').slice(0, 12)}`
       detail = String(event.error ?? '')
       break
     case 'tool_call_started':
@@ -210,5 +223,9 @@ function eventToDisplay(event: AgentEvent): DisplayEvent {
       detail = JSON.stringify(event, null, 2).slice(0, 300)
   }
 
-  return { id, type: event.type, sessionId, agentId, summary, detail, timestamp: new Date() }
+  const rawTimestamp = event.timestamp ?? event.created_at
+  const eventTimestamp = typeof rawTimestamp === 'string' || typeof rawTimestamp === 'number'
+    ? new Date(rawTimestamp)
+    : new Date()
+  return { id, type: event.type, sessionId, agentId, summary, detail, timestamp: Number.isNaN(eventTimestamp.getTime()) ? new Date() : eventTimestamp }
 }

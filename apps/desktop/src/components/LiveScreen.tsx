@@ -20,9 +20,16 @@ export function LiveScreen({ baseUrl = '/api/v1/computers' }: LiveScreenProps) {
   const [secretValue, setSecretValue] = useState('')
   const previousImage = useRef<string | null>(null)
   const imageUrlRef = useRef<string | null>(null)
+  const sessionStarted = useRef(false)
 
   const refresh = useCallback(async () => {
     try {
+      // The computer service requires an initialized browser session before
+      // health/snapshot and control endpoints become available.
+      if (!sessionStarted.current) {
+        await api.computer.startSession(baseUrl)
+        sessionStarted.current = true
+      }
       const [nextHealth, nextSnapshot] = await Promise.all([
         api.computer.health(baseUrl),
         api.computer.snapshot(baseUrl),
@@ -102,6 +109,7 @@ export function LiveScreen({ baseUrl = '/api/v1/computers' }: LiveScreenProps) {
 
   const owner = snapshot?.control?.owner ?? health?.control?.owner ?? snapshot?.control_owner ?? health?.control_owner
   const humanControl = owner === 'human'
+  const botControl = owner === 'bot'
   const displayImage = imageUrl ?? snapshot?.screenshot
 
   return (
@@ -165,12 +173,15 @@ export function LiveScreen({ baseUrl = '/api/v1/computers' }: LiveScreenProps) {
       </div>
 
       <div className="navigate-row secret-entry-row">
-        <input className="surface-input" value={secretRef} onChange={event => setSecretRef(event.target.value)} placeholder="Element ref (e_…)" aria-label="Secret element ref" />
-        <input className="surface-input" type="password" value={secretValue} onChange={event => setSecretValue(event.target.value)} placeholder="Secret value (never logged)" aria-label="Secret value" />
-        <button className="surface-button" onClick={() => void enterSecret()} disabled={busy !== null || surfaceState !== 'online' || humanControl || !secretRef.trim() || !secretValue}>
+        <input className="surface-input" value={secretRef} onChange={event => setSecretRef(event.target.value)} placeholder="Element ref (e_…)" aria-label="Secret element ref" disabled={!botControl} />
+        <input className="surface-input" type="password" value={secretValue} onChange={event => setSecretValue(event.target.value)} placeholder="Secret value (never logged)" aria-label="Secret value" disabled={!botControl} />
+        <button className="surface-button" onClick={() => void enterSecret()} disabled={busy !== null || surfaceState !== 'online' || !botControl || !secretRef.trim() || !secretValue}>
           {busy === 'secret' ? 'Sending…' : 'Enter secret'}
         </button>
       </div>
+      <p className="surface-hint" role="status">
+        {surfaceState !== 'online' ? 'Connect the computer service to enter a secret.' : humanControl ? 'Release operator control before entering a secret.' : botControl ? 'Worker control is active. Secret values are sent directly to the computer service and never shown in the transcript.' : 'Claim control to authorize worker actions before entering a secret.'}
+      </p>
 
       {error && (
         <div className="surface-error" role="status">

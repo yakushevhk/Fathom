@@ -186,13 +186,14 @@ html, body, #root {
 }
 
 .session-item {
+  width: 100%;
+  border-left: 2px solid transparent;
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
   cursor: pointer;
   transition: background 150ms ease;
-  border-left: 2px solid transparent;
 }
 .session-item:hover {
   background: var(--bg-elevated);
@@ -201,6 +202,22 @@ html, body, #root {
   background: var(--bg-elevated);
   border-left-color: var(--accent);
 }
+.session-row-select {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0 10px 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.session-row-select:focus-visible { outline: 2px solid var(--accent-blue); outline-offset: -2px; }
+.session-item > .titlebar-btn { margin-right: 6px; }
 
 .session-status {
   width: 8px;
@@ -230,6 +247,7 @@ html, body, #root {
 .session-info {
   flex: 1;
   min-width: 0;
+  display: block;
 }
 
 .session-title {
@@ -744,6 +762,7 @@ html, body, #root {
 .icon-button { padding-inline: 9px; font-size: 15px; line-height: 1; }
 .surface-input { min-width: 0; flex: 1; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-elevated); color: var(--fg-primary); padding: 7px 9px; font: 11px var(--font-mono); }
 .surface-input::placeholder { color: var(--fg-tertiary); }
+.surface-hint { margin: 8px 0 0; color: var(--fg-tertiary); font: 10px/1.5 var(--font-mono); }
 .surface-error { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; margin-top: 12px; padding: 9px; border: 1px solid rgba(229,72,77,.3); border-left: 2px solid var(--danger); background: rgba(229,72,77,.06); color: var(--danger); font-size: 11px; }
 .surface-error button, .plain-button { border: 0; color: var(--fg-primary); background: transparent; font: 600 10px var(--font-mono); cursor: pointer; text-decoration: underline; }
 .surface-error small { width: 100%; color: var(--fg-tertiary); font: 10px var(--font-mono); overflow-wrap: anywhere; }

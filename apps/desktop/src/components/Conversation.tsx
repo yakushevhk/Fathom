@@ -33,10 +33,11 @@ export function Conversation({ activeSession, engineUrl }: ConversationProps) {
     }
 
     let controller: AbortController | undefined
+    let disposed = false
 
-    // Fetch initial results
+    // Fetch initial results. Ignore late responses after switching workers.
     api.sessions.results(activeSession.id).then(results => {
-        if (results) {
+        if (!disposed && results) {
           setMessages([{
             id: 'result',
             type: 'assistant',
@@ -70,6 +71,7 @@ export function Conversation({ activeSession, engineUrl }: ConversationProps) {
     )
 
     return () => {
+      disposed = true
       controller?.abort()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -99,8 +101,8 @@ export function Conversation({ activeSession, engineUrl }: ConversationProps) {
           </svg>
           <h2>Fathom Desktop</h2>
           <p>
-            Select a session from the sidebar or start a new research task.
-            The Fathom engine powers your autonomous research agents.
+            Select a worker session from the sidebar or give a worker a new task.
+            Fathom workers can research, use tools, operate computers, and run scheduled work.
           </p>
         </div>
       </div>
@@ -172,7 +174,7 @@ export function Conversation({ activeSession, engineUrl }: ConversationProps) {
           </div>
           <div className="flex-center gap-4" style={{ justifyContent: 'flex-start', padding: '4px 0' }}>
             <div className="spinner" />
-            <span className="text-muted" style={{ fontSize: 12 }}>Researching</span>
+            <span className="text-muted" style={{ fontSize: 12 }}>Working on your task</span>
           </div>
         </div>
       )}

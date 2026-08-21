@@ -785,7 +785,7 @@ url       = <span class="code-string">"https://mcp.example.com"</span>`}} /></pr
 
   <section id="env-vars">
     <h2 data-i18n="docsConfig.envTitle">Environment Variables</h2>
-    <p data-i18n-html="docsConfig.envSub">Environment variables override config file values. Prefix: <code>PARALLEL_</code>.</p>
+    <p data-i18n-html="docsConfig.envSub">Environment variables override config-file values where the runtime defines an override. Generic config and state paths use <code>PR_</code> names such as <code>PR_CONFIG</code> and <code>PR_MEMORY_DB</code>; specialized <code>PARALLEL_*</code> variables remain valid for CDP, vision, directory and Twitter integrations.</p>
 
     <h3 id="priority" data-i18n="docsConfig.priorityTitle">Priority Order</h3>
     <ol class="priority-list">
@@ -794,7 +794,7 @@ url       = <span class="code-string">"https://mcp.example.com"</span>`}} /></pr
         <div>
           <strong data-i18n="docsConfig.p1Title">Environment variables</strong>
           <span class="priority-tag highest" data-i18n="docsConfig.p1Tag">Highest priority</span>
-          <p data-i18n="docsConfig.p1Desc"><code>PARALLEL_*</code> prefixed variables</p>
+          <p data-i18n="docsConfig.p1Desc"><code>PR_CONFIG</code>, <code>PR_MEMORY_DB</code>, and other explicitly supported overrides; specialized <code>PARALLEL_*</code> variables apply only to their integrations</p>
         </div>
       </li>
       <li>
@@ -924,9 +924,35 @@ url       = <span class="code-string">"https://mcp.example.com"</span>`}} /></pr
             <td>—</td>
             <td data-i18n="docsConfig.env.prJobsDir">Override jobs output directory</td>
           </tr>
+          <tr>
+            <td><code>FATHOM_CREDENTIAL_KEY</code></td>
+            <td>—</td>
+            <td>32-byte AES-256-GCM vault key, supplied as 64-character hex or base64</td>
+          </tr>
+          <tr>
+            <td><code>FATHOM_COMPUTER_SERVICE_URL</code></td>
+            <td>—</td>
+            <td>Computer relay service URL (default: <code>http://127.0.0.1:8765</code>)</td>
+          </tr>
+          <tr>
+            <td><code>COMPUTER_TOKEN</code></td>
+            <td>—</td>
+            <td>Authentication token for the computer service or supervisor</td>
+          </tr>
+          <tr>
+            <td><code>COMPUTER_ALLOW_PRIVATE_HOSTS</code></td>
+            <td>—</td>
+            <td>Development-only override for private/localhost browser targets (default: false)</td>
+          </tr>
         </tbody>
       </table>
     </div>
+  </section>
+
+  <section id="worker-control">
+    <h2>Worker control plane</h2>
+    <p>Persistent coworkers, schedules, credentials, notifications, replay and observability are HTTP control-plane capabilities. They are configured through the authenticated <code>/api/v1</code> routes rather than additional TOML sections. Use <a href="/docs/api">the API reference</a> for current routes and request contracts.</p>
+    <p>Computer use is enabled by the service settings above. The relay supports browser actions, screenshots, accessibility snapshots, confined files and operator control leases; Docker supervisor options are documented in the root <code>docs/COMPUTER-USE.md</code>.</p>
   </section>
 
   <section id="cli-commands">

@@ -9,13 +9,14 @@ interface CoworkerRailProps {
 
 const channels = [
   { id: 'overview', label: 'Overview', glyph: '◈' },
-  { id: 'research', label: 'Research', glyph: '⌁' },
+  { id: 'workers', label: 'Workers', glyph: '⌁' },
   { id: 'computer', label: 'Computer', glyph: '▣' },
   { id: 'governance', label: 'Guardrails', glyph: '⊙' },
 ]
 
 export function CoworkerRail({ sessions, activeSession, onSelect, onChannel }: CoworkerRailProps) {
   const running = sessions.filter(session => session.status === 'running')
+  const activeChannel = activeSession ? 'workers' : 'overview'
 
   return (
     <aside className="coworker-rail" aria-label="Coworker channels">
@@ -23,7 +24,7 @@ export function CoworkerRail({ sessions, activeSession, onSelect, onChannel }: C
       <div className="rail-divider" />
       <nav className="channel-list" aria-label="Channels">
         {channels.map(channel => (
-          <button className={`channel-button ${channel.id === 'research' ? 'active' : ''}`} key={channel.id} title={channel.label} aria-label={channel.label} onClick={() => onChannel?.(channel.id)}>
+          <button className={`channel-button ${channel.id === activeChannel ? 'active' : ''}`} key={channel.id} title={channel.label} aria-label={channel.label} aria-pressed={channel.id === activeChannel} onClick={() => onChannel?.(channel.id)}>
             <span>{channel.glyph}</span>
           </button>
         ))}

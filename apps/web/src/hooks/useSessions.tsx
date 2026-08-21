@@ -25,13 +25,18 @@ export function SessionsProvider({ children }: { children: ReactNode }) {
       setSessions(resp.sessions)
       setError(null)
     } catch (e) {
-      setError(String(e))
+      setError(e instanceof Error ? e.message : 'Worker service is unavailable')
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    void (async () => {
+      await Promise.resolve()
+      await load()
+    })()
+  }, [])
 
   // Poll every 5s
   useEffect(() => {
@@ -45,7 +50,7 @@ export function SessionsProvider({ children }: { children: ReactNode }) {
       await load()
       return s.id
     } catch (e) {
-      setError(String(e))
+      setError(e instanceof Error ? e.message : 'Unable to submit work to the worker service')
       return null
     }
   }
@@ -55,7 +60,7 @@ export function SessionsProvider({ children }: { children: ReactNode }) {
       await api.sessions.cancel(id)
       await load()
     } catch (e) {
-      setError(String(e))
+      setError(e instanceof Error ? e.message : 'Unable to cancel this task')
     }
   }
 

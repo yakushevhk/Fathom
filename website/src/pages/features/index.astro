@@ -2,43 +2,61 @@
 import Layout from '../../layouts/Layout.astro';
 ---
 
-<Layout title="Features — Fathom Research">
+<Layout title="Capabilities — Fathom Autonomous AI Workers" description="Explore Fathom's autonomous worker capabilities: research, outreach, code, computer use, scheduling, memory, governance, and persistent operations.">
   <main class="fp-page">
     <div class="container">
       <div class="fp-hero">
-        <p class="eyebrow" data-i18n="featuresPivot.hero.badge">Use cases</p>
-        <h1 class="h2-sec" data-i18n-html data-i18n="featuresPivot.hero.title">One agent.<br />Three superpowers.</h1>
-        <p class="copy-lg mx-auto" data-i18n="featuresPivot.hero.sub">Research, lead generation and outreach — one pipeline from a plain-language question to verified contacts in your CRM.</p>
+        <p class="eyebrow" data-i18n="featuresPivot.hero.badge">Autonomous worker capabilities</p>
+        <h1 class="h2-sec" data-i18n-html data-i18n="featuresPivot.hero.title">One platform.<br />Every mission.</h1>
+        <p class="copy-lg mx-auto" data-i18n="featuresPivot.hero.sub">Persistent workers turn plain-language goals into governed execution across research, code, computer use, outreach, and scheduled operations.</p>
       </div>
 
       <div class="cap-grid">
         <a href="/features/research" class="cap-card">
           <span class="cap-icon">🔍</span>
-          <h3 data-i18n="featuresPivot.cap.research.title">Deep Research</h3>
-          <p data-i18n="featuresPivot.cap.research.desc">7 search backends fused with hybrid &amp; smart modes. Hierarchical sub-agents fan out, collect and cross-reference — hours of manual work in minutes.</p>
+          <h3 data-i18n="featuresPivot.cap.research.title">Research &amp; analysis</h3>
+          <p data-i18n="featuresPivot.cap.research.desc">Search, fetch, parse, and synthesize cited findings with hierarchical workers that can fan out and reflect.</p>
           <span class="cap-go" data-i18n="featuresPivot.cap.research.go">Explore research →</span>
         </a>
-        <a href="/features/lead-generation" class="cap-card cap-card--accent">
-          <span class="cap-icon">🕵️</span>
-          <h3 data-i18n="featuresPivot.cap.leadgen.title">Lead Generation</h3>
-          <p data-i18n="featuresPivot.cap.leadgen.desc">Five-stage OSINT pipeline: find → extract → verify → deduplicate → push. Emails, phones, socials and company data — verified before they reach your CRM.</p>
-          <span class="cap-go" data-i18n="featuresPivot.cap.leadgen.go">Explore lead gen →</span>
+        <a href="/tools" class="cap-card cap-card--accent">
+          <span class="cap-icon">⌘</span>
+          <h3 data-i18n="featuresPivot.cap.computer.title">Code &amp; computer use</h3>
+          <p data-i18n="featuresPivot.cap.computer.desc">Workers can inspect repositories, run code, and operate a connected browser through explicit tool and approval boundaries.</p>
+          <span class="cap-go" data-i18n="featuresPivot.cap.computer.go">Explore tools →</span>
         </a>
         <a href="/features/auto-outreach" class="cap-card">
           <span class="cap-icon">✉️</span>
-          <h3 data-i18n="featuresPivot.cap.outreach.title">Auto Outreach</h3>
-          <p data-i18n="featuresPivot.cap.outreach.desc">Personalized messages at scale — role- and company-aware, unique per recipient, batch-generated for entire lists and pushed straight to pipeline.</p>
-          <span class="cap-go" data-i18n="featuresPivot.cap.outreach.go">Explore outreach →</span>
+          <h3 data-i18n="featuresPivot.cap.outreach.title">Outreach &amp; operations</h3>
+          <p data-i18n="featuresPivot.cap.outreach.desc">Draft messages, sync approved records, schedule repeat runs, and notify your team when work is complete.</p>
+          <span class="cap-go" data-i18n="featuresPivot.cap.outreach.go">Explore operations →</span>
+        </a>
+        <a href="/memory" class="cap-card">
+          <span class="cap-icon">◌</span>
+          <h3 data-i18n="featuresPivot.cap.memory.title">Memory that persists</h3>
+          <p data-i18n="featuresPivot.cap.memory.desc">Append-only semantic memory and an entity graph keep workers grounded across sessions and repeat runs.</p>
+          <span class="cap-go" data-i18n="featuresPivot.cap.memory.go">Explore memory →</span>
+        </a>
+        <a href="/security" class="cap-card">
+          <span class="cap-icon">◎</span>
+          <h3 data-i18n="featuresPivot.cap.governance.title">Governance by default</h3>
+          <p data-i18n="featuresPivot.cap.governance.desc">Approval gates, policy hooks, secret scanning, and protected surfaces make side effects reviewable.</p>
+          <span class="cap-go" data-i18n="featuresPivot.cap.governance.go">Explore security →</span>
+        </a>
+        <a href="/ops" class="cap-card">
+          <span class="cap-icon">◷</span>
+          <h3 data-i18n="featuresPivot.cap.schedule.title">Scheduled workers</h3>
+          <p data-i18n="featuresPivot.cap.schedule.desc">Durable jobs and repeat mode let workers operate on a schedule and alert you when results change.</p>
+          <span class="cap-go" data-i18n="featuresPivot.cap.schedule.go">Explore operations →</span>
         </a>
       </div>
 
       <div class="sec-head center">
-        <p class="eyebrow" data-i18n="featuresPivot.fits.badge">How it all fits together</p>
-        <h2 class="h3-sec" data-i18n="featuresPivot.fits.title">One platform. Complete pipeline.</h2>
+        <p class="eyebrow" data-i18n="featuresPivot.fits.badge">How workers operate</p>
+        <h2 class="h3-sec" data-i18n="featuresPivot.fits.title">Goal to governed result.</h2>
       </div>
 
       <div class="pipeline">
-        {['Ask', 'Plan', 'Fan-out', 'Extract', 'Verify', 'Memory', 'Outreach', 'CRM'].map((s, i) => (
+        {['Goal', 'Plan', 'Use tools', 'Reflect', 'Remember', 'Approve', 'Act', 'Notify'].map((s, i) => (
           <div class="pipe-step">
             <span class="pipe-num">{String(i + 1).padStart(2, '0')}</span>
             <span class="pipe-name" data-i18n={'featuresPivot.pipeline.' + i + '.name'}>{s}</span>
@@ -67,6 +85,7 @@ import Layout from '../../layouts/Layout.astro';
   .fp-hero .copy-lg { margin-top: 20px; }
 
   .cap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  @media (max-width: 1100px) { .cap-grid { grid-template-columns: repeat(2, 1fr); } }
   .cap-card { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 28px; display: flex; flex-direction: column; gap: 12px; transition: box-shadow .25s var(--ease-out), transform .25s var(--ease-out), border-color .25s; }
   .cap-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); border-color: var(--grey-400); }
   .cap-card--accent { border-color: var(--grey-300); }

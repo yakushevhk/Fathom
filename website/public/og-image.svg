@@ -3,7 +3,7 @@
   <rect x="60" y="60" width="60" height="60" rx="12" fill="#181818" stroke="#2a2a2a" stroke-width="2"/>
   <rect x="75" y="75" width="30" height="30" rx="6" fill="#fcfbfa"/>
   <text x="140" y="105" font-family="Inter, sans-serif" font-size="48" font-weight="700" fill="#fcfbfa">Fathom</text>
-  <text x="140" y="155" font-family="Inter, sans-serif" font-size="28" font-weight="400" fill="#8a8a8a">AI-powered research agent</text>
+  <text x="140" y="155" font-family="Inter, sans-serif" font-size="28" font-weight="400" fill="#8a8a8a">Universal autonomous AI workers</text>
   <rect x="60" y="480" width="1080" height="1" fill="#2a2a2a"/>
   <text x="60" y="530" font-family="Inter, sans-serif" font-size="20" fill="#5a5a5a">fathom.uz</text>
 </svg>

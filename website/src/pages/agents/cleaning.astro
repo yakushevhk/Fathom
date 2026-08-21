@@ -53,13 +53,13 @@ const results = [
 const tools = ['verify_email', 'verify_phone', 'verify_social_profile', 'suggest_emails'];
 ---
 
-<Layout title="Cleaning Agent — Fathom Research">
+<Layout title="Verification Worker — Fathom" description="Verification worker for checking email, phone, profile, and data quality before governed actions.">
   <main class="ag-page">
     <div class="container">
       <div class="ag-hero">
         <p class="eyebrow" data-i18n="agents.cleaning.hero.eyebrow">AGENT 05 / 07</p>
         <h1 class="h2-sec" data-i18n="agents.cleaning.hero.title">Cleaning</h1>
-        <p class="copy-lg mx-auto" data-i18n="agents.cleaning.hero.sub">Every bounce burns budget and sender reputation. The Cleaning agent verifies each email, phone and profile before it reaches your sequence — so outreach spends every message on a contact that actually exists.</p>
+        <p class="copy-lg mx-auto" data-i18n="agents.cleaning.hero.sub">The verification worker checks email, phone, profile, and extracted data before it reaches a governed action — keeping downstream work grounded in records that actually exist.</p>
         <div class="hero-canvas">
           <AgentCanvas agents={[{ name: 'Cleaning', mode: 'cleaning', hue: 55 }]} />
         </div>
@@ -141,12 +141,12 @@ const tools = ['verify_email', 'verify_phone', 'verify_social_profile', 'suggest
         {tools.map((t) => <span class="chip chip--mono">{t}</span>)}
       </div>
 
-      <!-- Feeds the outreach pipeline -->
+      <!-- Feeds downstream workers -->
       <div class="feat">
         <div class="feat-copy">
-          <p class="eyebrow" data-i18n="agents.cleaning.feeds.eyebrow">Feeds the outreach pipeline</p>
-          <h2 class="h3-sec" data-i18n="agents.cleaning.feeds.title">A clean list is budget that stays yours</h2>
-          <p class="copy-lg">Outreach receives only survivors of the gauntlet: a deliverable inbox, a valid number, a live profile. Department addresses and disposable domains never enter the sequence, so messages go to decision-makers — not to voids. That is the difference between outreach that converts and outreach that burns domains.</p>
+          <p class="eyebrow" data-i18n="agents.cleaning.feeds.eyebrow">Feeds downstream workers</p>
+          <h2 class="h3-sec" data-i18n="agents.cleaning.feeds.title">Verified inputs keep actions safe</h2>
+          <p class="copy-lg">Downstream workers receive only validated values and explicit confidence signals. Bad addresses, malformed records, and disposable domains stay out of governed actions, whether the next step is outreach, a report, or an update to another system.</p>
         </div>
         <div class="code-card">
           <pre><code>{`verify_email("ann@acme.io")

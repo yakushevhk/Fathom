@@ -56,8 +56,8 @@ const tools = [
 ---
 
 <Layout
-  title="Outreach — Agent 07 — Fathom Research"
-  description="Outreach — the finale of the Fathom chain: personal messages grounded in verified research, approval-gated side effects, CRM push with crm_id dedup, exports and notifications."
+  title="Operations Worker — Fathom"
+  description="Operations worker for personalized outreach, approved side effects, CRM sync, exports, schedules, and notifications grounded in verified context."
 >
   <main class="ag-page">
     <div class="container">
@@ -65,7 +65,7 @@ const tools = [
       <div class="ag-hero">
         <p class="eyebrow" data-i18n="agents.outreach.hero.eyebrow">Agent 07 / 07</p>
         <h1 class="h2-sec" data-i18n="agents.outreach.hero.title">Outreach</h1>
-        <p class="copy-lg mx-auto" data-i18n="agents.outreach.hero.sub">The finale of the chain. Everything six agents researched, extracted, verified and remembered becomes the one thing that matters — a personal message a human actually wants to read. Approved before it ships, written per recipient, then synced to your CRM or exported.</p>
+        <p class="copy-lg mx-auto" data-i18n="agents.outreach.hero.sub">The operations worker turns verified context and memory into useful action: personalized drafts, approved updates, exports, scheduled runs, and notifications — without losing the operator in the loop.</p>
         <div class="canvas-wrap">
           <AgentCanvas agents={[{ name: 'Outreach', mode: 'outreach', hue: 205 }]} />
         </div>
@@ -150,12 +150,12 @@ const tools = [
         {tools.map((t) => <span class="chip">{t}</span>)}
       </div>
 
-      <!-- 7 · Feeds the outreach pipeline -->
+      <!-- 7 · Delivers governed operations -->
       <div class="feat feat-reverse" id="finale">
         <div class="feat-copy">
-          <p class="eyebrow" data-i18n="agents.outreach.feeds.eyebrow">Feeds the outreach pipeline</p>
-          <h2 class="h3-sec" data-i18n="agents.outreach.feeds.title">The finale: final assembly and delivery</h2>
-          <p class="copy-lg">This is where the whole pipeline pays off. The message references real findings — with sources — because the prompt’s iron rule is to never fabricate. Memory makes repeat outreach smarter: past touches surface through the digest, supersession chains track role changes, and the text never asserts a stale fact. The approval flow keeps a human in control; crm_id dedup keeps the pipeline clean; notifications close the loop the moment the batch lands.</p>
+          <p class="eyebrow" data-i18n="agents.outreach.feeds.eyebrow">Delivers governed operations</p>
+          <h2 class="h3-sec" data-i18n="agents.outreach.feeds.title">From context to accountable action</h2>
+          <p class="copy-lg">This worker turns grounded context into useful action: a personalized draft, an approved record update, an export, or a scheduled notification. Memory keeps repeat runs current, approval gates keep operators in control, and every result can be inspected before it leaves the runtime.</p>
         </div>
         <div class="code-card">
           <pre><code>{`Subject: Acme's Series B → platform hiring

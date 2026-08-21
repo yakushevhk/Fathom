@@ -7,7 +7,7 @@ interface Props {
   description?: string;
 }
 
-const { title, description = 'A Rust AI agent runtime for web research, coding workflows, lead generation, and reviewable automation.' } = Astro.props;
+const { title, description = 'Fathom is a universal autonomous AI worker platform for research, code, computer use, scheduled operations, memory, governance, and reviewable automation.' } = Astro.props;
 const SITE = 'https://fathom.uz';
 const canonical = SITE + Astro.url.pathname;
 ---
@@ -27,7 +27,7 @@ const canonical = SITE + Astro.url.pathname;
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonical} />
     <meta property="og:locale" content={Astro.currentLocale === 'ru' ? 'ru_RU' : 'en_US'} />
-    <meta property="og:site_name" content="Fathom Research" />
+    <meta property="og:site_name" content="Fathom — Autonomous AI Workers" />
     <meta property="og:image" content={`${SITE}/og-image.svg`} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
@@ -39,7 +39,7 @@ const canonical = SITE + Astro.url.pathname;
     <JsonLd data={{
       '@context': 'https://schema.org',
       '@type': 'Organization',
-      name: 'Fathom Research',
+      name: 'Fathom — Autonomous AI Workers',
       url: SITE,
       logo: `${SITE}/favicon.svg`,
       description,
@@ -50,7 +50,7 @@ const canonical = SITE + Astro.url.pathname;
     <JsonLd data={{
       '@context': 'https://schema.org',
       '@type': 'WebSite',
-      name: 'Fathom Research',
+      name: 'Fathom — Autonomous AI Workers',
       url: SITE,
       inLanguage: ['en', 'ru'],
       description,
@@ -58,7 +58,8 @@ const canonical = SITE + Astro.url.pathname;
     <script is:inline>(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window, document, "clarity", "script", "y3qoy4b9ng");</script>
     <script is:inline>
       (function () {
-        var t = localStorage.getItem('Fathom-theme');
+        var t = localStorage.getItem('fathom-theme') || localStorage.getItem('Fathom-theme');
+        if (t && !localStorage.getItem('fathom-theme')) localStorage.setItem('fathom-theme', t);
         if (!t && window.matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
         if (t) document.documentElement.dataset.theme = t;
       })();
@@ -75,7 +76,8 @@ const canonical = SITE + Astro.url.pathname;
           <span class="brand-name">Fathom</span>
         </a>
         <div class="nav-links" id="navbarLinks">
-          <a href="/#features" class="navitem" data-i18n="nav.features">Features</a>
+          <a href="/#features" class="navitem" data-i18n="nav.features">Workers</a>
+          <a href="/features" class="navitem" data-i18n="nav.usecases">Capabilities</a>
           <a href="/research" class="navitem" data-i18n="nav.research">Research</a>
           <a href="/benchmarks" class="navitem" data-i18n="nav.benchmarks">Benchmarks</a>
           <a href="/tools" class="navitem" data-i18n="nav.tools">Tools</a>
@@ -115,7 +117,8 @@ const canonical = SITE + Astro.url.pathname;
 
     <div class="mobile-menu" id="mobile-menu">
       <div class="mobile-menu-links">
-        <a href="/#features" class="mobile-link" data-i18n="nav.features">Features</a>
+        <a href="/#features" class="mobile-link" data-i18n="nav.features">Workers</a>
+        <a href="/features" class="mobile-link" data-i18n="nav.usecases">Capabilities</a>
         <a href="/research" class="mobile-link" data-i18n="nav.research">Research</a>
         <a href="/benchmarks" class="mobile-link" data-i18n="nav.benchmarks">Benchmarks</a>
         <a href="/tools" class="mobile-link" data-i18n="nav.tools">Tools</a>
@@ -151,7 +154,7 @@ const canonical = SITE + Astro.url.pathname;
               </svg>
               <span class="brand-name">Fathom</span>
             </a>
-            <p class="footer-desc" data-i18n="footer.desc">AI-powered research agent for deep web intelligence, lead generation, and automated outreach.</p>
+            <p class="footer-desc" data-i18n="footer.desc">Autonomous AI workers for research, code, computer use, scheduled operations, and governed automation.</p>
           </div>
           <div class="foot-cols">
             <span class="c-title" data-i18n="footer.product">Product</span>
@@ -183,7 +186,7 @@ const canonical = SITE + Astro.url.pathname;
           </div>
         </div>
         <div class="footer-bottom">
-          <p data-i18n="footer.rights">© 2026 Fathom Research. All rights reserved.</p>
+          <p data-i18n="footer.rights">© 2026 Fathom. All rights reserved.</p>
         </div>
       </div>
     </footer>

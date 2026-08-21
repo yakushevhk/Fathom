@@ -1,28 +1,32 @@
 export default {
   featuresPivot: {
     hero: {
-      badge: { en: 'Use cases', ru: 'Кейсы' },
-      title: { en: 'One agent.<br />Three superpowers.', ru: 'Один агент.<br />Три суперсилы.' },
-      sub: { en: 'Research, lead generation and outreach — one pipeline from a plain-language question to verified contacts in your CRM.', ru: 'Исследование, генерация лидов и обращения — один конвейер от вопроса на обычном языке до верифицированных контактов в вашей CRM.' },
+      badge: { en: 'Autonomous worker capabilities', ru: 'Возможности автономных воркеров' },
+      title: { en: 'One platform.<br />Every mission.', ru: 'Одна платформа.<br />Любая задача.' },
+      sub: { en: 'Persistent workers turn plain-language goals into governed execution across research, code, computer use, outreach, and scheduled operations.', ru: 'Постоянные воркеры превращают цели на обычном языке в управляемое исполнение: исследования, код, работа за компьютером, аутрич и операции по расписанию.' },
     },
     cap: {
-      research: { title: { en: 'Deep Research', ru: 'Глубокое веб-исследование' }, desc: { en: '7 search backends fused with hybrid & smart modes. Hierarchical sub-agents fan out, collect and cross-reference — hours of manual work in minutes.', ru: '7 поисковых бэкендов в гибридном и умном режимах. Иерархические субагенты расходятся, собирают и перекрёстно проверяют — часы ручной работы за минуты.' }, go: { en: 'Explore research →', ru: 'Исследование →' } },
-      leadgen: { title: { en: 'Lead Generation', ru: 'Генерация лидов' }, desc: { en: 'Five-stage OSINT pipeline: find → extract → verify → deduplicate → push. Emails, phones, socials and company data — verified before they reach your CRM.', ru: 'Пятиступенчатый конвейер OSINT: найти → извлечь → проверить → устранить дубликаты → отправить. Электронная почта, телефоны, соцсети и данные компаний — проверены до попадания в CRM.' }, go: { en: 'Explore lead gen →', ru: 'Лиды →' } },
-      outreach: { title: { en: 'Auto Outreach', ru: 'Автообращение' }, desc: { en: 'Personalized, role- and company-aware drafts, batch-generated for entire lists — reviewed, exported, or pushed to your CRM.', ru: 'Персональные черновики с учётом роли и компании, пакетно для целых списков — просмотр, экспорт или отправка в CRM.' }, go: { en: 'Explore outreach →', ru: 'Обращения →' } },
+      research: { title: { en: 'Research & analysis', ru: 'Исследования и анализ' }, desc: { en: 'Search, fetch, parse, and synthesize cited findings with hierarchical workers that can fan out and reflect.', ru: 'Поиск, загрузка, разбор и синтез цитируемых находок с иерархическими воркерами, умеющими распределять задачи и анализировать результат.' }, go: { en: 'Explore research →', ru: 'Изучить исследования →' } },
+      computer: { title: { en: 'Code & computer use', ru: 'Код и работа за компьютером' }, desc: { en: 'Workers can inspect repositories, run code, and operate a connected browser through explicit tool and approval boundaries.', ru: 'Воркеры изучают репозитории, запускают код и работают в подключённом браузере через явные границы инструментов и одобрения.' }, go: { en: 'Explore tools →', ru: 'Изучить инструменты →' } },
+      leadgen: { title: { en: 'Contact operations', ru: 'Операции с контактами' }, desc: { en: 'Find, verify, and organize contacts, or apply the same governed pipeline to any structured operation.', ru: 'Находите, проверяйте и организуйте контакты или применяйте тот же управляемый конвейер к любой структурированной операции.' }, go: { en: 'Explore operations →', ru: 'Изучить операции →' } },
+      outreach: { title: { en: 'Outreach & operations', ru: 'Аутрич и операции' }, desc: { en: 'Workers draft personalized actions, batch operations, and approved updates with memory, schedules, and notifications.', ru: 'Воркеры готовят персональные действия, пакетные операции и одобренные обновления с памятью, расписаниями и уведомлениями.' }, go: { en: 'Explore operations →', ru: 'Изучить операции →' } },
+      memory: { title: { en: 'Memory that persists', ru: 'Постоянная память' }, desc: { en: 'Append-only semantic memory and an entity graph keep workers grounded across sessions and repeat runs.', ru: 'Семантическая память только для добавления и граф сущностей сохраняют контекст между сессиями и повторными запусками.' }, go: { en: 'Explore memory →', ru: 'Изучить память →' } },
+      governance: { title: { en: 'Governance by default', ru: 'Управление по умолчанию' }, desc: { en: 'Approval gates, policy hooks, secret scanning, and protected surfaces make side effects reviewable.', ru: 'Шлюзы одобрения, хуки политик, поиск секретов и защищённые поверхности делают побочные эффекты проверяемыми.' }, go: { en: 'Explore security →', ru: 'Изучить безопасность →' } },
+      schedule: { title: { en: 'Scheduled workers', ru: 'Воркеры по расписанию' }, desc: { en: 'Durable jobs and repeat mode let workers operate on a schedule and alert you when results change.', ru: 'Устойчивые задачи и повторный режим позволяют воркерам работать по расписанию и уведомлять об изменениях.' }, go: { en: 'Explore operations →', ru: 'Изучить операции →' } },
     },
     pipeline: {
-      "0": { name: { en: 'Ask', ru: 'Запрос' } },
+      "0": { name: { en: 'Goal', ru: 'Цель' } },
       "1": { name: { en: 'Plan', ru: 'План' } },
-      "2": { name: { en: 'Fan-out', ru: 'Ветвление' } },
-      "3": { name: { en: 'Extract', ru: 'Извлечение' } },
-      "4": { name: { en: 'Verify', ru: 'Проверка' } },
-      "5": { name: { en: 'Memory', ru: 'Память' } },
-      "6": { name: { en: 'Outreach', ru: 'Обращение' } },
-      "7": { name: { en: 'CRM', ru: 'CRM' } },
+      "2": { name: { en: 'Use tools', ru: 'Инструменты' } },
+      "3": { name: { en: 'Reflect', ru: 'Рефлексия' } },
+      "4": { name: { en: 'Remember', ru: 'Память' } },
+      "5": { name: { en: 'Approve', ru: 'Одобрение' } },
+      "6": { name: { en: 'Act', ru: 'Действие' } },
+      "7": { name: { en: 'Notify', ru: 'Уведомление' } },
     },
     fits: {
-      badge: { en: 'How it all fits together', ru: 'Как всё складывается' },
-      title: { en: 'One platform. Complete pipeline.', ru: 'Одна платформа. Полный конвейер.' },
+      badge: { en: 'How workers operate', ru: 'Как работают воркеры' },
+      title: { en: 'Goal to governed result.', ru: 'От цели к управляемому результату.' },
     },
     cta: {
       tools: { en: 'Browse all tools', ru: 'Все инструменты' },
@@ -33,12 +37,12 @@ export default {
   featuresResearch: {
     hero: {
       crumb: { en: 'Research', ru: 'Исследование' },
-      title: { en: 'Deep web research,<br />multiplied.', ru: 'Глубокое веб-исследование,<br />умноженное.' },
-      sub: { en: 'Seven search backends, hybrid fusion, hierarchical fan-out and cross-referencing — an answer assembled from the whole web, not the first page.', ru: 'Семь поисковых бэкендов, гибридное объединение, иерархическое распределение и перекрёстная проверка — ответ, собранный со всего веба, а не с первой страницы.' },
+      title: { en: 'Research workers,<br />multiplied.', ru: 'Исследовательские воркеры,<br />умноженные.' },
+      sub: { en: 'Autonomous workers search, fetch, parse, and cross-reference sources — then hand you a cited answer grounded in memory, code, and browser context.', ru: 'Автономные воркеры ищут, загружают, разбирают и сопоставляют источники — затем выдают цитируемый ответ на основе памяти, кода и контекста браузера.' },
     },
     cap: {
       badge: { en: 'Capabilities', ru: 'Возможности' },
-      title: { en: 'How Fathom researches the web', ru: 'Как Fathom исследует веб' },
+      title: { en: 'How research workers operate', ru: 'Как работают исследовательские воркеры' },
       backends: { en: 'Linkup, Parallel.ai, Exa, Tavily, Serper, Brave, DuckDuckGo — with hybrid and smart modes and RRF ranking to fuse results.', ru: 'Linkup, Parallel.ai, Exa, Tavily, Serper, Brave, DuckDuckGo — с гибридным и умным режимами и ранжированием RRF для объединения результатов.' },
       fanout: { en: 'spawn_agent at any depth up to max_depth; batches of children run in parallel, background mode reports results as notifications.', ru: 'spawn_agent на любой глубине до max_depth; группы дочерних задач выполняются параллельно, фоновый режим сообщает результаты уведомлениями.' },
       fetch: { en: 'web_fetch, web_crawl and web_feed pull full pages, follow sitemaps and parse RSS at up to 1.1M items/s.', ru: 'web_fetch, web_crawl и web_feed загружают полные страницы, следуют по картам сайтов и анализируют RSS со скоростью до 1,1 млн элементов/с.' },
@@ -48,7 +52,7 @@ export default {
     },
     cmp: {
       badge: { en: 'Comparison', ru: 'Сравнение' },
-      title: { en: 'Fathom vs. manual research', ru: 'Fathom против ручного исследования' },
+      title: { en: 'Fathom workers vs. manual work', ru: 'Воркеры Fathom против ручной работы' },
       manual: { head: { en: 'Manual', ru: 'Вручную' }, 0: { en: 'Hours per topic, one tab at a time', ru: 'Часы на тему, по одной вкладке' }, 1: { en: 'Single search engine, first-page bias', ru: 'Один поисковик, смещение к первой странице' }, 2: { en: 'Copy-paste into spreadsheets', ru: 'Копирование в таблицы' }, 3: { en: 'No verification, stale data', ru: 'Без проверки, устаревшие данные' }, 4: { en: 'Nothing remembered next week', ru: 'Ничего не запоминается через неделю' } },
       parallel: { head: { en: 'Fathom', ru: 'Fathom' }, 0: { en: 'Minutes per topic, parallel agents', ru: 'Минуты на тему, параллельные агенты' }, 1: { en: '7 backends fused with RRF ranking', ru: '7 бэкендов объединены с ранжированием RRF' }, 2: { en: 'Structured findings + exports', ru: 'Структурированные результаты + экспорт' }, 3: { en: 'Verified contacts, cross-referenced facts', ru: 'Проверенные контакты, перекрёстно проверенные факты' }, 4: { en: 'Semantic memory carries knowledge forward', ru: 'Семантическая память переносит знания дальше' } },
     },
@@ -88,8 +92,8 @@ export default {
   featuresLeadgen: {
     hero: {
       crumb: { en: 'Lead Generation', ru: 'Генерация лидов' },
-      title: { en: 'From a query to a<br />verified lead list.', ru: 'От запроса до<br />проверенного списка лидов.' },
-      sub: { en: 'An automated OSINT pipeline: agents find contacts across the web, verify every data point, deduplicate across sources and push straight to your CRM.', ru: 'Автоматический конвейер OSINT: агенты находят контакты по всему вебу, проверяют каждый атрибут, устраняют дубликаты по источникам и отправляют прямо в CRM.' },
+      title: { en: 'From a goal to a<br />verified operation.', ru: 'От цели к<br />проверенной операции.' },
+      sub: { en: 'A governed worker pipeline finds contacts across the web, verifies each data point, deduplicates sources, and prepares approved CRM updates.', ru: 'Управляемый конвейер воркеров находит контакты в вебе, проверяет данные, устраняет дубликаты и готовит одобренные обновления CRM.' },
     },
     pipeline: { badge: { en: 'Pipeline', ru: 'Конвейер' }, title: { en: 'Five-stage lead pipeline', ru: 'Пятиступенчатый конвейер лидов' } },
     stage: {
@@ -151,8 +155,8 @@ export default {
   featuresOutreach: {
     hero: {
       crumb: { en: 'Auto Outreach', ru: 'Автообращение' },
-      title: { en: 'Automated outreach<br />at scale.', ru: 'Автоматическое обращение<br />в масштабе.' },
-      sub: { en: 'Every message is written for one recipient — role-aware, company-aware, grounded in fresh research. Batch-generate for entire lists, push straight to pipeline.', ru: 'Каждое сообщение пишется под одного получателя — с учётом роли, компании и свежих исследований. Пакетно для целых списков, сразу в конвейер.' },
+      title: { en: 'Operations workers<br />at scale.', ru: 'Операционные воркеры<br />в масштабе.' },
+      sub: { en: 'Workers write one message per recipient using fresh research and persistent memory. Batch-generate drafts, review side effects, then export or sync approved updates.', ru: 'Воркеры пишут отдельное сообщение каждому получателю на основе свежих исследований и постоянной памяти. Создавайте черновики пакетно, проверяйте побочные эффекты и экспортируйте или синхронизируйте одобренные обновления.' },
     },
     steps: {
       badge: { en: 'How it works', ru: 'Как это работает' },

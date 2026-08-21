@@ -148,7 +148,7 @@ export default {
     hero: {
       badge: { en: 'MCP', ru: 'MCP' },
       title: { en: 'Both sides of the protocol.', ru: 'Обе стороны протокола.' },
-      sub: { en: 'Fathom Research speaks Model Context Protocol in both directions: it consumes tools from external MCP servers and exposes all of its own tools to external MCP clients.', ru: 'Fathom Research говорит на Model Context Protocol в обе стороны: потребляет инструменты внешних MCP-серверов и отдаёт все свои инструменты внешним MCP-клиентам.' },
+      sub: { en: 'Fathom speaks Model Context Protocol in both directions: workers consume tools from external MCP servers and expose their own tools to external MCP clients.', ru: 'Fathom говорит на Model Context Protocol в обе стороны: воркеры используют инструменты внешних MCP-серверов и отдают собственные инструменты внешним MCP-клиентам.' },
     },
     client: {
       badge: { en: 'Client', ru: 'Клиент' },
@@ -199,7 +199,7 @@ export default {
     },
     cta: {
       title: { en: 'Try the TUI now', ru: 'Попробуйте TUI сейчас' },
-      sub: { en: 'Install Fathom Research and launch the interactive terminal in one command.', ru: 'Установите Fathom Research и запустите интерактивный терминал одной командой.' },
+      sub: { en: 'Install Fathom and launch autonomous work from the interactive terminal in one command.', ru: 'Установите Fathom и запускайте автономную работу из интерактивного терминала одной командой.' },
       install: { en: 'Installation guide', ru: 'Руководство по установке' },
     },
   },
@@ -313,7 +313,7 @@ export default {
     },
     cta: {
       title: { en: 'Run your first research', ru: 'Запустите первое исследование' },
-      sub: { en: 'Install Fathom Research and generate a verified lead list in minutes.', ru: 'Установите Fathom Research и сгенерируйте верифицированный список лидов за минуты.' },
+      sub: { en: 'Install Fathom and complete a verified research or outreach task in minutes.', ru: 'Установите Fathom и выполните проверенную исследовательскую или outreach-задачу за минуты.' },
       docs: { en: 'Outreach & leads docs', ru: 'Документация по аутричу' },
     },
   },
@@ -347,10 +347,10 @@ export default {
     },
     cta: {
       title: { en: 'Try the dashboard', ru: 'Попробуйте дашборд' },
-      sub: { en: 'Install Fathom Research, start the server and open /dashboard in your browser.', ru: 'Установите Fathom Research, запустите сервер и откройте /dashboard в браузере.' },
+      sub: { en: 'Install Fathom, start the server and open /dashboard in your browser.', ru: 'Установите Fathom, запустите сервер и откройте /dashboard в браузере.' },
       docs: { en: 'API reference', ru: 'API-справка' },
       playground: { en: 'Open Playground', ru: 'Открыть плейграунд' },
-      playgroundNote: { en: 'Want to run research interactively? The Playground launches sessions, streams agent progress live and renders the report — right in the site.', ru: 'Хотите запускать исследование интерактивно? Плейграунд запускает сессии, стримит прогресс агентов вживую и рендерит отчёт — прямо на сайте.' },
+      playgroundNote: { en: 'Want to run autonomous work interactively? The Playground launches tasks, streams worker progress live and renders the result — right in the site.', ru: 'Хотите запускать автономную работу интерактивно? Плейграунд запускает задачи, показывает прогресс воркеров вживую и отображает результат — прямо на сайте.' },
     },
   },
   securityPage: {

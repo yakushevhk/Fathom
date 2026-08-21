@@ -4,7 +4,7 @@ export default {
       hero: {
         eyebrow: { en: 'AGENT 01 / 07', ru: 'АГЕНТ 01 / 07' },
         title: { en: 'Researcher', ru: 'Исследователь' },
-        sub: { en: 'The field worker of the outreach pipeline. It searches the open web, reads primary sources and brings back cited facts plus raw contacts — the raw truth every personalized message is later written from.', ru: 'Полевой работник конвейера outreach. Он ищет в открытом вебе, читает первоисточники и приносит цитируемые факты плюс сырые контакты — ту сырую правду, из которой позже пишется каждое персональное сообщение.' },
+        sub: { en: 'A general-purpose research worker for the fleet. It searches the open web, reads primary sources, inspects code, and returns cited findings that any downstream task can use.', ru: 'Универсальный исследовательский воркер для флота. Он ищет в открытом вебе, читает первоисточники, изучает код и возвращает цитируемые находки для любой следующей задачи.' },
       },
       what: { eyebrow: { en: 'What it does', ru: 'Что делает' }, title: { en: 'One loop, built to gather truth', ru: 'Один цикл, созданный для сбора правды' } },
       how: { eyebrow: { en: 'How it works', ru: 'Как это работает' }, title: { en: 'From query to cited findings', ru: 'От запроса до цитируемых находок' } },
@@ -54,7 +54,7 @@ export default {
         },
         '4': {
           t: { en: 'Hand off', ru: 'Передача' },
-          d: { en: 'Budget-capped summaries, structured findings and deduped sources flow into synthesis, memory and the contact DB — personalization fuel for outreach.', ru: 'Резюме с ограничением бюджета, структурированные находки и дедуплицированные источники поступают в синтез, память и базу контактов — топливо персонализации для аутрича.' },
+          d: { en: 'Budget-capped summaries, structured findings, and deduped sources flow into synthesis and memory — reusable context for any downstream operation.', ru: 'Резюме с ограничением бюджета, структурированные находки и дедуплицированные источники поступают в синтез, память и базу контактов — топливо персонализации для аутрича.' },
         },
       },
       hood: {
@@ -104,16 +104,16 @@ export default {
         },
       },
       feeds: {
-        eyebrow: { en: 'Feeds the outreach pipeline', ru: 'Работает на аутрич-пайплайн' },
-        title: { en: 'Cited facts become personal lines', ru: 'Цитируемые факты становятся персональными строками' },
+        eyebrow: { en: 'Feeds downstream workers', ru: 'Работает на флот воркеров' },
+        title: { en: 'Cited findings become reusable context', ru: 'Цитируемые факты становятся персональными строками' },
         body: {
-          en: 'Everything the Researcher gathers is personalization material: cited facts, source URLs, raw contacts with provenance. Extracted contacts are auto-persisted with the page they came from; verified emails and phones land in the contact DB and sync to the CRM without duplicates. Downstream, the outreach step writes each message against exactly these facts — a hiring round, a funding event, a tech migration — so the first line is never generic.',
+          en: 'Everything the Researcher gathers is reusable context: cited facts, source URLs, code references, and structured outputs with provenance. Findings persist to memory so an outreach, coding, or operations worker can act on the same evidence without starting from zero.',
           ru: 'Всё, что собирает Researcher, — это материал для персонализации: цитируемые факты, URL источников, сырые контакты с историей происхождения. Извлечённые контакты автоматически сохраняются вместе со страницей, с которой они были получены; верифицированные email и телефоны попадают в базу контактов и синхронизируются с CRM без дубликатов. Далее этап аутрича пишет каждое сообщение на основе именно этих фактов — найм, раунд финансирования, технологическая миграция — так что первая строка никогда не бывает шаблонной.',
         },
       },
       cta: {
-        title: { en: 'Truth in. Personal message out.', ru: 'Правда на входе. Личное сообщение на выходе.' },
-        auto: { en: 'Auto outreach →', ru: 'Автоаутрич →' },
+        title: { en: 'Evidence in. Useful action out.', ru: 'Правда на входе. Личное сообщение на выходе.' },
+        auto: { en: 'Operations workers →', ru: 'Операционные воркеры →' },
         prev: { en: '← Outreach', ru: '← Аутрич' },
         next: { en: 'Searching →', ru: 'Поиск →' },
       },
@@ -122,7 +122,7 @@ export default {
       hero: {
         eyebrow: { en: 'AGENT 04 / 07', ru: 'АГЕНТ 04 / 07' },
         title: { en: 'Searching', ru: 'Поиск' },
-        sub: { en: 'A list is only as good as its coverage. Searching runs every query across seven search backends at once and fuses the results into one deduplicated, ranked pool — so the outreach list is complete before a single message is drafted.', ru: 'Список настолько хорош, насколько широк его охват. Searching прогоняет каждый запрос сразу по семи поисковым бэкендам и объединяет результаты в один дедуплицированный, ранжированный пул — так что список для аутрича полон ещё до черновика первого сообщения.' },
+        sub: { en: 'A worker is only as good as its context. Searching runs queries across multiple backends and fuses the results into one ranked, deduplicated pool for any mission.', ru: 'Воркер хорош настолько, насколько хорош его контекст. Searching запускает запросы по нескольким бэкендам и объединяет результаты в один ранжированный дедуплицированный пул для любой задачи.' },
       },
       what: { eyebrow: { en: 'What it does', ru: 'Что делает' }, title: { en: 'Seven engines, one result set', ru: 'Семь движков, один набор результатов' } },
       how: { eyebrow: { en: 'How it works', ru: 'Как это работает' }, title: { en: 'From one query to a fused list', ru: 'От одного запроса до слитого списка' } },
@@ -140,17 +140,17 @@ export default {
         detailCol: { en: 'Detail', ru: 'Описание' },
       },
       tools: { eyebrow: { en: 'Tools', ru: 'Инструменты' }, title: { en: 'What Searching can call', ru: 'Что может вызывать Searching' } },
-      feeds: { eyebrow: { en: 'Feeds the outreach pipeline', ru: 'Работает на аутрич-пайплайн' }, title: { en: 'Coverage first, message second', ru: 'Сначала охват, потом сообщение' } },
+      feeds: { eyebrow: { en: 'Feeds downstream workers', ru: 'Работает на флот воркеров' }, title: { en: 'Coverage first, action second', ru: 'Сначала охват, потом сообщение' } },
       cta: {
-        title: { en: 'A complete list, ready to write.', ru: 'Полный список, готовый к письму.' },
-        auto: { en: 'Auto outreach →', ru: 'Автоаутрич →' },
+        title: { en: 'A complete context set, ready to use.', ru: 'Полный список, готовый к письму.' },
+        auto: { en: 'Operations workers →', ru: 'Операционные воркеры →' },
       },
     },
     extracting: {
       hero: {
         eyebrow: { en: 'AGENT 02 / 07', ru: 'АГЕНТ 02 / 07' },
         title: { en: 'Extracting', ru: 'Извлечение' },
-        sub: { en: 'Every page hides contacts. The Extracting agent pulls them out — emails, phones, social profiles, people, companies — and turns raw HTML into the structured fuel your outreach runs on. Nothing reaches your pipeline as prose.', ru: 'Каждая страница прячет контакты. Агент Extracting вытаскивает их — email, телефоны, соцпрофили, людей, компании — и превращает сырой HTML в структурированное топливо вашего аутрича. В пайплайн ничего не попадает в виде простого текста.' },
+        sub: { en: 'The extraction worker turns pages, documents, and browser output into structured data — contacts when you need them, or clean inputs for any downstream workflow.', ru: 'Воркер извлечения превращает страницы, документы и данные браузера в структурированные данные — контакты при необходимости или чистые входы для любого следующего процесса.' },
       },
       what: { eyebrow: { en: 'What it does', ru: 'Что делает' }, title: { en: 'Raw pages in, structured contacts out', ru: 'Сырые страницы на входе, структурированные контакты на выходе' } },
       how: { eyebrow: { en: 'How it works', ru: 'Как это работает' }, title: { en: 'Six passes over every source', ru: 'Шесть проходов по каждому источнику' } },
@@ -169,17 +169,17 @@ export default {
         detailCol: { en: 'Detail', ru: 'Описание' },
       },
       tools: { eyebrow: { en: 'Tools', ru: 'Инструменты' }, title: { en: 'The extraction toolbox', ru: 'Набор инструментов извлечения' } },
-      feeds: { eyebrow: { en: 'Feeds the outreach pipeline', ru: 'Работает на аутрич-пайплайн' }, title: { en: 'Extraction is outreach fuel', ru: 'Извлечение — топливо аутрича' } },
+      feeds: { eyebrow: { en: 'Feeds downstream workers', ru: 'Работает на флот воркеров' }, title: { en: 'Structured output is reusable fuel', ru: 'Извлечение — топливо аутрича' } },
       cta: {
-        title: { en: 'From raw pages to pipeline-ready contacts', ru: 'От сырых страниц до контактов, готовых к пайплайну' },
-        auto: { en: 'Auto outreach', ru: 'Автоаутрич' },
+        title: { en: 'From raw pages to workflow-ready data', ru: 'От сырых страниц к данным для процессов' },
+        auto: { en: 'Operations workers', ru: 'Операционные воркеры' },
       },
     },
     structuring: {
       hero: {
         eyebrow: { en: 'AGENT 03 / 07', ru: 'АГЕНТ 03 / 07' },
         title: { en: 'Structuring', ru: 'Структурирование' },
-        sub: { en: 'A lead you cannot address is noise. The Structuring agent turns extracted fragments into one canonical contact record — normalized, deduplicated, linked into an entity graph — so outreach always knows exactly who it is writing to.', ru: 'Лид, к которому нельзя обратиться, — это шум. Агент Structuring превращает извлечённые фрагменты в одну каноническую запись контакта — нормализованную, дедуплицированную, связанную в граф сущностей — чтобы аутрич всегда точно знал, кому пишет.' },
+        sub: { en: 'The structuring worker turns extracted fragments into canonical records — normalized, deduplicated, and linked in an entity graph so every worker can rely on the same context.', ru: 'Воркер структурирования превращает извлечённые фрагменты в канонические записи — нормализованные, дедуплицированные и связанные в граф сущностей, чтобы каждый воркер опирался на единый контекст.' },
       },
       what: { eyebrow: { en: 'What it does', ru: 'Что делает' }, title: { en: 'Canonical records from scattered fragments', ru: 'Канонические записи из разрозненных фрагментов' } },
       how: { eyebrow: { en: 'How it works', ru: 'Как это работает' }, title: { en: 'From tool output to canonical contact', ru: 'От вывода инструмента до канонического контакта' } },
@@ -198,12 +198,12 @@ export default {
         detailCol: { en: 'Detail', ru: 'Описание' },
       },
       tools: { eyebrow: { en: 'Tools', ru: 'Инструменты' }, title: { en: 'What the agent runs', ru: 'Что запускает агент' } },
-      feeds: { eyebrow: { en: 'Feeds the outreach pipeline', ru: 'Работает на аутрич-пайплайн' }, title: { en: 'A structured contact is an addressee', ru: 'Структурированный контакт — это адресат' }, body: { en: 'Outreach never writes "to whom it may concern". It writes to Ann Petrova, CTO at Acme, ann@acme.io — with her LinkedIn for context, tags for segmentation and notes for the opening hook. Because Structuring merged every source into one record, the draft lands once, in the right inbox — not three times in three spellings.', ru: 'Аутрич никогда не пишет «уважаемый господин». Он пишет Анне Петровой, техническому директору Acme, ann@acme.io — с её LinkedIn для контекста, тегами для сегментации и заметками для вступительного крючка. Поскольку Structuring объединил каждый источник в одну запись, черновик ложится один раз и в правильный ящик — а не трижды в трёх написаниях.' } },
+      feeds: { eyebrow: { en: 'Feeds downstream workers', ru: 'Работает на флот воркеров' }, title: { en: 'A canonical record is shared context', ru: 'Структурированный контакт — это адресат' }, body: { en: 'Workers do not operate on fragments. They use Ann Petrova, CTO at Acme, ann@acme.io as one canonical record — with source links, tags, and notes — so any action uses the same context without duplicates.', ru: 'Аутрич никогда не пишет «уважаемый господин». Он пишет Анне Петровой, техническому директору Acme, ann@acme.io — с её LinkedIn для контекста, тегами для сегментации и заметками для вступительного крючка. Поскольку Structuring объединил каждый источник в одну запись, черновик ложится один раз и в правильный ящик — а не трижды в трёх написаниях.' } },
       cta: {
         title: { en: 'Every message needs a canonical addressee', ru: 'Каждому сообщению нужен канонический адресат' },
         prev: { en: '← Extracting', ru: '← Извлечение' },
         next: { en: 'Cleaning →', ru: 'Очистка →' },
-        auto: { en: 'Auto outreach', ru: 'Автоаутрич' },
+        auto: { en: 'Operations workers', ru: 'Операционные воркеры' },
       },
       cap: {
         "0": {
@@ -254,7 +254,7 @@ export default {
       hero: {
         eyebrow: { en: 'AGENT 05 / 07', ru: 'АГЕНТ 05 / 07' },
         title: { en: 'Cleaning', ru: 'Очистка' },
-        sub: { en: 'Every bounce burns budget and sender reputation. The Cleaning agent verifies each email, phone and profile before it reaches your sequence — so outreach spends every message on a contact that actually exists.', ru: 'Каждый возврат сжигает бюджет и репутацию отправителя. Агент Cleaning проверяет каждый email, телефон и профиль, прежде чем они попадут в вашу последовательность, — чтобы аутрич тратил каждое сообщение на реально существующий контакт.' },
+        sub: { en: 'The verification worker checks email, phone, profile, and extracted data before it reaches a governed action — keeping downstream work grounded in records that actually exist.', ru: 'Воркер проверки проверяет email, телефон, профиль и извлечённые данные до управляемого действия — чтобы дальнейшая работа опиралась на реально существующие записи.' },
       },
       what: { eyebrow: { en: 'What it does', ru: 'Что делает' }, title: { en: 'Verification before a single send', ru: 'Проверка до первой отправки' } },
       how: { eyebrow: { en: 'How it works', ru: 'Как это работает' }, title: { en: 'Six gates between harvest and send', ru: 'Шесть ворот между сбором и отправкой' } },
@@ -274,17 +274,17 @@ export default {
       },
       results: { eyebrow: { en: 'Results', ru: 'Результаты' }, title: { en: 'What cleaning buys you', ru: 'Что вам даёт очистка' } },
       tools: { eyebrow: { en: 'Tools', ru: 'Инструменты' }, title: { en: 'The verification toolbox', ru: 'Набор инструментов проверки' } },
-      feeds: { eyebrow: { en: 'Feeds the outreach pipeline', ru: 'Работает на аутрич-пайплайн' }, title: { en: 'A clean list is budget that stays yours', ru: 'Чистый список — это бюджет, который остаётся у вас' } },
+      feeds: { eyebrow: { en: 'Feeds downstream workers', ru: 'Работает на флот воркеров' }, title: { en: 'Verified inputs keep actions safe', ru: 'Чистый список — это бюджет, который остаётся у вас' } },
       cta: {
         title: { en: 'Clean lists convert. Dirty lists bounce.', ru: 'Чистые списки конвертируют. Грязные — возвращаются.' },
-        auto: { en: 'Auto outreach', ru: 'Автоаутрич' },
+        auto: { en: 'Operations workers', ru: 'Операционные воркеры' },
       },
     },
     memoring: {
       hero: {
         eyebrow: { en: 'Agent 06 / 07', ru: 'Агент 06 / 07' },
         title: { en: 'Memoring', ru: 'Память' },
-        sub: { en: 'Long-term memory for the whole pipeline. Every verified contact, company fact and past touch is absorbed into an append-only knowledge base — so the next run, and the next outreach message, starts from everything already known instead of zero.', ru: 'Долгосрочная память для всего пайплайна. Каждый проверенный контакт, факт о компании и прошлые касания поглощаются в базу знаний с возможностью только добавления (append-only), — так что следующий прогон и следующее сообщение аутрича начинаются со всего уже известного вместо нуля.' },
+        sub: { en: 'Persistent memory for the whole worker fleet. Facts, findings, decisions, and past runs are absorbed into an append-only knowledge base so the next operation starts from what is already known.', ru: 'Постоянная память для всего флота воркеров. Факты, находки, решения и прошлые запуски попадают в базу только для добавления, поэтому следующая операция начинается с уже известного.' },
       },
       what: { eyebrow: { en: 'What it does', ru: 'Что делает' }, title: { en: 'Six tools, one knowledge base', ru: 'Шесть инструментов, одна база знаний' } },
       tiers: { eyebrow: { en: 'Three tiers', ru: 'Три уровня' }, title: { en: 'Profile, skills, archive', ru: 'Профиль, навыки, архив' } },
@@ -303,7 +303,7 @@ export default {
         detailCol: { en: 'Implementation', ru: 'Реализация' },
       },
       tools: { eyebrow: { en: 'Tools', ru: 'Инструменты' }, title: { en: 'The Memoring toolset', ru: 'Набор инструментов Memoring' } },
-      feeds: { eyebrow: { en: 'Feeds the outreach pipeline', ru: 'Работает на аутрич-пайплайн' }, title: { en: 'Outreach that remembers every touch', ru: 'Аутрич, который помнит каждое касание' } },
+      feeds: { eyebrow: { en: 'Feeds downstream workers', ru: 'Работает на флот воркеров' }, title: { en: 'Every operation starts smarter', ru: 'Аутрич, который помнит каждое касание' } },
       cta: {
         title: { en: 'Next: Outreach — the finale of the chain', ru: 'Дальше: Outreach — финал цепи' },
       },
@@ -312,7 +312,7 @@ export default {
       hero: {
         eyebrow: { en: 'Agent 07 / 07', ru: 'Агент 07 / 07' },
         title: { en: 'Outreach', ru: 'Аутрич' },
-        sub: { en: 'The finale of the chain. Everything six agents researched, extracted, verified and remembered becomes the one thing that matters — a personal message a human actually wants to read. Approved before it ships, written per recipient, then synced to your CRM or exported.', ru: 'Финал цепи. Всё, что шесть агентов исследовали, извлекли, проверили и запомнили, становится одной важной вещью — личным сообщением, которое человек действительно захочет прочитать. Утверждается перед отправкой, пишется под получателя, затем синхронизируется с CRM или экспортируется.' },
+        sub: { en: 'The operations worker turns verified context and memory into useful action: personalized drafts, approved updates, exports, scheduled runs, and notifications — without losing the operator in the loop.', ru: 'Операционный воркер превращает проверенный контекст и память в полезное действие: персональные черновики, одобренные обновления, экспорт, запуски по расписанию и уведомления — оператор остаётся в контуре.' },
       },
       what: { eyebrow: { en: 'What it does', ru: 'Что делает' }, title: { en: 'From verified leads to ready drafts', ru: 'От проверенных лидов до готовых черновиков' } },
       how: { eyebrow: { en: 'How it works', ru: 'Как это работает' }, title: { en: 'Five steps to a ready-to-send draft', ru: 'Пять шагов до готового к отправке черновика' } },
@@ -330,7 +330,7 @@ export default {
         detailCol: { en: 'Implementation', ru: 'Реализация' },
       },
       tools: { eyebrow: { en: 'Tools', ru: 'Инструменты' }, title: { en: 'The Outreach toolset', ru: 'Набор инструментов Outreach' } },
-      feeds: { eyebrow: { en: 'Feeds the outreach pipeline', ru: 'Работает на аутрич-пайплайн' }, title: { en: 'The finale: final assembly and delivery', ru: 'Финал: итоговая сборка и доставка' } },
+      feeds: { eyebrow: { en: 'Feeds downstream workers', ru: 'Работает на флот воркеров' }, title: { en: 'From context to accountable action', ru: 'Финал: итоговая сборка и доставка' } },
       cta: {
         title: { en: 'Run the whole pipeline — end with outreach', ru: 'Запустите весь пайплайн — и завершите аутричем' },
       },

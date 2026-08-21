@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api, type ActionContext, type AuditEvent, type Decision, type PolicyRule } from '@/lib/api'
 
 const secretKey = /token|secret|password|passwd|api[_-]?key|authorization|cookie|credential|private[_-]?key/i
@@ -31,19 +31,20 @@ function decisionReason(value: Decision): string {
 
 function RuleRow({ rule, onChange, onRemove }: { rule: PolicyRule; onChange: (rule: PolicyRule) => void; onRemove: () => void }) {
   return (
-    <div className="grid grid-cols-[1fr_92px_1fr_28px] gap-2 items-center border-b border-white/[0.06] py-2.5 last:border-0">
+    <div className="grid grid-cols-1 gap-2 items-center border-b border-white/[0.06] py-2.5 last:border-0 sm:grid-cols-[minmax(0,1fr)_92px_minmax(0,1fr)_28px]">
       <input aria-label="Rule tool" value={rule.tool ?? ''} onChange={e => onChange({ ...rule, tool: e.target.value })} placeholder="filesystem.read" className="ops-input font-mono" />
       <select aria-label="Rule effect" value={rule.effect} onChange={e => onChange({ ...rule, effect: e.target.value as PolicyRule['effect'] })} className="ops-input uppercase">
         <option value="allow">allow</option><option value="deny">deny</option>
       </select>
       <input aria-label="Rule path" value={rule.path ?? ''} onChange={e => onChange({ ...rule, path: e.target.value })} placeholder="path or *" className="ops-input font-mono" />
-      <button onClick={onRemove} aria-label={`Remove ${rule.tool ?? 'policy'} rule`} className="text-gray-600 hover:text-red-300 transition-colors">×</button>
+      <button type="button" onClick={onRemove} aria-label={`Remove ${rule.tool ?? 'policy'} rule`} className="text-gray-600 hover:text-red-300 transition-colors">×</button>
     </div>
   )
 }
 
 export default function GovernanceConsole() {
   const [rules, setRules] = useState<PolicyRule[]>([])
+  const [policyEnabled, setPolicyEnabled] = useState<boolean | null>(null)
   const [events, setEvents] = useState<AuditEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -58,6 +59,7 @@ export default function GovernanceConsole() {
     setError(null)
     try {
       const [policy, audit] = await Promise.all([api.governance.policy(), api.governance.audit({ limit: 30 })])
+      setPolicyEnabled(typeof policy.enabled === 'boolean' ? policy.enabled : null)
       setRules(normaliseRules(policy))
       setEvents(normaliseAudit(audit))
     } catch (e) {
@@ -65,7 +67,12 @@ export default function GovernanceConsole() {
     } finally { setLoading(false) }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    void (async () => {
+      await Promise.resolve()
+      await load()
+    })()
+  }, [])
 
   const enabledCount = rules.length
   const updateRule = (index: number, rule: PolicyRule) => setRules(current => current.map((item, i) => i === index ? rule : item))
@@ -86,9 +93,9 @@ export default function GovernanceConsole() {
   return (
     <div className="flex-1 overflow-y-auto bg-[#080909]">
       <header className="border-b border-white/[0.08] px-5 py-5 md:px-8">
-        <div className="flex items-start justify-between gap-4">
-          <div><p className="ops-kicker">Control plane / governance</p><h1 className="mt-1 text-xl tracking-tight text-gray-100">Policy &amp; audit</h1><p className="mt-1 max-w-xl text-xs text-gray-500">Governance evaluates configured agent actions when enabled. The server keeps governance disabled unless FATHOM_GOVERNANCE_ENABLED is set.</p></div>
-          <button onClick={load} disabled={loading} className="ops-button-secondary">{loading ? 'Syncing…' : '↻ Refresh'}</button>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div><p className="ops-kicker">Control / Governance</p><div className="mt-1 flex flex-wrap items-center gap-3"><h1 className="text-xl tracking-tight text-gray-100">Policy &amp; audit</h1>{policyEnabled !== null && <span className={`ops-status ${policyEnabled ? 'ops-status-allow' : 'ops-status-deny'}`} aria-live="polite">{policyEnabled ? 'ENABLED' : 'DISABLED'}</span>}</div><p className="mt-1 max-w-xl text-xs text-gray-500">Governance evaluates configured worker actions when enabled. Policy status is reported by the governance service.</p></div>
+          <button type="button" onClick={() => void load()} disabled={loading} className="ops-button-secondary">{loading ? 'Syncing…' : '↻ Refresh'}</button>
         </div>
       </header>
       <div className="grid gap-5 p-5 md:p-8 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,.9fr)]">
@@ -96,10 +103,10 @@ export default function GovernanceConsole() {
           {error && <div role="alert" className="ops-alert"><span>CONNECTION ERROR</span><p>{error}</p></div>}
           {notice && <div className="ops-notice">{notice}</div>}
           <section className="ops-panel">
-            <div className="ops-panel-head"><div><p className="ops-kicker">Active rules · {enabledCount}</p><h2>Execution policy</h2></div><button onClick={addRule} className="ops-button-secondary">+ Add rule</button></div>
-            <div className="grid grid-cols-[1fr_92px_1fr_28px] gap-2 border-b border-white/[0.08] pb-2 text-[10px] uppercase tracking-widest text-gray-600"><span>Tool</span><span>Effect</span><span>Path</span><span /></div>
+            <div className="ops-panel-head"><div><p className="ops-kicker">Configured rules · {enabledCount}</p><h2>Execution policy</h2></div><button type="button" onClick={addRule} className="ops-button-secondary">+ Add rule</button></div>
+            <div className="hidden grid-cols-[minmax(0,1fr)_92px_minmax(0,1fr)_28px] gap-2 border-b border-white/[0.08] pb-2 text-[10px] uppercase tracking-widest text-gray-600 sm:grid"><span>Tool</span><span>Effect</span><span>Path</span><span /></div>
             {loading ? <div className="ops-empty">Loading policy…</div> : rules.length === 0 ? <div className="ops-empty">No rules published. Add a rule to begin; behavior follows the server governance mode.</div> : rules.map((rule, index) => <RuleRow key={rule.id ?? `rule-${index}`} rule={rule} onChange={next => updateRule(index, next)} onRemove={() => setRules(current => current.filter((_, i) => i !== index))} />)}
-            <div className="mt-4 flex justify-end"><button onClick={save} disabled={saving || loading} className="ops-button-primary">{saving ? 'Publishing…' : 'Publish policy'}</button></div>
+            <div className="mt-4 flex justify-end"><button type="button" onClick={save} disabled={saving || loading} className="ops-button-primary">{saving ? 'Publishing…' : 'Publish policy'}</button></div>
           </section>
           <section className="ops-panel">
             <div className="ops-panel-head"><div><p className="ops-kicker">Dry run</p><h2>Ask the policy engine</h2></div>{decision && <span className={`ops-status ${decisionAllowed(decision) ? 'ops-status-allow' : 'ops-status-deny'}`}>{decisionAllowed(decision) ? 'ALLOWED' : 'DENIED'}</span>}</div>

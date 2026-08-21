@@ -140,6 +140,23 @@ export const memoryRecipes = [
   },
 ];
 
+export const workerRecipes = [
+  {
+    t: 'Create a persistent coworker',
+    d: `curl -X POST http://localhost:8080/api/v1/coworkers \\
+  -H "Content-Type: application/json" \\
+  -d '{"name":"market-watch","title":"Market watcher","role":"analyst","prompt":"Monitor the assigned market and summarize changes.","active":true}'`,
+    notes: 'Coworkers persist identity, role and prompt in the server database. Link channels and schedules through the authenticated API.',
+  },
+  {
+    t: 'Schedule a coworker task',
+    d: `curl -X POST http://localhost:8080/api/v1/schedules \\
+  -H "Content-Type: application/json" \\
+  -d '{"coworker_id":"<coworker-id>","cron_expression":"0 9 * * 1-5","timezone":"UTC","query":"Review new market signals","enabled":true}'`,
+    notes: 'Schedules require a coworker, validated cron expression, timezone and query. The scheduler claims due rows atomically.',
+  },
+];
+
 export const automationRecipes = [
   {
     t: 'Daily monitoring loop for new leads',
@@ -147,9 +164,11 @@ export const automationRecipes = [
     notes: 'The diff engine compares each run against contacts.db. Only genuinely new contacts trigger alerts. Old contacts that reappear are ignored. The session persists across restarts.',
   },
   {
-    t: 'Webhook notifications for completed sessions',
-    d: `fathom mcp-serve`,
-    notes: 'Set Telegram bot token and chat ID once, then any session can send alerts to the channel. Alerts include contact name, company, email, and a link to the full result in the dashboard.',
+    t: 'Test a configured notification channel',
+    d: `curl -X POST http://localhost:8080/api/v1/notifications/test \\
+  -H "Content-Type: application/json" \\
+  -d '{"channel":"webhook"}'`,
+    notes: 'The endpoint accepts only a symbolic channel name (webhook, email or telegram) and uses server-side [notifications] configuration. Destinations and credentials are never supplied by the caller.',
   },
   {
     t: 'Telegram alerts for new verified contacts',
@@ -361,14 +380,14 @@ export const workflowRecipes = [
 
 export const deploymentRecipes = [
   {
-    t: 'Run with Docker',
-    d: `docker run -d --name fathom \\\n  -v ./data:/data \\\n  -e FATHOM_API_KEYS=$FATHOM_API_KEYS \\\n  -e OPENAI_API_KEY=$OPENAI_API_KEY \\\n  -p 8080:8080 \\\n  fathom:latest mcp-serve`,
-    notes: 'Mounts a local data directory for persistence. The container runs the MCP server.',
+    t: 'Run the HTTP server with Docker',
+    d: `docker run -d --name fathom \\\n  -v ./data:/data \\\n  -v ~/.fathom:/home/researcher/.fathom \\\n  -e FATHOM_API_KEYS=$FATHOM_API_KEYS \\\n  -p 8080:8080 \\\n  fathom:latest serve --port 8080`,
+    notes: 'Mount persistent state and expose the authenticated HTTP control plane. Configure the LLM provider in the mounted config file.',
   },
   {
     t: 'Deploy to a VPS with systemd',
-    d: `# /etc/systemd/system/fathom.service\n# [Unit]\n# Description=Fathom Agent\n# After=network.target\n# \n# [Service]\n# Type=simple\n# User=parallel\n# WorkingDirectory=/opt/fathom\n# ExecStart=/usr/local/bin/fathom mcp-serve\n# Restart=always\n# RestartSec=10\n# EnvironmentFile=/opt/fathom/.env\n# \n# [Install]\n# WantedBy=multi-user.target\nsudo systemctl enable --now fathom`,
-    notes: 'Systemd ensures the service starts on boot and restarts on failure. The EnvironmentFile loads API keys from a protected .env file. Check status with systemctl status fathom.',
+    d: `# Create /etc/systemd/system/fathom.service from your deployment settings\n# ExecStart=/usr/local/bin/fathom serve --port 8080\n# Restart=on-failure\n# Set FATHOM_API_KEYS in the unit environment\nsudo systemctl daemon-reload\nsudo systemctl enable --now fathom`,
+    notes: 'The repository does not ship a unit file. Create one for your host, then use systemd to start the HTTP server on boot and restart it after failures.',
   },
   {
     t: 'Run behind Nginx reverse proxy',
@@ -417,6 +436,7 @@ export const deploymentRecipes = [
       <li><a href="#osint">OSINT & Lead Generation</a></li>
       <li><a href="#research">Research & Analysis</a></li>
       <li><a href="#memory">Memory & Knowledge</a></li>
+      <li><a href="#workers">Persistent coworkers & schedules</a></li>
       <li><a href="#automation">Automation & Watch Mode</a></li>
       <li><a href="#exports">Export & Reporting</a></li>
       <li><a href="#workflows">Multi-Step Workflows</a></li>
@@ -497,6 +517,26 @@ export const deploymentRecipes = [
     </div>
     <div class="recipe-grid">
       {memoryRecipes.map((r) => (
+        <div class="recipe-card">
+          <h3>{r.t}</h3>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span></div>
+            <pre><code dangerouslySetInnerHTML={{__html: `{r.d}`}} /></pre>
+          </div>
+          <p class="recipe-notes">{r.notes}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section id="workers">
+    <div class="section-header">
+      <span class="section-badge">Autonomous Workers</span>
+      <h2>Persistent coworkers & schedules</h2>
+      <p>Use the authenticated control plane to create durable worker profiles, connect channels and schedule recurring operations. These routes are backed by the current server API.</p>
+    </div>
+    <div class="recipe-grid">
+      {workerRecipes.map((r) => (
         <div class="recipe-card">
           <h3>{r.t}</h3>
           <div class="code-block">

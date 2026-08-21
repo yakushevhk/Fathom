@@ -137,11 +137,16 @@ pub async fn engine_sse_start(
         } {
             let Ok(chunk) = chunk else { break };
             buffer.push_str(&String::from_utf8_lossy(&chunk));
-            let lines: Vec<String> = buffer.split('\n').map(str::to_owned).collect();
-            buffer = lines.last().cloned().unwrap_or_default();
-            for line in lines.into_iter().take_while(|_| true).filter(|line| line.starts_with("data: ")) {
-                if let Ok(value) = serde_json::from_str::<Value>(&line[6..]) {
-                    let _ = app.emit(&format!("engine:sse:{stream_id}"), value);
+            // Consume each complete line exactly once. Keeping the partial tail
+            // in `buffer` avoids replaying the last event when the next chunk
+            // arrives (and accepts CRLF streams from some HTTP servers).
+            while let Some(newline) = buffer.find('\n') {
+                let line = buffer[..newline].trim_end_matches('\r').to_owned();
+                buffer.drain(..=newline);
+                if let Some(payload) = line.strip_prefix("data: ") {
+                    if let Ok(value) = serde_json::from_str::<Value>(payload) {
+                        let _ = app.emit(&format!("engine:sse:{stream_id}"), value);
+                    }
                 }
             }
         }

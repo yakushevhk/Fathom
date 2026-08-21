@@ -6,7 +6,6 @@ import { Markdown } from './Markdown'
 
 interface ChatViewProps {
   sessionId: string
-  baseUrl: string
 }
 
 interface Message {
@@ -32,7 +31,7 @@ interface PendingApproval {
   argsPreview: string
 }
 
-export function ChatView({ sessionId, baseUrl }: ChatViewProps) {
+export function ChatView({ sessionId }: ChatViewProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
@@ -40,42 +39,49 @@ export function ChatView({ sessionId, baseUrl }: ChatViewProps) {
   const [approval, setApproval] = useState<PendingApproval | null>(null)
   const [answer, setAnswer] = useState('')
   const [results, setResults] = useState<SessionResults | null>(null)
+  const [streamStatus, setStreamStatus] = useState<'connecting' | 'live' | 'offline'>('connecting')
   const scrollRef = useRef<HTMLDivElement>(null)
   const [autoScroll, setAutoScroll] = useState(true)
 
   // SSE stream
   useEffect(() => {
     const ctrl = new AbortController()
-    const connect = async () => {
-      while (!ctrl.signal.aborted) {
-        try {
-          const res = await fetch(api.events.sessionUrl(sessionId), {
-            signal: ctrl.signal,
-            headers: { Accept: 'text/event-stream', ...apiKeyHeaders() },
-          })
-          const reader = res.body?.getReader()
-          if (!reader) continue
-          const decoder = new TextDecoder()
-          let buffer = ''
-          for (;;) {
-            const { done, value } = await reader.read()
-            if (done) break
-            buffer += decoder.decode(value, { stream: true })
-            const lines = buffer.split('\n')
-            buffer = lines.pop() ?? ''
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                handleEvent(JSON.parse(line.slice(6)))
-              }
-            }
+    let retryTimer: number | null = null
+    const connect = async (): Promise<void> => {
+      if (ctrl.signal.aborted) return
+      try {
+        const res = await fetch(api.events.sessionUrl(sessionId), {
+          signal: ctrl.signal,
+          headers: { Accept: 'text/event-stream', ...apiKeyHeaders() },
+        })
+        if (!res.ok) throw new Error(`Event stream returned ${res.status}`)
+        const reader = res.body?.getReader()
+        if (!reader) throw new Error('Event stream has no response body')
+        setStreamStatus('live')
+        const decoder = new TextDecoder()
+        let buffer = ''
+        for (;;) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() ?? ''
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue
+            try { handleEvent(JSON.parse(line.slice(6)) as AgentEvent) } catch { /* keep stream alive */ }
           }
-        } catch {
-          if (ctrl.signal.aborted) break
         }
-        // Retry after 3s on disconnect
-        if (!ctrl.signal.aborted) {
-          await new Promise(resolve => setTimeout(resolve, 3000))
-        }
+      } catch {
+        if (ctrl.signal.aborted) return
+        setStreamStatus('offline')
+      } finally {
+        if (ctrl.signal.aborted) return
+        setStreamStatus('offline')
+        retryTimer = window.setTimeout(() => {
+          retryTimer = null
+          setStreamStatus('connecting')
+          void connect()
+        }, 3000)
       }
     }
 
@@ -90,7 +96,7 @@ export function ChatView({ sessionId, baseUrl }: ChatViewProps) {
           setMessages(prev => [...prev, {
             id: `question-${event.request_id}`,
             type: 'system',
-            content: `❓ Agent is asking: ${event.question as string}`,
+            content: `❓ Worker is asking: ${event.question as string}`,
             timestamp: new Date(),
             agentId: event.agent_id as string,
           }])
@@ -116,7 +122,7 @@ export function ChatView({ sessionId, baseUrl }: ChatViewProps) {
             id: `end-${Date.now()}`,
             type: 'system',
             content: event.type === 'session_completed'
-              ? `✅ Session completed — ${event.total_agents} agents, ${event.total_tokens} tokens`
+              ? `✅ Session completed — ${event.total_agents} workers, ${event.total_tokens} tokens`
               : `❌ Session failed: ${event.error as string}`,
             timestamp: new Date(),
           }])
@@ -130,8 +136,12 @@ export function ChatView({ sessionId, baseUrl }: ChatViewProps) {
       }
     }
 
-    connect()
-    return () => ctrl.abort()
+    void connect()
+    return () => {
+      ctrl.abort()
+      if (retryTimer !== null) window.clearTimeout(retryTimer)
+      retryTimer = null
+    }
   }, [sessionId])
 
   // Auto-scroll
@@ -210,24 +220,29 @@ export function ChatView({ sessionId, baseUrl }: ChatViewProps) {
       {/* Header */}
       <div className="h-9 flex items-center px-4 border-b border-white/[0.06] text-xs text-gray-400 shrink-0">
         <SessionHeader sessionId={sessionId} />
+        <span role="status" className="ml-3 inline-flex items-center gap-1 text-[10px] text-gray-500">
+          <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${streamStatus === 'live' ? 'bg-green-500' : streamStatus === 'offline' ? 'bg-red-500' : 'bg-yellow-400 animate-pulse'}`} />
+          {streamStatus === 'live' ? 'Live' : streamStatus === 'offline' ? 'Offline — retrying' : 'Connecting'}
+        </span>
       </div>
 
       {/* Pending question banner */}
       {question && (
         <div className="border-b border-blue-500/20 bg-blue-500/5 p-3 animate-fade-in shrink-0">
-          <div className="text-xs text-blue-300 font-medium mb-2">Agent needs your input</div>
+          <div className="text-xs text-blue-300 font-medium mb-2">Worker needs your input</div>
           <div className="text-sm text-gray-200 mb-2">{question.question}</div>
           <div className="flex gap-2">
             <input
               value={answer}
               onChange={e => setAnswer(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') submitAnswer() }}
+              aria-label="Answer worker question"
               placeholder="Your answer..."
               autoFocus
               className="flex-1 p-2 rounded-md bg-[#141414] border border-blue-500/30 text-sm text-gray-200 placeholder-gray-600 outline-none focus:border-blue-400"
             />
-            <button onClick={submitAnswer} disabled={!answer.trim()}
-              className="px-4 py-2 rounded-md bg-blue-500 text-black text-xs font-semibold hover:bg-blue-400 disabled:opacity-30 transition-colors">
+            <button type="button" onClick={submitAnswer} disabled={!answer.trim()}
+              className="px-4 py-2 rounded-md bg-blue-500 text-black text-xs font-semibold hover:bg-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300 disabled:opacity-30 transition-colors">
               Answer
             </button>
           </div>
@@ -237,16 +252,16 @@ export function ChatView({ sessionId, baseUrl }: ChatViewProps) {
       {/* Pending approval banner */}
       {approval && (
         <div className="border-b border-yellow-500/20 bg-yellow-500/5 p-3 animate-fade-in shrink-0">
-          <div className="text-xs text-yellow-300 font-medium mb-1">Tool needs approval</div>
+          <div className="text-xs text-yellow-300 font-medium mb-1">Worker tool needs approval</div>
           <div className="text-sm text-gray-200 font-mono mb-1">{approval.tool}</div>
           <div className="text-xs text-gray-400 font-mono bg-black/40 rounded p-2 mb-2 whitespace-pre-wrap max-h-20 overflow-y-auto">{approval.argsPreview}</div>
           <div className="flex gap-2">
-            <button onClick={() => submitApproval(true)}
-              className="px-4 py-1.5 rounded-md bg-green-600 text-black text-xs font-semibold hover:bg-green-500 transition-colors">
+            <button type="button" aria-label={`Allow ${approval.tool}`} onClick={() => submitApproval(true)}
+              className="px-4 py-1.5 rounded-md bg-green-600 text-black text-xs font-semibold hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-green-300 transition-colors">
               Allow
             </button>
-            <button onClick={() => submitApproval(false)}
-              className="px-4 py-1.5 rounded-md bg-red-600 text-white text-xs font-semibold hover:bg-red-500 transition-colors">
+            <button type="button" aria-label={`Deny ${approval.tool}`} onClick={() => submitApproval(false)}
+              className="px-4 py-1.5 rounded-md bg-red-600 text-white text-xs font-semibold hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-300 transition-colors">
               Deny
             </button>
           </div>
@@ -261,7 +276,7 @@ export function ChatView({ sessionId, baseUrl }: ChatViewProps) {
               <span className={`text-[10px] font-semibold uppercase tracking-wider ${
                 msg.type === 'user' ? 'text-blue-400' : msg.type === 'assistant' ? 'text-gray-400' : 'text-gray-600'
               }`}>
-                {msg.type === 'user' ? 'You' : msg.type === 'assistant' ? 'Agent' : msg.type === 'tool_call' ? (msg.toolName ?? 'Tool') : 'System'}
+                {msg.type === 'user' ? 'You' : msg.type === 'assistant' ? 'Worker' : msg.type === 'tool_call' ? (msg.toolName ?? 'Tool') : 'System'}
               </span>
               {msg.agentId && <span className="text-[9px] text-gray-700 font-mono">{msg.agentId.slice(0, 6)}</span>}
             </div>
@@ -323,13 +338,15 @@ export function ChatView({ sessionId, baseUrl }: ChatViewProps) {
                 handleSend()
               }
             }}
-            placeholder="Send a message or steer the agent..."
-            className="flex-1 p-2.5 rounded-md bg-[#141414] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 outline-none focus:border-gray-500 transition-colors"
+            aria-label="Send a message to the worker"
+            placeholder="Send a message or steer the worker..."
+            className="flex-1 p-2.5 rounded-md bg-[#141414] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 outline-none focus:border-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gray-300 transition-colors"
           />
           <button
+            type="button"
             onClick={handleSend}
             disabled={!input.trim() || sending}
-            className="px-4 py-2 rounded-md bg-gray-600 text-black text-xs font-semibold hover:bg-gray-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="px-4 py-2 rounded-md bg-gray-600 text-black text-xs font-semibold hover:bg-gray-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gray-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
             {sending ? '...' : 'Send'}
           </button>
@@ -361,17 +378,17 @@ function eventToMessage(event: AgentEvent): Message | null {
     case 'session_started':
       return { id: `start-${event.id}`, type: 'system', content: `Session started: ${event.query ?? ''}`, timestamp: new Date() }
     case 'agent_spawned':
-      return { id: `spawn-${event.id}`, type: 'system', content: `Spawning ${event.role} — ${String(event.task ?? '').slice(0, 200)}`, timestamp: new Date(), agentId: event.id as string }
+      return { id: `spawn-${event.id}`, type: 'system', content: `Starting worker ${event.role} — ${String(event.task ?? '').slice(0, 200)}`, timestamp: new Date(), agentId: event.id as string }
     case 'agent_completed':
-      return { id: `done-${event.id}`, type: 'system', content: `Agent completed: ${String(event.summary ?? '').slice(0, 300)} (${event.tokens_used ?? 0} tokens)`, timestamp: new Date(), agentId: event.id as string }
+      return { id: `done-${event.id}`, type: 'system', content: `Worker completed: ${String(event.summary ?? '').slice(0, 300)} (${event.tokens_used ?? 0} tokens)`, timestamp: new Date(), agentId: event.id as string }
     case 'agent_failed':
-      return { id: `fail-${event.id}`, type: 'system', content: `Agent failed: ${event.error ?? ''}`, timestamp: new Date(), agentId: event.id as string }
+      return { id: `fail-${event.id}`, type: 'system', content: `Worker failed: ${event.error ?? ''}`, timestamp: new Date(), agentId: event.id as string }
     case 'tool_call_started':
-      return { id: `tool-${event.agent_id}-${event.tool}-${Date.now()}`, type: 'tool_call', content: JSON.stringify(event.args, null, 2), timestamp: new Date(), toolName: event.tool as string, toolStatus: 'running', agentId: event.agent_id as string }
+      return { id: `tool-${event.agent_id}-${event.tool}-${event.request_id ?? event.id ?? Date.now()}`, type: 'tool_call', content: JSON.stringify(event.args, null, 2), timestamp: new Date(), toolName: event.tool as string, toolStatus: 'running', agentId: event.agent_id as string }
     case 'tool_call_completed':
-      return { id: `tool-done-${event.agent_id}-${event.tool}-${Date.now()}`, type: 'tool_call', content: String(event.result_preview ?? '').slice(0, 500), timestamp: new Date(), toolName: event.tool as string, toolStatus: 'completed', agentId: event.agent_id as string }
+      return { id: `tool-done-${event.agent_id}-${event.tool}-${event.request_id ?? event.id ?? Date.now()}`, type: 'tool_call', content: String(event.result_preview ?? '').slice(0, 500), timestamp: new Date(), toolName: event.tool as string, toolStatus: 'completed', agentId: event.agent_id as string }
     case 'finding':
-      return { id: `finding-${event.agent_id}-${Date.now()}`, type: 'system', content: `Finding: ${(event.finding as Record<string, unknown>)?.title ?? ''}`, timestamp: new Date(), agentId: event.agent_id as string }
+      return { id: `finding-${event.agent_id}-${event.id ?? event.request_id ?? Date.now()}`, type: 'system', content: `Finding: ${(event.finding as Record<string, unknown>)?.title ?? ''}`, timestamp: new Date(), agentId: event.agent_id as string }
     default:
       return null
   }

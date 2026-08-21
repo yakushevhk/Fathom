@@ -70,6 +70,7 @@ export default function App() {
             if (channel === 'computer') { setShowRightPane(true); setRightTab('computer') }
             if (channel === 'governance') { setShowRightPane(true); setRightTab('governance') }
             if (channel === 'overview') { setShowRightPane(true); setRightTab('details') }
+            if (channel === 'workers') { setShowRightPane(false) }
           }}
         />
         {/* Sidebar */}

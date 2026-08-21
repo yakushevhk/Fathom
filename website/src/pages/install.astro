@@ -4,11 +4,8 @@ import Layout from '../layouts/Layout.astro';
 const installers = [
   {
     name: 'install.sh',
-    d: 'One-line installer. Builds the Fathom release binary, installs it to /usr/local/bin (or $PREFIX/bin), and can optionally install a systemd service unit with INSTALL_SYSTEMD=1.',
-    code: `curl -sSf https://fathom.uz/install.sh | sh
-
-# also install + enable the systemd unit
-curl -sSf https://fathom.uz/install.sh | INSTALL_SYSTEMD=1 sh`,
+    d: 'One-line installer. Builds the Fathom release binary and installs it to /usr/local/bin (or $PREFIX/bin). A systemd unit is not shipped; create one from the documented service example when deploying on Linux.',
+    code: `curl -sSf https://fathom.uz/install.sh | sh`,
   },
   {
     name: 'Cargo',
@@ -30,13 +27,13 @@ docker run -it --rm \\
   fathom run "your query" --output /data/results/`,
   },
   {
-    name: 'docker-compose',
-    d: 'Publishes port 8080 with a restart policy. Mount persistent output and the ~/.fathom directory when running the API server.',
-    code: `docker compose up -d
-
-# volumes:
-#   research-data    → /data (chosen output directory)
-#   fathom-state     → ~/.fathom (config, memory and jobs state)`,
+    name: 'Docker Compose',
+    d: 'Compose is not shipped in this repository. Use the Docker image directly, or provide your own compose file with port 8080 and persistent state volumes.',
+    code: `# Build and run the shipped image
+docker build -t fathom .
+docker run --rm -p 8080:8080 \\
+  -v ~/.fathom:/home/researcher/.fathom \\
+  fathom serve --port 8080`,
   },
 ];
 
@@ -52,6 +49,9 @@ const envVars = [
   { name: 'FATHOM_RATE_LIMIT', purpose: 'Per-client HTTP API requests per minute (default: 120).' },
   { name: 'PR_CONFIG', purpose: 'Config file path override (default: ~/.fathom/config.toml).' },
   { name: 'PR_MEMORY_DB', purpose: 'Semantic memory SQLite database path override; default is ~/.fathom/memory.db.' },
+  { name: 'FATHOM_CREDENTIAL_KEY', purpose: 'Encryption key for the credential vault (32 bytes, represented as 64 hex characters).' },
+  { name: 'COMPUTER_URL', purpose: 'Computer service URL used by agent computer tools (default: http://127.0.0.1:8765).' },
+  { name: 'COMPUTER_ALLOW_PRIVATE_HOSTS', purpose: 'Allow private or localhost browser targets for development only (default: false).' },
   { name: 'RUST_LOG', purpose: 'Log level filter (default: info).' },
 ];
 ---
@@ -83,10 +83,10 @@ const envVars = [
         <div class="feat-copy">
           <p class="eyebrow" data-i18n="install.systemd.badge">Linux service</p>
           <h2 class="h3-sec" data-i18n="install.systemd.title">Run it under systemd</h2>
-          <p class="copy-lg" data-i18n-html data-i18n="install.systemd.sub">The unit starts <code class="ic">fathom serve</code> on port 8080 with <code class="ic">Restart=on-failure</code>. Keep its config and state under <code class="ic">~/.fathom</code>; set <code class="ic">FATHOM_API_KEYS</code> before exposing a non-loopback host.</p>
+          <p class="copy-lg" data-i18n-html data-i18n="install.systemd.sub">Fathom does not ship a systemd unit. Create one that starts <code class="ic">fathom serve</code> on port 8080 with <code class="ic">Restart=on-failure</code>; keep config and state under <code class="ic">~/.fathom</code> and set <code class="ic">FATHOM_API_KEYS</code> before exposing a non-loopback host.</p>
         </div>
         <div class="code-card">
-          <pre><code>{`sudo cp fathom.service /etc/systemd/system/
+          <pre><code>{`# after creating /etc/systemd/system/fathom.service
 sudo systemctl daemon-reload
 sudo systemctl enable --now fathom
 

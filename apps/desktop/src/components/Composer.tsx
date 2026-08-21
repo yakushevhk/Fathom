@@ -69,7 +69,7 @@ export function Composer({ onSend, activeSession, onSteer, onCancel }: ComposerP
             onChange={handleInput}
             onKeyDown={handleKeyDown}
             onFocus={handleFocus}
-            placeholder={isRunning ? 'Steer the agent...' : 'Research anything...'}
+            placeholder={isRunning ? 'Steer your worker...' : 'Give your worker a task...'}
             rows={expanded ? 4 : 1}
           />
         </div>

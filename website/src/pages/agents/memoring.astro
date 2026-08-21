@@ -61,8 +61,8 @@ const tools = [
 ---
 
 <Layout
-  title="Memoring — Agent 06 — Fathom Research"
-  description="Memoring — the long-term semantic memory agent: append-only absorb with 5 outcomes, hybrid 0.7·cosine + 0.3·BM25 search, secret detection and an entity graph. Outreach that remembers every past touch."
+  title="Memory Worker — Fathom"
+  description="Persistent semantic memory for autonomous workers: append-only facts, hybrid search, secret detection, and an entity graph across sessions."
 >
   <main class="ag-page">
     <div class="container">
@@ -70,7 +70,7 @@ const tools = [
       <div class="ag-hero">
         <p class="eyebrow" data-i18n="agents.memoring.hero.eyebrow">Agent 06 / 07</p>
         <h1 class="h2-sec" data-i18n="agents.memoring.hero.title">Memoring</h1>
-        <p class="copy-lg mx-auto" data-i18n="agents.memoring.hero.sub">Long-term memory for the whole pipeline. Every verified contact, company fact and past touch is absorbed into an append-only knowledge base — so the next run, and the next outreach message, starts from everything already known instead of zero.</p>
+        <p class="copy-lg mx-auto" data-i18n="agents.memoring.hero.sub">Persistent memory for the whole worker fleet. Facts, findings, decisions, and past runs are absorbed into an append-only knowledge base so the next operation starts from what is already known.</p>
         <div class="canvas-wrap">
           <AgentCanvas agents={[{ name: 'Memoring', mode: 'memoring', hue: 25 }]} />
         </div>
@@ -170,12 +170,12 @@ const tools = [
         {tools.map((t) => <span class="chip">{t}</span>)}
       </div>
 
-      <!-- 7 · Feeds the outreach pipeline -->
+      <!-- 7 · Feeds the worker fleet -->
       <div class="feat feat-reverse" id="outreach-feed">
         <div class="feat-copy">
-          <p class="eyebrow" data-i18n="agents.memoring.feeds.eyebrow">Feeds the outreach pipeline</p>
-          <h2 class="h3-sec" data-i18n="agents.memoring.feeds.title">Outreach that remembers every touch</h2>
-          <p class="copy-lg">Every harvested contact is absorbed automatically — no model call, confidence 0.6, tagged <code class="ic">contact</code>/<code class="ic">lead</code> — and session summaries land at 0.7. Before composing a follow-up, the Outreach agent loads a digest: who was contacted, what was verified, what was promised. Supersession chains track role changes and new emails without losing history; contradictions keep both versions visible, so a message never asserts a stale fact confidently. Repeat outreach stops being a cold start.</p>
+          <p class="eyebrow" data-i18n="agents.memoring.feeds.eyebrow">Feeds the worker fleet</p>
+          <h2 class="h3-sec" data-i18n="agents.memoring.feeds.title">Every operation starts smarter</h2>
+          <p class="copy-lg">Findings, decisions, entities, and session summaries are absorbed automatically with provenance and confidence. Any later worker can load a digest, follow supersession chains, and see contradictions instead of asserting stale context. Repeat operations stop being a cold start.</p>
         </div>
         <div class="code-card">
           <pre><code>{`$ memory_digest(topic: "Acme follow-up")

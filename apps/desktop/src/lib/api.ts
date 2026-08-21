@@ -202,6 +202,8 @@ export const api = {
   raw: rawRequest,
 
   computer: {
+    startSession: (base = '/api/v1/computers') =>
+      rawRequest<Record<string, unknown>>(`${base}/session`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) }),
     health: (base = '/api/v1/computers') =>
       rawRequest<ComputerHealth>(`${base}/health`),
     snapshot: (base = '/api/v1/computers') =>

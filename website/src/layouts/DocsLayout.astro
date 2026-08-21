@@ -8,10 +8,10 @@ interface Props {
   activePage?: string;
 }
 
-const { title, description = 'Fathom Rust agent documentation: tools, sessions, HTTP API, MCP, security, and architecture.', activePage = '' } = Astro.props;
+const { title, description = 'Fathom — Autonomous AI Workers documentation: tools, sessions, HTTP API, MCP, security, and architecture.', activePage = '' } = Astro.props;
 const SITE = 'https://fathom.uz';
 const canonical = SITE + Astro.url.pathname;
-const crumbLabel = title.replace(/ — Fathom Research$/, '');
+const crumbLabel = title.replace(/ — Fathom(?: Research)?$/, '');
 
 interface NavItem {
   label: string;
@@ -118,7 +118,7 @@ const navSections: NavSection[] = [
     <meta property="og:type" content="article" />
     <meta property="og:url" content={canonical} />
     <meta property="og:locale" content={Astro.currentLocale === 'ru' ? 'ru_RU' : 'en_US'} />
-    <meta property="og:site_name" content="Fathom Research" />
+    <meta property="og:site_name" content="Fathom — Autonomous AI Workers" />
     <meta property="og:image" content={`${SITE}/og-image.svg`} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
@@ -140,7 +140,8 @@ const navSections: NavSection[] = [
     }} />
     <script is:inline>
       (function () {
-        var t = localStorage.getItem('fathom-theme');
+        var t = localStorage.getItem('fathom-theme') || localStorage.getItem('Fathom-theme');
+        if (t && !localStorage.getItem('fathom-theme')) localStorage.setItem('fathom-theme', t);
         if (!t && window.matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
         if (t) document.documentElement.dataset.theme = t;
       })();

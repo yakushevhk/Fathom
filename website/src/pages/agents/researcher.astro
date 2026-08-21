@@ -26,7 +26,7 @@ const flow = [
   { t: 'Fan out', d: 'Each subtask becomes a Researcher — an in-process JoinSet task or an isolated OS worker process — with its share of the session token budget.' },
   { t: 'Research loop', d: 'Search → fetch → extract → record the source URL, again and again. Children spawn via spawn_agent up to max_depth; background children report back as notices.' },
   { t: 'Reflect', d: 'A count-based check closes lead-gen quotas with a gap-filling round; Goal Mode’s LLM judge replans up to replan_rounds times until the goal is covered.' },
-  { t: 'Hand off', d: 'Budget-capped summaries, structured findings and deduped sources flow into synthesis, memory and the contact DB — personalization fuel for outreach.' },
+  { t: 'Hand off', d: 'Budget-capped summaries, structured findings, and deduped sources flow into synthesis and memory — reusable context for any downstream operation.' },
 ];
 
 const hood = [
@@ -51,14 +51,14 @@ const tools = [
 ];
 ---
 
-<Layout title="Researcher Agent — Fathom Research">
+<Layout title="Research Worker — Fathom" description="Research worker for autonomous web investigation, cited findings, code-aware analysis, and durable handoffs.">
   <main class="ag-page">
     <div class="container">
       <!-- Hero -->
       <div class="ag-hero">
         <p class="eyebrow" data-i18n="agents.researcher.hero.eyebrow">AGENT 01 / 07</p>
         <h1 class="h2-sec" data-i18n="agents.researcher.hero.title">Researcher</h1>
-        <p class="copy-lg mx-auto" data-i18n="agents.researcher.hero.sub">The field worker of the outreach pipeline. It searches the open web, reads primary sources and brings back cited facts plus raw contacts — the raw truth every personalized message is later written from.</p>
+        <p class="copy-lg mx-auto" data-i18n="agents.researcher.hero.sub">A general-purpose research worker for the fleet. It searches the open web, reads primary sources, inspects code, and returns cited findings that any downstream task can use.</p>
         <div class="hero-canvas">
           <AgentCanvas agents={[{ name: 'Researcher', mode: 'researcher', hue: 206 }]} />
         </div>
@@ -136,12 +136,12 @@ const tools = [
         ))}
       </div>
 
-      <!-- Feeds the outreach pipeline -->
+      <!-- Feeds downstream workers -->
       <div class="feat">
         <div class="feat-copy">
-          <p class="eyebrow" data-i18n="agents.researcher.feeds.eyebrow">Feeds the outreach pipeline</p>
-          <h2 class="h3-sec" data-i18n="agents.researcher.feeds.title">Cited facts become personal lines</h2>
-          <p class="copy-lg" data-i18n="agents.researcher.feeds.body">Everything the Researcher gathers is personalization material: cited facts, source URLs, raw contacts with provenance. Extracted contacts are auto-persisted with the page they came from; verified emails and phones land in the contact DB and sync to the CRM without duplicates. Downstream, the outreach step writes each message against exactly these facts — a hiring round, a funding event, a tech migration — so the first line is never generic.</p>
+          <p class="eyebrow" data-i18n="agents.researcher.feeds.eyebrow">Feeds downstream workers</p>
+          <h2 class="h3-sec" data-i18n="agents.researcher.feeds.title">Cited findings become reusable context</h2>
+          <p class="copy-lg" data-i18n="agents.researcher.feeds.body">Everything the Researcher gathers is reusable context: cited facts, source URLs, code references, and structured outputs with provenance. Findings persist to memory so an outreach, coding, or operations worker can act on the same evidence without starting from zero.</p>
         </div>
         <div class="code-card">
           <pre><code>{`finding #7   person: Jane Doe — CTO, Acme

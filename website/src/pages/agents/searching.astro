@@ -48,14 +48,14 @@ const tools = [
 ];
 ---
 
-<Layout title="Searching Agent — Fathom Research">
+<Layout title="Search Worker — Fathom" description="Search worker that fuses multiple web backends into ranked, deduplicated context for autonomous tasks.">
   <main class="ag-page">
     <div class="container">
       <!-- Hero -->
       <div class="ag-hero">
         <p class="eyebrow" data-i18n="agents.searching.hero.eyebrow">AGENT 04 / 07</p>
         <h1 class="h2-sec" data-i18n="agents.searching.hero.title">Searching</h1>
-        <p class="copy-lg mx-auto" data-i18n="agents.searching.hero.sub">A list is only as good as its coverage. Searching runs every query across seven search backends at once and fuses the results into one deduplicated, ranked pool — so the outreach list is complete before a single message is drafted.</p>
+        <p class="copy-lg mx-auto" data-i18n="agents.searching.hero.sub">A worker is only as good as its context. Searching runs queries across multiple backends and fuses the results into one ranked, deduplicated pool for any mission.</p>
         <div class="hero-canvas">
           <AgentCanvas agents={[{ name: 'Searching', mode: 'searching', hue: 180 }]} />
         </div>
@@ -133,12 +133,12 @@ const tools = [
         ))}
       </div>
 
-      <!-- Feeds the outreach pipeline -->
+      <!-- Feeds downstream workers -->
       <div class="feat">
         <div class="feat-copy">
-          <p class="eyebrow" data-i18n="agents.searching.feeds.eyebrow">Feeds the outreach pipeline</p>
-          <h2 class="h3-sec" data-i18n="agents.searching.feeds.title">Coverage first, message second</h2>
-          <p class="copy-lg">Multi-source coverage is what makes an outreach list complete: directories supply the companies, social supplies the people, news supplies the reason to write right now. Smart-mode fusion dedupes everything into one ranked pool, so no prospect appears twice and the strongest leads surface first. Every result carries its source URL, and the shared fetch cache (10-minute TTL) means the next agent reads the same pages instantly — and turns them into verified contacts.</p>
+          <p class="eyebrow" data-i18n="agents.searching.feeds.eyebrow">Feeds downstream workers</p>
+          <h2 class="h3-sec" data-i18n="agents.searching.feeds.title">Coverage first, action second</h2>
+          <p class="copy-lg">Multi-source coverage gives every mission stronger context: directories, social, news, repositories, and public documents each add a different signal. Smart-mode fusion dedupes results into one ranked pool with source URLs, so the next worker can verify, write, or act without repeating the search.</p>
         </div>
         <div class="code-card">
           <pre><code>{`web_search "fintech CTO Berlin"   (smart mode)

@@ -42,14 +42,14 @@ const tiers = [
 const entChips = ['Zero Data Retention', 'SSO / SAML', 'DPA', 'On-prem', 'Custom models'];
 
 const faqs = [
-  ['How is it distributed?', 'Fathom Research is a closed product distributed individually — no public package registries or app stores. You receive a single static binary containing the CLI, TUI, HTTP server, dashboard, MCP server and worker processes. Every deployment is complete and identical: 51 always-registered tools + up to 5 CDP browser tools + up to 6 computer tools, 12 workspace crates, no usage metering.'],
+  ['How is it distributed?', 'Fathom is a closed product distributed individually — no public package registries or app stores. You receive a single static binary containing the CLI, TUI, HTTP server, dashboard, MCP server and worker processes. Every deployment is complete and identical: 51 always-registered tools + up to 5 CDP browser tools + up to 6 computer tools, 12 workspace crates, no usage metering.'],
   ['Do you store my data?', 'No. Everything — contacts, memory, jobs, reports — lives on your own infrastructure: local SQLite or your PostgreSQL. Nothing leaves your machines unless you push it to your own CRM, and there is no telemetry on your data.'],
   ['Which LLM providers are supported?', 'Any OpenAI-compatible endpoint: seven providers work out of the box, and you can plug in self-hosted or custom models. Per-role model routing lets each agent persona run on its own model.'],
   ['Can agents run air-gapped?', 'Yes. Offline TF-IDF embeddings (512 dimensions, no network), local models behind an OpenAI-compatible endpoint and on-device processing let the full pipeline run without any external calls.'],
 ];
 ---
 
-<Layout title="Pricing — Fathom Research">
+<Layout title="Pricing — Fathom">
   <main class="pricing-page">
     <div class="container">
       <div class="pricing-hero">

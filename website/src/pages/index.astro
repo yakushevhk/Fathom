@@ -16,22 +16,22 @@ const agents = [
 
 const backends = ['Linkup', 'Exa', 'Tavily', 'Serper', 'Brave', 'DuckDuckGo'];
 const capabilities = [
-  { k: 'landing.cap.r', t: 'Rust Agent Runtime', d: 'Typed RPC events, TUI/GPUI clients, sessions, permissions, MCP, LSP/DAP, browser CDP, persistent eval, and recursive subagents.', url: '/docs/protocol-gui' },
-  { k: 'landing.cap.l', t: 'Lead Generation', d: 'Automated OSINT pipeline: emails, phones, socials, corporate sites — verified before they reach your CRM.', url: '/features/lead-generation' },
-  { k: 'landing.cap.o', t: 'Auto Outreach', d: 'Personalized, role- and company-aware drafts, batch generated for entire lists — verified and ready for your review, CRM sync or export.', url: '/features/auto-outreach' },
+  { k: 'landing.cap.r', t: 'Research & analysis', d: 'Workers search, fetch, parse, cross-reference, and synthesize cited findings from the open web.', url: '/features/research' },
+  { k: 'landing.cap.l', t: 'Code & computer use', d: 'Run code, inspect repositories, and operate a connected browser through approval-aware tools.', url: '/tools' },
+  { k: 'landing.cap.o', t: 'Outreach & operations', d: 'Draft personalized outreach, sync approved records, schedule repeat runs, and notify your team.', url: '/features/auto-outreach' },
 ];
 
 const capabilityRows = [
-  { k: 'landing.capc.1', t: '51 always + up to 5 CDP + up to 6 computer tools', d: 'Web, files, shell, code, memory, MCP, Git, OSINT and verification; browser tools appear when CDP is reachable.' },
-  { k: 'landing.capc.2', t: 'Semantic memory', d: 'Vector + BM25 hybrid search, entity graph, auto-absorb of findings.' },
-  { k: 'landing.capc.3', t: 'MCP', d: 'Client (stdio/HTTP) + server mcp-serve.' },
-  { k: 'landing.capc.4', t: 'CRM sync', d: 'amoCRM, Bitrix24, HubSpot with dedup.' },
-  { k: 'landing.capc.5', t: 'Durable jobs', d: 'SQLite-backed background tasks that survive restarts.' },
-  { k: 'landing.capc.6', t: 'HTTP API + dashboard', d: 'SSE streaming, steering, Prometheus metrics.' },
-  { k: 'landing.capc.7', t: 'Personas', d: 'hunter · analyst · validator — or your own TOML profile.' },
-  { k: 'landing.capc.8', t: 'Hooks', d: 'PreToolUse, PostToolUse, Stop — intercept and shape agent behavior.' },
-  { k: 'landing.capc.9', t: 'TUI', d: 'Interactive terminal: live streaming, replay, steering, memory panel.' },
-  { k: 'landing.capc.10', t: 'Notifications', d: 'Webhook, email, Telegram — fan-out alerts on completion.' },
+  { k: 'landing.capc.1', t: 'Computer + code tools', d: 'Web, files, shell, code, browser, vision, Git, and verification; computer tools appear when the loopback service is reachable.' },
+  { k: 'landing.capc.2', t: 'Semantic memory', d: 'Vector + BM25 hybrid search, entity graph, and automatic absorption of worker findings.' },
+  { k: 'landing.capc.3', t: 'Persistent workers', d: 'Durable background jobs can continue across restarts and scheduled runs.' },
+  { k: 'landing.capc.4', t: 'Governance', d: 'Approval gates, policy hooks, protected surfaces, and secret scanning keep side effects reviewable.' },
+  { k: 'landing.capc.5', t: 'MCP integrations', d: 'Connect external tools over stdio or HTTP, and expose Fathom tools through mcp-serve.' },
+  { k: 'landing.capc.6', t: 'HTTP API + dashboard', d: 'SSE streaming, steering, session controls, and Prometheus metrics.' },
+  { k: 'landing.capc.7', t: 'Profiles & roles', d: 'Use built-in personas or define your own TOML worker profile.' },
+  { k: 'landing.capc.8', t: 'Scheduled operations', d: 'Repeat runs with diffs and notifications when new results arrive.' },
+  { k: 'landing.capc.9', t: 'TUI', d: 'Interactive terminal with live streaming, replay, steering, and memory views.' },
+  { k: 'landing.capc.10', t: 'Notifications', d: 'Webhook, email, and Telegram fan-out alerts on completion.' },
 ];
 
 const steps = [
@@ -49,16 +49,16 @@ const metrics = [
 ];
 ---
 
-<Layout title="Fathom Research — Where agents find answers">
+<Layout title="Fathom — Autonomous AI Workers" description="Fathom is a universal autonomous AI worker platform for research, code, computer use, scheduled operations, memory, governance, and reviewable automation.">
 
   <!-- ============ HERO ============ -->
   <section class="hero">
     <div class="container">
       <div class="hero__main">
-        <p class="eyebrow" data-i18n="landing.badge">AI-Powered Research Agent</p>
-        <h1 class="hero__title" data-i18n-html data-i18n="landing.title">Where agents<br />find answers.</h1>
+        <p class="eyebrow" data-i18n="landing.badge">Universal autonomous AI workers</p>
+        <h1 class="hero__title" data-i18n-html data-i18n="landing.title">Remote workers<br />that get things done.</h1>
         <p class="hero__subtitle" data-i18n="landing.subtitle">
-          Fathom is an autonomous outreach engine: seven specialized agents research, extract, verify and remember your leads — then deliver verified contacts with enriched context and personalized drafts, synced to your CRM or exported for any stack.
+          Fathom is a universal autonomous worker platform. Deploy persistent agents for research, outreach, code, computer use, and scheduled operations — with memory, governance, notifications, and human review built into one runtime.
         </p>
         <div class="hero__actions">
           <a href="#cta" class="btn btn-primary btn-lg" data-i18n="landing.cta1">Start building</a>
@@ -74,7 +74,7 @@ const metrics = [
             <span class="machine__url">fathom run</span>
           </div>
           <div class="machine__body">
-            <div class="prompt-line"><span class="p">$</span><span class="pc">fathom run "Find VP Engineering at Series B startups in SF"</span></div>
+            <div class="prompt-line"><span class="p">$</span><span class="pc">fathom run "Prepare a market brief and open a draft PR"</span></div>
             <div class="tags-row">
               <span class="ptag ptag--plan">Planning</span><span data-i18n="landing.term.plan">Decomposing into 4 sub-tasks…</span>
             </div>
@@ -82,16 +82,16 @@ const metrics = [
               <span class="ptag ptag--run">Researching</span><span data-i18n="landing.term.spawn">Spawning 4 parallel agents</span>
             </div>
             <div class="agent-lines">
-              <div class="agent-line"><span class="od">●</span> <span data-i18n="landing.term.a1">Searching LinkedIn &amp; Crunchbase</span></div>
-              <div class="agent-line"><span class="od">●</span> <span data-i18n="landing.term.a2">Parsing corporate websites</span></div>
-              <div class="agent-line"><span class="od">●</span> <span data-i18n="landing.term.a3">Extracting social profiles</span></div>
-              <div class="agent-line"><span class="od">●</span> <span data-i18n="landing.term.a4">Verifying email addresses</span></div>
+              <div class="agent-line"><span class="od">●</span> <span data-i18n="landing.term.a1">Researching the market and sources</span></div>
+              <div class="agent-line"><span class="od">●</span> <span data-i18n="landing.term.a2">Editing code in a sandbox</span></div>
+              <div class="agent-line"><span class="od">●</span> <span data-i18n="landing.term.a3">Using the browser to check a workflow</span></div>
+              <div class="agent-line"><span class="od">●</span> <span data-i18n="landing.term.a4">Saving findings to shared memory</span></div>
             </div>
             <div class="tags-row">
-              <span class="ptag ptag--ok">Complete</span><span data-i18n="landing.term.done">Found 47 contacts, 12 verified</span>
+              <span class="ptag ptag--ok">Complete</span><span data-i18n="landing.term.done">Brief ready, checks passed</span>
             </div>
             <div class="tags-row">
-              <span class="ptag ptag--save">Saving</span><span data-i18n="landing.term.save">Exporting to CSV + CRM sync</span>
+              <span class="ptag ptag--save">Saving</span><span data-i18n="landing.term.save">Updating memory + notifying the team</span>
             </div>
             <div class="prompt-line"><span class="p">$</span><span class="cursor">▊</span></div>
           </div>
@@ -103,7 +103,7 @@ const metrics = [
   <!-- ============ MARQUEE ============ -->
   <section class="marquee-section">
     <div class="marquee-head">
-      <p class="eyebrow" data-i18n="landing.marquee_label">Search backends</p>
+      <p class="eyebrow" data-i18n="landing.marquee_label">Workers connect to your stack</p>
     </div>
     <div class="marquee-track-wrap">
       <div class="marquee-track">
@@ -121,8 +121,8 @@ const metrics = [
     <div class="container">
       <div class="sec-head center reveal">
         <p class="eyebrow" data-i18n="landing.value_label">What you get</p>
-        <h2 class="h2-sec" data-i18n="landing.value_title">Three superpowers, one agent</h2>
-        <p class="copy-lg mx-auto" data-i18n="landing.value_sub">From a query to verified, enriched contacts and personalized outreach — without touching a spreadsheet.</p>
+        <h2 class="h2-sec" data-i18n="landing.value_title">One worker, many missions</h2>
+        <p class="copy-lg mx-auto" data-i18n="landing.value_sub">Give Fathom a goal and let autonomous workers research, write code, use a computer, and run repeatable operations with your approval.</p>
       </div>
 
       <div class="cap-grid">
@@ -207,7 +207,7 @@ const metrics = [
     <div class="container">
       <div class="sec-head center reveal">
         <p class="eyebrow" data-i18n="landing.how_label">How it works</p>
-        <h2 class="h2-sec" data-i18n="landing.how_title">From question to verified contacts</h2>
+        <h2 class="h2-sec" data-i18n="landing.how_title">From goal to governed execution</h2>
       </div>
 
       <div class="steps-grid">
@@ -272,8 +272,8 @@ const metrics = [
     <div class="container">
       <div class="sec-head center reveal">
         <p class="eyebrow" data-i18n="landing.pipe_label">One live pipeline</p>
-        <h2 class="h2-sec" data-i18n="landing.pipe_title">From a query to ready-to-send leads</h2>
-        <p class="copy-lg mx-auto" data-i18n="landing.pipe_sub">Watch the request travel through the engine: search the web, parse the pages, enrich the team, segment the leads — then compose verified, personalized drafts ready for your review, CRM sync or export.</p>
+        <h2 class="h2-sec" data-i18n="landing.pipe_title">A live run you can inspect</h2>
+        <p class="copy-lg mx-auto" data-i18n="landing.pipe_sub">Watch a goal travel through the engine: workers plan, use tools, write findings to memory, pause for approvals, and deliver a report or action with notifications.</p>
       </div>
 
       <Pipeline3D />
@@ -311,7 +311,7 @@ const metrics = [
     <div class="container">
       <div class="sec-head center reveal">
         <p class="eyebrow" data-i18n="landing.testi_label">Testimonials</p>
-        <h2 class="h2-sec" data-i18n="landing.testi_title">Trusted by researchers &amp; revenue teams</h2>
+        <h2 class="h2-sec" data-i18n="landing.testi_title">Built for teams with work to delegate</h2>
       </div>
 
       <div class="quote">
@@ -337,7 +337,7 @@ const metrics = [
   <section class="cta" id="cta">
     <div class="container">
       <h2 class="h2-sec" data-i18n="landing.cta_title">Start building with Fathom</h2>
-      <p class="copy-lg mx-auto" data-i18n="landing.cta_sub">Distributed individually. No vendor lock-in. Full control over your research pipeline.</p>
+      <p class="copy-lg mx-auto" data-i18n="landing.cta_sub">Self-hosted and reviewable. No vendor lock-in. Give your workers access to the tools, memory, and schedules your team controls.</p>
       <div class="install-box"><code>curl -sSf https://fathom.uz/install.sh | sh</code></div>
       <a href="mailto:hello@fathom.uz" class="btn btn-primary" data-i18n="landing.cta_access">Request access →</a>
       <p class="sub" data-i18n="landing.cta_mono">fathom bench · docs · request access</p>
@@ -354,7 +354,7 @@ const metrics = [
       <div class="faq-grid">
         <details class="faq-item">
           <summary data-i18n="landing.faq.q1">How is Fathom different from a ChatGPT plugin?</summary>
-          <p data-i18n="landing.faq.a1">Fathom is a purpose-built research engine in Rust: it fans out hierarchical sub-agents in parallel, verifies every contact before saving, and remembers everything over weeks of campaigns — not a single-session chat context window.</p>
+          <p data-i18n="landing.faq.a1">Fathom is a universal autonomous worker runtime in Rust: it plans goals, coordinates sub-agents, uses code and computer tools, remembers context, and keeps side effects behind governance gates — not a single-session chat context window.</p>
         </details>
         <details class="faq-item">
           <summary data-i18n="landing.faq.q2">Which search engines are supported?</summary>
@@ -375,10 +375,10 @@ const metrics = [
   <JsonLd data={{
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
-    name: 'Fathom Research',
+    name: 'Fathom — Autonomous AI Workers',
     applicationCategory: 'DeveloperApplication',
     operatingSystem: 'macOS, Linux, Windows (WSL)',
-    description: 'A Rust AI agent runtime with typed RPC, durable sessions, coding tools, web research, lead generation, and reviewable automation.',
+    description: 'A universal autonomous AI worker platform with durable sessions, code and computer tools, research, scheduled operations, memory, governance, and reviewable automation.',
     url: 'https://fathom.uz/',
     downloadUrl: 'https://fathom.uz/install',
     installUrl: 'https://fathom.uz/install',
@@ -404,7 +404,7 @@ const metrics = [
       {
         '@type': 'Question',
         name: 'How is Fathom different from a ChatGPT plugin?',
-        acceptedAnswer: { '@type': 'Answer', text: 'Fathom is a purpose-built research engine in Rust: it fans out hierarchical sub-agents in parallel, verifies every contact before saving, and remembers everything over weeks of campaigns.' },
+        acceptedAnswer: { '@type': 'Answer', text: 'Fathom is a universal autonomous worker runtime in Rust: it plans goals, coordinates sub-agents, uses code and computer tools, remembers context, and keeps side effects behind governance gates.' },
       },
       {
         '@type': 'Question',

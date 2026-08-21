@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { SessionSummary } from '../lib/api'
 
 interface SidebarProps {
@@ -25,6 +26,12 @@ export function Sidebar({
   engineLoading,
   engineError,
 }: SidebarProps) {
+  const [search, setSearch] = useState('')
+  const normalizedSearch = search.trim().toLowerCase()
+  const visibleSessions = normalizedSearch
+    ? sessions.filter(session => `${session.query} ${session.id} ${session.status}`.toLowerCase().includes(normalizedSearch))
+    : sessions
+
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
@@ -35,7 +42,14 @@ export function Sidebar({
           </svg>
           Fathom
         </div>
-        <input className="sidebar-search" type="text" placeholder="Search sessions..." />
+        <input
+          className="sidebar-search"
+          type="search"
+          value={search}
+          onChange={event => setSearch(event.target.value)}
+          placeholder="Search worker sessions..."
+          aria-label="Search worker sessions"
+        />
       </div>
 
       <div className="sidebar-actions">
@@ -65,7 +79,7 @@ export function Sidebar({
 
         {!loading && sessions.length === 0 && engineRunning && (
           <div className="flex-center" style={{ padding: 24, color: 'var(--fg-tertiary)', fontSize: 12 }}>
-            No sessions yet
+            No worker sessions yet
           </div>
         )}
 
@@ -75,27 +89,39 @@ export function Sidebar({
           </div>
         )}
 
-        {sessions.map(s => (
+        {visibleSessions.map(s => (
           <div
             key={s.id}
             className={`session-item ${activeSession?.id === s.id ? 'active' : ''}`}
-            onClick={() => onSelect(s)}
           >
-            <span className={`session-status ${s.status}`} />
-            <div className="session-info">
-              <div className="session-title">{s.query || 'Untitled'}</div>
-              <div className="session-meta">{s.id.slice(0, 8)}</div>
-            </div>
+            <button
+              type="button"
+              className="session-row-select"
+              onClick={() => onSelect(s)}
+              aria-current={activeSession?.id === s.id ? 'true' : undefined}
+            >
+              <span className={`session-status ${s.status}`} />
+              <span className="session-info">
+                <span className="session-title">{s.query || 'Untitled'}</span>
+                <span className="session-meta">{s.id.slice(0, 8)}</span>
+              </span>
+            </button>
             <button
               className="titlebar-btn"
-              onClick={e => { e.stopPropagation(); onCancel(s.id) }}
-              title="Cancel"
+              onClick={() => onCancel(s.id)}
+              title="Cancel worker session"
+              aria-label={`Cancel ${s.query || 'worker session'}`}
               style={{ opacity: 0.5, fontSize: 12 }}
             >
               &times;
             </button>
           </div>
         ))}
+        {visibleSessions.length === 0 && sessions.length > 0 && (
+          <div className="flex-center" style={{ padding: 24, color: 'var(--fg-tertiary)', fontSize: 12 }}>
+            No matching worker sessions
+          </div>
+        )}
       </div>
     </aside>
   )

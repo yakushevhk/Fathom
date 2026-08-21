@@ -26,6 +26,13 @@ const blocks = [
   { key: 'coordination', name: 'Agent coordination', d: 'hub supports peer messaging, list, jobs and set_activity; steer redirects a live run. Agents can park and be revived, while batch spawn accepts up to 8 tasks with output_schema, isolated and handoff_to options.' },
   { key: 'daemon', name: 'Daemon management', d: 'The daemon tool starts, stops, restarts, lists and reports status for long-running processes, with optional port or log-regex readiness checks.' },
   { key: 'stall_detection', name: 'Stall detection', d: 'Configurable warn (450s) and kill (1200s) timeouts per agent. Cancellation tokens propagate across the entire agent tree — cancelling the coordinator cancels every descendant. Heartbeat monitoring detects stuck workers.' },
+  { key: 'coworkers', name: 'Persistent coworkers', d: 'Durable worker profiles and collaboration channels keep identity, goals and delivery surfaces across sessions.' },
+  { key: 'schedules', name: 'Scheduled operations', d: 'Cron-like schedules trigger coworker work; atomic claims prevent duplicate runs when multiple server processes are active.' },
+  { key: 'credentials', name: 'Credential vault', d: 'Store named secrets through the authenticated API; list responses expose metadata only, never secret values.' },
+  { key: 'replay', name: 'Redacted replay', d: 'Inspect governed action history through a bounded replay endpoint with credential values redacted before persistence.' },
+  { key: 'observability', name: 'Operational observability', d: 'Prometheus metrics and a bounded summary endpoint expose live sessions, tokens, tool calls and governance audit counts.' },
+  { key: 'notifications', name: 'Notifications', d: 'Test configured webhook, email or Telegram channels through a bounded symbolic-channel endpoint; destinations and credentials stay server-side.' },
+  { key: 'computer', name: 'Computer use', d: 'Authenticated computer relay routes support navigation, accessibility snapshots, screenshots, files and human control leases.' },
 ];
 ---
 
@@ -35,7 +42,7 @@ const blocks = [
       <div class="ops-hero">
         <p class="eyebrow" data-i18n="opsPage.hero.badge">Operations</p>
         <h1 class="h2-sec" data-i18n="opsPage.hero.title">Built to run unattended.</h1>
-        <p class="copy-lg mx-auto" data-i18n="opsPage.hero.sub">Beyond the agent loop: durability, isolation, safety and observability — everything needed to leave the fleet running overnight.</p>
+        <p class="copy-lg mx-auto" data-i18n="opsPage.hero.sub">Beyond the agent loop: persistent coworkers, scheduled work, memory, governance, computer use, notifications, durability and observability — everything needed to leave autonomous workers running overnight.</p>
       </div>
 
       <div class="ops-grid">

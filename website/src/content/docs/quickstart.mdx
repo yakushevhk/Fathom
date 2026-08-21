@@ -7,7 +7,7 @@ sidebarId: "quickstart"
     <h1 data-i18n="docsQuickstart.title">Quickstart</h1>
     <p class="doc-lead" data-i18n="docsQuickstart.lead">
       Get Fathom up and running in under 5 minutes.
-      This guide covers installation, configuration, and your first research session.
+      This guide covers installation, configuration, and your first autonomous worker session.
     </p>
   </div>
 
@@ -34,7 +34,7 @@ sidebarId: "quickstart"
     <h2 data-i18n="docsQuickstart.installTitle">Installation</h2>
 
     <h3 id="install-curl" data-i18n="docsQuickstart.instOptionA">Option A: Curl Script (Recommended)</h3>
-    <p data-i18n="docsQuickstart.instADesc">The fastest way to install. Downloads a pre-built binary for your platform.</p>
+    <p data-i18n="docsQuickstart.instADesc">The fastest way to install. The script builds a release binary and installs it to <code>/usr/local/bin</code> (or <code>~/.local/bin</code> when a user prefix is used).</p>
     <div class="code-block">
       <div class="code-header">
         <span class="code-lang">bash</span>
@@ -67,7 +67,7 @@ cargo build --release`}} /></pre>
 
   <section id="first-run">
     <h2 data-i18n="docsQuickstart.firstRunTitle">First Run</h2>
-    <p data-i18n="docsQuickstart.firstRunSub">Run your first research session with a single command:</p>
+    <p data-i18n="docsQuickstart.firstRunSub">Run your first autonomous worker task with a single command. Research is one built-in workflow; the same worker runtime also supports outreach, code, computer use and scheduled operations:</p>
     <div class="code-block">
       <div class="code-header">
         <span class="code-lang">bash</span>
@@ -160,7 +160,7 @@ api_key = <span class="code-string">"tvly-your-key"</span>`}} /></pre>
       </div>
       <pre><code dangerouslySetInnerHTML={{__html: `fathom serve`}} /></pre>
     </div>
-    <p data-i18n-html="docsQuickstart.httpFoot">The server starts on <code>http://localhost:8080</code> by default. Send research requests via POST:</p>
+    <p data-i18n-html="docsQuickstart.httpFoot">The server starts on <code>http://localhost:8080</code> by default. Send worker tasks via POST:</p>
     <div class="code-block">
       <div class="code-header">
         <span class="code-lang">bash</span>
@@ -187,7 +187,7 @@ api_key = <span class="code-string">"tvly-your-key"</span>`}} /></pre>
       <a href="/docs/tools" class="next-link">
         <div class="next-link-content">
           <h4 data-i18n="docsQuickstart.next2Title">Tools Reference</h4>
-          <p data-i18n="docsQuickstart.next2Desc">Explore 51 always-registered tools plus up to 5 CDP browser tools and up to 6 computer tools, plus MCP and plugin extensions for coding, browser automation, security, memory, and research.</p>
+          <p data-i18n="docsQuickstart.next2Desc">Explore the built-in tools for web research, outreach, coding, memory, governance, coordination and computer use, plus MCP and plugin extensions.</p>
         </div>
         <span class="next-link-arrow">→</span>
       </a>
