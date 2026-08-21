@@ -78,13 +78,13 @@ export const draftSteps = [
     </p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">generic</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`Hi [Name], I wanted to reach out about our solution.\`}`}} /></pre>
+      <pre><code set:html={`Hi [Name], I wanted to reach out about our solution.`} /></pre>
     </div>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">grounded</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`Hi Ann, saw Acme just closed its Series B and is hiring 6 platform engineers. 
+      <pre><code set:html={`Hi Ann, saw Acme just closed its Series B and is hiring 6 platform engineers. 
 Given your background as CTO building high-scale systems in Rust, wanted to share how we
-cut our own infra costs — happy to trade notes if useful.\`}`}} /></pre>
+cut our own infra costs — happy to trade notes if useful.`} /></pre>
     </div>
   </section>
 
@@ -138,7 +138,7 @@ cut our own infra costs — happy to trade notes if useful.\`}`}} /></pre>
     </p>
     <div class="code-card">
       <div class="code-header"><span class="code-lang">hunter.toml</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`[profile]
+      <pre><code set:html={`[profile]
 name = "hunter"
 description = "Harvest maximum verified contacts fast"
 prompt = """
@@ -150,11 +150,11 @@ For each company, search for C-suite, VP Engineering, and Head of Product.
 temperature = 0.4
 max_agents = 6
 max_depth = 2
-deny_tools = ["git_push"]\`}`}} /></pre>
+deny_tools = ["git_push"]`} /></pre>
     </div>
     <div class="code-card code-card--gap">
       <div class="code-header"><span class="code-lang">usage</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom run --profile hunter "Find engineering leaders at YC W24 companies"\`}`}} /></pre>
+      <pre><code set:html={`fathom run --profile hunter "Find engineering leaders at YC W24 companies"`} /></pre>
     </div>
     <p>
       What changes: the agent spawns up to 6 parallel sub-agents, each tackling a slice of the search space.
@@ -171,7 +171,7 @@ deny_tools = ["git_push"]\`}`}} /></pre>
     </p>
     <div class="code-card">
       <div class="code-header"><span class="code-lang">analyst.toml</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`[profile]
+      <pre><code set:html={`[profile]
 name = "analyst"
 description = "Deep, cited, read-only research"
 prompt = """
@@ -185,11 +185,11 @@ temperature = 0.3
 max_agents = 4
 max_depth = 3
 max_iterations = 30
-deny_tools = ["save_contacts", "git_push"]\`}`}} /></pre>
+deny_tools = ["save_contacts", "git_push"]`} /></pre>
     </div>
     <div class="code-card code-card--gap">
       <div class="code-header"><span class="code-lang">usage</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom run --profile analyst "Evaluate the competitive landscape of vector databases"\`}`}} /></pre>
+      <pre><code set:html={`fathom run --profile analyst "Evaluate the competitive landscape of vector databases"`} /></pre>
     </div>
     <p>
       What changes: the agent uses <code>max_iterations = 30</code> for longer exploration chains and
@@ -205,7 +205,7 @@ deny_tools = ["save_contacts", "git_push"]\`}`}} /></pre>
     </p>
     <div class="code-card">
       <div class="code-header"><span class="code-lang">validator.toml</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`[profile]
+      <pre><code set:html={`[profile]
 name = "validator"
 description = "Verify and enrich existing contacts"
 prompt = """
@@ -219,11 +219,11 @@ temperature = 0.2
 max_agents = 1
 max_depth = 1
 max_iterations = 50
-deny_tools = ["spawn_agent"]\`}`}} /></pre>
+deny_tools = ["spawn_agent"]`} /></pre>
     </div>
     <div class="code-card code-card--gap">
       <div class="code-header"><span class="code-lang">usage</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom run --profile validator "Validate and enrich contacts in ./contacts.csv"\`}`}} /></pre>
+      <pre><code set:html={`fathom run --profile validator "Validate and enrich contacts in ./contacts.csv"`} /></pre>
     </div>
     <p>
       What changes: no sub-agents spawn — the entire validation runs in a single agent loop.
@@ -243,12 +243,12 @@ deny_tools = ["spawn_agent"]\`}`}} /></pre>
     <h3>File location and naming</h3>
     <div class="code-card">
       <div class="code-header"><span class="code-lang">directory layout</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`~/.fathom/profiles/
+      <pre><code set:html={`~/.fathom/profiles/
 ├── hunter.toml       # built-in (shipped with the binary)
 ├── analyst.toml      # built-in
 ├── validator.toml    # built-in
 ├── my-outreach.toml  # your custom profile
-└── due-diligence.toml\`}`}} /></pre>
+└── due-diligence.toml`} /></pre>
     </div>
 
     <h3>Creating a profile from the CLI</h3>
@@ -290,7 +290,7 @@ deny_tools = ["spawn_agent"]\`}`}} /></pre>
     </p>
     <div class="code-card">
       <div class="code-header"><span class="code-lang">due-diligence.toml</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`[profile]
+      <pre><code set:html={`[profile]
 name = "due-diligence"
 description = "Structured M&A due-diligence research"
 prompt = """
@@ -309,12 +309,12 @@ temperature = 0.3
 max_agents = 4
 max_depth = 3
 max_iterations = 40
-deny_tools = ["save_contacts", "git_push", "send_email"]\`}`}} /></pre>
+deny_tools = ["save_contacts", "git_push", "send_email"]`} /></pre>
     </div>
     <div class="code-card code-card--gap">
       <div class="code-header"><span class="code-lang">usage</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom run --profile due-diligence "Full due-diligence on Acme Corp"
-fathom tui --profile due-diligence "Analyze Acme Corp and its top 3 competitors"\`}`}} /></pre>
+      <pre><code set:html={`fathom run --profile due-diligence "Full due-diligence on Acme Corp"
+fathom tui --profile due-diligence "Analyze Acme Corp and its top 3 competitors"`} /></pre>
     </div>
   </section>
 
@@ -359,15 +359,15 @@ fathom tui --profile due-diligence "Analyze Acme Corp and its top 3 competitors"
     </p>
     <div class="code-card">
       <div class="code-header"><span class="code-lang">before (no grounding)</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`Hi Ann, I noticed your company has been growing rapidly and is probably
-looking for solutions to scale its infrastructure.\`}`}} /></pre>
+      <pre><code set:html={`Hi Ann, I noticed your company has been growing rapidly and is probably
+looking for solutions to scale its infrastructure.`} /></pre>
     </div>
     <div class="code-card code-card--gap">
       <div class="code-header"><span class="code-lang">after (grounded in facts)</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`Hi Ann, saw that Acme closed its Series B last month (TechCrunch, Feb 12)
+      <pre><code set:html={`Hi Ann, saw that Acme closed its Series B last month (TechCrunch, Feb 12)
 and is hiring 6 platform engineers (careers page). Given your team's
 Rust stack and the scaling challenges that come with a 3x headcount bump,
-wanted to share how we cut our own infra costs by 40%.\`}`}} /></pre>
+wanted to share how we cut our own infra costs by 40%.`} /></pre>
     </div>
 
     <h3>Rule B — Never fabricate</h3>
@@ -378,14 +378,14 @@ wanted to share how we cut our own infra costs by 40%.\`}`}} /></pre>
     </p>
     <div class="code-card">
       <div class="code-header"><span class="code-lang">before (fabricated)</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`Hi Ann, congratulations on Acme's recent $50M Series B led by Sequoia!
-I saw your recent talk at RustConf 2025 about microservices.\`}`}} /></pre>
+      <pre><code set:html={`Hi Ann, congratulations on Acme's recent $50M Series B led by Sequoia!
+I saw your recent talk at RustConf 2025 about microservices.`} /></pre>
     </div>
     <div class="code-card code-card--gap">
       <div class="code-header"><span class="code-lang">after (honest)</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`Hi Ann, saw that Acme closed a funding round last month — congrats to
+      <pre><code set:html={`Hi Ann, saw that Acme closed a funding round last month — congrats to
 the team. I couldn't find details on the lead investor, but the scale
-of your recent engineering hires suggests significant growth ahead.\`}`}} /></pre>
+of your recent engineering hires suggests significant growth ahead.`} /></pre>
     </div>
 
     <h3>Rule C — Layer memory</h3>
@@ -396,15 +396,15 @@ of your recent engineering hires suggests significant growth ahead.\`}`}} /></pr
     </p>
     <div class="code-card">
       <div class="code-header"><span class="code-lang">before (no memory)</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`Hi Ann, I wanted to introduce our platform and see if there's a fit.\`}`}} /></pre>
+      <pre><code set:html={`Hi Ann, I wanted to introduce our platform and see if there's a fit.`} /></pre>
     </div>
     <div class="code-card code-card--gap">
       <div class="code-header"><span class="code-lang">after (memory-aware)</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`Hi Ann, following up on our chat from January — you mentioned the
+      <pre><code set:html={`Hi Ann, following up on our chat from January — you mentioned the
 migration to Rust was your Q1 priority. Now that it's Q2, I noticed
 Acme is hiring platform engineers, which suggests you've made progress.
 Curious how the rollout went and whether our earlier benchmarks would
-still be useful.\`}`}} /></pre>
+still be useful.`} /></pre>
     </div>
     <p>
       The memory digest includes: contact name, company, known role (and any role changes), last interaction
@@ -434,7 +434,7 @@ still be useful.\`}`}} /></pre>
     </p>
     <div class="code-card">
       <div class="code-header"><span class="code-lang">config.toml</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`[agent]
+      <pre><code set:html={`[agent]
 # Default model for all roles
 model = "gpt-4o-mini"
 
@@ -447,7 +447,7 @@ verifier = "gpt-4o-mini"     # simple checks, keep it cheap
 coordinator = "gpt-4o"       # planning needs strong model
 
 [llm]
-fast_model = "gpt-4o-mini"   # high-volume extraction & parsing\`}`}} /></pre>
+fast_model = "gpt-4o-mini"   # high-volume extraction & parsing`} /></pre>
     </div>
 
     <h3>How role_models works</h3>
@@ -510,9 +510,9 @@ fast_model = "gpt-4o-mini"   # high-volume extraction & parsing\`}`}} /></pre>
     </p>
     <div class="code-card">
       <div class="code-header"><span class="code-lang">citation format</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`"Acme raised $50M in Series B" → sourced from: web_search result #3 (TechCrunch)
+      <pre><code set:html={`"Acme raised $50M in Series B" → sourced from: web_search result #3 (TechCrunch)
 "Currently hiring 6 engineers" → sourced from: web_fetch of careers page
-"CTO since 2022" → sourced from: LinkedIn profile scrape\`}`}} /></pre>
+"CTO since 2022" → sourced from: LinkedIn profile scrape`} /></pre>
     </div>
     <p>
       In the TUI, each claim in the draft can be traced back to its source tool call in the Log panel.

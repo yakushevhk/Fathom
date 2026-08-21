@@ -25,7 +25,7 @@ sidebarId: "quickstart"
       <div class="callout-content" data-i18n-html="docsQuickstart.callout1">
         <strong>Don't have Rust?</strong> Install it with:
         <div class="code-block compact">
-          <pre><code dangerouslySetInnerHTML={{__html: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`}} /></pre>
+          <pre><code set:html={`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`} /></pre>
         </div>
       </div>
     </div>
@@ -40,9 +40,9 @@ sidebarId: "quickstart"
       <div class="code-header">
         <span class="code-lang">bash</span>
       </div>
-      <pre><code dangerouslySetInnerHTML={{__html: `git clone https://github.com/yakushevhk/Fathom.git
+      <pre><code set:html={`git clone https://github.com/yakushevhk/Fathom.git
 cd Fathom
-cargo build --release`}} /></pre>
+cargo build --release`} /></pre>
     </div>
     <p data-i18n-html="docsQuickstart.instAFoot">Run <code>./target/release/fathom</code>, or optionally install the checkout with <code>cargo install --path .</code>.</p>
 
@@ -52,7 +52,7 @@ cargo build --release`}} /></pre>
       <div class="code-header">
         <span class="code-lang">bash</span>
       </div>
-      <pre><code dangerouslySetInnerHTML={{__html: `cargo install --path .`}} /></pre>
+      <pre><code set:html={`cargo install --path .`} /></pre>
     </div>
 
     <h3 id="install-source-dev" data-i18n="docsQuickstart.instOptionC">Option C: Debug Build</h3>
@@ -61,7 +61,7 @@ cargo build --release`}} /></pre>
       <div class="code-header">
         <span class="code-lang">bash</span>
       </div>
-      <pre><code dangerouslySetInnerHTML={{__html: `cargo build`}} /></pre>
+      <pre><code set:html={`cargo build`} /></pre>
     </div>
     <p data-i18n-html="docsQuickstart.instCFoot">The debug binary will be at <code>./target/debug/fathom</code>.</p>
   </section>
@@ -73,7 +73,7 @@ cargo build --release`}} /></pre>
       <div class="code-header">
         <span class="code-lang">bash</span>
       </div>
-      <pre><code dangerouslySetInnerHTML={{__html: `fathom run <span class="code-string">"Find B2B SaaS startups in Berlin with 10-50 employees"</span>`}} /></pre>
+      <pre><code set:html={`fathom run <span class="code-string">"Find B2B SaaS startups in Berlin with 10-50 employees"</span>`} /></pre>
     </div>
     <p data-i18n-html="docsQuickstart.firstRunFoot">
       Configure the LLM provider before running; Fathom does not prompt interactively for API keys.
@@ -92,7 +92,7 @@ cargo build --release`}} /></pre>
       <div class="code-header">
         <span class="code-lang">path</span>
       </div>
-      <pre><code dangerouslySetInnerHTML={{__html: `~/.fathom/config.toml`}} /></pre>
+      <pre><code set:html={`~/.fathom/config.toml`} /></pre>
     </div>
 
     <h3 id="config-llm" data-i18n="docsQuickstart.cfgLlmTitle">LLM Section</h3>
@@ -101,13 +101,13 @@ cargo build --release`}} /></pre>
       <div class="code-header">
         <span class="code-lang">config.toml</span>
       </div>
-      <pre><code dangerouslySetInnerHTML={{__html: `<span class="code-section">[llm]</span>
+      <pre><code set:html={`<span class="code-section">[llm]</span>
 provider    = <span class="code-string">"deepseek"</span>
 base_url    = <span class="code-string">"https://api.deepseek.com"</span>
 api_key     = <span class="code-string">"sk-your-key"</span>
 model       = <span class="code-string">"deepseek-chat"</span>
 max_tokens  = <span class="code-number">8192</span>
-temperature = <span class="code-number">0.7</span>`}} /></pre>
+temperature = <span class="code-number">0.7</span>`} /></pre>
     </div>
 
     <h3 id="config-search" data-i18n="docsQuickstart.cfgSearchTitle">Search Backend</h3>
@@ -116,11 +116,11 @@ temperature = <span class="code-number">0.7</span>`}} /></pre>
       <div class="code-header">
         <span class="code-lang">config.toml</span>
       </div>
-      <pre><code dangerouslySetInnerHTML={{__html: `<span class="code-section">[search]</span>
+      <pre><code set:html={`<span class="code-section">[search]</span>
 backend = <span class="code-string">"hybrid"</span>
 
 <span class="code-section">[search.tavily]</span>
-api_key = <span class="code-string">"tvly-your-key"</span>`}} /></pre>
+api_key = <span class="code-string">"tvly-your-key"</span>`} /></pre>
     </div>
 
     <div class="callout">
@@ -141,7 +141,7 @@ api_key = <span class="code-string">"tvly-your-key"</span>`}} /></pre>
       <div class="code-header">
         <span class="code-lang">bash</span>
       </div>
-      <pre><code dangerouslySetInnerHTML={{__html: `fathom tui`}} /></pre>
+      <pre><code set:html={`fathom tui`} /></pre>
     </div>
     <p data-i18n="docsQuickstart.tuiFoot">
       The TUI provides an interactive chat interface where you can type queries,
@@ -159,16 +159,16 @@ api_key = <span class="code-string">"tvly-your-key"</span>`}} /></pre>
       <div class="code-header">
         <span class="code-lang">bash</span>
       </div>
-      <pre><code dangerouslySetInnerHTML={{__html: `fathom serve`}} /></pre>
+      <pre><code set:html={`fathom serve`} /></pre>
     </div>
     <p data-i18n-html="docsQuickstart.httpFoot">The server starts on <code>http://localhost:8080</code> by default. Send worker tasks via POST:</p>
     <div class="code-block">
       <div class="code-header">
         <span class="code-lang">bash</span>
       </div>
-      <pre><code dangerouslySetInnerHTML={{__html: `curl -X POST http://localhost:8080/api/v1/sessions \\
+      <pre><code set:html={`curl -X POST http://localhost:8080/api/v1/sessions \\
   -H <span class="code-string">"Content-Type: application/json"</span> \\
-  -d <span class="code-string">'{"query": "Find AI startups in London"}'</span>`}} /></pre>
+  -d <span class="code-string">'{"query": "Find AI startups in London"}'</span>`} /></pre>
     </div>
   </section>
 

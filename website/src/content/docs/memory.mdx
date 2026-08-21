@@ -46,8 +46,8 @@ export const scopes = [
     <p data-i18n="docsMemory.searchSub">Memory search is a hybrid of semantic (vector) similarity and BM25 keyword matching:</p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">formula</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`score = 0.7·cosine_similarity + 0.3·bm25_normalized
-final  = score × max(0, 1 − 0.01·days_old)\`}`}} /></pre>
+      <pre><code set:html={`score = 0.7·cosine_similarity + 0.3·bm25_normalized
+final  = score × max(0, 1 − 0.01·days_old)`} /></pre>
     </div>
     <ul class="check-list">
       <li><strong>Semantic weight 0.7</strong> balances meaning over exact-match.</li>
@@ -153,10 +153,10 @@ final  = score × max(0, 1 − 0.01·days_old)\`}`}} /></pre>
     </p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">example</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`memory_absorb({
+      <pre><code set:html={`memory_absorb({
   scope: "agent",
   fact: "Stripe acquired Lemon Squeezy in March 2024 for merchant-of-record capabilities"
-})\`}`}} /></pre>
+})`} /></pre>
     </div>
     <p>The pipeline executes these steps in order:</p>
     <div class="flow-list">
@@ -199,14 +199,14 @@ final  = score × max(0, 1 − 0.01·days_old)\`}`}} /></pre>
     <p>Typical response:</p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">json</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+      <pre><code set:html={`{
   "status": "absorbed",
   "memory_id": "mem_8f3a2b",
   "classification": "new",
   "embedding_model": "tfidf-512",
   "edges_created": 0,
   "duplicates_merged": 0
-}\`}`}} /></pre>
+}`} /></pre>
     </div>
 
     {/* — memory_search — */}
@@ -217,24 +217,24 @@ final  = score × max(0, 1 − 0.01·days_old)\`}`}} /></pre>
     </p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">example queries</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`memory_search({ scope: "agent", query: "Stripe pricing tiers", top_k: 5 })
+      <pre><code set:html={`memory_search({ scope: "agent", query: "Stripe pricing tiers", top_k: 5 })
 memory_search({ scope: "user", query: "CEO name and background", top_k: 3 })
-memory_search({ scope: "all", query: "competitor analysis fintech", min_score: 0.3 })\`}`}} /></pre>
+memory_search({ scope: "all", query: "competitor analysis fintech", min_score: 0.3 })`} /></pre>
     </div>
     <p>Scoring formula in detail:</p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">formula</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`raw_score = semantic_weight × cosine(embedding_q, embedding_doc)
+      <pre><code set:html={`raw_score = semantic_weight × cosine(embedding_q, embedding_doc)
            + (1 − semantic_weight) × bm25_normalized(query, doc)
 
 temporal  = max(0, 1 − temporal_decay × days_since_last_update)
 
-final_score = raw_score × temporal × importance_boost\`}`}} /></pre>
+final_score = raw_score × temporal × importance_boost`} /></pre>
     </div>
     <p>Example search result:</p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">json</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+      <pre><code set:html={`{
   "results": [
     {
       "id": "mem_8f3a2b",
@@ -250,7 +250,7 @@ final_score = raw_score × temporal × importance_boost\`}`}} /></pre>
   ],
   "total": 1,
   "query_time_ms": 12
-}\`}`}} /></pre>
+}`} /></pre>
     </div>
 
     {/* — memory_digest — */}
@@ -261,11 +261,11 @@ final_score = raw_score × temporal × importance_boost\`}`}} /></pre>
     </p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">example</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`memory_digest({
+      <pre><code set:html={`memory_digest({
   scope: "agent",
   topic: "outreach to fintech companies",
   max_tokens: 2000
-})\`}`}} /></pre>
+})`} /></pre>
     </div>
     <p>The digest includes three sections:</p>
     <ul class="check-list">
@@ -275,7 +275,7 @@ final_score = raw_score × temporal × importance_boost\`}`}} /></pre>
     </ul>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">output</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`## Memory Digest — "outreach to fintech companies"
+      <pre><code set:html={`## Memory Digest — "outreach to fintech companies"
 
 ### Relevant Facts
 - [agent] Stripe acquired Lemon Squeezy (MoR) in March 2024 (score: 0.87)
@@ -286,7 +286,7 @@ final_score = raw_score × temporal × importance_boost\`}`}} /></pre>
 - [run] Draft personalized email for Jane Doe referencing Plaid's API-first approach
 
 ### Recent (last 48h)
-- [run] Plaid announced new Transfer product on 2024-03-14\`}`}} /></pre>
+- [run] Plaid announced new Transfer product on 2024-03-14`} /></pre>
     </div>
 
     {/* — memory_boost — */}
@@ -298,11 +298,11 @@ final_score = raw_score × temporal × importance_boost\`}`}} /></pre>
     </p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">example</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`memory_boost({
+      <pre><code set:html={`memory_boost({
   id: "mem_8f3a2b",
   importance: 2.0,
   reason: "Critical acquisition — cite in all Stripe outreach"
-})\`}`}} /></pre>
+})`} /></pre>
     </div>
     <p>How importance affects ranking:</p>
     <table class="mini-table">
@@ -335,12 +335,12 @@ final_score = raw_score × temporal × importance_boost\`}`}} /></pre>
     </table>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">example</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`memory_link({
+      <pre><code set:html={`memory_link({
   from_id: "mem_new_series_d",
   to_id: "mem_old_series_c",
   edge_type: "supersedes",
   note: "Valuation updated after Series D announcement"
-})\`}`}} /></pre>
+})`} /></pre>
     </div>
 
     {/* — memory_graph — */}
@@ -352,7 +352,7 @@ final_score = raw_score × temporal × importance_boost\`}`}} /></pre>
     <p>Three actions are available:</p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">add entity</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`memory_graph({
+      <pre><code set:html={`memory_graph({
   action: "add",
   entity: {
     type: "person",
@@ -377,11 +377,11 @@ memory_graph({
     name: "San Francisco",
     attributes: { country: "US", state: "CA" }
   }
-})\`}`}} /></pre>
+})`} /></pre>
     </div>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">add relation</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`memory_graph({
+      <pre><code set:html={`memory_graph({
   action: "add",
   relation: {
     from: "person:Jane Doe",
@@ -398,11 +398,11 @@ memory_graph({
     to: "location:San Francisco",
     type: "located_in"
   }
-})\`}`}} /></pre>
+})`} /></pre>
     </div>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">query</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`memory_graph({
+      <pre><code set:html={`memory_graph({
   action: "query",
   start: "location:San Francisco",
   relation: "located_in",
@@ -415,7 +415,7 @@ memory_graph({
   action: "list",
   entity_type: "company",
   limit: 20
-})\`}`}} /></pre>
+})`} /></pre>
     </div>
   </section>
 
@@ -445,11 +445,11 @@ memory_graph({
     </p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">relationship model</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`person:Jane Doe  ──works_at──▶  company:Plaid
+      <pre><code set:html={`person:Jane Doe  ──works_at──▶  company:Plaid
 company:Plaid    ──located_in──▶  location:San Francisco
 person:Jane Doe  ──knows──▶  person:John Smith
 company:Plaid    ──competes_with──▶  company:Stripe
-company:Stripe   ──acquired──▶  company:Lemon Squeezy\`}`}} /></pre>
+company:Stripe   ──acquired──▶  company:Lemon Squeezy`} /></pre>
     </div>
 
     <h3>Multi-Hop Queries</h3>
@@ -460,7 +460,7 @@ company:Stripe   ──acquired──▶  company:Lemon Squeezy\`}`}} /></pre>
     </p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">multi-hop example</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`// Hop 1: Find companies in Berlin
+      <pre><code set:html={`// Hop 1: Find companies in Berlin
 //   location:Berlin ←──located_in── company:N26
 //   location:Berlin ←──located_in── company:Delivery Hero
 
@@ -468,7 +468,7 @@ company:Stripe   ──acquired──▶  company:Lemon Squeezy\`}`}} /></pre>
 //   company:N26 ←──works_at── person:Max Tayenthal
 //   company:Delivery Hero ←──works_at── person:Niklas Östberg
 
-// Result: [Max Tayenthal, Niklas Östberg]\`}`}} /></pre>
+// Result: [Max Tayenthal, Niklas Östberg]`} /></pre>
     </div>
 
     <h3>Entity Deduplication</h3>
@@ -491,7 +491,7 @@ company:Stripe   ──acquired──▶  company:Lemon Squeezy\`}`}} /></pre>
     </p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">visualization pseudocode</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`nodes = graph.list_entities()
+      <pre><code set:html={`nodes = graph.list_entities()
 edges = graph.list_relations()
 
 for node in nodes:
@@ -507,7 +507,7 @@ for edge in edges:
     from=edge.from, to=edge.to,
     style=edge_type_styles[edge.type],  // solid, dashed, dotted
     label=edge.type
-  )\`}`}} /></pre>
+  )`} /></pre>
     </div>
   </section>
 
@@ -553,7 +553,7 @@ for edge in edges:
     <h3>Example Configuration</h3>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">config.toml</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`[memory]
+      <pre><code set:html={`[memory]
 enabled = true
 db_path = "~/.fathom/memory.db"
 embeddings = "auto"
@@ -566,7 +566,7 @@ llm_classify = true
 rerank = false
 gc_ttl_days = 30
 gc_compact_above = 200
-gc_auto = false\`}`}} /></pre>
+gc_auto = false`} /></pre>
     </div>
   </section>
 
@@ -581,9 +581,9 @@ gc_auto = false\`}`}} /></pre>
     <h3>Search</h3>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">bash</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom memory search "Stripe pricing tiers" --top-k 10 --scope agent
+      <pre><code set:html={`fathom memory search "Stripe pricing tiers" --top-k 10 --scope agent
 fathom memory search "competitor analysis" --scope all
-fathom memory search "CEO background" --scope user\`}`}} /></pre>
+fathom memory search "CEO background" --scope user`} /></pre>
     </div>
     <p>
       The <code>search</code> command runs hybrid vector + BM25 search and prints ranked results.
@@ -594,9 +594,9 @@ fathom memory search "CEO background" --scope user\`}`}} /></pre>
     <h3>List</h3>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">bash</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom memory list --scope all --status active
+      <pre><code set:html={`fathom memory list --scope all --status active
 fathom memory list --scope agent --status archived -n 50
-fathom memory list --scope run\`}`}} /></pre>
+fathom memory list --scope run`} /></pre>
     </div>
       <p>
       Lists records with optional filtering by scope, status (<code>active</code>, <code>superseded</code>, <code>archived</code>, <code>all</code>),
@@ -606,9 +606,9 @@ fathom memory list --scope run\`}`}} /></pre>
     <h3>Get</h3>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">bash</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom memory get mem_8f3a2b
+      <pre><code set:html={`fathom memory get mem_8f3a2b
 fathom memory get mem_8f3a2b --follow full_history
-fathom memory get mem_8f3a2b --follow latest\`}`}} /></pre>
+fathom memory get mem_8f3a2b --follow latest`} /></pre>
     </div>
     <p>
       Fetches a single record by ID. The <code>--follow</code> flag controls how much related data
@@ -619,7 +619,7 @@ fathom memory get mem_8f3a2b --follow latest\`}`}} /></pre>
     <h3>Stats</h3>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">bash</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom memory stats\`}`}} /></pre>
+      <pre><code set:html={`fathom memory stats`} /></pre>
     </div>
     <p>
       Prints a summary of the memory store: total records by scope and status, entity graph size,
@@ -627,7 +627,7 @@ fathom memory get mem_8f3a2b --follow latest\`}`}} /></pre>
     </p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">output</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`┌─────────────────────────────────────┐
+      <pre><code set:html={`┌─────────────────────────────────────┐
 │  Memory Store Statistics            │
 ├─────────────────────────────────────┤
 │  Active records:  1,247             │
@@ -640,13 +640,13 @@ fathom memory get mem_8f3a2b --follow latest\`}`}} /></pre>
 │    edges:           412             │
 │  Embedding model:  tfidf-512        │
 │  DB size:          14.2 MB          │
-└─────────────────────────────────────┘\`}`}} /></pre>
+└─────────────────────────────────────┘`} /></pre>
     </div>
 
     <h3>Rebuild</h3>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">bash</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom memory rebuild\`}`}} /></pre>
+      <pre><code set:html={`fathom memory rebuild`} /></pre>
     </div>
     <p>
       Rebuilds the memory index from scratch. Useful after changing embedding models or if the
@@ -656,9 +656,9 @@ fathom memory get mem_8f3a2b --follow latest\`}`}} /></pre>
     <h3>Distill</h3>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">bash</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom memory distill --session run_abc123
+      <pre><code set:html={`fathom memory distill --session run_abc123
 fathom memory distill --session run_abc123 --dry-run
-fathom memory distill --session run_abc123\`}`}} /></pre>
+fathom memory distill --session run_abc123`} /></pre>
     </div>
     <p>
       Promotes run-scoped facts from a completed session into the agent scope. Use <code>--dry-run</code>
@@ -668,9 +668,9 @@ fathom memory distill --session run_abc123\`}`}} /></pre>
     <h3>Garbage Collection</h3>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">bash</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom memory gc
+      <pre><code set:html={`fathom memory gc
 fathom memory gc --ttl-days 30 --dry-run
-fathom memory gc --compact-above 200\`}`}} /></pre>
+fathom memory gc --compact-above 200`} /></pre>
     </div>
     <p>
       Manually triggers garbage collection. <code>--dry-run</code> shows what would be archived or
@@ -681,8 +681,8 @@ fathom memory gc --compact-above 200\`}`}} /></pre>
     <h3>Nuke</h3>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">bash</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom memory nuke --scope run --yes
-fathom memory nuke --scope all --yes\`}`}} /></pre>
+      <pre><code set:html={`fathom memory nuke --scope run --yes
+fathom memory nuke --scope all --yes`} /></pre>
     </div>
     <p>
       Permanently deletes all records in the specified scope. Requires <code>--yes</code> as a safety
@@ -703,7 +703,7 @@ fathom memory nuke --scope all --yes\`}`}} /></pre>
     <h3>List &amp; Search Memories</h3>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">http</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`GET /api/v1/memories?scope=agent&q=stripe+pricing&top_k=5&min_score=0.25\`}`}} /></pre>
+      <pre><code set:html={`GET /api/v1/memories?scope=agent&q=stripe+pricing&top_k=5&min_score=0.25`} /></pre>
     </div>
     <table class="mini-table">
       <thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
@@ -718,7 +718,7 @@ fathom memory nuke --scope all --yes\`}`}} /></pre>
     </table>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">json response</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+      <pre><code set:html={`{
   "memories": [
     {
       "id": "mem_8f3a2b",
@@ -734,40 +734,40 @@ fathom memory nuke --scope all --yes\`}`}} /></pre>
   ],
   "total": 1,
   "page": 1
-}\`}`}} /></pre>
+}`} /></pre>
     </div>
 
     <h3>Absorb Facts</h3>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">http</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`POST /api/v1/memories/absorb
+      <pre><code set:html={`POST /api/v1/memories/absorb
 Content-Type: application/json
 
 {
   "scope": "agent",
   "fact": "Stripe acquired Lemon Squeezy in March 2024 for merchant-of-record capabilities"
-}\`}`}} /></pre>
+}`} /></pre>
     </div>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">json response</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+      <pre><code set:html={`{
   "status": "absorbed",
   "memory_id": "mem_8f3a2b",
   "classification": "new",
   "embedding_model": "tfidf-512",
   "edges_created": 0,
   "duplicates_merged": 0
-}\`}`}} /></pre>
+}`} /></pre>
     </div>
 
     <h3>Store Statistics</h3>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">http</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`GET /api/v1/memories/stats\`}`}} /></pre>
+      <pre><code set:html={`GET /api/v1/memories/stats`} /></pre>
     </div>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">json response</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+      <pre><code set:html={`{
   "active_count": 1247,
   "archived_count": 389,
   "by_scope": {
@@ -781,60 +781,60 @@ Content-Type: application/json
   },
   "embedding_model": "tfidf-512",
   "db_size_bytes": 14889768
-}\`}`}} /></pre>
+}`} /></pre>
     </div>
 
     <h3>Distill Run Facts</h3>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">http</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`POST /api/v1/memories/distill
+      <pre><code set:html={`POST /api/v1/memories/distill
 Content-Type: application/json
 
 {
   "session_key": "run_abc123",
   "target_scope": "agent",
   "dry_run": false
-}\`}`}} /></pre>
+}`} /></pre>
     </div>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">json response</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+      <pre><code set:html={`{
   "promoted": 12,
   "archived_originals": 12,
   "duplicates_found": 3,
   "new_memories_created": 9
-}\`}`}} /></pre>
+}`} /></pre>
     </div>
 
     <h3>Garbage Collection</h3>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">http</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`POST /api/v1/memories/gc
+      <pre><code set:html={`POST /api/v1/memories/gc
 Content-Type: application/json
 
 {
   "ttl_days": 30,
   "compact_above": 200,
   "dry_run": true
-}\`}`}} /></pre>
+}`} /></pre>
     </div>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">json response</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+      <pre><code set:html={`{
   "would_archive": 47,
   "would_compact": 2,
   "dry_run": true
-}\`}`}} /></pre>
+}`} /></pre>
     </div>
 
     <h3>Get Single Memory</h3>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">http</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`GET /api/v1/memories/mem_8f3a2b?follow=full_history\`}`}} /></pre>
+      <pre><code set:html={`GET /api/v1/memories/mem_8f3a2b?follow=full_history`} /></pre>
     </div>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">json response</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+      <pre><code set:html={`{
   "id": "mem_8f3a2b",
   "scope": "agent",
   "key": "stripe-acquisition",
@@ -854,21 +854,21 @@ Content-Type: application/json
   ],
   "created_at": "2024-03-15T10:30:00Z",
   "updated_at": "2024-03-15T10:30:00Z"
-}\`}`}} /></pre>
+}`} /></pre>
     </div>
 
     <h3>Archive (Soft Delete)</h3>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">http</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`DELETE /api/v1/memories/mem_8f3a2b\`}`}} /></pre>
+      <pre><code set:html={`DELETE /api/v1/memories/mem_8f3a2b`} /></pre>
     </div>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">json response</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+      <pre><code set:html={`{
   "id": "mem_8f3a2b",
   "status": "archived",
   "archived_at": "2024-03-20T14:00:00Z"
-}\`}`}} /></pre>
+}`} /></pre>
     </div>
     <p>
       This is a soft delete — the record is moved to archived status and excluded from default

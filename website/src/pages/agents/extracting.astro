@@ -69,9 +69,9 @@ const tools = ['extract_contacts', 'parse_html', 'extract_json', 'parse_corporat
 >
   <div slot="posttools" class="feat">
     <div class="feat-copy">
-      <p class="feat-eyebrow">Feeds downstream workers</p>
-      <h2>Structured output is reusable fuel</h2>
-      <p class="feat-body">Every extracted value leaves with a confidence score and source, so downstream workers know what to trust and what to verify. The runtime autosaves results as soon as the extraction tool returns — nothing evaporates when the session ends. Other workers can validate, write, or act on the same structured output.</p>
+      <p class="feat-eyebrow" data-i18n="agents.extracting.feeds.eyebrow">Feeds downstream workers</p>
+      <h2 data-i18n="agents.extracting.feeds.title">Structured output is reusable fuel</h2>
+      <p class="feat-body" data-i18n="agents.extracting.feeds.body">Every extracted value leaves with a confidence score and source, so downstream workers know what to trust and what to verify. The runtime autosaves results as soon as the extraction tool returns — nothing evaporates when the session ends. Other workers can validate, write, or act on the same structured output.</p>
     </div>
     <div class="code-card">
       <pre><code>{`extract_contacts(url: "https://acme.io/team")

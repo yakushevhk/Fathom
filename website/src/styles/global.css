@@ -404,7 +404,7 @@ pre:hover .copy-btn {
 [class$="-hero"]::before {
   content: "";
   position: absolute;
-  inset: -20%;
+  inset: 0;
   z-index: -1;
   pointer-events: none;
   background:
@@ -414,6 +414,14 @@ pre:hover .copy-btn {
   filter: blur(34px);
   animation: auroraDrift 14s ease-in-out infinite alternate;
   will-change: transform;
+  /* Fade out before the hero's clip edge so container-width heroes
+     (ag-hero, pg-hero, phero__inner …) never show a hard rectangle. */
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent),
+    linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent),
+    linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent);
+  mask-composite: intersect;
 }
 @keyframes auroraDrift {
   0%   { transform: translate3d(-6%, -2%, 0) scale(1); }
@@ -433,6 +441,12 @@ pre:hover .copy-btn {
   opacity: 0.05;
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent),
+    linear-gradient(to bottom, transparent, #000 16%, #000 84%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent),
+    linear-gradient(to bottom, transparent, #000 16%, #000 84%, transparent);
+  mask-composite: intersect;
 }
 [data-theme="dark"] [class$="-hero"]::after { opacity: 0.07; }
 

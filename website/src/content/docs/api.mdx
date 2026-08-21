@@ -103,8 +103,8 @@ sidebarId: "api"
           <div class="code-header">
             <span class="code-lang">HTTP Headers</span>
           </div>
-          <pre><code dangerouslySetInnerHTML={{__html: `Authorization: Bearer &lt;your-api-key&gt;
-X-Api-Key: &lt;your-api-key&gt;`}} /></pre>
+          <pre><code set:html={`Authorization: Bearer &lt;your-api-key&gt;
+X-Api-Key: &lt;your-api-key&gt;`} /></pre>
         </div>
       </section>
 
@@ -118,7 +118,7 @@ X-Api-Key: &lt;your-api-key&gt;`}} /></pre>
           <div class="code-header">
             <span class="code-lang">Environment</span>
           </div>
-          <pre><code dangerouslySetInnerHTML={{__html: `FATHOM_API_KEYS=key-abc123,key-def456,key-ghi789`}} /></pre>
+          <pre><code set:html={`FATHOM_API_KEYS=key-abc123,key-def456,key-ghi789`} /></pre>
         </div>
         <p class="api-text" data-i18n-html="docsApi.authRateLimit">
           Each key maps to an independent identity. Rate limiting is applied per-key: <strong>120 requests/minute</strong> for standard endpoints. Exceeding limits returns <code>429 Too Many Requests</code>.
@@ -149,10 +149,10 @@ X-Api-Key: &lt;your-api-key&gt;`}} /></pre>
               <span class="code-lang">JSON</span>
               <span class="code-label" data-i18n="docsApi.requestLabel">Request</span>
             </div>
-            <pre><code dangerouslySetInnerHTML={{__html: `{
+            <pre><code set:html={`{
   "query": "Find SaaS companies in Berlin with 10-50 employees",
   "output_dir": "./results/session-001"
-}`}} /></pre>
+}`} /></pre>
           </div>
 
           <div class="param-table">
@@ -177,12 +177,12 @@ X-Api-Key: &lt;your-api-key&gt;`}} /></pre>
               <span class="code-lang">JSON</span>
               <span class="code-label" data-i18n="docsApi.responseLabel">Response</span>
             </div>
-            <pre><code dangerouslySetInnerHTML={{__html: `{
+            <pre><code set:html={`{
   "id": "sess_a1b2c3d4",
   "status": "running",
   "query": "Find SaaS companies in Berlin...",
   "output_dir": "./results/session-001"
-}`}} /></pre>
+}`} /></pre>
           </div>
         </article>
 
@@ -200,7 +200,7 @@ X-Api-Key: &lt;your-api-key&gt;`}} /></pre>
               <span class="code-lang">JSON</span>
               <span class="code-label" data-i18n="docsApi.responseLabel">Response</span>
             </div>
-            <pre><code dangerouslySetInnerHTML={{__html: `{
+            <pre><code set:html={`{
   "sessions": [
     {
       "id": "sess_a1b2c3d4",
@@ -226,7 +226,7 @@ X-Api-Key: &lt;your-api-key&gt;`}} /></pre>
     }
   ],
   "count": 2
-}`}} /></pre>
+}`} /></pre>
           </div>
         </article>
 
@@ -256,7 +256,7 @@ X-Api-Key: &lt;your-api-key&gt;`}} /></pre>
               <span class="code-lang">JSON</span>
               <span class="code-label">Response</span>
             </div>
-            <pre><code dangerouslySetInnerHTML={{__html: `{
+            <pre><code set:html={`{
   "id": "sess_a1b2c3d4",
   "query": "Find SaaS companies in Berlin...",
   "status": "running",
@@ -266,7 +266,7 @@ X-Api-Key: &lt;your-api-key&gt;`}} /></pre>
   "created_at": "2026-08-07T10:30:00Z",
   "updated_at": "2026-08-07T10:31:00Z",
   "active": true
-}`}} /></pre>
+}`} /></pre>
           </div>
         </article>
 
@@ -284,10 +284,10 @@ X-Api-Key: &lt;your-api-key&gt;`}} /></pre>
               <span class="code-lang">JSON</span>
               <span class="code-label" data-i18n="docsApi.responseLabel">Response</span>
             </div>
-            <pre><code dangerouslySetInnerHTML={{__html: `{
+            <pre><code set:html={`{
   "id": "sess_a1b2c3d4",
   "status": "cancelled"
-}`}} /></pre>
+}`} /></pre>
           </div>
         </article>
 
@@ -305,9 +305,9 @@ X-Api-Key: &lt;your-api-key&gt;`}} /></pre>
               <span class="code-lang">JSON</span>
               <span class="code-label" data-i18n="docsApi.requestLabel">Request</span>
             </div>
-            <pre><code dangerouslySetInnerHTML={{__html: `{
+            <pre><code set:html={`{
   "message": "Focus only on companies with Series A funding"
-}`}} /></pre>
+}`} /></pre>
           </div>
 
           <h4 class="param-heading" data-i18n-html="docsApi.response202">Response — <code>202 Accepted</code></h4>
@@ -316,11 +316,11 @@ X-Api-Key: &lt;your-api-key&gt;`}} /></pre>
               <span class="code-lang">JSON</span>
               <span class="code-label" data-i18n="docsApi.responseLabel">Response</span>
             </div>
-            <pre><code dangerouslySetInnerHTML={{__html: `{
+            <pre><code set:html={`{
   "id": "sess_a1b2c3d4",
   "steered": true,
   "message": "Instruction delivered to session sess_a1b2c3d4"
-}`}} /></pre>
+}`} /></pre>
           </div>
         </article>
 
@@ -338,7 +338,7 @@ X-Api-Key: &lt;your-api-key&gt;`}} /></pre>
               <span class="code-lang">JSON</span>
               <span class="code-label" data-i18n="docsApi.responseLabel">Response</span>
             </div>
-            <pre><code dangerouslySetInnerHTML={{__html: `{
+            <pre><code set:html={`{
   "session_id": "sess_a1b2c3d4",
   "status": "completed",
   "summary": "Found 3 SaaS companies in Berlin matching criteria.",
@@ -351,7 +351,7 @@ X-Api-Key: &lt;your-api-key&gt;`}} /></pre>
       "content": "TechCorp GmbH — B2B SaaS, 25 employees, Series A 2025"
     }
   ]
-}`}} /></pre>
+}`} /></pre>
           </div>
         </article>
 
@@ -369,11 +369,11 @@ X-Api-Key: &lt;your-api-key&gt;`}} /></pre>
               <span class="code-lang">SSE</span>
               <span class="code-label" data-i18n="docsApi.streamLabel">Stream</span>
             </div>
-            <pre><code dangerouslySetInnerHTML={{__html: `data: {"type":"agent_spawned","agent_id":"agent_x1y2z3","role":"web-researcher"}
+            <pre><code set:html={`data: {"type":"agent_spawned","agent_id":"agent_x1y2z3","role":"web-researcher"}
 
 data: {"type":"finding","agent_id":"agent_x1y2z3","title":"TechCorp GmbH","confidence":0.92}
 
-data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`}} /></pre>
+data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`} /></pre>
           </div>
         </article>
 
@@ -412,7 +412,7 @@ data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`}} /></pre>
               <span class="code-lang">JSON</span>
               <span class="code-label" data-i18n="docsApi.responseLabel">Response</span>
             </div>
-            <pre><code dangerouslySetInnerHTML={{__html: `{
+            <pre><code set:html={`{
   "agents": [
     {
       "id": "agent_x1y2z3",
@@ -424,7 +424,7 @@ data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`}} /></pre>
     }
   ],
   "count": 1
-}`}} /></pre>
+}`} /></pre>
           </div>
         </article>
 
@@ -442,7 +442,7 @@ data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`}} /></pre>
               <span class="code-lang">JSON</span>
               <span class="code-label" data-i18n="docsApi.responseLabel">Response</span>
             </div>
-            <pre><code dangerouslySetInnerHTML={{__html: `{
+            <pre><code set:html={`{
   "id": "agent_x1y2z3",
   "session_id": "sess_a1b2c3d4",
   "parent_id": null,
@@ -453,7 +453,7 @@ data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`}} /></pre>
   "tokens_used": 18420,
   "created_at": "2026-08-07T10:30:01Z",
   "completed_at": "2026-08-07T10:30:42Z"
-}`}} /></pre>
+}`} /></pre>
           </div>
         </article>
 
@@ -465,9 +465,9 @@ data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`}} /></pre>
           </div>
           <p class="endpoint-desc">Answer a pending <code>question</code> tool call. The agent blocks until the operator responds or timeout expires.</p>
           <h4 class="param-heading">Request Body</h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"request_id": "ctrl_abc123", "text": "Focus on Series B companies"&#125;`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code set:html={`&#123;"request_id": "ctrl_abc123", "text": "Focus on Series B companies"&#125;`} /></pre></div>
           <h4 class="param-heading">Response — <code>200 OK</code></h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"answered": true, "request_id": "ctrl_abc123"&#125;`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code set:html={`&#123;"answered": true, "request_id": "ctrl_abc123"&#125;`} /></pre></div>
           <p class="endpoint-desc">Returns <code>410 GONE</code> if agent stopped waiting, <code>404</code> if no such request_id.</p>
         </article>
 
@@ -479,9 +479,9 @@ data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`}} /></pre>
           </div>
           <p class="endpoint-desc">Allow or deny a pending side-effect tool call (e.g. <code>save_contacts</code>, <code>git_push</code>).</p>
           <h4 class="param-heading">Request Body</h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"request_id": "ctrl_def456", "approved": true&#125;`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code set:html={`&#123;"request_id": "ctrl_def456", "approved": true&#125;`} /></pre></div>
           <h4 class="param-heading">Response — <code>200 OK</code></h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"approved": true, "request_id": "ctrl_def456"&#125;`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code set:html={`&#123;"approved": true, "request_id": "ctrl_def456"&#125;`} /></pre></div>
         </article>
 
         {/* POST /api/v1/jobs */}
@@ -492,9 +492,9 @@ data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`}} /></pre>
           </div>
           <p class="endpoint-desc">Submit a durable background job. Spawns a fully detached runner process.</p>
           <h4 class="param-heading">Request Body</h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"task": "Find CTOs at fintech startups in Berlin", "attempts": 3&#125;`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code set:html={`&#123;"task": "Find CTOs at fintech startups in Berlin", "attempts": 3&#125;`} /></pre></div>
           <h4 class="param-heading">Response — <code>202 ACCEPTED</code></h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"id": "job_abc123", "status": "queued", "task": "...", "attempts": 3, "max_attempts": 3, "output_dir": "./jobs/job_abc123", "log": "./jobs/job_abc123/run.log"&#125;`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code set:html={`&#123;"id": "job_abc123", "status": "queued", "task": "...", "attempts": 3, "max_attempts": 3, "output_dir": "./jobs/job_abc123", "log": "./jobs/job_abc123/run.log"&#125;`} /></pre></div>
         </article>
 
         {/* GET /api/v1/jobs */}
@@ -505,7 +505,7 @@ data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`}} /></pre>
           </div>
           <p class="endpoint-desc">List all jobs. Jobs with running status but dead PID are marked <code>"stale"</code>.</p>
           <h4 class="param-heading">Response — <code>200 OK</code></h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"jobs": [...], "count": 5&#125;`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code set:html={`&#123;"jobs": [...], "count": 5&#125;`} /></pre></div>
         </article>
 
         {/* GET /api/v1/jobs/:id */}
@@ -516,7 +516,7 @@ data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`}} /></pre>
           </div>
           <p class="endpoint-desc">Get job status by full ID or unique prefix.</p>
           <h4 class="param-heading">Response — <code>200 OK</code></h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"id": "job_abc123", "status": "completed", "task": "...", "attempts": 1, "max_attempts": 3&#125;`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code set:html={`&#123;"id": "job_abc123", "status": "completed", "task": "...", "attempts": 1, "max_attempts": 3&#125;`} /></pre></div>
         </article>
 
         {/* DELETE /api/v1/jobs/:id */}
@@ -527,7 +527,7 @@ data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`}} /></pre>
           </div>
           <p class="endpoint-desc">Cancel an active job. Terminates the runner process and marks the job cancelled.</p>
           <h4 class="param-heading">Response — <code>200 OK</code></h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"id": "job_abc123", "status": "cancelled"&#125;`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code set:html={`&#123;"id": "job_abc123", "status": "cancelled"&#125;`} /></pre></div>
         </article>
 
         {/* GET /api/v1/jobs/:id/log */}
@@ -538,9 +538,9 @@ data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`}} /></pre>
           </div>
           <p class="endpoint-desc">Tail the job log file.</p>
           <h4 class="param-heading">Query Parameters</h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">HTTP</span></div><pre><code dangerouslySetInnerHTML={{__html: `?lines=100  (default 100, cap 2000)`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">HTTP</span></div><pre><code set:html={`?lines=100  (default 100, cap 2000)`} /></pre></div>
           <h4 class="param-heading">Response — <code>200 OK</code></h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"lines": ["...", "..."], "total_lines": 150, "returned": 100&#125;`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code set:html={`&#123;"lines": ["...", "..."], "total_lines": 150, "returned": 100&#125;`} /></pre></div>
         </article>
 
         {/* POST /api/v1/jobs/:id/rerun */}
@@ -551,7 +551,7 @@ data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`}} /></pre>
           </div>
           <p class="endpoint-desc">Re-run a finished or stale job. Resets state and spawns a new runner.</p>
           <h4 class="param-heading">Response — <code>202 ACCEPTED</code></h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"id": "job_abc123", "status": "queued", ...&#125;`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code set:html={`&#123;"id": "job_abc123", "status": "queued", ...&#125;`} /></pre></div>
         </article>
 
         {/* GET /api/v1/memories */}
@@ -562,9 +562,9 @@ data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`}} /></pre>
           </div>
           <p class="endpoint-desc">List memories or perform hybrid search. If <code>?q=</code> is non-empty, does semantic search.</p>
           <h4 class="param-heading">Query Parameters</h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">HTTP</span></div><pre><code dangerouslySetInnerHTML={{__html: `?q=CTO+fintech&scope=agent&status=active&limit=20&top_k=10`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">HTTP</span></div><pre><code set:html={`?q=CTO+fintech&scope=agent&status=active&limit=20&top_k=10`} /></pre></div>
           <h4 class="param-heading">Response — <code>200 OK</code></h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"query": "CTO fintech", "memories": [...]&#125;`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code set:html={`&#123;"query": "CTO fintech", "memories": [...]&#125;`} /></pre></div>
         </article>
 
         {/* POST /api/v1/memories/absorb */}
@@ -575,9 +575,9 @@ data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`}} /></pre>
           </div>
           <p class="endpoint-desc">Absorb facts through the full memory pipeline (classification, embedding, dedup, storage).</p>
           <h4 class="param-heading">Request Body</h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"facts": [&#123;"content": "Acme Corp uses React", "confidence": 0.9&#125;], "source": "research", "scope": "agent"&#125;`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code set:html={`&#123;"facts": [&#123;"content": "Acme Corp uses React", "confidence": 0.9&#125;], "source": "research", "scope": "agent"&#125;`} /></pre></div>
           <h4 class="param-heading">Response — <code>200 OK</code></h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"created": 1, "duplicates": 0, "superseded": 0&#125;`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code set:html={`&#123;"created": 1, "duplicates": 0, "superseded": 0&#125;`} /></pre></div>
         </article>
 
         {/* GET /api/v1/memories/stats */}
@@ -588,7 +588,7 @@ data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`}} /></pre>
           </div>
           <p class="endpoint-desc">Memory store statistics: scope counts, entity graph nodes/edges.</p>
           <h4 class="param-heading">Response — <code>200 OK</code></h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"embedding_model": "text-embedding-3-small", "scopes": &#123;"agent": &#123;"active": 42, "superseded": 5, "archived": 12&#125;&#125;, "entity_graph": &#123;"nodes": 28, "edges": 45&#125;&#125;`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code set:html={`&#123;"embedding_model": "text-embedding-3-small", "scopes": &#123;"agent": &#123;"active": 42, "superseded": 5, "archived": 12&#125;&#125;, "entity_graph": &#123;"nodes": 28, "edges": 45&#125;&#125;`} /></pre></div>
         </article>
 
         {/* POST /api/v1/memories/distill */}
@@ -599,9 +599,9 @@ data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`}} /></pre>
           </div>
           <p class="endpoint-desc">Promote run-scoped facts into agent-scoped knowledge.</p>
           <h4 class="param-heading">Query Parameters</h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">HTTP</span></div><pre><code dangerouslySetInnerHTML={{__html: `?session=sess_abc123&dry_run=true`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">HTTP</span></div><pre><code set:html={`?session=sess_abc123&dry_run=true`} /></pre></div>
           <h4 class="param-heading">Response — <code>200 OK</code></h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"promoted": 8, "archived": 3&#125;`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code set:html={`&#123;"promoted": 8, "archived": 3&#125;`} /></pre></div>
         </article>
 
         {/* POST /api/v1/memories/gc */}
@@ -612,9 +612,9 @@ data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`}} /></pre>
           </div>
           <p class="endpoint-desc">Garbage-collect expired/stale facts and compact groups.</p>
           <h4 class="param-heading">Query Parameters</h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">HTTP</span></div><pre><code dangerouslySetInnerHTML={{__html: `?ttl_days=30&dry_run=false`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">HTTP</span></div><pre><code set:html={`?ttl_days=30&dry_run=false`} /></pre></div>
           <h4 class="param-heading">Response — <code>200 OK</code></h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"stale_archived": 15, "compacted": 2, "dry_run": false&#125;`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code set:html={`&#123;"stale_archived": 15, "compacted": 2, "dry_run": false&#125;`} /></pre></div>
         </article>
 
         {/* GET /api/v1/memories/:id */}
@@ -625,9 +625,9 @@ data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`}} /></pre>
           </div>
           <p class="endpoint-desc">Get one memory by ID with optional history following.</p>
           <h4 class="param-heading">Query Parameters</h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">HTTP</span></div><pre><code dangerouslySetInnerHTML={{__html: `?follow=latest  (options: active, latest, full_history)`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">HTTP</span></div><pre><code set:html={`?follow=latest  (options: active, latest, full_history)`} /></pre></div>
           <h4 class="param-heading">Response — <code>200 OK</code></h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"memories": [...]&#125;`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code set:html={`&#123;"memories": [...]&#125;`} /></pre></div>
         </article>
 
         {/* DELETE /api/v1/memories/:id */}
@@ -638,7 +638,7 @@ data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`}} /></pre>
           </div>
           <p class="endpoint-desc">Soft-delete a memory by setting status to "archived".</p>
           <h4 class="param-heading">Response — <code>200 OK</code></h4>
-          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code dangerouslySetInnerHTML={{__html: `&#123;"archived": "mem_abc123"&#125;`}} /></pre></div>
+          <div class="code-block"><div class="code-header"><span class="code-lang">JSON</span></div><pre><code set:html={`&#123;"archived": "mem_abc123"&#125;`} /></pre></div>
         </article>
 
         {/* GET /health */}
@@ -655,7 +655,7 @@ data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`}} /></pre>
               <span class="code-lang">JSON</span>
               <span class="code-label" data-i18n="docsApi.responseLabel">Response</span>
             </div>
-            <pre><code dangerouslySetInnerHTML={{__html: `{
+            <pre><code set:html={`{
   "status": "ok",
   "service": "fathom",
   "version": "0.3.0",
@@ -665,7 +665,7 @@ data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`}} /></pre>
 
 // Possible values:
 // status: "ok" | "degraded"
-// database: "ok" | "error"`}} /></pre>
+// database: "ok" | "error"`} /></pre>
           </div>
         </article>
 
@@ -683,7 +683,7 @@ data: {"type":"session_completed","session_id":"sess_a1b2c3d4"}`}} /></pre>
               <span class="code-lang">Prometheus</span>
               <span class="code-label" data-i18n="docsApi.metricsLabel">Metrics</span>
             </div>
-            <pre><code dangerouslySetInnerHTML={{__html: `# HELP pr_sessions_total Total number of sessions
+            <pre><code set:html={`# HELP pr_sessions_total Total number of sessions
 # TYPE pr_sessions_total counter
 pr_sessions_total 42
 
@@ -693,7 +693,7 @@ pr_agents_active 3
 
 # HELP pr_request_duration_seconds Request latency
 # TYPE pr_request_duration_seconds histogram
-pr_request_duration_seconds_bucket{le="0.1"} 120`}} /></pre>
+pr_request_duration_seconds_bucket{le="0.1"} 120`} /></pre>
           </div>
         </article>
 
@@ -912,9 +912,9 @@ pr_request_duration_seconds_bucket{le="0.1"} 120`}} /></pre>
             <span class="code-lang">JSON</span>
             <span class="code-label" data-i18n="docsApi.errorFormatLabel">Error Format</span>
           </div>
-          <pre><code dangerouslySetInnerHTML={{__html: `{
+          <pre><code set:html={`{
   "error": "Invalid or missing API key"
-}`}} /></pre>
+}`} /></pre>
         </div>
 
         <div class="error-table">

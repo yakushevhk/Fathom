@@ -60,7 +60,7 @@ export const contextStages = [
 
     <div class="code-block">
       <div class="code-header"><span class="code-lang">workspace layout</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom/
+      <pre><code set:html={`fathom/
 ├── crates/
 │   ├── core/          # fundamental types & domain logic
 │   ├── llm/           # LLM provider abstraction
@@ -71,16 +71,16 @@ export const contextStages = [
 │   ├── persistence/   # storage (SQLite, connection pool, jobs)
 │   ├── server/        # HTTP API
 │   └── tui/           # terminal interface
-└── src/main.rs        # CLI entry point\`}`}} /></pre>
+└── src/main.rs        # CLI entry point`} /></pre>
     </div>
 
     <div class="code-block">
       <div class="code-header"><span class="code-lang">dependency graph</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`core  ←──  llm  ←──  agent  ←──  server
+      <pre><code set:html={`core  ←──  llm  ←──  agent  ←──  server
   ↑          ↑          ↑           ↑
   └── tools ─┴── mcp ───┴── tui ────┘
        ↑          └── persistence ──┘
-       └── memory ──┘  (depends on core + llm)\`}`}} /></pre>
+       └── memory ──┘  (depends on core + llm)`} /></pre>
     </div>
 
     <div class="crate-grid">
@@ -133,13 +133,13 @@ export const contextStages = [
 
     <div class="code-block">
       <div class="code-header"><span class="code-lang">unix socket IPC</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`Coordinator (process 1)
+      <pre><code set:html={`Coordinator (process 1)
     │  Unix socket IPC (JSON lines)
     ├──spawn──► Worker (process 2)  ── agent_id_1
     ├──spawn──► Worker (process 3)  ── agent_id_2
     └──spawn──► Worker (process 4)  ── agent_id_3
 
-events: progress · tool-call · completion\`}`}} /></pre>
+events: progress · tool-call · completion`} /></pre>
     </div>
 
     <ul class="prop-list">
@@ -257,7 +257,7 @@ events: progress · tool-call · completion\`}`}} /></pre>
     </p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">data flow</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`User Query
+      <pre><code set:html={`User Query
     │
     ▼
 ┌─────────────┐
@@ -300,7 +300,7 @@ events: progress · tool-call · completion\`}`}} /></pre>
 │  + PDF / HTML / JSON / DOCX export               │
 │  + Memory absorb (long-term)                     │
 │  + Notifications (webhook / email / Telegram)     │
-└──────────────────────────────────────────────────┘\`}`}} /></pre>
+└──────────────────────────────────────────────────┘`} /></pre>
     </div>
   </section>
 
@@ -348,7 +348,7 @@ events: progress · tool-call · completion\`}`}} /></pre>
     </p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">detected patterns</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`1.  "ignore previous instructions"
+      <pre><code set:html={`1.  "ignore previous instructions"
 2.  "you are now a ..."
 3.  "system: " or "[system]" prefix injection
 4.  Base64-encoded instruction blocks
@@ -359,7 +359,7 @@ events: progress · tool-call · completion\`}`}} /></pre>
 9.  "IMPORTANT:" overrides in scraped page content
 10. Repeated newlines followed by instruction blocks
 11. XML/CDATA wrapping to break output parsing
-12. Unicode homoglyph substitution in keywords\`}`}} /></pre>
+12. Unicode homoglyph substitution in keywords`} /></pre>
     </div>
     <p>
       When a pattern is detected, the output is sanitized and a warning is logged. The agent receives
@@ -393,14 +393,14 @@ events: progress · tool-call · completion\`}`}} /></pre>
     </p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">blocked patterns</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`1.  rm -rf /          — recursive root deletion
+      <pre><code set:html={`1.  rm -rf /          — recursive root deletion
 2.  mkfs / dd if=     — filesystem destruction
 3.  :(){ :|:& };:    — fork bombs
 4.  chmod -R 777 /    — permission escalation
 5.  wget | sh / curl | sh — remote code execution
 6.  > /dev/sda        — raw disk writes
 7.  shutdown / reboot / halt — system control
-8.  iptables -F       — firewall flush\`}`}} /></pre>
+8.  iptables -F       — firewall flush`} /></pre>
     </div>
 
     <h3>Protected surfaces</h3>
@@ -410,11 +410,11 @@ events: progress · tool-call · completion\`}`}} /></pre>
     </p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">protected paths</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`~/.fathom/config.toml      # main configuration
+      <pre><code set:html={`~/.fathom/config.toml      # main configuration
 ~/.fathom/memory.db        # long-term memory database
 ~/.fathom/profiles/        # profile definitions
 <output_dir>/.research.db             # session database
-<output_dir>/index.md                 # generated index\`}`}} /></pre>
+<output_dir>/index.md                 # generated index`} /></pre>
     </div>
   </section>
 
@@ -542,11 +542,11 @@ events: progress · tool-call · completion\`}`}} /></pre>
     <h3>Unix socket IPC protocol</h3>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">IPC message format</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`→ Coordinator → Worker:   {"type":"start","task":"...","tools":[...]}
+      <pre><code set:html={`→ Coordinator → Worker:   {"type":"start","task":"...","tools":[...]}
 ← Worker → Coordinator:   {"type":"progress","agent_id":"...","msg":"searching..."}
 ← Worker → Coordinator:   {"type":"tool_call","tool":"web_search","args":{...},"ms":342}
 ← Worker → Coordinator:   {"type":"completion","agent_id":"...","result":"..."}
-← Worker → Coordinator:   {"type":"error","agent_id":"...","error":"timeout"}\`}`}} /></pre>
+← Worker → Coordinator:   {"type":"error","agent_id":"...","error":"timeout"}`} /></pre>
     </div>
 
     <h3>kill_on_drop safety</h3>

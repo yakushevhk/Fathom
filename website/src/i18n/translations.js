@@ -1142,6 +1142,22 @@ export const translations = {
       "en": "The same honest path every time: goal → plan → tools → verification → approval → memory → delivery. Every stage is visible, every number is real.",
       "ru": "Каждый раз один и тот же честный путь: цель → план → инструменты → верификация → одобрение → память → доставка. Каждый этап виден, каждая цифра настоящая."
     },
+      "run": {
+        "s1": { "en": "Goal", "ru": "Цель" },
+        "s2": { "en": "Plan", "ru": "План" },
+        "s3": { "en": "Gather", "ru": "Сбор" },
+        "s4": { "en": "Verify", "ru": "Проверка" },
+        "s5": { "en": "Approve", "ru": "Одобрение" },
+        "s6": { "en": "Remember", "ru": "Память" },
+        "s7": { "en": "Deliver", "ru": "Доставка" },
+        "log1": { "en": "goal accepted — decomposed into 4 subtasks", "ru": "цель принята — разбита на 4 подзадачи" },
+        "log2": { "en": "fan-out: 4 researchers spawned (budget 32k tokens each)", "ru": "fan-out: порождены 4 ресёрчера (бюджет 32k токенов каждый)" },
+        "log3": { "en": "48 sources fetched · injection scan clean", "ru": "загружено 48 источников · скан инъекций чист" },
+        "log4": { "en": "31 findings verified · confidence ≥ 0.8", "ru": "верифицировано 31 находка · уверенность ≥ 0.8" },
+        "log5": { "en": "approval gate: save_contacts approved by operator", "ru": "шлюз одобрения: save_contacts одобрен оператором" },
+        "log6": { "en": "31 facts absorbed into memory (scope: agent)", "ru": "31 факт поглощён в память (scope: agent)" },
+        "log7": { "en": "delivered via email + CRM · session closed", "ru": "доставлено через email + CRM · сессия закрыта" }
+      },
       "cta_title": {
         "en": "Put a worker on it <em class=\"it\">today</em>",
         "ru": "Посадите воркера на задачу <em class=\"it\">уже сегодня</em>"

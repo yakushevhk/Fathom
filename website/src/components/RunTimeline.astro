@@ -31,9 +31,9 @@ const logs = [
             <span class="rt-dot" data-rt-dot={i}></span>
             {i < stages.length - 1 && <span class="rt-line"></span>}
           </div>
-          <span class="rt-label" data-i18n={s.k}>Stage</span>
+          <span class="rt-label" data-i18n={s.k}>{['Goal', 'Plan', 'Gather', 'Verify', 'Approve', 'Remember', 'Deliver'][i]}</span>
           <span class="rt-met">
-            <b data-rt-met={i}>0</b>
+            <b data-rt-met={i}>{s.met}</b>
             <i>{s.unit}</i>
           </span>
         </div>
@@ -52,7 +52,7 @@ const logs = [
         logs.map((l, i) => (
           <div class="rt-log-line" data-rt-line={i}>
             <span class="rt-log-t" data-rt-t={i}>00:00</span>
-            <span class="rt-log-txt" data-i18n={l}>log line</span>
+            <span class="rt-log-txt" data-i18n={l}>{['goal accepted — decomposed into 4 subtasks', 'fan-out: 4 researchers spawned (budget 32k tokens each)', '48 sources fetched · injection scan clean', '31 findings verified · confidence ≥ 0.8', 'approval gate: save_contacts approved by operator', '31 facts absorbed into memory (scope: agent)', 'delivered via email + CRM · session closed'][i]}</span>
           </div>
         ))
       }

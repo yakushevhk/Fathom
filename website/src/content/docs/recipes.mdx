@@ -272,11 +272,13 @@ export const troubleshootingRecipes = [
   },
   {
     t: 'Handle rate limiting from search backends',
-    notes: 'Rate limits are applied per-domain. If a source is consistently rate-limited, the agent automatically shifts to alternative sources for the same data.',
+    d: `fathom config set search.backend "hybrid"`,
+    notes: 'Rate limits are applied per-domain. The hybrid backend spreads queries across configured providers, and the agent shifts to alternative sources when one is consistently rate-limited.',
   },
   {
     t: 'Recover from context window overflow',
-    notes: 'When a session exceeds the context window, compact-and-retry compresses the history and resumes.',
+    d: `fathom config set context.compact_threshold 0.7`,
+    notes: 'When a session exceeds the context window, compact-and-retry compresses the history and resumes. A lower threshold compacts earlier and leaves more headroom.',
   },
   {
     t: 'Fix stuck session that won\'t complete',
@@ -308,31 +310,38 @@ export const exportRecipes = [
   },
   {
     t: 'Generate a Markdown research report',
+    d: `fathom run "Analyze the European EV charging market: size, growth, key vendors" -o ./report/`,
     notes: 'Compiles session findings into a structured Markdown report with executive summary, findings, sources, and confidence scores.',
   },
   {
     t: 'Export to JSON for programmatic processing',
+    d: `fathom config set export.format json\nfathom run "Your task" -o ./results/`,
     notes: 'JSON export includes all fields, nested objects for enrichment data, and source arrays.',
   },
   {
     t: 'Create a PDF report from session results',
-    notes: 'PDF generation uses a template for executive summaries.',
+    d: `fathom config set export.format pdf\nfathom run "Your task" -o ./results/`,
+    notes: 'PDF generation renders the same report structure; it requires pandoc on the host.',
   },
   {
-    t: 'Export session data to Google Sheets',
-    notes: 'Google Sheets export uses a service account for authentication.',
+    t: 'Export contacts as a spreadsheet',
+    d: `fathom contacts export --format xlsx -o ./exports/`,
+    notes: 'xlsx opens directly in Google Sheets and Excel; csv works everywhere.',
   },
   {
-    t: 'Bulk export all sessions to a data warehouse',
-    notes: 'Parquet format is optimized for analytical queries.',
+    t: 'Bulk export contacts for a data warehouse',
+    d: `fathom config set export.format json\nfathom contacts export --format json -o ./warehouse/`,
+    notes: 'JSON export includes every stored field for ingestion into your warehouse.',
   },
   {
     t: 'Generate a competitive landscape PDF',
-    notes: 'The landscape template renders a side-by-side comparison grid with radar charts and scoring matrices.',
+    d: `fathom config set export.format pdf\nfathom run "Compare Datadog, New Relic and Dynatrace side by side" -o ./landscape/`,
+    notes: 'The PDF report renders a side-by-side comparison of the researched competitors.',
   },
   {
-    t: 'Export memory graph as Gephi format',
-    notes: 'GEXF (Graph Exchange XML Format) is readable by Gephi, Sigma.js, and most graph visualization tools.',
+    t: 'Export memory facts for graph tooling',
+    d: `fathom memory list --scope all --status active -n 500 > ./memory-export.txt`,
+    notes: 'Plain-text export of active facts; adapt the rows to your graph tooling of choice.',
   },
 ];
 
@@ -402,7 +411,8 @@ export const deploymentRecipes = [
   },
   {
     t: 'Backup and restore data',
-    notes: 'Always backup your data directory.',
+    d: `cp -r ~/.fathom ~/.fathom.bak\n# restore:\ncp -r ~/.fathom.bak ~/.fathom`,
+    notes: 'Always backup your data directory before upgrades or destructive commands like memory nuke.',
   },
   {
     t: 'Run in a tmux session for persistence',
@@ -462,7 +472,7 @@ export const deploymentRecipes = [
           <h3>{r.t}</h3>
           <div class="code-block">
             <div class="code-header"><span class="code-lang">bash</span></div>
-            <pre><code dangerouslySetInnerHTML={{__html: `{r.d}`}} /></pre>
+            <pre><code set:html={r.d} /></pre>
           </div>
           <p class="recipe-notes">{r.notes}</p>
         </div>
@@ -482,7 +492,7 @@ export const deploymentRecipes = [
           <h3>{r.t}</h3>
           <div class="code-block">
             <div class="code-header"><span class="code-lang">bash</span></div>
-            <pre><code dangerouslySetInnerHTML={{__html: `{r.d}`}} /></pre>
+            <pre><code set:html={r.d} /></pre>
           </div>
           <p class="recipe-notes">{r.notes}</p>
         </div>
@@ -502,7 +512,7 @@ export const deploymentRecipes = [
           <h3>{r.t}</h3>
           <div class="code-block">
             <div class="code-header"><span class="code-lang">bash</span></div>
-            <pre><code dangerouslySetInnerHTML={{__html: `{r.d}`}} /></pre>
+            <pre><code set:html={r.d} /></pre>
           </div>
           <p class="recipe-notes">{r.notes}</p>
         </div>
@@ -522,7 +532,7 @@ export const deploymentRecipes = [
           <h3>{r.t}</h3>
           <div class="code-block">
             <div class="code-header"><span class="code-lang">bash</span></div>
-            <pre><code dangerouslySetInnerHTML={{__html: `{r.d}`}} /></pre>
+            <pre><code set:html={r.d} /></pre>
           </div>
           <p class="recipe-notes">{r.notes}</p>
         </div>
@@ -542,7 +552,7 @@ export const deploymentRecipes = [
           <h3>{r.t}</h3>
           <div class="code-block">
             <div class="code-header"><span class="code-lang">bash</span></div>
-            <pre><code dangerouslySetInnerHTML={{__html: `{r.d}`}} /></pre>
+            <pre><code set:html={r.d} /></pre>
           </div>
           <p class="recipe-notes">{r.notes}</p>
         </div>
@@ -562,7 +572,7 @@ export const deploymentRecipes = [
           <h3>{r.t}</h3>
           <div class="code-block">
             <div class="code-header"><span class="code-lang">bash</span></div>
-            <pre><code dangerouslySetInnerHTML={{__html: `{r.d}`}} /></pre>
+            <pre><code set:html={r.d} /></pre>
           </div>
           <p class="recipe-notes">{r.notes}</p>
         </div>
@@ -582,7 +592,7 @@ export const deploymentRecipes = [
           <h3>{r.t}</h3>
           <div class="code-block">
             <div class="code-header"><span class="code-lang">bash</span></div>
-            <pre><code dangerouslySetInnerHTML={{__html: `{r.d}`}} /></pre>
+            <pre><code set:html={r.d} /></pre>
           </div>
           <p class="recipe-notes">{r.notes}</p>
         </div>
@@ -602,7 +612,7 @@ export const deploymentRecipes = [
           <h3>{r.t}</h3>
           <div class="code-block">
             <div class="code-header"><span class="code-lang">bash</span></div>
-            <pre><code dangerouslySetInnerHTML={{__html: `{r.d}`}} /></pre>
+            <pre><code set:html={r.d} /></pre>
           </div>
           <p class="recipe-notes">{r.notes}</p>
         </div>
@@ -622,7 +632,7 @@ export const deploymentRecipes = [
           <h3>{r.t}</h3>
           <div class="code-block">
             <div class="code-header"><span class="code-lang">bash</span></div>
-            <pre><code dangerouslySetInnerHTML={{__html: `{r.d}`}} /></pre>
+            <pre><code set:html={r.d} /></pre>
           </div>
           <p class="recipe-notes">{r.notes}</p>
         </div>
@@ -642,7 +652,7 @@ export const deploymentRecipes = [
           <h3>{r.t}</h3>
           <div class="code-block">
             <div class="code-header"><span class="code-lang">bash</span></div>
-            <pre><code dangerouslySetInnerHTML={{__html: `{r.d}`}} /></pre>
+            <pre><code set:html={r.d} /></pre>
           </div>
           <p class="recipe-notes">{r.notes}</p>
         </div>
@@ -662,7 +672,7 @@ export const deploymentRecipes = [
           <h3>{r.t}</h3>
           <div class="code-block">
             <div class="code-header"><span class="code-lang">bash</span></div>
-            <pre><code dangerouslySetInnerHTML={{__html: `{r.d}`}} /></pre>
+            <pre><code set:html={r.d} /></pre>
           </div>
           <p class="recipe-notes">{r.notes}</p>
         </div>
@@ -799,7 +809,7 @@ export const deploymentRecipes = [
           <li><a href="#exports">Google Sheets export</a></li>
           <li><a href="#exports">Bulk data warehouse export</a></li>
           <li><a href="#exports">Competitive landscape PDF</a></li>
-          <li><a href="#exports">Memory graph as Gephi</a></li>
+          <li><a href="#exports">Memory facts export</a></li>
         </ul>
       </div>
       <div class="index-card">
@@ -911,35 +921,35 @@ export const deploymentRecipes = [
         <h3>Model Configuration</h3>
         <div class="code-block">
           <div class="code-header"><span class="code-lang">bash</span></div>
-          <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom config set agent.role_models.writer "openai/gpt-4o"
+          <pre><code set:html={`fathom config set agent.role_models.writer "openai/gpt-4o"
 fathom config set agent.role_models.researcher "deepseek/deepseek-chat"
 fathom config set agent.role_models.verifier "openai/gpt-4o-mini"
-fathom config set agent.role_models.default "openai/gpt-4o"\`}`}} /></pre>
+fathom config set agent.role_models.default "openai/gpt-4o"`} /></pre>
         </div>
       </div>
       <div class="config-card">
         <h3>Alert Configuration</h3>
         <div class="code-block">
           <div class="code-header"><span class="code-lang">bash</span></div>
-          <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom config set alerts.telegram.bot-token "123456:ABC..."
+          <pre><code set:html={`fathom config set alerts.telegram.bot-token "123456:ABC..."
 fathom config set alerts.telegram.chat-id "-1001234567890"
 fathom config set alerts.email.to "you@example.com"
-fathom config set alerts.webhook.url "https://hooks.slack.com/..."\`}`}} /></pre>
+fathom config set alerts.webhook.url "https://hooks.slack.com/..."`} /></pre>
         </div>
       </div>
       <div class="config-card">
         <h3>Search Configuration</h3>
         <div class="code-block">
           <div class="code-header"><span class="code-lang">bash</span></div>
-          <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom config show\`}`}} /></pre>
+          <pre><code set:html={`fathom config show`} /></pre>
         </div>
       </div>
       <div class="config-card">
         <h3>Context & Memory</h3>
         <div class="code-block">
           <div class="code-header"><span class="code-lang">bash</span></div>
-          <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom config set context.context_window 128000
-fathom config set context.compact_threshold 0.85\`}`}} /></pre>
+          <pre><code set:html={`fathom config set context.context_window 128000
+fathom config set context.compact_threshold 0.85`} /></pre>
         </div>
       </div>
     </div>
@@ -955,7 +965,7 @@ fathom config set context.compact_threshold 0.85\`}`}} /></pre>
         <h3>List all available commands</h3>
         <div class="code-block">
           <div class="code-header"><span class="code-lang">bash</span></div>
-          <pre><code dangerouslySetInnerHTML={{__html: `fathom --help`}} /></pre>
+          <pre><code set:html={`fathom --help`} /></pre>
         </div>
         <p class="recipe-notes">Shows all top-level commands with descriptions. Use --help on any subcommand for detailed flags and examples.</p>
       </div>
@@ -963,7 +973,7 @@ fathom config set context.compact_threshold 0.85\`}`}} /></pre>
         <h3>Show current configuration</h3>
         <div class="code-block">
           <div class="code-header"><span class="code-lang">bash</span></div>
-          <pre><code dangerouslySetInnerHTML={{__html: `fathom config show`}} /></pre>
+          <pre><code set:html={`fathom config show`} /></pre>
         </div>
         <p class="recipe-notes">Dumps all config values with their sources (default, file, env var, or CLI flag). Useful for debugging unexpected behavior.</p>
       </div>
@@ -971,7 +981,7 @@ fathom config set context.compact_threshold 0.85\`}`}} /></pre>
         <h3>Check system health</h3>
         <div class="code-block">
           <div class="code-header"><span class="code-lang">bash</span></div>
-          <pre><code dangerouslySetInnerHTML={{__html: `fathom memory stats`}} /></pre>
+          <pre><code set:html={`fathom memory stats`} /></pre>
         </div>
         <p class="recipe-notes">Shows memory graph statistics and health.</p>
       </div>
@@ -979,7 +989,7 @@ fathom config set context.compact_threshold 0.85\`}`}} /></pre>
         <h3>View session logs</h3>
         <div class="code-block">
           <div class="code-header"><span class="code-lang">bash</span></div>
-          <pre><code dangerouslySetInnerHTML={{__html: `RUST_LOG=debug fathom run "..."`}} /></pre>
+          <pre><code set:html={`RUST_LOG=debug fathom run "..."`} /></pre>
         </div>
         <p class="recipe-notes">Enable debug logging to see every tool call, decision, and error with timestamps.</p>
       </div>
@@ -987,7 +997,7 @@ fathom config set context.compact_threshold 0.85\`}`}} /></pre>
         <h3>List active sessions</h3>
         <div class="code-block">
           <div class="code-header"><span class="code-lang">bash</span></div>
-          <pre><code dangerouslySetInnerHTML={{__html: `fathom memory list`}} /></pre>
+          <pre><code set:html={`fathom memory list`} /></pre>
         </div>
         <p class="recipe-notes">Shows all facts, entities, and relationships in the memory graph.</p>
       </div>
@@ -995,7 +1005,7 @@ fathom config set context.compact_threshold 0.85\`}`}} /></pre>
         <h3>Show version and build info</h3>
         <div class="code-block">
           <div class="code-header"><span class="code-lang">bash</span></div>
-          <pre><code dangerouslySetInnerHTML={{__html: `fathom --version`}} /></pre>
+          <pre><code set:html={`fathom --version`} /></pre>
         </div>
         <p class="recipe-notes">Displays the binary version and build info. Useful for bug reports.</p>
       </div>
@@ -1003,7 +1013,7 @@ fathom config set context.compact_threshold 0.85\`}`}} /></pre>
         <h3>Reset to factory defaults</h3>
         <div class="code-block">
           <div class="code-header"><span class="code-lang">bash</span></div>
-          <pre><code dangerouslySetInnerHTML={{__html: `rm ~/.fathom/config.toml`}} /></pre>
+          <pre><code set:html={`rm ~/.fathom/config.toml`} /></pre>
         </div>
         <p class="recipe-notes">Remove the config file to reset to defaults.</p>
       </div>
@@ -1042,7 +1052,7 @@ fathom config set context.compact_threshold 0.85\`}`}} /></pre>
         <h3>Write specific, structured prompts</h3>
         <div class="code-block">
           <div class="code-header"><span class="code-lang">text</span></div>
-          <pre><code dangerouslySetInnerHTML={{__html: `{\`# Vague (low quality results):
+          <pre><code set:html={`# Vague (low quality results):
 "Find leads in fintech"
 
 # Specific (high quality results):
@@ -1051,7 +1061,7 @@ startups in London with 50-200 employees that
 raised Series A or B in the past 18 months.
 Verify each email via SMTP probe. Include
 company size, last funding round, and tech
-stack from job postings."\`}`}} /></pre>
+stack from job postings."`} /></pre>
         </div>
         <p class="recipe-notes">Specificity drives quality. Include geography, company size, role, verification method, and enrichment fields. The agent performs better with clear success criteria.</p>
       </div>
@@ -1059,12 +1069,12 @@ stack from job postings."\`}`}} /></pre>
         <h3>Use -o for reproducibility</h3>
         <div class="code-block">
           <div class="code-header"><span class="code-lang">bash</span></div>
-          <pre><code dangerouslySetInnerHTML={{__html: `{\`# Always specify output directory
+          <pre><code set:html={`# Always specify output directory
 fathom run "..." -o ./leads/q1-2025
 
 # Re-run produces deterministic structure
 ls ./leads/q1-2025/
-# contacts.db  session.json  sources/  synthesis.md\`}`}} /></pre>
+# contacts.db  session.json  sources/  synthesis.md`} /></pre>
         </div>
         <p class="recipe-notes">Explicit output directories make results versionable, comparable, and easy to reference in follow-up sessions. The deterministic structure means scripts can reliably process outputs.</p>
       </div>
@@ -1072,11 +1082,11 @@ ls ./leads/q1-2025/
         <h3>Start shallow, then go deep</h3>
         <div class="code-block">
           <div class="code-header"><span class="code-lang">bash</span></div>
-          <pre><code dangerouslySetInnerHTML={{__html: `{\`# First pass: broad, shallow
+          <pre><code set:html={`# First pass: broad, shallow
 fathom run "..." --depth 2 -o ./broad
 
 # Second pass: deep dive on top results
-fathom run "Analyze top 20 from ./broad"\`}`}} /></pre>
+fathom run "Analyze top 20 from ./broad"`} /></pre>
         </div>
         <p class="recipe-notes">Shallow depth is faster and cheaper. Use it to identify the most promising targets, then invest deep research only on the best candidates. This two-pass approach cuts costs by 60-80%.</p>
       </div>
@@ -1084,12 +1094,12 @@ fathom run "Analyze top 20 from ./broad"\`}`}} /></pre>
         <h3>Chain sessions with memory</h3>
         <div class="code-block">
           <div class="code-header"><span class="code-lang">bash</span></div>
-          <pre><code dangerouslySetInnerHTML={{__html: `{\`# Session 1: research
+          <pre><code set:html={`# Session 1: research
 fathom run "..." -o ./research
 
 # Session 2: uses memory from session 1
 fathom memory distill --session latest
-fathom run "Using prior research, ..." -o ./follow-up\`}`}} /></pre>
+fathom run "Using prior research, ..." -o ./follow-up`} /></pre>
         </div>
         <p class="recipe-notes">Distilling session facts into memory makes them available to future sessions. The memory graph connects entities across sessions, so the second session benefits from all prior context.</p>
       </div>
@@ -1108,7 +1118,7 @@ fathom run "Using prior research, ..." -o ./follow-up\`}`}} /></pre>
           <h3>{r.t}</h3>
           <div class="code-block">
             <div class="code-header"><span class="code-lang">bash</span></div>
-            <pre><code dangerouslySetInnerHTML={{__html: `{r.d}`}} /></pre>
+            <pre><code set:html={r.d} /></pre>
           </div>
           <p class="recipe-notes">{r.notes}</p>
         </div>
@@ -1246,7 +1256,7 @@ fathom run "Using prior research, ..." -o ./follow-up\`}`}} /></pre>
     </div>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">.env</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`# Required
+      <pre><code set:html={`# Required
 FATHOM_API_KEYS=key-your_api_key_here
 
 # Model providers (at least one required)
@@ -1272,6 +1282,6 @@ PR_OUTPUT_DIR=./research-output
 PR_MEMORY_DB=~/.fathom/memory.db
 
 # Optional: logging
-RUST_LOG=info\`}`}} /></pre>
+RUST_LOG=info`} /></pre>
     </div>
   </section>

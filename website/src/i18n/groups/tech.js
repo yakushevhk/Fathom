@@ -335,7 +335,7 @@ export default {
     features: {
       badge: { en: 'Features', ru: 'Функции' },
       title: { en: 'Built for operators', ru: 'Создан для операторов' },
-      auth: { name: { en: 'API key auth', ru: 'API-ключ аутентификация' }, d: { en: 'Set an API key to protect the dashboard. Persisted in localStorage for convenience.', ru: 'Установите API-ключ для защиты дашборда. Сохраняется в localStorage для удобства.' } },
+      auth: { name: { en: 'API key auth', ru: 'API-ключ аутентификация' }, d: { en: 'Set a key from <code class="ic">FATHOM_API_KEYS</code> to protect API requests; the dashboard keeps it in localStorage for convenience.', ru: 'Задайте ключ из <code class="ic">FATHOM_API_KEYS</code> для защиты API-запросов; дашборд хранит его в localStorage для удобства.' } },
       refresh: { name: { en: 'Auto-refresh', ru: 'Авто-обновление' }, d: { en: 'All panels poll the API every 5 seconds. SSE events arrive instantly.', ru: 'Все панели опрашивают API каждые 5 секунд. SSE-события приходят мгновенно.' } },
       responsive: { name: { en: 'Responsive', ru: 'Адаптивный' }, d: { en: 'Two-column grid collapses to single column below 900px. Works on tablets and phones.', ru: 'Двухколоночная сетка схлопывается в одну колонку ниже 900px. Работает на планшетах и телефонах.' } },
       dark: { name: { en: 'Dark theme', ru: 'Тёмная тема' }, d: { en: 'GitHub-dark color palette. Single-file HTML — no external CSS or JS dependencies.', ru: 'Палитра в стиле GitHub-dark. Одностраничный HTML — без внешних CSS или JS зависимостей.' } },

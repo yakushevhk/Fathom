@@ -57,7 +57,7 @@ export const verifyStages = [
     <p data-i18n="docsOutreach.exSub">No schemas, no CRM setup first. Ask for what you want in the terms that make sense to you.</p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">bash</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom run "Find VP Engineering at Series B startups in SF, verify their emails, and save the leads"\`}`}} /></pre>
+      <pre><code set:html={`fathom run "Find VP Engineering at Series B startups in SF, verify their emails, and save the leads"`} /></pre>
     </div>
     <p data-i18n-html data-i18n="docsOutreach.exFoot">
       The coordinator turns that into sub-tasks with per-task contact quotas. Each sub-task becomes a
@@ -170,18 +170,18 @@ export const verifyStages = [
       <h4>Example invocation</h4>
       <div class="code-block">
         <div class="code-header"><span class="code-lang">python</span></div>
-        <pre><code dangerouslySetInnerHTML={{__html: `{\`result = await agent.call_tool("find_leads", {
+        <pre><code set:html={`result = await agent.call_tool("find_leads", {
     industry: "B2B SaaS",
     location: "San Francisco Bay Area",
     roles: ["VP Engineering", "CTO"],
     limit: 25,
     enrich: true
-})\`}`}} /></pre>
+})`} /></pre>
       </div>
       <h4>Example output (one record)</h4>
       <div class="code-block">
         <div class="code-header"><span class="code-lang">json</span></div>
-        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+        <pre><code set:html={`{
   "company": "Acme Analytics",
   "website": "https://acme-analytics.com",
   "industry": "B2B SaaS",
@@ -204,7 +204,7 @@ export const verifyStages = [
     "https://acme-analytics.com/team",
     "https://linkedin.com/company/acme-analytics"
   ]
-}\`}`}} /></pre>
+}`} /></pre>
       </div>
     </div>
 
@@ -245,7 +245,7 @@ export const verifyStages = [
       <h4>Example output</h4>
       <div class="code-block">
         <div class="code-header"><span class="code-lang">json</span></div>
-        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+        <pre><code set:html={`{
   "name": "NovaTech Solutions",
   "category": "Software Development",
   "address": "45 Market St, Suite 200, San Francisco, CA 94105",
@@ -255,7 +255,7 @@ export const verifyStages = [
   "rating": 4.6,
   "reviews_count": 38,
   "source": "google_maps"
-}\`}`}} /></pre>
+}`} /></pre>
       </div>
     </div>
 
@@ -293,14 +293,14 @@ export const verifyStages = [
       <h4>Example output</h4>
       <div class="code-block">
         <div class="code-header"><span class="code-lang">json</span></div>
-        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+        <pre><code set:html={`{
   "profile_url": "https://twitter.com/jordanlee_eng",
   "name": "Jordan Lee",
   "bio": "VP Engineering @AcmeAnalytics · Building data pipelines at scale",
   "followers_count": 4200,
   "location": "San Francisco, CA",
   "platform": "twitter"
-}\`}`}} /></pre>
+}`} /></pre>
       </div>
     </div>
 
@@ -340,7 +340,7 @@ export const verifyStages = [
       <h4>Example output</h4>
       <div class="code-block">
         <div class="code-header"><span class="code-lang">json</span></div>
-        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+        <pre><code set:html={`{
   "title": "Acme Analytics Raises $40M Series B Led by Sequoia",
   "url": "https://techcrunch.com/2025/03/15/acme-series-b",
   "source": "TechCrunch",
@@ -348,7 +348,7 @@ export const verifyStages = [
   "snippet": "Acme Analytics, the San Francisco-based B2B data platform, has closed a $40M Series B round...",
   "mentioned_persons": ["Jordan Lee", "Maria Chen"],
   "mentioned_companies": ["Acme Analytics", "Sequoia Capital"]
-}\`}`}} /></pre>
+}`} /></pre>
       </div>
     </div>
 
@@ -381,7 +381,7 @@ export const verifyStages = [
       <h4>Example output</h4>
       <div class="code-block">
         <div class="code-header"><span class="code-lang">json</span></div>
-        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+        <pre><code set:html={`{
   "company_name": "Acme Analytics",
   "description": "Real-time data pipelines for modern B2B teams",
   "industry": "B2B SaaS / Data Infrastructure",
@@ -400,7 +400,7 @@ export const verifyStages = [
     { "name": "Alex Rivera", "title": "CTO" }
   ],
   "technologies": ["React", "Go", "Kubernetes", "PostgreSQL"]
-}\`}`}} /></pre>
+}`} /></pre>
       </div>
     </div>
   </section>
@@ -477,7 +477,7 @@ export const verifyStages = [
       <h4>Confidence scoring algorithm</h4>
       <div class="code-block">
         <div class="code-header"><span class="code-lang">python</span></div>
-        <pre><code dangerouslySetInnerHTML={{__html: `{\`score = 0.5                                    # base
+        <pre><code set:html={`score = 0.5                                    # base
 if mx_resolved:     score += 0.4               # domain is real
 if disposable:      score -= 0.3               # throwaway domain
 if role_based:      score -= 0.15              # department mailbox
@@ -485,13 +485,13 @@ if smtp_accepted:   score = max(score, 0.95)   # server confirmed
 if smtp_rejected:   score = min(score, 0.2)    # server denied
 if no_smtp_check:   score = min(score, 0.9)    # can't fully confirm
 score = clamp(score, 0.0, 1.0)
-if pattern_matched: score = min(score + 0.15, 0.95)  # suggest_emails bonus\`}`}} /></pre>
+if pattern_matched: score = min(score + 0.15, 0.95)  # suggest_emails bonus`} /></pre>
       </div>
 
       <h4>Example responses</h4>
       <div class="code-block">
         <div class="code-header"><span class="code-lang">json — Valid corporate email</span></div>
-        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+        <pre><code set:html={`{
   "email": "jordan.lee@acme-analytics.com",
   "verdict": "valid",
   "confidence": 0.97,
@@ -503,11 +503,11 @@ if pattern_matched: score = min(score + 0.15, 0.95)  # suggest_emails bonus\`}`}
     "smtp": "accepted (250 OK)"
   },
   "mx_records": ["alt1.gmail-smtp-in.l.google.com", "gmail-smtp-in.l.google.com"]
-}\`}`}} /></pre>
+}`} /></pre>
       </div>
       <div class="code-block">
         <div class="code-header"><span class="code-lang">json — Disposable email</span></div>
-        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+        <pre><code set:html={`{
   "email": "test@mailinator.com",
   "verdict": "disposable",
   "confidence": 0.05,
@@ -518,11 +518,11 @@ if pattern_matched: score = min(score + 0.15, 0.95)  # suggest_emails bonus\`}`}
     "role_based": false,
     "smtp": "skipped"
   }
-}\`}`}} /></pre>
+}`} /></pre>
       </div>
       <div class="code-block">
         <div class="code-header"><span class="code-lang">json — Role-based, SMTP accepted</span></div>
-        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+        <pre><code set:html={`{
   "email": "info@acme-analytics.com",
   "verdict": "role_based",
   "confidence": 0.78,
@@ -533,7 +533,7 @@ if pattern_matched: score = min(score + 0.15, 0.95)  # suggest_emails bonus\`}`}
     "role_based": "flagged (info@)",
     "smtp": "accepted (250 OK)"
   }
-}\`}`}} /></pre>
+}`} /></pre>
       </div>
     </div>
 
@@ -561,14 +561,14 @@ if pattern_matched: score = min(score + 0.15, 0.95)  # suggest_emails bonus\`}`}
       <h4>Example</h4>
       <div class="code-block">
         <div class="code-header"><span class="code-lang">json</span></div>
-        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+        <pre><code set:html={`{
   "input": "8 (495) 123-45-67",
   "e164": "+74951234567",
   "country": "RU",
   "line_type": "fixed_line",
   "valid": true,
   "carrier": null
-}\`}`}} /></pre>
+}`} /></pre>
       </div>
     </div>
 
@@ -604,7 +604,7 @@ if pattern_matched: score = min(score + 0.15, 0.95)  # suggest_emails bonus\`}`}
       <h4>Example response</h4>
       <div class="code-block">
         <div class="code-header"><span class="code-lang">json</span></div>
-        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+        <pre><code set:html={`{
   "url": "https://twitter.com/jordanlee_eng",
   "platform": "twitter",
   "valid": true,
@@ -618,7 +618,7 @@ if pattern_matched: score = min(score + 0.15, 0.95)  # suggest_emails bonus\`}`}
     "joined": "2019-04-22",
     "location": "San Francisco, CA"
   }
-}\`}`}} /></pre>
+}`} /></pre>
       </div>
     </div>
 
@@ -703,7 +703,7 @@ if pattern_matched: score = min(score + 0.15, 0.95)  # suggest_emails bonus\`}`}
       <h4>Example response</h4>
       <div class="code-block">
         <div class="code-header"><span class="code-lang">json</span></div>
-        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+        <pre><code set:html={`{
   "domain": "acme-analytics.com",
   "company_name": "Acme Analytics",
   "industry": "B2B SaaS — Data Infrastructure",
@@ -719,7 +719,7 @@ if pattern_matched: score = min(score + 0.15, 0.95)  # suggest_emails bonus\`}`}
     "date": "2025-03-15",
     "investors": ["Sequoia Capital", "Y Combinator"]
   }
-}\`}`}} /></pre>
+}`} /></pre>
       </div>
     </div>
 
@@ -749,7 +749,7 @@ if pattern_matched: score = min(score + 0.15, 0.95)  # suggest_emails bonus\`}`}
       <h4>Example response</h4>
       <div class="code-block">
         <div class="code-header"><span class="code-lang">json</span></div>
-        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+        <pre><code set:html={`{
   "name": "Jordan Lee",
   "title": "VP Engineering",
   "company": "Acme Analytics",
@@ -767,7 +767,7 @@ if pattern_matched: score = min(score + 0.15, 0.95)  # suggest_emails bonus\`}`}
       "date": "2025-03-15"
     }
   ]
-}\`}`}} /></pre>
+}`} /></pre>
       </div>
     </div>
   </section>
@@ -788,7 +788,7 @@ if pattern_matched: score = min(score + 0.15, 0.95)  # suggest_emails bonus\`}`}
     </p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">sql</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`CREATE TABLE contacts (
+      <pre><code set:html={`CREATE TABLE contacts (
     id          TEXT PRIMARY KEY,   -- UUID v4
     name        TEXT,
     email       TEXT,
@@ -809,7 +809,7 @@ if pattern_matched: score = min(score + 0.15, 0.95)  # suggest_emails bonus\`}`}
 );
 
 CREATE UNIQUE INDEX idx_dedup
-    ON contacts(email, phone, linkedin);\`}`}} /></pre>
+    ON contacts(email, phone, linkedin);`} /></pre>
     </div>
     <h4>Dedup logic</h4>
     <ul class="check-list">
@@ -826,13 +826,13 @@ CREATE UNIQUE INDEX idx_dedup
     </p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">python</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`result = await agent.call_tool("extract_contacts", {
+      <pre><code set:html={`result = await agent.call_tool("extract_contacts", {
     url: "https://acme-analytics.com/team"
 })
 
 result = await agent.call_tool("extract_contacts", {
     text: "Reach Jordan at jordan.lee@acme-analytics.com or +1 (415) 555-0199"
-})\`}`}} /></pre>
+})`} /></pre>
     </div>
 
     <h3 id="save-contacts">save_contacts</h3>
@@ -842,11 +842,11 @@ result = await agent.call_tool("extract_contacts", {
     </p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">python</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`# Save with auto-push to CRM
+      <pre><code set:html={`# Save with auto-push to CRM
 await agent.call_tool("save_contacts", { push_crm: true })
 
 # Save without CRM push (default)
-await agent.call_tool("save_contacts", {})\`}`}} /></pre>
+await agent.call_tool("save_contacts", {})`} /></pre>
     </div>
 
     <h3 id="cli-commands">CLI commands</h3>
@@ -909,7 +909,7 @@ await agent.call_tool("save_contacts", {})\`}`}} /></pre>
     </div>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">toml — config.toml CRM section</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`[crm]
+      <pre><code set:html={`[crm]
 provider = "amocrm"          # amocrm | bitrix24 | hubspot
 domain = "mycompany.amocrm.com"
 api_key = "..."
@@ -917,7 +917,7 @@ api_key = "..."
 # Or for HubSpot:
 # provider = "hubspot"
 # domain = "api.hubapi.com"
-# api_key = "pat-xxx-..."\`}`}} /></pre>
+# api_key = "pat-xxx-..."`} /></pre>
     </div>
   </section>
 
@@ -951,7 +951,7 @@ api_key = "..."
     </p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">toml</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`[agent]
+      <pre><code set:html={`[agent]
 # Default: save_contacts and git_push require approval
 approval_tools = ["save_contacts", "git_push"]
 
@@ -959,7 +959,7 @@ approval_tools = ["save_contacts", "git_push"]
 approval_tools = ["save_contacts", "git_push", "send_email", "crm_push"]
 
 # Remove all gates (use with caution):
-approval_tools = []\`}`}} /></pre>
+approval_tools = []`} /></pre>
     </div>
 
     <h3 id="tui-approval">TUI approval workflow</h3>
@@ -976,7 +976,7 @@ approval_tools = []\`}`}} /></pre>
     </p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">bash</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`# Approve a pending action
+      <pre><code set:html={`# Approve a pending action
 curl -X POST http://localhost:8080/api/v1/sessions/sess_abc123/approve \\\\
   -H "Content-Type: application/json" \\\\
   -d '{"action_id": "act_789", "approved": true}'
@@ -984,7 +984,7 @@ curl -X POST http://localhost:8080/api/v1/sessions/sess_abc123/approve \\\\
 # Reject a pending action
 curl -X POST http://localhost:8080/api/v1/sessions/sess_abc123/approve \\\\
   -H "Content-Type: application/json" \\\\
-  -d '{"action_id": "act_789", "approved": false}'\`}`}} /></pre>
+  -d '{"action_id": "act_789", "approved": false}'`} /></pre>
     </div>
 
     <h3 id="timeout-fallback">Timeout and fallback behavior</h3>
@@ -993,7 +993,7 @@ curl -X POST http://localhost:8080/api/v1/sessions/sess_abc123/approve \\\\
     </p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">toml</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`[agent]
+      <pre><code set:html={`[agent]
 # What to do when approval times out:
 # "deny"  — skip the action, continue the pipeline
 # "allow" — auto-approve (for fully automated runs)
@@ -1001,7 +1001,7 @@ curl -X POST http://localhost:8080/api/v1/sessions/sess_abc123/approve \\\\
 approval_fallback = "deny"
 
 # Timeout in seconds (default: 300 = 5 minutes)
-approval_timeout_seconds = 300\`}`}} /></pre>
+approval_timeout_seconds = 300`} /></pre>
     </div>
     <div class="callout">
       <div class="callout-icon">⚠️</div>
@@ -1028,9 +1028,9 @@ approval_timeout_seconds = 300\`}`}} /></pre>
     </p>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">bash</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`# Re-run every 24 hours (86400 seconds)
+      <pre><code set:html={`# Re-run every 24 hours (86400 seconds)
 fathom run "Find new VP Engineering hires at Series B startups in SF" \\\\
-  --repeat 86400\`}`}} /></pre>
+  --repeat 86400`} /></pre>
     </div>
 
     <h3 id="diff-detection">How diff detection works</h3>
@@ -1069,19 +1069,19 @@ fathom run "Find new VP Engineering hires at Series B startups in SF" \\\\
     <h3 id="daily-monitoring-example">Example: daily lead monitoring setup</h3>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">bash</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`# Full monitoring setup
+      <pre><code set:html={`# Full monitoring setup
 export NOTIFY_WEBHOOK_URL="https://hooks.slack.com/services/T00/B00/xxx"
 export TELEGRAM_BOT_TOKEN="123456:ABC-..."
 export TELEGRAM_CHAT_ID="-1001234567890"
 
 fathom run \\\\
   "Find newly funded startups in Berlin, extract CTO contacts, verify emails" \\\\
-  --repeat 86400\`}`}} /></pre>
+  --repeat 86400`} /></pre>
     </div>
     <h4>Webhook payload example</h4>
     <div class="code-block">
       <div class="code-header"><span class="code-lang">json</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+      <pre><code set:html={`{
   "event": "watch_diff",
   "run_id": "run_20250615_001",
   "timestamp": "2025-06-15T08:00:00Z",
@@ -1098,7 +1098,7 @@ fathom run \\\\
     }
   ],
   "query": "newly funded startups in Berlin"
-}\`}`}} /></pre>
+}`} /></pre>
     </div>
   </section>
 
@@ -1119,10 +1119,10 @@ fathom run \\\\
       <h4>Command</h4>
       <div class="code-block">
         <div class="code-header"><span class="code-lang">bash</span></div>
-        <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom run \\\\
+        <pre><code set:html={`fathom run \\\\
   "Find VP Engineering at B2B SaaS companies in the Bay Area. \\\\
    Verify their emails and LinkedIn profiles. \\\\
-   Save enriched contacts with confidence >= 0.85."\`}`}} /></pre>
+   Save enriched contacts with confidence >= 0.85."`} /></pre>
       </div>
       <h4>What happens step by step</h4>
       <table class="mini-table">
@@ -1139,7 +1139,7 @@ fathom run \\\\
       <h4>Expected output structure</h4>
       <div class="code-block">
         <div class="code-header"><span class="code-lang">json</span></div>
-        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+        <pre><code set:html={`{
   "session_id": "sess_abc123",
   "query": "VP Engineering at B2B SaaS companies in the Bay Area",
   "total_companies_found": 87,
@@ -1162,7 +1162,7 @@ fathom run \\\\
       "company_funding": "Series B ($40M)"
     }
   ]
-}\`}`}} /></pre>
+}`} /></pre>
       </div>
     </div>
 
@@ -1175,11 +1175,11 @@ fathom run \\\\
       <h4>Command</h4>
       <div class="code-block">
         <div class="code-header"><span class="code-lang">bash</span></div>
-        <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom run \\\\
+        <pre><code set:html={`fathom run \\\\
   "Monitor career pages and job boards for senior engineering roles \\\\
    at CompetitorA, CompetitorB, CompetitorC. \\\\
    Alert on new VP/Director/Staff-level postings." \\\\
-  --repeat 43200\`}`}} /></pre>
+  --repeat 43200`} /></pre>
       </div>
       <h4>What happens step by step</h4>
       <table class="mini-table">
@@ -1194,7 +1194,7 @@ fathom run \\\\
       <h4>Expected notification payload</h4>
       <div class="code-block">
         <div class="code-header"><span class="code-lang">json</span></div>
-        <pre><code dangerouslySetInnerHTML={{__html: `{\`{
+        <pre><code set:html={`{
   "event": "watch_diff",
   "new_postings": [
     {
@@ -1208,7 +1208,7 @@ fathom run \\\\
   ],
   "monitoring_since": "2025-06-01T00:00:00Z",
   "total_runs": 30
-}\`}`}} /></pre>
+}`} /></pre>
       </div>
     </div>
 
@@ -1221,7 +1221,7 @@ fathom run \\\\
       <h4>Command</h4>
       <div class="code-block">
         <div class="code-header"><span class="code-lang">bash</span></div>
-        <pre><code dangerouslySetInnerHTML={{__html: `{\`# Step 1: Import the CSV
+        <pre><code set:html={`# Step 1: Import the CSV
 fathom contacts list --limit 50
 
 # Step 2: Enrich each contact
@@ -1232,7 +1232,7 @@ fathom run \\\\
   --source-db contacts.db
 
 # Step 3: Export enriched results
-fathom contacts export --format csv -o ./enriched_contacts\`}`}} /></pre>
+fathom contacts export --format csv -o ./enriched_contacts`} /></pre>
       </div>
       <h4>What happens step by step</h4>
       <table class="mini-table">
@@ -1250,9 +1250,9 @@ fathom contacts export --format csv -o ./enriched_contacts\`}`}} /></pre>
       <h4>Expected output structure</h4>
       <div class="code-block">
         <div class="code-header"><span class="code-lang">text — enriched_contacts.csv columns</span></div>
-        <pre><code dangerouslySetInnerHTML={{__html: `{\`name,email,email_confidence,title,company,linkedin,twitter,location,bio,source
+        <pre><code set:html={`name,email,email_confidence,title,company,linkedin,twitter,location,bio,source
 Jordan Lee,jordan.lee@acme-analytics.com,0.97,VP Engineering,Acme Analytics,https://linkedin.com/in/jordanlee,https://twitter.com/jordanlee_eng,"San Francisco, CA","Engineering leader with 12 years...",suggest_emails+verify
-Maria Chen,maria.chen@startupx.io,0.91,CTO,StartupX,https://linkedin.com/in/mariachen,,Berlin,"Former Google, building developer tools...",search_social+verify\`}`}} /></pre>
+Maria Chen,maria.chen@startupx.io,0.91,CTO,StartupX,https://linkedin.com/in/mariachen,,Berlin,"Former Google, building developer tools...",search_social+verify`} /></pre>
       </div>
       <div class="callout">
         <div class="callout-icon">💡</div>

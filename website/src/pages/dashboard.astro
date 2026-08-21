@@ -52,7 +52,7 @@ const features = [
         {features.map((f) => (
           <div class="dash-feat-card">
             <div class="dash-feat-name" data-i18n={'dashboardPage.features.' + f.key + '.name'}>{f.name}</div>
-            <p data-i18n={'dashboardPage.features.' + f.key + '.d'}>{f.d}</p>
+            <p data-i18n-html={'dashboardPage.features.' + f.key + '.d'} set:html={f.d}></p>
           </div>
         ))}
       </div>

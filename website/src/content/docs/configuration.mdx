@@ -17,7 +17,7 @@ sidebarId: "configuration"
       <div class="code-header">
         <span class="code-lang">~/.fathom/config.toml</span>
       </div>
-      <pre><code dangerouslySetInnerHTML={{__html: `<span class="code-comment"># ─────────────────────────────────────────</span>
+      <pre><code set:html={`<span class="code-comment"># ─────────────────────────────────────────</span>
 <span class="code-comment"># LLM Provider</span>
 <span class="code-comment"># ─────────────────────────────────────────</span>
 <span class="code-section">[llm]</span>
@@ -157,7 +157,7 @@ args      = [<span class="code-string">"-y"</span>, <span class="code-string">"@
 <span class="code-section">[[mcp.servers]]</span>
 name      = <span class="code-string">"remote-tools"</span>
 transport = <span class="code-string">"http"</span>
-url       = <span class="code-string">"https://mcp.example.com"</span>`}} /></pre>
+url       = <span class="code-string">"https://mcp.example.com"</span>`} /></pre>
     </div>
   </section>
 
@@ -965,7 +965,7 @@ url       = <span class="code-string">"https://mcp.example.com"</span>`}} /></pr
       <div class="code-header">
         <span class="code-lang">bash</span>
       </div>
-      <pre><code dangerouslySetInnerHTML={{__html: `fathom config show`}} /></pre>
+      <pre><code set:html={`fathom config show`} /></pre>
     </div>
 
     <h3 data-i18n="docsConfig.cliSetTitle">Set a Value</h3>
@@ -973,7 +973,7 @@ url       = <span class="code-string">"https://mcp.example.com"</span>`}} /></pr
       <div class="code-header">
         <span class="code-lang">bash</span>
       </div>
-      <pre><code dangerouslySetInnerHTML={{__html: `fathom config set llm.api_key <span class="code-string">"sk-..."</span>`}} /></pre>
+      <pre><code set:html={`fathom config set llm.api_key <span class="code-string">"sk-..."</span>`} /></pre>
     </div>
     <p data-i18n-html="docsConfig.cliSetDesc">Uses dot notation for nested keys: <code>section.field</code>.</p>
   </section>

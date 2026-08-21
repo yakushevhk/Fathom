@@ -42,7 +42,7 @@ export const benchScenarios = ['dispatch', 'parallel-io', 'parallel-cpu', 'mixed
   <section id="overview">
     <h2 data-i18n="docsCli.overviewTitle">Command overview</h2>
     <div class="code-card">
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom <COMMAND>
+      <pre><code set:html={`fathom <COMMAND>
 
 run         Run a research task (headless)
 tui         Interactive TUI
@@ -56,7 +56,7 @@ profiles    List / show / create personas
 contacts    Contact database: list / export / dedup / push-crm
 jobs        Durable background jobs
 bench       Benchmark the tool-execution layer
-stats       Tool-call statistics for a recorded session\`}`}} /></pre>
+stats       Tool-call statistics for a recorded session`} /></pre>
     </div>
   </section>
 
@@ -75,13 +75,13 @@ stats       Tool-call statistics for a recorded session\`}`}} /></pre>
       </table>
     </div>
     <div class="code-card">
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom run "Compare Rust and Go for backend services" --output ./research/
+      <pre><code set:html={`fathom run "Compare Rust and Go for backend services" --output ./research/
 
 # watch mode: re-collect every 6 hours, alert on new contacts
 fathom run "Acme leadership team" --repeat 21600
 
 # with a persona
-fathom run --profile hunter "Find the CTO of Acme"\`}`}} /></pre>
+fathom run --profile hunter "Find the CTO of Acme"`} /></pre>
     </div>
   </section>
 
@@ -99,9 +99,9 @@ fathom run --profile hunter "Find the CTO of Acme"\`}`}} /></pre>
       </table>
     </div>
     <div class="code-card">
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom tui
+      <pre><code set:html={`fathom tui
 fathom tui "Find VPs of Engineering at fintech startups" --profile analyst
-fathom tui --replay 3f9c2a   # browse a saved session\`}`}} /></pre>
+fathom tui --replay 3f9c2a   # browse a saved session`} /></pre>
     </div>
   </section>
 
@@ -119,8 +119,8 @@ fathom tui --replay 3f9c2a   # browse a saved session\`}`}} /></pre>
     </div>
     <div class="callout" data-i18n-html="docsCli.serveCallout">Binding a non-loopback address (<code>--host 0.0.0.0</code>) requires <code>FATHOM_API_KEYS</code> to be set — otherwise startup is refused. Keys are passed via <code>Authorization: Bearer</code> or <code>X-Api-Key</code>. The per-client request limit is configured with <code>FATHOM_RATE_LIMIT</code>.</div>
     <div class="code-card">
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom serve --port 8080
-fathom serve --host 0.0.0.0   # requires FATHOM_API_KEYS\`}`}} /></pre>
+      <pre><code set:html={`fathom serve --port 8080
+fathom serve --host 0.0.0.0   # requires FATHOM_API_KEYS`} /></pre>
     </div>
   </section>
 
@@ -128,11 +128,11 @@ fathom serve --host 0.0.0.0   # requires FATHOM_API_KEYS\`}`}} /></pre>
     <h2 data-i18n="docsCli.mcpTitle">mcp-serve</h2>
     <p data-i18n="docsCli.mcpDesc">Exposes all agent tools to external MCP clients (Claude, ZCode, …) over stdio. Tool calls are executed through the same registry the agents use. Logging goes to stderr so stdout stays clean JSON-RPC.</p>
     <div class="code-card">
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom mcp-serve\`}`}} /></pre>
+      <pre><code set:html={`fathom mcp-serve`} /></pre>
     </div>
     <p data-i18n="docsCli.mcpAddText">Add it to your MCP client config:</p>
     <div class="code-card">
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`{ "command": "fathom", "args": ["mcp-serve"] }\`}`}} /></pre>
+      <pre><code set:html={`{ "command": "fathom", "args": ["mcp-serve"] }`} /></pre>
     </div>
   </section>
 
@@ -155,12 +155,12 @@ fathom serve --host 0.0.0.0   # requires FATHOM_API_KEYS\`}`}} /></pre>
       </table>
     </div>
     <div class="code-card">
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom memory search "email of the director of Acme" --top-k 10
+      <pre><code set:html={`fathom memory search "email of the director of Acme" --top-k 10
 fathom memory list --scope agent --status active -n 20
 fathom memory get 7f31 --follow full_history
 fathom memory stats
 fathom memory distill --dry-run
-fathom memory gc --ttl-days 30 --dry-run\`}`}} /></pre>
+fathom memory gc --ttl-days 30 --dry-run`} /></pre>
     </div>
   </section>
 
@@ -177,8 +177,8 @@ fathom memory gc --ttl-days 30 --dry-run\`}`}} /></pre>
       </table>
     </div>
     <div class="code-card">
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom sessions list -n 10 --search "fintech"
-fathom sessions show 3f9c2a\`}`}} /></pre>
+      <pre><code set:html={`fathom sessions list -n 10 --search "fintech"
+fathom sessions show 3f9c2a`} /></pre>
     </div>
   </section>
 
@@ -195,7 +195,7 @@ fathom sessions show 3f9c2a\`}`}} /></pre>
       </table>
     </div>
     <div class="code-card">
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom resume --output ./results/\`}`}} /></pre>
+      <pre><code set:html={`fathom resume --output ./results/`} /></pre>
     </div>
   </section>
 
@@ -203,9 +203,9 @@ fathom sessions show 3f9c2a\`}`}} /></pre>
     <h2 data-i18n="docsCli.configTitle">config</h2>
     <p data-i18n-html="docsCli.configDesc">Show or edit <code>~/.fathom/config.toml</code> from the command line. Keys use dot notation: <code>section.field</code>.</p>
     <div class="code-card">
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom config show
+      <pre><code set:html={`fathom config show
 fathom config set agent.max_depth 3
-fathom config set agent.max_agents 30\`}`}} /></pre>
+fathom config set agent.max_agents 30`} /></pre>
     </div>
   </section>
 
@@ -213,9 +213,9 @@ fathom config set agent.max_agents 30\`}`}} /></pre>
     <h2 data-i18n="docsCli.profilesTitle">profiles</h2>
     <p data-i18n-html="docsCli.profilesDesc">Personas for <code>run --profile</code> and <code>tui --profile</code>: a ready system prompt plus optional overrides for model, temperature, depth, agent count and denied tools. Built-ins: <code>hunter</code>, <code>analyst</code>, <code>validator</code>; your own TOML files live in <code>~/.fathom/profiles/</code>.</p>
     <div class="code-card">
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom profiles list
+      <pre><code set:html={`fathom profiles list
 fathom profiles show hunter
-fathom profiles new my-persona   # creates a template file\`}`}} /></pre>
+fathom profiles new my-persona   # creates a template file`} /></pre>
     </div>
   </section>
 
@@ -234,11 +234,11 @@ fathom profiles new my-persona   # creates a template file\`}`}} /></pre>
       </table>
     </div>
     <div class="code-card">
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom contacts list
+      <pre><code set:html={`fathom contacts list
 fathom contacts export --format csv
 fathom contacts dedup           # dry run: list groups
 fathom contacts dedup --merge   # actually merge them
-fathom contacts push-crm\`}`}} /></pre>
+fathom contacts push-crm`} /></pre>
     </div>
   </section>
 
@@ -259,12 +259,12 @@ fathom contacts push-crm\`}`}} /></pre>
       </table>
     </div>
     <div class="code-card">
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom jobs submit "Analyze the market of AI agents" --attempts 3
+      <pre><code set:html={`fathom jobs submit "Analyze the market of AI agents" --attempts 3
 fathom jobs list
 fathom jobs status 9b2e --watch 5
 fathom jobs logs 9b2e
 fathom jobs cancel 9b2e
-fathom jobs rerun 9b2e\`}`}} /></pre>
+fathom jobs rerun 9b2e`} /></pre>
     </div>
   </section>
 
@@ -285,10 +285,10 @@ fathom jobs rerun 9b2e\`}`}} /></pre>
       {benchScenarios.map((s) => <span class="chip">{s}</span>)}
     </div>
     <div class="code-card code-card--gap">
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom bench                    # all scenarios
+      <pre><code set:html={`fathom bench                    # all scenarios
 fathom bench -s feed-parse      # feed parsing (quick-xml)
 fathom bench -s code-map        # code_symbols / repo_map
-fathom bench -s memory          # absorb / search / digest\`}`}} /></pre>
+fathom bench -s memory          # absorb / search / digest`} /></pre>
     </div>
   </section>
 
@@ -304,7 +304,7 @@ fathom bench -s memory          # absorb / search / digest\`}`}} /></pre>
       </table>
     </div>
     <div class="code-card">
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`fathom stats -o ./results/\`}`}} /></pre>
+      <pre><code set:html={`fathom stats -o ./results/`} /></pre>
     </div>
   </section>
 
@@ -359,7 +359,7 @@ fathom bench -s memory          # absorb / search / digest\`}`}} /></pre>
     <h2 data-i18n="docsCli.outputTitle">Output structure</h2>
     <p data-i18n="docsCli.outputDesc">Every run writes the same layout into its output directory — plus optional PDF/HTML/JSON/DOCX exports when configured.</p>
     <div class="code-card">
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`output/
+      <pre><code set:html={`output/
 ├── index.md           # table of contents + metadata
 ├── summary.md         # final synthesis
 ├── findings/          # findings per subtask
@@ -367,7 +367,7 @@ fathom bench -s memory          # absorb / search / digest\`}`}} /></pre>
 │   ├── finding-2.md
 │   └── finding-3.md
 ├── sources.md         # source list
-└── .research.db       # session SQLite database\`}`}} /></pre>
+└── .research.db       # session SQLite database`} /></pre>
     </div>
   </section>
 
@@ -384,7 +384,7 @@ fathom bench -s memory          # absorb / search / digest\`}`}} /></pre>
     </p>
     <div class="code-card">
       <div class="code-header"><span class="code-lang">pipeline</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`# 1. Run the research with the hunter profile
+      <pre><code set:html={`# 1. Run the research with the hunter profile
 fathom run --profile hunter "Find VPs of Engineering at Series B startups" -o ./fintech-vps/
 
 # 2. Review the results
@@ -397,7 +397,7 @@ fathom contacts export --format csv -o ./fintech-vps/
 fathom contacts dedup
 fathom contacts dedup --merge
 # 5. Push to your configured CRM
-fathom contacts push-crm\`}`}} /></pre>
+fathom contacts push-crm`} /></pre>
     </div>
 
     <h3>Workflow 2 — Resume crashed session</h3>
@@ -407,7 +407,7 @@ fathom contacts push-crm\`}`}} /></pre>
     </p>
     <div class="code-card">
       <div class="code-header"><span class="code-lang">resume</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`# 1. Find the interrupted session
+      <pre><code set:html={`# 1. Find the interrupted session
 fathom sessions list -n 5
 
 # 2. Resume it (defaults to most recent interrupted session)
@@ -415,7 +415,7 @@ fathom resume --output ./fintech-vps/
 
 # 3. Check the completed results
 fathom sessions show --output ./fintech-vps/
-fathom stats -o ./fintech-vps/\`}`}} /></pre>
+fathom stats -o ./fintech-vps/`} /></pre>
     </div>
 
     <h3>Workflow 3 — Memory management</h3>
@@ -425,7 +425,7 @@ fathom stats -o ./fintech-vps/\`}`}} /></pre>
     </p>
     <div class="code-card">
       <div class="code-header"><span class="code-lang">memory maintenance</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`# 1. Check what's in memory
+      <pre><code set:html={`# 1. Check what's in memory
 fathom memory stats
 
 # 2. Search for specific knowledge
@@ -443,7 +443,7 @@ fathom memory gc --ttl-days 30 --dry-run
 fathom memory gc --ttl-days 30
 
 # 6. Rebuild embeddings after upgrading the embedding model
-fathom memory rebuild\`}`}} /></pre>
+fathom memory rebuild`} /></pre>
     </div>
 
     <h3>Workflow 4 — Job management</h3>
@@ -452,7 +452,7 @@ fathom memory rebuild\`}`}} /></pre>
     </p>
     <div class="code-card">
       <div class="code-header"><span class="code-lang">jobs</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`# 1. Submit a job (detached, runs in background)
+      <pre><code set:html={`# 1. Submit a job (detached, runs in background)
 fathom jobs submit "Analyze the AI agent market landscape" --attempts 3
 
 # 2. List all jobs and their states
@@ -468,7 +468,7 @@ fathom jobs logs 9b2e -n 100
 fathom jobs rerun 9b2e
 
 # 6. Cancel a stuck job
-fathom jobs cancel 9b2e\`}`}} /></pre>
+fathom jobs cancel 9b2e`} /></pre>
     </div>
 
     <h3>Workflow 5 — Profile-based campaigns</h3>
@@ -477,7 +477,7 @@ fathom jobs cancel 9b2e\`}`}} /></pre>
     </p>
     <div class="code-card">
       <div class="code-header"><span class="code-lang">campaign</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`# 1. Create a new profile from template
+      <pre><code set:html={`# 1. Create a new profile from template
 fathom profiles new series-b-outreach
 
 # 2. Edit the profile (set prompt, model, temperature)
@@ -490,7 +490,7 @@ fathom profiles show series-b-outreach
 fathom run --profile series-b-outreach "Find CTOs at Series B companies in fintech"
 
 # 5. Reuse for a different vertical
-fathom run --profile series-b-outreach "Find CTOs at Series B companies in healthtech"\`}`}} /></pre>
+fathom run --profile series-b-outreach "Find CTOs at Series B companies in healthtech"`} /></pre>
     </div>
   </section>
 
@@ -651,7 +651,7 @@ fathom run --profile series-b-outreach "Find CTOs at Series B companies in healt
     </p>
     <div class="code-card">
       <div class="code-header"><span class="code-lang">task file</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`# task.txt
+      <pre><code set:html={`# task.txt
 Research the competitive landscape of AI coding assistants.
 Include:
 1. GitHub Copilot, Cursor, Codeium, Tabnine, Cody
@@ -663,7 +663,7 @@ Include:
 Format as a comparison table with a recommendation section.
 
 # Run with the task file
-fathom run --task-file task.txt -o ./ai-coding-tools/\`}`}} /></pre>
+fathom run --task-file task.txt -o ./ai-coding-tools/`} /></pre>
     </div>
 
     <h3>Use --repeat for monitoring loops</h3>
@@ -673,11 +673,11 @@ fathom run --task-file task.txt -o ./ai-coding-tools/\`}`}} /></pre>
     </p>
     <div class="code-card">
       <div class="code-header"><span class="code-lang">monitoring</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`# Check for new Acme Corp signals every 6 hours
+      <pre><code set:html={`# Check for new Acme Corp signals every 6 hours
 fathom run "Acme Corp latest news and hiring" --repeat 21600
 
 # Monitor a job board every hour
-fathom run "New postings on careers.acme.com" --repeat 3600\`}`}} /></pre>
+fathom run "New postings on careers.acme.com" --repeat 3600`} /></pre>
     </div>
 
     <h3>Use --profile for campaign-specific behavior</h3>
@@ -687,11 +687,11 @@ fathom run "New postings on careers.acme.com" --repeat 3600\`}`}} /></pre>
     </p>
     <div class="code-card">
       <div class="code-header"><span class="code-lang">dual pass</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`# Pass 1: harvest contacts
+      <pre><code set:html={`# Pass 1: harvest contacts
 fathom run --profile hunter "Series B fintech companies" -o ./fintech/
 
 # Pass 2: deep analysis on the same topic
-fathom run --profile analyst "Series B fintech companies" -o ./fintech-analysis/\`}`}} /></pre>
+fathom run --profile analyst "Series B fintech companies" -o ./fintech-analysis/`} /></pre>
     </div>
 
     <h3>Pipe output to other tools</h3>
@@ -700,14 +700,14 @@ fathom run --profile analyst "Series B fintech companies" -o ./fintech-analysis/
     </p>
     <div class="code-card">
       <div class="code-header"><span class="code-lang">pipes</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`# Export contacts and pipe to jq for filtering
+      <pre><code set:html={`# Export contacts and pipe to jq for filtering
 fathom contacts export --format json | jq '.[] | select(.title | contains("CTO"))'
 
 # Search memory and format as markdown links
 fathom memory search "fintech" --top-k 5 | grep -oP 'https?://\\\\S+' | sort -u
 
 # Run stats and save to file
-fathom stats -o ./results/ > stats-report.md\`}`}} /></pre>
+fathom stats -o ./results/ > stats-report.md`} /></pre>
     </div>
 
     <h3>Find past research with sessions</h3>
@@ -717,14 +717,14 @@ fathom stats -o ./results/ > stats-report.md\`}`}} /></pre>
     </p>
     <div class="code-card">
       <div class="code-header"><span class="code-lang">sessions</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`# Find all sessions about fintech
+      <pre><code set:html={`# Find all sessions about fintech
 fathom sessions list --search "fintech"
 
 # Show the last 5 sessions
 fathom sessions list -n 5
 
 # View details of a specific session (prefix match)
-fathom sessions show 3f9c2a\`}`}} /></pre>
+fathom sessions show 3f9c2a`} /></pre>
     </div>
 
     <h3>Analyze tool performance with stats</h3>
@@ -734,7 +734,7 @@ fathom sessions show 3f9c2a\`}`}} /></pre>
     </p>
     <div class="code-card">
       <div class="code-header"><span class="code-lang">stats</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`# Show stats for the most recent session
+      <pre><code set:html={`# Show stats for the most recent session
 fathom stats
 
 # Show stats for a specific output directory
@@ -746,7 +746,7 @@ fathom stats -o ./fintech-vps/
 # web_fetch          89      245      3200        5
 # extract_contacts   23      180       420        0
 # verify_email       15      890      4500        1
-# memory_search      12       45       120        0\`}`}} /></pre>
+# memory_search      12       45       120        0`} /></pre>
     </div>
 
     <h3>Benchmark before deploying</h3>
@@ -756,13 +756,13 @@ fathom stats -o ./fintech-vps/
     </p>
     <div class="code-card">
       <div class="code-header"><span class="code-lang">bench</span></div>
-      <pre><code dangerouslySetInnerHTML={{__html: `{\`# Run all benchmark scenarios
+      <pre><code set:html={`# Run all benchmark scenarios
 fathom bench
 
 # Run a specific scenario and save the report
 fathom bench -s memory --save bench-report.md
 
 # Quick check on tool dispatch overhead
-fathom bench -s dispatch -n 32\`}`}} /></pre>
+fathom bench -s dispatch -n 32`} /></pre>
     </div>
   </section>
