@@ -21,6 +21,11 @@ const STATUS = {
   cleaning: 'sweep · dedup pass',
   memoring: 'trail · absorbing facts',
   outreach: 'in flight · composing',
+  coordinator: 'fanning out · synthesizing',
+  coder: 'editing · sandboxed',
+  operator: 'scheduling · dispatching',
+  browser: 'navigating · clicking',
+  reviewer: 'auditing · gating',
 };
 ---
 
@@ -382,16 +387,27 @@ const STATUS = {
 
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  // Landing pages use role names (coordinator, coder, …) that map onto the
+  // visual modes below; unknown modes fall back to the researcher sphere.
+  const ALIAS = {
+    coordinator: 'structuring',
+    coder: 'extracting',
+    operator: 'cleaning',
+    browser: 'searching',
+    reviewer: 'outreach',
+  };
+
   const items = Array.from(document.querySelectorAll('.agent-canvas canvas')).map((cv, idx) => {
     const a = agents[idx];
+    const mode = MODES[a.mode] ? a.mode : (ALIAS[a.mode] && MODES[ALIAS[a.mode]] ? ALIAS[a.mode] : 'researcher');
     cv.width = SIZE * SCALE;
     cv.height = SIZE * SCALE;
     const ctx = cv.getContext('2d');
     ctx.scale(SCALE, SCALE);
     return {
       ctx,
-      mode: MODES[a.mode],
-      cfg: { ...CONFIGS[a.mode], hue: a.hue, lit: a.lit ?? 55 },
+      mode: MODES[mode],
+      cfg: { ...(CONFIGS[mode] || { speed: 1 }), hue: a.hue, lit: a.lit ?? 55 },
     };
   });
 

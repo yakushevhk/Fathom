@@ -225,6 +225,46 @@ const description = doc.data.description ?? `Fathom documentation for ${baseTitl
     margin-bottom: 16px;
   }
 
+  .doc-content :global(.table-wrap) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+  }
+
+  .doc-content :global(.table-wrap table) {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .doc-content :global(.table-wrap th) {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--grey-600);
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--grey-50);
+    white-space: nowrap;
+  }
+
+  .doc-content :global(.table-wrap td) {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--grey-100);
+    color: var(--grey-800);
+    line-height: 1.55;
+    vertical-align: top;
+  }
+
+  .doc-content :global(.table-wrap tr:last-child td) {
+    border-bottom: none;
+  }
+
   .doc-content :global(.mini-table) {
     width: 100%;
     border-collapse: collapse;

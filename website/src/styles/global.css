@@ -168,6 +168,15 @@ button {
   color: var(--text-inverse);
 }
 
+/* ---- Editorial serif accent (landing display words) ----
+   Global on purpose: translated HTML injected at build time
+   carries no scoped attributes. */
+.it {
+  font-family: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 400;
+}
+
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;

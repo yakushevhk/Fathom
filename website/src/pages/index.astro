@@ -3,6 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import JsonLd from '../components/JsonLd.astro';
 import AgentCanvas from '../components/AgentCanvas.astro';
 import Pipeline3D from '../components/Pipeline3D.astro';
+import OceanField from '../components/OceanField.astro';
 
 const agents = [
   { name: 'Coordinator', mode: 'coordinator', hue: 206, href: '/profiles' },
@@ -15,10 +16,38 @@ const agents = [
 ];
 
 const backends = ['Linkup', 'Exa', 'Tavily', 'Serper', 'Brave', 'Parallel.ai', 'DuckDuckGo'];
-const capabilities = [
-  { k: 'landing.cap.r', t: 'Research & analysis', d: 'Workers search, fetch, parse, cross-reference, and synthesize findings from configured sources.', url: '/features/research' },
-  { k: 'landing.cap.l', t: 'Code & computer use', d: 'Run code, inspect repositories, and operate an optional connected computer through explicit tool boundaries.', url: '/tools' },
-  { k: 'landing.cap.o', t: 'Operations & outreach', d: 'Draft actions, sync approved records, schedule repeat runs, and notify your team when configured.', url: '/features/auto-outreach' },
+
+const usecases = [
+  {
+    k: 'landing.uc.outreach', n: '01', href: '/features/auto-outreach', cls: 'uc--wide',
+    t: 'Outreach & lead generation',
+    d: 'Find prospects across the web, verify every email through a five-gate pipeline, draft personalized sequences, and sync approved contacts to your CRM.',
+    chips: ['find prospects', 'verify emails', 'draft sequences', 'sync CRM'],
+  },
+  {
+    k: 'landing.uc.research', n: '02', href: '/features/research', cls: '',
+    t: 'Deep research',
+    d: 'Seven search backends fused into one query, then fetch, parse, cross-reference and synthesize findings into a sourced brief.',
+    chips: ['7 search backends', 'cross-check sources', 'synthesized brief'],
+  },
+  {
+    k: 'landing.uc.code', n: '03', href: '/tools', cls: '',
+    t: 'Code & computer use',
+    d: 'Write and run code, inspect repositories, drive a browser and operate an optional connected computer — inside explicit tool boundaries.',
+    chips: ['write & run code', 'browser flows', 'desktop actions'],
+  },
+  {
+    k: 'landing.uc.ops', n: '04', href: '/ops', cls: '',
+    t: 'Scheduled operations',
+    d: 'Durable background jobs survive restarts, repeat on a schedule, and resume interrupted work exactly where it stopped.',
+    chips: ['durable jobs', 'repeat runs', 'auto-resume'],
+  },
+  {
+    k: 'landing.uc.memory', n: '05', href: '/memory', cls: '',
+    t: 'Memory that persists',
+    d: 'Hybrid vector + BM25 search and an entity graph keep every finding across sessions — scanned for secrets before it lands.',
+    chips: ['vector + BM25', 'entity graph', 'cross-session'],
+  },
 ];
 
 const capabilityRows = [
@@ -49,22 +78,25 @@ const metrics = [
 ];
 ---
 
-<Layout title="Fathom — Autonomous AI Workers" description="Fathom is a universal autonomous AI worker platform for research, code, computer use, scheduled operations, memory, governance, and reviewable automation.">
+<Layout title="Fathom — One Universal AI Worker for Every Job" description="Fathom is the universal autonomous AI worker: outreach and lead generation, deep research, code, computer use, and scheduled operations — with memory, governance, and human review in one self-hosted runtime.">
 
   <!-- ============ HERO ============ -->
   <section class="hero">
-    <div class="container">
+    <div class="container hero__grid">
       <div class="hero__main">
-        <p class="eyebrow" data-i18n="landing.badge">Universal autonomous AI workers</p>
-        <h1 class="hero__title" data-i18n-html data-i18n="landing.title">Remote workers<br />that get things done.</h1>
+        <p class="hero-badge">
+          <span class="hero-badge__dot" aria-hidden="true"></span>
+          <span data-i18n="landing.badge">Universal autonomous AI worker</span>
+        </p>
+        <h1 class="hero__title" data-i18n-html data-i18n="landing.title">One worker.<br /><em class="it">Every</em> job done.</h1>
         <p class="hero__subtitle" data-i18n="landing.subtitle">
-          Fathom is a universal autonomous worker platform. Deploy persistent agents for research, outreach, code, computer use, and scheduled operations — with memory, governance, notifications, and human review built into one runtime.
+          Fathom is a universal AI worker you self-host: it runs outreach, does deep research, writes code, operates a computer, and works on a schedule — with durable memory, governance, and human review built into one runtime.
         </p>
         <div class="hero__actions">
-          <a href="#cta" class="btn btn-primary btn-lg" data-i18n="landing.cta1">Start building</a>
-          <a href="#features" class="btn btn-secondary btn-lg" data-i18n="landing.cta2">Explore features</a>
+          <a href="/install" class="btn btn-primary btn-lg" data-i18n="landing.cta1">Start building</a>
+          <a href="#features" class="btn btn-secondary btn-lg" data-i18n="landing.cta2">See what it can do</a>
         </div>
-        <p class="hero__mono" data-i18n="landing.hero_mono">Rust · built-in tools plus optional browser and computer services · one runtime</p>
+        <p class="hero__mono" data-i18n="landing.hero_mono">Rust · one binary · memory · governance · schedules</p>
       </div>
 
       <div class="hero__visual">
@@ -74,24 +106,24 @@ const metrics = [
             <span class="machine__url">fathom run</span>
           </div>
           <div class="machine__body">
-            <div class="prompt-line"><span class="p">$</span><span class="pc">fathom run "Prepare a market brief and open a draft PR"</span></div>
+            <div class="prompt-line"><span class="p">$</span><span class="pc">fathom run "Find 50 fintech CTOs, verify emails, draft outreach"</span></div>
             <div class="tags-row">
-              <span class="ptag ptag--plan">Planning</span><span data-i18n="landing.term.plan">Decomposing into 4 sub-tasks…</span>
+              <span class="ptag ptag--plan" data-i18n="landing.term.tag_plan">Planning</span><span data-i18n="landing.term.plan">Decomposing into 4 sub-tasks…</span>
             </div>
             <div class="tags-row">
-              <span class="ptag ptag--run">Researching</span><span data-i18n="landing.term.spawn">Spawning 4 parallel agents</span>
+              <span class="ptag ptag--run" data-i18n="landing.term.tag_run">Researching</span><span data-i18n="landing.term.spawn">Spawning 4 parallel agents</span>
             </div>
             <div class="agent-lines">
               <div class="agent-line"><span class="od">●</span> <span data-i18n="landing.term.a1">Researching the market and sources</span></div>
-              <div class="agent-line"><span class="od">●</span> <span data-i18n="landing.term.a2">Editing code in a sandbox</span></div>
-              <div class="agent-line"><span class="od">●</span> <span data-i18n="landing.term.a3">Using the browser to check a workflow</span></div>
+              <div class="agent-line"><span class="od">●</span> <span data-i18n="landing.term.a2">Verifying emails through 5 gates</span></div>
+              <div class="agent-line"><span class="od">●</span> <span data-i18n="landing.term.a3">Drafting personalized sequences</span></div>
               <div class="agent-line"><span class="od">●</span> <span data-i18n="landing.term.a4">Saving findings to shared memory</span></div>
             </div>
             <div class="tags-row">
-              <span class="ptag ptag--ok">Complete</span><span data-i18n="landing.term.done">Brief ready, checks passed</span>
+              <span class="ptag ptag--ok" data-i18n="landing.term.tag_ok">Complete</span><span data-i18n="landing.term.done">50 contacts ready, checks passed</span>
             </div>
             <div class="tags-row">
-              <span class="ptag ptag--save">Saving</span><span data-i18n="landing.term.save">Updating memory + notifying the team</span>
+              <span class="ptag ptag--save" data-i18n="landing.term.tag_save">Saving</span><span data-i18n="landing.term.save">Updating memory + notifying the team</span>
             </div>
             <div class="prompt-line"><span class="p">$</span><span class="cursor">▊</span></div>
           </div>
@@ -103,7 +135,7 @@ const metrics = [
   <!-- ============ MARQUEE ============ -->
   <section class="marquee-section">
     <div class="marquee-head">
-      <p class="eyebrow" data-i18n="landing.marquee_label">Workers connect to your stack</p>
+      <p class="eyebrow"><span data-i18n="landing.marquee_label">Workers connect to your stack</span></p>
     </div>
     <div class="marquee-track-wrap">
       <div class="marquee-track">
@@ -116,25 +148,45 @@ const metrics = [
     </div>
   </section>
 
-  <!-- ============ CAPABILITIES / FEATURES ============ -->
+  <!-- ============ USE CASES / BENTO ============ -->
   <section class="section alt" id="features">
     <div class="container">
       <div class="sec-head center reveal">
-        <p class="eyebrow" data-i18n="landing.value_label">What you get</p>
-        <h2 class="h2-sec" data-i18n="landing.value_title">One worker, many missions</h2>
-        <p class="copy-lg mx-auto" data-i18n="landing.value_sub">Give Fathom a goal and let autonomous workers research, write code, use a computer, and run repeatable operations with your approval.</p>
+        <p class="eyebrow"><span class="eyebrow__num">01</span><span data-i18n="landing.uc_label">What your worker does</span></p>
+        <h2 class="h2-sec" data-i18n-html data-i18n="landing.uc_title">Delegate the <em class="it">whole pipeline</em></h2>
+        <p class="copy-lg mx-auto" data-i18n="landing.uc_sub">One goal in — finished work out. The same worker runs outreach, research, code and operations, switching roles as the task demands.</p>
       </div>
 
-      <div class="cap-grid">
+      <div class="uc-grid">
         {
-          capabilities.map((c, i) => (
-            <a href={c.url} class:list={['cap-card', i === 1 ? 'cap-card--accent' : '']}>
-              <h3 class="cap-name" data-i18n={c.k + '.t'}>{c.t}</h3>
-              <p class="cap-desc" data-i18n={c.k + '.d'}>{c.d}</p>
-              <span class="cap-go" data-i18n="landing.learn">Explore →</span>
+          usecases.map((u) => (
+            <a href={u.href} class:list={['uc-card', u.cls]}>
+              <div class="uc-top">
+                <span class="uc-num">{u.n}</span>
+                <span class="uc-go">→</span>
+              </div>
+              <h3 class="uc-name" data-i18n={u.k + '.t'}>{u.t}</h3>
+              <p class="uc-desc" data-i18n={u.k + '.d'}>{u.d}</p>
+              <div class="uc-chips">
+                {u.chips.map((c, ci) => (
+                  <span class="uc-chip" data-i18n={`${u.k}.c${ci + 1}`}>{c}</span>
+                ))}
+              </div>
             </a>
           ))
         }
+
+        <div class="uc-card uc--strip">
+          <div class="uc-strip-copy">
+            <h3 class="uc-name" data-i18n="landing.uc.report.t">Reports &amp; notifications</h3>
+            <p class="uc-desc" data-i18n="landing.uc.report.d">Every finished run lands where your team already looks — webhook, email or Telegram. One failing channel never blocks the rest.</p>
+          </div>
+          <div class="uc-chips uc-strip-chips">
+            <span class="uc-chip" data-i18n="landing.uc.report.c1">Webhook</span>
+            <span class="uc-chip" data-i18n="landing.uc.report.c2">Email SMTP</span>
+            <span class="uc-chip" data-i18n="landing.uc.report.c3">Telegram</span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -143,12 +195,36 @@ const metrics = [
   <section class="section agents-sec">
     <div class="container">
       <div class="sec-head center reveal">
-        <p class="eyebrow" data-i18n="landing.agents_label">Agent types</p>
-        <h2 class="h2-sec" data-i18n="landing.agents_title">Purpose-built agent roles</h2>
+        <p class="eyebrow"><span class="eyebrow__num on-dark">02</span><span data-i18n="landing.agents_label">Agent types</span></p>
+        <h2 class="h2-sec" data-i18n-html data-i18n="landing.agents_title">A crew of <em class="it">specialists</em></h2>
         <p class="copy-lg mx-auto" data-i18n="landing.agents_sub">Each sub-agent has a focused role and its own behavior. Coordinators decompose, fan out, reflect, and synthesize.</p>
       </div>
 
       <AgentCanvas agents={agents} />
+    </div>
+  </section>
+
+  <!-- ============ HOW IT WORKS ============ -->
+  <section class="section" id="how-it-works">
+    <div class="container">
+      <div class="sec-head center reveal">
+        <p class="eyebrow"><span class="eyebrow__num">03</span><span data-i18n="landing.how_label">How it works</span></p>
+        <h2 class="h2-sec" data-i18n-html data-i18n="landing.how_title">From goal to <em class="it">governed</em> execution</h2>
+      </div>
+
+      <div class="steps-grid">
+        {
+          steps.map((s) => (
+            <div class="step">
+              <div class="step-number">{s.n}</div>
+              <div class="step-body">
+                <h3 data-i18n={s.k + '.t'}>{s.t}</h3>
+                <p data-i18n={s.k + '.d'}>{s.d}</p>
+              </div>
+            </div>
+          ))
+        }
+      </div>
     </div>
   </section>
 
@@ -157,8 +233,8 @@ const metrics = [
     <div class="container">
       <div class="feat">
         <div class="feat-copy">
-          <p class="eyebrow" data-i18n="landing.bench_label">Performance</p>
-          <h2 class="h2-sec" data-i18n-html data-i18n="landing.bench_title">Built for speed.<br />Measured, not claimed.</h2>
+          <p class="eyebrow"><span class="eyebrow__num">04</span><span data-i18n="landing.bench_label">Performance</span></p>
+          <h2 class="h2-sec" data-i18n-html data-i18n="landing.bench_title">Built for speed.<br /><em class="it">Measured</em>, not claimed.</h2>
           <p class="copy-lg" data-i18n="landing.bench_sub">Real benchmarks from the release build — parallel tool execution spreads CPU across cores and ships verified results with minimal dispatch overhead.</p>
           <a href="/benchmarks" class="btn btn-secondary" data-i18n="landing.bench_cta">See all benchmarks →</a>
         </div>
@@ -180,8 +256,8 @@ const metrics = [
   <section class="section">
     <div class="container">
       <div class="sec-head center reveal">
-        <p class="eyebrow" data-i18n="landing.overview_label">The full toolbox</p>
-        <h2 class="h2-sec" data-i18n="landing.overview_title">One engine, every capability</h2>
+        <p class="eyebrow"><span class="eyebrow__num">05</span><span data-i18n="landing.overview_label">The full toolbox</span></p>
+        <h2 class="h2-sec" data-i18n-html data-i18n="landing.overview_title">One engine, <em class="it">every</em> capability</h2>
       </div>
 
       <div class="api-grid">
@@ -202,39 +278,12 @@ const metrics = [
     </div>
   </section>
 
-  <!-- ============ HOW IT WORKS ============ -->
-  <section class="section alt" id="how-it-works">
-    <div class="container">
-      <div class="sec-head center reveal">
-        <p class="eyebrow" data-i18n="landing.how_label">How it works</p>
-        <h2 class="h2-sec" data-i18n="landing.how_title">From goal to governed execution</h2>
-      </div>
-
-      <div class="steps-grid">
-        {
-          steps.map((s, i) => (
-            <>
-              {i > 0 && <div class="step-connector">→</div>}
-              <div class="step">
-                <div class="step-number">{s.n}</div>
-                <div class="step-body">
-                  <h3 data-i18n={s.k + '.t'}>{s.t}</h3>
-                  <p data-i18n={s.k + '.d'}>{s.d}</p>
-                </div>
-              </div>
-            </>
-          ))
-        }
-      </div>
-    </div>
-  </section>
-
   <!-- ============ SAFETY & RELIABILITY ============ -->
-  <section class="section">
+  <section class="section alt">
     <div class="container">
       <div class="sec-head center reveal">
-        <p class="eyebrow" data-i18n="landing.safety_label">Safety & Reliability</p>
-        <h2 class="h2-sec" data-i18n="landing.safety_title">Guardrails that never sleep</h2>
+        <p class="eyebrow"><span class="eyebrow__num">06</span><span data-i18n="landing.safety_label">Safety &amp; Reliability</span></p>
+        <h2 class="h2-sec" data-i18n-html data-i18n="landing.safety_title">Guardrails that <em class="it">never sleep</em></h2>
         <p class="copy-lg mx-auto" data-i18n="landing.safety_sub">Every agent action passes through multiple safety layers — from doom-loop detection to secret scanning to human approval gates.</p>
       </div>
 
@@ -271,8 +320,8 @@ const metrics = [
   <section class="section pipeline-sec">
     <div class="container">
       <div class="sec-head center reveal">
-        <p class="eyebrow" data-i18n="landing.pipe_label">One live pipeline</p>
-        <h2 class="h2-sec" data-i18n="landing.pipe_title">A live run you can inspect</h2>
+        <p class="eyebrow"><span class="eyebrow__num">07</span><span data-i18n="landing.pipe_label">One live pipeline</span></p>
+        <h2 class="h2-sec" data-i18n-html data-i18n="landing.pipe_title">A live run you can <em class="it">inspect</em></h2>
         <p class="copy-lg mx-auto" data-i18n="landing.pipe_sub">Watch a goal travel through the engine: workers plan, use tools, write findings to memory, pause for approvals, and deliver a report or action with notifications.</p>
       </div>
 
@@ -280,39 +329,27 @@ const metrics = [
     </div>
   </section>
 
-  <!-- ============ NOTIFICATIONS ============ -->
-  <section class="section alt">
-    <div class="container">
-      <div class="sec-head center reveal">
-        <p class="eyebrow" data-i18n="landing.notify_label">Notifications</p>
-        <h2 class="h2-sec" data-i18n="landing.notify_title">Never miss a completed run</h2>
-        <p class="copy-lg mx-auto" data-i18n="landing.notify_sub">Fan-out delivery to every configured channel. One failing channel does not block the rest.</p>
-      </div>
-
-      <div class="notify-grid">
-        <div class="notify-card">
-          <div class="notify-name" data-i18n="landing.notify.webhook.t">Webhook</div>
-          <p data-i18n="landing.notify.webhook.d">Generic JSON POST to any URL — session_id, summary, synthesis preview, token counts and output path.</p>
-        </div>
-        <div class="notify-card">
-          <div class="notify-name" data-i18n="landing.notify.email.t">Email (SMTP)</div>
-          <p data-i18n="landing.notify.email.d">Plain or STARTTLS SMTP delivery. Subject includes session ID, body includes summary and synthesis preview.</p>
-        </div>
-        <div class="notify-card">
-          <div class="notify-name" data-i18n="landing.notify.telegram.t">Telegram</div>
-          <p data-i18n="landing.notify.telegram.d">Bot message with checkmark, summary, synthesis preview and full report path.</p>
-        </div>
-      </div>
+  <!-- ============ DEEP WORK (three.js ocean) ============ -->
+  <section class="ocean-sec">
+    <OceanField />
+    <div class="container ocean-content">
+      <p class="eyebrow"><span class="eyebrow__num">08</span><span data-i18n="landing.ocean_label">Deep work</span></p>
+      <h2 class="h2-sec" data-i18n-html data-i18n="landing.ocean_title">Built to go <em class="it">deep</em></h2>
+      <p class="copy-lg" data-i18n="landing.ocean_sub">A fathom is a nautical measure of depth. Ours is measured in gates and backends: seven search engines deep, five verification gates deep, every session replayable to the bottom.</p>
+      <p class="ocean-mono" data-i18n="landing.ocean_mono">1 fathom = 1.829 m · depth of work</p>
     </div>
   </section>
 
   <!-- ============ CTA ============ -->
   <section class="cta" id="cta">
     <div class="container">
-      <h2 class="h2-sec" data-i18n="landing.cta_title">Start building with Fathom</h2>
+      <h2 class="h2-sec" data-i18n-html data-i18n="landing.cta_title">Put a worker on it <em class="it">today</em></h2>
       <p class="copy-lg mx-auto" data-i18n="landing.cta_sub">Self-hosted and reviewable. No vendor lock-in. Give your workers access to the tools, memory, and schedules your team controls.</p>
-      <a href="/install" class="btn btn-primary" data-i18n="landing.cta_access">Read installation guide →</a>
-      <p class="sub" data-i18n="landing.cta_mono">fathom bench · docs · request access</p>
+      <div class="cta__actions">
+        <a href="/install" class="btn btn-primary" data-i18n="landing.cta_access">Read installation guide →</a>
+        <a href="/playground" class="btn btn-cta-ghost" data-i18n="landing.cta_play">Try the playground</a>
+      </div>
+      <p class="sub" data-i18n="landing.cta_mono">fathom run "your task here" · docs · request access</p>
     </div>
   </section>
 
@@ -320,7 +357,7 @@ const metrics = [
   <section class="section alt" id="faq">
     <div class="container">
       <div class="sec-head center reveal">
-        <p class="eyebrow" data-i18n="landing.faq_label">FAQ</p>
+        <p class="eyebrow"><span class="eyebrow__num">09</span><span data-i18n="landing.faq_label">FAQ</span></p>
         <h2 class="h2-sec" data-i18n="landing.faq_title">Frequently asked questions</h2>
       </div>
       <div class="faq-grid">
@@ -347,10 +384,10 @@ const metrics = [
   <JsonLd data={{
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
-    name: 'Fathom — Autonomous AI Workers',
+    name: 'Fathom — One Universal AI Worker for Every Job',
     applicationCategory: 'DeveloperApplication',
     operatingSystem: 'macOS, Linux, Windows (WSL)',
-    description: 'A universal autonomous AI worker platform with durable sessions, code and computer tools, research, scheduled operations, memory, governance, and reviewable automation.',
+    description: 'The universal autonomous AI worker: outreach and lead generation, deep research, code, computer use, and scheduled operations — with durable memory, governance, and reviewable automation.',
     url: 'https://fathom.uz/',
     downloadUrl: 'https://fathom.uz/install',
     installUrl: 'https://fathom.uz/install',
@@ -388,60 +425,95 @@ const metrics = [
 </Layout>
 
 <style>
-  /* ---- Hero ---- */
-  .hero { padding: 60px 0 72px; }
-  .hero .container { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+  /* ================= HERO ================= */
+  .hero { position: relative; padding: 72px 0 84px; overflow: hidden; }
+  .hero::before {
+    content: ""; position: absolute; inset: -20% -10% auto -10%; height: 130%;
+    background:
+      radial-gradient(42% 48% at 20% 18%, rgba(143, 182, 204, 0.26), transparent 70%),
+      radial-gradient(34% 40% at 84% 10%, rgba(224, 140, 74, 0.14), transparent 70%),
+      radial-gradient(44% 50% at 60% 108%, rgba(143, 201, 194, 0.14), transparent 70%);
+    filter: blur(36px);
+    pointer-events: none;
+    animation: heroDrift 16s ease-in-out infinite alternate;
+  }
+  @keyframes heroDrift {
+    0%   { transform: translate3d(-4%, -2%, 0) scale(1); }
+    100% { transform: translate3d(4%, 3%, 0) scale(1.06); }
+  }
 
-  .eyebrow {
-    font-family: var(--font-mono);
-    letter-spacing: 0.16px;
-    color: var(--grey-600);
-    font-size: 13px;
-    font-weight: 500;
-    line-height: 1.4;
-    text-transform: uppercase;
+  .hero__grid {
+    position: relative; z-index: 1;
+    display: grid; grid-template-columns: 1.06fr 0.94fr; gap: 72px; align-items: center;
+  }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--grey-600);
+    border: 1px solid var(--grey-300); border-radius: var(--radius-full);
+    padding: 8px 16px; background: color-mix(in srgb, var(--bg-card) 70%, transparent);
+    backdrop-filter: blur(6px);
+  }
+  .hero-badge__dot {
+    width: 7px; height: 7px; border-radius: 50%; background: #3f7a52; flex: none;
+    box-shadow: 0 0 0 0 rgba(63, 122, 82, 0.5);
+    animation: pulseDot 2.2s ease-out infinite;
+  }
+  @keyframes pulseDot {
+    0%   { box-shadow: 0 0 0 0 rgba(63, 122, 82, 0.45); }
+    70%  { box-shadow: 0 0 0 8px rgba(63, 122, 82, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(63, 122, 82, 0); }
   }
 
   .hero__title {
-    font-size: clamp(52px, 8.5vw, 128px);
-    line-height: 0.94;
-    letter-spacing: -0.03em;
-    font-weight: 450;
-    margin-top: 24px;
+    font-size: clamp(52px, 7vw, 112px);
+    line-height: 0.98; letter-spacing: -0.035em; font-weight: 470;
+    margin-top: 30px;
   }
+  .hero__title .it { font-size: 1.05em; letter-spacing: -0.01em; }
 
   .hero__subtitle {
-    margin-top: 26px;
-    color: var(--grey-700);
-    font-size: clamp(16px, 1.9vw, 21px);
-    line-height: 1.5;
-    max-width: 560px;
+    margin-top: 28px; color: var(--grey-700);
+    font-size: clamp(16px, 1.7vw, 19px); line-height: 1.6; max-width: 540px;
   }
 
-  .hero__actions { margin-top: 34px; display: flex; gap: 12px; flex-wrap: wrap; }
-  .btn-lg { padding: 14px 26px; font-size: 15px; }
+  .hero__actions { margin-top: 36px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn-lg { padding: 15px 28px; font-size: 15px; }
 
   .hero__mono {
-    margin-top: 26px;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--grey-500);
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
+    margin-top: 30px; font-family: var(--font-mono); font-size: 11.5px;
+    color: var(--grey-500); text-transform: uppercase; letter-spacing: 0.6px;
+  }
+
+  /* hero entrance stagger */
+  .hero__main > * { opacity: 0; animation: heroRise 0.7s var(--ease-out) forwards; }
+  .hero__main > *:nth-child(2) { animation-delay: 80ms; }
+  .hero__main > *:nth-child(3) { animation-delay: 160ms; }
+  .hero__main > *:nth-child(4) { animation-delay: 240ms; }
+  .hero__main > *:nth-child(5) { animation-delay: 320ms; }
+  .hero__visual { opacity: 0; animation: heroRise 0.8s var(--ease-out) 260ms forwards; }
+  @keyframes heroRise {
+    from { opacity: 0; transform: translateY(22px); }
+    to   { opacity: 1; transform: none; }
   }
 
   /* ---- Machine (terminal demo) ---- */
+  .hero__visual { position: relative; }
+  .hero__visual::before {
+    content: ""; position: absolute; inset: 8% -6% -6% -6%;
+    background: radial-gradient(60% 60% at 50% 40%, rgba(143, 182, 204, 0.28), transparent 75%);
+    filter: blur(42px); pointer-events: none;
+  }
   .machine {
-    border: 1px solid var(--grey-300);
-    border-radius: 10px;
-    background: var(--bg-card);
-    overflow: hidden;
-    box-shadow: 0 1px 1px rgba(0,0,0,.03), 0 30px 60px -30px rgba(0,0,0,.35);
+    position: relative;
+    border: 1px solid var(--grey-300); border-radius: var(--radius-lg);
+    background: var(--bg-card); overflow: hidden;
+    box-shadow: 0 1px 1px rgba(0,0,0,.03), 0 40px 80px -36px rgba(0,0,0,.4);
   }
   .machine__bar {
     display: flex; align-items: center; gap: 6px;
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--grey-200);
+    padding: 11px 14px; border-bottom: 1px solid var(--grey-200);
     background: var(--grey-50);
   }
   .machine__dots { display: flex; gap: 6px; }
@@ -450,7 +522,7 @@ const metrics = [
   .machine__dots i:nth-child(2) { background: #e8d49a; }
   .machine__dots i:nth-child(3) { background: #a8ccb0; }
   .machine__url { margin: 0 auto; font-family: var(--font-mono); font-size: 12px; color: var(--grey-600); }
-  .machine__body { padding: 20px; font-family: var(--font-mono); font-size: 13px; }
+  .machine__body { padding: 22px; font-family: var(--font-mono); font-size: 13px; }
 
   .prompt-line { display: flex; gap: 8px; color: var(--grey-800); align-items: baseline; flex-wrap: wrap; }
   .prompt-line .p { color: var(--grey-500); }
@@ -460,7 +532,7 @@ const metrics = [
 
   .ptag {
     font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px;
-    padding: 2px 7px; border-radius: 4px;
+    padding: 3px 8px; border-radius: 5px;
   }
   .ptag--plan { background: rgba(143,182,204,.25); color: #4a7186; }
   .ptag--run { background: rgba(224,140,74,.22); color: #a05a20; }
@@ -474,132 +546,205 @@ const metrics = [
   .cursor { color: var(--grey-900); animation: blink 1.1s step-end infinite; }
   @keyframes blink { 0%,55% { opacity: 1; } 56% { opacity: .06; } }
 
-  /* staggered terminal "typing" */
   .machine__body > * { opacity: 0; animation: lineIn .45s var(--ease-out) forwards; }
-  .machine__body > *:nth-child(1) { animation-delay: .25s; }
-  .machine__body > *:nth-child(2) { animation-delay: .8s; }
-  .machine__body > *:nth-child(3) { animation-delay: 1.3s; }
-  .machine__body > *:nth-child(4) { animation-delay: 1.7s; }
-  .machine__body > *:nth-child(5) { animation-delay: 2.6s; }
-  .machine__body > *:nth-child(6) { animation-delay: 3.1s; }
-  .machine__body > *:nth-child(7) { animation-delay: 3.6s; }
+  .machine__body > *:nth-child(1) { animation-delay: .35s; }
+  .machine__body > *:nth-child(2) { animation-delay: .9s; }
+  .machine__body > *:nth-child(3) { animation-delay: 1.4s; }
+  .machine__body > *:nth-child(4) { animation-delay: 1.8s; }
+  .machine__body > *:nth-child(5) { animation-delay: 2.7s; }
+  .machine__body > *:nth-child(6) { animation-delay: 3.2s; }
+  .machine__body > *:nth-child(7) { animation-delay: 3.7s; }
   @keyframes lineIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* ================= SECTION SCAFFOLD ================= */
+  .section.alt { background: var(--bg-card); border-top: 1px solid var(--grey-200); border-bottom: 1px solid var(--grey-200); }
+  .sec-head { max-width: 760px; margin-bottom: 52px; }
+  .sec-head.center { margin-left: auto; margin-right: auto; text-align: center; }
+  .copy-lg { color: var(--grey-700); font-size: 17px; line-height: 1.6; max-width: 660px; }
+  .mx-auto { margin-left: auto; margin-right: auto; }
+  .h2-sec { font-size: clamp(32px, 4.2vw, 58px); letter-spacing: -0.03em; font-weight: 500; line-height: 1.06; margin: 18px 0 14px; }
+  .h2-sec .it { font-weight: 400; }
+
+  .eyebrow {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--grey-600);
+  }
+  .eyebrow__num { color: var(--grey-400); }
+  .eyebrow__num.on-dark { color: #5a5a63; }
 
   /* dark agents section (both themes) */
   .agents-sec { background: #0a0a0a; }
-  .agents-sec .eyebrow { color: #6f6f78; }
+  .agents-sec .eyebrow { color: #8b8b94; }
   .agents-sec .h2-sec { color: #ececec; }
   .agents-sec .copy-lg { color: #9a9a9f; }
 
-  /* live pipeline demo — dark panel on card background */
+  /* live pipeline */
   .pipeline-sec .pipeline-wrap { margin-top: 8px; }
   .pipeline-sec .sec-head { margin-bottom: 40px; }
 
-  @media (max-width: 960px) {
-    .hero .container { grid-template-columns: 1fr; gap: 40px; }
-  }
-
-  /* ---- Marquee ---- */
-  .marquee-section { overflow: hidden; padding: 20px 0 70px; }
-  .marquee-head { text-align: center; margin-bottom: 30px; }
-  .marquee-track-wrap { overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
-  .marquee-track { display: flex; gap: 64px; width: max-content; animation: marquee 36s linear infinite; }
+  /* ================= MARQUEE ================= */
+  .marquee-section { overflow: hidden; padding: 8px 0 64px; }
+  .marquee-head { text-align: center; margin-bottom: 28px; }
+  .marquee-head .eyebrow { color: var(--grey-500); }
+  .marquee-track-wrap { overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+  .marquee-track { display: flex; gap: 72px; width: max-content; animation: marquee 38s linear infinite; }
   .marquee-track:hover { animation-play-state: paused; }
   .mlogo { color: var(--grey-400); font-weight: 500; font-size: 20px; letter-spacing: -0.01em; white-space: nowrap; display: flex; align-items: center; transition: color .25s; }
   .mlogo:hover { color: var(--grey-900); }
   @keyframes marquee { 0% { transform: translate(0); } to { transform: translate(-50%); } }
 
-  /* ---- Sections ---- */
-  .section.alt { background: var(--bg-card); border-top: 1px solid var(--grey-200); border-bottom: 1px solid var(--grey-200); }
-  .sec-head { max-width: 720px; margin-bottom: 44px; }
-  .sec-head.center { margin-left: auto; margin-right: auto; text-align: center; }
-  .copy-lg { color: var(--grey-700); font-size: 17px; line-height: 1.55; max-width: 640px; }
-  .mx-auto { margin-left: auto; margin-right: auto; }
-  .h2-sec { font-size: clamp(30px, 4.5vw, 64px); letter-spacing: -0.025em; font-weight: 500; line-height: 1.05; margin: 12px 0; }
-
-  /* ---- Capabilities ---- */
-  .cap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-  .cap-card {
-    background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg);
-    padding: 30px 26px; display: flex; flex-direction: column; gap: 12px;
-    transition: box-shadow .25s var(--ease-out), transform .25s var(--ease-out), border-color .25s;
+  /* ================= USE CASES / BENTO ================= */
+  .uc-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+    background: var(--grey-300);
+    border: 1px solid var(--grey-300); border-radius: var(--radius-lg); overflow: hidden;
   }
-  .cap-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); border-color: var(--grey-400); }
-  .cap-card--accent { border-color: var(--grey-300); }
-  .cap-name { font-size: 22px; font-weight: 500; letter-spacing: -0.02em; }
-  .cap-desc { color: var(--grey-600); font-size: 15px; line-height: 1.55; flex: 1; }
-  .cap-go { font-family: var(--font-mono); font-size: 13px; color: var(--grey-900); }
-  @media (max-width: 900px) { .cap-grid { grid-template-columns: 1fr; } }
+  .uc-card {
+    background: var(--bg-primary); padding: 32px 30px;
+    display: flex; flex-direction: column; gap: 14px;
+    position: relative;
+    transition: background .25s var(--ease-out);
+  }
+  .uc-card:hover { background: var(--bg-card-hover); }
+  .uc--wide { grid-column: span 2; }
+  .uc--wide .uc-desc { max-width: 60ch; }
 
-  /* ---- Bench teaser ---- */
-  .feat { display: grid; grid-template-columns: 1.2fr 1fr; gap: 56px; align-items: center; }
-  @media (max-width: 900px) { .feat { grid-template-columns: 1fr; gap: 32px; } }
-  .feat-copy .btn { margin-top: 8px; }
+  .uc-top { display: flex; align-items: center; justify-content: space-between; }
+  .uc-num { font-family: var(--font-mono); font-size: 12px; color: var(--grey-400); letter-spacing: 0.08em; }
+  .uc-go {
+    color: var(--grey-400); font-size: 18px; line-height: 1;
+    transition: transform .25s var(--ease-out), color .25s;
+  }
+  .uc-card:hover .uc-go { transform: translateX(5px); color: var(--grey-900); }
 
-  .bench-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .bench-card { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 24px; }
-  .bench-card .metric { font-size: 40px; font-weight: 500; letter-spacing: -0.02em; line-height: 1; }
-  .bench-card .cap { font-family: var(--font-mono); font-size: 12px; color: var(--grey-600); margin-top: 10px; line-height: 1.5; }
+  .uc-name { font-size: 23px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.2; }
+  .uc-desc { color: var(--grey-600); font-size: 15px; line-height: 1.55; flex: 1; max-width: 52ch; }
+  .uc-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .uc-chip {
+    font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.02em;
+    padding: 5px 11px; border: 1px solid var(--grey-200); border-radius: var(--radius-full);
+    color: var(--grey-600); background: var(--bg-card);
+    transition: border-color .2s, color .2s;
+  }
+  .uc-card:hover .uc-chip { border-color: var(--grey-300); }
 
-  /* ---- API grid (full toolbox) ---- */
-  .api-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; background: var(--grey-300); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--grey-300); }
-  .api-card { background: var(--bg-card); padding: 26px 24px; display: flex; flex-direction: column; gap: 8px; }
-  .api-card .api-name { font-family: var(--font-mono); font-weight: 600; font-size: 15px; }
-  .api-card p { color: var(--grey-600); font-size: 14px; line-height: 1.5; }
-  @media (max-width: 800px) { .api-grid { grid-template-columns: 1fr; } }
+  .uc--strip {
+    grid-column: 1 / -1;
+    flex-direction: row; align-items: center; justify-content: space-between; gap: 32px;
+    padding: 30px;
+  }
+  .uc-strip-copy { display: flex; flex-direction: column; gap: 8px; max-width: 640px; }
+  .uc-strip-copy .uc-desc { flex: 0; }
+  .uc-strip-chips { margin-top: 0; flex-shrink: 0; }
 
-  .more-links { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 40px; }
-
-  /* ---- Safety grid (3 cols) ---- */
-  .safety-grid { grid-template-columns: repeat(3, 1fr); }
-  @media (max-width: 900px) { .safety-grid { grid-template-columns: 1fr 1fr; } }
-  @media (max-width: 560px) { .safety-grid { grid-template-columns: 1fr; } }
-
-  /* ---- Notifications grid ---- */
-  .notify-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  .notify-card { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 24px; transition: box-shadow .25s, transform .25s var(--ease-out), border-color .25s; }
-  .notify-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--grey-400); }
-  .notify-name { font-family: var(--font-mono); font-weight: 600; font-size: 14px; margin-bottom: 10px; }
-  .notify-card p { color: var(--grey-600); font-size: 14px; line-height: 1.55; }
-  @media (max-width: 800px) { .notify-grid { grid-template-columns: 1fr; } }
-
-  /* ---- Steps ---- */
-  .steps-grid { display: flex; align-items: stretch; gap: 16px; }
+  /* ================= STEPS ================= */
+  .steps-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
   .step {
-    flex: 1; background: var(--bg-card); border: 1px solid var(--grey-200);
-    border-radius: var(--radius-lg); padding: 28px;
-    transition: border-color .2s, box-shadow .2s;
+    border-top: 1px solid var(--grey-900);
+    padding-top: 22px;
+    transition: border-color .25s;
   }
-  .step:hover { border-color: var(--grey-400); box-shadow: var(--shadow-md); }
-  .step-number { font-family: var(--font-mono); font-size: 32px; font-weight: 500; color: var(--grey-300); display: block; margin-bottom: 14px; letter-spacing: -0.04em; }
-  .step h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
-  .step p { font-size: 14px; color: var(--grey-600); line-height: 1.55; }
-  .step-connector { color: var(--grey-400); font-size: 1.4rem; align-self: center; flex-shrink: 0; }
-  @media (max-width: 900px) { .steps-grid { flex-direction: column; } .step-connector { transform: rotate(90deg); text-align: center; } }
+  .step:hover .step-number { color: var(--grey-900); }
+  .step-number {
+    font-family: var(--font-mono); font-size: 15px; font-weight: 500;
+    color: var(--grey-400); display: block; margin-bottom: 42px; letter-spacing: 0.08em;
+    transition: color .3s;
+  }
+  .step h3 { font-size: 19px; font-weight: 600; margin-bottom: 10px; letter-spacing: -0.01em; }
+  .step p { font-size: 14px; color: var(--grey-600); line-height: 1.6; }
 
-  /* ---- CTA ---- */
-  .cta { text-align: center; padding: 96px 24px; background: var(--bg-dark); color: #fff; }
-  .cta .h2-sec, .cta .copy-lg { color: #fff; }
+  /* ================= BENCHMARKS ================= */
+  .feat { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 64px; align-items: center; }
+  .feat-copy .btn { margin-top: 14px; }
+  .bench-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .bench-card {
+    background: var(--bg-primary); border: 1px solid var(--grey-200);
+    border-radius: var(--radius-lg); padding: 26px;
+    transition: border-color .25s, transform .25s var(--ease-out), box-shadow .25s;
+  }
+  .bench-card:hover { border-color: var(--grey-400); transform: translateY(-3px); box-shadow: var(--shadow-md); }
+  .bench-card .metric { font-size: 44px; font-weight: 500; letter-spacing: -0.03em; line-height: 1; }
+  .bench-card .cap { font-family: var(--font-mono); font-size: 12px; color: var(--grey-600); margin-top: 12px; line-height: 1.5; }
+
+  /* ================= API GRID (toolbox) ================= */
+  .api-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--grey-300); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--grey-300); }
+  .api-card { background: var(--bg-primary); padding: 28px 26px; display: flex; flex-direction: column; gap: 8px; }
+  .api-card .api-name { font-family: var(--font-mono); font-weight: 600; font-size: 15px; }
+  .api-card p { color: var(--grey-600); font-size: 14px; line-height: 1.55; }
+  .more-links { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 44px; margin-bottom: 0; }
+
+  .safety-grid { grid-template-columns: repeat(3, 1fr); }
+
+  /* ================= OCEAN (deep work) ================= */
+  .ocean-sec {
+    position: relative;
+    background: #0a0a0a;
+    padding: 130px 0 150px;
+    overflow: hidden;
+    border-top: 1px solid var(--grey-200);
+  }
+  .ocean-content {
+    position: relative; z-index: 1;
+    max-width: 760px; margin: 0 auto; text-align: center;
+  }
+  .ocean-sec .eyebrow { color: #8b8b94; }
+  .ocean-sec .eyebrow__num { color: #4d4d56; }
+  .ocean-sec .h2-sec { color: #ececec; font-size: clamp(36px, 5vw, 68px); }
+  .ocean-sec .copy-lg { color: #9a9a9f; margin: 18px auto 0; }
+  .ocean-mono {
+    margin-top: 34px; font-family: var(--font-mono); font-size: 12px;
+    letter-spacing: 0.14em; text-transform: uppercase; color: #5a5a63;
+  }
+
+  /* ================= CTA ================= */
+  .cta { text-align: center; padding: 110px 24px; background: var(--bg-dark); color: #fff; position: relative; overflow: hidden; }
+  .cta::before {
+    content: ""; position: absolute; inset: auto -20% -60% -20%; height: 120%;
+    background: radial-gradient(50% 50% at 50% 100%, rgba(143, 182, 204, 0.22), transparent 70%);
+    filter: blur(40px); pointer-events: none;
+  }
+  .cta .container { position: relative; }
+  .cta .h2-sec { color: #fff; }
+  .cta .h2-sec .it { color: rgba(255,255,255,.92); }
   .cta .copy-lg { color: rgba(255,255,255,.7); margin-top: 18px; }
-  .install-box {
-    display: inline-block; margin: 32px 0 26px;
-    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
-    border-radius: var(--radius-md); padding: 14px 26px;
-    font-family: var(--font-mono); font-size: 14px; color: rgba(255,255,255,.85);
-    user-select: all; max-width: 100%; overflow-x: auto;
+  .cta__actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 34px; }
+  .cta .btn-primary { background: #fff; color: #101010; }
+  .cta .btn-primary:hover { background: var(--grey-200); }
+  .btn-cta-ghost {
+    border: 1px solid rgba(255,255,255,.25); color: rgba(255,255,255,.9);
+    background: transparent;
   }
-  .cta .btn-primary { background: var(--bg-card); color: var(--grey-900); }
-  .cta .btn-primary:hover { background: var(--grey-100); }
-  .cta .sub { font-family: var(--font-mono); color: rgba(255,255,255,.45); font-size: 12px; margin-top: 22px; }
-  .cta .sub { font-family: var(--font-mono); color: rgba(255,255,255,.45); font-size: 12px; margin-top: 22px; }
+  .btn-cta-ghost:hover { border-color: rgba(255,255,255,.6); background: rgba(255,255,255,.06); }
+  .cta .sub { font-family: var(--font-mono); color: rgba(255,255,255,.45); font-size: 12px; margin-top: 26px; }
 
-  /* ---- FAQ ---- */
-  .faq-grid { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
-  .faq-item { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); overflow: hidden; transition: border-color .2s; }
+  /* ================= FAQ ================= */
+  .faq-grid { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+  .faq-item { background: var(--bg-primary); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); overflow: hidden; transition: border-color .2s; }
   .faq-item:hover { border-color: var(--grey-400); }
-  .faq-item summary { padding: 18px 24px; font-weight: 600; font-size: 15px; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 12px; list-style: none; }
+  .faq-item summary { padding: 20px 26px; font-weight: 600; font-size: 15.5px; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 12px; list-style: none; letter-spacing: -0.01em; }
   .faq-item summary::-webkit-details-marker { display: none; }
   .faq-item summary::before { content: '▼'; font-size: 10px; color: var(--grey-400); transition: transform .2s; flex-shrink: 0; }
   .faq-item[open] summary::before { transform: rotate(180deg); }
-  .faq-item p { padding: 0 24px 18px; color: var(--grey-600); font-size: 14px; line-height: 1.6; }
+  .faq-item p { padding: 0 26px 20px; color: var(--grey-600); font-size: 14.5px; line-height: 1.65; }
+
+  /* ================= RESPONSIVE ================= */
+  @media (max-width: 1080px) {
+    .uc-grid { grid-template-columns: repeat(2, 1fr); }
+    .uc--wide { grid-column: span 2; }
+    .uc--strip { grid-column: 1 / -1; flex-direction: column; align-items: flex-start; gap: 16px; }
+    .steps-grid { grid-template-columns: repeat(2, 1fr); }
+    .safety-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 960px) {
+    .hero__grid { grid-template-columns: 1fr; gap: 48px; }
+    .feat { grid-template-columns: 1fr; gap: 36px; }
+  }
+  @media (max-width: 720px) {
+    .uc-grid { grid-template-columns: 1fr; }
+    .uc--wide { grid-column: span 1; }
+    .steps-grid { grid-template-columns: 1fr; gap: 32px; }
+    .step-number { margin-bottom: 16px; }
+    .safety-grid { grid-template-columns: 1fr; }
+  }
 </style>

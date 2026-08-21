@@ -589,7 +589,13 @@ export const translations = {
     "securityOverview": { "en": "Security Overview", "ru": "Обзор безопасности" },
     "integrations": { "en": "Integrations", "ru": "Интеграции" },
     "allIntegrations": { "en": "All Integrations", "ru": "Все интеграции" },
-    "protocolGui": { "en": "RPC, GUI & IDE", "ru": "RPC, GUI и IDE" }
+    "protocolGui": { "en": "RPC, GUI & IDE", "ru": "RPC, GUI и IDE" },
+    "crumbHome": { "en": "Home", "ru": "Главная" },
+    "crumbDocs": { "en": "Documentation", "ru": "Документация" },
+    "prev": { "en": "Previous", "ru": "Назад" },
+    "next": { "en": "Next", "ru": "Далее" },
+    "filterPh": { "en": "Filter pages…", "ru": "Фильтр страниц…" },
+    "noMatches": { "en": "No matches", "ru": "Ничего не найдено" }
   },
   "arch_perf": {
     "l_tools": {
@@ -621,406 +627,600 @@ export const translations = {
       "ru": "Смотреть бенчмарки"
     }
   },
-  "landing": {
-    "badge": {
-      "en": "Universal autonomous AI workers",
-      "ru": "Универсальные автономные ИИ-воркеры"
-    },
-    "title": {
-      "en": "Remote workers<br />that get things done.",
-      "ru": "Удалённые воркеры<br />которые делают работу."
-    },
-    "subtitle": {
-      "en": "Fathom is a universal autonomous worker platform. Deploy persistent agents for research, outreach, code, computer use, and scheduled operations — with memory, governance, notifications, and human review built into one runtime.",
-      "ru": "Fathom — универсальная платформа автономных воркеров. Запускайте постоянных агентов для исследований, аутрича, кода, работы за компьютером и операций по расписанию — с памятью, управлением, уведомлениями и проверкой человеком в одном рантайме."
-    },
-    "cta1": {
-      "en": "Start building",
-      "ru": "Начать"
-    },
-    "cta2": {
-      "en": "Explore features",
-      "ru": "Возможности"
-    },
-    "hero_mono": {
-      "en": "Rust · built-in tools plus optional browser and computer services · one runtime",
-      "ru": "Rust · встроенные инструменты и опциональные браузерные и компьютерные сервисы · один рантайм"
-    },
-    "t1name": { "en": "Sarah Kim", "ru": "Сара Ким" },
-    "t1role": { "en": "VP of Sales, TechFlow", "ru": "Вице-президент по продажам, TechFlow" },
-    "t2name": { "en": "Marco Rossi", "ru": "Марко Росси" },
-    "t2role": { "en": "Head of Growth, DataPrime", "ru": "Руководитель роста, DataPrime" },
-    "term": {
-      "plan": {
-        "en": "Decomposing into 4 sub-tasks…",
-        "ru": "Декомпозиция на 4 подзадачи…"
+"landing": {
+      "badge": {
+        "en": "Universal autonomous AI worker",
+        "ru": "Универсальный автономный ИИ-воркер"
       },
-      "spawn": {
-        "en": "Spawning 4 parallel agents",
-        "ru": "Запуск 4 параллельных агентов"
+      "title": {
+        "en": "One worker.<br /><em class=\"it\">Every</em> job done.",
+        "ru": "Один воркер.<br /><em class=\"it\">Все</em> задачи закрыты."
       },
-      "a1": {
-        "en": "Researching configured sources",
-        "ru": "Исследование настроенных источников"
+      "subtitle": {
+        "en": "Fathom is a universal AI worker you self-host: it runs outreach, does deep research, writes code, operates a computer, and works on a schedule — with durable memory, governance, and human review built into one runtime.",
+        "ru": "Fathom — универсальный ИИ-воркер, который вы разворачиваете у себя: он ведёт аутрич, проводит глубокий ресёрч, пишет код, работает за компьютером и выполняет задачи по расписанию — с постоянной памятью, контролем и проверкой человеком в одном рантайме."
       },
-      "a2": {
-        "en": "Editing code in an isolated workspace",
-        "ru": "Изменение кода в изолированном рабочем пространстве"
+      "cta1": {
+        "en": "Start building",
+        "ru": "Начать"
       },
-      "a3": {
-        "en": "Checking a workflow with an optional computer service",
-        "ru": "Проверка рабочего процесса с опциональным компьютерным сервисом"
+      "cta2": {
+        "en": "See what it can do",
+        "ru": "Смотреть возможности"
       },
-      "a4": {
-        "en": "Saving findings to durable memory",
-        "ru": "Сохранение находок в долговечную память"
+      "hero_mono": {
+        "en": "Rust · one binary · memory · governance · schedules",
+        "ru": "Rust · один бинарник · память · контроль · расписания"
       },
-      "done": {
-        "en": "Result ready for operator review",
-        "ru": "Результат готов к проверке оператором"
-      },
-      "save": {
-        "en": "Updating memory + configured notifications",
-        "ru": "Обновление памяти + настроенные уведомления"
-      }
-    },
-    "marquee_label": {
-      "en": "Workers connect to your stack",
-      "ru": "Воркеры подключаются к вашему стеку"
-    },
-    "value_label": {
-      "en": "What you get",
-      "ru": "Что вы получаете"
-    },
-    "value_title": {
-      "en": "One worker, many missions",
-      "ru": "Один воркер — множество задач"
-    },
-    "value_sub": {
-      "en": "Give Fathom a goal and let autonomous workers research, write code, use a computer, and run repeatable operations with your approval.",
-      "ru": "Поставьте Fathom цель — и автономные воркеры исследуют, пишут код, работают за компьютером и выполняют повторяемые операции с вашим одобрением."
-    },
-    "cap": {
-      "r": {
-        "t": { "en": "Deep Research", "ru": "Глубокое исследование" },
-        "d": {
-          "en": "Search, fetch, parse and synthesize cited findings with hierarchical workers that can fan out and reflect.",
-          "ru": "Поиск, загрузка, разбор и синтез цитируемых находок с иерархическими воркерами, умеющими распределять задачи и анализировать результат."
+      "term": {
+        "tag_plan": {
+          "en": "Planning",
+          "ru": "Планирование"
+        },
+        "tag_run": {
+          "en": "Researching",
+          "ru": "Ресёрч"
+        },
+        "tag_ok": {
+          "en": "Complete",
+          "ru": "Готово"
+        },
+        "tag_save": {
+          "en": "Saving",
+          "ru": "Сохранение"
+        },
+        "plan": {
+          "en": "Decomposing into 4 sub-tasks…",
+          "ru": "Декомпозиция на 4 подзадачи…"
+        },
+        "spawn": {
+          "en": "Spawning 4 parallel agents",
+          "ru": "Запуск 4 параллельных агентов"
+        },
+        "a1": {
+          "en": "Researching the market and sources",
+          "ru": "Изучает рынок и источники"
+        },
+        "a2": {
+          "en": "Verifying emails through 5 gates",
+          "ru": "Проверяет email через 5 шлюзов"
+        },
+        "a3": {
+          "en": "Drafting personalized sequences",
+          "ru": "Готовит персональные письма"
+        },
+        "a4": {
+          "en": "Saving findings to shared memory",
+          "ru": "Сохраняет находки в общую память"
+        },
+        "done": {
+          "en": "50 contacts ready, checks passed",
+          "ru": "50 контактов готовы, проверки пройдены"
+        },
+        "save": {
+          "en": "Updating memory + notifying the team",
+          "ru": "Обновляет память и уведомляет команду"
         }
       },
-      "l": {
-        "t": { "en": "Code & computer use", "ru": "Код и работа за компьютером" },
-        "d": {
-          "en": "Run code, inspect repositories, and use an optional connected computer through explicit tools and approval boundaries.",
-          "ru": "Запускайте код, изучайте репозитории и используйте подключённый компьютер через явные инструменты и границы одобрения."
+      "marquee_label": {
+        "en": "Workers connect to your stack",
+        "ru": "Воркеры подключаются к вашему стеку"
+      },
+      "uc_label": {
+        "en": "What your worker does",
+        "ru": "Что умеет ваш воркер"
+      },
+      "uc_title": {
+        "en": "Delegate the <em class=\"it\">whole pipeline</em>",
+        "ru": "Делегируйте <em class=\"it\">весь пайплайн</em>"
+      },
+      "uc_sub": {
+        "en": "One goal in — finished work out. The same worker runs outreach, research, code and operations, switching roles as the task demands.",
+        "ru": "Одна задача на входе — готовый результат на выходе. Один и тот же воркер ведёт аутрич, ресёрч, код и операции, переключая роли по ходу задачи."
+      },
+      "uc": {
+        "outreach": {
+          "t": {
+            "en": "Outreach & lead generation",
+            "ru": "Аутрич и лидогенерация"
+          },
+          "d": {
+            "en": "Find prospects across the web, verify every email through a five-gate pipeline, draft personalized sequences, and sync approved contacts to your CRM.",
+            "ru": "Находит потенциальных клиентов по всему вебу, проверяет каждый email через пайплайн из пяти шлюзов, готовит персональные письма и синхронизирует подтверждённые контакты с CRM."
+          },
+          "c1": {
+            "en": "find prospects",
+            "ru": "поиск лидов"
+          },
+          "c2": {
+            "en": "verify emails",
+            "ru": "верификация email"
+          },
+          "c3": {
+            "en": "draft sequences",
+            "ru": "персональные письма"
+          },
+          "c4": {
+            "en": "sync CRM",
+            "ru": "синк с CRM"
+          }
+        },
+        "research": {
+          "t": {
+            "en": "Deep research",
+            "ru": "Глубокий ресёрч"
+          },
+          "d": {
+            "en": "Seven search backends fused into one query, then fetch, parse, cross-reference and synthesize findings into a sourced brief.",
+            "ru": "Семь поисковых бэкендов в одном запросе: сбор, парсинг, сверка источников и синтез результатов в отчёт со ссылками."
+          },
+          "c1": {
+            "en": "7 search backends",
+            "ru": "7 поисковых бэкендов"
+          },
+          "c2": {
+            "en": "cross-check sources",
+            "ru": "сверка источников"
+          },
+          "c3": {
+            "en": "synthesized brief",
+            "ru": "готовый бриф"
+          }
+        },
+        "code": {
+          "t": {
+            "en": "Code & computer use",
+            "ru": "Код и работа за компьютером"
+          },
+          "d": {
+            "en": "Write and run code, inspect repositories, drive a browser and operate an optional connected computer — inside explicit tool boundaries.",
+            "ru": "Пишет и запускает код, изучает репозитории, управляет браузером и опциональным подключённым компьютером — в строгих границах инструментов."
+          },
+          "c1": {
+            "en": "write & run code",
+            "ru": "пишет и запускает код"
+          },
+          "c2": {
+            "en": "browser flows",
+            "ru": "сценарии в браузере"
+          },
+          "c3": {
+            "en": "desktop actions",
+            "ru": "действия за компьютером"
+          }
+        },
+        "ops": {
+          "t": {
+            "en": "Scheduled operations",
+            "ru": "Операции по расписанию"
+          },
+          "d": {
+            "en": "Durable background jobs survive restarts, repeat on a schedule, and resume interrupted work exactly where it stopped.",
+            "ru": "Фоновые задачи переживают перезапуски, повторяются по расписанию и возобновляют прерванную работу ровно с того места, где остановились."
+          },
+          "c1": {
+            "en": "durable jobs",
+            "ru": "надёжные джобы"
+          },
+          "c2": {
+            "en": "repeat runs",
+            "ru": "повторные запуски"
+          },
+          "c3": {
+            "en": "auto-resume",
+            "ru": "автовозобновление"
+          }
+        },
+        "memory": {
+          "t": {
+            "en": "Memory that persists",
+            "ru": "Память, которая остаётся"
+          },
+          "d": {
+            "en": "Hybrid vector + BM25 search and an entity graph keep every finding across sessions — scanned for secrets before it lands.",
+            "ru": "Гибридный поиск (векторы + BM25) и граф сущностей сохраняют все находки между сессиями — с проверкой на секреты перед записью."
+          },
+          "c1": {
+            "en": "vector + BM25",
+            "ru": "векторы + BM25"
+          },
+          "c2": {
+            "en": "entity graph",
+            "ru": "граф сущностей"
+          },
+          "c3": {
+            "en": "cross-session",
+            "ru": "между сессиями"
+          }
+        },
+        "report": {
+          "t": {
+            "en": "Reports & notifications",
+            "ru": "Отчёты и уведомления"
+          },
+          "d": {
+            "en": "Every finished run lands where your team already looks — webhook, email or Telegram. One failing channel never blocks the rest.",
+            "ru": "Каждый завершённый запуск приходит туда, где команда уже смотрит, — webhook, email или Telegram. Отказ одного канала не блокирует остальные."
+          },
+          "c1": {
+            "en": "Webhook",
+            "ru": "Webhook"
+          },
+          "c2": {
+            "en": "Email SMTP",
+            "ru": "Email SMTP"
+          },
+          "c3": {
+            "en": "Telegram",
+            "ru": "Telegram"
+          }
         }
       },
-      "o": {
-        "t": { "en": "Operations & outreach", "ru": "Операции и аутрич" },
-        "d": {
-          "en": "Draft actions, sync approved records, schedule repeat runs, and notify operators when configured.",
-          "ru": "Готовьте действия, синхронизируйте одобренные записи, планируйте повторы и уведомляйте операторов при настройке."
-        }
-      }
-    },
-    "learn": {
-      "en": "Explore →",
-      "ru": "Подробнее →"
-    },
-    "agents_label": {
-      "en": "Persistent worker roles",
-      "ru": "Роли постоянных воркеров"
-    },
-    "agents_title": {
-      "en": "Specialists for every mission",
-      "ru": "Специалисты для любой задачи"
-    },
-    "agents_sub": {
-      "en": "Persistent workers compose into a team: coordinators plan, specialists use tools, memory carries context forward, and governance keeps operators in control.",
-      "ru": "Постоянные воркеры объединяются в команду: координаторы планируют, специалисты используют инструменты, память переносит контекст, а управление сохраняет контроль оператора."
-    },
-    "bench_label": {
-      "en": "Performance",
-      "ru": "Производительность"
-    },
-    "bench_title": {
-      "en": "Built for speed.<br />Measured, not claimed.",
-      "ru": "Создан для скорости.<br />Измерено, а не обещано."
-    },
-    "bench_sub": {
-      "en": "Real benchmarks from the release build — parallel tool execution spreads CPU across cores and ships verified results with minimal dispatch overhead.",
-      "ru": "Реальные бенчмарки из release-сборки: параллельное исполнение инструментов распределяет нагрузку по ядрам процессора и даёт проверенные результаты с минимальными накладными расходами диспетчеризации."
-    },
-    "bench_cta": {
-      "en": "See all benchmarks →",
-      "ru": "Все бенчмарки →"
-    },
-    "overview_label": {
-      "en": "The full toolbox",
-      "ru": "Полный набор"
-    },
-    "overview_title": {
-      "en": "One engine, every capability",
-      "ru": "Один движок — все возможности"
-    },
-    "capc": {
-      "1": {
-        "t": { "en": "Code + optional computer tools", "ru": "Код и опциональные компьютерные инструменты" },
-        "d": {
-          "en": "Web, files, exec, browser, vision, git, PDF, OSINT, memory.",
-          "ru": "Веб, файлы, исполнение, браузер, vision, git, PDF, OSINT, память."
-        }
+      "agents_label": {
+        "en": "Agent types",
+        "ru": "Типы агентов"
       },
-      "2": {
-        "t": { "en": "Semantic memory", "ru": "Семантическая память" },
-        "d": {
-          "en": "Vector + BM25 hybrid search, entity graph, auto-absorb of findings.",
-          "ru": "Гибридный поиск (векторы + BM25), граф сущностей, авто-поглощение находок."
-        }
+      "agents_title": {
+        "en": "A crew of <em class=\"it\">specialists</em>",
+        "ru": "Команда <em class=\"it\">специалистов</em>"
       },
-      "3": {
-        "t": { "en": "MCP", "ru": "MCP" },
-        "d": {
-          "en": "Client (stdio/HTTP) + server mcp-serve.",
-          "ru": "Клиент (stdio/HTTP/OAuth) + сервер mcp-serve."
+      "agents_sub": {
+        "en": "Each sub-agent has a focused role and its own behavior. Coordinators decompose, fan out, reflect, and synthesize.",
+        "ru": "У каждого суб-агента своя роль и поведение. Координатор декомпозирует, раздаёт задачи, переосмысливает и синтезирует."
+      },
+      "how_label": {
+        "en": "How it works",
+        "ru": "Как это работает"
+      },
+      "how_title": {
+        "en": "From goal to <em class=\"it\">governed</em> execution",
+        "ru": "От цели до <em class=\"it\">контролируемого</em> результата"
+      },
+      "step": {
+        "1": {
+          "t": {
+            "en": "Goal",
+            "ru": "Цель"
+          },
+          "d": {
+            "en": "Describe an outcome in plain language. The coordinator turns it into durable sub-tasks.",
+            "ru": "Опишите результат обычным языком. Координатор превратит его в подзадачи."
+          }
+        },
+        "2": {
+          "t": {
+            "en": "Plan and act",
+            "ru": "План и действие"
+          },
+          "d": {
+            "en": "Workers delegate, use configured tools, and coordinate research, code, computer, or operations work.",
+            "ru": "Воркеры делегируют, используют настроенные инструменты и координируют ресёрч, код, компьютер или операции."
+          }
+        },
+        "3": {
+          "t": {
+            "en": "Remember and review",
+            "ru": "Память и проверка"
+          },
+          "d": {
+            "en": "Findings persist in memory; policies and approval gates make side effects reviewable.",
+            "ru": "Находки остаются в памяти; политики и шлюзы одобрения делают действия проверяемыми."
+          }
+        },
+        "4": {
+          "t": {
+            "en": "Deliver",
+            "ru": "Результат"
+          },
+          "d": {
+            "en": "Return a report, code change, approved update, or notification through the interface you choose.",
+            "ru": "Отчёт, изменение кода, одобренное обновление или уведомление — через удобный вам интерфейс."
+          }
         }
       },
-      "4": {
-        "t": { "en": "CRM sync", "ru": "Синхронизация CRM" },
-        "d": {
-          "en": "amoCRM, Bitrix24, HubSpot with dedup.",
-          "ru": "amoCRM, Bitrix24, HubSpot с дедупликацией."
+      "bench_label": {
+        "en": "Performance",
+        "ru": "Производительность"
+      },
+      "bench_title": {
+        "en": "Built for speed.<br /><em class=\"it\">Measured</em>, not claimed.",
+        "ru": "Создан быстрым.<br /><em class=\"it\">Измерено</em>, а не обещано."
+      },
+      "bench_sub": {
+        "en": "Real benchmarks from the release build — parallel tool execution spreads CPU across cores and ships verified results with minimal dispatch overhead.",
+        "ru": "Реальные бенчмарки релизной сборки — параллельное выполнение инструментов загружает все ядра и выдаёт проверенные результаты с минимальными накладными расходами."
+      },
+      "bench_cta": {
+        "en": "See all benchmarks →",
+        "ru": "Все бенчмарки →"
+      },
+      "overview_label": {
+        "en": "The full toolbox",
+        "ru": "Полный набор инструментов"
+      },
+      "overview_title": {
+        "en": "One engine, <em class=\"it\">every</em> capability",
+        "ru": "Один движок — <em class=\"it\">все</em> возможности"
+      },
+      "capc": {
+        "1": {
+          "t": {
+            "en": "Code + optional computer tools",
+            "ru": "Код и опциональные компьютерные инструменты"
+          },
+          "d": {
+            "en": "Web, files, shell, code, browser, vision, Git, and verification; computer tools appear when the optional service is configured.",
+            "ru": "Веб, файлы, shell, код, браузер, зрение, Git и верификация; компьютерные инструменты появляются при настроенном сервисе."
+          }
+        },
+        "2": {
+          "t": {
+            "en": "Durable semantic memory",
+            "ru": "Постоянная семантическая память"
+          },
+          "d": {
+            "en": "Vector + BM25 hybrid search, entity graph, and worker findings that persist across sessions.",
+            "ru": "Гибридный поиск (векторы + BM25), граф сущностей и находки воркеров, живущие между сессиями."
+          }
+        },
+        "3": {
+          "t": {
+            "en": "Persistent workers and jobs",
+            "ru": "Постоянные воркеры и задачи"
+          },
+          "d": {
+            "en": "Durable background jobs can continue across restarts and scheduled runs.",
+            "ru": "Фоновые задачи переживают перезапуски и запускаются по расписанию."
+          }
+        },
+        "4": {
+          "t": {
+            "en": "Governance and approvals",
+            "ru": "Управление и одобрения"
+          },
+          "d": {
+            "en": "Approval gates, policy hooks, protected surfaces, and secret scanning keep side effects reviewable.",
+            "ru": "Шлюзы одобрения, политические хуки, защищённые поверхности и сканирование секретов делают действия проверяемыми."
+          }
+        },
+        "5": {
+          "t": {
+            "en": "MCP integrations",
+            "ru": "MCP-интеграции"
+          },
+          "d": {
+            "en": "Connect external tools over stdio or HTTP, and expose Fathom tools through mcp-serve.",
+            "ru": "Подключайте внешние инструменты по stdio или HTTP и открывайте инструменты Fathom через mcp-serve."
+          }
+        },
+        "6": {
+          "t": {
+            "en": "HTTP, SSE, AG-UI, and TUI",
+            "ru": "HTTP, SSE, AG-UI и TUI"
+          },
+          "d": {
+            "en": "Serve workers through HTTP/SSE and AG-UI compatibility, or operate them from the terminal.",
+            "ru": "Воркеры доступны через HTTP/SSE и AG-UI или управляются из терминала."
+          }
+        },
+        "7": {
+          "t": {
+            "en": "Profiles and roles",
+            "ru": "Профили и роли"
+          },
+          "d": {
+            "en": "Use built-in personas or define your own TOML worker profile.",
+            "ru": "Используйте встроенные персоны или опишите собственный TOML-профиль воркера."
+          }
+        },
+        "8": {
+          "t": {
+            "en": "Scheduled operations",
+            "ru": "Операции по расписанию"
+          },
+          "d": {
+            "en": "Run repeatable work on a schedule and notify operators when configured.",
+            "ru": "Повторяемая работа по расписанию с уведомлениями операторов при настройке."
+          }
+        },
+        "9": {
+          "t": {
+            "en": "Replay and observability",
+            "ru": "Replay и наблюдаемость"
+          },
+          "d": {
+            "en": "Inspect sessions, replay events, and export Prometheus-compatible metrics.",
+            "ru": "Инспектируйте сессии, воспроизводите события и выгружайте Prometheus-метрики."
+          }
+        },
+        "10": {
+          "t": {
+            "en": "Operator notifications",
+            "ru": "Уведомления операторов"
+          },
+          "d": {
+            "en": "Webhook, email, and Telegram fan-out alerts when configured and triggered.",
+            "ru": "Webhook, email и Telegram-рассылка алертов при настройке и срабатывании триггеров."
+          }
         }
       },
-      "5": {
-        "t": { "en": "Durable jobs", "ru": "Устойчивые задачи" },
-        "d": {
-          "en": "SQLite-backed background tasks that survive restarts.",
-          "ru": "Фоновые задачи в SQLite, переживающие рестарты."
+      "tools_cta": {
+        "en": "Browse all Rust tools",
+        "ru": "Все инструменты"
+      },
+      "arch_cta": {
+        "en": "Architecture",
+        "ru": "Архитектура"
+      },
+      "mem_cta": {
+        "en": "Memory & Graph",
+        "ru": "Память и граф"
+      },
+      "safety_label": {
+        "en": "Safety & Reliability",
+        "ru": "Безопасность и надёжность"
+      },
+      "safety_title": {
+        "en": "Guardrails that <em class=\"it\">never sleep</em>",
+        "ru": "Ограничители, которые <em class=\"it\">никогда не спят</em>"
+      },
+      "safety_sub": {
+        "en": "Every agent action passes through multiple safety layers — from doom-loop detection to secret scanning to human approval gates.",
+        "ru": "Каждое действие агента проходит несколько уровней защиты — от детектора зацикливаний до сканирования секретов и одобрения человеком."
+      },
+      "safety": {
+        "doom": {
+          "t": {
+            "en": "Doom Loop Detection",
+            "ru": "Детектор зацикливания"
+          },
+          "d": {
+            "en": "Stuck agents repeating the same tool call are detected and stopped automatically — no runaway costs.",
+            "ru": "Застрявшие агенты, повторяющие один и тот же вызов, обнаруживаются и останавливаются автоматически — без runaway-расходов."
+          }
+        },
+        "approval": {
+          "t": {
+            "en": "Approval Gates",
+            "ru": "Шлюзы одобрения"
+          },
+          "d": {
+            "en": "Side-effect tools like save_contacts and git_push wait for explicit human approval before executing.",
+            "ru": "Инструменты с побочными эффектами, такие как save_contacts и git_push, выполняются только после явного одобрения человека."
+          }
+        },
+        "secrets": {
+          "t": {
+            "en": "Secret Scanning",
+            "ru": "Сканирование секретов"
+          },
+          "d": {
+            "en": "API keys, passwords and tokens are blocked before they can enter the long-term memory store.",
+            "ru": "API-ключи, пароли и токены блокируются до попадания в долгосрочную память."
+          }
+        },
+        "injection": {
+          "t": {
+            "en": "Injection Defense",
+            "ru": "Защита от инъекций"
+          },
+          "d": {
+            "en": "Prompt injection attempts in web-fetched content are detected and neutralized before they reach the model.",
+            "ru": "Попытки prompt-инъекций в веб-контенте обнаруживаются и нейтрализуются до передачи модели."
+          }
+        },
+        "resume": {
+          "t": {
+            "en": "Session Resume",
+            "ru": "Возобновление сессий"
+          },
+          "d": {
+            "en": "Crashed or interrupted sessions are detected and reconstructed — unfinished sub-tasks continue from where they stopped.",
+            "ru": "Прерванные сессии обнаруживаются и восстанавливаются — незаконченные подзадачи продолжаются с места остановки."
+          }
+        },
+        "protected": {
+          "t": {
+            "en": "Protected Surfaces",
+            "ru": "Защищённые поверхности"
+          },
+          "d": {
+            "en": "Safety configs, memory databases and own source code are guarded from self-modifying agent actions.",
+            "ru": "Настройки безопасности, базы памяти и собственный исходный код защищены от саморедактирования агента."
+          }
         }
       },
-      "6": {
-        "t": { "en": "HTTP API + dashboard", "ru": "HTTP API + дашборд" },
-        "d": {
-          "en": "SSE streaming, steering, Prometheus metrics.",
-          "ru": "SSE-стриминг, управление в процессе выполнения, метрики Prometheus."
+      "pipe_label": {
+        "en": "One live pipeline",
+        "ru": "Живой пайплайн"
+      },
+      "pipe_title": {
+        "en": "A live run you can <em class=\"it\">inspect</em>",
+        "ru": "Запуск, который можно <em class=\"it\">разглядеть</em>"
+      },
+      "pipe_sub": {
+        "en": "Watch a goal travel through the engine: workers plan, use tools, write findings to memory, pause for approvals, and deliver a report or action with notifications.",
+        "ru": "Смотрите, как цель проходит через движок: воркеры планируют, используют инструменты, пишут находки в память, останавливаются на одобрении и доставляют отчёт или действие с уведомлениями."
+      },
+      "cta_title": {
+        "en": "Put a worker on it <em class=\"it\">today</em>",
+        "ru": "Посадите воркера на задачу <em class=\"it\">уже сегодня</em>"
+      },
+      "cta_sub": {
+        "en": "Self-hosted and reviewable. No vendor lock-in. Give your workers access to the tools, memory, and schedules your team controls.",
+        "ru": "Self-hosted и проверяемо. Без vendor lock-in. Дайте воркерам доступ к инструментам, памяти и расписаниям, которые контролирует ваша команда."
+      },
+      "cta_access": {
+        "en": "Read installation guide →",
+        "ru": "Гайд по установке →"
+      },
+      "cta_play": {
+        "en": "Try the playground",
+        "ru": "Попробовать playground"
+      },
+      "cta_mono": {
+        "en": "fathom run \"your task here\" · docs · request access",
+        "ru": "fathom run \"ваша задача\" · docs · запрос доступа"
+      },
+      "faq_label": {
+        "en": "FAQ",
+        "ru": "FAQ"
+      },
+      "faq_title": {
+        "en": "Frequently asked questions",
+        "ru": "Частые вопросы"
+      },
+      "faq": {
+        "q1": {
+          "en": "How is Fathom different from a ChatGPT plugin?",
+          "ru": "Чем Fathom отличается от плагина ChatGPT?"
+        },
+        "a1": {
+          "en": "Fathom is a universal autonomous worker runtime in Rust: it plans goals, coordinates sub-agents, uses code and computer tools, remembers context, and keeps side effects behind governance gates — not a single-session chat context window.",
+          "ru": "Fathom — универсальный рантайм автономных воркеров на Rust: он планирует цели, координирует суб-агентов, использует инструменты кода и компьютера, помнит контекст и держит побочные эффекты за шлюзами управления — а не просто чат с контекстным окном."
+        },
+        "q2": {
+          "en": "Which search engines are supported?",
+          "ru": "Какие поисковики поддерживаются?"
+        },
+        "a2": {
+          "en": "Seven backends — Linkup, Exa, Tavily, Serper, Brave, Parallel.ai and DuckDuckGo — fused with hybrid and smart modes and RRF ranking, so one query spans the whole web, not just the first page.",
+          "ru": "Семь бэкендов — Linkup, Exa, Tavily, Serper, Brave, Parallel.ai и DuckDuckGo — с гибридным и smart-режимами и RRF-ранжированием: один запрос охватывает весь веб, а не первую страницу."
+        },
+        "q3": {
+          "en": "Is my data stored on your servers?",
+          "ru": "Мои данные хранятся на ваших серверах?"
+        },
+        "a3": {
+          "en": "No. Fathom is distributed as a self-hosted binary — sessions, contacts and memory live in your own SQLite/PostgreSQL databases on your infrastructure. There is no cloud lock-in.",
+          "ru": "Нет. Fathom распространяется как self-hosted бинарник — сессии, контакты и память живут в ваших SQLite/PostgreSQL на вашей инфраструктуре. Никакого облачного lock-in."
+        },
+        "q4": {
+          "en": "Which interfaces can operators use?",
+          "ru": "Какие интерфейсы доступны операторам?"
+        },
+        "a4": {
+          "en": "Use the CLI and TUI, or expose a configured runtime through HTTP/SSE, AG-UI compatibility, and MCP. The available surface depends on how you deploy and configure Fathom.",
+          "ru": "CLI и TUI, либо настроенный рантайм через HTTP/SSE, AG-UI-совместимость и MCP. Доступные поверхности зависят от деплоя и конфигурации."
         }
       },
-      "7": {
-        "t": { "en": "Personas", "ru": "Персоны" },
-        "d": {
-          "en": "hunter · analyst · validator — or your own TOML profile.",
-          "ru": "hunter · analyst · validator — или собственный TOML-профиль."
-        }
-      },
-      "8": {
-        "t": { "en": "Hooks", "ru": "Хуки" },
-        "d": {
-          "en": "PreToolUse, PostToolUse, Stop — intercept and shape agent behavior.",
-          "ru": "PreToolUse, PostToolUse, Stop — перехват и управление поведением агента."
-        }
-      },
-      "9": {
-        "t": { "en": "TUI", "ru": "TUI" },
-        "d": {
-          "en": "Interactive terminal: live streaming, replay, steering, memory panel.",
-          "ru": "Интерактивный терминал: стриминг, реплей, управление, панель памяти."
-        }
-      },
-      "10": {
-        "t": { "en": "Notifications", "ru": "Уведомления" },
-        "d": {
-          "en": "Webhook, email, Telegram — fan-out alerts on completion.",
-          "ru": "Webhook, email, Telegram — fan-out оповещения по завершении."
-        }
-      }
+    "ocean_label": {
+      "en": "Deep work",
+      "ru": "Глубокая работа"
     },
-    "safety_label": {
-      "en": "Safety & Reliability",
-      "ru": "Безопасность и надёжность"
+    "ocean_title": {
+      "en": "Built to go <em class=\"it\">deep</em>",
+      "ru": "Создан работать <em class=\"it\">глубоко</em>"
     },
-    "safety_title": {
-      "en": "Guardrails that never sleep",
-      "ru": "Защитные механизмы, которые не спят"
+    "ocean_sub": {
+      "en": "A fathom is a nautical measure of depth. Ours is measured in gates and backends: seven search engines deep, five verification gates deep, every session replayable to the bottom.",
+      "ru": "Fathom — морская мера глубины. Наша измеряется в шлюзах и бэкендах: семь поисковиков вглубь, пять шлюзов верификации вглубь, каждая сессия воспроизводима до самого дна."
     },
-    "safety_sub": {
-      "en": "Every agent action passes through multiple safety layers — from doom-loop detection to secret scanning to human approval gates.",
-      "ru": "Каждое действие агента проходит через множество уровней безопасности — от обнаружения зацикливания и сканирования секретов до одобрения человеком."
-    },
-    "safety": {
-      "doom": {
-        "t": { "en": "Doom Loop Detection", "ru": "Обнаружение зацикливания" },
-        "d": { "en": "Stuck agents repeating the same tool call are detected and stopped automatically — no runaway costs.", "ru": "Агенты, зацикленные на одном вызове, обнаруживаются и останавливаются автоматически — без неконтролируемых затрат." }
-      },
-      "approval": {
-        "t": { "en": "Approval Gates", "ru": "Шлюзы одобрения" },
-        "d": { "en": "Side-effect tools like save_contacts and git_push wait for explicit human approval before executing.", "ru": "Инструменты с побочными эффектами (save_contacts, git_push) ждут явного одобрения человека перед выполнением." }
-      },
-      "secrets": {
-        "t": { "en": "Secret Scanning", "ru": "Сканирование секретов" },
-        "d": { "en": "API keys, passwords and tokens are blocked before they can enter the long-term memory store.", "ru": "API-ключи, пароли и токены блокируются до попадания в долгосрочное хранилище памяти." }
-      },
-      "injection": {
-        "t": { "en": "Injection Defense", "ru": "Защита от инъекций" },
-        "d": { "en": "Prompt injection attempts in web-fetched content are detected and neutralized before they reach the model.", "ru": "Попытки промпт-инъекций в веб-контенте обнаруживаются и нейтрализуются до попадания в модель." }
-      },
-      "resume": {
-        "t": { "en": "Session Resume", "ru": "Возобновление сессий" },
-        "d": { "en": "Crashed or interrupted sessions are detected and reconstructed — unfinished sub-tasks continue from where they stopped.", "ru": "Упавшие или прерванные сессии обнаруживаются и восстанавливаются — незавершённые подзадачи продолжаются с места остановки." }
-      },
-      "protected": {
-        "t": { "en": "Protected Surfaces", "ru": "Защищённые поверхности" },
-        "d": { "en": "Safety configs, memory databases and own source code are guarded from self-modifying agent actions.", "ru": "Конфигурации безопасности, базы данных памяти и собственный исходный код защищены от действий самомодифицирующихся агентов." }
-      }
-    },
-    "notify_label": {
-      "en": "Notifications",
-      "ru": "Уведомления"
-    },
-    "notify_title": {
-      "en": "Never miss a completed run",
-      "ru": "Ни один завершённый прогон не пропущен"
-    },
-    "notify_sub": {
-      "en": "Fan-out delivery to every configured channel. One failing channel does not block the rest.",
-      "ru": "Fan-out доставка во все настроенные каналы. Сбой одного канала не блокирует остальные."
-    },
-    "notify": {
-      "webhook": {
-        "t": { "en": "Webhook", "ru": "Webhook" },
-        "d": { "en": "Generic JSON POST to any URL — session_id, summary, synthesis preview, token counts and output path.", "ru": "JSON POST на любой URL — session_id, сводка, превью синтеза, счётчик токенов и путь к результату." }
-      },
-      "email": {
-        "t": { "en": "Email (SMTP)", "ru": "Email (SMTP)" },
-        "d": { "en": "Plain or STARTTLS SMTP delivery. Subject includes session ID, body includes summary and synthesis preview.", "ru": "SMTP-доставка (plain или STARTTLS). Тема содержит ID сессии, тело — сводка и превью синтеза." }
-      },
-      "telegram": {
-        "t": { "en": "Telegram", "ru": "Telegram" },
-        "d": { "en": "Bot message with checkmark, summary, synthesis preview and full report path.", "ru": "Сообщение бота с галочкой, сводка, превью синтеза и полным путём к отчёту." }
-      }
-    },
-    "tools_cta": {
-      "en": "Browse all Rust tools",
-      "ru": "Все инструменты Rust"
-    },
-    "arch_cta": {
-      "en": "Architecture",
-      "ru": "Архитектура"
-    },
-    "mem_cta": {
-      "en": "Memory & Graph",
-      "ru": "Память и граф"
-    },
-    "how_label": {
-      "en": "How workers operate",
-      "ru": "Как работают воркеры"
-    },
-    "how_title": {
-      "en": "From goal to governed execution",
-      "ru": "От цели к управляемому исполнению"
-    },
-    "pipe_label": {
-      "en": "A live worker run",
-      "ru": "Живой запуск воркера"
-    },
-    "pipe_title": {
-      "en": "A live run you can inspect",
-      "ru": "Живой запуск, который можно проверить"
-    },
-    "pipe_sub": {
-      "en": "Watch a goal travel through the engine: workers plan, use tools, write findings to memory, pause for approvals, and deliver a report or action with notifications.",
-      "ru": "Смотрите, как цель проходит через движок: воркеры планируют, используют инструменты, записывают находки в память, ждут одобрения и выдают отчёт или действие с уведомлениями."
-    },
-    "step": {
-      "1": {
-        "t": { "en": "Ask", "ru": "Запрос" },
-        "d": {
-          "en": "Describe a goal in plain language. The coordinator decomposes it into durable sub-tasks.",
-          "ru": "Опишите цель обычным языком — координатор разложит её на устойчивые подзадачи."
-        }
-      },
-      "2": {
-        "t": { "en": "Research", "ru": "Исследование" },
-        "d": {
-          "en": "Workers search, write code, use a browser, call integrations, and spawn specialists when the goal needs them.",
-          "ru": "Воркеры ищут, пишут код, работают в браузере, вызывают интеграции и порождают специалистов, когда это нужно цели."
-        }
-      },
-      "3": {
-        "t": { "en": "Verify", "ru": "Проверка" },
-        "d": {
-          "en": "Policy hooks and approval gates check side effects before they run; protected surfaces and secret scanning add another layer.",
-          "ru": "Хуки политик и шлюзы одобрения проверяют побочные эффекты до запуска; защищённые поверхности и поиск секретов добавляют ещё один уровень."
-        }
-      },
-      "4": {
-        "t": { "en": "Export", "ru": "Экспорт" },
-        "d": {
-          "en": "Deliver a report, code change, approved update, or notification — with durable state for the next run.",
-          "ru": "Выдайте отчёт, изменение кода, одобренное обновление или уведомление — с устойчивым состоянием для следующего запуска."
-        }
-      }
-    },
-
-    "cta_title": {
-      "en": "Start building with Fathom",
-      "ru": "Начните работать с Fathom"
-    },
-    "cta_sub": {
-      "en": "Self-hosted and reviewable. Give workers access to the tools, memory, and schedules your team controls, then inspect the result through the interface you choose.",
-      "ru": "В вашем контуре и с возможностью проверки. Дайте воркерам доступ к инструментам, памяти и расписаниям под контролем команды, а затем изучите результат через выбранный интерфейс."
-    },
-    "cta_mono": {
-      "en": "fathom run · docs · installation",
-      "ru": "fathom run · docs · установка"
-    },
-    "cta_access": {
-      "en": "Read installation guide →",
-      "ru": "Руководство по установке →"
-    },
-    "faq_label": {
-      "en": "FAQ",
-      "ru": "FAQ"
-    },
-    "faq_title": {
-      "en": "Frequently asked questions",
-      "ru": "Часто задаваемые вопросы"
-    },
-    "faq": {
-      "q1": {
-        "en": "How is Fathom different from a ChatGPT plugin?",
-        "ru": "Чем Fathom отличается от плагина ChatGPT?"
-      },
-      "a1": {
-        "en": "Fathom is a universal autonomous worker runtime in Rust: it plans goals, coordinates sub-agents, uses code and computer tools, remembers context, and keeps side effects behind governance gates — not a single-session chat context window.",
-        "ru": "Fathom — универсальный рантайм автономных воркеров на Rust: он планирует цели, координирует саб-агентов, использует инструменты кода и компьютера, сохраняет контекст и держит побочные эффекты за шлюзами управления — а не в окне одного чата."
-      },
-      "q2": {
-        "en": "Which search engines are supported?",
-        "ru": "Какие поисковые системы поддерживаются?"
-      },
-      "a2": {
-        "en": "Configured search backends — including Linkup, Exa, Tavily, Serper, Brave, Parallel.ai and DuckDuckGo — can be combined with hybrid and smart modes and RRF ranking.",
-        "ru": "Настроенные поисковые бэкенды, включая Linkup, Exa, Tavily, Serper, Brave, Parallel.ai и DuckDuckGo, можно объединять в гибридном и smart-режимах с RRF-ранжированием."
-      },
-      "q3": {
-        "en": "Is my data stored on your servers?",
-        "ru": "Хранятся ли мои данные на ваших серверах?"
-      },
-      "a3": {
-        "en": "No. Fathom is distributed as a self-hosted binary — sessions, contacts and memory live in your own SQLite/PostgreSQL databases on your infrastructure. There is no cloud lock-in.",
-        "ru": "Нет. Fathom распространяется как самодостаточный бинарник — сессии, контакты и память хранятся в ваших собственных базах SQLite/PostgreSQL на вашей инфраструктуре. Никакой привязки к облаку."
-      },
-      "q4": {
-        "en": "Which interfaces can operators use?",
-        "ru": "Какие интерфейсы доступны операторам?"
-      },
-      "a4": {
-        "en": "Use the CLI and TUI, or expose a configured runtime through HTTP/SSE, AG-UI compatibility, and MCP. The available surface depends on deployment and configuration.",
-        "ru": "Используйте CLI и TUI либо откройте настроенный рантайм через HTTP/SSE, совместимость с AG-UI и MCP. Доступная поверхность зависит от развёртывания и конфигурации."
-      }
+    "ocean_mono": {
+      "en": "1 fathom = 1.829 m · depth of work",
+      "ru": "1 fathom = 1,829 м · глубина работы"
     }
-  },
+    },
   "lang_aria": {
     "en": "Change language",
     "ru": "Сменить язык"

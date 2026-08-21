@@ -10,6 +10,8 @@ interface Props {
 const { title, description = 'Fathom is a self-hosted Rust runtime for autonomous remote AI workers with planning, tools, durable memory, governance, scheduling, and operator interfaces.' } = Astro.props;
 const SITE = 'https://fathom.uz';
 const canonical = SITE + Astro.url.pathname;
+const isHome = Astro.url.pathname === '/' || Astro.url.pathname === '/ru/' || Astro.url.pathname === '/ru';
+const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
 ---
 
 <!doctype html>
@@ -28,13 +30,17 @@ const canonical = SITE + Astro.url.pathname;
     <meta property="og:url" content={canonical} />
     <meta property="og:locale" content={Astro.currentLocale === 'ru' ? 'ru_RU' : 'en_US'} />
     <meta property="og:site_name" content="Fathom — Autonomous AI Workers" />
-    <meta property="og:image" content={`${SITE}/og-image.svg`} />
+    <meta property="og:image" content={`${SITE}/og-image.png`} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Fathom — One worker. Every job done." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={`${SITE}/og-image.svg`} />
+    <meta name="twitter:image" content={`${SITE}/og-image.png`} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
     <title>{title}</title>
     <JsonLd data={{
       '@context': 'https://schema.org',
@@ -55,6 +61,20 @@ const canonical = SITE + Astro.url.pathname;
       inLanguage: ['en', 'ru'],
       description,
     }} />
+    {
+      !isHome && (
+        <JsonLd
+          data={{
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: SITE + '/' },
+              { '@type': 'ListItem', position: 2, name: crumbName, item: canonical },
+            ],
+          }}
+        />
+      )
+    }
     <script is:inline>(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window, document, "clarity", "script", "y3qoy4b9ng");</script>
     <script is:inline>
       (function () {

@@ -101,6 +101,11 @@ const navSections: NavSection[] = [
     ],
   },
 ];
+
+const flatNav = navSections.flatMap((s) => s.items);
+const curIdx = flatNav.findIndex((i) => i.id === activePage);
+const prevItem = curIdx > 0 ? flatNav[curIdx - 1] : null;
+const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1] : null;
 ---
 
 <!doctype html>
@@ -119,11 +124,14 @@ const navSections: NavSection[] = [
     <meta property="og:url" content={canonical} />
     <meta property="og:locale" content={Astro.currentLocale === 'ru' ? 'ru_RU' : 'en_US'} />
     <meta property="og:site_name" content="Fathom — Autonomous AI Workers" />
-    <meta property="og:image" content={`${SITE}/og-image.svg`} />
+    <meta property="og:image" content={`${SITE}/og-image.png`} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Fathom — One worker. Every job done." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={`${SITE}/og-image.svg`} />
+    <meta name="twitter:image" content={`${SITE}/og-image.png`} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <title>{title}</title>
@@ -178,6 +186,11 @@ const navSections: NavSection[] = [
 
     <div class="docs-layout">
       <aside class="docs-sidebar" id="docs-sidebar">
+        <div class="sidebar-filter">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line></svg>
+          <input type="text" id="sidebar-filter-input" data-i18n-placeholder="docsNav.filterPh" placeholder="Filter pages…" autocomplete="off" spellcheck="false" />
+          <kbd>/</kbd>
+        </div>
         <nav class="sidebar-nav">
           {navSections.map((section) => (
             <div class="sidebar-section">
@@ -198,11 +211,45 @@ const navSections: NavSection[] = [
             </div>
           ))}
         </nav>
+        <p class="sidebar-empty" id="sidebar-empty" hidden data-i18n="docsNav.noMatches">No matches</p>
       </aside>
 
       <main class="docs-main">
         <div class="docs-content">
+          <nav class="docs-crumbs" aria-label="Breadcrumb">
+            <a href="/" data-i18n="docsNav.crumbHome">Home</a>
+            <span class="crumb-sep">/</span>
+            <a href="/docs" data-i18n="docsNav.crumbDocs">Documentation</a>
+            {Astro.url.pathname !== '/docs/' && (
+              <>
+                <span class="crumb-sep">/</span>
+                <span class="crumb-current">{crumbLabel}</span>
+              </>
+            )}
+          </nav>
           <slot />
+          {
+            (prevItem || nextItem) && (
+              <nav class="docs-pager" aria-label="Documentation navigation">
+                {prevItem ? (
+                  <a href={prevItem.href} class="pager-link pager-prev">
+                    <span class="pager-dir" data-i18n="docsNav.prev">Previous</span>
+                    <span class="pager-label" {...(prevItem.i18nKey ? { 'data-i18n': prevItem.i18nKey } : {})}>{prevItem.label}</span>
+                  </a>
+                ) : (
+                  <span />
+                )}
+                {nextItem ? (
+                  <a href={nextItem.href} class="pager-link pager-next">
+                    <span class="pager-dir" data-i18n="docsNav.next">Next</span>
+                    <span class="pager-label" {...(nextItem.i18nKey ? { 'data-i18n': nextItem.i18nKey } : {})}>{nextItem.label}</span>
+                  </a>
+                ) : (
+                  <span />
+                )}
+              </nav>
+            )
+          }
         </div>
       </main>
 
@@ -368,6 +415,55 @@ const navSections: NavSection[] = [
         gap: 28px;
       }
 
+      .sidebar-filter {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        margin-bottom: 24px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        background: var(--bg-card);
+        color: var(--text-tertiary);
+        transition: border-color var(--duration) var(--ease-out);
+      }
+
+      .sidebar-filter:focus-within {
+        border-color: var(--grey-500);
+        color: var(--text-secondary);
+      }
+
+      .sidebar-filter input {
+        flex: 1;
+        min-width: 0;
+        border: none;
+        outline: none;
+        background: transparent;
+        font: inherit;
+        font-size: 0.8125rem;
+        color: var(--text-primary);
+      }
+
+      .sidebar-filter input::placeholder {
+        color: var(--text-tertiary);
+      }
+
+      .sidebar-filter kbd {
+        font-family: var(--font-mono);
+        font-size: 0.625rem;
+        color: var(--text-tertiary);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 1px 5px;
+        line-height: 1.4;
+      }
+
+      .sidebar-empty {
+        font-size: 0.8125rem;
+        color: var(--text-tertiary);
+        padding: 0 12px;
+      }
+
       .sidebar-section-title {
         font-family: var(--font-mono);
         font-size: 0.6875rem;
@@ -406,6 +502,83 @@ const navSections: NavSection[] = [
         color: var(--accent);
         background: var(--accent-light);
         font-weight: 550;
+        box-shadow: inset 2px 0 0 var(--accent);
+      }
+
+      .docs-crumbs {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--font-mono);
+        font-size: 0.6875rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+        margin-bottom: 28px;
+      }
+
+      .docs-crumbs a {
+        color: var(--text-tertiary);
+        transition: color var(--duration) var(--ease-out);
+      }
+
+      .docs-crumbs a:hover {
+        color: var(--text-primary);
+      }
+
+      .crumb-sep {
+        opacity: 0.5;
+      }
+
+      .crumb-current {
+        color: var(--text-secondary);
+      }
+
+      .docs-pager {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 64px;
+        padding-top: 32px;
+        border-top: 1px solid var(--border);
+      }
+
+      .pager-link {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 16px 20px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        background: var(--bg-card);
+        transition: border-color var(--duration) var(--ease-out), box-shadow var(--duration) var(--ease-out), transform var(--duration) var(--ease-out);
+      }
+
+      .pager-link:hover {
+        border-color: var(--grey-400);
+        box-shadow: var(--shadow-sm);
+        transform: translateY(-1px);
+      }
+
+      .pager-next {
+        text-align: right;
+        align-items: flex-end;
+      }
+
+      .pager-dir {
+        font-family: var(--font-mono);
+        font-size: 0.625rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+      }
+
+      .pager-label {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        line-height: 1.35;
       }
 
       .docs-main {
@@ -416,6 +589,7 @@ const navSections: NavSection[] = [
       .docs-content {
         max-width: 800px;
         margin: 0 auto;
+        overflow-wrap: break-word;
       }
 
       .docs-toc {
@@ -522,6 +696,10 @@ const navSections: NavSection[] = [
         .docs-main {
           padding: 32px 20px 60px;
         }
+
+        .docs-pager {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
 
@@ -548,6 +726,39 @@ const navSections: NavSection[] = [
       const sidebar = document.getElementById('docs-sidebar');
       toggle?.addEventListener('click', () => {
         sidebar?.classList.toggle('open');
+      });
+
+      const filterInput = document.getElementById('sidebar-filter-input');
+      const sidebarEmpty = document.getElementById('sidebar-empty');
+      function applyFilter() {
+        const q = (filterInput?.value || '').trim().toLowerCase();
+        let any = false;
+        document.querySelectorAll('.sidebar-section').forEach((sec) => {
+          let visible = 0;
+          sec.querySelectorAll('.sidebar-link').forEach((a) => {
+            const hit = !q || a.textContent.toLowerCase().includes(q);
+            a.parentElement.style.display = hit ? '' : 'none';
+            if (hit) visible++;
+          });
+          sec.style.display = visible ? '' : 'none';
+          if (visible) any = true;
+        });
+        if (sidebarEmpty) sidebarEmpty.hidden = any;
+      }
+      filterInput?.addEventListener('input', applyFilter);
+      document.addEventListener('keydown', (e) => {
+        if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
+          const inViewport = sidebar && sidebar.getBoundingClientRect().top < window.innerHeight;
+          if (inViewport) {
+            e.preventDefault();
+            filterInput?.focus();
+          }
+        }
+        if (e.key === 'Escape' && document.activeElement === filterInput) {
+          filterInput.value = '';
+          applyFilter();
+          filterInput.blur();
+        }
       });
 
       const headings = document.querySelectorAll('.docs-content h2, .docs-content h3');
