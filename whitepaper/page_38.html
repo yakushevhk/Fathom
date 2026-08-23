@@ -22,125 +22,57 @@
     </div>
 
     <div class="content-body">
-<div class="card-accent">
-  <div class="card-title">Empirical Benchmark Results: The Systems Difference</div>
-  <p>
+<div class="card-accent" style="padding: 7px 10px;">
+  <div class="card-title" style="font-size: 8.8pt;">Empirical Benchmark Results: The Systems Difference</div>
+  <p style="font-size: 7.4pt;">
     Benchmarks were executed offline using deterministic synthetic fixtures via <code>fathom bench</code> on macOS ARM64 (Apple M4, 10 cores, release build with LTO and stripped symbols).
   </p>
 </div>
 
 <div class="grid-2">
-  <div class="card">
+  <div class="card" style="padding: 5px 8px;">
     <div class="card-title-sm">Tool Layer Overhead (4 Layers)</div>
     <table>
       <thead>
-        <tr>
-          <th>Layer</th>
-          <th>Iterations</th>
-          <th>Time / Call</th>
-        </tr>
+        <tr><th>Layer</th><th>Iterations</th><th>Time / Call</th></tr>
       </thead>
       <tbody>
-        <tr>
-          <td><code>registry.execute</code> (Raw dispatch)</td>
-          <td>300</td>
-          <td>5,140 µs</td>
-        </tr>
-        <tr>
-          <td><code>execute_batch</code> (1 call)</td>
-          <td>300</td>
-          <td>7,614 µs</td>
-        </tr>
-        <tr>
-          <td><code>execute_batch</code> (8 calls amortized)</td>
-          <td>320</td>
-          <td><strong>5,893 µs (~0.75ms overhead)</strong></td>
-        </tr>
-        <tr>
-          <td><code>ToolCall</code> JSON Serde</td>
-          <td>100,000</td>
-          <td><strong>752 ns</strong></td>
-        </tr>
+        <tr><td><code>registry.execute</code> (Raw dispatch)</td><td>300</td><td>5,140 µs</td></tr>
+        <tr><td><code>execute_batch</code> (1 call)</td><td>300</td><td>7,614 µs</td></tr>
+        <tr><td><code>execute_batch</code> (8 calls amortized)</td><td>320</td><td><strong>5,893 µs (~0.75ms overhead)</strong></td></tr>
+        <tr><td><code>ToolCall</code> JSON Serde</td><td>100,000</td><td><strong>752 ns</strong></td></tr>
       </tbody>
     </table>
   </div>
 
-  <div class="card">
+  <div class="card" style="padding: 5px 8px;">
     <div class="card-title-sm">Multi-Threaded Parallel Speedups</div>
     <table>
       <thead>
-        <tr>
-          <th>Task</th>
-          <th>Sequential</th>
-          <th>Tokio Spawn</th>
-          <th>Speedup</th>
-        </tr>
+        <tr><th>Task</th><th>Sequential</th><th>Tokio Spawn</th><th>Speedup</th></tr>
       </thead>
       <tbody>
-        <tr>
-          <td>16 × <code>file_read</code> (2MB each)</td>
-          <td>79.0 ms</td>
-          <td>25.8 ms</td>
-          <td><strong>3.06×</strong></td>
-        </tr>
-        <tr>
-          <td>8 × <code>parse_html</code> (1MB table)</td>
-          <td>130.3 ms</td>
-          <td>34.5 ms</td>
-          <td><strong>3.78×</strong></td>
-        </tr>
-        <tr>
-          <td>8 × <code>code_symbols</code> (240 files)</td>
-          <td>61.9 ms</td>
-          <td>20.4 ms</td>
-          <td><strong>3.04×</strong></td>
-        </tr>
-        <tr>
-          <td><code>web_feed</code> (XML streaming)</td>
-          <td>—</td>
-          <td>—</td>
-          <td><strong>1.11M items/s</strong></td>
-        </tr>
+        <tr><td>16 × <code>file_read</code> (2MB each)</td><td>79.0 ms</td><td>25.8 ms</td><td><strong>3.06×</strong></td></tr>
+        <tr><td>8 × <code>parse_html</code> (1MB table)</td><td>130.3 ms</td><td>34.5 ms</td><td><strong>3.78×</strong></td></tr>
+        <tr><td>8 × <code>code_symbols</code> (240 files)</td><td>61.9 ms</td><td>20.4 ms</td><td><strong>3.04×</strong></td></tr>
+        <tr><td><code>web_feed</code> (XML streaming)</td><td>—</td><td>—</td><td><strong>1.11M items/s</strong></td></tr>
       </tbody>
     </table>
   </div>
 </div>
 
-<div class="card">
+<div class="card" style="padding: 5px 8px;">
   <div class="card-title">Comparative Architecture Matrix</div>
   <table>
     <thead>
-      <tr>
-        <th>Metric</th>
-        <th>Python Frameworks (LangChain/AutoGPT)</th>
-        <th>Fathom (Rust Compiled)</th>
-      </tr>
+      <tr><th>Metric</th><th>Python Frameworks (LangChain/AutoGPT)</th><th>Fathom (Rust Compiled)</th></tr>
     </thead>
     <tbody>
-      <tr>
-        <td><strong>Cold Start Latency</strong></td>
-        <td>2,500 – 8,000 ms</td>
-        <td><strong>&lt; 5 ms (500x Faster)</strong></td>
-      </tr>
-      <tr>
-        <td><strong>Tool Dispatch Overhead</strong></td>
-        <td>25 – 150 ms</td>
-        <td><strong>~0.75 ms (100x Faster)</strong></td>
-      </tr>
-      <tr>
-        <td><strong>Concurrency Model</strong></td>
-        <td>Blocked by Python GIL</td>
-        <td><strong>True Multi-Threaded Tokio Spawn</strong></td>
-      </tr>
+      <tr><td><strong>Cold Start Latency</strong></td><td>2,500 – 8,000 ms</td><td><strong>&lt; 5 ms (500x Faster)</strong></td></tr>
+      <tr><td><strong>Tool Dispatch Overhead</strong></td><td>25 – 150 ms</td><td><strong>~0.75 ms (100x Faster)</strong></td></tr>
+      <tr><td><strong>Concurrency Model</strong></td><td>Blocked by Python GIL</td><td><strong>True Multi-Threaded Tokio Spawn</strong></td></tr>
     </tbody>
   </table>
-</div>
-
-<div class="card-slate">
-  <div class="card-title-sm">Zero Latency Waste</div>
-  <p style="font-size: 7.4pt;">
-    Because Fathom dispatches tools and serializes payloads in microseconds, users experience zero perceptible latency lag between agent reasoning turns.
-  </p>
 </div>
     </div>
 

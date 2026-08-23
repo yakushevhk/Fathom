@@ -22,63 +22,45 @@
     </div>
 
     <div class="content-body">
-<div class="card-dark">
-  <div class="card-title">Ironclad Isolation: One Container Per Active Worker</div>
-  <p>
+<div class="card-dark" style="padding: 7px 10px;">
+  <div class="card-title" style="font-size: 8.8pt;">Ironclad Isolation: One Container Per Active Worker</div>
+  <p style="font-size: 7.4pt;">
     To ensure complete enterprise security and prevent cross-tenant data contamination, Fathom provisions an isolated Docker container for every active digital coworker via <code>crates/supervisor</code>.
   </p>
 </div>
 
 <div class="grid-2">
-  <div class="card">
+  <div class="card" style="padding: 5px 8px;">
     <div class="card-title-sm">Container Sandbox Specifications</div>
-    <ul style="font-size: 7.2pt; margin-bottom: 0;">
+    <ul style="font-size: 6.8pt; margin-bottom: 0;">
       <li><strong>Capability Stripping:</strong> All Linux capabilities dropped (<code>cap_drop: ["ALL"]</code>).</li>
-      <li><strong>Privilege Escalation Blocked:</strong> <code>no-new-privileges: true</code> enforced at Docker runtime.</li>
-      <li><strong>Ephemeral & Persistent Volumes:</strong> Dedicated volume mounts for browser cookies and workspace files.</li>
-      <li><strong>Deterministic Port Mapping:</strong> Dedicated loopback ports per agent (19000–19999 range).</li>
+      <li><strong>Privilege Escalation Blocked:</strong> <code>no-new-privileges: true</code> enforced at runtime.</li>
+      <li><strong>Ephemeral Volumes:</strong> Dedicated volume mounts for browser cookies and workspace files.</li>
     </ul>
   </div>
 
-  <div class="card card-emerald">
+  <div class="card card-emerald" style="padding: 5px 8px;">
     <div class="card-title-sm">Strict Network Egress Guarding</div>
-    <p style="font-size: 7.4pt;">The browser loopback service enforces strict firewall rules:</p>
-    <ul style="font-size: 7.2pt; margin-bottom: 0;">
-      <li><strong>Cloud Metadata Blocked:</strong> Rejects all calls to <code>169.254.169.254</code> (AWS/GCP metadata theft protection).</li>
-      <li><strong>Private Subnet Deny:</strong> Rejects connections to private RFC1918 subnets (<code>10.0.0.0/8</code>, <code>192.168.0.0/16</code>).</li>
-      <li><strong>Multicast & Loopback Deny:</strong> Prevents agents from scanning or probing internal corporate networks.</li>
+    <ul style="font-size: 6.8pt; margin-bottom: 0;">
+      <li><strong>Cloud Metadata Blocked:</strong> Rejects all calls to <code>169.254.169.254</code> (AWS/GCP protection).</li>
+      <li><strong>Private Subnet Deny:</strong> Rejects connections to private RFC1918 subnets (<code>10.0.0.0/8</code>).</li>
+      <li><strong>Loopback Deny:</strong> Prevents agents from scanning internal corporate networks.</li>
     </ul>
   </div>
 </div>
 
-<div class="card">
-  <div class="card-title">Multi-Tenant Isolation Architecture</div>
+<div class="card" style="padding: 5px 8px;">
+  <div class="card-title">Multi-Tenant Isolation Topology</div>
   <div class="diagram-flow">
-    <div class="flow-step">
-      <div class="flow-title">Host Server</div>
-      <div class="flow-desc">Fathom Axum Daemon</div>
-    </div>
+    <div class="flow-step"><div class="flow-title">Host Server</div><div class="flow-desc">Fathom Axum Daemon</div></div>
     <div class="flow-arrow">→</div>
-    <div class="flow-step">
-      <div class="flow-title">Docker Sandbox A</div>
-      <div class="flow-desc">Client 1 / SDR Worker</div>
-    </div>
+    <div class="flow-step"><div class="flow-title">Docker Sandbox A</div><div class="flow-desc">Client 1 / SDR Worker</div></div>
     <div class="flow-arrow">≠</div>
-    <div class="flow-step">
-      <div class="flow-title">Docker Sandbox B</div>
-      <div class="flow-desc">Client 2 / Recruiter</div>
-    </div>
+    <div class="flow-step"><div class="flow-title">Docker Sandbox B</div><div class="flow-desc">Client 2 / Recruiter</div></div>
   </div>
 </div>
 
-<div class="card-slate">
-  <div class="card-title-sm">Enterprise Multi-Tenant Security Guarantee</div>
-  <p style="font-size: 7.4pt;">
-    Even if an agent navigates to a malicious webpage attempting prompt injection or cross-site scripting, the attack remains completely trapped within the unprivileged Docker container with zero access to the host OS or other client workspaces.
-  </p>
-</div>
-
-<div class="callout callout-info">
+<div class="callout callout-info" style="margin-bottom: 0;">
   <strong>Sovereign Data Security:</strong> Deploy multi-tenant AI operations with total confidence in cryptographic process separation and zero cross-client data leakage.
 </div>
     </div>

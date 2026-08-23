@@ -22,14 +22,14 @@
     </div>
 
     <div class="content-body">
-<div class="card-dark">
-  <div class="card-title">Dynamic Hierarchical Task Decomposition</div>
-  <p>
+<div class="card-dark" style="padding: 7px 10px;">
+  <div class="card-title" style="font-size: 8.8pt;">Dynamic Hierarchical Task Decomposition</div>
+  <p style="font-size: 7.4pt;">
     When a user assigns a complex project, the Coordinator uses a structured planning prompt to analyze dependencies, formulate execution branches, and launch parallel sub-agents via the <code>spawn_agent</code> tool.
   </p>
 </div>
 
-<div class="card">
+<div class="card" style="padding: 5px 8px;">
   <div class="card-title">Sample Task Decomposition Tree</div>
   <div class="diagram-flow" style="flex-direction: column; align-items: stretch; gap: 4px;">
     <div style="background: white; border: 1px solid var(--border-color); padding: 4px 8px; border-radius: 4px;">
@@ -37,45 +37,35 @@
     </div>
     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px;">
       <div style="background: #eff6ff; border-left: 3px solid var(--primary-accent); padding: 4px 6px; border-radius: 3px; font-size: 6.8pt;">
-        <strong>Branch 1 (Registry Agent):</strong><br>Scrapes Companies House & Handelsregister for corporate registration & filings.
+        <strong>Branch 1 (Registry Agent):</strong><br>Scrapes Companies House for corporate registration & filings.
       </div>
       <div style="background: #f0fdf4; border-left: 3px solid var(--emerald); padding: 4px 6px; border-radius: 3px; font-size: 6.8pt;">
         <strong>Branch 2 (OSINT Agent):</strong><br>Harvests C-level leadership, LinkedIn profiles, and verified work emails.
       </div>
       <div style="background: #faf5ff; border-left: 3px solid var(--purple); padding: 4px 6px; border-radius: 3px; font-size: 6.8pt;">
-        <strong>Branch 3 (Tech Stack Agent):</strong><br>Fingerprints homepage HTML for 40+ technology signatures (AWS, Stripe, Next.js).
+        <strong>Branch 3 (Tech Stack Agent):</strong><br>Fingerprints homepage HTML for 40+ technology signatures.
       </div>
-    </div>
-    <div style="background: #fffbeb; border-left: 3px solid var(--amber); padding: 4px 6px; border-radius: 3px; font-size: 7pt;">
-      <strong>Synthesis Node (Analyst & Writer):</strong> Merges all 3 branches, reconciles conflicts, and formats final executive PDF report.
     </div>
   </div>
 </div>
 
 <div class="grid-2">
-  <div class="card card-emerald">
+  <div class="card card-emerald" style="padding: 5px 8px;">
     <div class="card-title-sm">Recursive Depth Limits & Guardrails</div>
-    <p style="font-size: 7.4pt;">
+    <p style="font-size: 7.2pt;">
       To prevent runaway sub-agent spawning loops, Fathom enforces strict depth limits (default max depth: 2). Coordinators can spawn workers, but workers cannot spawn infinite child trees without explicit permission.
     </p>
   </div>
 
-  <div class="card card-accent">
+  <div class="card card-accent" style="padding: 5px 8px;">
     <div class="card-title-sm">Tokio JoinSet Multi-Threading</div>
-    <p style="font-size: 7.4pt;">
+    <p style="font-size: 7.2pt;">
       All spawned workers run as concurrent tasks inside a Tokio <code>JoinSet</code>. If one branch encounters a slow network request or rate limit, sibling branches continue executing at full speed.
     </p>
   </div>
 </div>
 
-<div class="card-slate">
-  <div class="card-title-sm">Token Budget Fair-Share Scheduling</div>
-  <p style="font-size: 7.4pt;">
-    The coordinator assigns token quotas to each sub-agent branch (e.g. max 16k tokens per worker). When a worker approaches 80% of its budget, it enters Economy Mode, truncating verbose tool outputs to prevent waste.
-  </p>
-</div>
-
-<div class="callout callout-info">
+<div class="callout callout-info" style="margin-bottom: 0;">
   <strong>Fault-Tolerant Merging:</strong> If one sub-agent fails due to an anti-bot block, the coordinator gracefully incorporates partial findings from other branches without failing the overall run.
 </div>
     </div>

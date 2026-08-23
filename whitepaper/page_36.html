@@ -22,66 +22,53 @@
     </div>
 
     <div class="content-body">
-<div class="card-accent">
-  <div class="card-title">Protecting Secrets Against Prompt Injection & Extraction</div>
-  <p>
-    A major vulnerability in traditional AI wrappers is passing API keys and passwords directly inside prompt contexts, making them susceptible to prompt-injection extraction. <strong>Fathom isolates credentials behind an AES-256-GCM encrypted vault</strong>.
+<div class="card-accent" style="padding: 6px 10px;">
+  <div class="card-title" style="font-size: 8.8pt;">Protecting Secrets Against Prompt Injection & Extraction</div>
+  <p style="font-size: 7.4pt;">
+    A major vulnerability in AI wrappers is passing API keys inside prompt contexts. <strong>Fathom isolates credentials behind an AES-256-GCM encrypted vault</strong>.
   </p>
 </div>
 
+<!-- MOCKUP 13: Encrypted Credentials Vault & Audit Ledger (Rakazo Style) -->
+<div class="app-mockup">
+  <div class="mockup-header">
+    <div class="mockup-traffic"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span><span class="mockup-title">Fathom Vault · AES-256-GCM Encrypted Credentials</span></div>
+    <div style="font-size:6pt; color:#10b981; font-family:'JetBrains Mono';">RING CRATE · HARDWARE KEY DERIVATION</div>
+  </div>
+  <div style="padding: 5px 8px; background:#0b0f17; font-size:6pt; font-family:'JetBrains Mono';">
+    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #1e293b; padding-bottom:2px;">
+      <span style="color:#f1f5f9;">KEY NAME</span><span style="color:#f1f5f9;">CIPHERTEXT DIGEST</span><span style="color:#f1f5f9;">PROMPT EXPOSURE</span>
+    </div>
+    <div style="display:flex; justify-content:space-between; padding-top:2px;">
+      <span style="color:#38bdf8;">hubspot_api_key</span><span style="color:#64748b;">$aes-gcm$v1$e8f9a2b01c4...</span><span class="badge badge-green">0% (NEVER PASSED TO LLM)</span>
+    </div>
+    <div style="display:flex; justify-content:space-between; padding-top:2px;">
+      <span style="color:#38bdf8;">amocrm_oauth_token</span><span style="color:#64748b;">$aes-gcm$v1$991a0f8b2c1...</span><span class="badge badge-green">0% (NEVER PASSED TO LLM)</span>
+    </div>
+  </div>
+</div>
+
 <div class="grid-2">
-  <div class="card card-emerald">
+  <div class="card card-emerald" style="padding: 5px 8px;">
     <div class="card-title-sm">1. Hardware-Grade Encryption (Ring Crate)</div>
-    <ul style="font-size: 7.2pt; margin-bottom: 0;">
+    <ul style="font-size: 6.8pt; margin-bottom: 0;">
       <li>Secrets stored in SQLite are encrypted using <strong>AES-256-GCM</strong> authenticated encryption.</li>
       <li>Encryption keys are derived from secure environment variables (<code>FATHOM_CREDENTIAL_KEY</code>).</li>
       <li>API listing endpoints return strictly masked strings (e.g. <code>sk-live-***1234</code>).</li>
     </ul>
   </div>
 
-  <div class="card card-purple">
+  <div class="card card-purple" style="padding: 5px 8px;">
     <div class="card-title-sm">2. Zero Secret Tools in Agent Registry</div>
-    <ul style="font-size: 7.2pt; margin-bottom: 0;">
+    <ul style="font-size: 6.8pt; margin-bottom: 0;">
       <li>Agents have <strong>zero tools to read or query plaintext secrets</strong>.</li>
-      <li>When an agent invokes a service (e.g. CRM push), the backend adapter resolves credentials internally in Rust memory.</li>
+      <li>When an agent invokes a service, the backend adapter resolves credentials internally in Rust memory.</li>
       <li>Prompt injection attacks cannot extract keys that the LLM has no mechanism to access.</li>
     </ul>
   </div>
 </div>
 
-<div class="card">
-  <div class="card-title">Credential Lifecycle Architecture</div>
-  <div class="diagram-flow">
-    <div class="flow-step">
-      <div class="flow-title">1. Operator Inputs Secret</div>
-      <div class="flow-desc">Via UI / Protected API</div>
-    </div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-step">
-      <div class="flow-title">2. AES-256-GCM Vault</div>
-      <div class="flow-desc">Encrypted in SQLite DB</div>
-    </div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-step">
-      <div class="flow-title">3. Internal Rust Resolution</div>
-      <div class="flow-desc">Resolved by adapter at call-time</div>
-    </div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-step">
-      <div class="flow-title">4. Zero Prompt Exposure</div>
-      <div class="flow-desc">LLM sees zero API tokens</div>
-    </div>
-  </div>
-</div>
-
-<div class="card-slate">
-  <div class="card-title-sm">Cryptographic Separation of Concerns</div>
-  <p style="font-size: 7.4pt;">
-    The AI model reasons about business concepts (e.g. <em>"Push lead to HubSpot"</em>) without ever seeing the API token. The Rust adapter injects the decrypted bearer token at the network layer just before dispatching the HTTPS request.
-  </p>
-</div>
-
-<div class="callout callout-success">
+<div class="callout callout-success" style="margin-bottom: 0;">
   <strong>Enterprise Compliance:</strong> Enterprise security teams can deploy Fathom with full confidence that proprietary CRM tokens and database passwords remain completely secure.
 </div>
     </div>

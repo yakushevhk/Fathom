@@ -22,34 +22,41 @@
     </div>
 
     <div class="content-body">
-<div class="card-dark">
-  <div class="card-title">The Fundamental Difference: Proactive Agency vs. Reactive Text Generation</div>
-  <p>
-    Most commercial AI tools are <strong>passive text assistants</strong>: they wait for a human prompt, generate conversational text, and stop immediately. <strong>Fathom instantiates proactive digital coworkers</strong>: given a high-level goal, they independently formulate a multi-step plan, spawn specialized sub-agents, operate browser tools, verify their own work against objective criteria, and deliver finalized deliverables directly to your CRM, database, or team channels.
+<div class="card-dark" style="padding: 7px 10px;">
+  <div class="card-title" style="font-size: 8.8pt;">The Fundamental Difference: Proactive Agency vs. Reactive Text Generation</div>
+  <p style="font-size: 7.4pt;">
+    Most commercial AI tools are <strong>passive text assistants</strong>. <strong>Fathom instantiates proactive digital coworkers</strong>: given a high-level goal, they formulate plans, spawn sub-agents, operate browser tools, verify work, and deliver results directly to your CRM.
   </p>
 </div>
 
+<!-- MOCKUP 2: Visual Comparison of Bot Execution -->
 <div class="grid-2">
-  <div class="card">
-    <div class="card-title-sm">Traditional AI Chatbot (Single-Turn Reactive)</div>
-    <div class="diagram-flow" style="flex-direction: column; gap: 3px;">
-      <div class="flow-step" style="width: 100%;">1. Human writes prompt: "Give me fintech leads"</div>
-      <div class="flow-step" style="width: 100%;">2. LLM generates unverified list from training data</div>
-      <div class="flow-step" style="width: 100%;">3. Human manually searches emails, tests deliverability</div>
-      <div class="flow-step" style="width: 100%;">4. Human copy-pastes data into CRM manually</div>
+  <div class="app-mockup">
+    <div class="mockup-header" style="background:#1f1618; border-color:#382226;">
+      <div class="mockup-traffic"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span><span class="mockup-title" style="color:#f87171;">Traditional Reactive Chatbot</span></div>
     </div>
-    <p style="font-size: 7.2pt; color: var(--rose); margin-top: 3px;"><strong>Bottleneck:</strong> The human operator remains trapped as the manual executor, data validator, and tool operator.</p>
+    <div class="mockup-chat" style="background:#130c0e;">
+      <div class="chat-bubble-user">Find CTO emails in Berlin</div>
+      <div class="chat-bubble-bot" style="background:#1c1114; border-color:#382226;">
+        Here are 3 example emails: info@company.com, cto@berlintech.de. (Note: These may not be verified; please check LinkedIn manually).
+      </div>
+      <div style="font-size: 5.8pt; color: #ef4444; padding: 2px 4px;">❌ Bottleneck: Human must manually test emails and enter CRM.</div>
+    </div>
   </div>
 
-  <div class="card card-accent">
-    <div class="card-title-sm">Fathom Autonomous Coworker (Multi-Agent Swarm)</div>
-    <div class="diagram-flow" style="flex-direction: column; gap: 3px;">
-      <div class="flow-step" style="width: 100%;">1. Goal assigned: "Enrich 50 fintech leads in London"</div>
-      <div class="flow-step" style="width: 100%;">2. Coordinator plans & spawns 4 parallel worker agents</div>
-      <div class="flow-step" style="width: 100%;">3. Workers scrape registries, verify SMTP & extract tech</div>
-      <div class="flow-step" style="width: 100%;">4. LLM Judge verifies completeness & syncs amoCRM/HubSpot</div>
+  <div class="app-mockup">
+    <div class="mockup-header" style="background:#11221b; border-color:#1e382b;">
+      <div class="mockup-traffic"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span><span class="mockup-title" style="color:#34d399;">Fathom Autonomous Coworker</span></div>
     </div>
-    <p style="font-size: 7.2pt; color: var(--emerald); margin-top: 3px;"><strong>Advantage:</strong> Complete end-to-end task ownership from initial query to final system-of-record synchronization.</p>
+    <div class="mockup-chat" style="background:#091410;">
+      <div class="chat-bubble-user">Find CTO emails in Berlin</div>
+      <div class="chat-bubble-bot" style="background:#0d1f19; border-color:#1e382b;">
+        <div class="bot-step-line"><span class="bot-check">✓</span><strong>Companies Scraped</strong><span class="bot-arrow">→</span><span>35 Berlin Tech Startups</span></div>
+        <div class="bot-step-line"><span class="bot-check">✓</span><strong>SMTP 250 OK Probed</strong><span class="bot-arrow">→</span><span>28 Mailboxes Verified Live</span></div>
+        <div class="bot-step-line"><span class="bot-check">✓</span><strong>HubSpot Pushed</strong><span class="bot-arrow">→</span><span>28 Enriched Contacts Synced</span></div>
+      </div>
+      <div style="font-size: 5.8pt; color: #10b981; padding: 2px 4px;">✅ Zero human intervention: 100% executed end-to-end.</div>
+    </div>
   </div>
 </div>
 
@@ -58,15 +65,15 @@
   <div class="grid-3">
     <div class="card-slate">
       <div class="card-title-sm">1. Self-Directed Planning</div>
-      <p style="font-size: 7.2pt;">Decomposes vague objectives into concrete sub-tasks with strict dependency trees, depth limits, and fair-share token budgets.</p>
+      <p style="font-size: 7pt;">Decomposes vague objectives into concrete sub-tasks with strict dependency trees, depth limits, and fair-share token budgets.</p>
     </div>
     <div class="card-slate">
       <div class="card-title-sm">2. Multi-Signal Verification</div>
-      <p style="font-size: 7.2pt;">Checks every harvested fact, email MX record, and code output against objective validation gates before human presentation.</p>
+      <p style="font-size: 7pt;">Checks every harvested fact, email MX record, and code output against objective validation gates before human presentation.</p>
     </div>
     <div class="card-slate">
       <div class="card-title-sm">3. Compounding Memory</div>
-      <p style="font-size: 7.2pt;">Retains company relationships, past conversation context, and client preferences in persistent SQLite memory graphs.</p>
+      <p style="font-size: 7pt;">Retains company relationships, past conversation context, and client preferences in persistent SQLite memory graphs.</p>
     </div>
   </div>
 </div>
@@ -75,38 +82,18 @@
   <div class="card-title-sm">Key Lifecycle Differences at a Glance</div>
   <table>
     <thead>
-      <tr>
-        <th>Lifecycle Dimension</th>
-        <th>Single-Turn Chatbots</th>
-        <th>Fathom Digital Coworkers</th>
-      </tr>
+      <tr><th>Lifecycle Dimension</th><th>Single-Turn Chatbots</th><th>Fathom Digital Coworkers</th></tr>
     </thead>
     <tbody>
-      <tr>
-        <td><strong>Initiation Mechanism</strong></td>
-        <td>Requires constant synchronous human prompting.</td>
-        <td><strong>Autonomous scheduled triggers (Cron), webhooks, or API.</strong></td>
-      </tr>
-      <tr>
-        <td><strong>Concurrency Model</strong></td>
-        <td>Single sequential thread of thought.</td>
-        <td><strong>Parallel multi-core Tokio task swarms (JoinSet).</strong></td>
-      </tr>
-      <tr>
-        <td><strong>Failure Recovery</strong></td>
-        <td>Crashes or hallucinates; requires human reprompting.</td>
-        <td><strong>Self-healing retries with error diagnosis & task augmentation.</strong></td>
-      </tr>
-      <tr>
-        <td><strong>State Persistence</strong></td>
-        <td>Stateless; context vanishes on tab closure.</td>
-        <td><strong>Durable SQLite database with append-only fact versioning.</strong></td>
-      </tr>
+      <tr><td><strong>Initiation Mechanism</strong></td><td>Requires constant synchronous human prompting.</td><td><strong>Autonomous scheduled triggers (Cron), webhooks, or API.</strong></td></tr>
+      <tr><td><strong>Concurrency Model</strong></td><td>Single sequential thread of thought.</td><td><strong>Parallel multi-core Tokio task swarms (JoinSet).</strong></td></tr>
+      <tr><td><strong>Failure Recovery</strong></td><td>Crashes or hallucinates; requires human reprompting.</td><td><strong>Self-healing retries with error diagnosis & task augmentation.</strong></td></tr>
+      <tr><td><strong>State Persistence</strong></td><td>Stateless; context vanishes on tab closure.</td><td><strong>Durable SQLite database with append-only fact versioning.</strong></td></tr>
     </tbody>
   </table>
 </div>
 
-<div class="callout callout-success">
+<div class="callout callout-success" style="margin-bottom: 0;">
   <strong>The Autonomous Standard:</strong> Fathom coworkers don't just draft emails or write snippets—they find the decision-maker, verify deliverability, operate the sales platform, and track pipeline outcomes completely autonomously.
 </div>
     </div>

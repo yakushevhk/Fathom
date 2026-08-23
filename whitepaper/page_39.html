@@ -22,17 +22,17 @@
     </div>
 
     <div class="content-body">
-<div class="card-dark">
-  <div class="card-title">Maximizing Hardware Density: The Economics of Efficiency</div>
-  <p>
+<div class="card-dark" style="padding: 7px 10px;">
+  <div class="card-title" style="font-size: 8.8pt;">Maximizing Hardware Density: The Economics of Efficiency</div>
+  <p style="font-size: 7.4pt;">
     The true test of enterprise scalability is operational efficiency per server dollar. Because Fathom compiles to lean machine code with zero runtime interpreter overhead, it achieves unprecedented hardware worker density.
   </p>
 </div>
 
 <div class="grid-2">
-  <div class="card">
-    <div class="card-title-sm">Python Framework Server Footprint (100 Agents)</div>
-    <ul style="font-size: 7.2pt; margin-bottom: 0;">
+  <div class="card" style="padding: 5px 8px;">
+    <div class="card-title-sm">Python Framework Footprint (100 Agents)</div>
+    <ul style="font-size: 6.8pt; margin-bottom: 0;">
       <li><strong>RAM Required:</strong> 64 GB – 128 GB RAM (Heavy Kubernetes Cluster).</li>
       <li><strong>CPU Saturation:</strong> High context-switching drag and Python GIL contention.</li>
       <li><strong>Monthly Server Cost:</strong> $400 – $1,200 / month on AWS/GCP.</li>
@@ -40,9 +40,9 @@
     </ul>
   </div>
 
-  <div class="card card-emerald">
-    <div class="card-title-sm">Fathom Rust Server Footprint (100 Coworkers)</div>
-    <ul style="font-size: 7.2pt; margin-bottom: 0;">
+  <div class="card card-emerald" style="padding: 5px 8px;">
+    <div class="card-title-sm">Fathom Rust Footprint (100 Coworkers)</div>
+    <ul style="font-size: 6.8pt; margin-bottom: 0;">
       <li><strong>RAM Required:</strong> <strong>1.5 GB – 3.5 GB RAM</strong> (Modest 8-Core Box).</li>
       <li><strong>CPU Utilization:</strong> Zero idle CPU burn; epoll/kqueue event-driven I/O.</li>
       <li><strong>Monthly Server Cost:</strong> $30 – $60 / month on Hetzner/DigitalOcean.</li>
@@ -51,36 +51,17 @@
   </div>
 </div>
 
-<div class="card">
+<div class="card" style="padding: 5px 8px;">
   <div class="card-title">Server Resource Allocation Model (8 Cores, 32GB RAM)</div>
   <div class="grid-4">
-    <div class="metric-box">
-      <div class="metric-val">100+</div>
-      <div class="metric-label">Concurrent Coworkers</div>
-    </div>
-    <div class="metric-box">
-      <div class="metric-val">~25 MB</div>
-      <div class="metric-label">Average RAM / Coworker</div>
-    </div>
-    <div class="metric-box">
-      <div class="metric-val">&lt; 1%</div>
-      <div class="metric-label">Idle CPU Utilization</div>
-    </div>
-    <div class="metric-box">
-      <div class="metric-val">99.4%</div>
-      <div class="metric-label">Gross Margin on Compute</div>
-    </div>
+    <div class="metric-box"><div class="metric-val">100+</div><div class="metric-label">Coworkers</div></div>
+    <div class="metric-box"><div class="metric-val">~25 MB</div><div class="metric-label">RAM / Worker</div></div>
+    <div class="metric-box"><div class="metric-val">&lt; 1%</div><div class="metric-label">Idle CPU</div></div>
+    <div class="metric-box"><div class="metric-val">99.4%</div><div class="metric-label">Compute Margin</div></div>
   </div>
 </div>
 
-<div class="card-slate">
-  <div class="card-title-sm">Edge and On-Premise Deployability</div>
-  <p style="font-size: 7.4pt;">
-    Because Fathom's compiled binary requires only 15MB RAM, complete multi-agent swarms can be deployed directly on edge devices, local Mac Minis, or air-gapped industrial servers with zero cloud dependencies.
-  </p>
-</div>
-
-<div class="callout callout-success">
+<div class="callout callout-success" style="margin-bottom: 0;">
   <strong>The Bottom Line:</strong> Fathom cuts server infrastructure costs by <strong>95%</strong>, allowing businesses to scale their virtual workforce profitably.
 </div>
     </div>

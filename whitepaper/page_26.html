@@ -22,60 +22,42 @@
     </div>
 
     <div class="content-body">
-<div class="card-accent">
-  <div class="card-title">Decoupled Asynchronous Telemetry Architecture</div>
-  <p>
+<div class="card-accent" style="padding: 7px 10px;">
+  <div class="card-title" style="font-size: 8.8pt;">Decoupled Asynchronous Telemetry Architecture</div>
+  <p style="font-size: 7.4pt;">
     Communication across sub-agents, persistence layers, and client dashboards occurs over a centralized, high-throughput <strong>Tokio broadcast message bus</strong> (<code>event_tx</code>).
   </p>
 </div>
 
-<div class="card">
+<div class="card" style="padding: 5px 8px;">
   <div class="card-title">Message Bus Architecture & Event Flow</div>
   <div class="diagram-flow">
-    <div class="flow-step">
-      <div class="flow-title">Agent Event Emitters</div>
-      <div class="flow-desc">Spawns, Tool Calls, Thoughts</div>
-    </div>
+    <div class="flow-step"><div class="flow-title">Agent Event Emitters</div><div class="flow-desc">Spawns, Tool Calls, Thoughts</div></div>
     <div class="flow-arrow">→</div>
-    <div class="flow-step">
-      <div class="flow-title">Broadcast Bus (1024 cap)</div>
-      <div class="flow-desc">Lock-free Tokio Channel</div>
-    </div>
+    <div class="flow-step"><div class="flow-title">Broadcast Bus (1024 cap)</div><div class="flow-desc">Lock-free Tokio Channel</div></div>
     <div class="flow-arrow">→</div>
-    <div class="flow-step">
-      <div class="flow-title">Multiple Subscribers</div>
-      <div class="flow-desc">SSE, TUI, Prometheus, DB</div>
-    </div>
+    <div class="flow-step"><div class="flow-title">Multiple Subscribers</div><div class="flow-desc">SSE, TUI, Prometheus, DB</div></div>
   </div>
 </div>
 
 <div class="grid-3">
-  <div class="card card-slate">
+  <div class="card card-slate" style="padding: 5px 8px;">
     <div class="card-title-sm">1. Server-Sent Events (SSE)</div>
-    <p style="font-size: 7.2pt;">Streams live agent events to web and desktop dashboards, updating UI progress bars and sparklines in real time.</p>
+    <p style="font-size: 6.8pt;">Streams live agent events to web and desktop dashboards, updating UI progress bars and sparklines in real time.</p>
   </div>
 
-  <div class="card card-slate">
+  <div class="card card-slate" style="padding: 5px 8px;">
     <div class="card-title-sm">2. Prometheus Scrapers</div>
-    <p style="font-size: 7.2pt;">The metrics middleware consumes event counters, exporting real-time tool durations and token velocity to Grafana.</p>
+    <p style="font-size: 6.8pt;">The metrics middleware consumes event counters, exporting real-time tool durations and token velocity to Grafana.</p>
   </div>
 
-  <div class="card card-slate">
+  <div class="card card-slate" style="padding: 5px 8px;">
     <div class="card-title-sm">3. SQLite Audit Ledger</div>
-    <p style="font-size: 7.2pt;">Records immutable execution logs, tool inputs, and decision outcomes for permanent compliance replay.</p>
+    <p style="font-size: 6.8pt;">Records immutable execution logs, tool inputs, and decision outcomes for permanent compliance replay.</p>
   </div>
 </div>
 
-<div class="card-dark">
-  <div class="card-title">Key Benefits of Broadcast Topology</div>
-  <ul style="font-size: 7.4pt; margin-bottom: 0;">
-    <li><strong>Zero Performance Drag:</strong> Slow UI clients or network drops never slow down or block agent reasoning threads.</li>
-    <li><strong>Multi-Client Sync:</strong> An engineer on CLI, a manager on web dashboard, and a Telegram bot all receive synchronized updates simultaneously.</li>
-    <li><strong>Plug-and-Play Extensibility:</strong> Connect custom corporate webhooks or auditing sinks by subscribing to the stream.</li>
-  </ul>
-</div>
-
-<div class="callout callout-success">
+<div class="callout callout-success" style="margin-bottom: 0;">
   <strong>High-Throughput Guarantee:</strong> The lock-free broadcast channel handles over 50,000 inter-agent events per second with sub-microsecond latency.
 </div>
     </div>

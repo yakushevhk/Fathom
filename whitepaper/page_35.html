@@ -22,18 +22,17 @@
     </div>
 
     <div class="content-body">
-<div class="card-dark">
-  <div class="card-title">Deterministic Safety: The Governance Policy Engine</div>
-  <p>
+<div class="card-dark" style="padding: 7px 10px;">
+  <div class="card-title" style="font-size: 8.8pt;">Deterministic Safety: The Governance Policy Engine</div>
+  <p style="font-size: 7.4pt;">
     Deploying autonomous agents in corporate environments demands strict, auditable guardrails. In <code>crates/governance</code>, Fathom implements a <strong>fail-closed policy engine</strong> where every tool call is authorized against declarative security rules prior to execution.
   </p>
 </div>
 
 <div class="grid-2">
-  <div class="card card-emerald">
+  <div class="card card-emerald" style="padding: 5px 8px;">
     <div class="card-title-sm">1. Declarative Allow / Deny Glob Rules</div>
-    <p style="font-size: 7.4pt;">Administrators define granular access control rules matching tool names and target resources:</p>
-    <ul style="font-size: 7.2pt; margin-bottom: 0;">
+    <ul style="font-size: 6.8pt; margin-bottom: 0;">
       <li><strong>Allow Search:</strong> <code>allow: tool="web_search", target="*"</code></li>
       <li><strong>Restrict Browser:</strong> <code>allow: tool="browser.*", target="https://*.linkedin.com/*"</code></li>
       <li><strong>Deny Admin Access:</strong> <code>deny: tool="browser.type", target="*/admin/*"</code></li>
@@ -41,34 +40,24 @@
     </ul>
   </div>
 
-  <div class="card card-accent">
+  <div class="card card-accent" style="padding: 5px 8px;">
     <div class="card-title-sm">2. Strict Fail-Closed Security Stance</div>
-    <ul style="font-size: 7.2pt; margin-bottom: 0;">
-      <li><strong>Deny Wins:</strong> If an action matches both an allow and a deny rule, the <strong>deny rule always takes absolute precedence</strong>.</li>
-      <li><strong>Unmatched Fails Closed:</strong> If an action does not explicitly match an allow rule in an active policy, it is rejected by default.</li>
+    <ul style="font-size: 6.8pt; margin-bottom: 0;">
+      <li><strong>Deny Wins:</strong> If an action matches both allow and deny, <strong>deny always takes absolute precedence</strong>.</li>
+      <li><strong>Unmatched Fails Closed:</strong> If an action does not match an allow rule, it is rejected by default.</li>
       <li><strong>Operator Claim Gating:</strong> Administrative actions require verified operator claims in HTTP headers.</li>
     </ul>
   </div>
 </div>
 
-<div class="card">
+<div class="card" style="padding: 5px 8px;">
   <div class="card-title">Human Approval Side-Effect Registry</div>
-  <p style="font-size: 7.4pt;">
+  <p style="font-size: 7.2pt;">
     Configurable critical tools (e.g. <code>save_contacts</code>, CRM push, <code>git_push</code>) can be placed in the <code>approval_tools</code> list, ensuring that data never leaves the research sandbox without human sign-off.
   </p>
 </div>
 
-<div class="card-slate">
-  <div class="card-title-sm">Security Governance Metrics</div>
-  <div class="grid-4">
-    <div class="metric-box"><div class="metric-val">100%</div><div class="metric-label">Fail-Closed Default</div></div>
-    <div class="metric-box"><div class="metric-val">&lt; 0.1ms</div><div class="metric-label">Policy Evaluation</div></div>
-    <div class="metric-box"><div class="metric-val">Glob</div><div class="metric-label">Target Matching</div></div>
-    <div class="metric-box"><div class="metric-val">Zero</div><div class="metric-label">Bypasses</div></div>
-  </div>
-</div>
-
-<div class="callout callout-success">
+<div class="callout callout-success" style="margin-bottom: 0;">
   <strong>Enterprise Compliance:</strong> Set exact operational boundaries for every virtual employee, preventing accidental data egress or unsanctioned system modifications.
 </div>
     </div>

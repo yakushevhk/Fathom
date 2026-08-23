@@ -22,72 +22,114 @@
     </div>
 
     <div class="content-body">
-<div class="card-dark">
-  <div class="card-title">The Paradigm Shift: From Scripted Bots to Autonomous Remote Employees</div>
-  <p>
-    Traditional AI automation is fundamentally constrained by brittle Python pipelines, single-shot prompt wrappers, and synchronous execution bottlenecks. <strong>Fathom</strong> introduces a production-grade, self-hosted <strong>Rust runtime</strong> designed to instantiate, govern, and orchestrate true <strong>autonomous remote digital employees</strong>. These agents do not merely suggest answers; they independently plan, execute multi-day workflows, operate web browsers via accessibility trees, perform deep OSINT/lead generation, write and maintain software, and interact across all corporate channels 100% remotely.
+<div class="card-dark" style="padding: 7px 10px;">
+  <div class="card-title" style="font-size: 8.8pt;">The Paradigm Shift: From Scripted Bots to Autonomous Remote Employees</div>
+  <p style="font-size: 7.4pt;">
+    <strong>Fathom</strong> introduces a production-grade, self-hosted <strong>Rust runtime</strong> designed to instantiate, govern, and orchestrate true <strong>autonomous remote digital employees</strong>. These agents independently plan, execute multi-day workflows, operate web browsers via accessibility trees, perform deep OSINT/lead generation, write and maintain software, and interact across all corporate channels 100% remotely.
   </p>
 </div>
 
+<!-- MOCKUP 1: Master 3-Pane Command Center (Rakazo Style) -->
+<div class="app-mockup">
+  <div class="mockup-header">
+    <div class="mockup-traffic">
+      <span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span>
+      <span class="mockup-title">fathom-control-plane · v0.3.0 · Tokyo Node #04</span>
+    </div>
+    <div style="font-size: 6pt; color: #38bdf8; font-family: 'JetBrains Mono', monospace;">● 5 WORKERS ONLINE</div>
+  </div>
+  <div class="mockup-body mockup-3col">
+    <!-- Col 1: Bots Sidebar -->
+    <div class="mockup-sidebar">
+      <div class="mockup-sidebar-search">🔍 Search Coworkers...</div>
+      <div class="bot-row is-active">
+        <div class="bot-avatar avatar-orange">⚡</div>
+        <div class="bot-info">
+          <div class="bot-name">Sales Outbound</div>
+          <div class="bot-preview">50 fintechs verified, CRM sync</div>
+        </div>
+      </div>
+      <div class="bot-row">
+        <div class="bot-avatar avatar-indigo">🧠</div>
+        <div class="bot-info">
+          <div class="bot-name">Market Intel</div>
+          <div class="bot-preview">Competitor pricing diff alert</div>
+        </div>
+      </div>
+      <div class="bot-row">
+        <div class="bot-avatar avatar-emerald">👥</div>
+        <div class="bot-info">
+          <div class="bot-name">Talent Scout</div>
+          <div class="bot-preview">30 Rust architects mapped</div>
+        </div>
+      </div>
+      <div class="bot-row">
+        <div class="bot-avatar avatar-purple">⚙️</div>
+        <div class="bot-info">
+          <div class="bot-name">DevOps Maintainer</div>
+          <div class="bot-preview">23/23 pytest suite passing</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Col 2: Chat & Execution -->
+    <div class="mockup-chat">
+      <div class="chat-bubble-user">Find 50 verified VP Engineering leads in London & sync to amoCRM</div>
+      <div class="chat-bubble-bot">
+        <div>Decomposed goal into 4 parallel workers. Querying registries & running SMTP probes:</div>
+        <div class="bot-task-card">
+          <div class="bot-step-line"><span class="bot-check">✓</span><strong>Companies House</strong><span class="bot-arrow">→</span><span>120 entities discovered</span></div>
+          <div class="bot-step-line"><span class="bot-check">✓</span><strong>Social & Web Crawl</strong><span class="bot-arrow">→</span><span>108 VP Engineering names</span></div>
+          <div class="bot-step-line"><span class="bot-check">✓</span><strong>SMTP 250 OK Probes</strong><span class="bot-arrow">→</span><span>94 direct emails deliverable</span></div>
+          <div class="bot-step-line"><span class="bot-check">✓</span><strong>amoCRM Synced</strong><span class="bot-arrow">→</span><span>94 contacts staged with tech tags</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Col 3: Computer & Routines -->
+    <div class="mockup-computer">
+      <div class="computer-viewport">
+        <div class="browser-bar"><span style="color:#10b981;">●</span><span class="browser-url">companieshouse.gov.uk</span></div>
+        <div class="browser-content" style="font-family: 'JetBrains Mono', monospace; font-size: 5.4pt;">
+          [Search: FinTech UK]<br>
+          > Matched: 120 firms<br>
+          > Parsing officers...<br>
+          <span style="color:#38bdf8;">Status: 100% complete</span>
+        </div>
+      </div>
+      <div class="btn-takeover">⚡ Take Control</div>
+      <div class="routine-item"><span class="routine-name">Nightly Sweep</span><span class="routine-time">02:00 AM</span></div>
+    </div>
+  </div>
+</div>
+
 <div class="grid-3">
-  <div class="card card-accent">
+  <div class="card card-accent" style="padding: 5px 8px;">
     <div class="card-title-sm">100% Remote Operation</div>
-    <p>Autonomous agents operate independently inside sandboxed environments, interacting with web portals, public registries, APIs, shells, and CRMs 24/7 without manual babysitting or human prompting loops.</p>
+    <p style="font-size: 6.8pt;">Autonomous agents operate independently inside sandboxed environments, interacting with web portals, public registries, APIs, shells, and CRMs 24/7.</p>
   </div>
-  <div class="card card-emerald">
+  <div class="card card-emerald" style="padding: 5px 8px;">
     <div class="card-title-sm">Microsecond Rust Engine</div>
-    <p>Zero-cost abstractions, Tokio async I/O, and concurrent <code>JoinSet</code> task trees provide sub-millisecond tool dispatch (~0.75 ms), 94 µs memory absorption, and 500x faster cold starts than Python.</p>
+    <p style="font-size: 6.8pt;">Zero-cost abstractions, Tokio async I/O, and concurrent <code>JoinSet</code> task trees provide sub-millisecond tool dispatch (~0.75 ms) and 94 µs memory absorption.</p>
   </div>
-  <div class="card card-purple">
+  <div class="card card-purple" style="padding: 5px 8px;">
     <div class="card-title-sm">Unlimited Neural Compute</div>
-    <p>High-throughput routing to cost-efficient frontier foundation models (Kimi k3, Qwen 3.8 Max, GLM 5.3) enables flat-rate monthly seat economics, completely eliminating customer token metering anxiety.</p>
+    <p style="font-size: 6.8pt;">High-throughput routing to cost-efficient frontier foundation models (Kimi k3, Qwen 3.8 Max, GLM 5.3) enables flat-rate monthly seat economics.</p>
   </div>
 </div>
 
-<div class="card">
-  <div class="card-title">Core Operational Pillars of the Fathom Platform</div>
-  <div class="grid-2">
-    <div>
-      <ul style="margin-bottom: 0;">
-        <li><strong>Hierarchical Sub-Agent Swarms:</strong> Recursive coordinator-worker trees with non-blocking broadcast bus telemetry and multi-core CPU parallelism.</li>
-        <li><strong>Autonomous Outreach & OSINT:</strong> 7 unified search engines, corporate website crawlers, pattern-based email inference, and live SMTP port-25 handshake verification.</li>
-        <li><strong>Governed Computer Use:</strong> Native Playwright Chromium integration with Accessibility-Tree snapshots, anti-staleness element caching, and live operator takeover leases.</li>
-      </ul>
-    </div>
-    <div>
-      <ul style="margin-bottom: 0;">
-        <li><strong>Long-Term Semantic Memory:</strong> Local in-process SQLite engine combining FTS5 BM25 with offline TF-IDF vectors, entity graphs, and sub-5ms volatile prompt digests.</li>
-        <li><strong>Durable Asynchronous Jobs:</strong> SQLite-backed jobs surviving server reboots with self-healing retry task augmentation and automatic failure diagnosis.</li>
-        <li><strong>Enterprise Governance & Trust:</strong> Fail-closed policy evaluation, AES-256-GCM encrypted credentials vault, and immutable audit logs with automated secret redaction.</li>
-      </ul>
-    </div>
-  </div>
-</div>
-
-<div class="card-slate">
-  <div class="card-title-sm">System Performance Scorecard (Empirical Benchmarks on Apple Silicon M4)</div>
+<div class="card-slate" style="padding: 5px 8px;">
+  <div class="card-title-sm">System Metric Scorecard (Empirical Benchmarks on Apple Silicon M4)</div>
   <div class="grid-4">
-    <div class="metric-box">
-      <div class="metric-val">12</div>
-      <div class="metric-label">Rust Workspace Crates</div>
-    </div>
-    <div class="metric-box">
-      <div class="metric-val">0.75 ms</div>
-      <div class="metric-label">Tool Dispatch Latency</div>
-    </div>
-    <div class="metric-box">
-      <div class="metric-val">51+</div>
-      <div class="metric-label">Native Core Tools</div>
-    </div>
-    <div class="metric-box">
-      <div class="metric-val">15 MB</div>
-      <div class="metric-label">Daemon Baseline RSS</div>
-    </div>
+    <div class="metric-box"><div class="metric-val">12</div><div class="metric-label">Rust Workspace Crates</div></div>
+    <div class="metric-box"><div class="metric-val">0.75 ms</div><div class="metric-label">Tool Dispatch Latency</div></div>
+    <div class="metric-box"><div class="metric-val">51+</div><div class="metric-label">Native Core Tools</div></div>
+    <div class="metric-box"><div class="metric-val">15 MB</div><div class="metric-label">Daemon Baseline RSS</div></div>
   </div>
 </div>
 
-<div class="callout callout-info">
-  <strong>Strategic Objective:</strong> Deliver a scalable, high-frequency trading caliber software foundation where businesses deploy specialized digital workers on demand—scaling operational capacity infinitely without proportional linear headcount expansion.
+<div class="callout callout-info" style="padding: 4px 8px; margin-bottom: 0;">
+  <strong>Strategic Objective:</strong> Deliver a scalable software foundation where businesses deploy digital workers on demand—scaling operational capacity infinitely without proportional linear headcount expansion.
 </div>
     </div>
 

@@ -10,15 +10,15 @@
       top: 12px;
       right: 16px;
       z-index: 9999;
-      background: rgba(15, 23, 42, 0.92);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(15, 23, 42, 0.94);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
       border-radius: 30px;
       padding: 6px 14px;
       display: flex;
       align-items: center;
       gap: 10px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
       color: #ffffff;
       font-size: 8.5pt;
     }
@@ -26,164 +26,102 @@
       background: rgba(255, 255, 255, 0.15);
       border: none;
       color: #ffffff;
-      padding: 4px 10px;
+      padding: 5px 12px;
       border-radius: 16px;
       cursor: pointer;
       font-weight: 600;
       font-size: 8pt;
       transition: all 0.15s ease;
     }
-    .deck-btn:hover {
-      background: var(--primary-accent);
-    }
-    .deck-btn-primary {
-      background: var(--primary-accent);
-    }
+    .deck-btn:hover { background: #2563eb; }
+    .deck-btn-primary { background: #2563eb; }
     .deck-select {
       background: rgba(255, 255, 255, 0.12);
       color: #ffffff;
       border: 1px solid rgba(255, 255, 255, 0.2);
-      padding: 3px 8px;
-      border-radius: 12px;
-      font-size: 7.8pt;
-      font-family: inherit;
+      padding: 4px 10px;
+      border-radius: 14px;
+      font-size: 8pt;
       outline: none;
+      max-width: 320px;
     }
-    .deck-select option {
-      background: #0f172a;
-      color: #ffffff;
-    }
+    .deck-select option { background: #0f172a; color: #ffffff; }
     iframe.page-frame {
       width: 210mm;
       height: 297mm;
       border: none;
-      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12);
+      box-shadow: 0 12px 35px rgba(15, 23, 42, 0.18);
       border-radius: 4px;
+      display: block;
+      margin: 20px auto;
       background: #ffffff;
-    }
-    @media print {
-      .deck-nav {
-        display: none !important;
-      }
-      iframe.page-frame {
-        box-shadow: none !important;
-        page-break-after: always !important;
-      }
     }
   </style>
 </head>
-<body>
-  <div class="deck-nav no-print">
-    <span style="font-weight: 800; letter-spacing: 0.05em; color: #38bdf8;">FATHOM 42-PAGE DECK</span>
+<body style="background: #e2e8f0; margin: 0; padding: 40px 0 80px 0;">
+
+  <div class="deck-nav">
     <button class="deck-btn" onclick="prevPage()">◀ Prev</button>
     <select class="deck-select" id="pageSelect" onchange="jumpToPage(this.value)">
-      <option value="1">Page 01: Universal Autonomous AI Workforce Runtime</option>
-      <option value="2">Page 02: The Broken Remote Hiring Landscape</option>
-      <option value="3">Page 03: Digital Coworkers vs. Scripted Chatbots</option>
-      <option value="4">Page 04: The 5 Core Digital Worker Archetypes</option>
-      <option value="5">Page 05: A Day in the Life of a Digital Employee</option>
-      <option value="6">Page 06: The Virtual Employee Subscription Model</option>
-      <option value="7">Page 07: Unlimited Neural Compute Engine</option>
-      <option value="8">Page 08: Total Cost of Ownership (TCO) & ROI</option>
-      <option value="9">Page 09: Scalability Economics: 1 to 1,000 Workers</option>
-      <option value="10">Page 10: Enterprise & Agency Monetization Models</option>
-      <option value="11">Page 11: The Self-Replicating Growth Loop</option>
-      <option value="12">Page 12: Go-To-Market Channels & Customer Acquisition</option>
-      <option value="13">Page 13: The 'Free Value Audit to Paid Seat' Funnel</option>
-      <option value="14">Page 14: Agency & B2B Partner Ecosystem</option>
-      <option value="15">Page 15: Skill Marketplace & Template Network</option>
-      <option value="16">Page 16: Autonomous Sales Development Rep (SDR)</option>
-      <option value="17">Page 17: Executive Headhunter & Talent Scout</option>
-      <option value="18">Page 18: 24/7 Market Intelligence & Competitor Tracker</option>
-      <option value="19">Page 19: Automated Customer Onboarding & Support</option>
-      <option value="20">Page 20: Back-Office & Invoice Reconciliation</option>
-      <option value="21">Page 21: Autonomous Software Engineer & Maintainer</option>
-      <option value="22">Page 22: Regulatory & Legal Document Auditor</option>
-      <option value="23">Page 23: How the Virtual Office Operates</option>
-      <option value="24">Page 24: Why Rust? The Architecture of Performance</option>
-      <option value="25">Page 25: Coordinator & Worker Swarm Execution</option>
-      <option value="26">Page 26: The Broadcast Message Bus</option>
-      <option value="27">Page 27: Reliability & Self-Healing Workflows</option>
-      <option value="28">Page 28: How Digital Workers See & Control Computers</option>
-      <option value="29">Page 29: Why Opaque Refs Beat Brittle Selectors</option>
-      <option value="30">Page 30: Screen Streaming & Seamless Takeover</option>
-      <option value="31">Page 31: Docker Sandboxes & Network Egress</option>
-      <option value="32">Page 32: How Coworkers Remember Across Months</option>
-      <option value="33">Page 33: Sub-Millisecond Knowledge Ingestion</option>
-      <option value="34">Page 34: The Enterprise Entity Knowledge Graph</option>
-      <option value="35">Page 35: Enterprise Guardrails & Policy Engine</option>
-      <option value="36">Page 36: The Ironclad Credentials Vault</option>
-      <option value="37">Page 37: Complete Compliance & Audit Trails</option>
-      <option value="38">Page 38: Speed Showdown: Fathom vs. Python</option>
-      <option value="39">Page 39: Hardware Efficiency & Worker Density</option>
-      <option value="40">Page 40: Empirical Performance Summary</option>
-      <option value="41">Page 41: Strategic Product Roadmap (2026–2027)</option>
-      <option value="42">Page 42: The Autonomous Enterprise OS</option>
-      <option value="all">View All 42 Pages (Printable)</option>
+      <option value="1">Page 01: Strategic Overview & Universal Runtime</option><option value="2">Page 02: The Autonomous Digital Employee Paradigm</option><option value="3">Page 03: Virtual Office Topology & Autonomous Coordination</option><option value="4">Page 04: Day in the Life of a Digital Employee Fleet [Mockup: Inbox Zero]</option><option value="5">Page 05: Core Engine Architecture & Sub-Millisecond Dispatch</option><option value="6">Page 06: Autonomous SDR & Corporate Registries [Mockup: SDR Outbound]</option><option value="7">Page 07: Market Intelligence & Competitor Tracking [Mockup: DOM Diff]</option><option value="8">Page 08: Executive Recruiting & Talent Sourcing [Mockup: GitHub AST]</option><option value="9">Page 09: Back-Office & Financial Reconciliation [Mockup: QuickBooks]</option><option value="10">Page 10: DevOps Maintenance & Code Engineering [Mockup: Sentry PR]</option><option value="11">Page 11: Autonomous Research & Deep Intelligence</option><option value="12">Page 12: Self-Healing Background Jobs & Scheduled Routines [Mockup: Swarm DAG]</option><option value="13">Page 13: Automated Outreach: The 7-Layer OSINT Engine</option><option value="14">Page 14: Multi-Source Identity Fusion & Graph Deduplication</option><option value="15">Page 15: Automated Enrichment & Cross-Platform Corroboration</option><option value="16">Page 16: SMTP 250 OK Gauntlet & Deliverability Engine</option><option value="17">Page 17: Multi-Channel Outbound Dispatch [Mockup: Instantly Bridge]</option><option value="18">Page 18: Goal-Oriented Autonomous Search & LLM Judge</option><option value="19">Page 19: Zero-Bounce Deliverability & Anti-Spam Pipeline [Mockup: Audit Table]</option><option value="20">Page 20: Two-Way CRM Synchronization & Autonomous Deal Staging</option><option value="21">Page 21: Computer Use: Sandboxed Browser & Desktop Automation</option><option value="22">Page 22: Accessibility Trees vs Visual Coordinate Scripts</option><option value="23">Page 23: Governed Execution & 2FA Human Takeover [Mockup: AWS 2FA]</option><option value="24">Page 24: Live Human Supervision, Telegram Approval & Takeover [Mockup: CS REPL]</option><option value="25">Page 25: Sub-Millisecond Tokio Dispatch Engine (~0.75 ms)</option><option value="26">Page 26: Enterprise Security Architecture & AES-256-GCM Vault [Mockup: Vault]</option><option value="27">Page 27: Regulatory Compliance, Legal Audits & Risk Matrices [Mockup: Legal MSA]</option><option value="28">Page 28: Hardware Efficiency & High-Concurrency Benchmarks</option><option value="29">Page 29: Cold Start, Concurrency & Memory Profiles</option><option value="30">Page 30: Long-Term Memory & Entity Knowledge Graphs [Mockup: Graph]</option><option value="31">Page 31: Self-Healing Infrastructure & Error Diagnostics</option><option value="32">Page 32: HTTP Server, Axum Router & SSE Real-Time Protocol</option><option value="33">Page 33: Multi-Channel Gateway (Telegram, Slack, Discord, Web)</option><option value="34">Page 34: The Self-Replicating Growth Loop & Inbound Engine</option><option value="35">Page 35: Customer Acquisition & The Free Value Audit Flywheel</option><option value="36">Page 36: Pricing Architecture: Flat-Rate Unlimited Seat Economics</option><option value="37">Page 37: Agency Scaling, Multi-Tenancy & White-Label Deployments [Mockup: Agency Fleet]</option><option value="38">Page 38: Total Cost of Ownership & 90%+ Gross Margin Unit Economics</option><option value="39">Page 39: Enterprise Deployment Topologies (Bare-Metal, Cloud, Edge)</option><option value="40">Page 40: High-Availability, Clustering & State Synchronization</option><option value="41">Page 41: Enterprise SLA, Disaster Recovery & Continuous Auditing</option><option value="42">Page 42: Conclusion: The Autonomous Enterprise Era & Roadmap</option>
     </select>
     <button class="deck-btn" onclick="nextPage()">Next ▶</button>
-    <button class="deck-btn deck-btn-primary" onclick="window.print()">Print / Save PDF</button>
+    <span style="color: rgba(255,255,255,0.4);">|</span>
+    <button class="deck-btn" onclick="toggleViewMode(this)" id="viewModeBtn">Show All 42 Pages</button>
+    <a href="Fathom_Whitepaper.pdf" target="_blank" class="deck-btn deck-btn-primary" style="text-decoration:none;">📄 Download PDF (14.6 MB)</a>
+    <a href="mockups/index.html" target="_blank" class="deck-btn" style="text-decoration:none; background:#4f46e5;">🖼 15 HD Mockups</a>
   </div>
 
-  <div id="deckContainer" style="display: flex; flex-direction: column; align-items: center; gap: 24px; width: 100%;">
-    <iframe id="singleFrame" class="page-frame" src="page_01.html"></iframe>
+  <div id="deckContainer">
+    <iframe class="page-frame" id="singleFrame" src="page_01.html"></iframe>
   </div>
 
   <script>
-    let currentPage = 1;
-    const totalPages = 42;
+    let cur = 1;
+    const total = 42;
+    let isAllView = false;
 
-    function padZero(num) {
-      return num < 10 ? '0' + num : num;
-    }
-
-    function updateView() {
-      const container = document.getElementById('deckContainer');
-      const select = document.getElementById('pageSelect');
-      
-      if (select.value === 'all') {
-        container.innerHTML = '';
-        for (let i = 1; i <= totalPages; i++) {
-          const frame = document.createElement('iframe');
-          frame.className = 'page-frame';
-          frame.src = `page_${padZero(i)}.html`;
-          container.appendChild(frame);
-        }
+    function jumpToPage(num) {
+      cur = parseInt(num);
+      document.getElementById('pageSelect').value = cur;
+      if (!isAllView) {
+        document.getElementById('singleFrame').src = 'page_' + String(cur).padStart(2, '0') + '.html';
+        window.scrollTo(0, 0);
       } else {
-        container.innerHTML = `<iframe id="singleFrame" class="page-frame" src="page_${padZero(currentPage)}.html"></iframe>`;
-        select.value = currentPage;
-      }
-    }
-
-    function jumpToPage(val) {
-      if (val === 'all') {
-        updateView();
-      } else {
-        currentPage = parseInt(val, 10);
-        updateView();
+        const el = document.getElementById('frame-' + cur);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
       }
     }
 
     function prevPage() {
-      if (currentPage > 1) {
-        currentPage--;
-        document.getElementById('pageSelect').value = currentPage;
-        updateView();
-      }
+      if (cur > 1) jumpToPage(cur - 1);
     }
 
     function nextPage() {
-      if (currentPage < totalPages) {
-        currentPage++;
-        document.getElementById('pageSelect').value = currentPage;
-        updateView();
+      if (cur < total) jumpToPage(cur + 1);
+    }
+
+    function toggleViewMode(btn) {
+      const container = document.getElementById('deckContainer');
+      isAllView = !isAllView;
+      if (isAllView) {
+        btn.innerText = "Single Slide Mode";
+        let html = '';
+        for (let i = 1; i <= total; i++) {
+          html += '<iframe class="page-frame" id="frame-' + i + '" src="page_' + String(i).padStart(2, '0') + '.html"></iframe>';
+        }
+        container.innerHTML = html;
+      } else {
+        btn.innerText = "Show All 42 Pages";
+        container.innerHTML = '<iframe class="page-frame" id="singleFrame" src="page_' + String(cur).padStart(2, '0') + '.html"></iframe>';
       }
     }
 
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowLeft') prevPage();
-      if (e.key === 'ArrowRight') nextPage();
+      if (e.key === 'ArrowRight' || e.key === 'PageDown') nextPage();
+      if (e.key === 'ArrowLeft' || e.key === 'PageUp') prevPage();
     });
   </script>
+
 </body>
 </html>

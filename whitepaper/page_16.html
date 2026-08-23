@@ -22,73 +22,59 @@
     </div>
 
     <div class="content-body">
-<div class="card-accent">
-  <div class="card-title">Scenario Brief: Scaling Outbound Pipeline for a B2B SaaS Startup</div>
-  <p>
-    <strong>Company:</strong> CloudSecure (Enterprise Cybersecurity SaaS).<br>
+<div class="card-accent" style="padding: 6px 10px;">
+  <div class="card-title" style="font-size: 8.8pt;">Scenario Brief: Scaling Outbound Pipeline for CloudSecure (Cybersecurity SaaS)</div>
+  <p style="font-size: 7.2pt;">
     <strong>Objective:</strong> Generate 100 verified CISO and VP IT contacts at mid-market financial firms in London every week with zero bounced emails.
   </p>
 </div>
 
-<div class="card">
-  <div class="card-title">Autonomous Execution Workflow</div>
-  <div class="timeline">
-    <div class="timeline-item">
-      <div class="timeline-time">Step 1</div>
-      <div class="timeline-content">
-        <div class="timeline-title">Directory & Registry Sweep</div>
-        <div class="timeline-desc">The SDR coworker queries Companies House and business registries in parallel, identifying 120 mid-market financial firms fitting ICP parameters.</div>
+<!-- MOCKUP 6: SDR Workspace & SMTP Verification Gauge (Rakazo Style) -->
+<div class="app-mockup">
+  <div class="mockup-header">
+    <div class="mockup-traffic"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span><span class="mockup-title">Autonomous SDR · Lead Sourcing & SMTP Gauntlet</span></div>
+    <div style="font-size:6pt; color:#10b981; font-family:'JetBrains Mono';">● SMTP PROBE ACTIVE</div>
+  </div>
+  <div class="mockup-body mockup-2col">
+    <div class="mockup-sidebar" style="font-size: 6.2pt;">
+      <div style="color:#94a3b8; font-weight:700;">PROSPECTING TARGET</div>
+      <div style="color:#f1f5f9;">Sector: FinTech / Banking</div>
+      <div style="color:#f1f5f9;">Geo: London, UK</div>
+      <div style="color:#f1f5f9;">Role: CISO, VP IT, SecOps</div>
+      <div style="margin-top: 4px; border-top:1px solid #232b38; padding-top:4px;">
+        <span class="badge badge-green">94 EMAILS VERIFIED</span>
       </div>
     </div>
-
-    <div class="timeline-item">
-      <div class="timeline-time">Step 2</div>
-      <div class="timeline-content">
-        <div class="timeline-title">Decision-Maker Mapping & Extraction</div>
-        <div class="timeline-desc">Scans corporate team pages (<code>parse_corporate_site</code>) and social networks (<code>search_social</code>), identifying 108 CISO and IT leadership names.</div>
-      </div>
-    </div>
-
-    <div class="timeline-item">
-      <div class="timeline-time">Step 3</div>
-      <div class="timeline-content">
-        <div class="timeline-title">Email Permutation & SMTP Probing</div>
-        <div class="timeline-desc">Generates corporate email permutations (<code>suggest_emails</code>) and validates each via non-intrusive SMTP 250 OK handshakes. 94 emails confirmed deliverable.</div>
-      </div>
-    </div>
-
-    <div class="timeline-item">
-      <div class="timeline-time">Step 4</div>
-      <div class="timeline-content">
-        <div class="timeline-title">CRM Auto-Sync & Telegram Notification</div>
-        <div class="timeline-desc">Pushes all 94 leads into HubSpot with company revenue, tech stack tags (e.g. AWS, Okta), and notifies the sales team via Telegram.</div>
-      </div>
+    <div class="mockup-chat" style="font-size: 6.2pt;">
+      <div class="bot-step-line"><span class="bot-check">✓</span><strong>Domain:</strong> <code>monzofintech.co.uk</code> → MX: <code>aspmx.l.google.com</code></div>
+      <div class="bot-step-line"><span class="bot-check">✓</span><strong>SMTP Handshake:</strong> <code>HELO fathom.local</code> → <code>RCPT TO:&lt;david.evans@monzo...&gt;</code> → <strong>250 OK (Mailbox Exists)</strong></div>
+      <div class="bot-step-line"><span class="bot-check">✓</span><strong>amoCRM Synced:</strong> Lead staged in pipeline <em>"Q3 Enterprise Deals"</em> with LinkedIn URL & AWS/Okta tags.</div>
     </div>
   </div>
 </div>
 
 <div class="grid-2">
-  <div class="card card-emerald">
+  <div class="card card-emerald" style="padding: 5px 8px;">
     <div class="card-title-sm">Business Outcome</div>
-    <ul style="font-size: 7.2pt; margin-bottom: 0;">
+    <ul style="font-size: 6.8pt; margin-bottom: 0;">
       <li><strong>Time Saved:</strong> 35 hours of manual human prospecting per week.</li>
       <li><strong>Data Quality:</strong> Zero email bounces (&lt; 1% bounce rate on SMTP-verified leads).</li>
       <li><strong>Pipeline Generated:</strong> 8 qualified enterprise demo calls booked in month 1.</li>
     </ul>
   </div>
 
-  <div class="card card-slate">
+  <div class="card card-slate" style="padding: 5px 8px;">
     <div class="card-title-sm">Human Operator Touchpoint</div>
-    <p style="font-size: 7.4pt;">
-      The human sales director spent just <strong>5 minutes per week</strong> reviewing the Telegram summary and giving 1-click approval for CRM injection.
+    <p style="font-size: 7pt;">
+      The sales director spent just <strong>5 minutes per week</strong> reviewing the Telegram summary and giving 1-click approval for CRM injection.
     </p>
-    <ul style="font-size: 7.2pt; margin-bottom: 0;">
+    <ul style="font-size: 6.8pt; margin-bottom: 0;">
       <li><strong>Tools Invoked:</strong> <code>find_leads</code>, <code>suggest_emails</code>, <code>verify_email</code>, <code>save_contacts</code>.</li>
     </ul>
   </div>
 </div>
 
-<div class="callout callout-success">
+<div class="callout callout-success" style="margin-bottom: 0;">
   <strong>Measurable Impact:</strong> Outbound prospecting shifts from a costly manual grind to an automated, auditable, high-conversion pipeline engine.
 </div>
     </div>

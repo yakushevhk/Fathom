@@ -22,59 +22,45 @@
     </div>
 
     <div class="content-body">
-<div class="card-dark">
-  <div class="card-title">Resilience by Design: Surviving Crashes and API Failures</div>
-  <p>
+<div class="card-dark" style="padding: 7px 10px;">
+  <div class="card-title" style="font-size: 8.8pt;">Resilience by Design: Surviving Crashes and API Failures</div>
+  <p style="font-size: 7.4pt;">
     In production environments, network timeouts, API rate limits, and server restarts are inevitable. Fathom's durable job engine is designed to ensure that <strong>no work is ever lost</strong>.
   </p>
 </div>
 
 <div class="grid-2">
-  <div class="card card-emerald">
+  <div class="card card-emerald" style="padding: 5px 8px;">
     <div class="card-title-sm">1. Detached Process Execution (setsid)</div>
-    <p style="font-size: 7.4pt;">
+    <p style="font-size: 7.2pt;">
       Background jobs run as independent operating system processes detached from the terminal session. Closing your laptop, terminating SSH, or exiting the CLI does not interrupt ongoing worker execution.
     </p>
   </div>
 
-  <div class="card card-accent">
+  <div class="card card-accent" style="padding: 5px 8px;">
     <div class="card-title-sm">2. Self-Healing Task Augmentation</div>
-    <p style="font-size: 7.4pt;">
-      When a job fails (e.g. hitting an unexpected rate limit), the runner does not execute a blind restart. Attempt #2 automatically injects the previous error trace and partial files, prompting the agent to adapt its strategy and self-heal.
+    <p style="font-size: 7.2pt;">
+      When a job fails (e.g. hitting an unexpected rate limit), Attempt #2 automatically injects the previous error trace and partial files, prompting the agent to adapt its strategy and self-heal.
     </p>
   </div>
 </div>
 
-<div class="card">
+<div class="card" style="padding: 5px 8px;">
   <div class="card-title">The Self-Correction Loop in Action</div>
-  <div class="timeline">
-    <div class="timeline-item">
-      <div class="timeline-time">Attempt 1</div>
-      <div class="timeline-content">
-        <div class="timeline-title">Initial Execution Fails</div>
-        <div class="timeline-desc">Worker attempts to scrape 50 pages using primary API; hits HTTP 429 Rate Limit after saving 20 records.</div>
-      </div>
+  <div class="timeline" style="gap: 2px;">
+    <div class="timeline-item" style="padding: 3px 6px;">
+      <div class="timeline-time" style="font-size:6pt;">Attempt 1</div>
+      <div class="timeline-content"><div class="timeline-title" style="font-size:6.6pt;">Initial Execution Fails</div><div class="timeline-desc" style="font-size:5.6pt;">Worker hits HTTP 429 Rate Limit after saving 20 records.</div></div>
     </div>
-
-    <div class="timeline-item">
-      <div class="timeline-time">Attempt 2</div>
-      <div class="timeline-content">
-        <div class="timeline-title">Augmented Prompt & Recovery</div>
-        <div class="timeline-desc">Worker inspects the 20 saved records in workspace, switches search backend to DuckDuckGo fallback, applies request throttling, and completes remaining 30 records.</div>
-      </div>
+    <div class="timeline-item" style="padding: 3px 6px;">
+      <div class="timeline-time" style="font-size:6pt;">Attempt 2</div>
+      <div class="timeline-content"><div class="timeline-title" style="font-size:6.6pt;">Augmented Prompt & Recovery</div><div class="timeline-desc" style="font-size:5.6pt;">Worker switches to fallback API, throttles requests, and completes remaining 30 records.</div></div>
     </div>
   </div>
 </div>
 
-<div class="card-slate">
-  <div class="card-title-sm">Stale Process Detection & Recovery</div>
-  <p style="font-size: 7.4pt;">
-    If a server experiences an abrupt power outage, Fathom's SQLite registry identifies dead PIDs upon reboot and marks interrupted jobs as <code>stale</code>, allowing 1-click seamless restarts without corrupted state.
-  </p>
-</div>
-
-<div class="callout callout-info">
-  <strong>Autonomous Multi-Hour Durability:</strong> Deploy complex, multi-stage research workflows with total confidence that temporary network glitches will be resolved automatically.
+<div class="callout callout-info" style="margin-bottom: 0;">
+  <strong>Autonomous Multi-Hour Durability:</strong> Deploy complex research workflows with total confidence that temporary network glitches will be resolved automatically.
 </div>
     </div>
 

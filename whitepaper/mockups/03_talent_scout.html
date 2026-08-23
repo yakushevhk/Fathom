@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fathom GPUI Metal · Talent Scout</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #09090b;
+  color: #f4f4f5;
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 30px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Master GPUI Metal Window Frame */
+.gpui-window {
+  width: 1220px;
+  height: 780px;
+  background: #111115;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 35px 90px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Glassmorphic Metal Topbar */
+.gpui-topbar {
+  background: #16161b;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  backdrop-filter: blur(16px);
+}
+.gpui-traffic { display: flex; gap: 7px; align-items: center; }
+.gpui-dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+.gdot-red { background: #ff5f56; }
+.gdot-yellow { background: #ffbd2e; }
+.gdot-green { background: #27c93f; }
+
+.gpui-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #71717a;
+}
+.gpui-crumb-active { color: #f4f4f5; font-weight: 600; }
+.gpui-crumb-sep { color: #3f3f46; }
+
+.gpui-model-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.28);
+  color: #a5b4fc;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 6px;
+}
+
+/* 3-Pane Body */
+.gpui-body {
+  display: grid;
+  grid-template-columns: 240px 1fr 320px;
+  flex: 1;
+  background: #0d0d10;
+  overflow: hidden;
+}
+
+/* Left Sidebar (Fleet / Channels) */
+.gpui-sidebar {
+  background: #131317;
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+}
+.sidebar-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.sidebar-btn-add {
+  width: 18px;
+  height: 18px;
+  background: #1c1c22;
+  border: 1px solid #27272a;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a1a1aa;
+  font-size: 12px;
+  cursor: pointer;
+}
+.gpui-bot-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6.5px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.12s;
+}
+.gpui-bot-row.is-active {
+  background: #1e1e26;
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+.gpui-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.gpui-bot-details { display: flex; flex-direction: column; overflow: hidden; flex: 1; }
+.gpui-bot-title-row { display: flex; justify-content: space-between; align-items: center; }
+.gpui-bot-name { font-size: 11.5px; font-weight: 600; color: #f4f4f5; }
+.gpui-bot-status-dot { width: 6px; height: 6px; border-radius: 50%; background: #34d399; }
+.gpui-bot-sub { font-size: 9.5px; color: #71717a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+
+.gpui-user-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding-top: 10px;
+}
+.gpui-user-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  color: #f4f4f5;
+  font-size: 9.5px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #818cf8;
+}
+.gpui-user-meta { font-size: 11px; font-weight: 600; color: #f4f4f5; }
+
+/* Center Chat / Execution Stream */
+.gpui-center-pane {
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: #0d0d10;
+  overflow: hidden;
+}
+.gpui-chat-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding-bottom: 8px;
+}
+.gpui-active-head { display: flex; align-items: center; gap: 8px; }
+.gpui-active-title { font-size: 13px; font-weight: 700; color: #f4f4f5; }
+.gpui-speed-tag { font-size: 9.5px; font-family: 'JetBrains Mono', monospace; color: #34d399; }
+
+.gpui-stream {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  overflow-y: auto;
+  padding: 10px 0;
+}
+.gpui-msg-user {
+  background: #18181f;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #f4f4f5;
+  padding: 8px 12px;
+  border-radius: 8px 8px 2px 8px;
+  align-self: flex-end;
+  font-size: 11.5px;
+  max-width: 85%;
+  line-height: 1.45;
+}
+.gpui-msg-bot {
+  background: #131318;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  color: #d4d4d8;
+  padding: 10px 14px;
+  border-radius: 8px 8px 8px 2px;
+  align-self: flex-start;
+  font-size: 11.5px;
+  width: 98%;
+  line-height: 1.5;
+}
+
+/* Tool Calling Chips (Collapsed & Interactive) */
+.tool-call-group {
+  margin: 6px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tool-chip {
+  background: #09090c;
+  border: 1px solid #27272a;
+  border-radius: 6px;
+  padding: 5px 9px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #a1a1aa;
+}
+.tool-chip-left { display: flex; align-items: center; gap: 7px; }
+.tool-icon-exec { color: #f59e0b; font-weight: 700; }
+.tool-name-highlight { color: #38bdf8; font-weight: 600; }
+.tool-result-badge {
+  color: #34d399;
+  font-size: 9px;
+  background: rgba(52, 211, 153, 0.1);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.tool-collapsed-bar {
+  background: #111116;
+  border: 1px dashed #27272a;
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-size: 9.5px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #71717a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.gpui-card-deliverable {
+  background: #09090c;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 7px;
+  padding: 8px 12px;
+  margin: 6px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.deliverable-line { display: flex; align-items: center; gap: 7px; font-size: 11px; color: #d4d4d8; }
+.chk-green { color: #34d399; font-weight: 800; }
+
+.gpui-composer {
+  background: #141419;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 7px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 11px;
+}
+.comp-icon { color: #71717a; font-size: 13px; cursor: pointer; }
+.comp-input-text { color: #71717a; flex: 1; }
+.comp-send-key {
+  background: #27272a;
+  color: #ececee;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 600;
+}
+
+/* Right Panel: Live Terminal / Browser Inspection */
+.gpui-right-pane {
+  background: #131317;
+  border-left: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.right-pane-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #f4f4f5;
+  font-size: 11px;
+  font-weight: 600;
+}
+.browser-frame-mock {
+  background: #09090c;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.browser-top-strip {
+  background: #18181f;
+  padding: 5px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid #27272a;
+}
+.url-text-pill {
+  background: #0d0d10;
+  color: #38bdf8;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.browser-viewport-inner {
+  padding: 8px;
+  font-size: 9.5px;
+  color: #d4d4d8;
+  min-height: 95px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.takeover-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: #71717a;
+}
+.btn-gpui-action {
+  background: #1e1e26;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f4f4f5;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cron-routines-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+.cron-title-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.cron-card {
+  background: #18181f;
+  border: 1px solid #27272a;
+  border-radius: 6px;
+  padding: 4px 7px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+}
+.cron-time-val { color: #38bdf8; font-family: 'JetBrains Mono', monospace; font-size: 9px; }
+
+/* Bottom Metal Status Bar */
+.gpui-statusbar {
+  background: #141418;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 4px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: #71717a;
+}
+.statusbar-left { display: flex; gap: 12px; align-items: center; }
+.statusbar-right { display: flex; gap: 14px; align-items: center; }
+.stat-active-item { color: #d4d4d8; }
+.stat-green { color: #34d399; }
+</style>
+</head>
+<body>
+
+<div class="gpui-window">
+  <!-- Topbar -->
+  <div class="gpui-topbar">
+    <div class="gpui-traffic">
+      <span class="gpui-dot gdot-red"></span>
+      <span class="gpui-dot gdot-yellow"></span>
+      <span class="gpui-dot gdot-green"></span>
+    </div>
+
+    <div class="gpui-breadcrumbs">
+      <span>fathom</span>
+      <span class="gpui-crumb-sep">//</span>
+      <span>coworkers</span>
+      <span class="gpui-crumb-sep">//</span>
+      <span class="gpui-crumb-active">recruiter // rust-tokio-sourcing</span>
+    </div>
+
+    <div class="gpui-model-badge">
+      <span>⚡</span>
+      <span>GLM 5.3 (Zhipu AI)</span>
+    </div>
+  </div>
+
+  <!-- Main Body -->
+  <div class="gpui-body">
+    <!-- Sidebar -->
+    <div class="gpui-sidebar">
+      <div>
+        <div class="sidebar-section-title">
+          <span>Active Coworkers</span>
+          <div class="sidebar-btn-add">+</div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:3px;">
+          
+        <div class="gpui-bot-row">
+          <div class="gpui-avatar" style="background: linear-gradient(135deg, #0d9488, #14b8a6);">👑</div>
+          <div class="gpui-bot-details">
+            <div class="gpui-bot-title-row">
+              <span class="gpui-bot-name">Chief of Staff</span>
+              <span class="gpui-bot-status-dot"></span>
+            </div>
+            <div class="gpui-bot-sub">briefing ready, 3 meetings staged</div>
+          </div>
+        </div>
+        <div class="gpui-bot-row">
+          <div class="gpui-avatar" style="background: linear-gradient(135deg, #ea580c, #f97316);">⚡</div>
+          <div class="gpui-bot-details">
+            <div class="gpui-bot-title-row">
+              <span class="gpui-bot-name">Sales Outbound</span>
+              <span class="gpui-bot-status-dot"></span>
+            </div>
+            <div class="gpui-bot-sub">40 accounts researched, 18 queued</div>
+          </div>
+        </div>
+        <div class="gpui-bot-row">
+          <div class="gpui-avatar" style="background: linear-gradient(135deg, #4f46e5, #6366f1);">🧠</div>
+          <div class="gpui-bot-details">
+            <div class="gpui-bot-title-row">
+              <span class="gpui-bot-name">Market Intel</span>
+              <span class="gpui-bot-status-dot"></span>
+            </div>
+            <div class="gpui-bot-sub">competitor pricing diff alert</div>
+          </div>
+        </div>
+        <div class="gpui-bot-row is-active">
+          <div class="gpui-avatar" style="background: linear-gradient(135deg, #0284c7, #38bdf8);">🔍</div>
+          <div class="gpui-bot-details">
+            <div class="gpui-bot-title-row">
+              <span class="gpui-bot-name">Talent Scout</span>
+              <span class="gpui-bot-status-dot"></span>
+            </div>
+            <div class="gpui-bot-sub">30 senior Rust engineers mapped</div>
+          </div>
+        </div>
+        <div class="gpui-bot-row">
+          <div class="gpui-avatar" style="background: linear-gradient(135deg, #e11d48, #fb7185);">📑</div>
+          <div class="gpui-bot-details">
+            <div class="gpui-bot-title-row">
+              <span class="gpui-bot-name">Back-Office</span>
+              <span class="gpui-bot-status-dot"></span>
+            </div>
+            <div class="gpui-bot-sub">500 invoices matched, 0 errors</div>
+          </div>
+        </div>
+        <div class="gpui-bot-row">
+          <div class="gpui-avatar" style="background: linear-gradient(135deg, #059669, #10b981);">🛠️</div>
+          <div class="gpui-bot-details">
+            <div class="gpui-bot-title-row">
+              <span class="gpui-bot-name">DevOps Maintainer</span>
+              <span class="gpui-bot-status-dot"></span>
+            </div>
+            <div class="gpui-bot-sub">23/23 tests passing, PR #142</div>
+          </div>
+        </div>
+        </div>
+      </div>
+
+      <div class="gpui-user-pill">
+        <div class="gpui-user-icon">YH</div>
+        <div class="gpui-user-meta">Yakushev Hermann · Tokyo Node</div>
+      </div>
+    </div>
+
+    <!-- Center Stream -->
+    <div class="gpui-center-pane">
+      <div class="gpui-chat-head">
+        <div class="gpui-active-head">
+          <div class="gpui-avatar" style="background: linear-gradient(135deg, #0284c7, #38bdf8); width: 22px; height: 22px; font-size: 11px;">🔍</div>
+          <span class="gpui-active-title">Talent Scout</span>
+        </div>
+        <span class="gpui-speed-tag">142 tok/s · 0.75ms dispatch</span>
+      </div>
+
+      <div class="gpui-stream">
+        
+    <div class="gpui-msg-user">Map 30 senior Rust architects with Tokio & distributed systems expertise in Berlin</div>
+    
+    <div class="tool-call-group">
+      <div class="tool-chip">
+        <div class="tool-chip-left">
+          <span class="tool-icon-exec">❯</span>
+          <span>tool: <strong class="tool-name-highlight">code_symbols.repo_map</strong>(repo="tokio-rs/tokio", min_commits=50)</span>
+        </div>
+        <span class="tool-result-badge">38 candidates</span>
+      </div>
+
+      <div class="tool-chip">
+        <div class="tool-chip-left">
+          <span class="tool-icon-exec">❯</span>
+          <span>tool: <strong class="tool-name-highlight">social_corroborate</strong>(handle="avance_rust", platforms=["github","linkedin"])</span>
+        </div>
+        <span class="tool-result-badge">Berlin (4.2y)</span>
+      </div>
+
+      <div class="tool-chip">
+        <div class="tool-chip-left">
+          <span class="tool-icon-exec">❯</span>
+          <span>tool: <strong class="tool-name-highlight">smtp_probe</strong>(email="a.vance@cloudscale.de")</span>
+        </div>
+        <span class="tool-result-badge">250 OK</span>
+      </div>
+    </div>
+
+    <div class="gpui-msg-bot">
+      Mapped candidate dossier for Alexander Vance (Principal Systems Eng):
+      <div class="gpui-card-deliverable">
+        <div class="deliverable-line"><span class="chk-green">✓</span><strong>GitHub Proof:</strong> 142 commits to <code>tokio-rs/tokio</code> (SIMD AVX-512)</div>
+        <div class="deliverable-line"><span class="chk-green">✓</span><strong>Current Seniority:</strong> Senior Rust Eng at CloudScale (Berlin)</div>
+        <div class="deliverable-line"><span class="chk-green">✓</span><strong>Icebreaker:</strong> Generated from EuroRust 2025 presentation</div>
+      </div>
+      3 candidate intro emails drafted in your voice.
+    </div>
+    
+      </div>
+
+      <div class="gpui-composer">
+        <span class="comp-icon">+</span>
+        <span class="comp-input-text">Instruct Talent Scout...</span>
+        <span class="comp-send-key">⌘⏎</span>
+      </div>
+    </div>
+
+    <!-- Right Inspection -->
+    <div class="gpui-right-pane">
+      <div class="right-pane-header">
+        <span>Live Inspection</span>
+        <span style="color:#71717a; font-size:10px; font-family:'JetBrains Mono';">Playwright Loopback</span>
+      </div>
+
+      <div class="browser-frame-mock">
+        <div class="browser-top-strip">
+          <span style="color:#52525b; font-size:8px;">●●●</span>
+          <div class="url-text-pill">github.com/tokio-rs/tokio/commits</div>
+        </div>
+        <div class="browser-viewport-inner">
+          
+    <span style="color:#38bdf8;">[AST Code Analyzer]</span><br>
+    > Candidate: Alexander Vance<br>
+    > Tokio Commits: 142 (Top 1%)<br>
+    > Location: Berlin (4.2 yrs exp)<br>
+    > Email: <span style="color:#34d399;">a.vance@... (250 OK)</span>
+    
+        </div>
+      </div>
+
+      <div class="takeover-bar">
+        <span>Status: Streaming (500ms)</span>
+        <button class="btn-gpui-action">Take Control</button>
+      </div>
+
+      <div class="cron-routines-box">
+        <div class="cron-title-label">Scheduled Routines</div>
+        
+        <div class="cron-card">
+          <span style="color:#f4f4f5; display:flex; align-items:center; gap:5px;"><span style="color:#71717a;">◷</span> GitHub talent crawler</span>
+          <span class="cron-time-val">Daily 11:00 PM</span>
+        </div>
+        <div class="cron-card">
+          <span style="color:#f4f4f5; display:flex; align-items:center; gap:5px;"><span style="color:#71717a;">◷</span> Candidate follow-up</span>
+          <span class="cron-time-val">Tuesday 9:00 AM</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Metal Status Bar -->
+  <div class="gpui-statusbar">
+    <div class="statusbar-left">
+      <span class="stat-active-item">● 6 Nodes Running</span>
+      <span>⎇ main</span>
+      <span>Tokio JoinSet</span>
+    </div>
+    <div class="statusbar-right">
+      <span>RAM: <strong style="color:#f4f4f5;">15.4 MB</strong></span>
+      <span>Dispatch: <strong class="stat-green">0.75 ms</strong></span>
+      <span>Tokens: <strong style="color:#38bdf8;">Unmetered</strong></span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -22,84 +22,52 @@
     </div>
 
     <div class="content-body">
-<div class="card-accent">
-  <div class="card-title">The Complete Performance Scorecard</div>
-  <p>
+<div class="card-accent" style="padding: 7px 10px;">
+  <div class="card-title" style="font-size: 8.8pt;">The Complete Performance Scorecard</div>
+  <p style="font-size: 7.4pt;">
     Every layer of the Fathom stack has been profiled and optimized for microsecond-level execution speed, ensuring instantaneous response times across all enterprise workflows.
   </p>
 </div>
 
 <div class="grid-3">
-  <div class="card card-emerald">
+  <div class="card card-emerald" style="padding: 5px 8px;">
     <div class="card-title-sm">Memory Ingestion</div>
-    <div class="metric-val" style="font-size: 15pt;">94 µs</div>
+    <div class="metric-val" style="font-size: 14pt;">94 µs</div>
     <div class="metric-label">Per-Fact Absorb (100 batch)</div>
-    <p style="font-size: 7pt; margin-top: 4px;">5.1ms to absorb and dedup 100 facts via SHA-256 fast path.</p>
+    <p style="font-size: 6.8pt; margin-top: 2px;">5.1ms to absorb and dedup 100 facts via SHA-256 fast path.</p>
   </div>
 
-  <div class="card card-accent">
+  <div class="card card-accent" style="padding: 5px 8px;">
     <div class="card-title-sm">Hybrid Retrieval</div>
-    <div class="metric-val" style="font-size: 15pt;">1.62 ms</div>
+    <div class="metric-val" style="font-size: 14pt;">1.62 ms</div>
     <div class="metric-label">Search Median Latency</div>
-    <p style="font-size: 7pt; margin-top: 4px;">Fused Vector + BM25 search across 500 facts in under 2ms.</p>
+    <p style="font-size: 6.8pt; margin-top: 2px;">Fused Vector + BM25 search across 500 facts in under 2ms.</p>
   </div>
 
-  <div class="card card-purple">
+  <div class="card card-purple" style="padding: 5px 8px;">
     <div class="card-title-sm">XML Feed Stream</div>
-    <div class="metric-val" style="font-size: 15pt;">1.11M</div>
+    <div class="metric-val" style="font-size: 14pt;">1.11M</div>
     <div class="metric-label">Items / Sec Throughput</div>
-    <p style="font-size: 7pt; margin-top: 4px;">Streaming quick-xml parser processes 12k feed items in 10.8ms.</p>
+    <p style="font-size: 6.8pt; margin-top: 2px;">Streaming quick-xml parser processes 12k feed items in 10.8ms.</p>
   </div>
 </div>
 
-<div class="card">
+<div class="card" style="padding: 5px 8px;">
   <div class="card-title">Parser Scaling & Extraction Latencies</div>
   <table>
     <thead>
-      <tr>
-        <th>Document Type</th>
-        <th>Size / Rows</th>
-        <th>Parse Duration</th>
-        <th>Effective Throughput</th>
-      </tr>
+      <tr><th>Document Type</th><th>Size / Rows</th><th>Parse Duration</th><th>Effective Throughput</th></tr>
     </thead>
     <tbody>
-      <tr>
-        <td><strong>HTML Table (Scraper)</strong></td>
-        <td>191 KB / 3,000 rows</td>
-        <td>9.55 ms</td>
-        <td>314,268 rows / sec</td>
-      </tr>
-      <tr>
-        <td><strong>HTML Large (Scraper)</strong></td>
-        <td>773 KB / 12,000 rows</td>
-        <td>34.22 ms</td>
-        <td>350,723 rows / sec</td>
-      </tr>
-      <tr>
-        <td><strong>JSON Tree Walk</strong></td>
-        <td>4 MB / 20,000 objects</td>
-        <td>43.47 ms</td>
-        <td>Stateless Parallel-Safe</td>
-      </tr>
-      <tr>
-        <td><strong>AST Code Map (240 files)</strong></td>
-        <td>3.3 MB Rust Source</td>
-        <td>34.20 ms</td>
-        <td>4,330 Summary Lines</td>
-      </tr>
+      <tr><td><strong>HTML Table (Scraper)</strong></td><td>191 KB / 3,000 rows</td><td>9.55 ms</td><td>314,268 rows / sec</td></tr>
+      <tr><td><strong>HTML Large (Scraper)</strong></td><td>773 KB / 12,000 rows</td><td>34.22 ms</td><td>350,723 rows / sec</td></tr>
+      <tr><td><strong>JSON Tree Walk</strong></td><td>4 MB / 20,000 objects</td><td>43.47 ms</td><td>Stateless Parallel-Safe</td></tr>
+      <tr><td><strong>AST Code Map (240 files)</strong></td><td>3.3 MB Rust Source</td><td>34.20 ms</td><td>4,330 Summary Lines</td></tr>
     </tbody>
   </table>
 </div>
 
-<div class="card-slate">
-  <div class="card-title-sm">System Latency Guarantees</div>
-  <p style="font-size: 7.4pt;">
-    All core internal operations—from policy validation to database inserts—are strictly bounded under 5 milliseconds, ensuring that human operators and external API callers experience instantaneous execution.
-  </p>
-</div>
-
-<div class="callout callout-info">
+<div class="callout callout-info" style="margin-bottom: 0;">
   <strong>Deterministic Excellence:</strong> Fathom turns AI agent execution from a sluggish, bloated prototype into a high-frequency trading caliber software runtime.
 </div>
     </div>

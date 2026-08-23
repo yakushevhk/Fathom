@@ -22,45 +22,57 @@
     </div>
 
     <div class="content-body">
-<div class="card-dark">
-  <div class="card-title">Scenario Brief: Continuous Code Maintenance & Automated Bug Triage</div>
-  <p>
-    <strong>Company:</strong> SaaSScale Inc. (Cloud Platform).<br>
-    <strong>Objective:</strong> Triage incoming Sentry error reports, navigate complex codebases, write reproducing unit tests, fix the underlying bug, and submit ready-to-review Pull Requests.
+<div class="card-dark" style="padding: 6px 10px;">
+  <div class="card-title" style="font-size: 8.8pt;">Scenario Brief: Continuous Code Maintenance for SaaSScale Inc.</div>
+  <p style="font-size: 7.2pt;">
+    <strong>Objective:</strong> Triage Sentry error reports, navigate complex codebases, write reproducing unit tests, fix the underlying bug, and submit ready-to-review Pull Requests.
   </p>
+</div>
+
+<!-- MOCKUP 10: DevOps IDE & Pytest Passing Log (Rakazo Style) -->
+<div class="app-mockup">
+  <div class="mockup-header">
+    <div class="mockup-traffic"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span><span class="mockup-title">Autonomous Engineer · AST Analysis & Test Suite</span></div>
+    <div style="font-size:6pt; color:#10b981; font-family:'JetBrains Mono';">● 23/23 TESTS PASSED (74s)</div>
+  </div>
+  <div class="mockup-body mockup-2col">
+    <div class="mockup-sidebar" style="font-size:5.8pt; font-family:'JetBrains Mono';">
+      <div style="color:#94a3b8;">REPO MAP (34ms):</div>
+      <div>src/analytics.py</div>
+      <div>src/revenue_calc.py</div>
+      <div>tests/test_revenue.py</div>
+      <div style="color:#10b981; margin-top:2px;">Branch: fix/mom-zero-div</div>
+    </div>
+    <div class="mockup-chat" style="font-size:5.8pt; font-family:'JetBrains Mono';">
+      <div style="color:#ef4444;">FAIL: test_mom_growth_zero_prior_month (ZeroDivisionError)</div>
+      <div style="color:#38bdf8;">> Patched: revenue_calc.py line 84 (defensive 0-check)</div>
+      <div style="color:#10b981;">> pytest tests/ -v: 23 passed in 1.42s</div>
+      <div style="color:#f1f5f9;">> GitHub PR #142 opened: "fix: guard MoM revenue calculation against 0 sales"</div>
+    </div>
+  </div>
 </div>
 
 <div class="grid-2">
-  <div class="card">
+  <div class="card" style="padding: 5px 8px;">
     <div class="card-title-sm">The 5-Step Code Engineering Loop</div>
-    <ol style="font-size: 7.2pt; margin-bottom: 0;">
-      <li><strong>Repo Mapping (<code>repo_map</code>):</strong> Parses AST symbols across 240+ project files in 34ms, mapping functions, types, and dependencies.</li>
-      <li><strong>Bug Reproduction:</strong> Generates a standalone pytest/cargo test reproducing the exact exception in an isolated sandbox.</li>
-      <li><strong>Targeted Code Modification:</strong> Edits source files precisely via <code>file_edit</code>, adhering to existing formatting.</li>
-      <li><strong>Automated Test Execution:</strong> Runs test suites via <code>shell</code>, verifying that the failing test passes and zero regressions occur.</li>
-      <li><strong>Git Branch & PR Creation:</strong> Commits changes with structured conventional commit messages and opens a GitHub PR.</li>
+    <ol style="font-size: 6.8pt; margin-bottom: 0;">
+      <li><strong>Repo Mapping:</strong> Parses AST symbols across 240+ files in 34ms.</li>
+      <li><strong>Bug Reproduction:</strong> Generates standalone test in isolated sandbox.</li>
+      <li><strong>Targeted Code Modification:</strong> Edits source files via <code>file_edit</code>.</li>
+      <li><strong>Automated Test Execution:</strong> Verifies 100% tests pass cleanly.</li>
+      <li><strong>Git Branch & PR Creation:</strong> Opens structured GitHub PR for review.</li>
     </ol>
   </div>
 
-  <div class="card card-emerald">
+  <div class="card card-emerald" style="padding: 5px 8px;">
     <div class="card-title-sm">Real Empirical Case (From Fathom Test Suite)</div>
-    <p style="font-size: 7.4pt;">
-      In live case study 5 (<code>docs/article/05-case-studies.md</code>), an autonomous Fathom engineer was tasked with building a complete Python CLI with MoM revenue analytics, realistic sample data, and pytest coverage.
+    <p style="font-size: 7pt;">
+      In live case study 5 (<code>05-case-studies.md</code>), an autonomous Fathom engineer was tasked with building a complete Python CLI with MoM revenue analytics, sample data, and pytest coverage, achieving <strong>23/23 passing tests</strong> completely autonomously in 74 seconds.
     </p>
-    <ul style="font-size: 7.2pt; margin-bottom: 0;">
-      <li>The agent wrote the code, ran tests, detected 1 calculation bug, edited the logic, and achieved <strong>23/23 passing tests</strong> completely autonomously in 74 seconds.</li>
-    </ul>
   </div>
 </div>
 
-<div class="card-slate">
-  <div class="card-title-sm">Developer Superpower: Zero Friction Maintenance</div>
-  <p style="font-size: 7.4pt;">
-    Senior engineering talent is freed from triaging mundane bug reports, updating outdated dependencies, and writing boilerplate integration tests, allowing them to focus 100% on core product architecture.
-  </p>
-</div>
-
-<div class="callout callout-info">
+<div class="callout callout-info" style="margin-bottom: 0;">
   <strong>Developer Superpower:</strong> Senior engineers focus on high-level system architecture while digital coworkers handle routine bugs, dependency upgrades, and test coverage.
 </div>
     </div>

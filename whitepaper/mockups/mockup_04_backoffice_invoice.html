@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Back-Office & Invoice Reconciliation</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #060608;
+  color: #ececee;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 30px;
+}
+
+.window-frame {
+  width: 1180px;
+  height: 720px;
+  background: #0d0d11;
+  border: 1px solid #23232a;
+  border-radius: 12px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255,255,255,0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Chrome Topbar */
+.window-chrome {
+  background: #131317;
+  padding: 10px 16px;
+  border-bottom: 1px solid #202026;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.traffic-lights { display: flex; gap: 7px; align-items: center; }
+.dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+.dot-red { background: #ff5f56; border: 1px solid #e0443e; }
+.dot-yellow { background: #ffbd2e; border: 1px solid #dea123; }
+.dot-green { background: #27c93f; border: 1px solid #1aab29; }
+.window-title { font-size: 11px; font-weight: 600; color: #8e8e93; font-family: 'JetBrains Mono', monospace; }
+.window-status { font-size: 10px; font-weight: 700; color: #30d158; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em; }
+
+/* 3-Pane Body */
+.window-body {
+  display: grid;
+  grid-template-columns: 240px 1fr 310px;
+  flex: 1;
+  background: #09090c;
+  overflow: hidden;
+}
+
+/* Left Sidebar */
+.sidebar {
+  background: #101014;
+  border-right: 1px solid #1c1c22;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+}
+.sidebar-head { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: #ececee; }
+.search-input {
+  background: #09090c;
+  border: 1px solid #23232a;
+  border-radius: 6px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #71717a;
+  font-size: 11px;
+}
+.bot-list { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+.bot-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.bot-item.is-active {
+  background: #1c1c22;
+  border-left: 3px solid #6366f1;
+}
+.bot-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.bot-details { display: flex; flex-direction: column; overflow: hidden; flex: 1; }
+.bot-title-row { display: flex; justify-content: space-between; align-items: center; }
+.bot-item-name { font-size: 11px; font-weight: 700; color: #ececee; }
+.bot-item-time { font-size: 9px; color: #71717a; font-family: 'JetBrains Mono', monospace; }
+.bot-item-preview { font-size: 10px; color: #8e8e93; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid #1c1c22;
+  padding-top: 10px;
+}
+.user-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #27272a;
+  color: #ececee;
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.user-name { font-size: 11px; font-weight: 600; color: #ececee; }
+
+/* Center Chat */
+.chat-pane {
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: #09090c;
+  overflow: hidden;
+}
+.chat-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #19191f;
+  padding-bottom: 8px;
+}
+.chat-bot-info { display: flex; align-items: center; gap: 8px; }
+.chat-bot-name { font-size: 13px; font-weight: 700; color: #ececee; }
+.chat-thread { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; padding: 10px 0; }
+.bubble-user {
+  background: #1c1c22;
+  color: #ececee;
+  padding: 8px 12px;
+  border-radius: 12px 12px 3px 12px;
+  align-self: flex-end;
+  font-size: 11.5px;
+  max-width: 85%;
+  line-height: 1.4;
+}
+.bubble-bot {
+  background: #141418;
+  border: 1px solid #23232a;
+  color: #d4d4d8;
+  padding: 9px 13px;
+  border-radius: 12px 12px 12px 3px;
+  align-self: flex-start;
+  font-size: 11.5px;
+  width: 98%;
+  line-height: 1.45;
+}
+.task-card {
+  background: #0e0e12;
+  border: 1px solid #23232a;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 6px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.task-line { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #d4d4d8; }
+.task-check { color: #30d158; font-weight: 800; font-size: 12px; }
+.task-arrow { color: #71717a; }
+
+.composer {
+  background: #131317;
+  border: 1px solid #23232a;
+  border-radius: 20px;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 11px;
+}
+.comp-plus { color: #71717a; font-size: 14px; font-weight: 700; cursor: pointer; }
+.comp-input { color: #71717a; flex: 1; }
+.comp-send {
+  background: #27272a;
+  color: #ececee;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Right Computer Pane */
+.computer-pane {
+  background: #101014;
+  border-left: 1px solid #1c1c22;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.comp-head { display: flex; justify-content: space-between; align-items: center; color: #ececee; font-size: 11.5px; font-weight: 700; }
+.screen-wrapper {
+  background: #09090c;
+  border: 1px solid #23232a;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.browser-bar {
+  background: #16161c;
+  padding: 5px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid #23232a;
+}
+.b-dots { display: flex; gap: 4px; }
+.b-dot { width: 6px; height: 6px; border-radius: 50%; background: #52525b; }
+.url-pill {
+  background: #09090c;
+  color: #38bdf8;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.browser-body { padding: 8px; font-size: 10px; color: #d4d4d8; min-height: 90px; }
+.screen-meta { display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #8e8e93; margin-top: 2px; }
+.btn-takeover {
+  background: #18181c;
+  border: 1px solid #3f3f46;
+  color: #ececee;
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.routines-label { font-size: 10px; font-weight: 700; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
+.routine-item {
+  background: #141418;
+  border: 1px solid #202026;
+  border-radius: 6px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+}
+.routine-title { color: #e4e4e7; font-weight: 600; }
+.routine-time { color: #38bdf8; font-family: 'JetBrains Mono', monospace; font-size: 9px; }
+.new-routine { color: #71717a; font-size: 9.5px; cursor: pointer; padding: 2px; }
+</style>
+</head>
+<body>
+
+<div class="window-frame">
+  <div class="window-chrome">
+    <div class="traffic-lights">
+      <span class="dot dot-red"></span>
+      <span class="dot dot-yellow"></span>
+      <span class="dot dot-green"></span>
+      <span class="window-title">fathom-desktop · Back-Office & Invoice Reconciliation</span>
+    </div>
+    <span class="window-status">● 500 INVOICES MATCHED · 0 DISCREPANCIES</span>
+  </div>
+
+  <div class="window-body">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div>
+        <div class="sidebar-head">
+          <span>Bots</span>
+          <span style="cursor:pointer; color:#71717a;">+</span>
+        </div>
+        <div class="search-input" style="margin: 8px 0 10px 0;">
+          <span>⌕</span>
+          <span>Search bots...</span>
+        </div>
+        <div class="bot-list">
+          
+        <div class="bot-item">
+          <div class="bot-avatar" style="background: linear-gradient(135deg, #0d9488, #14b8a6);">👑</div>
+          <div class="bot-details">
+            <div class="bot-title-row">
+              <span class="bot-item-name">Chief of Staff</span>
+              <span class="bot-item-time">Yesterday</span>
+            </div>
+            <div class="bot-item-preview">venue booked, contracts queued</div>
+          </div>
+        </div>
+        <div class="bot-item">
+          <div class="bot-avatar" style="background: linear-gradient(135deg, #ea580c, #f97316);">⚡</div>
+          <div class="bot-details">
+            <div class="bot-title-row">
+              <span class="bot-item-name">Sales Outbound</span>
+              <span class="bot-item-time">3:10 AM</span>
+            </div>
+            <div class="bot-item-preview">40 accounts researched, 18 queued</div>
+          </div>
+        </div>
+        <div class="bot-item">
+          <div class="bot-avatar" style="background: linear-gradient(135deg, #4f46e5, #6366f1);">🧠</div>
+          <div class="bot-details">
+            <div class="bot-title-row">
+              <span class="bot-item-name">Market Intel</span>
+              <span class="bot-item-time">12:11 AM</span>
+            </div>
+            <div class="bot-item-preview">competitor pricing diff alert</div>
+          </div>
+        </div>
+        <div class="bot-item">
+          <div class="bot-avatar" style="background: linear-gradient(135deg, #0284c7, #38bdf8);">🔍</div>
+          <div class="bot-details">
+            <div class="bot-title-row">
+              <span class="bot-item-name">Talent Scout</span>
+              <span class="bot-item-time">Yesterday</span>
+            </div>
+            <div class="bot-item-preview">5 senior Rust engineers mapped</div>
+          </div>
+        </div>
+        <div class="bot-item is-active">
+          <div class="bot-avatar" style="background: linear-gradient(135deg, #e11d48, #fb7185);">📑</div>
+          <div class="bot-details">
+            <div class="bot-title-row">
+              <span class="bot-item-name">Back-Office</span>
+              <span class="bot-item-time">Monday</span>
+            </div>
+            <div class="bot-item-preview">500 invoices matched, 0 errors</div>
+          </div>
+        </div>
+        <div class="bot-item">
+          <div class="bot-avatar" style="background: linear-gradient(135deg, #059669, #10b981);">🛠️</div>
+          <div class="bot-details">
+            <div class="bot-title-row">
+              <span class="bot-item-name">DevOps Maintainer</span>
+              <span class="bot-item-time">2:45 PM</span>
+            </div>
+            <div class="bot-item-preview">23/23 tests passing, PR #142</div>
+          </div>
+        </div>
+        </div>
+      </div>
+
+      <div class="user-profile">
+        <div class="user-avatar">AK</div>
+        <span class="user-name">Avery Kim</span>
+      </div>
+    </div>
+
+    <!-- Center Chat -->
+    <div class="chat-pane">
+      <div class="chat-topbar">
+        <div class="chat-bot-info">
+          <span class="chat-bot-name">Back-Office</span>
+          <span style="font-size:10px; color:#71717a;">▾</span>
+        </div>
+        <div style="font-size:14px; cursor:pointer;">💻</div>
+      </div>
+
+      <div class="chat-thread">
+        
+    <div class="bubble-user">Reconcile August freight invoices against warehouse purchase orders</div>
+    <div class="bubble-bot">
+      Ingested 500 PDF invoices from vendor portal. 3-way match completed:
+      <div class="task-card">
+        <div class="task-line"><span class="task-check">✓</span><strong>Parsed</strong><span class="task-arrow">→</span><span>500 PDF invoices ($482,000 total volume)</span></div>
+        <div class="task-line"><span class="task-check">✓</span><strong>PO Cross-Check</strong><span class="task-arrow">→</span><span>498 exact PO matches in ERP system</span></div>
+        <div class="task-line"><span class="task-check">✓</span><strong>Resolved</strong><span class="task-arrow">→</span><span>2 minor tax discrepancies corrected autonomously</span></div>
+        <div class="task-line"><span class="task-check">✓</span><strong>QuickBooks Entry</strong><span class="task-arrow">→</span><span>Batch payment staged for CFO 1-click approval</span></div>
+      </div>
+      Saved approximately 80 hours of manual bookkeeping.
+    </div>
+    
+      </div>
+
+      <div class="composer">
+        <span class="comp-plus">+</span>
+        <span class="comp-input">Message Back-Office...</span>
+        <span class="comp-send">↑</span>
+      </div>
+    </div>
+
+    <!-- Right Computer -->
+    <div class="computer-pane">
+      <div class="comp-head">
+        <span>Back-Office’s computer</span>
+        <span style="font-size:12px; color:#71717a;">⚙</span>
+      </div>
+
+      <div class="screen-wrapper">
+        <div class="browser-bar">
+          <div class="b-dots"><span class="b-dot"></span><span class="b-dot"></span><span class="b-dot"></span></div>
+          <div class="url-pill">quickbooks.intuit.com/app/invoices</div>
+        </div>
+        <div class="browser-body">
+          
+    <div style="font-family:'JetBrains Mono',monospace; font-size:9px;">
+      <span style="color:#38bdf8;">[QuickBooks Accessibility Ref @e14]</span><br>
+      > Batch #849: 500 Invoices<br>
+      > Total: $482,000.00 USD<br>
+      > PO Match Rate: 100.0%<br>
+      <span style="color:#30d158;">Status: Ready for CFO approval</span>
+    </div>
+    
+        </div>
+      </div>
+
+      <div class="screen-meta">
+        <span>Back-Office’s screen</span>
+        <button class="btn-takeover">Take control</button>
+      </div>
+
+      <div class="routines-label">Routines</div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        
+        <div class="routine-item">
+          <span class="routine-title">◷ Invoice mailbox sweep</span>
+          <span class="routine-time">Hourly</span>
+        </div>
+        <div class="routine-item">
+          <span class="routine-title">◷ Month-end reconciliation</span>
+          <span class="routine-time">28th of month</span>
+        </div>
+        <div class="new-routine">+ New routine</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

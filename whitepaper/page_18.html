@@ -22,56 +22,44 @@
     </div>
 
     <div class="content-body">
-<div class="card-accent">
-  <div class="card-title">Scenario Brief: Real-Time Competitive Landscape Monitoring</div>
-  <p>
-    <strong>Company:</strong> FinPay Global (B2B Fintech Platform).<br>
+<div class="card-accent" style="padding: 6px 10px;">
+  <div class="card-title" style="font-size: 8.8pt;">Scenario Brief: Real-Time Competitive Landscape Monitoring for FinPay Global</div>
+  <p style="font-size: 7.2pt;">
     <strong>Objective:</strong> Continuously monitor 15 direct global competitors for pricing adjustments, new product features, key executive hires, and regulatory license filings.
   </p>
 </div>
 
-<div class="card">
-  <div class="card-title">Autonomous Monitoring & Synthesis Lifecycle</div>
-  <div class="diagram-flow">
-    <div class="flow-step">
-      <div class="flow-title">1. Scheduled Crawl</div>
-      <div class="flow-desc">Runs every 6 hours across 15 target domains</div>
-    </div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-step">
-      <div class="flow-title">2. Diff Detection</div>
-      <div class="flow-desc">Extracts DOM changes on pricing & team pages</div>
-    </div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-step">
-      <div class="flow-title">3. Memory Assimilation</div>
-      <div class="flow-desc">Absorbs facts into entity graph (94µs/fact)</div>
-    </div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-step">
-      <div class="flow-title">4. Executive Alert</div>
-      <div class="flow-desc">Emits Slack alert only on significant strategic shifts</div>
-    </div>
+<!-- MOCKUP 8: Competitor DOM Diff & Alert View (Rakazo Style) -->
+<div class="app-mockup">
+  <div class="mockup-header">
+    <div class="mockup-traffic"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span><span class="mockup-title">Market Intel · Competitor DOM Diff Monitor</span></div>
+    <div style="font-size:6pt; color:#f59e0b; font-family:'JetBrains Mono';">🚨 PRICING SHIFT DETECTED</div>
+  </div>
+  <div style="padding: 5px 8px; background:#0b0f17; font-size:6.2pt; font-family:'JetBrains Mono';">
+    <div style="color:#94a3b8;">[Crawl Target: stripe-x.io/pricing · 18:42 UTC]</div>
+    <div style="color:#ef4444;">- Enterprise Transaction Fee: 2.9% + $0.30</div>
+    <div style="color:#10b981;">+ Enterprise Transaction Fee: 2.4% + $0.20 (Volume tier &gt; $1M/mo)</div>
+    <div style="color:#38bdf8; margin-top:2px;">Memory: Fact absorbed into SQLite graph (node: StripeX_Pricing_2026_Q3) · Alert dispatched to Slack #executive-intel</div>
   </div>
 </div>
 
 <div class="grid-2">
-  <div class="card card-emerald">
-    <div class="card-title-sm">Real-World Case: Pricing Shift Caught in 15 Minutes</div>
-    <p style="font-size: 7.4pt;">
-      When competitor <em>Stripe-X</em> adjusted their enterprise transaction fee from 2.9% to 2.4% on a Friday evening, the Fathom market analyst detected the pricing table diff, updated long-term memory, and alerted the Chief Product Officer via Telegram within 15 minutes.
+  <div class="card card-emerald" style="padding: 5px 8px;">
+    <div class="card-title-sm">Real-World Case: Caught in 15 Minutes</div>
+    <p style="font-size: 7pt;">
+      When competitor <em>Stripe-X</em> adjusted their enterprise transaction fee on a Friday evening, the Fathom market analyst detected the pricing table diff, updated long-term memory, and alerted the Chief Product Officer via Telegram within 15 minutes.
     </p>
   </div>
 
-  <div class="card card-indigo">
+  <div class="card card-indigo" style="padding: 5px 8px;">
     <div class="card-title-sm">Institutional Knowledge Ingestion</div>
-    <p style="font-size: 7.4pt;">
+    <p style="font-size: 7pt;">
       All competitor historical changes are stored permanently in Fathom's SQLite entity graph. When leadership asks: <em>"How has Competitor Y's pricing evolved over the last 6 months?"</em>, the coworker generates an instant timeline report in under 5 milliseconds.
     </p>
   </div>
 </div>
 
-<div class="callout callout-success">
+<div class="callout callout-success" style="margin-bottom: 0;">
   <strong>Executive Value:</strong> Leadership stays three steps ahead of market dynamics with zero hours spent manually clicking competitor websites.
 </div>
     </div>

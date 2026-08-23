@@ -55,7 +55,7 @@ export default {
     },
     searching: {
       hero: {
-        eyebrow: { en: 'AGENT 04 / 07', ru: 'АГЕНТ 04 / 07' },
+        eyebrow: { en: 'AGENT 02 / 07', ru: 'АГЕНТ 02 / 07' },
         title: { en: 'Searching', ru: 'Поиск' },
         sub: { en: 'The discovery layer of the fleet. Seven backends behind one call, fused with hybrid and smart modes and RRF ranking — so a query spans the whole web, not the first page.', ru: 'Слой обнаружения флота. Семь бэкендов за одним вызовом, объединённые гибридным и умным режимами с ранжированием RRF → запрос охватывает весь веб, а не первую страницу.' },
         mode: { en: 'searching', ru: 'searching' },
@@ -103,7 +103,7 @@ export default {
     },
     extracting: {
       hero: {
-        eyebrow: { en: 'AGENT 02 / 07', ru: 'АГЕНТ 02 / 07' },
+        eyebrow: { en: 'AGENT 03 / 07', ru: 'АГЕНТ 03 / 07' },
         title: { en: 'Extracting', ru: 'Извлечение' },
         sub: { en: 'The extraction worker turns pages, documents, and browser output into structured data — contacts when you need them, or clean inputs for any downstream workflow.', ru: 'Воркер извлечения превращает страницы, документы и данные браузера в структурированные данные — контакты при необходимости или чистые входы для любого следующего процесса.' },
         mode: { en: 'extracting', ru: 'extracting' },
@@ -156,7 +156,7 @@ export default {
     },
     structuring: {
       hero: {
-        eyebrow: { en: 'AGENT 03 / 07', ru: 'АГЕНТ 03 / 07' },
+        eyebrow: { en: 'AGENT 04 / 07', ru: 'АГЕНТ 04 / 07' },
         title: { en: 'Structuring', ru: 'Структурирование' },
         sub: { en: 'The structuring worker turns extracted fragments into canonical records — normalized, deduplicated, and linked in an entity graph so every worker can rely on the same context.', ru: 'Воркер структурирования превращает извлечённые фрагменты в канонические записи — нормализованные, дедуплицированные и связанные в граф сущностей, чтобы каждый воркер опирался на единый контекст.' },
         mode: { en: 'structuring', ru: 'structuring' },
@@ -268,7 +268,7 @@ export default {
     },
     memoring: {
       hero: {
-        eyebrow: { en: 'Agent 06 / 07', ru: 'Агент 06 / 07' },
+        eyebrow: { en: 'AGENT 06 / 07', ru: 'АГЕНТ 06 / 07' },
         title: { en: 'Memoring', ru: 'Память' },
         sub: { en: 'Persistent memory for the whole worker fleet. Facts, findings, decisions, and past runs are absorbed into an append-only knowledge base so the next operation starts from what is already known.', ru: 'Постоянная память для всего флота воркеров. Факты, находки, решения и прошлые запуски попадают в базу только для добавления, поэтому следующая операция начинается с уже известного.' },
         mode: { en: 'memoring', ru: 'memoring' },
@@ -323,7 +323,7 @@ export default {
     },
     outreach: {
       hero: {
-        eyebrow: { en: 'Agent 07 / 07', ru: 'Агент 07 / 07' },
+        eyebrow: { en: 'AGENT 07 / 07', ru: 'АГЕНТ 07 / 07' },
         title: { en: 'Outreach', ru: 'Аутрич' },
         sub: { en: 'The operations worker turns verified context and memory into useful action: personalized drafts, approved updates, exports, scheduled runs, and notifications — without losing the operator in the loop.', ru: 'Операционный воркер превращает проверенный контекст и память в полезное действие: персональные черновики, одобренные обновления, экспорт, запуски по расписанию и уведомления — оператор остаётся в контуре.' },
         mode: { en: 'outreach', ru: 'outreach' },

@@ -22,78 +22,49 @@
     </div>
 
     <div class="content-body">
-<div class="card-accent">
-  <div class="card-title">The Engineering Foundation: Why We Chose Rust</div>
-  <p>
+<div class="card-accent" style="padding: 7px 10px;">
+  <div class="card-title" style="font-size: 8.8pt;">The Engineering Foundation: Why We Chose Rust</div>
+  <p style="font-size: 7.4pt;">
     Traditional agent frameworks built on Python suffer from high latency, heavy memory consumption, fragile type errors, and concurrency bottlenecks caused by the Global Interpreter Lock (GIL). <strong>Fathom is built natively in Rust</strong> to provide enterprise-grade reliability and speed.
   </p>
 </div>
 
 <div class="grid-2">
-  <div class="card card-amber">
+  <div class="card card-amber" style="padding: 5px 8px;">
     <div class="card-title-sm">The Python Framework Trap</div>
-    <ul style="font-size: 7.2pt; margin-bottom: 0;">
+    <ul style="font-size: 6.8pt; margin-bottom: 0;">
       <li><strong>Massive Memory Footprint:</strong> Idle Python runtimes consume 400MB–1.5GB RAM per agent process.</li>
       <li><strong>GIL Concurrency Deadlocks:</strong> Asynchronous I/O is serialized, choking multi-agent swarms.</li>
       <li><strong>Slow Startup Latency:</strong> 2.5 to 8.0 seconds just to load interpreter and dependency trees.</li>
-      <li><strong>Brittle Type Bugs:</strong> Runtime dictionary mismatches crash multi-hour research runs.</li>
     </ul>
   </div>
 
-  <div class="card card-emerald">
+  <div class="card card-emerald" style="padding: 5px 8px;">
     <div class="card-title-sm">The Fathom Rust Advantage</div>
-    <ul style="font-size: 7.2pt; margin-bottom: 0;">
+    <ul style="font-size: 6.8pt; margin-bottom: 0;">
       <li><strong>Microscopic RAM Footprint:</strong> Lean 15–35 MB baseline RAM allows 100+ agents per server.</li>
       <li><strong>True Multi-Core Parallelism:</strong> Tokio async tasks utilize all CPU cores without locks.</li>
       <li><strong>Instant Binary Startup:</strong> Starts in under 5 milliseconds from cold execution.</li>
-      <li><strong>Compile-Time Guarantees:</strong> Strong typing and ownership eliminate memory leaks and runtime panics.</li>
     </ul>
   </div>
 </div>
 
-<div class="card">
+<div class="card" style="padding: 5px 8px;">
   <div class="card-title">Architectural Efficiency Comparison</div>
   <table>
     <thead>
-      <tr>
-        <th>Engineering Metric</th>
-        <th>Python Agent Frameworks</th>
-        <th>Fathom Rust Runtime</th>
-      </tr>
+      <tr><th>Engineering Metric</th><th>Python Agent Frameworks</th><th>Fathom Rust Runtime</th></tr>
     </thead>
     <tbody>
-      <tr>
-        <td><strong>Tool Dispatch Latency</strong></td>
-        <td>25.0 – 150.0 ms</td>
-        <td><strong>0.75 ms (Microsecond Level)</strong></td>
-      </tr>
-      <tr>
-        <td><strong>Memory Usage (100 Agents)</strong></td>
-        <td>40 – 120 GB RAM (Requires Cluster)</td>
-        <td><strong>1.5 – 3.5 GB RAM (Single Modest VM)</strong></td>
-      </tr>
-      <tr>
-        <td><strong>HTML Parsing Speed</strong></td>
-        <td>15,000 rows/sec (BeautifulSoup)</td>
-        <td><strong>350,000+ rows/sec (Scraper Rust)</strong></td>
-      </tr>
-      <tr>
-        <td><strong>Binary Packaging</strong></td>
-        <td>Fragile venv + wheels</td>
-        <td><strong>Single Static Binary (Zero Dependencies)</strong></td>
-      </tr>
+      <tr><td><strong>Tool Dispatch Latency</strong></td><td>25.0 – 150.0 ms</td><td><strong>0.75 ms (Microsecond Level)</strong></td></tr>
+      <tr><td><strong>Memory Usage (100 Agents)</strong></td><td>40 – 120 GB RAM (Requires Cluster)</td><td><strong>1.5 – 3.5 GB RAM (Single Modest VM)</strong></td></tr>
+      <tr><td><strong>HTML Parsing Speed</strong></td><td>15,000 rows/sec (BeautifulSoup)</td><td><strong>350,000+ rows/sec (Scraper Rust)</strong></td></tr>
+      <tr><td><strong>Binary Packaging</strong></td><td>Fragile venv + wheels</td><td><strong>Single Static Binary (Zero Dependencies)</strong></td></tr>
     </tbody>
   </table>
 </div>
 
-<div class="card-slate">
-  <div class="card-title-sm">Zero-Cost Abstractions in Practice</div>
-  <p style="font-size: 7.4pt;">
-    Rust's compile-time monomorphization and memory ownership model ensure that high-level abstractions—such as sub-agent spawning, stream filtering, and policy evaluation—compile directly into native assembly instructions with zero heap allocation overhead.
-  </p>
-</div>
-
-<div class="callout callout-success">
+<div class="callout callout-success" style="margin-bottom: 0;">
   <strong>Speed Equals Intelligence:</strong> Microsecond tool execution means agents spend 99.9% of their time waiting for model tokens, not framework overhead.
 </div>
     </div>

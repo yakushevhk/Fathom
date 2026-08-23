@@ -22,17 +22,17 @@
     </div>
 
     <div class="content-body">
-<div class="card-dark">
-  <div class="card-title">Auditable AI: Immutable Records for Every Decision</div>
-  <p>
+<div class="card-dark" style="padding: 7px 10px;">
+  <div class="card-title" style="font-size: 8.8pt;">Auditable AI: Immutable Records for Every Decision</div>
+  <p style="font-size: 7.4pt;">
     Enterprise compliance requires full traceability for every autonomous action. Fathom logs all authorization decisions into an append-only, tamper-resistant <strong>Audit Ledger</strong> (<code>/api/v1/governance/audit</code>).
   </p>
 </div>
 
 <div class="grid-2">
-  <div class="card">
+  <div class="card" style="padding: 5px 8px;">
     <div class="card-title-sm">Audit Record Fields</div>
-    <ul style="font-size: 7.2pt; margin-bottom: 0;">
+    <ul style="font-size: 6.8pt; margin-bottom: 0;">
       <li><code>timestamp</code>: Nanosecond-precision RFC 3339 timestamp.</li>
       <li><code>agent_id</code> & <code>session_id</code>: Full UUIDv7 session tracing.</li>
       <li><code>tool</code> & <code>intent</code>: Declared action and reasoning rationale.</li>
@@ -40,52 +40,29 @@
     </ul>
   </div>
 
-  <div class="card card-emerald">
+  <div class="card card-emerald" style="padding: 5px 8px;">
     <div class="card-title-sm">Automatic Secret Redaction</div>
-    <p style="font-size: 7.4pt;">
+    <p style="font-size: 7.2pt;">
       Before audit records are written to SQLite, a built-in redaction engine scans tool arguments with regex scanners, stripping API keys, bearer tokens, and passwords to prevent credential leakage into logs.
     </p>
   </div>
 </div>
 
-<div class="card">
+<div class="card" style="padding: 5px 8px;">
   <div class="card-title">Data Privacy & Regulatory Framework Compliance</div>
   <table>
     <thead>
-      <tr>
-        <th>Regulation</th>
-        <th>Compliance Invariant</th>
-        <th>Fathom Implementation Mechanism</th>
-      </tr>
+      <tr><th>Regulation</th><th>Compliance Invariant</th><th>Fathom Implementation Mechanism</th></tr>
     </thead>
     <tbody>
-      <tr>
-        <td><strong>GDPR (EU)</strong></td>
-        <td>Lawful processing of public data & right to be forgotten</td>
-        <td>Strict OSINT confidence scoring + <code>ContactDb</code> delete APIs.</td>
-      </tr>
-      <tr>
-        <td><strong>152-FZ (Russia)</strong></td>
-        <td>Personal data localization & verifiable storage</td>
-        <td>Self-hosted local SQLite / PostgreSQL storage on sovereign infrastructure.</td>
-      </tr>
-      <tr>
-        <td><strong>SOC 2 Type II</strong></td>
-        <td>Access control, auditability, and data isolation</td>
-        <td>AES-256-GCM vault, per-agent Docker sandboxes, immutable audit trail.</td>
-      </tr>
+      <tr><td><strong>GDPR (EU)</strong></td><td>Lawful processing of public data & right to be forgotten</td><td>Strict OSINT confidence scoring + <code>ContactDb</code> delete APIs.</td></tr>
+      <tr><td><strong>152-FZ (Russia)</strong></td><td>Personal data localization & verifiable storage</td><td>Self-hosted local SQLite / PostgreSQL storage on sovereign infrastructure.</td></tr>
+      <tr><td><strong>SOC 2 Type II</strong></td><td>Access control, auditability, and data isolation</td><td>AES-256-GCM vault, per-agent Docker sandboxes, immutable audit trail.</td></tr>
     </tbody>
   </table>
 </div>
 
-<div class="card-slate">
-  <div class="card-title-sm">Historical Session Replay (Replay Debugger)</div>
-  <p style="font-size: 7.4pt;">
-    Compliance officers can use the <code>GET /api/v1/replay</code> endpoint to reconstruct and step through any historical session turn-by-turn, inspecting exact tool inputs, outputs, and model reasoning steps.
-  </p>
-</div>
-
-<div class="callout callout-info">
+<div class="callout callout-info" style="margin-bottom: 0;">
   <strong>Audit Replay Ready:</strong> Compliance teams can use the <code>GET /api/v1/replay</code> endpoint to reconstruct and step through any historical session turn-by-turn.
 </div>
     </div>

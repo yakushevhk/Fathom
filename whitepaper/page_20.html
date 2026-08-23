@@ -22,68 +22,43 @@
     </div>
 
     <div class="content-body">
-<div class="card-accent">
-  <div class="card-title">Scenario Brief: Automating Repetitive Monthly Financial Operations</div>
-  <p>
-    <strong>Company:</strong> Global Logistics Partner (Supply Chain & Freight Operations).<br>
+<div class="card-accent" style="padding: 6px 10px;">
+  <div class="card-title" style="font-size: 8.8pt;">Scenario Brief: Automating Monthly Invoicing for Global Logistics Partner</div>
+  <p style="font-size: 7.2pt;">
     <strong>Objective:</strong> Ingest 500+ PDF vendor invoices monthly, cross-reference against warehouse delivery receipts, and input approved payments into 1C / QuickBooks.
   </p>
 </div>
 
-<div class="card">
-  <div class="card-title">Autonomous Back-Office Pipeline</div>
-  <div class="timeline">
-    <div class="timeline-item">
-      <div class="timeline-time">Phase 1</div>
-      <div class="timeline-content">
-        <div class="timeline-title">PDF Ingestion & Structural Extraction</div>
-        <div class="timeline-desc">The worker downloads vendor invoices, applies <code>pdf_extract</code> and regex parsers, extracting vendor TIN, invoice number, line items, and totals.</div>
-      </div>
-    </div>
-
-    <div class="timeline-item">
-      <div class="timeline-time">Phase 2</div>
-      <div class="timeline-content">
-        <div class="timeline-title">Three-Way Matching & Verification</div>
-        <div class="timeline-desc">Cross-references invoice line items against warehouse receipts and purchase orders stored in the internal database. Discrepancies flagged automatically.</div>
-      </div>
-    </div>
-
-    <div class="timeline-item">
-      <div class="timeline-time">Phase 3</div>
-      <div class="timeline-content">
-        <div class="timeline-title">Portal Entry via Governed Computer Use</div>
-        <div class="timeline-desc">The worker navigates the accounting web portal via Playwright Accessibility Snapshots, fills invoice fields accurately, and queues batch payments.</div>
-      </div>
-    </div>
-
-    <div class="timeline-item">
-      <div class="timeline-time">Phase 4</div>
-      <div class="timeline-content">
-        <div class="timeline-title">CFO Single-Click Approval Batch</div>
-        <div class="timeline-desc">Presents an executive summary of 500 reconciled invoices with zero errors for CFO sign-off via Telegram (<code>POST /api/v1/sessions/:id/approve</code>).</div>
-      </div>
-    </div>
+<!-- MOCKUP 9: Invoice 3-Way Match & Portal Entry View (Rakazo Style) -->
+<div class="app-mockup">
+  <div class="mockup-header">
+    <div class="mockup-traffic"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span><span class="mockup-title">Back-Office Assistant · 3-Way Invoice Reconciliation</span></div>
+    <div style="font-size:6pt; color:#10b981; font-family:'JetBrains Mono';">MATCH: 100% (500/500 INVOICES)</div>
+  </div>
+  <div style="padding: 4px 6px; background:#0b0f17; font-size:6pt;">
+    <div class="bot-step-line"><span class="bot-check">✓</span><strong>PDF Extracted:</strong> <code>Inv_#8492.pdf</code> → Vendor TIN: <code>GB9920194</code> · Amount: <strong>$14,250.00</strong></div>
+    <div class="bot-step-line"><span class="bot-check">✓</span><strong>Warehouse PO Match:</strong> <code>PO-9921</code> (50x Freight Pallets) verified on 2026-08-18 · Discrepancy: $0.00</div>
+    <div class="bot-step-line"><span class="bot-check">✓</span><strong>Accounting Portal Entry:</strong> Navigated QuickBooks via Accessibility Tree (ref <code>@e12</code>) · Staged batch payment for CFO 1-click sign-off.</div>
   </div>
 </div>
 
 <div class="grid-2">
-  <div class="card card-emerald">
+  <div class="card card-emerald" style="padding: 5px 8px;">
     <div class="card-title-sm">Operational Impact</div>
-    <ul style="font-size: 7.2pt; margin-bottom: 0;">
+    <ul style="font-size: 6.8pt; margin-bottom: 0;">
       <li><strong>Labor Replaced:</strong> 80 hours of mind-numbing manual copy-paste data entry per month.</li>
       <li><strong>Error Rate:</strong> Reduced from 4.2% human entry errors to 0.00% deterministic accuracy.</li>
     </ul>
   </div>
-  <div class="card card-slate">
+  <div class="card card-slate" style="padding: 5px 8px;">
     <div class="card-title-sm">Audit Trail Integrity</div>
-    <p style="font-size: 7.2pt;">
+    <p style="font-size: 7pt;">
       Every parsed invoice, line-item match, and portal click is logged with immutable nanosecond timestamps in SQLite for seamless tax auditing.
     </p>
   </div>
 </div>
 
-<div class="callout callout-success">
+<div class="callout callout-success" style="margin-bottom: 0;">
   <strong>Operational Impact:</strong> Replaces 80 hours of mind-numbing manual copy-paste data entry per month with an automated, auditable, and error-free execution loop.
 </div>
     </div>

@@ -22,63 +22,52 @@
     </div>
 
     <div class="content-body">
-<div class="card-accent">
-  <div class="card-title">Relational Knowledge: Beyond Flat Text Records</div>
-  <p>
-    Fathom does not merely store isolated snippets of text. In <code>crates/memory</code>, it structures verified information into a <strong>typed, directional Entity Knowledge Graph</strong> that captures the rich web of corporate and professional relationships.
+<div class="card-accent" style="padding: 6px 10px;">
+  <div class="card-title" style="font-size: 8.8pt;">Relational Knowledge: Beyond Flat Text Records</div>
+  <p style="font-size: 7.4pt;">
+    In <code>crates/memory</code>, Fathom structures verified information into a <strong>typed, directional Entity Knowledge Graph</strong> that captures the rich web of corporate and professional relationships.
   </p>
 </div>
 
+<!-- MOCKUP 12: Dark-Mode Entity Knowledge Graph (Rakazo Style) -->
+<div class="app-mockup">
+  <div class="mockup-header">
+    <div class="mockup-traffic"><span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span><span class="mockup-title">Entity Knowledge Graph Explorer · memory_graph</span></div>
+    <div style="font-size:6pt; color:#38bdf8; font-family:'JetBrains Mono';">QUERY: 1.62ms · 5,420 NODES</div>
+  </div>
+  <div style="padding: 6px 8px; background:#0b0f17; font-size:6.4pt;">
+    <div class="diagram-flow" style="background:#161e2b; border-color:#232b38;">
+      <div class="flow-step" style="background:#1e293b; color:#f1f5f9; border-color:#334155;"><span style="color:#f97316;">👤</span> <strong>Jane Doe</strong><br><span style="font-size:5.4pt; color:#94a3b8;">CTO · Ex-Stripe</span></div>
+      <div class="flow-arrow" style="font-size:6.4pt; color:#38bdf8;">──[works_at]──►</div>
+      <div class="flow-step" style="background:#1e293b; color:#f1f5f9; border-color:#334155;"><span style="color:#3b82f6;">🏢</span> <strong>Acme FinTech</strong><br><span style="font-size:5.4pt; color:#94a3b8;">Series A ($14M)</span></div>
+      <div class="flow-arrow" style="font-size:6.4pt; color:#10b981;">──[uses_tech]──►</div>
+      <div class="flow-step" style="background:#1e293b; color:#f1f5f9; border-color:#334155;"><span style="color:#10b981;">⚡</span> <strong>Rust / Axum</strong><br><span style="font-size:5.4pt; color:#94a3b8;">Tech Signature</span></div>
+    </div>
+  </div>
+</div>
+
 <div class="grid-2">
-  <div class="card">
+  <div class="card" style="padding: 5px 8px;">
     <div class="card-title-sm">Typed Graph Relationships</div>
-    <ul style="font-size: 7.2pt; margin-bottom: 0;">
+    <ul style="font-size: 6.8pt; margin-bottom: 0;">
       <li><code>Person ──[works_at]──► Company</code> (with title & seniority)</li>
       <li><code>Person ──[leads]─────► Department</code> (e.g. Engineering)</li>
       <li><code>Company ─[invests_in]─► Startup</code> (with funding round date)</li>
       <li><code>Company ─[uses_tech]──► Technology</code> (e.g. AWS, Next.js)</li>
-      <li><code>Company ─[competes_with]► Competitor</code> (direct market rival)</li>
     </ul>
   </div>
 
-  <div class="card card-purple">
+  <div class="card card-purple" style="padding: 5px 8px;">
     <div class="card-title-sm">6-Hop Graph Traversal Queries</div>
-    <p style="font-size: 7.4pt;">Agents query the graph to answer complex relational questions:</p>
-    <ul style="font-size: 7.2pt; margin-bottom: 0;">
+    <p style="font-size: 7pt;">Agents query the graph to answer complex relational questions:</p>
+    <ul style="font-size: 6.8pt; margin-bottom: 0;">
       <li><em>"Which former Stripe engineers are now CTOs at Series-A AI companies in Berlin?"</em></li>
-      <li><em>"Which competitors are backed by the same venture fund as our company?"</em></li>
+      <li><em>"Which competitors are backed by the same VC fund?"</em></li>
     </ul>
   </div>
 </div>
 
-<div class="card">
-  <div class="card-title">Graph Visualization & Tool Integration (memory_graph)</div>
-  <div class="diagram-flow">
-    <div class="flow-step">
-      <div class="flow-title">Jane Doe (CTO)</div>
-      <div class="flow-desc">Verified Person Node</div>
-    </div>
-    <div class="flow-arrow">──[works_at]──►</div>
-    <div class="flow-step">
-      <div class="flow-title">Acme FinTech</div>
-      <div class="flow-desc">Company (Series A, Berlin)</div>
-    </div>
-    <div class="flow-arrow">──[uses_tech]──►</div>
-    <div class="flow-step">
-      <div class="flow-title">Rust & Axum</div>
-      <div class="flow-desc">Tech Signature Node</div>
-    </div>
-  </div>
-</div>
-
-<div class="card-slate">
-  <div class="card-title-sm">Shared Swarm Intelligence</div>
-  <p style="font-size: 7.4pt;">
-    When one researcher agent discovers a person's new company affiliation, every other agent across the organization gains immediate access to the updated graph node, creating a shared organizational brain.
-  </p>
-</div>
-
-<div class="callout callout-info">
+<div class="callout callout-info" style="margin-bottom: 0;">
   <strong>Shared Swarm Intelligence:</strong> When one researcher agent discovers a person's new company affiliation, every other agent across the organization gains immediate access to the updated graph node.
 </div>
     </div>

@@ -22,54 +22,38 @@
     </div>
 
     <div class="content-body">
-<div class="card-dark">
-  <div class="card-title">Deterministic Element Targeting: Eliminating Broken Clicks</div>
-  <p>
+<div class="card-dark" style="padding: 7px 10px;">
+  <div class="card-title" style="font-size: 8.8pt;">Deterministic Element Targeting: Eliminating Broken Clicks</div>
+  <p style="font-size: 7.4pt;">
     In modern web portals, asynchronous JavaScript frequently alters DOM elements between agent reasoning steps. Fathom implements an active <strong>Anti-Staleness Guard</strong> to guarantee that actions are executed only on valid, intended targets.
   </p>
 </div>
 
 <div class="grid-2">
-  <div class="card">
+  <div class="card" style="padding: 5px 8px;">
     <div class="card-title-sm">1. Pre-Execution Freshness Check</div>
-    <p style="font-size: 7.4pt;">
+    <p style="font-size: 7.2pt;">
       Before executing a <code>computer_click</code> or <code>computer_type</code> command, the runtime takes a microsecond snapshot to confirm that the target element ref (<code>@e14</code>) still exists and matches its original role fingerprint.
     </p>
   </div>
 
-  <div class="card card-emerald">
+  <div class="card card-emerald" style="padding: 5px 8px;">
     <div class="card-title-sm">2. Stale-Ref Rejection & Self-Recovery</div>
-    <p style="font-size: 7.4pt;">
-      If the page navigated or a popup closed during agent thinking, the ref is rejected immediately with an explicit error: <em>"Ref @e14 is stale. Capturing fresh snapshot."</em> The agent re-evaluates the new DOM state without misclicking.
+    <p style="font-size: 7.2pt;">
+      If the page navigated or a popup closed during agent thinking, the ref is rejected immediately with an explicit error: <em>"Ref @e14 is stale."</em> The agent captures a fresh snapshot and re-evaluates safely.
     </p>
   </div>
 </div>
 
-<div class="card">
+<div class="card" style="padding: 5px 8px;">
   <div class="card-title">Form Data Security & Workspace Confinement</div>
   <div class="grid-2">
-    <div>
-      <strong>Automatic Password Scrubbing</strong>
-      <p style="font-size: 7.2pt;">Password inputs and sensitive token fields are automatically masked in accessibility snapshots, preventing sensitive credentials from appearing in reasoning transcripts.</p>
-    </div>
-    <div>
-      <strong>Confined File Workspace</strong>
-      <p style="font-size: 7.2pt;">Browser downloads are strictly confined to an isolated directory (<code>/data/browser</code>), preventing malicious downloads from touching host system files.</p>
-    </div>
+    <div><strong>Automatic Password Scrubbing</strong><p style="font-size: 6.8pt;">Password inputs and token fields are automatically masked in accessibility snapshots.</p></div>
+    <div><strong>Confined File Workspace</strong><p style="font-size: 6.8pt;">Browser downloads are strictly confined to an isolated directory (<code>/data/browser</code>).</p></div>
   </div>
 </div>
 
-<div class="card-slate">
-  <div class="card-title-sm">Deterministic Action Safety Scorecard</div>
-  <div class="grid-4">
-    <div class="metric-box"><div class="metric-val">100%</div><div class="metric-label">Stale Ref Detection</div></div>
-    <div class="metric-box"><div class="metric-val">&lt; 1ms</div><div class="metric-label">Target Validation</div></div>
-    <div class="metric-box"><div class="metric-val">Zero</div><div class="metric-label">Phantom Clicks</div></div>
-    <div class="metric-box"><div class="metric-val">Masked</div><div class="metric-label">Password Fields</div></div>
-  </div>
-</div>
-
-<div class="callout callout-info">
+<div class="callout callout-info" style="margin-bottom: 0;">
   <strong>Zero Phantom Interactions:</strong> Fathom ensures that automated browser actions are as predictable, deterministic, and safe as compiled software code.
 </div>
     </div>
