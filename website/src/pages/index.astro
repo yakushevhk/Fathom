@@ -72,10 +72,10 @@ const steps = [
 ];
 
 const metrics = [
-  { v: '3.78×', l: 'CPU-bound parallel speedup' },
-  { v: '531k', l: 'rows/s HTML parsing' },
-  { v: '1.1M', l: 'items/s feed parsing' },
-  { v: '~2ms', l: 'hybrid memory search' },
+  { v: '3.78×', l: 'CPU-bound parallel speedup', k: 'landing.metrics.cpu' },
+  { v: '531k', l: 'rows/s HTML parsing', k: 'landing.metrics.html' },
+  { v: '1.1M', l: 'items/s feed parsing', k: 'landing.metrics.feed' },
+  { v: '~2ms', l: 'hybrid memory search', k: 'landing.metrics.mem' },
 ];
 ---
 
@@ -112,10 +112,10 @@ const metrics = [
         <div class="machine">
           <div class="machine__bar">
             <div class="machine__dots"><i></i><i></i><i></i></div>
-            <span class="machine__url">fathom run</span>
+            <span class="machine__url" data-i18n="landing.hero_run_url">fathom run</span>
           </div>
           <div class="machine__body">
-            <div class="prompt-line"><span class="p">$</span><span class="pc">fathom run "Find 50 fintech CTOs, verify emails, draft outreach"</span></div>
+            <div class="prompt-line"><span class="p">$</span><span class="pc" data-i18n="landing.hero_run_cmd">fathom run "Find 50 fintech CTOs, verify emails, draft outreach"</span></div>
             <div class="tags-row">
               <span class="ptag ptag--plan" data-i18n="landing.term.tag_plan">Planning</span><span data-i18n="landing.term.plan">Decomposing into 4 sub-tasks…</span>
             </div>
@@ -145,9 +145,9 @@ const metrics = [
   <section class="product-showcase-section">
     <div class="container">
       <div class="sec-head center reveal">
-        <p class="eyebrow"><span class="eyebrow__num">00</span><span>Autonomous Workspace</span></p>
-        <h2 class="h2-sec">Live GPUI Workspace <em class="it">in Action</em></h2>
-        <p class="copy-lg mx-auto">Complete multi-agent execution workspace: sub-agent swarm dispatch, live ARIA DOM browser control, and real-time CRM pipeline sync.</p>
+        <p class="eyebrow"><span class="eyebrow__num">00</span><span data-i18n="landing.showcase.workspaceLabel">Autonomous Workspace</span></p>
+        <h2 class="h2-sec" data-i18n="landing.showcase.workspaceTitle">Live GPUI Workspace <em class="it">in Action</em></h2>
+        <p class="copy-lg mx-auto" data-i18n="landing.showcase.workspaceDesc">Complete multi-agent execution workspace: sub-agent swarm dispatch, live ARIA DOM browser control, and real-time CRM pipeline sync.</p>
       </div>
       <div class="product-screenshot-frame">
         <img src="/images/mockups/01_sales_outbound_sdr.png" alt="Fathom Autonomous Outbound SDR Command Center" loading="lazy" width="1220" height="780" />
@@ -267,7 +267,7 @@ const metrics = [
             metrics.map((m) => (
               <div class="bench-card">
                 <div class="metric">{m.v}</div>
-                <div class="cap">{m.l}</div>
+                <div class="cap" data-i18n={m.k}>{m.l}</div>
               </div>
             ))
           }
@@ -369,14 +369,14 @@ const metrics = [
     <div class="container">
       <div class="whitepaper-banner">
         <div>
-          <p class="eyebrow" style="color:#60a5fa;"><span>Strategic Systems Whitepaper</span></p>
-          <h2 style="font-size: 2.2rem; font-weight: 900; margin: 8px 0 16px 0; letter-spacing: -0.02em;">42-Page Systems Architecture &amp; Workforce Blueprint</h2>
-          <p style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6; margin-bottom: 24px;">
+          <p class="eyebrow" style="color:#60a5fa;"><span data-i18n="landing.whitepaper.badge">Strategic Systems Whitepaper</span></p>
+          <h2 style="font-size: 2.2rem; font-weight: 900; margin: 8px 0 16px 0; letter-spacing: -0.02em;" data-i18n="landing.whitepaper.title">42-Page Systems Architecture &amp; Workforce Blueprint</h2>
+          <p style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6; margin-bottom: 24px;" data-i18n="landing.whitepaper.desc">
             Explore the definitive architectural and economic breakdown of autonomous AI employees: ~0.75 ms tool dispatch, 94 µs memory assimilation, 15.4 MB RAM footprint, and unlimited neural compute economics.
           </p>
           <div style="display:flex; gap: 16px; flex-wrap: wrap;">
-            <a href="/Fathom_Whitepaper.pdf" class="btn btn-primary" target="_blank" download>⬇ Download Whitepaper (PDF, 7.6 MB)</a>
-            <a href="https://github.com/yakushevhk/Fathom/tree/main/whitepaper" class="btn btn-secondary" target="_blank">View 42-Slide Deck</a>
+            <a href="/Fathom_Whitepaper.pdf" class="btn btn-primary" target="_blank" download data-i18n="landing.whitepaper.download">⬇ Download Whitepaper (PDF, 7.6 MB)</a>
+            <a href="https://github.com/yakushevhk/Fathom/tree/main/whitepaper" class="btn btn-secondary" target="_blank" data-i18n="landing.whitepaper.deck">View 42-Slide Deck</a>
           </div>
         </div>
         <div class="product-screenshot-frame" style="border-radius: var(--radius-md);">

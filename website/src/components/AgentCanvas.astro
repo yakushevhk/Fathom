@@ -37,16 +37,16 @@ const STATUS = {
           <div class="agent-canvas">
             <canvas data-mode={a.mode} data-hue={a.hue} data-lit={a.lit ?? 55} role="img" aria-label={`${a.name} agent animation`}></canvas>
           </div>
-          <span class="agent-name">{a.name}</span>
-          <span class="agent-status">{STATUS[a.mode] ?? 'active'}</span>
+          <span class="agent-name" data-i18n={`landing.agent.${a.mode}.name`}>{a.name}</span>
+          <span class="agent-status" data-i18n={`landing.agent.${a.mode}.status`}>{STATUS[a.mode] ?? 'active'}</span>
         </a>
       ) : (
         <div class="agent-card">
           <div class="agent-canvas">
             <canvas data-mode={a.mode} data-hue={a.hue} data-lit={a.lit ?? 55} role="img" aria-label={`${a.name} agent animation`}></canvas>
           </div>
-          <span class="agent-name">{a.name}</span>
-          <span class="agent-status">{STATUS[a.mode] ?? 'active'}</span>
+          <span class="agent-name" data-i18n={`landing.agent.${a.mode}.name`}>{a.name}</span>
+          <span class="agent-status" data-i18n={`landing.agent.${a.mode}.status`}>{STATUS[a.mode] ?? 'active'}</span>
         </div>
       )
     )

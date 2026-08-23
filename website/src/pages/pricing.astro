@@ -28,16 +28,16 @@ import PageHero from '../components/PageHero.astro';
       <!-- Interactive ROI & Savings Calculator -->
       <section class="section" id="roi-calculator" style="margin: 60px 0;">
         <div class="sec-head center">
-          <p class="eyebrow"><span>Interactive Financial Modeling</span></p>
-          <h2 class="h3-sec">Workforce ROI &amp; TCO Calculator</h2>
-          <p class="copy-lg mx-auto">Calculate your annual savings from deploying autonomous Fathom digital workers versus traditional headcount and fragmented SaaS subscriptions.</p>
+          <p class="eyebrow"><span data-i18n="pricingCalc.sectionTitle">Interactive Financial Modeling</span></p>
+          <h2 class="h3-sec" data-i18n="pricingCalc.sectionSub">Workforce ROI &amp; TCO Calculator</h2>
+          <p class="copy-lg mx-auto" data-i18n="pricingCalc.sectionDesc">Calculate your annual savings from deploying autonomous Fathom digital workers versus traditional headcount and fragmented SaaS subscriptions.</p>
         </div>
 
         <div class="calculator-card">
           <div class="calc-inputs">
             <div class="calc-group">
               <div class="calc-label-row">
-                <label for="headcount">Routine Headcount (SDRs, Researchers, Admins):</label>
+                <label for="headcount" data-i18n="pricingCalc.headcountLabel">Routine Headcount (SDRs, Researchers, Admins):</label>
                 <span id="headcount-val" class="calc-val-badge">3 people</span>
               </div>
               <input type="range" id="headcount" min="1" max="20" value="3" class="calc-slider" />
@@ -45,7 +45,7 @@ import PageHero from '../components/PageHero.astro';
 
             <div class="calc-group">
               <div class="calc-label-row">
-                <label for="salary">Avg Monthly Salary per Employee ($):</label>
+                <label for="salary" data-i18n="pricingCalc.salaryLabel">Avg Monthly Salary per Employee ($):</label>
                 <span id="salary-val" class="calc-val-badge">$4,500 / mo</span>
               </div>
               <input type="range" id="salary" min="1500" max="12000" step="500" value="4500" class="calc-slider" />
@@ -53,7 +53,7 @@ import PageHero from '../components/PageHero.astro';
 
             <div class="calc-group">
               <div class="calc-label-row">
-                <label for="saas">Monthly SaaS Spend (ZoomInfo, Apollo, DBs, Scraping):</label>
+                <label for="saas" data-i18n="pricingCalc.saasLabel">Monthly SaaS Spend (ZoomInfo, Apollo, DBs, Scraping):</label>
                 <span id="saas-val" class="calc-val-badge">$1,200 / mo</span>
               </div>
               <input type="range" id="saas" min="200" max="8000" step="200" value="1200" class="calc-slider" />
@@ -62,27 +62,27 @@ import PageHero from '../components/PageHero.astro';
 
           <div class="calc-results">
             <div class="res-block highlight">
-              <div class="res-title">Estimated Annual Net Savings</div>
+              <div class="res-title" data-i18n="pricingCalc.savingsLabel">Estimated Annual Net Savings</div>
               <div id="res-savings" class="res-amount">$162,400</div>
-              <div class="res-sub">Based on 91% process automation &amp; SaaS consolidation</div>
+              <div class="res-sub" data-i18n="pricingCalc.basisLabel">Based on 91% process automation &amp; SaaS consolidation</div>
             </div>
 
             <div class="res-grid">
               <div class="res-mini">
-                <div class="res-mini-lbl">Traditional Annual Cost</div>
+                <div class="res-mini-lbl" data-i18n="pricingCalc.tradLabel">Traditional Annual Cost</div>
                 <div id="res-trad" class="res-mini-val">$176,400 / yr</div>
               </div>
               <div class="res-mini">
-                <div class="res-mini-lbl">Fathom Fleet Cost</div>
+                <div class="res-mini-lbl" data-i18n="pricingCalc.fathomLabel">Fathom Fleet Cost</div>
                 <div id="res-fathom" class="res-mini-val">$14,000 / yr</div>
               </div>
               <div class="res-mini">
-                <div class="res-mini-lbl">Estimated ROI Payback</div>
+                <div class="res-mini-lbl" data-i18n="pricingCalc.paybackLabel">Estimated ROI Payback</div>
                 <div id="res-payback" class="res-mini-val">12 Days</div>
               </div>
               <div class="res-mini">
-                <div class="res-mini-lbl">Capacity Increase</div>
-                <div class="res-mini-val">8.5× Faster</div>
+                <div class="res-mini-lbl" data-i18n="pricingCalc.capacityLabel">Capacity Increase</div>
+                <div class="res-mini-val" data-i18n="pricingCalc.fasterLabel">8.5× Faster</div>
               </div>
             </div>
           </div>
@@ -129,7 +129,7 @@ import PageHero from '../components/PageHero.astro';
         </div>
         <div class="cta-actions">
           <a href="mailto:hello@fathom.uz" class="cta-btn" data-i18n="pricingPage.cta.access">Request access →</a>
-          <a href="/whitepaper" class="cta-link">Read Whitepaper</a>
+          <a href="/whitepaper" class="cta-link" data-i18n="pricingCalc.readWhitepaper">Read Whitepaper</a>
         </div>
       </div>
     </div>
@@ -142,9 +142,16 @@ import PageHero from '../components/PageHero.astro';
     const salary = parseInt(document.getElementById('salary').value, 10);
     const saas = parseInt(document.getElementById('saas').value, 10);
 
-    document.getElementById('headcount-val').innerText = headcount + (headcount === 1 ? ' person' : ' people');
-    document.getElementById('salary-val').innerText = '$' + salary.toLocaleString() + ' / mo';
-    document.getElementById('saas-val').innerText = '$' + saas.toLocaleString() + ' / mo';
+    const lang = document.documentElement.lang || 'en';
+    const personLabel = lang === 'ru' ? 'чел.' : 'person';
+    const peopleLabel = lang === 'ru' ? 'чел.' : 'people';
+    const perMo = lang === 'ru' ? ' / мес' : ' / mo';
+    const perYr = lang === 'ru' ? ' / год' : ' / yr';
+    const daysLabel = lang === 'ru' ? 'дн.' : 'Days';
+
+    document.getElementById('headcount-val').innerText = headcount + (headcount === 1 ? ' ' + personLabel : ' ' + peopleLabel);
+    document.getElementById('salary-val').innerText = '$' + salary.toLocaleString() + perMo;
+    document.getElementById('saas-val').innerText = '$' + saas.toLocaleString() + perMo;
 
     const tradAnnual = (headcount * salary * 12) + (saas * 12);
     const fathomAnnual = 1200 + (headcount * 300 * 12);
@@ -152,9 +159,9 @@ import PageHero from '../components/PageHero.astro';
     const paybackDays = Math.max(4, Math.round((fathomAnnual / tradAnnual) * 365 / headcount));
 
     document.getElementById('res-savings').innerText = '$' + savings.toLocaleString();
-    document.getElementById('res-trad').innerText = '$' + tradAnnual.toLocaleString() + ' / yr';
-    document.getElementById('res-fathom').innerText = '$' + fathomAnnual.toLocaleString() + ' / yr';
-    document.getElementById('res-payback').innerText = paybackDays + ' Days';
+    document.getElementById('res-trad').innerText = '$' + tradAnnual.toLocaleString() + perYr;
+    document.getElementById('res-fathom').innerText = '$' + fathomAnnual.toLocaleString() + perYr;
+    document.getElementById('res-payback').innerText = paybackDays + ' ' + daysLabel;
   }
 
   document.addEventListener('DOMContentLoaded', () => {

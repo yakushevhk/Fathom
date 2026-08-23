@@ -12,6 +12,26 @@ export const DEFAULT_LANG = "en";
 
 export const translations = {
   "nav": {
+    "product": {
+      "en": "Product",
+      "ru": "Продукт"
+    },
+    "solutions": {
+      "en": "Solutions",
+      "ru": "Решения"
+    },
+    "whitepaper": {
+      "en": "Whitepaper",
+      "ru": "Вайтпейпер"
+    },
+    "pricing": {
+      "en": "Pricing",
+      "ru": "Цены"
+    },
+    "vsPython": {
+      "en": "Fathom vs. Python",
+      "ru": "Fathom vs Python"
+    },
     "features": {
       "en": "Workers",
       "ru": "Воркеры"
@@ -38,7 +58,7 @@ export const translations = {
     },
     "cta": {
       "en": "Start building",
-      "ru": "Начать разработку"
+      "ru": "Начать работу"
     },
     "menu": {
       "en": "Menu",
@@ -83,7 +103,8 @@ export const translations = {
     "integrations": {
       "en": "Integrations",
       "ru": "Интеграции"
-    }
+    },
+    "skipToContent": { "en": "Skip to content", "ru": "Перейти к содержимому" }
   },
   "footer": {
     "desc": {
@@ -752,7 +773,7 @@ export const translations = {
           },
           "c4": {
             "en": "sync CRM",
-            "ru": "синк с CRM"
+            "ru": "синхронизация с CRM"
           }
         },
         "research": {
@@ -810,7 +831,7 @@ export const translations = {
           },
           "c1": {
             "en": "durable jobs",
-            "ru": "надёжные джобы"
+            "ru": "устойчивые задачи"
           },
           "c2": {
             "en": "repeat runs",
@@ -877,6 +898,20 @@ export const translations = {
       "agents_sub": {
         "en": "Each sub-agent has a focused role and its own behavior. Coordinators decompose, fan out, reflect, and synthesize.",
         "ru": "У каждого суб-агента своя роль и поведение. Координатор декомпозирует, раздаёт задачи, переосмысливает и синтезирует."
+      },
+      "agent": {
+        "researcher": { "name": { "en": "Researcher", "ru": "Исследователь" }, "status": { "en": "breathing · scanning sources", "ru": "дыхание · сканирование источников" } },
+        "extracting": { "name": { "en": "Extractor", "ru": "Экстрактор" }, "status": { "en": "pulse · pulling fields", "ru": "пульс · извлечение полей" } },
+        "structuring": { "name": { "en": "Structurer", "ru": "Структуризатор" }, "status": { "en": "firing · building schema", "ru": "выстрел · построение схемы" } },
+        "searching": { "name": { "en": "Searcher", "ru": "Поисковик" }, "status": { "en": "globe · 7 backends", "ru": "глобус · 7 бэкендов" } },
+        "cleaning": { "name": { "en": "Cleaner", "ru": "Чистильщик" }, "status": { "en": "sweep · dedup pass", "ru": "зачистка · дедупликация" } },
+        "memoring": { "name": { "en": "Memory Keeper", "ru": "Хранитель памяти" }, "status": { "en": "trail · absorbing facts", "ru": "след · поглощение фактов" } },
+        "outreach": { "name": { "en": "Outreach", "ru": "Аутрич" }, "status": { "en": "in flight · composing", "ru": "в полёте · составление" } },
+        "coordinator": { "name": { "en": "Coordinator", "ru": "Координатор" }, "status": { "en": "fanning out · synthesizing", "ru": "разветвление · синтез" } },
+        "coder": { "name": { "en": "Coder", "ru": "Кодер" }, "status": { "en": "editing · sandboxed", "ru": "редактирование · в песочнице" } },
+        "operator": { "name": { "en": "Operator", "ru": "Оператор" }, "status": { "en": "scheduling · dispatching", "ru": "планирование · отправка" } },
+        "browser": { "name": { "en": "Browser", "ru": "Браузер" }, "status": { "en": "navigating · clicking", "ru": "навигация · клики" } },
+        "reviewer": { "name": { "en": "Reviewer", "ru": "Ревьюер" }, "status": { "en": "auditing · gating", "ru": "аудит · контрольные точки" } }
       },
       "how_label": {
         "en": "How it works",
@@ -1188,6 +1223,14 @@ export const translations = {
         "en": "fathom run \"your task here\" · docs · request access",
         "ru": "fathom run \"ваша задача\" · docs · запрос доступа"
       },
+    "hero_run_url": {
+      "en": "fathom run",
+      "ru": "fathom run"
+    },
+    "hero_run_cmd": {
+      "en": "fathom run \"Find 50 fintech CTOs, verify emails, draft outreach\"",
+      "ru": "fathom run \"Найти 50 CTO финтеха, проверить email, подготовить письма\""
+    },
       "faq_label": {
         "en": "FAQ",
         "ru": "FAQ"
@@ -1245,6 +1288,24 @@ export const translations = {
     "ocean_mono": {
       "en": "1 fathom = 1.829 m · depth of work",
       "ru": "1 fathom = 1,829 м · глубина работы"
+    },
+    "whitepaper": {
+      "badge": { "en": "Strategic Systems Whitepaper", "ru": "Стратегический технический документ" },
+      "title": { "en": "42-Page Systems Architecture & Workforce Blueprint", "ru": "42-страничная архитектура системы и план внедрения" },
+      "desc": { "en": "Explore the definitive architectural and economic breakdown of autonomous AI employees: ~0.75 ms tool dispatch, 94 µs memory assimilation, 15.4 MB RAM footprint, and unlimited neural compute economics.", "ru": "Подробный архитектурный и экономический разбор автономных ИИ-сотрудников: ~0.75 мс вызов инструментов, 94 мкс ассимиляция памяти, 15.4 МБ потребление RAM и безлимитные вычислительные ресурсы." },
+      "download": { "en": "⬇ Download Whitepaper (PDF, 7.6 MB)", "ru": "⬇ Скачать документ (PDF, 7.6 МБ)" },
+      "deck": { "en": "View 42-Slide Deck", "ru": "Смотреть презентацию (42 слайда)" }
+    },
+    "metrics": {
+      "cpu": { "en": "CPU-bound parallel speedup", "ru": "Параллельное ускорение (CPU)" },
+      "html": { "en": "rows/s HTML parsing", "ru": "строк/сек разбор HTML" },
+      "feed": { "en": "items/s feed parsing", "ru": "элементов/сек разбор фидов" },
+      "mem": { "en": "hybrid memory search", "ru": "гибридный поиск в памяти" }
+    },
+    "showcase": {
+      "workspaceLabel": { "en": "Autonomous Workspace", "ru": "Автономное рабочее пространство" },
+      "workspaceTitle": { "en": "Live GPUI Workspace in Action", "ru": "Рабочее пространство GPUI в действии" },
+      "workspaceDesc": { "en": "A live TUI session showing the agent tree, task decomposition, parallel workers, memory writes, and approval gates — all in the terminal.", "ru": "Живая TUI-сессия: дерево агентов, декомпозиция задач, параллельные воркеры, записи в память и шлюзы одобрения — всё в терминале." }
     },
     "runDemo": {
       "s1": { "en": "Goal", "ru": "Цель" },
@@ -1317,9 +1378,59 @@ export const translations = {
         "tui": { "cat": { "en": "TUI", "ru": "TUI" }, "items": { "en": "ratatui + crossterm", "ru": "ratatui + crossterm" } },
         "lsp": { "cat": { "en": "LSP", "ru": "LSP" }, "items": { "en": "Language Server Protocol integration", "ru": "Интеграция Language Server Protocol" } },
         "mcp": { "cat": { "en": "MCP", "ru": "MCP" }, "items": { "en": "Model Context Protocol (client + server)", "ru": "Model Context Protocol (клиент + сервер)" } }
-      }
+            }
     }
   },
+  "navDesc": {
+    "autoEmployees": { "en": "Autonomous digital employees", "ru": "Автономные цифровые сотрудники" },
+    "researchCodeOps": { "en": "Research, code, computer, ops", "ru": "Ресёрч, код, компьютер, операции" },
+    "osintBrowserMemory": { "en": "OSINT, browser, memory & shell", "ru": "OSINT, браузер, память и shell" },
+    "ratatuiReplay": { "en": "Ratatui agent tree & replay", "ru": "Дерево агентов Ratatui и replay" },
+    "sdrScoutMaintainer": { "en": "SDR, scout, maintainer personas", "ru": "Персоны SDR, скаута, Maintainer" },
+    "solutionsHub": { "en": "Solutions Hub", "ru": "Центр решений" },
+    "allEnterprisePlaybooks": { "en": "All enterprise use-case playbooks", "ru": "Все playbook для бизнеса" },
+    "b2bOutboundSdr": { "en": "B2B Outbound SDR", "ru": "B2B исходящий SDR" },
+    "verifiedLeadGen": { "en": "Verified lead gen & CRM pipeline", "ru": "Верифицированная лидогенерация и CRM" },
+    "technicalRecruiting": { "en": "Technical Recruiting", "ru": "Технический рекрутинг" },
+    "githubAstMining": { "en": "GitHub AST mining & candidate dossiers", "ru": "GitHub AST-анализ и досье кандидатов" },
+    "marketIntelligence": { "en": "Market Intelligence", "ru": "Маркетинговая разведка" },
+    "competitorPricing": { "en": "24/7 competitor pricing & DOM tracking", "ru": "Мониторинг цен конкурентов 24/7" },
+    "agencyFleets": { "en": "Agency Fleets", "ru": "Флот агентств" },
+    "multiTenant": { "en": "Multi-tenant client pods with 92% margin", "ru": "Мультитенантные клиентские поды с маржой 92%" },
+    "backOfficeFinance": { "en": "Back-Office & Finance", "ru": "Бэкоффис и финансы" },
+    "invoiceReconciliation": { "en": "3-way invoice reconciliation in QuickBooks", "ru": "Трёхсторонняя сверка счетов в QuickBooks" },
+    "twelveWorkspaceCrates": { "en": "12 Workspace Crates", "ru": "12 крейтов воркспейса" },
+    "tokioJoinset": { "en": "Tokio JoinSet swarm coordination", "ru": "Координация роя через Tokio JoinSet" },
+    "memoryEntityGraph": { "en": "Memory & Entity Graph", "ru": "Память и граф сущностей" },
+    "sqliteFts5": { "en": "SQLite FTS5 hybrid vector memory", "ru": "Гибридная векторная память SQLite FTS5" },
+    "securityVault": { "en": "Security & Vault", "ru": "Безопасность и хранилище" },
+    "aes256": { "en": "AES-256-GCM hardware key isolation", "ru": "Изоляция ключей AES-256-GCM" },
+    "microbenchmarks": { "en": "Microbenchmarks", "ru": "Микробенчмарки" },
+    "empiricalLatency": { "en": "Empirical latency & memory tests", "ru": "Эмпирические тесты задержки и памяти" },
+    "rustVsLangchain": { "en": "Rust vs LangChain / CrewAI comparison", "ru": "Сравнение Rust с LangChain / CrewAI" }
+  },
+  "pricingCalc": {
+    "sectionTitle": { "en": "Interactive Financial Modeling", "ru": "Интерактивный финансовый расчёт" },
+    "sectionSub": { "en": "Workforce ROI & TCO Calculator", "ru": "Калькулятор ROI и TCO" },
+    "sectionDesc": { "en": "Calculate your annual savings from deploying autonomous Fathom digital workers versus traditional headcount and fragmented SaaS subscriptions.", "ru": "Рассчитайте годовую экономию от внедрения автономных цифровых воркеров Fathom по сравнению с традиционным штатом и разрозненными SaaS-подписками." },
+    "headcountLabel": { "en": "Routine Headcount (SDRs, Researchers, Admins):", "ru": "Штат для рутинных задач (SDR, исследователи, админы):" },
+    "salaryLabel": { "en": "Avg Monthly Salary per Employee ($):", "ru": "Средняя зарплата на сотрудника ($):" },
+    "saasLabel": { "en": "Monthly SaaS Spend (ZoomInfo, Apollo, DBs, Scraping):", "ru": "Месячные расходы на SaaS (ZoomInfo, Apollo, БД, скрапинг):" },
+    "savingsLabel": { "en": "Estimated Annual Net Savings", "ru": "Ожидаемая годовая экономия" },
+    "tradLabel": { "en": "Traditional Annual Cost", "ru": "Традиционная годовая стоимость" },
+    "fathomLabel": { "en": "Fathom Fleet Cost", "ru": "Стоимость флота Fathom" },
+    "paybackLabel": { "en": "Estimated ROI Payback", "ru": "Окупаемость ROI" },
+    "capacityLabel": { "en": "Capacity Increase", "ru": "Рост производительности" },
+    "fasterLabel": { "en": "8.5× Faster", "ru": "8.5× быстрее" },
+    "basisLabel": { "en": "Based on 91% process automation & SaaS consolidation", "ru": "На основе 91% автоматизации и консолидации SaaS" },
+    "person": { "en": "person", "ru": "чел." },
+    "people": { "en": "people", "ru": "чел." },
+    "perMo": { "en": "/ mo", "ru": " / мес" },
+    "perYr": { "en": "/ yr", "ru": " / год" },
+    "days": { "en": "Days", "ru": "дн." },
+    "readWhitepaper": { "en": "Read Whitepaper", "ru": "Читать документ" }
+  },
+
   "lang_aria": {
     "en": "Change language",
     "ru": "Сменить язык"
