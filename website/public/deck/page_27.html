@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Page 27 · Coordinator & Worker Swarm Execution</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="page">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-meta">
+        <span class="brand-badge">FATHOM</span>
+        <span class="header-category">RUNTIME INTERNALS · SWARM ENGINE</span>
+      </div>
+      <div class="header-title-main">Coordinator & Worker Swarm Execution</div>
+      <div class="header-subtitle">Crate Topology: crates/core, crates/llm, crates/agent & Tokio JoinSet trees</div>
+    </div>
+    <div class="header-right">
+      <span class="page-badge">PAGE 27 / 42</span>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content-body">
+    <div class="card-dark">
+  <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Inside the Rust Workspace: 12 High-Cohesion Modular Crates</div>
+  <p style="font-size: 7.6pt; line-height: 1.38;">
+    Fathom's architecture is structured as a tightly optimized Rust workspace comprising 12 specialized crates, each with explicit boundary contracts, zero circular dependencies, and dedicated sub-millisecond execution loops.
+  </p>
+</div>
+
+
+    <div class="deck-mockup-container">
+      <div class="deck-mockup-frame">
+        <img src="mockups/11_swarm_coordinator.png" alt="Figure 27.1: Swarm Coordinator — Tokio JoinSet DAG execution across 4 parallel CPU worker pods with fair-share token budgets">
+      </div>
+      <div class="deck-mockup-caption">Figure 27.1: Swarm Coordinator — Tokio JoinSet DAG execution across 4 parallel CPU worker pods with fair-share token budgets</div>
+    </div>
+    
+
+<div class="grid-2">
+  <div class="card card-accent">
+    <div class="card-title-sm">Crate Topology Breakdown</div>
+    <ul style="font-size: 7.0pt; line-height: 1.30; margin-bottom: 0;">
+      <li><code>crates/core</code>: Domain primitives, agent state machines, tool traits.</li>
+      <li><code>crates/llm</code>: Streaming provider router, Hermes compaction, token budgeter.</li>
+      <li><code>crates/agent</code>: Autonomous multi-turn reasoning loops & sub-agent manager.</li>
+      <li><code>crates/tools</code>: 51+ native tools (OSINT, Playwright, shell, filesystem).</li>
+      <li><code>crates/server</code>: High-throughput Axum HTTP/SSE server & event relays.</li>
+      <li><code>crates/governance</code>: Fail-closed policy engine & AES-256-GCM vault.</li>
+    </ul>
+  </div>
+
+  <div class="card card-emerald">
+    <div class="card-title-sm">Tokio JoinSet Tree Concurrency</div>
+    <p style="font-size: 7.0pt; line-height: 1.30;">
+      Sub-agent lifecycles are managed via <code>tokio::task::JoinSet</code>. When a coordinator dispatches 4 workers, tasks are scheduled across available CPU cores in parallel. If a child agent errors, the parent traps the cancellation token cleanly.
+    </p>
+  </div>
+</div>
+
+<div class="callout callout-info" style="margin-bottom: 0;">
+  <strong>Architectural Cleanliness:</strong> Zero circular dependencies; strictly decoupled domain boundaries allow enterprise developers to extend Fathom with custom internal tools in minutes.
+</div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-left">
+      <span>Fathom Autonomous Workforce Runtime</span>
+      <span class="footer-bullet">•</span>
+      <span>Elastic-2.0 License</span>
+      <span class="footer-bullet">•</span>
+      <span>Strategic Whitepaper Presentation</span>
+    </div>
+    <div class="footer-right">v0.3.0 · Page 27 of 42</div>
+  </div>
+</div>
+
+</body>
+</html>

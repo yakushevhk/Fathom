@@ -1,0 +1,74 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PageHero from '../../components/PageHero.astro';
+---
+
+<Layout title="Technical Talent Scout & Recruiting — Fathom Enterprise Solutions" description="Autonomous technical talent scout: AST commit mining across GitHub, open-source portfolio analysis, and deep candidate dossiers.">
+  <main class="sol-detail-page">
+    <PageHero cls="sol-detail-hero">
+      <p class="eyebrow"><a href="/solutions">Solutions</a> / <span>Technical Recruiting</span></p>
+      <h1 class="h2-sec">Autonomous <em class="it">Talent Scout</em></h1>
+      <p class="copy-lg mx-auto">Source top 1% engineering talent by analyzing real code contributions, AST syntax trees, PR quality, and cross-platform footprints across GitHub and technical blogs.</p>
+      
+      <div class="sol-hero-metrics">
+        <div class="metric-card">
+          <div class="metric-val">15</div>
+          <div class="metric-lbl">Vetted Candidates / Run</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">20 min</div>
+          <div class="metric-lbl">Full Dossier Generation</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">100%</div>
+          <div class="metric-lbl">AST Code Verification</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">0%</div>
+          <div class="metric-lbl">Recruiter Placement Fees</div>
+        </div>
+      </div>
+    </PageHero>
+
+    <div class="container">
+      <div class="sol-section">
+        <div class="sec-head center">
+          <p class="eyebrow"><span>Candidate Deep Dive</span></p>
+          <h2 class="h3-sec">Engineered Candidate Dossiers</h2>
+          <p class="copy-lg mx-auto">Fathom inspects actual AST symbol structures in public repos, verifying genuine concurrency and systems engineering proficiency.</p>
+        </div>
+        <div class="product-screenshot-frame">
+          <img src="/images/mockups/03_talent_scout.png" alt="Technical Talent Scout AST Commit Mining" loading="lazy" />
+        </div>
+        <p class="screenshot-caption">Fig 2.1 — Talent Scout: Automated GitHub repository mining, verified email discovery, and personalized outreach drafting.</p>
+      </div>
+
+      <div class="whitepaper-banner" style="margin-top: 80px;">
+        <div>
+          <p class="eyebrow" style="color:#60a5fa;"><span>Talent Fleet Deployment</span></p>
+          <h2 style="font-size: 2.2rem; font-weight: 900; margin: 8px 0 16px 0;">Scale Your Technical Hiring</h2>
+          <p style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6; margin-bottom: 24px;">
+            Eliminate traditional $25k+ agency recruiter commissions. Deploy an autonomous technical talent scout on your self-hosted infrastructure.
+          </p>
+          <div style="display:flex; gap: 16px; flex-wrap: wrap;">
+            <a href="/#cta" class="btn btn-primary btn-lg">Request Dedicated Server Access →</a>
+            <a href="/whitepaper" class="btn btn-secondary btn-lg">Read 42-Page Whitepaper</a>
+          </div>
+        </div>
+        <div class="product-screenshot-frame" style="border-radius: var(--radius-md);">
+          <img src="/images/mockups/09_entity_knowledge_graph.png" alt="Candidate Entity Graph" loading="lazy" />
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .sol-detail-page { padding: 60px 0 90px; }
+  .sol-detail-hero { text-align: center; max-width: 860px; margin: 0 auto 40px; padding: 0 20px; }
+  .sol-detail-hero h1 { font-size: clamp(36px, 5.5vw, 68px); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; margin-top: 12px; }
+  .sol-hero-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 36px; }
+  .metric-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; text-align: center; }
+  .metric-val { font-size: 2.2rem; font-weight: 800; color: var(--accent); }
+  .metric-lbl { font-size: 0.84rem; font-weight: 600; color: var(--text-secondary); margin-top: 4px; }
+</style>

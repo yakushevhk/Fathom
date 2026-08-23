@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FATHOM — 42-Page Master Whitepaper Deck</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  :root {
+    --bg-dark: #07090e;
+    --sidebar-bg: #0d1117;
+    --border-color: #1e293b;
+    --accent: #1d4ed8;
+    --accent-hover: #2563eb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: var(--bg-dark);
+    color: #f1f5f9;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  /* Sidebar */
+  #sidebar {
+    width: 320px;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .sidebar-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .brand-title {
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .brand-badge {
+    background: var(--accent);
+    color: #fff;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+  }
+  .pdf-download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #1e293b;
+    color: #38bdf8;
+    border: 1px solid #334155;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .pdf-download-btn:hover {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  
+  .page-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .page-nav-item {
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11.5px;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+  }
+  .page-nav-item:hover {
+    background: #161f2e;
+    color: #f1f5f9;
+  }
+  .page-nav-item.active {
+    background: #1e293b;
+    color: #38bdf8;
+    font-weight: 700;
+    border-color: #334155;
+  }
+  .nav-num {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    opacity: 0.7;
+    min-width: 20px;
+  }
+  .nav-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  /* Main Stage */
+  #main-stage {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #020408;
+    overflow: hidden;
+    position: relative;
+  }
+  .stage-topbar {
+    padding: 12px 24px;
+    background: #0d1117;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+  }
+  .stage-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .btn-ctrl {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #f1f5f9;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-ctrl:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .page-counter {
+    font-family: "JetBrains Mono", monospace;
+    color: #94a3b8;
+    font-size: 12px;
+  }
+  
+  .viewport-container {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    justify-content: center;
+    padding: 30px 20px;
+  }
+  .deck-frame {
+    width: 210mm;
+    height: 297mm;
+    border: 1px solid #334155;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255,255,255,0.05);
+    background: #fff;
+    border-radius: 2px;
+  }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div class="sidebar-header">
+    <div class="brand-title">
+      <span>FATHOM</span>
+      <span class="brand-badge">42 PAGES</span>
+    </div>
+    <a href="Fathom_Whitepaper.pdf" class="pdf-download-btn" download>
+      <span>⬇</span> PDF
+    </a>
+  </div>
+  <div class="page-list" id="pageList"></div>
+</div>
+
+<div id="main-stage">
+  <div class="stage-topbar">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <span style="font-weight:800; color:#fff;" id="topbarCategory">COVER</span>
+      <span style="color:#64748b;">·</span>
+      <span style="color:#cbd5e1;" id="topbarTitle">FATHOM Title Page</span>
+    </div>
+    <div class="stage-controls">
+      <button class="btn-ctrl" onclick="prevPage()">◀ Prev</button>
+      <span class="page-counter" id="pageCounter">01 / 42</span>
+      <button class="btn-ctrl" onclick="nextPage()">Next ▶</button>
+      <button class="btn-ctrl" onclick="toggleFullScreen()">⛶ Fullscreen</button>
+    </div>
+  </div>
+
+  <div class="viewport-container">
+    <iframe class="deck-frame" id="slideFrame" src="page_01.html"></iframe>
+  </div>
+</div>
+
+<script>
+const pages = [
+  { num: 1, title: "FATHOM (Title Page)", cat: "COVER" },
+  { num: 2, title: "Table of Contents & Outline", cat: "OUTLINE" },
+  { num: 3, title: "Universal AI Workforce Runtime", cat: "EXECUTIVE STRATEGY" },
+  { num: 4, title: "The Broken Remote Hiring Landscape", cat: "MACRO PROBLEM" },
+  { num: 5, title: "Digital Coworkers vs. Scripted Chatbots", cat: "PRODUCT PHILOSOPHY" },
+  { num: 6, title: "The 5 Core Digital Worker Archetypes", cat: "WORKFORCE ARCHETYPES" },
+  { num: 7, title: "A Day in the Life of a Digital Employee", cat: "OPERATIONAL WORKFLOW" },
+  { num: 8, title: "The Virtual Employee Subscription Model", cat: "PRICING MODEL" },
+  { num: 9, title: "Unlimited Neural Compute Engine", cat: "NEURAL ECONOMICS" },
+  { num: 10, title: "Total Cost of Ownership (TCO) & ROI", cat: "FINANCIAL ANALYSIS" },
+  { num: 11, title: "Elastic Scaling: 1 to 100 Workers", cat: "ELASTIC SCALE" },
+  { num: 12, title: "Enterprise & Agency Monetization", cat: "COMMERCIAL ARCHITECTURE" },
+  { num: 13, title: "The Self-Replicating Outbound Flywheel", cat: "GO-TO-MARKET" },
+  { num: 14, title: "Multi-Channel Go-To-Market Strategy", cat: "DISTRIBUTION" },
+  { num: 15, title: "The Free Value Audit Lead Magnet", cat: "CONVERSION FUNNEL" },
+  { num: 16, title: "The Agency & White-Label Ecosystem", cat: "PARTNER NETWORK" },
+  { num: 17, title: "Skill Marketplace & Template Network", cat: "COMMUNITY & NETWORK" },
+  { num: 18, title: "Autonomous Sales Development Rep (SDR)", cat: "REAL-WORLD SCENARIOS" },
+  { num: 19, title: "Executive Headhunter & Talent Scout", cat: "REAL-WORLD SCENARIOS" },
+  { num: 20, title: "24/7 Market Intelligence Tracker", cat: "REAL-WORLD SCENARIOS" },
+  { num: 21, title: "Automated Customer Onboarding & Support", cat: "REAL-WORLD SCENARIOS" },
+  { num: 22, title: "Back-Office & Invoice Reconciliation", cat: "REAL-WORLD SCENARIOS" },
+  { num: 23, title: "Autonomous Software Engineer & Maintainer", cat: "REAL-WORLD SCENARIOS" },
+  { num: 24, title: "Regulatory & Legal Document Auditor", cat: "REAL-WORLD SCENARIOS" },
+  { num: 25, title: "How the Virtual Office Operates", cat: "SYSTEM ARCHITECTURE" },
+  { num: 26, title: "Why Rust? Architecture of Performance", cat: "SYSTEM ARCHITECTURE" },
+  { num: 27, title: "Coordinator & Worker Swarm Execution", cat: "RUNTIME INTERNALS" },
+  { num: 28, title: "The Broadcast Message Bus & Security Vault", cat: "RUNTIME INTERNALS" },
+  { num: 29, title: "Reliability & Self-Healing Workflows", cat: "RUNTIME INTERNALS" },
+  { num: 30, title: "How Workers See & Control Computers", cat: "COMPUTER USE" },
+  { num: 31, title: "Why Opaque Refs Beat Brittle Selectors", cat: "COMPUTER USE" },
+  { num: 32, title: "Screen Streaming & Seamless Takeover", cat: "COMPUTER USE" },
+  { num: 33, title: "Docker Sandboxes & Network Egress", cat: "SECURITY SANDBOXING" },
+  { num: 34, title: "How Coworkers Remember Across Months", cat: "KNOWLEDGE ENGINE" },
+  { num: 35, title: "Sub-Millisecond Knowledge Ingestion", cat: "MEMORY ENGINE" },
+  { num: 36, title: "The Enterprise Entity Knowledge Graph", cat: "KNOWLEDGE GRAPH" },
+  { num: 37, title: "Enterprise Guardrails & Policy Engine", cat: "ENTERPRISE SECURITY" },
+  { num: 38, title: "The Ironclad Credentials Vault", cat: "SECURITY VAULT" },
+  { num: 39, title: "Agency Fleet Scaling & Multi-Tenancy", cat: "FLEET MANAGEMENT" },
+  { num: 40, title: "Definitive Microbenchmarks: Rust vs Python", cat: "BENCHMARKS" },
+  { num: 41, title: "Hardware Efficiency & Hosting Density", cat: "HARDWARE ECONOMICS" },
+  { num: 42, title: "Strategic Roadmap: Future of Autonomous Work", cat: "EXECUTIVE SUMMARY" }
+];
+
+let currentPage = 1;
+
+function renderNav() {
+  const container = document.getElementById("pageList");
+  container.innerHTML = "";
+  pages.forEach(p => {
+    const item = document.createElement("div");
+    item.className = "page-nav-item" + (p.num === currentPage ? " active" : "");
+    item.innerHTML = `<span class="nav-num">${String(p.num).padStart(2, "0")}</span><span class="nav-title">${p.title}</span>`;
+    item.onclick = () => loadPage(p.num);
+    container.appendChild(item);
+  });
+}
+
+function loadPage(num) {
+  if (num < 1) num = 1;
+  if (num > 42) num = 42;
+  currentPage = num;
+  const p = pages[num - 1];
+  document.getElementById("slideFrame").src = `page_${String(num).padStart(2, "0")}.html`;
+  document.getElementById("topbarCategory").innerText = p.cat;
+  document.getElementById("topbarTitle").innerText = p.title;
+  document.getElementById("pageCounter").innerText = `${String(num).padStart(2, "0")} / 42`;
+  renderNav();
+}
+
+function prevPage() { if (currentPage > 1) loadPage(currentPage - 1); }
+function nextPage() { if (currentPage < 42) loadPage(currentPage + 1); }
+
+function toggleFullScreen() {
+  const elem = document.getElementById("slideFrame");
+  if (elem.requestFullscreen) { elem.requestFullscreen(); }
+  else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); }
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowRight" || e.key === " ") nextPage();
+  if (e.key === "ArrowLeft") prevPage();
+});
+
+renderNav();
+loadPage(1);
+</script>
+
+</body>
+</html>

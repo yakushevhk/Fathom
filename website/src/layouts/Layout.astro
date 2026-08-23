@@ -98,16 +98,103 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
           <span class="brand-name">Fathom</span>
         </a>
         <div class="nav-links" id="navbarLinks">
-          <a href="/#features" class="navitem" data-i18n="nav.features">Workers</a>
-          <a href="/features" class="navitem" data-i18n="nav.usecases">Capabilities</a>
-          <a href="/architecture" class="navitem" data-i18n="nav.architecture">Architecture</a>
-          <a href="/research" class="navitem" data-i18n="nav.research">Research</a>
-          <a href="/tools" class="navitem" data-i18n="nav.tools">Tools</a>
-          <a href="/tui" class="navitem" data-i18n="nav.tui">TUI</a>
-          <a href="/profiles" class="navitem" data-i18n="nav.profiles">Profiles</a>
-          <a href="/memory" class="navitem" data-i18n="nav.memory">Memory</a>
-          <a href="/security" class="navitem" data-i18n="nav.security">Security</a>
-          <a href="/Fathom_Whitepaper.pdf" class="navitem" style="color:var(--accent); font-weight:700;" target="_blank">Whitepaper (PDF)</a>
+          <!-- Product Dropdown -->
+          <div class="nav-dropdown">
+            <button class="nav-dropdown-toggle">
+              <span>Product</span>
+              <svg class="nav-dropdown-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="nav-dropdown-menu">
+              <a href="/#features" class="nav-dropdown-item">
+                <span class="nav-dropdown-title">Workers Overview</span>
+                <span class="nav-dropdown-desc">Autonomous digital employees</span>
+              </a>
+              <a href="/features" class="nav-dropdown-item">
+                <span class="nav-dropdown-title">Capabilities</span>
+                <span class="nav-dropdown-desc">Research, code, computer, ops</span>
+              </a>
+              <a href="/tools" class="nav-dropdown-item">
+                <span class="nav-dropdown-title">51+ Rust Tools</span>
+                <span class="nav-dropdown-desc">OSINT, browser, memory &amp; shell</span>
+              </a>
+              <a href="/tui" class="nav-dropdown-item">
+                <span class="nav-dropdown-title">Terminal TUI</span>
+                <span class="nav-dropdown-desc">Ratatui agent tree &amp; replay</span>
+              </a>
+              <a href="/profiles" class="nav-dropdown-item">
+                <span class="nav-dropdown-title">Worker Profiles</span>
+                <span class="nav-dropdown-desc">SDR, scout, maintainer personas</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Solutions Dropdown -->
+          <div class="nav-dropdown">
+            <button class="nav-dropdown-toggle">
+              <span>Solutions</span>
+              <svg class="nav-dropdown-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="nav-dropdown-menu">
+              <a href="/solutions" class="nav-dropdown-item">
+                <span class="nav-dropdown-title">Solutions Hub</span>
+                <span class="nav-dropdown-desc">All enterprise use-case playbooks</span>
+              </a>
+              <a href="/solutions/b2b-outbound" class="nav-dropdown-item">
+                <span class="nav-dropdown-title">B2B Outbound SDR</span>
+                <span class="nav-dropdown-desc">Verified lead gen &amp; CRM pipeline</span>
+              </a>
+              <a href="/solutions/executive-recruiting" class="nav-dropdown-item">
+                <span class="nav-dropdown-title">Technical Recruiting</span>
+                <span class="nav-dropdown-desc">GitHub AST mining &amp; candidate dossiers</span>
+              </a>
+              <a href="/solutions/market-intelligence" class="nav-dropdown-item">
+                <span class="nav-dropdown-title">Market Intelligence</span>
+                <span class="nav-dropdown-desc">24/7 competitor pricing &amp; DOM tracking</span>
+              </a>
+              <a href="/solutions/agency-whitelabel" class="nav-dropdown-item">
+                <span class="nav-dropdown-title">Agency Fleets</span>
+                <span class="nav-dropdown-desc">Multi-tenant client pods with 92% margin</span>
+              </a>
+              <a href="/solutions/backoffice-finance" class="nav-dropdown-item">
+                <span class="nav-dropdown-title">Back-Office &amp; Finance</span>
+                <span class="nav-dropdown-desc">3-way invoice reconciliation in QuickBooks</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Architecture Dropdown -->
+          <div class="nav-dropdown">
+            <button class="nav-dropdown-toggle">
+              <span>Architecture</span>
+              <svg class="nav-dropdown-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="nav-dropdown-menu">
+              <a href="/architecture" class="nav-dropdown-item">
+                <span class="nav-dropdown-title">12 Workspace Crates</span>
+                <span class="nav-dropdown-desc">Tokio JoinSet swarm coordination</span>
+              </a>
+              <a href="/memory" class="nav-dropdown-item">
+                <span class="nav-dropdown-title">Memory &amp; Entity Graph</span>
+                <span class="nav-dropdown-desc">SQLite FTS5 hybrid vector memory</span>
+              </a>
+              <a href="/security" class="nav-dropdown-item">
+                <span class="nav-dropdown-title">Security &amp; Vault</span>
+                <span class="nav-dropdown-desc">AES-256-GCM hardware key isolation</span>
+              </a>
+              <a href="/benchmarks" class="nav-dropdown-item">
+                <span class="nav-dropdown-title">Microbenchmarks</span>
+                <span class="nav-dropdown-desc">Empirical latency &amp; memory tests</span>
+              </a>
+              <a href="/vs-python" class="nav-dropdown-item">
+                <span class="nav-dropdown-title">Fathom vs. Python</span>
+                <span class="nav-dropdown-desc">Rust vs LangChain / CrewAI comparison</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Direct Links -->
+          <a href="/whitepaper" class="navitem" style="color:var(--accent); font-weight:700;">Whitepaper</a>
+          <a href="/pricing" class="navitem" data-i18n="nav.pricing">Pricing</a>
           <a href="/docs" class="navitem" data-i18n="nav.docs">Docs</a>
         </div>
         <div class="nav-actions">
@@ -138,15 +225,15 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
     <div class="mobile-menu" id="mobile-menu">
       <div class="mobile-menu-links">
         <a href="/#features" class="mobile-link" data-i18n="nav.features">Workers</a>
+        <a href="/solutions" class="mobile-link">Solutions</a>
         <a href="/features" class="mobile-link" data-i18n="nav.usecases">Capabilities</a>
         <a href="/architecture" class="mobile-link" data-i18n="nav.architecture">Architecture</a>
-        <a href="/research" class="mobile-link" data-i18n="nav.research">Research</a>
+        <a href="/vs-python" class="mobile-link">Fathom vs. Python</a>
         <a href="/tools" class="mobile-link" data-i18n="nav.tools">Tools</a>
-        <a href="/tui" class="mobile-link" data-i18n="nav.tui">TUI</a>
-        <a href="/profiles" class="mobile-link" data-i18n="nav.profiles">Profiles</a>
-        <a href="/memory" class="mobile-link" data-i18n="nav.memory">Memory</a>
-        <a href="/security" class="mobile-link" data-i18n="nav.security">Security</a>
-        <a href="/Fathom_Whitepaper.pdf" class="mobile-link" target="_blank">Whitepaper (PDF)</a>
+        <a href="/memory" class="mobile-link" data-i18n="nav.memory">Memory &amp; Graph</a>
+        <a href="/security" class="mobile-link" data-i18n="nav.security">Security &amp; Vault</a>
+        <a href="/whitepaper" class="mobile-link" style="color:var(--accent); font-weight:700;">Whitepaper</a>
+        <a href="/pricing" class="mobile-link">Pricing &amp; ROI</a>
         <a href="/docs" class="mobile-link" data-i18n="nav.docs">Docs</a>
       </div>
       <div class="mobile-menu-lang">

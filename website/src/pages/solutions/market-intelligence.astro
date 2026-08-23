@@ -1,0 +1,74 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PageHero from '../../components/PageHero.astro';
+---
+
+<Layout title="Market Intelligence & Competitor Tracking — Fathom Enterprise Solutions" description="Autonomous real-time market intelligence: 24/7 competitor DOM change detection, pricing sweeps, and executive Telegram alerts.">
+  <main class="sol-detail-page">
+    <PageHero cls="sol-detail-hero">
+      <p class="eyebrow"><a href="/solutions">Solutions</a> / <span>Market Intelligence</span></p>
+      <h1 class="h2-sec">Real-Time <em class="it">Market Intelligence</em></h1>
+      <p class="copy-lg mx-auto">Continuous autonomous surveillance of competitor websites, pricing matrix updates, product feature launches, and executive personnel shifts.</p>
+      
+      <div class="sol-hero-metrics">
+        <div class="metric-card">
+          <div class="metric-val">15 min</div>
+          <div class="metric-lbl">Change Detection Alert</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">200+</div>
+          <div class="metric-lbl">Domains Crawled Daily</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">24/7</div>
+          <div class="metric-lbl">Automated Watch Mode</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">100%</div>
+          <div class="metric-lbl">Diff Traceability</div>
+        </div>
+      </div>
+    </PageHero>
+
+    <div class="container">
+      <div class="sol-section">
+        <div class="sec-head center">
+          <p class="eyebrow"><span>Live Surveillance</span></p>
+          <h2 class="h3-sec">DOM Diff Tracking &amp; Feature Audits</h2>
+          <p class="copy-lg mx-auto">Automated DOM structure comparisons highlighting new pricing tiers, enterprise add-ons, and blog announcements.</p>
+        </div>
+        <div class="product-screenshot-frame">
+          <img src="/images/mockups/02_market_intelligence.png" alt="Market Intelligence DOM Diff Tracker" loading="lazy" />
+        </div>
+        <p class="screenshot-caption">Fig 3.1 — Market Intelligence: Competitor tier changes detected, synthesized, and routed to executive Slack/Telegram channels.</p>
+      </div>
+
+      <div class="whitepaper-banner" style="margin-top: 80px;">
+        <div>
+          <p class="eyebrow" style="color:#60a5fa;"><span>Surveillance Deployment</span></p>
+          <h2 style="font-size: 2.2rem; font-weight: 900; margin: 8px 0 16px 0;">Never Miss a Competitor Move</h2>
+          <p style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6; margin-bottom: 24px;">
+            Set up persistent scheduled worker watchdogs (<code>fathom run --repeat 6h</code>) on your private infrastructure with webhook dispatch.
+          </p>
+          <div style="display:flex; gap: 16px; flex-wrap: wrap;">
+            <a href="/#cta" class="btn btn-primary btn-lg">Request Dedicated Server Access →</a>
+            <a href="/whitepaper" class="btn btn-secondary btn-lg">Read 42-Page Whitepaper</a>
+          </div>
+        </div>
+        <div class="product-screenshot-frame" style="border-radius: var(--radius-md);">
+          <img src="/images/mockups/07_inbox_manager.png" alt="Inbox Triage" loading="lazy" />
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .sol-detail-page { padding: 60px 0 90px; }
+  .sol-detail-hero { text-align: center; max-width: 860px; margin: 0 auto 40px; padding: 0 20px; }
+  .sol-detail-hero h1 { font-size: clamp(36px, 5.5vw, 68px); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; margin-top: 12px; }
+  .sol-hero-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 36px; }
+  .metric-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; text-align: center; }
+  .metric-val { font-size: 2.2rem; font-weight: 800; color: var(--accent); }
+  .metric-lbl { font-size: 0.84rem; font-weight: 600; color: var(--text-secondary); margin-top: 4px; }
+</style>

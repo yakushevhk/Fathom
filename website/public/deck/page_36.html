@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Page 36 · The Enterprise Entity Knowledge Graph</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="page">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-meta">
+        <span class="brand-badge">FATHOM</span>
+        <span class="header-category">KNOWLEDGE GRAPH · ENTITY TOPOLOGY</span>
+      </div>
+      <div class="header-title-main">The Enterprise Entity Knowledge Graph</div>
+      <div class="header-subtitle">Mapping People, Companies, Roles and Technologies into an Interconnected Web</div>
+    </div>
+    <div class="header-right">
+      <span class="page-badge">PAGE 36 / 42</span>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content-body">
+    <div class="card-dark">
+  <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Relational Intelligence: Beyond Flat Unstructured Records</div>
+  <p style="font-size: 7.6pt; line-height: 1.38;">
+    Enterprise intelligence is fundamentally relational. In <code>crates/memory</code>, Fathom structures verified facts into a directional <strong>Entity Knowledge Graph</strong> that automatically connects individuals, corporate entities, funding events, job titles, and technology stacks into a unified queryable web.
+  </p>
+</div>
+
+
+    <div class="deck-mockup-container">
+      <div class="deck-mockup-frame">
+        <img src="mockups/09_entity_knowledge_graph.png" alt="Figure 36.1: Enterprise Entity Knowledge Graph Explorer — 3-hop relationship traversal across 5,420 nodes in 1.62 ms.">
+      </div>
+      <div class="deck-mockup-caption">Figure 36.1: Enterprise Entity Knowledge Graph Explorer — 3-hop relationship traversal across 5,420 nodes in 1.62 ms.</div>
+    </div>
+    
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title-sm">Core Entity Node Classes</div>
+    <ul style="font-size: 7.0pt; line-height: 1.30; margin-bottom: 0;">
+      <li><code>Person</code>: Verified full name, LinkedIn URL, email, seniority.</li>
+      <li><code>Organization</code>: Domain, headcount, funding round, revenue tier.</li>
+      <li><code>Technology</code>: Cloud stack, CRM, web frameworks, payment APIs.</li>
+    </ul>
+  </div>
+
+  <div class="card card-purple">
+    <div class="card-title-sm">Directional Edge Types & Traversal</div>
+    <ul style="font-size: 7.0pt; line-height: 1.30; margin-bottom: 0;">
+      <li><code>Person ──[works_at {{title, since}}]──► Organization</code></li>
+      <li><code>Organization ──[uses_tech {{confidence}}]──► Technology</code></li>
+      <li>6-hop traversal queries execute in &lt;1.8ms via SQLite recursive CTEs.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout callout-success" style="margin-bottom: 0;">
+  <strong>Networked Collective IQ:</strong> As more digital coworkers join the fleet, the shared Knowledge Graph compounds in density and accuracy, accelerating discovery across all business units.
+</div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-left">
+      <span>Fathom Autonomous Workforce Runtime</span>
+      <span class="footer-bullet">•</span>
+      <span>Elastic-2.0 License</span>
+      <span class="footer-bullet">•</span>
+      <span>Strategic Whitepaper Presentation</span>
+    </div>
+    <div class="footer-right">v0.3.0 · Page 36 of 42</div>
+  </div>
+</div>
+
+</body>
+</html>

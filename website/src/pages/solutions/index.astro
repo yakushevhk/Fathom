@@ -1,0 +1,132 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PageHero from '../../components/PageHero.astro';
+
+const solutions = [
+  {
+    slug: 'b2b-outbound',
+    title: 'Autonomous Outbound SDR',
+    tagline: '50 Verified B2B Decision-Makers Daily with 0% Bounces',
+    desc: 'Goal Mode OSINT research across 7 search backends, 5-stage SMTP mailbox probes, personalized multi-stage sequences, and direct CRM sync.',
+    image: '/images/mockups/08_lead_audit_report.png',
+    stat: '0% Email Bounce Rate',
+    roi: 'Replaces $6k/mo SDR agency + ZoomInfo'
+  },
+  {
+    slug: 'executive-recruiting',
+    title: 'Technical Talent Scout',
+    tagline: 'GitHub AST Commit Mining & Candidate Dossiers',
+    desc: 'Autonomous developer sourcing: parsing GitHub repos, AST symbol analysis, cross-referencing LinkedIn and personal blogs, producing vetted technical dossiers.',
+    image: '/images/mockups/03_talent_scout.png',
+    stat: '15 Candidates / 20 min',
+    roi: 'Replaces 20% recruiter placement fee'
+  },
+  {
+    slug: 'market-intelligence',
+    title: 'Real-Time Market Intelligence',
+    tagline: '24/7 Competitor DOM Tracking & Pricing Sweeps',
+    desc: 'Continuous web surveillance: crawling 200+ competitor domains, detecting feature and pricing diffs in 15 minutes, sending executive alerts to Telegram.',
+    image: '/images/mockups/02_market_intelligence.png',
+    stat: '15-min Alert Latency',
+    roi: '100% automated competitor monitoring'
+  },
+  {
+    slug: 'agency-whitelabel',
+    title: 'Agency Multi-Tenant Fleets',
+    tagline: 'Deploy 12+ Client Pods with 92% Net Margin',
+    desc: 'Unified control plane for agencies: dedicated client Docker sandboxes, separate SQLite memory graphs, custom branding, and flat-rate compute.',
+    image: '/images/mockups/15_agency_fleet_manager.png',
+    stat: '92% Agency Margin',
+    roi: '$24k MRR on $80 server cost'
+  },
+  {
+    slug: 'backoffice-finance',
+    title: 'Back-Office & Invoice Reconciliation',
+    tagline: '3-Way Invoice Matching in QuickBooks & ERPs',
+    desc: 'Autonomous accounting: OCR PDF invoice ingestion, PO line-item reconciliation, payment staging, and flagging duplicate invoices.',
+    image: '/images/mockups/04_backoffice_invoice.png',
+    stat: '100% Audit Compliance',
+    roi: 'Eliminates 30 hrs/wk manual entry'
+  }
+];
+---
+
+<Layout title="Enterprise Solutions — Fathom Autonomous AI Workforce" description="Turnkey autonomous AI employee solutions for sales outbound, talent scouting, market intelligence, agency fleets, and back-office operations.">
+  <main class="solutions-page">
+    <PageHero cls="sol-hero">
+      <p class="eyebrow"><span>Enterprise Playbooks &amp; Solutions</span></p>
+      <h1 class="h2-sec">Turnkey Autonomous <em class="it">Workforce</em></h1>
+      <p class="copy-lg mx-auto">Deploy specialized autonomous AI employees engineered for high-value business workflows with guaranteed governance and durable memory.</p>
+    </PageHero>
+
+    <div class="container">
+      <div class="sol-grid">
+        {solutions.map((s) => (
+          <div class="sol-card">
+            <div class="sol-img-wrap">
+              <img src={s.image} alt={s.title} loading="lazy" />
+            </div>
+            <div class="sol-body">
+              <div class="sol-badges">
+                <span class="badge-stat">{s.stat}</span>
+                <span class="badge-roi">{s.roi}</span>
+              </div>
+              <h2 class="sol-title">{s.title}</h2>
+              <p class="sol-tagline">{s.tagline}</p>
+              <p class="sol-desc">{s.desc}</p>
+              <div class="sol-footer">
+                <a href={`/solutions/${s.slug}`} class="btn btn-primary btn-sm">Explore Solution Playbook →</a>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <!-- CTA Section -->
+      <div class="whitepaper-banner" style="margin-top: 80px;">
+        <div>
+          <p class="eyebrow" style="color:#60a5fa;"><span>Custom Enterprise Solutions</span></p>
+          <h2 style="font-size: 2.2rem; font-weight: 900; margin: 8px 0 16px 0; letter-spacing: -0.02em;">Need a Custom Worker Fleet?</h2>
+          <p style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6; margin-bottom: 24px;">
+            We provision and tune dedicated self-hosted Fathom server environments tailored to your company's CRM, internal APIs, and governance guidelines.
+          </p>
+          <div style="display:flex; gap: 16px; flex-wrap: wrap;">
+            <a href="/#cta" class="btn btn-primary btn-lg">Request Dedicated Server Access →</a>
+            <a href="/whitepaper" class="btn btn-secondary btn-lg">Read 42-Page Whitepaper</a>
+          </div>
+        </div>
+        <div class="product-screenshot-frame" style="border-radius: var(--radius-md);">
+          <img src="/images/mockups/01_sales_outbound_sdr.png" alt="Fathom Command Center" loading="lazy" />
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .solutions-page { padding: 60px 0 90px; }
+  .sol-hero { text-align: center; max-width: 860px; margin: 0 auto 40px; padding: 0 20px; }
+  .sol-hero h1 { font-size: clamp(36px, 5.5vw, 68px); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; margin-top: 12px; }
+  
+  .sol-grid { display: flex; flex-direction: column; gap: 40px; margin-top: 30px; }
+  .sol-card { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 32px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-md); transition: transform var(--duration), box-shadow var(--duration); }
+  .sol-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--grey-400); }
+  
+  .sol-img-wrap { width: 100%; height: 100%; min-height: 320px; background: #0a0a0a; display: flex; align-items: center; justify-content: center; }
+  .sol-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+  
+  .sol-body { padding: 36px 32px; display: flex; flex-direction: column; justify-content: center; }
+  .sol-badges { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .badge-stat { font-family: var(--font-mono); font-size: 0.76rem; font-weight: 700; color: #10b981; background: rgba(16, 185, 129, 0.1); padding: 4px 10px; border-radius: var(--radius-full); }
+  .badge-roi { font-family: var(--font-mono); font-size: 0.76rem; font-weight: 600; color: #3b82f6; background: rgba(59, 130, 246, 0.1); padding: 4px 10px; border-radius: var(--radius-full); }
+  
+  .sol-title { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .sol-tagline { font-size: 1rem; font-weight: 600; color: var(--accent); margin-bottom: 14px; }
+  .sol-desc { font-size: 0.92rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 24px; }
+  
+  @media (max-width: 900px) {
+    .sol-card { grid-template-columns: 1fr; }
+    .sol-img-wrap { min-height: 240px; }
+    .sol-body { padding: 24px; }
+  }
+</style>

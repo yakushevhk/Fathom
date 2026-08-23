@@ -1,0 +1,188 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+
+const parts = [
+  { num: 'I', title: 'Executive Summary & Vision', pages: '01–05', desc: 'The autonomous workforce shift, multi-agent coordination, and universal runtime architecture.' },
+  { num: 'II', title: 'Archetypes & Day-in-the-Life Workflows', pages: '06–12', desc: 'SDR, Talent Scout, DevOps Maintainer, Chief of Staff, and Back-Office Accounting personas.' },
+  { num: 'III', title: 'Governed Computer Use & Playwright Service', pages: '13–18', desc: 'ARIA accessibility tree navigation, live screen streams, and 2FA human takeover mutex.' },
+  { num: 'IV', title: 'OSINT Lead Generation & Outreach Engine', pages: '19–24', desc: '7 search backends, 5-stage SMTP verification gates, and CRM push adapters.' },
+  { num: 'V', title: 'Enterprise Security & Governance Vault', pages: '25–28', desc: 'AES-256-GCM hardware key isolation, fail-closed policy engine, and GDPR audit trails.' },
+  { num: 'VI', title: 'Persistent Memory & Entity Knowledge Graph', pages: '29–32', desc: 'Hybrid BM25 + Vector SQLite search (1.62ms) and 3-hop recursive entity relationship graphs.' },
+  { num: 'VII', title: 'Hardware Efficiency & Benchmark Analysis', pages: '33–36', desc: 'Tokio async concurrency, 15.4 MB RAM footprint, and empirical Rust vs Python benchmarks.' },
+  { num: 'VIII', title: 'Economics, Agency Scaling & Strategic Roadmap', pages: '37–42', desc: 'Flat monthly seat pricing, unlimited neural compute economics, and agency multi-tenancy.' },
+];
+---
+
+<Layout title="Enterprise Whitepaper — Fathom Systems Architecture & Workforce Blueprint" description="The definitive 42-page technical whitepaper and architectural blueprint for Fathom: universal autonomous AI workforce runtime in Rust.">
+  <main class="whitepaper-page">
+    <PageHero cls="wp-hero">
+      <p class="eyebrow"><span>Technical Whitepaper &amp; Architecture Deck</span></p>
+      <h1 class="h2-sec">Fathom Systems <em class="it">Architecture</em></h1>
+      <p class="copy-lg mx-auto">The definitive 42-page engineering and economic blueprint for universal autonomous AI employee fleets.</p>
+      
+      <div class="wp-actions">
+        <a href="/Fathom_Whitepaper.pdf" class="btn btn-primary btn-lg" target="_blank" download>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Download PDF (7.6 MB)
+        </a>
+        <a href="/deck/index.html" class="btn btn-secondary btn-lg" target="_blank">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+          Full-Screen Slide Deck ↗
+        </a>
+      </div>
+      
+      <div class="wp-meta-strip">
+        <div class="wp-meta-item"><strong>Pages:</strong> 42 Dense Slides</div>
+        <div class="wp-meta-item"><strong>Format:</strong> A4 Landscape Retina</div>
+        <div class="wp-meta-item"><strong>Lead Architect:</strong> Yakushev Hermann</div>
+        <div class="wp-meta-item"><strong>Release:</strong> August 2026 / v1.0</div>
+      </div>
+    </PageHero>
+
+    <div class="container">
+      <!-- Interactive Presentation Viewer -->
+      <section class="viewer-section">
+        <div class="sec-head center" style="margin-bottom: 24px;">
+          <p class="eyebrow"><span>Interactive Deck Viewer</span></p>
+          <h2 class="h3-sec">Browse the Complete 42 Slides</h2>
+          <p class="copy-lg mx-auto">Use keyboard arrows [← / →] or swipe on mobile to navigate through the high-density architectural slides.</p>
+        </div>
+
+        <div class="deck-frame-wrap">
+          <iframe src="/deck/index.html" class="deck-iframe" title="Fathom Interactive Whitepaper Presentation" loading="lazy"></iframe>
+        </div>
+      </section>
+
+      <!-- Table of Contents / 8 Parts -->
+      <section class="section" style="padding-top: 40px;">
+        <div class="sec-head center">
+          <p class="eyebrow"><span>Structure &amp; Outline</span></p>
+          <h2 class="h3-sec">8 Parts. Complete Transparency.</h2>
+          <p class="copy-lg mx-auto">From microbenchmark latency numbers to multi-tenant agency unit economics.</p>
+        </div>
+
+        <div class="parts-grid">
+          {parts.map((p) => (
+            <div class="part-card">
+              <div class="part-top">
+                <span class="part-badge">Part {p.num}</span>
+                <span class="part-pages">Pages {p.pages}</span>
+              </div>
+              <h3 class="part-title">{p.title}</h3>
+              <p class="part-desc">{p.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <!-- Systems Specifications Matrix -->
+      <section class="section alt" style="border-radius: var(--radius-xl); padding: 48px 36px; margin: 60px 0;">
+        <div class="sec-head center">
+          <p class="eyebrow"><span>Systems Verification</span></p>
+          <h2 class="h3-sec">Verified Runtime Specifications</h2>
+        </div>
+
+        <div class="spec-table-wrap">
+          <table class="spec-table">
+            <thead>
+              <tr>
+                <th>Benchmark / Metric</th>
+                <th>Fathom (Rust Runtime)</th>
+                <th>Standard Python Stacks (LangChain / CrewAI)</th>
+                <th>Architectural Mechanism</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Tool Dispatch Overhead</strong></td>
+                <td><strong style="color:#10b981;">~0.75 ms / batch</strong></td>
+                <td>240 – 480 ms</td>
+                <td>Zero-cost serde serialization &amp; Tokio Green Threads</td>
+              </tr>
+              <tr>
+                <td><strong>Memory Footprint (Idle / Active)</strong></td>
+                <td><strong style="color:#10b981;">15.4 MB RAM</strong></td>
+                <td>450 – 850 MB RAM</td>
+                <td>Zero GC overhead, jemalloc native memory management</td>
+              </tr>
+              <tr>
+                <td><strong>Entity Graph Traversal (3-Hop)</strong></td>
+                <td><strong style="color:#10b981;">1.62 ms</strong></td>
+                <td>45 – 120 ms</td>
+                <td>Embedded SQLite recursive CTEs &amp; FTS5 indexing</td>
+              </tr>
+              <tr>
+                <td><strong>Secret Exposure Surface</strong></td>
+                <td><strong style="color:#10b981;">0.00% (Zero-Prompt Exposure)</strong></td>
+                <td>High (Plaintext in LLM context)</td>
+                <td>Hardware AES-256-GCM vault, memory-only TLS injection</td>
+              </tr>
+              <tr>
+                <td><strong>Single Server Worker Capacity</strong></td>
+                <td><strong style="color:#10b981;">100+ Concurrent Employees</strong></td>
+                <td>4 – 8 Workers (OOM collapse)</td>
+                <td>Tokio JoinSet async I/O multiplexing</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Bottom Download Callout -->
+      <div class="whitepaper-banner">
+        <div>
+          <p class="eyebrow" style="color:#60a5fa;"><span>Immediate Access</span></p>
+          <h2 style="font-size: 2.2rem; font-weight: 900; margin: 8px 0 16px 0; letter-spacing: -0.02em;">Download the Full PDF Master</h2>
+          <p style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6; margin-bottom: 24px;">
+            Get the full 42-page technical document including all 15 GPUI Metal Retina screenshots, security architecture schemas, and mathematical unit economic models.
+          </p>
+          <div style="display:flex; gap: 16px; flex-wrap: wrap;">
+            <a href="/Fathom_Whitepaper.pdf" class="btn btn-primary btn-lg" target="_blank" download>⬇ Download Whitepaper (PDF, 7.6 MB)</a>
+            <a href="/#cta" class="btn btn-secondary btn-lg">Request Dedicated Server Access →</a>
+          </div>
+        </div>
+        <div class="product-screenshot-frame" style="border-radius: var(--radius-md);">
+          <img src="/images/mockups/01_sales_outbound_sdr.png" alt="Fathom Command Center" loading="lazy" />
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .whitepaper-page { padding: 60px 0 90px; }
+  .wp-hero { text-align: center; max-width: 860px; margin: 0 auto 40px; padding: 0 20px; }
+  .wp-hero h1 { font-size: clamp(36px, 5.5vw, 68px); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; margin-top: 12px; }
+  .wp-hero .copy-lg { margin-top: 18px; }
+  
+  .wp-actions { display: flex; justify-content: center; gap: 16px; margin: 32px 0 28px; flex-wrap: wrap; }
+  .wp-actions .btn { display: inline-flex; align-items: center; gap: 8px; }
+
+  .wp-meta-strip { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; padding: 14px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-full); font-size: 0.85rem; color: var(--text-secondary); max-width: fit-content; margin: 0 auto; }
+  .wp-meta-item strong { color: var(--text-primary); }
+
+  .viewer-section { margin-top: 20px; }
+  .deck-frame-wrap { width: 100%; height: 740px; border-radius: var(--radius-xl); overflow: hidden; border: 1px solid var(--border); box-shadow: var(--shadow-xl); background: #0a0a0a; }
+  .deck-iframe { width: 100%; height: 100%; border: none; }
+
+  .parts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; margin-top: 32px; }
+  .part-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; transition: transform var(--duration) var(--ease-soft), box-shadow var(--duration); }
+  .part-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--grey-400); }
+  .part-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .part-badge { font-family: var(--font-mono); font-size: 0.76rem; font-weight: 700; color: var(--accent); background: var(--bg-secondary); padding: 3px 8px; border-radius: 4px; }
+  .part-pages { font-family: var(--font-mono); font-size: 0.76rem; color: var(--text-tertiary); }
+  .part-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 8px; line-height: 1.35; }
+  .part-desc { font-size: 0.86rem; color: var(--text-secondary); line-height: 1.5; }
+
+  .spec-table-wrap { overflow-x: auto; margin-top: 28px; }
+  .spec-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+  .spec-table th, .spec-table td { padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .spec-table th { font-family: var(--font-mono); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); background: var(--bg-secondary); }
+  .spec-table tbody tr:hover { background: var(--bg-secondary); }
+
+  @media (max-width: 768px) {
+    .deck-frame-wrap { height: 480px; }
+    .wp-meta-strip { border-radius: var(--radius-lg); flex-direction: column; gap: 8px; text-align: left; }
+  }
+</style>

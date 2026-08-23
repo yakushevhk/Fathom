@@ -3,29 +3,93 @@ import Layout from '../layouts/Layout.astro';
 import PageHero from '../components/PageHero.astro';
 ---
 
-<Layout title="Pricing — Fathom">
+<Layout title="Pricing & ROI Calculator — Fathom Autonomous AI Workers" description="Predictable self-hosted pricing and interactive ROI calculator for autonomous AI digital employees.">
   <main class="pricing-page">
     <PageHero cls="pricing-hero">
-      <p class="eyebrow" data-i18n="pricingPage.hero.badge">Pricing</p>
+      <p class="eyebrow" data-i18n="pricingPage.hero.badge">Access &amp; Pricing</p>
       <h1 class="h2-sec" data-i18n-html data-i18n="pricingPage.hero.title">Remote AI workers <em class="it">on your team.</em></h1>
       <p class="copy-lg mx-auto" data-i18n="pricingPage.hero.sub">Fathom deploys on dedicated infrastructure for your team. Contact us for access — we'll set up a server with full runtime, API, dashboard, and memory.</p>
     </PageHero>
-    <div class="container">
 
-      <!-- Contact CTA -->
+    <div class="container">
+      <!-- Contact Card -->
       <div class="contact-card">
         <div class="contact-icon">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
         </div>
-        <h2 data-i18n="pricingPage.contact.title">Request access</h2>
+        <h2 data-i18n="pricingPage.contact.title">Request Server Access</h2>
         <p class="contact-body" data-i18n="pricingPage.contact.body">
-          We provision servers for your team with full access to the Fathom runtime, CLI, TUI, API, dashboard, and integrations. Email us to get started.
+          We provision dedicated high-performance servers for your team with full access to the Fathom runtime, CLI, TUI, REST API, web dashboard, and unlimited neural compute.
         </p>
         <a href="mailto:hello@fathom.uz" class="contact-btn">hello@fathom.uz</a>
-        <p class="contact-footnote" data-i18n="pricingPage.contact.footnote">We'll respond within 24 hours with server credentials and documentation.</p>
+        <p class="contact-footnote" data-i18n="pricingPage.contact.footnote">We'll respond within 24 hours with server credentials and onboarding documentation.</p>
       </div>
 
-      <!-- What you get -->
+      <!-- Interactive ROI & Savings Calculator -->
+      <section class="section" id="roi-calculator" style="margin: 60px 0;">
+        <div class="sec-head center">
+          <p class="eyebrow"><span>Interactive Financial Modeling</span></p>
+          <h2 class="h3-sec">Workforce ROI &amp; TCO Calculator</h2>
+          <p class="copy-lg mx-auto">Calculate your annual savings from deploying autonomous Fathom digital workers versus traditional headcount and fragmented SaaS subscriptions.</p>
+        </div>
+
+        <div class="calculator-card">
+          <div class="calc-inputs">
+            <div class="calc-group">
+              <div class="calc-label-row">
+                <label for="headcount">Routine Headcount (SDRs, Researchers, Admins):</label>
+                <span id="headcount-val" class="calc-val-badge">3 people</span>
+              </div>
+              <input type="range" id="headcount" min="1" max="20" value="3" class="calc-slider" />
+            </div>
+
+            <div class="calc-group">
+              <div class="calc-label-row">
+                <label for="salary">Avg Monthly Salary per Employee ($):</label>
+                <span id="salary-val" class="calc-val-badge">$4,500 / mo</span>
+              </div>
+              <input type="range" id="salary" min="1500" max="12000" step="500" value="4500" class="calc-slider" />
+            </div>
+
+            <div class="calc-group">
+              <div class="calc-label-row">
+                <label for="saas">Monthly SaaS Spend (ZoomInfo, Apollo, DBs, Scraping):</label>
+                <span id="saas-val" class="calc-val-badge">$1,200 / mo</span>
+              </div>
+              <input type="range" id="saas" min="200" max="8000" step="200" value="1200" class="calc-slider" />
+            </div>
+          </div>
+
+          <div class="calc-results">
+            <div class="res-block highlight">
+              <div class="res-title">Estimated Annual Net Savings</div>
+              <div id="res-savings" class="res-amount">$162,400</div>
+              <div class="res-sub">Based on 91% process automation &amp; SaaS consolidation</div>
+            </div>
+
+            <div class="res-grid">
+              <div class="res-mini">
+                <div class="res-mini-lbl">Traditional Annual Cost</div>
+                <div id="res-trad" class="res-mini-val">$176,400 / yr</div>
+              </div>
+              <div class="res-mini">
+                <div class="res-mini-lbl">Fathom Fleet Cost</div>
+                <div id="res-fathom" class="res-mini-val">$14,000 / yr</div>
+              </div>
+              <div class="res-mini">
+                <div class="res-mini-lbl">Estimated ROI Payback</div>
+                <div id="res-payback" class="res-mini-val">12 Days</div>
+              </div>
+              <div class="res-mini">
+                <div class="res-mini-lbl">Capacity Increase</div>
+                <div class="res-mini-val">8.5× Faster</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- What's Included -->
       <div class="sec-head" id="includes">
         <p class="eyebrow" data-i18n="pricingPage.includes.badge">What's included</p>
         <h2 class="h3-sec" data-i18n="pricingPage.includes.title">Full worker platform</h2>
@@ -65,12 +129,43 @@ import PageHero from '../components/PageHero.astro';
         </div>
         <div class="cta-actions">
           <a href="mailto:hello@fathom.uz" class="cta-btn" data-i18n="pricingPage.cta.access">Request access →</a>
-          <a href="/docs" class="cta-link" data-i18n="pricingPage.cta.docs">Read the docs</a>
+          <a href="/whitepaper" class="cta-link">Read Whitepaper</a>
         </div>
       </div>
     </div>
   </main>
 </Layout>
+
+<script is:inline>
+  function updateCalc() {
+    const headcount = parseInt(document.getElementById('headcount').value, 10);
+    const salary = parseInt(document.getElementById('salary').value, 10);
+    const saas = parseInt(document.getElementById('saas').value, 10);
+
+    document.getElementById('headcount-val').innerText = headcount + (headcount === 1 ? ' person' : ' people');
+    document.getElementById('salary-val').innerText = '$' + salary.toLocaleString() + ' / mo';
+    document.getElementById('saas-val').innerText = '$' + saas.toLocaleString() + ' / mo';
+
+    const tradAnnual = (headcount * salary * 12) + (saas * 12);
+    const fathomAnnual = 1200 + (headcount * 300 * 12);
+    const savings = Math.max(0, tradAnnual - fathomAnnual);
+    const paybackDays = Math.max(4, Math.round((fathomAnnual / tradAnnual) * 365 / headcount));
+
+    document.getElementById('res-savings').innerText = '$' + savings.toLocaleString();
+    document.getElementById('res-trad').innerText = '$' + tradAnnual.toLocaleString() + ' / yr';
+    document.getElementById('res-fathom').innerText = '$' + fathomAnnual.toLocaleString() + ' / yr';
+    document.getElementById('res-payback').innerText = paybackDays + ' Days';
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const inputs = ['headcount', 'salary', 'saas'];
+    inputs.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', updateCalc);
+    });
+    updateCalc();
+  });
+</script>
 
 <style>
   .pricing-page { padding: 70px 0 90px; }
@@ -99,22 +194,48 @@ import PageHero from '../components/PageHero.astro';
   .contact-btn:hover { background: var(--grey-900); color: var(--on-accent); border-color: var(--grey-900); }
   .contact-footnote { color: var(--grey-500); font-size: 13px; margin-top: 18px; }
 
-  .sec-head { max-width: 720px; margin: 56px 0 24px; }
+  /* Calculator Styles */
+  .calculator-card {
+    display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 36px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-xl); padding: 40px; box-shadow: var(--shadow-lg);
+  }
+  .calc-inputs { display: flex; flex-direction: column; gap: 28px; justify-content: center; }
+  .calc-group { display: flex; flex-direction: column; gap: 10px; }
+  .calc-label-row { display: flex; justify-content: space-between; align-items: center; }
+  .calc-label-row label { font-size: 0.92rem; font-weight: 600; color: var(--text-primary); }
+  .calc-val-badge { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; color: var(--accent); background: var(--bg-secondary); padding: 4px 10px; border-radius: var(--radius-sm); }
+  .calc-slider { width: 100%; height: 6px; border-radius: 3px; background: var(--grey-200); accent-color: var(--accent); cursor: pointer; }
 
-  .includes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--grey-300); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--grey-300); }
-  .include-card { background: var(--bg-primary); padding: 26px 24px; display: flex; flex-direction: column; gap: 8px; transition: background .25s var(--ease-out); }
-  .include-card:hover { background: var(--bg-card-hover); }
-  .include-name { font-family: var(--font-mono); font-weight: 600; font-size: 15px; }
-  .include-card p { color: var(--grey-600); font-size: 14px; line-height: 1.5; }
-  @media (max-width: 800px) { .includes-grid { grid-template-columns: 1fr; } }
+  .calc-results {
+    background: var(--bg-dark); color: var(--text-inverse);
+    border-radius: var(--radius-lg); padding: 32px; display: flex;
+    flex-direction: column; justify-content: space-between; gap: 24px;
+  }
+  .res-block.highlight { text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 20px; }
+  .res-title { font-size: 0.85rem; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; }
+  .res-amount { font-size: 3rem; font-weight: 900; letter-spacing: -0.03em; color: #10b981; margin: 8px 0 4px; }
+  .res-sub { font-size: 0.78rem; color: #64748b; }
 
-  .cta-strip { margin-top: 64px; background: var(--bg-dark); border-radius: var(--radius-xl); padding: 40px 44px; display: flex; align-items: center; justify-content: space-between; gap: 32px; }
-  .cta-copy h3 { color: #fff; font-size: 24px; font-weight: 500; letter-spacing: -0.02em; }
-  .cta-copy p { color: var(--grey-500); font-size: 14.5px; line-height: 1.6; margin-top: 8px; max-width: 480px; }
-  .cta-actions { display: flex; align-items: center; gap: 20px; flex-shrink: 0; }
-  .cta-btn { background: var(--bg-card); color: var(--grey-900); font-weight: 600; font-size: 15px; padding: 13px 26px; border-radius: var(--radius-md); white-space: nowrap; transition: transform var(--duration) var(--ease-out), box-shadow var(--duration); }
-  .cta-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 30px -12px rgba(255, 255, 255, 0.35); }
-  .cta-link { color: var(--grey-400); font-size: 14px; font-weight: 500; white-space: nowrap; }
-  .cta-link:hover { color: #fff; }
-  @media (max-width: 800px) { .cta-strip { flex-direction: column; align-items: flex-start; padding: 32px 28px; } }
+  .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .res-mini { background: rgba(255, 255, 255, 0.05); padding: 14px; border-radius: var(--radius-sm); }
+  .res-mini-lbl { font-size: 0.74rem; color: #94a3b8; margin-bottom: 4px; }
+  .res-mini-val { font-size: 1rem; font-weight: 700; color: #ffffff; }
+
+  .includes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; margin-top: 24px; }
+  .include-card { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 24px; }
+  .include-name { font-weight: 600; font-size: 16px; margin-bottom: 8px; }
+  .include-card p { color: var(--grey-600); font-size: 14px; line-height: 1.55; }
+
+  .cta-strip { display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px 40px; margin-top: 60px; }
+  .cta-copy h3 { font-size: 1.3rem; font-weight: 600; }
+  .cta-copy p { font-size: 0.95rem; color: var(--text-secondary); margin-top: 4px; }
+  .cta-actions { display: flex; gap: 14px; align-items: center; }
+  .cta-btn { font-family: var(--font-mono); font-size: 0.9rem; font-weight: 600; color: var(--text-inverse); background: var(--accent); padding: 10px 20px; border-radius: var(--radius-sm); text-decoration: none; }
+  .cta-link { font-size: 0.9rem; color: var(--text-secondary); text-decoration: none; font-weight: 500; }
+
+  @media (max-width: 900px) {
+    .calculator-card { grid-template-columns: 1fr; padding: 24px; }
+    .cta-strip { flex-direction: column; gap: 20px; text-align: center; }
+  }
 </style>

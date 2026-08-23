@@ -1,0 +1,177 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+
+const comparisons = [
+  {
+    feature: 'Tool Dispatch Latency',
+    fathom: '~0.75 ms per batch (compiled Rust native)',
+    python: '180 – 450 ms (Pydantic validation + Python runtime)',
+    advantage: '240× – 600× Faster'
+  },
+  {
+    feature: 'Memory Footprint (per worker)',
+    fathom: '15.4 MB RAM (jemalloc, zero garbage collection)',
+    python: '450 – 850 MB RAM (PyTorch/LangChain dependencies)',
+    advantage: '30× – 55× Less RAM'
+  },
+  {
+    feature: 'Multi-Agent Concurrency',
+    fathom: 'Tokio JoinSet async I/O multiplexing across CPU cores',
+    python: 'Global Interpreter Lock (GIL) / heavy multiprocessing',
+    advantage: '100+ workers on $40/mo VPS'
+  },
+  {
+    feature: 'Long-Term Memory Storage',
+    fathom: 'Embedded SQLite FTS5 + Hybrid BM25/Vector (1.62 ms)',
+    python: 'External Vector DB required ($300-$1000/mo Cloud API)',
+    advantage: 'Zero external cloud DB fees'
+  },
+  {
+    feature: 'Computer Use & Browser',
+    fathom: 'Tokenized ARIA DOM + WebSocket live streaming + 2FA lease',
+    python: 'Heavy visual screenshot loops (50k tokens/step)',
+    advantage: '90% token cost reduction'
+  },
+  {
+    feature: 'Secret & API Key Security',
+    fathom: 'AES-256-GCM hardware vault, memory-only TLS injection',
+    python: 'Plaintext API keys injected into LLM system prompts',
+    advantage: 'Zero-prompt leak protection'
+  },
+  {
+    feature: 'Deployment Artifact',
+    fathom: 'Single static binary (zero runtime dependencies)',
+    python: 'Python virtualenv, 140+ pip packages, Docker bloat',
+    advantage: 'Instant start, zero dependency drift'
+  }
+];
+---
+
+<Layout title="Fathom vs. Python AI Frameworks — LangChain & CrewAI Architectural Comparison" description="Why Fathom was built in Rust: 0.75 ms tool dispatch, 15.4 MB RAM footprint, hardware security vault, and 100+ concurrent workers per server.">
+  <main class="vs-page">
+    <PageHero cls="vs-hero">
+      <p class="eyebrow"><span>Systems Architecture &amp; Performance</span></p>
+      <h1 class="h2-sec">Fathom (Rust) vs. <em class="it">Python Frameworks</em></h1>
+      <p class="copy-lg mx-auto">Why high-concurrency autonomous enterprise agent fleets cannot run on interpreted Python runtimes.</p>
+    </PageHero>
+
+    <div class="container">
+      <!-- High-Level Metric Cards -->
+      <div class="vs-stats-grid">
+        <div class="vs-stat-card">
+          <div class="vs-stat-num">~0.75 ms</div>
+          <div class="vs-stat-label">Tool Dispatch Latency</div>
+          <div class="vs-stat-comp">vs 240 ms in Python</div>
+        </div>
+        <div class="vs-stat-card">
+          <div class="vs-stat-num">15.4 MB</div>
+          <div class="vs-stat-label">Memory Footprint</div>
+          <div class="vs-stat-comp">vs 650 MB per Python worker</div>
+        </div>
+        <div class="vs-stat-card">
+          <div class="vs-stat-num">100+</div>
+          <div class="vs-stat-label">Concurrent Digital Employees</div>
+          <div class="vs-stat-comp">on a single $80/mo VPS</div>
+        </div>
+        <div class="vs-stat-card">
+          <div class="vs-stat-num">0.00%</div>
+          <div class="vs-stat-label">LLM Secret Exposure</div>
+          <div class="vs-stat-comp">AES-256-GCM hardware vault</div>
+        </div>
+      </div>
+
+      <!-- Detailed Comparison Matrix -->
+      <section class="section" style="padding: 40px 0;">
+        <div class="sec-head center">
+          <p class="eyebrow"><span>Direct Matrix</span></p>
+          <h2 class="h3-sec">Architectural Comparison</h2>
+        </div>
+
+        <div class="vs-table-wrap">
+          <table class="vs-table">
+            <thead>
+              <tr>
+                <th style="width: 22%;">System Characteristic</th>
+                <th style="width: 32%; background: var(--bg-card);">Fathom (Rust Native Runtime)</th>
+                <th style="width: 32%;">Python Stacks (LangChain / CrewAI / AutoGPT)</th>
+                <th style="width: 14%;">Fathom Advantage</th>
+              </tr>
+            </thead>
+            <tbody>
+              {comparisons.map((c) => (
+                <tr>
+                  <td><strong>{c.feature}</strong></td>
+                  <td class="fathom-cell">
+                    <span class="badge-ok">● Fathom</span>
+                    <p>{c.fathom}</p>
+                  </td>
+                  <td class="python-cell">
+                    <span class="badge-warn">● Python</span>
+                    <p>{c.python}</p>
+                  </td>
+                  <td class="advantage-cell"><strong>{c.advantage}</strong></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Visual Showcase -->
+      <div style="margin: 40px 0 60px 0;">
+        <div class="sec-head center">
+          <p class="eyebrow"><span>Concurrency In Action</span></p>
+          <h2 class="h3-sec">Tokio JoinSet Swarm Coordinator</h2>
+          <p class="copy-lg mx-auto">4 parallel CPU workers executing 12 tool calls concurrently with zero thread contention and sub-millisecond dispatch.</p>
+        </div>
+        <div class="product-screenshot-frame">
+          <img src="/images/mockups/11_swarm_coordinator.png" alt="Swarm Coordinator Tokio JoinSet Concurrency" loading="lazy" width="1220" height="780" />
+        </div>
+        <p class="screenshot-caption">Fig 8.1 — Rust Swarm Coordinator: Tokio JoinSet DAG execution across 4 parallel CPU worker pods with fair-share token budgeting.</p>
+      </div>
+
+      <!-- CTA Section -->
+      <div class="whitepaper-banner">
+        <div>
+          <p class="eyebrow" style="color:#60a5fa;"><span>Verified Systems Proof</span></p>
+          <h2 style="font-size: 2.2rem; font-weight: 900; margin: 8px 0 16px 0; letter-spacing: -0.02em;">Read the Full Empirical Benchmark Suite</h2>
+          <p style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6; margin-bottom: 24px;">
+            Chapter VII of our Whitepaper details the complete microbenchmark test harness with memory profiles, flame graphs, and tokens/sec throughput data.
+          </p>
+          <div style="display:flex; gap: 16px; flex-wrap: wrap;">
+            <a href="/Fathom_Whitepaper.pdf" class="btn btn-primary btn-lg" target="_blank" download>⬇ Download Whitepaper (PDF, 7.6 MB)</a>
+            <a href="/whitepaper" class="btn btn-secondary btn-lg">View Interactive Deck</a>
+          </div>
+        </div>
+        <div class="product-screenshot-frame" style="border-radius: var(--radius-md);">
+          <img src="/images/mockups/05_devops_engineer.png" alt="DevOps Code Maintainer" loading="lazy" />
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .vs-page { padding: 60px 0 90px; }
+  .vs-hero { text-align: center; max-width: 860px; margin: 0 auto 40px; padding: 0 20px; }
+  .vs-hero h1 { font-size: clamp(36px, 5.5vw, 68px); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; margin-top: 12px; }
+  
+  .vs-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 30px 0 40px; }
+  .vs-stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; text-align: center; }
+  .vs-stat-num { font-size: 2.4rem; font-weight: 800; letter-spacing: -0.03em; color: var(--accent); }
+  .vs-stat-label { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-top: 4px; }
+  .vs-stat-comp { font-family: var(--font-mono); font-size: 0.76rem; color: var(--text-tertiary); margin-top: 6px; }
+
+  .vs-table-wrap { overflow-x: auto; margin-top: 28px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-xl); }
+  .vs-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; }
+  .vs-table th, .vs-table td { padding: 16px 20px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .vs-table th { font-family: var(--font-mono); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); background: var(--bg-secondary); }
+  
+  .badge-ok { display: inline-block; font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: #10b981; margin-bottom: 4px; }
+  .badge-warn { display: inline-block; font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: #f59e0b; margin-bottom: 4px; }
+  
+  .fathom-cell p { font-size: 0.86rem; color: var(--text-primary); font-weight: 500; }
+  .python-cell p { font-size: 0.86rem; color: var(--text-secondary); }
+  .advantage-cell { font-family: var(--font-mono); color: #10b981; font-size: 0.84rem; }
+</style>

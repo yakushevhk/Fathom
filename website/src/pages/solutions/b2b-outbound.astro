@@ -1,0 +1,89 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PageHero from '../../components/PageHero.astro';
+---
+
+<Layout title="Autonomous Outbound SDR — Fathom Enterprise Solutions" description="Autonomous B2B sales development representative: 50 verified decision-makers daily, 0% email bounces, personalized sequences, and instant CRM pipeline sync.">
+  <main class="sol-detail-page">
+    <PageHero cls="sol-detail-hero">
+      <p class="eyebrow"><a href="/solutions">Solutions</a> / <span>Sales Outbound</span></p>
+      <h1 class="h2-sec">Autonomous <em class="it">Outbound SDR</em></h1>
+      <p class="copy-lg mx-auto">Generate 50 high-intent enterprise decision-makers every day with live 5-gate SMTP email verification, hyper-personalized copy, and direct CRM sync.</p>
+      
+      <div class="sol-hero-metrics">
+        <div class="metric-card">
+          <div class="metric-val">0%</div>
+          <div class="metric-lbl">Email Bounce Rate</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">50</div>
+          <div class="metric-lbl">Verified Leads / Run</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">100%</div>
+          <div class="metric-lbl">CRM Sync Automation</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">90%</div>
+          <div class="metric-lbl">Cost Reduction vs Agency</div>
+        </div>
+      </div>
+    </PageHero>
+
+    <div class="container">
+      <!-- Live Deliverable Mockup -->
+      <div class="sol-section">
+        <div class="sec-head center">
+          <p class="eyebrow"><span>Live Deliverable</span></p>
+          <h2 class="h3-sec">Pre-Verified Executive Lead Audit</h2>
+          <p class="copy-lg mx-auto">Every contact is verified via live port 25 SMTP handshake (HELO → MAIL FROM → RCPT TO). Zero spam traps, zero department aliases.</p>
+        </div>
+        <div class="product-screenshot-frame">
+          <img src="/images/mockups/08_lead_audit_report.png" alt="OSINT Lead Audit Report" loading="lazy" />
+        </div>
+        <p class="screenshot-caption">Fig 1.1 — Fathom Lead Audit: 50 enterprise decision-makers with corporate emails, direct phone numbers, LinkedIn profiles, and confidence scoring.</p>
+      </div>
+
+      <!-- Campaign Dispatcher -->
+      <div class="sol-section" style="margin-top: 60px;">
+        <div class="sec-head center">
+          <p class="eyebrow"><span>Outreach Sequences</span></p>
+          <h2 class="h3-sec">Multi-Stage Campaign Dispatcher</h2>
+          <p class="copy-lg mx-auto">Automated multi-stage sequences with custom icebreakers synthesized from recent prospect podcasts, blog posts, and GitHub commits.</p>
+        </div>
+        <div class="product-screenshot-frame">
+          <img src="/images/mockups/14_outreach_campaign_dispatcher.png" alt="Outreach Campaign Dispatcher" loading="lazy" />
+        </div>
+        <p class="screenshot-caption">Fig 1.2 — Multi-Stage Campaign Dispatcher: Adaptive delivery scheduling, DNS MX validation, and human approval gates.</p>
+      </div>
+
+      <!-- Bottom Banner -->
+      <div class="whitepaper-banner" style="margin-top: 80px;">
+        <div>
+          <p class="eyebrow" style="color:#60a5fa;"><span>Immediate Deployment</span></p>
+          <h2 style="font-size: 2.2rem; font-weight: 900; margin: 8px 0 16px 0;">Deploy an Outbound SDR Fleet</h2>
+          <p style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6; margin-bottom: 24px;">
+            Eliminate SDR hiring friction and expensive data subscription costs. Get dedicated server provisioning with full CRM integration.
+          </p>
+          <div style="display:flex; gap: 16px; flex-wrap: wrap;">
+            <a href="/#cta" class="btn btn-primary btn-lg">Request Dedicated Server Access →</a>
+            <a href="/whitepaper" class="btn btn-secondary btn-lg">Read 42-Page Whitepaper</a>
+          </div>
+        </div>
+        <div class="product-screenshot-frame" style="border-radius: var(--radius-md);">
+          <img src="/images/mockups/01_sales_outbound_sdr.png" alt="Command Center" loading="lazy" />
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .sol-detail-page { padding: 60px 0 90px; }
+  .sol-detail-hero { text-align: center; max-width: 860px; margin: 0 auto 40px; padding: 0 20px; }
+  .sol-detail-hero h1 { font-size: clamp(36px, 5.5vw, 68px); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; margin-top: 12px; }
+  .sol-hero-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 36px; }
+  .metric-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; text-align: center; }
+  .metric-val { font-size: 2.2rem; font-weight: 800; color: var(--accent); }
+  .metric-lbl { font-size: 0.84rem; font-weight: 600; color: var(--text-secondary); margin-top: 4px; }
+</style>

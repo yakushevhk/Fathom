@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Page 25 · How the Virtual Office Operates</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="page">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-meta">
+        <span class="brand-badge">FATHOM</span>
+        <span class="header-category">SYSTEM ARCHITECTURE · VIRTUAL OFFICE</span>
+      </div>
+      <div class="header-title-main">How the Virtual Office Operates</div>
+      <div class="header-subtitle">The Conceptual Architecture of an Autonomous Multi-Agent Organization</div>
+    </div>
+    <div class="header-right">
+      <span class="page-badge">PAGE 25 / 42</span>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content-body">
+    <div class="card-dark">
+  <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">The Virtual Office Model: Conceptual Elegance Meets Execution Rigor</div>
+  <p style="font-size: 7.6pt; line-height: 1.38;">
+    Fathom does not operate as a single bloated AI model trying to do everything. Instead, it mirrors a <strong>high-performing corporate department</strong>: a hierarchical topology of specialized digital workers collaborating asynchronously over a shared event bus and persistent memory fabric.
+  </p>
+</div>
+
+<div class="diagram-flow">
+  <div class="flow-step"><div class="flow-title">Coordinator</div><div class="flow-desc">Breaks objective into directed subtask tree</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><div class="flow-title">Workers</div><div class="flow-desc">Parallel scraping, coding, and OSINT execution</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><div class="flow-title">Analysts</div><div class="flow-desc">Synthesize data & cross-reference facts</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><div class="flow-title">Reviewer / Judge</div><div class="flow-desc">Validates against acceptance criteria</div></div>
+</div>
+
+<div class="grid-3">
+  <div class="card card-accent">
+    <div class="card-title-sm">1. Task Tree Delegation</div>
+    <p style="font-size: 7.0pt; line-height: 1.30;">The coordinator assigns clear deliverables, max execution depths (<code>max_depth=3</code>), and token quotas to sub-agents.</p>
+  </div>
+
+  <div class="card card-emerald">
+    <div class="card-title-sm">2. Non-Blocking Concurrency</div>
+    <p style="font-size: 7.0pt; line-height: 1.30;">Sub-agents run concurrently on Tokio OS threads. If one worker hits rate limits, sibling workers continue.</p>
+  </div>
+
+  <div class="card card-purple">
+    <div class="card-title-sm">3. Disk-Spill Scaling</div>
+    <p style="font-size: 7.0pt; line-height: 1.30;">Sub-agents return concise summaries while spilling large raw artifacts to disk, avoiding context overflow.</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title" style="font-size: 8.2pt;">Virtual Office Roles & Operational Boundaries</div>
+  <table>
+    <thead>
+      <tr><th>Role Archetype</th><th>Primary Responsibility</th><th>Permitted Tools</th><th>Context Scope</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Swarm Coordinator</strong></td><td>Goal breakdown, sub-agent spawning, deliverable synthesis</td><td><code>invoke_subagent</code>, <code>send_message</code></td><td>High-level strategic context only</td></tr>
+      <tr><td><strong>OSINT Lead Researcher</strong></td><td>Registry discovery, email extraction, SMTP verification</td><td><code>find_leads</code>, <code>verify_email</code>, <code>save_contacts</code></td><td>Raw directory data, discarded on task end</td></tr>
+      <tr><td><strong>Computer Operator</strong></td><td>Browser automation, accessibility tree navigation, form filling</td><td><code>playwright_action</code>, <code>takeover_request</code></td><td>Active browser DOM snapshots (@e1..@eN)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout callout-info" style="margin-bottom: 0;">
+  <strong>Architectural Triumph:</strong> Decomposing monolithic tasks into specialized worker swarms completely eliminates hallucinations, keeps context windows razor-sharp, and enables massive horizontal parallelism.
+</div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-left">
+      <span>Fathom Autonomous Workforce Runtime</span>
+      <span class="footer-bullet">•</span>
+      <span>Elastic-2.0 License</span>
+      <span class="footer-bullet">•</span>
+      <span>Strategic Whitepaper Presentation</span>
+    </div>
+    <div class="footer-right">v0.3.0 · Page 25 of 42</div>
+  </div>
+</div>
+
+</body>
+</html>
