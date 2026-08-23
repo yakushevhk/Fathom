@@ -1,82 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Fathom Whitepaper — How Digital Workers See & Control Computers</title>
-  <link rel="stylesheet" href="styles.css">
+<meta charset="utf-8">
+<title>Page 28 · The Broadcast Message Bus & Security Vault</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="page">
-    <div class="header">
-      <div class="header-left">
-        <div class="header-meta">
-          <span class="brand-badge">FATHOM</span>
-          <span class="header-category">COMPUTER USE · ACCESSIBILITY PARADIGM</span>
-        </div>
-        <div class="header-title-main">How Digital Workers See & Control Computers</div>
-        <div class="header-subtitle">Accessibility-Tree Snapshots: Semantic Understanding Over Brittle Visual Pixels</div>
-      </div>
-      <div class="header-right">
-        <span class="page-badge">PAGE 28 / 42</span>
-      </div>
-    </div>
 
-    <div class="content-body">
-<div class="card-accent" style="padding: 7px 10px;">
-  <div class="card-title" style="font-size: 8.8pt;">The Semantic Revolution in Browser Automation</div>
-  <p style="font-size: 7.4pt;">
-    Traditional browser automation fails because web pages frequently change CSS classes, responsive layouts, and visual styling. Fathom operates browsers via the <strong>Accessibility Tree</strong> (the standard semantic model used by screen readers).
+<div class="page">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-meta">
+        <span class="brand-badge">FATHOM</span>
+        <span class="header-category">RUNTIME INTERNALS · GOVERNANCE & BUS</span>
+      </div>
+      <div class="header-title-main">The Broadcast Message Bus & Security Vault</div>
+      <div class="header-subtitle">Nanosecond Event Relays, SSE Streaming Protocols & AES-256-GCM Vault</div>
+    </div>
+    <div class="header-right">
+      <span class="page-badge">PAGE 28 / 42</span>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content-body">
+    <div class="card-accent">
+  <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Real-Time Communication & Bank-Grade Security Architecture</div>
+  <p style="font-size: 7.6pt; line-height: 1.38;">
+    Enterprise operations require both instant real-time visibility and zero-compromise credential security. Fathom implements an in-memory <strong>broadcast message bus</strong> coupled with an <strong>AES-256-GCM hardware security vault</strong>.
   </p>
 </div>
 
+
+    <div class="deck-mockup-container">
+      <div class="deck-mockup-frame">
+        <img src="mockups/10_security_credentials_vault.png" alt="Figure 28.1: Enterprise Security Vault & Telemetry — AES-256-GCM hardware key derivation with zero LLM prompt exposure">
+      </div>
+      <div class="deck-mockup-caption">Figure 28.1: Enterprise Security Vault & Telemetry — AES-256-GCM hardware key derivation with zero LLM prompt exposure</div>
+    </div>
+    
+
 <div class="grid-2">
-  <div class="card card-amber" style="padding: 5px 8px;">
-    <div class="card-title-sm">Legacy Pixel / CSS Automation (Fragile)</div>
-    <ul style="font-size: 6.8pt; margin-bottom: 0;">
-      <li><strong>Obfuscated CSS:</strong> Class names change on every frontend software build.</li>
-      <li><strong>Pixel Drift:</strong> Screen scaling causes mouse clicks to hit empty whitespace.</li>
-      <li><strong>High Latency:</strong> Uploading screenshots consumes massive bandwidth and tokens.</li>
+  <div class="card card-purple">
+    <div class="card-title-sm">1. Broadcast Message Bus & SSE Relays</div>
+    <ul style="font-size: 7.0pt; line-height: 1.30; margin-bottom: 0;">
+      <li><strong>Lock-Free Broadcast:</strong> <code>tokio::sync::broadcast</code> distributes state events to all connected clients.</li>
+      <li><strong>Server-Sent Events:</strong> Streams token-by-token thought processes and live tool outputs to Web, Slack, and Telegram.</li>
+      <li><strong>Reactive Wakeup:</strong> Workers sleep with zero CPU usage until an incoming event triggers execution.</li>
     </ul>
   </div>
 
-  <div class="card card-emerald" style="padding: 5px 8px;">
-    <div class="card-title-sm">Fathom Semantic Accessibility (Rock Solid)</div>
-    <ul style="font-size: 6.8pt; margin-bottom: 0;">
-      <li><strong>Semantic Roles:</strong> The agent sees functional elements: <code>Button: "Login"</code>.</li>
-      <li><strong>Opaque Numerical Refs:</strong> Direct addressing via stable tokens (e.g. <code>@e14</code>).</li>
-      <li><strong>10x Token Efficiency:</strong> Lightweight snapshots use 90% fewer tokens.</li>
+  <div class="card card-emerald">
+    <div class="card-title-sm">2. AES-256-GCM Credential Vault (Ring)</div>
+    <ul style="font-size: 7.0pt; line-height: 1.30; margin-bottom: 0;">
+      <li><strong>Hardware Encryption:</strong> All stored CRM keys and passwords are encrypted at rest using AES-256-GCM.</li>
+      <li><strong>Zero Prompt Exposure:</strong> Secrets are resolved in Rust memory before TLS dispatch; <strong>LLMs never see keys</strong>.</li>
+      <li><strong>Memory Zeroization:</strong> Plaintext keys are wiped from RAM immediately after HTTP dispatch.</li>
     </ul>
-  </div>
-</div>
-
-<div class="card" style="padding: 5px 8px;">
-  <div class="card-title">Accessibility Snapshot Architecture</div>
-  <div class="diagram-flow">
-    <div class="flow-step"><div class="flow-title">1. Chromium Page</div><div class="flow-desc">Dynamic DOM & SPAs</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-step"><div class="flow-title">2. ARIA Snapshot</div><div class="flow-desc">Extracts semantic tree</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-step"><div class="flow-title">3. Opaque Tokens</div><div class="flow-desc">Assigns stable refs (@e1)</div></div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-step"><div class="flow-title">4. Agent Action</div><div class="flow-desc">click(@e1), type(@e2)</div></div>
   </div>
 </div>
 
 <div class="callout callout-success" style="margin-bottom: 0;">
-  <strong>Layout-Agnostic Stability:</strong> Whether a website is redesigned, translated into Japanese, or resized to mobile viewport, the accessibility tree retains functional semantic integrity.
+  <strong>Enterprise Security Standard:</strong> Security officers can configure enterprise CRM integrations with complete confidence that keys remain cryptographically locked and completely invisible to LLMs.
 </div>
-    </div>
-
-    <div class="footer">
-      <div class="footer-left">
-        <span>Fathom Autonomous Workforce Runtime</span>
-        <span class="footer-bullet">•</span>
-        <span>Elastic-2.0 License</span>
-        <span class="footer-bullet">•</span>
-        <span>Strategic Whitepaper Presentation</span>
-      </div>
-      <div class="footer-right">v0.3.0 · Page 28 of 42</div>
-    </div>
   </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-left">
+      <span>Fathom Autonomous Workforce Runtime</span>
+      <span class="footer-bullet">•</span>
+      <span>Elastic-2.0 License</span>
+      <span class="footer-bullet">•</span>
+      <span>Strategic Whitepaper Presentation</span>
+    </div>
+    <div class="footer-right">v0.3.0 · Page 28 of 42</div>
+  </div>
+</div>
+
 </body>
 </html>

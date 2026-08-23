@@ -1,112 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Fathom Whitepaper — A Day in the Life of a Digital Employee</title>
-  <link rel="stylesheet" href="styles.css">
+<meta charset="utf-8">
+<title>Page 05 · Digital Coworkers vs. Scripted Chatbots</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="page">
-    <div class="header">
-      <div class="header-left">
-        <div class="header-meta">
-          <span class="brand-badge">FATHOM</span>
-          <span class="header-category">DAY IN THE LIFE · OPERATIONAL WORKFLOW</span>
-        </div>
-        <div class="header-title-main">A Day in the Life of a Digital Employee</div>
-        <div class="header-subtitle">24-Hour Continuous Execution Cycle of an Autonomous Fathom Worker</div>
-      </div>
-      <div class="header-right">
-        <span class="page-badge">PAGE 05 / 42</span>
-      </div>
-    </div>
 
-    <div class="content-body">
-<div class="card-dark" style="padding: 6px 10px;">
-  <div class="card-title" style="font-size: 8.8pt;">Continuous 24/7 Autonomy: Zero Idle Time, Zero Latency</div>
-  <p style="font-size: 7.4pt;">
-    While human teams sleep, Fathom coworkers execute scheduled background operations, monitor market shifts, prepare outbound campaigns, verify deliverability, and stage pipeline deliverables for morning review.
+<div class="page">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-meta">
+        <span class="brand-badge">FATHOM</span>
+        <span class="header-category">PRODUCT PHILOSOPHY · PARADIGM COMPARISON</span>
+      </div>
+      <div class="header-title-main">Digital Coworkers vs. Scripted Chatbots</div>
+      <div class="header-subtitle">Moving Beyond Single-Prompt Chat Interfaces to Autonomous Goal-Driven Agents</div>
+    </div>
+    <div class="header-right">
+      <span class="page-badge">PAGE 05 / 42</span>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content-body">
+    <div class="card-dark">
+  <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">The Fundamental Difference: Proactive Agency vs. Reactive Text Generation</div>
+  <p style="font-size: 7.6pt; line-height: 1.38;">
+    Most commercial AI tools are <strong>passive text assistants</strong>: they wait for a human prompt, generate conversational text, and stop immediately. <strong>Fathom instantiates proactive digital coworkers</strong>: given a high-level goal, they independently formulate a multi-step plan, spawn specialized sub-agents, operate browser tools, verify work against objective criteria, and deliver finalized deliverables directly to your CRM, database, or team channels.
   </p>
 </div>
 
-<!-- MOCKUP 4: Timeline & Telegram Alert Card -->
 <div class="grid-2">
-  <div class="timeline" style="gap: 3px;">
-    <div class="timeline-item" style="padding: 3px 6px;">
-      <div class="timeline-time" style="font-size:6.2pt;">02:00 AM</div>
-      <div class="timeline-content">
-        <div class="timeline-title" style="font-size:6.8pt;">Scheduled Cron Trigger (Atomic Lock)</div>
-        <div class="timeline-desc" style="font-size:5.8pt;">Coworker wakes via atomic claim (<code>0 2 * * *</code>), loads target criteria from persistent SQLite memory.</div>
-      </div>
+  <div class="card" style="border-left: 3.5px solid var(--rose);">
+    <div class="card-title-sm" style="color: var(--rose);">Traditional AI Chatbot (Single-Turn Reactive)</div>
+    <div class="diagram-flow" style="flex-direction: column; gap: 3px; padding: 4px;">
+      <div class="flow-step" style="width: 100%; text-align: left; font-size: 6.6pt;"><strong>1. Prompt:</strong> Human writes: "Give me 50 fintech leads in London"</div>
+      <div class="flow-step" style="width: 100%; text-align: left; font-size: 6.6pt;"><strong>2. Generation:</strong> LLM produces hallucinations from static training weights</div>
+      <div class="flow-step" style="width: 100%; text-align: left; font-size: 6.6pt;"><strong>3. Human Work:</strong> Operator manually looks up MX records & tests emails</div>
+      <div class="flow-step" style="width: 100%; text-align: left; font-size: 6.6pt;"><strong>4. Data Entry:</strong> Human copy-pastes data into CRM manually row by row</div>
     </div>
-    <div class="timeline-item" style="padding: 3px 6px;">
-      <div class="timeline-time" style="font-size:6.2pt;">02:15 AM</div>
-      <div class="timeline-content">
-        <div class="timeline-title" style="font-size:6.8pt;">Parallel Multi-Engine OSINT Swarm</div>
-        <div class="timeline-desc" style="font-size:5.8pt;">Coordinator spawns 4 worker sub-agents querying directories and websites concurrently; 85 candidate records found.</div>
-      </div>
-    </div>
-    <div class="timeline-item" style="padding: 3px 6px;">
-      <div class="timeline-time" style="font-size:6.2pt;">03:30 AM</div>
-      <div class="timeline-content">
-        <div class="timeline-title" style="font-size:6.8pt;">SMTP 250 OK Non-Intrusive Probes</div>
-        <div class="timeline-desc" style="font-size:5.8pt;">DNS MX check + port 25 handshake confirms 62 deliverable mailboxes; disposable emails purged.</div>
-      </div>
-    </div>
-    <div class="timeline-item" style="padding: 3px 6px;">
-      <div class="timeline-time" style="font-size:6.2pt;">07:00 AM</div>
-      <div class="timeline-content">
-        <div class="timeline-title" style="font-size:6.8pt;">CRM Ingestion & Knowledge Assimilation</div>
-        <div class="timeline-desc" style="font-size:5.8pt;">Pushes 62 leads to amoCRM; absorbs company ties into SQLite entity graph (94µs/fact).</div>
-      </div>
-    </div>
+    <p style="font-size: 6.8pt; color: var(--rose); margin-top: 2px;"><strong>Bottleneck:</strong> The human operator remains trapped as the manual executor, data validator, and tool operator.</p>
   </div>
 
-  <!-- Mobile Telegram Bot Interface Mockup -->
-  <div class="app-mockup" style="background:#17212b; border-color:#242f3d;">
-    <div class="mockup-header" style="background:#242f3d; border-color:#17212b;">
-      <div style="font-size:6.4pt; font-weight:700; color:#fff;">✈️ Telegram · Fathom Coworker Bot</div>
-      <div style="font-size:5.8pt; color:#38bdf8;">08:30 AM</div>
+  <div class="card card-emerald">
+    <div class="card-title-sm">Fathom Autonomous Coworker (Multi-Agent Swarm)</div>
+    <div class="diagram-flow" style="flex-direction: column; gap: 3px; padding: 4px;">
+      <div class="flow-step" style="width: 100%; text-align: left; font-size: 6.6pt;"><strong>1. Goal Assigned:</strong> "Enrich 50 verified London FinTech VP leads"</div>
+      <div class="flow-step" style="width: 100%; text-align: left; font-size: 6.6pt;"><strong>2. Autonomous Plan:</strong> Coordinator spawns 4 parallel Tokio sub-agents</div>
+      <div class="flow-step" style="width: 100%; text-align: left; font-size: 6.6pt;"><strong>3. Active Execution:</strong> Scrapes registries, runs SMTP 250 OK probes</div>
+      <div class="flow-step" style="width: 100%; text-align: left; font-size: 6.6pt;"><strong>4. System Sync:</strong> LLM Judge validates quality & pushes directly to amoCRM</div>
     </div>
-    <div style="padding: 6px; display:flex; flex-direction:column; gap:4px; font-size:6.2pt;">
-      <div style="background:#1e2c3a; padding:5px 7px; border-radius:6px; color:#f1f5f9;">
-        <strong>🌅 Good morning Sarah!</strong><br>
-        Nightly SDR sweep completed:<br>
-        • <strong>62 verified leads</strong> in London FinTech<br>
-        • 100% email validity (SMTP probed)<br>
-        • amoCRM deal cards staged.<br>
-        <span style="color:#64748b; font-size:5.4pt;">Attachment: London_Fintech_Q3.xlsx</span>
-      </div>
-      <div style="display:flex; gap:4px;">
-        <div style="background:#2b5278; color:#fff; padding:3px; border-radius:3px; text-align:center; flex:1; font-weight:700; font-size:5.8pt;">✓ Approve CRM Push</div>
-        <div style="background:#242f3d; color:#94a3b8; padding:3px; border-radius:3px; text-align:center; flex:1; font-size:5.8pt;">📊 View Excel Report</div>
-      </div>
-    </div>
+    <p style="font-size: 6.8pt; color: var(--emerald); margin-top: 2px;"><strong>Advantage:</strong> Complete end-to-end task ownership from initial query to final system-of-record synchronization.</p>
   </div>
 </div>
 
-<div class="card-slate" style="padding: 5px 8px;">
-  <div class="card-title-sm">Operational Outcome Summary</div>
-  <p style="font-size: 7.2pt;">
-    When human account executives arrive at their desks at 9:00 AM, fresh, fully verified, and enriched leads are already waiting in the CRM pipeline ready for high-conversion closing calls—with zero human prospecting time required.
-  </p>
+<div class="card">
+  <div class="card-title" style="font-size: 8.2pt;">Key Lifecycle Differences at a Glance</div>
+  <table>
+    <thead>
+      <tr><th>Lifecycle Dimension</th><th>Single-Turn Chatbots</th><th>Fathom Digital Coworkers</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Initiation Mechanism</strong></td><td>Requires constant synchronous human prompting.</td><td><strong>Autonomous scheduled triggers (Cron), webhooks, or API.</strong></td></tr>
+      <tr><td><strong>Concurrency Model</strong></td><td>Single sequential thread of thought.</td><td><strong>Parallel multi-core Tokio task swarms (JoinSet).</strong></td></tr>
+      <tr><td><strong>Failure Recovery</strong></td><td>Crashes or hallucinates; requires human reprompting.</td><td><strong>Self-healing retries with error diagnosis & task augmentation.</strong></td></tr>
+      <tr><td><strong>State Persistence</strong></td><td>Stateless; context vanishes on tab closure.</td><td><strong>Durable SQLite database with append-only fact versioning.</strong></td></tr>
+      <tr><td><strong>Action Verification</strong></td><td>Unchecked text generation with zero validation.</td><td><strong>Multi-signal validation gates & automated LLM Judge review.</strong></td></tr>
+    </tbody>
+  </table>
 </div>
 
 <div class="callout callout-success" style="margin-bottom: 0;">
-  <strong>The Compounding Advantage:</strong> 6 hours of autonomous nighttime execution delivers more qualified pipeline than a full-time human SDR produces in an entire work week.
+  <strong>The Autonomous Standard:</strong> Fathom coworkers don't just draft emails or write snippets—they find the decision-maker, verify deliverability, operate the sales platform, and track pipeline outcomes completely autonomously.
 </div>
-    </div>
-
-    <div class="footer">
-      <div class="footer-left">
-        <span>Fathom Autonomous Workforce Runtime</span>
-        <span class="footer-bullet">•</span>
-        <span>Elastic-2.0 License</span>
-        <span class="footer-bullet">•</span>
-        <span>Strategic Whitepaper Presentation</span>
-      </div>
-      <div class="footer-right">v0.3.0 · Page 05 of 42</div>
-    </div>
   </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-left">
+      <span>Fathom Autonomous Workforce Runtime</span>
+      <span class="footer-bullet">•</span>
+      <span>Elastic-2.0 License</span>
+      <span class="footer-bullet">•</span>
+      <span>Strategic Whitepaper Presentation</span>
+    </div>
+    <div class="footer-right">v0.3.0 · Page 05 of 42</div>
+  </div>
+</div>
+
 </body>
 </html>

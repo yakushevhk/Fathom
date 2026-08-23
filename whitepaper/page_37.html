@@ -1,82 +1,91 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Fathom Whitepaper — Complete Compliance & Audit Trails</title>
-  <link rel="stylesheet" href="styles.css">
+<meta charset="utf-8">
+<title>Page 37 · Enterprise Guardrails & Policy Engine</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="page">
-    <div class="header">
-      <div class="header-left">
-        <div class="header-meta">
-          <span class="brand-badge">FATHOM</span>
-          <span class="header-category">REGULATORY COMPLIANCE · AUDIT TRAILS</span>
-        </div>
-        <div class="header-title-main">Complete Compliance & Audit Trails</div>
-        <div class="header-subtitle">Immutable Decision Ledgers, Automatic Secret Redaction & GDPR / 152-FZ Readiness</div>
-      </div>
-      <div class="header-right">
-        <span class="page-badge">PAGE 37 / 42</span>
-      </div>
-    </div>
 
-    <div class="content-body">
-<div class="card-dark" style="padding: 7px 10px;">
-  <div class="card-title" style="font-size: 8.8pt;">Auditable AI: Immutable Records for Every Decision</div>
-  <p style="font-size: 7.4pt;">
-    Enterprise compliance requires full traceability for every autonomous action. Fathom logs all authorization decisions into an append-only, tamper-resistant <strong>Audit Ledger</strong> (<code>/api/v1/governance/audit</code>).
+<div class="page">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-meta">
+        <span class="brand-badge">FATHOM</span>
+        <span class="header-category">ENTERPRISE SECURITY · GOVERNANCE ENGINE</span>
+      </div>
+      <div class="header-title-main">Enterprise Guardrails & Policy Engine</div>
+      <div class="header-subtitle">Fail-Closed Security Posture, Allow/Deny Glob Rules & Controlled Autonomy</div>
+    </div>
+    <div class="header-right">
+      <span class="page-badge">PAGE 37 / 42</span>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content-body">
+    <div class="card-accent">
+  <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Deterministic Safety: The Governance Policy Engine</div>
+  <p style="font-size: 7.6pt; line-height: 1.38;">
+    Deploying autonomous agents in mission-critical enterprise environments requires mathematically provable guardrails. In <code>crates/governance</code>, Fathom implements a <strong>fail-closed policy engine</strong> where every single tool call is authorized against declarative security rules prior to execution.
   </p>
 </div>
 
 <div class="grid-2">
-  <div class="card" style="padding: 5px 8px;">
-    <div class="card-title-sm">Audit Record Fields</div>
-    <ul style="font-size: 6.8pt; margin-bottom: 0;">
-      <li><code>timestamp</code>: Nanosecond-precision RFC 3339 timestamp.</li>
-      <li><code>agent_id</code> & <code>session_id</code>: Full UUIDv7 session tracing.</li>
-      <li><code>tool</code> & <code>intent</code>: Declared action and reasoning rationale.</li>
-      <li><code>target</code> & <code>decision</code>: URL / file path and Allow/Deny verdict.</li>
+  <div class="card card-emerald">
+    <div class="card-title-sm">1. Declarative Allow / Deny Glob Rules</div>
+    <ul style="font-size: 7.0pt; line-height: 1.35; margin-bottom: 0;">
+      <li><strong>Tool Level:</strong> <code>allow: tool="web_search", target="*"</code></li>
+      <li><strong>Domain Restriction:</strong> <code>allow: tool="browser.*", target="https://*.linkedin.com/*"</code></li>
+      <li><strong>Explicit Admin Deny:</strong> <code>deny: tool="browser.type", target="*/admin/*"</code></li>
+      <li><strong>Destructive Shell Deny:</strong> <code>deny: tool="shell", target="rm -rf *"</code></li>
     </ul>
   </div>
 
-  <div class="card card-emerald" style="padding: 5px 8px;">
-    <div class="card-title-sm">Automatic Secret Redaction</div>
-    <p style="font-size: 7.2pt;">
-      Before audit records are written to SQLite, a built-in redaction engine scans tool arguments with regex scanners, stripping API keys, bearer tokens, and passwords to prevent credential leakage into logs.
-    </p>
+  <div class="card card-purple">
+    <div class="card-title-sm">2. Strict Fail-Closed Security Posture</div>
+    <ul style="font-size: 7.0pt; line-height: 1.35; margin-bottom: 0;">
+      <li><strong>Deny Wins:</strong> If an action matches both allow and deny, <strong>deny always wins</strong>.</li>
+      <li><strong>Default Rejection:</strong> Any unclassified tool call fails immediately.</li>
+      <li><strong>Operator Claims:</strong> Privileged tools require Ed25519-signed operator claims.</li>
+      <li><strong>Zero Bypass:</strong> Enforced at compiled Rust dispatch, immune to prompt hacks.</li>
+    </ul>
   </div>
 </div>
 
-<div class="card" style="padding: 5px 8px;">
-  <div class="card-title">Data Privacy & Regulatory Framework Compliance</div>
+<div class="card">
+  <div class="card-title" style="font-size: 8.2pt;">Side-Effect Registry & Human Approval Matrix</div>
   <table>
     <thead>
-      <tr><th>Regulation</th><th>Compliance Invariant</th><th>Fathom Implementation Mechanism</th></tr>
+      <tr><th>Action Category</th><th>Tool Names</th><th>Risk Tier</th><th>Governance Enforcement Policy</th></tr>
     </thead>
     <tbody>
-      <tr><td><strong>GDPR (EU)</strong></td><td>Lawful processing of public data & right to be forgotten</td><td>Strict OSINT confidence scoring + <code>ContactDb</code> delete APIs.</td></tr>
-      <tr><td><strong>152-FZ (Russia)</strong></td><td>Personal data localization & verifiable storage</td><td>Self-hosted local SQLite / PostgreSQL storage on sovereign infrastructure.</td></tr>
-      <tr><td><strong>SOC 2 Type II</strong></td><td>Access control, auditability, and data isolation</td><td>AES-256-GCM vault, per-agent Docker sandboxes, immutable audit trail.</td></tr>
+      <tr><td><strong>Read-Only OSINT</strong></td><td><code>web_search</code>, <code>read_page</code>, <code>dns_lookup</code></td><td><span class="badge badge-green">LOW (SAFE)</span></td><td>Automated execution under domain allowlist</td></tr>
+      <tr><td><strong>Storage & Ingestion</strong></td><td><code>save_contacts</code>, <code>memory_store</code></td><td><span class="badge badge-blue">MEDIUM (ISOLATED)</span></td><td>Ingests into sandbox after regex secret sanitization</td></tr>
+      <tr><td><strong>CRM Push & Outbound</strong></td><td><code>amocrm_push</code>, <code>send_email</code></td><td><span class="badge badge-amber">HIGH (APPROVAL)</span></td><td>Batched staged push; requires 1-click human confirmation</td></tr>
+      <tr><td><strong>System Modification</strong></td><td><code>db_drop</code>, <code>rm_rf</code>, <code>ssh_keygen</code></td><td><span class="badge badge-red">CRITICAL (DENY)</span></td><td>Permanently blocked by fail-closed policy engine</td></tr>
     </tbody>
   </table>
 </div>
 
-<div class="callout callout-info" style="margin-bottom: 0;">
-  <strong>Audit Replay Ready:</strong> Compliance teams can use the <code>GET /api/v1/replay</code> endpoint to reconstruct and step through any historical session turn-by-turn.
+<div class="callout callout-success" style="margin-bottom: 0;">
+  <strong>Enterprise Peace of Mind:</strong> Restrict coworkers to precise operational lanes with mathematical certainty, eliminating hallucinations, unauthorized data egress, and rogue API actions.
 </div>
-    </div>
-
-    <div class="footer">
-      <div class="footer-left">
-        <span>Fathom Autonomous Workforce Runtime</span>
-        <span class="footer-bullet">•</span>
-        <span>Elastic-2.0 License</span>
-        <span class="footer-bullet">•</span>
-        <span>Strategic Whitepaper Presentation</span>
-      </div>
-      <div class="footer-right">v0.3.0 · Page 37 of 42</div>
-    </div>
   </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-left">
+      <span>Fathom Autonomous Workforce Runtime</span>
+      <span class="footer-bullet">•</span>
+      <span>Elastic-2.0 License</span>
+      <span class="footer-bullet">•</span>
+      <span>Strategic Whitepaper Presentation</span>
+    </div>
+    <div class="footer-right">v0.3.0 · Page 37 of 42</div>
+  </div>
+</div>
+
 </body>
 </html>

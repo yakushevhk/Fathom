@@ -192,7 +192,7 @@ When a **pending approval** exists, the hint area shows: `🔐 APPROVAL NEEDED �
 | `Shift+Enter`     | Insert         | Insert newline in input (multi-line)                        |
 | `Esc`             | Insert         | Return to normal mode                                       |
 | `Esc`             | Normal         | Switch focus to the Input panel                             |
-| `Tab`             | Any            | Cycle panels forward: Input → Agents → Output → Log → Jobs → Memory → Input |
+| `Tab`             | Any            | Cycle panels forward: Agents → Output → Log → Jobs → Memory → Input |
 | `BackTab`         | Any            | Cycle panels backward                                       |
 | `Up` / `Down`     | Agents panel   | Move agent cursor up/down in the tree                       |
 | `Up` / `Down`     | Other panels   | Scroll the event log / output vertically                    |
@@ -390,9 +390,176 @@ AgentEvent (broadcast from pr_core)                    │
 ### Key data structures
 
 - **`App`** — holds all UI state: agents, event log, streams, thinking, tool calls, jobs, memory, dialogs, input
+- **`Panel`** — enum for navigable panels: `Agents`, `Output`, `Log`, `Jobs`, `Memory`, `Input`
+- **`Dialog`** — enum for modal dialogs: `Help`, `SessionBrowser`, `Confirm(String)`, `FilePicker`
 - **`PendingQuestion`** — oneshot channel + metadata for the `question` tool
 - **`PendingApproval`** — oneshot channel + metadata for side-effect approval gates
 - **`MemorySnapshot`** — periodic refresh of memory store counts and recent entries
 - **`StreamingBuffer`** — per-agent line-buffered text accumulator
 - **`AgentInfo`** — per-agent metadata: id, parent, role, task, state, tokens, depth, tool calls, start time
 - **`ToolCallEntry`** — tool call record with agent ID, tool name, start time, duration, result preview
+- **`EventLogEntry`** — timestamped log entry with level (Info/Success/Error/Tool) and message
+
+### Types
+
+```rust
+pub enum Panel {
+    Agents,
+    Output,
+    Log,
+    Jobs,
+    Memory,
+    Input,
+}
+
+pub enum Dialog {
+    Help,
+    SessionBrowser,
+    Confirm(String),
+    FilePicker,
+}
+
+pub struct App {
+    // Core state
+    pub should_quit: bool,
+    pub session_id: Option<SessionId>,
+    pub query: String,
+    pub input: String,
+    pub input_cursor: usize,
+    pub input_mode: InputMode,
+    
+    // Agent tracking
+    pub agents: HashMap<AgentId, AgentInfo>,
+    pub event_log: Vec<EventLogEntry>,
+    pub total_tokens: u64,
+    pub context_window: u64,
+    pub total_agents: u32,
+    pub start_time: std::time::Instant,
+    pub scroll_offset: u16,
+    pub selected_panel: Panel,
+    
+    // Input history
+    pub input_history: Vec<String>,
+    pub history_index: Option<usize>,
+    pub input_snapshot: String,
+    
+    // Mid-run steering
+    pub steer_tx: Option<tokio::sync::mpsc::UnboundedSender<String>>,
+    
+    // Thinking/reasoning
+    pub thinking: HashMap<AgentId, ThinkingState>,
+    pub thinking_collapsed: bool,
+    pub last_thinking_time: Option<std::time::Instant>,
+    
+    // Streaming
+    pub streams: HashMap<AgentId, StreamingBuffer>,
+    pub output_text: String,
+    
+    // Paste
+    pub paste_buffer: String,
+    pub in_paste: bool,
+    
+    // Tool calls
+    pub tool_calls: Vec<ToolCallEntry>,
+    pub active_tools: HashMap<AgentId, String>,
+    
+    // Background jobs
+    pub jobs: Vec<pr_persistence::JobRow>,
+    
+    // Memory
+    pub memory: Option<std::sync::Arc<pr_memory::Memory>>,
+    pub memory_snapshot: MemorySnapshot,
+    
+    // Operator control plane
+    pub pending_question: Option<PendingQuestion>,
+    pub pending_approval: Option<PendingApproval>,
+    
+    // Agent tree
+    pub collapsed: std::collections::HashSet<AgentId>,
+    pub agents_cursor: usize,
+    
+    // Sparkline
+    pub token_history: Vec<u64>,
+    
+    // UI state
+    pub show_help: bool,
+    pub replay_mode: bool,
+    pub dialog: Option<Dialog>,
+    
+    // File references (@ autocomplete)
+    pub file_refs: Vec<String>,
+    pub in_file_ref: bool,
+    pub file_ref_query: String,
+    pub file_ref_selected: usize,
+    
+    // Session browser
+    pub session_list: Vec<pr_persistence::SessionSummary>,
+    
+    // Mouse
+    pub mouse_pos: (u16, u16),
+}
+
+pub struct AgentInfo {
+    pub id: AgentId,
+    pub parent: Option<AgentId>,
+    pub role: String,
+    pub task: String,
+    pub state: AgentState,
+    pub tokens: u64,
+    pub depth: u32,
+    pub tool_calls: Vec<String>,
+    pub start_time: std::time::Instant,
+}
+
+pub struct PendingQuestion {
+    pub request_id: String,
+    pub agent_id: AgentId,
+    pub question: String,
+    pub reply: tokio::sync::oneshot::Sender<String>,
+}
+
+pub struct PendingApproval {
+    pub request_id: String,
+    pub agent_id: AgentId,
+    pub tool: String,
+    pub args_preview: String,
+    pub reply: tokio::sync::oneshot::Sender<bool>,
+}
+
+pub struct EventLogEntry {
+    pub time: chrono::DateTime<chrono::Local>,
+    pub message: String,
+    pub level: LogLevel,
+}
+
+pub enum LogLevel {
+    Info,
+    Success,
+    Error,
+    Tool,
+}
+
+pub struct ToolCallEntry {
+    pub agent_id: AgentId,
+    pub tool: String,
+    pub start_time: std::time::Instant,
+    pub duration_ms: Option<u64>,
+    pub result_preview: Option<String>,
+}
+
+pub struct MemorySnapshot {
+    pub agent_active: usize,
+    pub user_active: usize,
+    pub run_active: usize,
+    pub entity_nodes: i64,
+    pub entity_edges: i64,
+    pub recent: Vec<MemoryLine>,
+    pub refreshed: bool,
+}
+
+pub struct MemoryLine {
+    pub id: String,
+    pub scope: String,
+    pub content: String,
+}
+```

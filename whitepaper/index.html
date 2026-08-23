@@ -1,127 +1,309 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Fathom Whitepaper — 42-Page Master Presentation Deck</title>
-  <link rel="stylesheet" href="styles.css">
-  <style>
-    .deck-nav {
-      position: fixed;
-      top: 12px;
-      right: 16px;
-      z-index: 9999;
-      background: rgba(15, 23, 42, 0.94);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      border-radius: 30px;
-      padding: 6px 14px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-      color: #ffffff;
-      font-size: 8.5pt;
-    }
-    .deck-btn {
-      background: rgba(255, 255, 255, 0.15);
-      border: none;
-      color: #ffffff;
-      padding: 5px 12px;
-      border-radius: 16px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 8pt;
-      transition: all 0.15s ease;
-    }
-    .deck-btn:hover { background: #2563eb; }
-    .deck-btn-primary { background: #2563eb; }
-    .deck-select {
-      background: rgba(255, 255, 255, 0.12);
-      color: #ffffff;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      padding: 4px 10px;
-      border-radius: 14px;
-      font-size: 8pt;
-      outline: none;
-      max-width: 320px;
-    }
-    .deck-select option { background: #0f172a; color: #ffffff; }
-    iframe.page-frame {
-      width: 210mm;
-      height: 297mm;
-      border: none;
-      box-shadow: 0 12px 35px rgba(15, 23, 42, 0.18);
-      border-radius: 4px;
-      display: block;
-      margin: 20px auto;
-      background: #ffffff;
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FATHOM — 42-Page Master Whitepaper Deck</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  :root {
+    --bg-dark: #07090e;
+    --sidebar-bg: #0d1117;
+    --border-color: #1e293b;
+    --accent: #1d4ed8;
+    --accent-hover: #2563eb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: var(--bg-dark);
+    color: #f1f5f9;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  /* Sidebar */
+  #sidebar {
+    width: 320px;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .sidebar-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .brand-title {
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .brand-badge {
+    background: var(--accent);
+    color: #fff;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+  }
+  .pdf-download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #1e293b;
+    color: #38bdf8;
+    border: 1px solid #334155;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .pdf-download-btn:hover {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  
+  .page-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .page-nav-item {
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11.5px;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+  }
+  .page-nav-item:hover {
+    background: #161f2e;
+    color: #f1f5f9;
+  }
+  .page-nav-item.active {
+    background: #1e293b;
+    color: #38bdf8;
+    font-weight: 700;
+    border-color: #334155;
+  }
+  .nav-num {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    opacity: 0.7;
+    min-width: 20px;
+  }
+  .nav-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  /* Main Stage */
+  #main-stage {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #020408;
+    overflow: hidden;
+    position: relative;
+  }
+  .stage-topbar {
+    padding: 12px 24px;
+    background: #0d1117;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+  }
+  .stage-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .btn-ctrl {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #f1f5f9;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-ctrl:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .page-counter {
+    font-family: "JetBrains Mono", monospace;
+    color: #94a3b8;
+    font-size: 12px;
+  }
+  
+  .viewport-container {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    justify-content: center;
+    padding: 30px 20px;
+  }
+  .deck-frame {
+    width: 210mm;
+    height: 297mm;
+    border: 1px solid #334155;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255,255,255,0.05);
+    background: #fff;
+    border-radius: 2px;
+  }
+</style>
 </head>
-<body style="background: #e2e8f0; margin: 0; padding: 40px 0 80px 0;">
+<body>
 
-  <div class="deck-nav">
-    <button class="deck-btn" onclick="prevPage()">◀ Prev</button>
-    <select class="deck-select" id="pageSelect" onchange="jumpToPage(this.value)">
-      <option value="1">Page 01: Strategic Overview & Universal Runtime</option><option value="2">Page 02: The Autonomous Digital Employee Paradigm</option><option value="3">Page 03: Virtual Office Topology & Autonomous Coordination</option><option value="4">Page 04: Day in the Life of a Digital Employee Fleet [Mockup: Inbox Zero]</option><option value="5">Page 05: Core Engine Architecture & Sub-Millisecond Dispatch</option><option value="6">Page 06: Autonomous SDR & Corporate Registries [Mockup: SDR Outbound]</option><option value="7">Page 07: Market Intelligence & Competitor Tracking [Mockup: DOM Diff]</option><option value="8">Page 08: Executive Recruiting & Talent Sourcing [Mockup: GitHub AST]</option><option value="9">Page 09: Back-Office & Financial Reconciliation [Mockup: QuickBooks]</option><option value="10">Page 10: DevOps Maintenance & Code Engineering [Mockup: Sentry PR]</option><option value="11">Page 11: Autonomous Research & Deep Intelligence</option><option value="12">Page 12: Self-Healing Background Jobs & Scheduled Routines [Mockup: Swarm DAG]</option><option value="13">Page 13: Automated Outreach: The 7-Layer OSINT Engine</option><option value="14">Page 14: Multi-Source Identity Fusion & Graph Deduplication</option><option value="15">Page 15: Automated Enrichment & Cross-Platform Corroboration</option><option value="16">Page 16: SMTP 250 OK Gauntlet & Deliverability Engine</option><option value="17">Page 17: Multi-Channel Outbound Dispatch [Mockup: Instantly Bridge]</option><option value="18">Page 18: Goal-Oriented Autonomous Search & LLM Judge</option><option value="19">Page 19: Zero-Bounce Deliverability & Anti-Spam Pipeline [Mockup: Audit Table]</option><option value="20">Page 20: Two-Way CRM Synchronization & Autonomous Deal Staging</option><option value="21">Page 21: Computer Use: Sandboxed Browser & Desktop Automation</option><option value="22">Page 22: Accessibility Trees vs Visual Coordinate Scripts</option><option value="23">Page 23: Governed Execution & 2FA Human Takeover [Mockup: AWS 2FA]</option><option value="24">Page 24: Live Human Supervision, Telegram Approval & Takeover [Mockup: CS REPL]</option><option value="25">Page 25: Sub-Millisecond Tokio Dispatch Engine (~0.75 ms)</option><option value="26">Page 26: Enterprise Security Architecture & AES-256-GCM Vault [Mockup: Vault]</option><option value="27">Page 27: Regulatory Compliance, Legal Audits & Risk Matrices [Mockup: Legal MSA]</option><option value="28">Page 28: Hardware Efficiency & High-Concurrency Benchmarks</option><option value="29">Page 29: Cold Start, Concurrency & Memory Profiles</option><option value="30">Page 30: Long-Term Memory & Entity Knowledge Graphs [Mockup: Graph]</option><option value="31">Page 31: Self-Healing Infrastructure & Error Diagnostics</option><option value="32">Page 32: HTTP Server, Axum Router & SSE Real-Time Protocol</option><option value="33">Page 33: Multi-Channel Gateway (Telegram, Slack, Discord, Web)</option><option value="34">Page 34: The Self-Replicating Growth Loop & Inbound Engine</option><option value="35">Page 35: Customer Acquisition & The Free Value Audit Flywheel</option><option value="36">Page 36: Pricing Architecture: Flat-Rate Unlimited Seat Economics</option><option value="37">Page 37: Agency Scaling, Multi-Tenancy & White-Label Deployments [Mockup: Agency Fleet]</option><option value="38">Page 38: Total Cost of Ownership & 90%+ Gross Margin Unit Economics</option><option value="39">Page 39: Enterprise Deployment Topologies (Bare-Metal, Cloud, Edge)</option><option value="40">Page 40: High-Availability, Clustering & State Synchronization</option><option value="41">Page 41: Enterprise SLA, Disaster Recovery & Continuous Auditing</option><option value="42">Page 42: Conclusion: The Autonomous Enterprise Era & Roadmap</option>
-    </select>
-    <button class="deck-btn" onclick="nextPage()">Next ▶</button>
-    <span style="color: rgba(255,255,255,0.4);">|</span>
-    <button class="deck-btn" onclick="toggleViewMode(this)" id="viewModeBtn">Show All 42 Pages</button>
-    <a href="Fathom_Whitepaper.pdf" target="_blank" class="deck-btn deck-btn-primary" style="text-decoration:none;">📄 Download PDF (14.6 MB)</a>
-    <a href="mockups/index.html" target="_blank" class="deck-btn" style="text-decoration:none; background:#4f46e5;">🖼 15 HD Mockups</a>
+<div id="sidebar">
+  <div class="sidebar-header">
+    <div class="brand-title">
+      <span>FATHOM</span>
+      <span class="brand-badge">42 PAGES</span>
+    </div>
+    <a href="Fathom_Whitepaper.pdf" class="pdf-download-btn" download>
+      <span>⬇</span> PDF
+    </a>
+  </div>
+  <div class="page-list" id="pageList"></div>
+</div>
+
+<div id="main-stage">
+  <div class="stage-topbar">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <span style="font-weight:800; color:#fff;" id="topbarCategory">COVER</span>
+      <span style="color:#64748b;">·</span>
+      <span style="color:#cbd5e1;" id="topbarTitle">FATHOM Title Page</span>
+    </div>
+    <div class="stage-controls">
+      <button class="btn-ctrl" onclick="prevPage()">◀ Prev</button>
+      <span class="page-counter" id="pageCounter">01 / 42</span>
+      <button class="btn-ctrl" onclick="nextPage()">Next ▶</button>
+      <button class="btn-ctrl" onclick="toggleFullScreen()">⛶ Fullscreen</button>
+    </div>
   </div>
 
-  <div id="deckContainer">
-    <iframe class="page-frame" id="singleFrame" src="page_01.html"></iframe>
+  <div class="viewport-container">
+    <iframe class="deck-frame" id="slideFrame" src="page_01.html"></iframe>
   </div>
+</div>
 
-  <script>
-    let cur = 1;
-    const total = 42;
-    let isAllView = false;
+<script>
+const pages = [
+  { num: 1, title: "FATHOM (Title Page)", cat: "COVER" },
+  { num: 2, title: "Table of Contents & Outline", cat: "OUTLINE" },
+  { num: 3, title: "Universal AI Workforce Runtime", cat: "EXECUTIVE STRATEGY" },
+  { num: 4, title: "The Broken Remote Hiring Landscape", cat: "MACRO PROBLEM" },
+  { num: 5, title: "Digital Coworkers vs. Scripted Chatbots", cat: "PRODUCT PHILOSOPHY" },
+  { num: 6, title: "The 5 Core Digital Worker Archetypes", cat: "WORKFORCE ARCHETYPES" },
+  { num: 7, title: "A Day in the Life of a Digital Employee", cat: "OPERATIONAL WORKFLOW" },
+  { num: 8, title: "The Virtual Employee Subscription Model", cat: "PRICING MODEL" },
+  { num: 9, title: "Unlimited Neural Compute Engine", cat: "NEURAL ECONOMICS" },
+  { num: 10, title: "Total Cost of Ownership (TCO) & ROI", cat: "FINANCIAL ANALYSIS" },
+  { num: 11, title: "Elastic Scaling: 1 to 100 Workers", cat: "ELASTIC SCALE" },
+  { num: 12, title: "Enterprise & Agency Monetization", cat: "COMMERCIAL ARCHITECTURE" },
+  { num: 13, title: "The Self-Replicating Outbound Flywheel", cat: "GO-TO-MARKET" },
+  { num: 14, title: "Multi-Channel Go-To-Market Strategy", cat: "DISTRIBUTION" },
+  { num: 15, title: "The Free Value Audit Lead Magnet", cat: "CONVERSION FUNNEL" },
+  { num: 16, title: "The Agency & White-Label Ecosystem", cat: "PARTNER NETWORK" },
+  { num: 17, title: "Skill Marketplace & Template Network", cat: "COMMUNITY & NETWORK" },
+  { num: 18, title: "Autonomous Sales Development Rep (SDR)", cat: "REAL-WORLD SCENARIOS" },
+  { num: 19, title: "Executive Headhunter & Talent Scout", cat: "REAL-WORLD SCENARIOS" },
+  { num: 20, title: "24/7 Market Intelligence Tracker", cat: "REAL-WORLD SCENARIOS" },
+  { num: 21, title: "Automated Customer Onboarding & Support", cat: "REAL-WORLD SCENARIOS" },
+  { num: 22, title: "Back-Office & Invoice Reconciliation", cat: "REAL-WORLD SCENARIOS" },
+  { num: 23, title: "Autonomous Software Engineer & Maintainer", cat: "REAL-WORLD SCENARIOS" },
+  { num: 24, title: "Regulatory & Legal Document Auditor", cat: "REAL-WORLD SCENARIOS" },
+  { num: 25, title: "How the Virtual Office Operates", cat: "SYSTEM ARCHITECTURE" },
+  { num: 26, title: "Why Rust? Architecture of Performance", cat: "SYSTEM ARCHITECTURE" },
+  { num: 27, title: "Coordinator & Worker Swarm Execution", cat: "RUNTIME INTERNALS" },
+  { num: 28, title: "The Broadcast Message Bus & Security Vault", cat: "RUNTIME INTERNALS" },
+  { num: 29, title: "Reliability & Self-Healing Workflows", cat: "RUNTIME INTERNALS" },
+  { num: 30, title: "How Workers See & Control Computers", cat: "COMPUTER USE" },
+  { num: 31, title: "Why Opaque Refs Beat Brittle Selectors", cat: "COMPUTER USE" },
+  { num: 32, title: "Screen Streaming & Seamless Takeover", cat: "COMPUTER USE" },
+  { num: 33, title: "Docker Sandboxes & Network Egress", cat: "SECURITY SANDBOXING" },
+  { num: 34, title: "How Coworkers Remember Across Months", cat: "KNOWLEDGE ENGINE" },
+  { num: 35, title: "Sub-Millisecond Knowledge Ingestion", cat: "MEMORY ENGINE" },
+  { num: 36, title: "The Enterprise Entity Knowledge Graph", cat: "KNOWLEDGE GRAPH" },
+  { num: 37, title: "Enterprise Guardrails & Policy Engine", cat: "ENTERPRISE SECURITY" },
+  { num: 38, title: "The Ironclad Credentials Vault", cat: "SECURITY VAULT" },
+  { num: 39, title: "Agency Fleet Scaling & Multi-Tenancy", cat: "FLEET MANAGEMENT" },
+  { num: 40, title: "Definitive Microbenchmarks: Rust vs Python", cat: "BENCHMARKS" },
+  { num: 41, title: "Hardware Efficiency & Hosting Density", cat: "HARDWARE ECONOMICS" },
+  { num: 42, title: "Strategic Roadmap: Future of Autonomous Work", cat: "EXECUTIVE SUMMARY" }
+];
 
-    function jumpToPage(num) {
-      cur = parseInt(num);
-      document.getElementById('pageSelect').value = cur;
-      if (!isAllView) {
-        document.getElementById('singleFrame').src = 'page_' + String(cur).padStart(2, '0') + '.html';
-        window.scrollTo(0, 0);
-      } else {
-        const el = document.getElementById('frame-' + cur);
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
+let currentPage = 1;
 
-    function prevPage() {
-      if (cur > 1) jumpToPage(cur - 1);
-    }
+function renderNav() {
+  const container = document.getElementById("pageList");
+  container.innerHTML = "";
+  pages.forEach(p => {
+    const item = document.createElement("div");
+    item.className = "page-nav-item" + (p.num === currentPage ? " active" : "");
+    item.innerHTML = `<span class="nav-num">${String(p.num).padStart(2, "0")}</span><span class="nav-title">${p.title}</span>`;
+    item.onclick = () => loadPage(p.num);
+    container.appendChild(item);
+  });
+}
 
-    function nextPage() {
-      if (cur < total) jumpToPage(cur + 1);
-    }
+function loadPage(num) {
+  if (num < 1) num = 1;
+  if (num > 42) num = 42;
+  currentPage = num;
+  const p = pages[num - 1];
+  document.getElementById("slideFrame").src = `page_${String(num).padStart(2, "0")}.html`;
+  document.getElementById("topbarCategory").innerText = p.cat;
+  document.getElementById("topbarTitle").innerText = p.title;
+  document.getElementById("pageCounter").innerText = `${String(num).padStart(2, "0")} / 42`;
+  renderNav();
+}
 
-    function toggleViewMode(btn) {
-      const container = document.getElementById('deckContainer');
-      isAllView = !isAllView;
-      if (isAllView) {
-        btn.innerText = "Single Slide Mode";
-        let html = '';
-        for (let i = 1; i <= total; i++) {
-          html += '<iframe class="page-frame" id="frame-' + i + '" src="page_' + String(i).padStart(2, '0') + '.html"></iframe>';
-        }
-        container.innerHTML = html;
-      } else {
-        btn.innerText = "Show All 42 Pages";
-        container.innerHTML = '<iframe class="page-frame" id="singleFrame" src="page_' + String(cur).padStart(2, '0') + '.html"></iframe>';
-      }
-    }
+function prevPage() { if (currentPage > 1) loadPage(currentPage - 1); }
+function nextPage() { if (currentPage < 42) loadPage(currentPage + 1); }
 
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowRight' || e.key === 'PageDown') nextPage();
-      if (e.key === 'ArrowLeft' || e.key === 'PageUp') prevPage();
-    });
-  </script>
+function toggleFullScreen() {
+  const elem = document.getElementById("slideFrame");
+  if (elem.requestFullscreen) { elem.requestFullscreen(); }
+  else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); }
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowRight" || e.key === " ") nextPage();
+  if (e.key === "ArrowLeft") prevPage();
+});
+
+renderNav();
+loadPage(1);
+</script>
 
 </body>
 </html>

@@ -1,22 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>Fathom Whitepaper — Full 42-Page Deck</title>
-<link rel="stylesheet" href="styles.css">
-<style>
-  @media print {
-    body { margin: 0; padding: 0; }
-    .page { page-break-after: always !important; page-break-inside: avoid !important; }
-  }
-  @media screen {
-    body { background: #070a12; padding: 20px 0; display: flex; flex-direction: column; align-items: center; gap: 30px; }
-  }
-</style>
-</head>
-<body>
-<div class="page simple-cover">
-  <div class="cover-brand-large">FATHOM</div>
+#!/usr/bin/env python3
+import os, subprocess, tempfile, shutil
+from pypdf import PdfWriter, PdfReader
+
+WP_DIR = "/Users/yakushev/Documents/GitHub/Fathom/whitepaper"
+CHROME_PATH = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+
+pages = {}
+
+def set_page(num, category, title, subtitle, content_html, is_cover=False):
+    pages[num] = {
+        "category": category,
+        "title": title,
+        "subtitle": subtitle,
+        "html": content_html.strip(),
+        "is_cover": is_cover
+    }
+
+def mockup(img_name, caption):
+    return f"""
+    <div class="deck-mockup-container">
+      <div class="deck-mockup-frame">
+        <img src="mockups/{img_name}" alt="{caption}">
+      </div>
+      <div class="deck-mockup-caption">{caption}</div>
+    </div>
+    """
+
+# ==============================================================================
+# PAGE 01: MINIMALIST CLEAN COVER PAGE (Просто FATHOM)
+# ==============================================================================
+set_page(1, "COVER", "FATHOM", "Universal Autonomous AI Workforce Runtime",
+"""
+<div class="cover-brand-large">FATHOM</div>
 <div class="cover-rule"></div>
 <div class="cover-subtitle-main">Universal Autonomous AI Workforce Runtime</div>
 <div class="cover-desc-main">
@@ -29,26 +44,14 @@
   <div><strong>Neural Foundation:</strong> Unlimited Compute Engine (Kimi k3 / Qwen 3.8 / GLM 5.3)</div>
   <div><strong>Specification:</strong> Enterprise Whitepaper v0.3.0 · October 2026 · Tokyo Node</div>
 </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">TABLE OF CONTENTS</span>
-      </div>
-      <div class="header-title-main">Document Outline & Executive Roadmap</div>
-      <div class="header-subtitle">Comprehensive 42-Page Architecture, Economic Model & Deployment Guide</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 02 / 42</span>
-    </div>
-  </div>
+""", is_cover=True)
 
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark" style="padding: 7px 11px; margin-bottom: 3px;">
+# ==============================================================================
+# PAGE 02: TABLE OF CONTENTS (Оглавление)
+# ==============================================================================
+set_page(2, "TABLE OF CONTENTS", "Document Outline & Executive Roadmap", "Comprehensive 42-Page Architecture, Economic Model & Deployment Guide",
+"""
+<div class="card-dark" style="padding: 7px 11px; margin-bottom: 3px;">
   <div style="font-size: 8.2pt; font-weight: 800; color: #60a5fa;">Structure of the Fathom Whitepaper</div>
   <div style="font-size: 7.0pt; color: #cbd5e1; line-height: 1.3;">This document provides the definitive architectural, financial, and operational blueprint for enterprise autonomous AI workforce deployment across 8 structured sections.</div>
 </div>
@@ -174,53 +177,21 @@
     </div>
   </div>
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 02 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">EXECUTIVE STRATEGY · PARADIGM SHIFT</span>
-      </div>
-      <div class="header-title-main">Universal Autonomous AI Workforce Runtime</div>
-      <div class="header-subtitle">High-Performance Rust Architecture for End-to-End Remote Digital Employees</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 03 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 03: Universal AI Workforce Runtime
+set_page(3, "EXECUTIVE STRATEGY · PARADIGM SHIFT",
+"Universal Autonomous AI Workforce Runtime",
+"High-Performance Rust Architecture for End-to-End Remote Digital Employees",
+f"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">From Scripted Automation to Autonomous Digital Employees</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     <strong>Fathom</strong> introduces an enterprise-grade, self-hosted <strong>Rust runtime</strong> designed to coordinate fleets of <strong>autonomous remote digital employees</strong>. These agents formulate plans, execute multi-day workflows, operate browsers via accessibility trees, perform OSINT investigations, engineer software, and interact across corporate channels 100% remotely.
   </p>
 </div>
 
-
-    <div class="deck-mockup-container">
-      <div class="deck-mockup-frame">
-        <img src="mockups/01_sales_outbound_sdr.png" alt="Figure 3.1: Fathom Command Center — 3-pane execution workspace with sub-agent swarm dispatch, live computer use, and CRM synchronization">
-      </div>
-      <div class="deck-mockup-caption">Figure 3.1: Fathom Command Center — 3-pane execution workspace with sub-agent swarm dispatch, live computer use, and CRM synchronization</div>
-    </div>
-    
+{mockup("01_sales_outbound_sdr.png", "Figure 3.1: Fathom Command Center — 3-pane execution workspace with sub-agent swarm dispatch, live computer use, and CRM synchronization")}
 
 <div class="grid-3">
   <div class="card card-accent">
@@ -240,39 +211,14 @@
 <div class="callout callout-info" style="margin-bottom: 0;">
   <strong>Strategic Objective:</strong> Deliver a scalable software foundation where businesses deploy specialized digital workers on demand—scaling operational capacity infinitely without linear headcount expansion.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 03 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">MACRO PROBLEM · THE HIRING BOTTLENECK</span>
-      </div>
-      <div class="header-title-main">The Broken Remote Hiring Landscape</div>
-      <div class="header-subtitle">Why Traditional Outsourcing and Human Headcount Scaling Fail Modern Companies</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 04 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 04: The Broken Remote Hiring Landscape
+set_page(4, "MACRO PROBLEM · THE HIRING BOTTLENECK",
+"The Broken Remote Hiring Landscape",
+"Why Traditional Outsourcing and Human Headcount Scaling Fail Modern Companies",
+"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">The Remote Workforce Crisis: High Cost, High Friction, Slow Ramp-Up</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Scaling modern digital operations with human remote labor faces severe structural limitations: exorbitant salaries, months of recruiting lag, high employee turnover, timezone disconnects, and inconsistent task execution. Knowledge work has become the primary operational bottleneck for high-growth enterprises.
@@ -350,39 +296,14 @@
 <div class="callout callout-info" style="margin-bottom: 0;">
   <strong>The Strategic Imperative:</strong> In an era of compressed margins and fierce global competition, companies that transition routine research, outreach, data entry, and computer tasks to autonomous digital staff gain an unassailable operational speed and cost advantage.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 04 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">PRODUCT PHILOSOPHY · PARADIGM COMPARISON</span>
-      </div>
-      <div class="header-title-main">Digital Coworkers vs. Scripted Chatbots</div>
-      <div class="header-subtitle">Moving Beyond Single-Prompt Chat Interfaces to Autonomous Goal-Driven Agents</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 05 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 05: Digital Coworkers vs. Scripted Chatbots
+set_page(5, "PRODUCT PHILOSOPHY · PARADIGM COMPARISON",
+"Digital Coworkers vs. Scripted Chatbots",
+"Moving Beyond Single-Prompt Chat Interfaces to Autonomous Goal-Driven Agents",
+"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">The Fundamental Difference: Proactive Agency vs. Reactive Text Generation</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Most commercial AI tools are <strong>passive text assistants</strong>: they wait for a human prompt, generate conversational text, and stop immediately. <strong>Fathom instantiates proactive digital coworkers</strong>: given a high-level goal, they independently formulate a multi-step plan, spawn specialized sub-agents, operate browser tools, verify work against objective criteria, and deliver finalized deliverables directly to your CRM, database, or team channels.
@@ -432,53 +353,21 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>The Autonomous Standard:</strong> Fathom coworkers don't just draft emails or write snippets—they find the decision-maker, verify deliverability, operate the sales platform, and track pipeline outcomes completely autonomously.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 05 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">WORKFORCE ARCHETYPES · PERSONAS</span>
-      </div>
-      <div class="header-title-main">The 5 Core Digital Worker Archetypes</div>
-      <div class="header-subtitle">Specialized Autonomous Roles Pre-Tuned for Immediate Enterprise Deployment</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 06 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-accent">
+# Page 06: The 5 Core Digital Worker Archetypes
+set_page(6, "WORKFORCE ARCHETYPES · PERSONAS",
+"The 5 Core Digital Worker Archetypes",
+"Specialized Autonomous Roles Pre-Tuned for Immediate Enterprise Deployment",
+f"""
+<div class="card-accent">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Pre-Configured Autonomous Employee Roles</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Fathom supports specialized coworker personas out-of-the-box. Each persona is configured with role-specific system prompts (up to 32,000 characters), optimized tool sets, strict governance policies, and tailored verification loops.
   </p>
 </div>
 
-
-    <div class="deck-mockup-container">
-      <div class="deck-mockup-frame">
-        <img src="mockups/07_inbox_manager.png" alt="Figure 6.1: Autonomous Chief of Staff — 41-thread inbox sweep, noise archival, draft triage, and multi-persona execution">
-      </div>
-      <div class="deck-mockup-caption">Figure 6.1: Autonomous Chief of Staff — 41-thread inbox sweep, noise archival, draft triage, and multi-persona execution</div>
-    </div>
-    
+{mockup("07_inbox_manager.png", "Figure 6.1: Autonomous Chief of Staff — 41-thread inbox sweep, noise archival, draft triage, and multi-persona execution")}
 
 <div class="grid-2">
   <div class="card card-emerald">
@@ -509,39 +398,14 @@
 <div class="callout callout-info" style="margin-bottom: 0;">
   <strong>Organizational Leverage:</strong> A single human department manager can effortlessly supervise a team of 10 to 50 specialized digital employees across multiple business functions.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 06 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">DAY IN THE LIFE · OPERATIONAL WORKFLOW</span>
-      </div>
-      <div class="header-title-main">A Day in the Life of a Digital Employee</div>
-      <div class="header-subtitle">24-Hour Continuous Execution Cycle of an Autonomous Fathom Worker</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 07 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 07: A Day in the Life of a Digital Employee
+set_page(7, "DAY IN THE LIFE · OPERATIONAL WORKFLOW",
+"A Day in the Life of a Digital Employee",
+"24-Hour Continuous Execution Cycle of an Autonomous Fathom Worker",
+"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Continuous 24/7 Autonomy: Zero Idle Time, Zero Latency</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     While human teams sleep, Fathom coworkers execute scheduled background operations, monitor market shifts, prepare outbound campaigns, verify deliverability, and stage pipeline deliverables for morning review.
@@ -612,39 +476,14 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>The Compounding Advantage:</strong> 6 hours of autonomous nighttime execution delivers more qualified pipeline than a full-time human SDR produces in an entire work week.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 07 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">COMMERCIAL STRATEGY · PRICING MODEL</span>
-      </div>
-      <div class="header-title-main">The Virtual Employee Subscription Model</div>
-      <div class="header-subtitle">Seat-Based Flat Pricing: Eliminating Token Metering and Billing Anxiety</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 08 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 08: The Virtual Employee Subscription Model
+set_page(8, "COMMERCIAL STRATEGY · PRICING MODEL",
+"The Virtual Employee Subscription Model",
+"Seat-Based Flat Pricing: Eliminating Token Metering and Billing Anxiety",
+"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Commercial Model: Pay Per Autonomous Coworker Seat</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Traditional AI tools force customers to monitor complex token meters, calculate cost-per-call, and live in constant fear of unexpected billing spikes. <strong>Fathom adopts a transparent subscription model</strong>: customers subscribe to dedicated virtual employee seats on a flat monthly basis.
@@ -712,53 +551,21 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>The Commercial Commitment:</strong> You pay for the digital worker's business output and role, never for the number of words it reads, reasons over, or writes.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 08 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">NEURAL ECONOMICS · MARGIN ARBITRAGE</span>
-      </div>
-      <div class="header-title-main">Unlimited Neural Compute Engine</div>
-      <div class="header-subtitle">Harnessing Frontier Foundation Models for High-Throughput Cost Arbitrage</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 09 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-accent">
+# Page 09: Unlimited Neural Compute Engine
+set_page(9, "NEURAL ECONOMICS · MARGIN ARBITRAGE",
+"Unlimited Neural Compute Engine",
+"Harnessing Frontier Foundation Models for High-Throughput Cost Arbitrage",
+f"""
+<div class="card-accent">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">The Foundation Model Cost-Performance Revolution</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Offering unlimited neural compute is economically viable because Fathom intelligently routes tasks to next-generation frontier foundation models that deliver elite reasoning at a fraction of legacy pricing.
   </p>
 </div>
 
-
-    <div class="deck-mockup-container">
-      <div class="deck-mockup-frame">
-        <img src="mockups/02_market_intelligence.png" alt="Figure 9.1: Real-Time Market Intelligence — DOM diff tracker detecting competitor tier pricing shifts and updating semantic memory">
-      </div>
-      <div class="deck-mockup-caption">Figure 9.1: Real-Time Market Intelligence — DOM diff tracker detecting competitor tier pricing shifts and updating semantic memory</div>
-    </div>
-    
+{mockup("02_market_intelligence.png", "Figure 9.1: Real-Time Market Intelligence — DOM diff tracker detecting competitor tier pricing shifts and updating semantic memory")}
 
 <div class="grid-3">
   <div class="card card-emerald">
@@ -778,53 +585,21 @@
 <div class="callout callout-info" style="margin-bottom: 0;">
   <strong>The Economic Reality:</strong> High-volume intelligence work no longer requires six-figure LLM budgets; compiled Rust combined with frontier cost arbitrage unlocks unlimited enterprise scaling.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 09 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">FINANCIAL ANALYSIS · ROI & TCO</span>
-      </div>
-      <div class="header-title-main">Total Cost of Ownership (TCO) & ROI</div>
-      <div class="header-subtitle">Hard Economic Numbers: Comparing In-House Staff, Traditional AI Stacks, and Fathom</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 10 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 10: Total Cost of Ownership (TCO) & ROI
+set_page(10, "FINANCIAL ANALYSIS · ROI & TCO",
+"Total Cost of Ownership (TCO) & ROI",
+"Hard Economic Numbers: Comparing In-House Staff, Traditional AI Stacks, and Fathom",
+f"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Executive Financial Summary: The 10x ROI Multiplier</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Deploying a Fathom digital employee eliminates the vast majority of operational expenses associated with human hiring, third-party data subscriptions, and complex cloud AI pipelines.
   </p>
 </div>
 
-
-    <div class="deck-mockup-container">
-      <div class="deck-mockup-frame">
-        <img src="mockups/03_talent_scout.png" alt="Figure 10.1: Executive Talent Scout — Mining GitHub AST repositories and constructing verified candidate dossiers">
-      </div>
-      <div class="deck-mockup-caption">Figure 10.1: Executive Talent Scout — Mining GitHub AST repositories and constructing verified candidate dossiers</div>
-    </div>
-    
+{mockup("03_talent_scout.png", "Figure 10.1: Executive Talent Scout — Mining GitHub AST repositories and constructing verified candidate dossiers")}
 
 <div class="grid-2">
   <div class="card card-emerald">
@@ -847,53 +622,21 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>Bottom-Line Impact:</strong> Replaces over $500,000 in recurring labor and fragmented software tool costs with a unified, high-performance autonomous runtime.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 10 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">ELASTIC SCALE · WORKFORCE FLEXIBILITY</span>
-      </div>
-      <div class="header-title-main">Elastic Scaling: Scaling from 1 to 100 Workers</div>
-      <div class="header-subtitle">Instant Operational Capacity Adjustments Without HR Overhead or Severance Costs</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 11 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 11: Elastic Scaling: 1 to 100 Workers
+set_page(11, "ELASTIC SCALE · WORKFORCE FLEXIBILITY",
+"Elastic Scaling: Scaling from 1 to 100 Workers",
+"Instant Operational Capacity Adjustments Without HR Overhead or Severance Costs",
+f"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Elastic Digital Labor: Instant Capacity on Demand</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Human organizations suffer from severe scaling friction: hiring takes 60+ days, onboarding drains senior team bandwidth, and downsizing carries severe cultural and severance costs. <strong>Fathom delivers instant elastic workforce scaling</strong>, enabling organizations to burst from 1 to 100+ concurrent workers in under 60 seconds.
   </p>
 </div>
 
-
-    <div class="deck-mockup-container">
-      <div class="deck-mockup-frame">
-        <img src="mockups/04_backoffice_invoice.png" alt="Figure 11.1: Back-Office Assistant — 3-way invoice reconciliation across $482,000 transaction volume in QuickBooks">
-      </div>
-      <div class="deck-mockup-caption">Figure 11.1: Back-Office Assistant — 3-way invoice reconciliation across $482,000 transaction volume in QuickBooks</div>
-    </div>
-    
+{mockup("04_backoffice_invoice.png", "Figure 11.1: Back-Office Assistant — 3-way invoice reconciliation across $482,000 transaction volume in QuickBooks")}
 
 <div class="grid-3">
   <div class="card card-accent">
@@ -913,53 +656,21 @@
 <div class="callout callout-info" style="margin-bottom: 0;">
   <strong>Strategic Agility:</strong> Transform labor from a rigid, high-risk fixed overhead into an agile, on-demand operational lever that flexes dynamically with business requirements.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 11 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">COMMERCIAL ARCHITECTURE · MONETIZATION</span>
-      </div>
-      <div class="header-title-main">Enterprise & Agency Monetization Models</div>
-      <div class="header-subtitle">Direct Subscriptions, White-Label Agency Fleets, and Enterprise Dedicated Deployments</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 12 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 12: Enterprise & Agency Monetization Models
+set_page(12, "COMMERCIAL ARCHITECTURE · MONETIZATION",
+"Enterprise & Agency Monetization Models",
+"Direct Subscriptions, White-Label Agency Fleets, and Enterprise Dedicated Deployments",
+f"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Multi-Channel Revenue Architecture: Capturing SMB to Enterprise Value</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Fathom monetizes across three distinct commercial channels: direct SaaS subscriptions for SMBs and mid-market teams, white-label multi-tenant fleet licenses for agencies, and dedicated private-cloud deployments for regulated enterprises.
   </p>
 </div>
 
-
-    <div class="deck-mockup-container">
-      <div class="deck-mockup-frame">
-        <img src="mockups/05_devops_engineer.png" alt="Figure 12.1: DevOps Maintainer — AST symbol search, zero-division error reproduction, and GitHub PR #142 creation">
-      </div>
-      <div class="deck-mockup-caption">Figure 12.1: DevOps Maintainer — AST symbol search, zero-division error reproduction, and GitHub PR #142 creation</div>
-    </div>
-    
+{mockup("05_devops_engineer.png", "Figure 12.1: DevOps Maintainer — AST symbol search, zero-division error reproduction, and GitHub PR #142 creation")}
 
 <div class="grid-3">
   <div class="card card-accent">
@@ -979,39 +690,14 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>Sovereign Enterprise Architecture:</strong> Regulated industries (financial services, healthcare, defense) deploy Fathom entirely air-gapped on private servers with zero data leaving corporate premises.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 12 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">GO-TO-MARKET · CUSTOMER ACQUISITION</span>
-      </div>
-      <div class="header-title-main">The Self-Replicating Outbound Growth Loop</div>
-      <div class="header-subtitle">How Fathom Uses Its Own Digital Workers to Prospect, Enrich, and Close New Customers</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 13 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 13: The Self-Replicating Outbound Growth Loop
+set_page(13, "GO-TO-MARKET · CUSTOMER ACQUISITION",
+"The Self-Replicating Outbound Growth Loop",
+"How Fathom Uses Its Own Digital Workers to Prospect, Enrich, and Close New Customers",
+"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">The Autonomous Flywheel: AI Employees Selling AI Employees</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Fathom's customer acquisition strategy features a self-reinforcing, autonomous growth loop: the platform's own SDR coworkers continuously prospect, verify, enrich, and conduct targeted outreach to potential enterprise customers.
@@ -1065,53 +751,21 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>The Growth Flywheel:</strong> The product is its own best salesperson. By demonstrating autonomous capability in the very first outreach touchpoint, Fathom creates an irresistible value proposition.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 13 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">DISTRIBUTION · GO-TO-MARKET</span>
-      </div>
-      <div class="header-title-main">Multi-Channel Go-To-Market Strategy</div>
-      <div class="header-subtitle">Developer Open-Core, Product-Led Growth, Enterprise Outbound, and Agency Distribution</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 14 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 14: Multi-Channel Go-To-Market Strategy
+set_page(14, "DISTRIBUTION · GO-TO-MARKET",
+"Multi-Channel Go-To-Market Strategy",
+"Developer Open-Core, Product-Led Growth, Enterprise Outbound, and Agency Distribution",
+f"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">A 4-Pillar Go-To-Market Framework for Market Leadership</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Fathom captures market share across the entire business spectrum through four synergistic distribution motions: open-core developer adoption, product-led free audit trials, autonomous enterprise outbound, and an agency partner network.
   </p>
 </div>
 
-
-    <div class="deck-mockup-container">
-      <div class="deck-mockup-frame">
-        <img src="mockups/11_swarm_coordinator.png" alt="Figure 14.1: Swarm Coordinator — Tokio JoinSet DAG execution across 4 parallel CPU worker pods with fair-share token budgets">
-      </div>
-      <div class="deck-mockup-caption">Figure 14.1: Swarm Coordinator — Tokio JoinSet DAG execution across 4 parallel CPU worker pods with fair-share token budgets</div>
-    </div>
-    
+{mockup("11_swarm_coordinator.png", "Figure 14.1: Swarm Coordinator — Tokio JoinSet DAG execution across 4 parallel CPU worker pods with fair-share token budgets")}
 
 <div class="grid-2">
   <div class="card card-accent">
@@ -1127,53 +781,21 @@
 <div class="callout callout-info" style="margin-bottom: 0;">
   <strong>Synergistic Distribution:</strong> Open-source credibility establishes technical trust; the free value audit proves immediate business ROI; agency partnerships drive exponential non-linear scaling.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 14 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">CONVERSION FUNNEL · LEAD MAGNET</span>
-      </div>
-      <div class="header-title-main">The Free Value Audit: The High-Converting Lead Magnet</div>
-      <div class="header-subtitle">Delivering 50 Pre-Verified Leads for Free as an Irresistible Conversion Hook</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 15 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-accent">
+# Page 15: The Free Value Audit Lead Magnet
+set_page(15, "CONVERSION FUNNEL · LEAD MAGNET",
+"The Free Value Audit: The High-Converting Lead Magnet",
+"Delivering 50 Pre-Verified Leads for Free as an Irresistible Conversion Hook",
+f"""
+<div class="card-accent">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">The Value-First Offer: 'We Found 50 Verified Leads for You for Free'</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Traditional B2B SaaS asks prospects to sit through boring 45-minute slide demos. <strong>Fathom delivers tangible economic value upfront</strong>: our autonomous system finds, verifies, and packages 50 high-quality leads for the prospect's exact target market—completely free, before asking for a single dollar.
   </p>
 </div>
 
-
-    <div class="deck-mockup-container">
-      <div class="deck-mockup-frame">
-        <img src="mockups/08_lead_audit_report.png" alt="Figure 15.1: Free Value Audit Deliverable — 50 pre-verified decision-makers with zero bounce rate and CRM sync ready">
-      </div>
-      <div class="deck-mockup-caption">Figure 15.1: Free Value Audit Deliverable — 50 pre-verified decision-makers with zero bounce rate and CRM sync ready</div>
-    </div>
-    
+{mockup("08_lead_audit_report.png", "Figure 15.1: Free Value Audit Deliverable — 50 pre-verified decision-makers with zero bounce rate and CRM sync ready")}
 
 <div class="grid-3">
   <div class="card card-emerald">
@@ -1193,39 +815,14 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>Irresistible Conversion Logic:</strong> <em>"If Fathom's autonomous worker delivered 50 verified leads in 2 minutes for free, imagine what a dedicated digital employee will do for your business every single day."</em>
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 15 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">PARTNER ECOSYSTEM · RESELLER NETWORK</span>
-      </div>
-      <div class="header-title-main">The Agency & White-Label Reseller Ecosystem</div>
-      <div class="header-subtitle">Empowering Marketing Agencies, Recruiters, and IT Firms to Deploy AI Employee Fleets</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 16 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 16: The Agency & White-Label Reseller Ecosystem
+set_page(16, "PARTNER ECOSYSTEM · RESELLER NETWORK",
+"The Agency & White-Label Reseller Ecosystem",
+"Empowering Marketing Agencies, Recruiters, and IT Firms to Deploy AI Employee Fleets",
+"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">The B2B Multiplier: Turning Service Agencies into Software Operators</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Digital marketing agencies, outbound lead-generation shops, executive search firms, and IT managed service providers (MSPs) face a critical bottleneck: labor costs consume 60–75% of revenue. <strong>Fathom provides a turnkey white-label platform</strong> that enables agencies to deploy fleets of autonomous coworkers for their clients.
@@ -1262,53 +859,21 @@
 <div class="callout callout-info" style="margin-bottom: 0;">
   <strong>Scale Without Hiring:</strong> An agency founder and one operations manager can seamlessly service 30 enterprise clients with 100+ active digital coworkers, achieving $1M+ ARR at 90% net margin.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 16 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">COMMUNITY & NETWORK EFFECTS · FLYWHEEL</span>
-      </div>
-      <div class="header-title-main">Skill Marketplace & Template Network</div>
-      <div class="header-subtitle">Harnessing Community-Driven Personas and SOPs to Drive Long-Term Defensibility</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 17 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 17: Skill Marketplace & Template Network
+set_page(17, "COMMUNITY & NETWORK EFFECTS · FLYWHEEL",
+"Skill Marketplace & Template Network",
+"Harnessing Community-Driven Personas and SOPs to Drive Long-Term Defensibility",
+f"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">The Template Network Effect: Collective Worker Intelligence</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     As the Fathom community expands, users and partners contribute domain-specific coworker configurations, prompt engineering frameworks, and tool bindings into a shared <strong>Skill & Coworker Marketplace</strong>, transforming individual operational breakthroughs into instant, reusable organizational capabilities.
   </p>
 </div>
 
-
-    <div class="deck-mockup-container">
-      <div class="deck-mockup-frame">
-        <img src="mockups/14_outreach_campaign_dispatcher.png" alt="Figure 17.1: Marketplace SOP Dispatcher — Verified multi-stage outbound outreach template with built-in DNS MX checks and token budgeting">
-      </div>
-      <div class="deck-mockup-caption">Figure 17.1: Marketplace SOP Dispatcher — Verified multi-stage outbound outreach template with built-in DNS MX checks and token budgeting</div>
-    </div>
-    
+{mockup("14_outreach_campaign_dispatcher.png", "Figure 17.1: Marketplace SOP Dispatcher — Verified multi-stage outbound outreach template with built-in DNS MX checks and token budgeting")}
 
 <div class="grid-2">
   <div class="card card-accent">
@@ -1333,53 +898,21 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>The Network Advantage:</strong> Competitors might replicate agent code, but they cannot replicate an active ecosystem of thousands of specialized, battle-tested employee personas and community-verified SOPs.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 17 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">REAL-WORLD USE CASE · SCENARIO 01</span>
-      </div>
-      <div class="header-title-main">Autonomous Sales Development Rep (SDR)</div>
-      <div class="header-subtitle">End-to-End Cold Lead Discovery, Multi-Signal Verification & CRM Pipeline Creation</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 18 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-accent">
+# Page 18: Real-World Scenario 01: Autonomous SDR
+set_page(18, "REAL-WORLD USE CASE · SCENARIO 01",
+"Autonomous Sales Development Rep (SDR)",
+"End-to-End Cold Lead Discovery, Multi-Signal Verification & CRM Pipeline Creation",
+f"""
+<div class="card-accent">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Scenario Brief: Scaling Outbound Pipeline for CloudSecure (Cybersecurity SaaS)</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     <strong>Objective:</strong> Generate 100 verified CISO and VP IT contacts at mid-market financial firms in London every week with zero bounced emails and complete tech stack enrichment staged directly into CRM.
   </p>
 </div>
 
-
-    <div class="deck-mockup-container">
-      <div class="deck-mockup-frame">
-        <img src="mockups/08_lead_audit_report.png" alt="Figure 18.1: Autonomous SDR Lead Audit — 50 live SMTP-verified enterprise leads with MX deliverability scores and CRM pipeline staging">
-      </div>
-      <div class="deck-mockup-caption">Figure 18.1: Autonomous SDR Lead Audit — 50 live SMTP-verified enterprise leads with MX deliverability scores and CRM pipeline staging</div>
-    </div>
-    
+{mockup("08_lead_audit_report.png", "Figure 18.1: Autonomous SDR Lead Audit — 50 live SMTP-verified enterprise leads with MX deliverability scores and CRM pipeline staging")}
 
 <div class="grid-2">
   <div class="card card-emerald">
@@ -1405,53 +938,21 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>Measurable Impact:</strong> Outbound prospecting shifts from an expensive, manual grind into an automated, auditable, high-conversion pipeline engine running continuously 24/7.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 18 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">REAL-WORLD USE CASE · SCENARIO 02</span>
-      </div>
-      <div class="header-title-main">Executive Headhunter & Talent Scout</div>
-      <div class="header-subtitle">Autonomous Technical Sourcing, Candidate Mapping & Profile Corroboration</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 19 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 19: Real-World Scenario 02: Executive Talent Scout
+set_page(19, "REAL-WORLD USE CASE · SCENARIO 02",
+"Executive Headhunter & Talent Scout",
+"Autonomous Technical Sourcing, Candidate Mapping & Profile Corroboration",
+f"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Scenario Brief: Sourcing Senior Rust & AI Systems Architects for Apex Search</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     <strong>Objective:</strong> Map and source 30 senior systems engineers with deep Rust and distributed systems experience for an autonomous robotics venture, generating verified contact dossiers with commit-level icebreakers.
   </p>
 </div>
 
-
-    <div class="deck-mockup-container">
-      <div class="deck-mockup-frame">
-        <img src="mockups/03_talent_scout.png" alt="Figure 19.1: Autonomous Technical Talent Scout — GitHub AST commit mining, contributor ranking, and cross-platform dossier synthesis">
-      </div>
-      <div class="deck-mockup-caption">Figure 19.1: Autonomous Technical Talent Scout — GitHub AST commit mining, contributor ranking, and cross-platform dossier synthesis</div>
-    </div>
-    
+{mockup("03_talent_scout.png", "Figure 19.1: Autonomous Technical Talent Scout — GitHub AST commit mining, contributor ranking, and cross-platform dossier synthesis")}
 
 <div class="grid-2">
   <div class="card card-purple">
@@ -1476,53 +977,21 @@
 <div class="callout callout-info" style="margin-bottom: 0;">
   <strong>Key Takeaway:</strong> Sourcing moves from a slow, manual keyword search to an automated, code-aware intelligence gathering pipeline that identifies true top-tier engineering talent.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 19 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">REAL-WORLD USE CASE · SCENARIO 03</span>
-      </div>
-      <div class="header-title-main">24/7 Market Intelligence & Competitor Tracker</div>
-      <div class="header-subtitle">Continuous Pricing Tracking, Feature Launches & Regulatory Monitoring</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 20 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-accent">
+# Page 20: Real-World Scenario 03: 24/7 Market Intelligence
+set_page(20, "REAL-WORLD USE CASE · SCENARIO 03",
+"24/7 Market Intelligence & Competitor Tracker",
+"Continuous Pricing Tracking, Feature Launches & Regulatory Monitoring",
+f"""
+<div class="card-accent">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Scenario Brief: Real-Time Competitive Landscape Monitoring for FinPay Global</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     <strong>Objective:</strong> Continuously monitor 15 direct global competitors for pricing adjustments, new product features, key executive hires, and regulatory license filings with zero human manual browsing.
   </p>
 </div>
 
-
-    <div class="deck-mockup-container">
-      <div class="deck-mockup-frame">
-        <img src="mockups/02_market_intelligence.png" alt="Figure 20.1: Real-Time Market Intelligence Engine — DOM diffing, pricing tier shift detection, and executive alert dispatch in 15 minutes">
-      </div>
-      <div class="deck-mockup-caption">Figure 20.1: Real-Time Market Intelligence Engine — DOM diffing, pricing tier shift detection, and executive alert dispatch in 15 minutes</div>
-    </div>
-    
+{mockup("02_market_intelligence.png", "Figure 20.1: Real-Time Market Intelligence Engine — DOM diffing, pricing tier shift detection, and executive alert dispatch in 15 minutes")}
 
 <div class="grid-2">
   <div class="card card-emerald">
@@ -1543,53 +1012,21 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>Executive Value:</strong> Leadership stays three steps ahead of market dynamics with zero hours spent manually clicking competitor websites or reading press releases.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 20 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">REAL-WORLD USE CASE · SCENARIO 04</span>
-      </div>
-      <div class="header-title-main">Automated Customer Onboarding & Support</div>
-      <div class="header-subtitle">Autonomous Technical Setup, API Verification & 24/7 Troubleshooting</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 21 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 21: Real-World Scenario 04: Customer Onboarding & Support
+set_page(21, "REAL-WORLD USE CASE · SCENARIO 04",
+"Automated Customer Onboarding & Support",
+"Autonomous Technical Setup, API Verification & 24/7 Troubleshooting",
+f"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Scenario Brief: Accelerating B2B Client Time-to-Value for DataStream API</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     <strong>Objective:</strong> Guide new enterprise customers through webhook configuration, test payload verification, and initial API key provisioning with zero support backlog and automated technical sandbox validation.
   </p>
 </div>
 
-
-    <div class="deck-mockup-container">
-      <div class="deck-mockup-frame">
-        <img src="mockups/13_customer_success_onboarding.png" alt="Figure 21.1: Autonomous Support & Webhook REPL — P1 enterprise ticket diagnosed and resolved in 12s via isolated sandbox">
-      </div>
-      <div class="deck-mockup-caption">Figure 21.1: Autonomous Support & Webhook REPL — P1 enterprise ticket diagnosed and resolved in 12s via isolated sandbox</div>
-    </div>
-    
+{mockup("13_customer_success_onboarding.png", "Figure 21.1: Autonomous Support & Webhook REPL — P1 enterprise ticket diagnosed and resolved in 12s via isolated sandbox")}
 
 <div class="grid-2">
   <div class="card card-accent">
@@ -1614,53 +1051,21 @@
 <div class="callout callout-info" style="margin-bottom: 0;">
   <strong>Scale Without Headcount:</strong> Support teams handle 10x customer growth while maintaining sub-minute response times and flawless technical onboarding.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 21 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">REAL-WORLD USE CASE · SCENARIO 05</span>
-      </div>
-      <div class="header-title-main">Back-Office & Invoice Reconciliation</div>
-      <div class="header-subtitle">Autonomous Document Parsing, Multi-System Data Entry & Financial Reconciliation</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 22 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-accent">
+# Page 22: Real-World Scenario 05: Back-Office & Invoice Reconciliation
+set_page(22, "REAL-WORLD USE CASE · SCENARIO 05",
+"Back-Office & Invoice Reconciliation",
+"Autonomous Document Parsing, Multi-System Data Entry & Financial Reconciliation",
+f"""
+<div class="card-accent">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Scenario Brief: Automating Monthly Invoicing for Global Logistics Partner</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     <strong>Objective:</strong> Ingest 500+ PDF vendor invoices monthly, cross-reference against warehouse delivery receipts and PO records, and stage approved payments in QuickBooks and 1C with 100% mathematical accuracy.
   </p>
 </div>
 
-
-    <div class="deck-mockup-container">
-      <div class="deck-mockup-frame">
-        <img src="mockups/04_backoffice_invoice.png" alt="Figure 22.1: Back-Office Invoice Reconciliation — 3-way matching across $482,000 transaction volume with zero discrepancy in QuickBooks">
-      </div>
-      <div class="deck-mockup-caption">Figure 22.1: Back-Office Invoice Reconciliation — 3-way matching across $482,000 transaction volume with zero discrepancy in QuickBooks</div>
-    </div>
-    
+{mockup("04_backoffice_invoice.png", "Figure 22.1: Back-Office Invoice Reconciliation — 3-way matching across $482,000 transaction volume with zero discrepancy in QuickBooks")}
 
 <div class="grid-2">
   <div class="card card-emerald">
@@ -1683,53 +1088,21 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>Operational Impact:</strong> Replaces 80 hours of mind-numbing manual copy-paste data entry per month with an automated, auditable, and error-free execution loop.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 22 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">REAL-WORLD USE CASE · SCENARIO 06</span>
-      </div>
-      <div class="header-title-main">Autonomous Software Engineer & Maintainer</div>
-      <div class="header-subtitle">Codebase Mapping, Bug Investigation, Test Generation & Safe PR Creation</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 23 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 23: Real-World Scenario 06: Autonomous Software Maintainer
+set_page(23, "REAL-WORLD USE CASE · SCENARIO 06",
+"Autonomous Software Engineer & Maintainer",
+"Codebase Mapping, Bug Investigation, Test Generation & Safe PR Creation",
+f"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Scenario Brief: Continuous Code Maintenance for SaaSScale Inc.</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     <strong>Objective:</strong> Triage Sentry error reports, navigate complex codebases, write reproducing unit tests, fix underlying edge-case bugs, and submit ready-to-review Pull Requests with 100% test coverage.
   </p>
 </div>
 
-
-    <div class="deck-mockup-container">
-      <div class="deck-mockup-frame">
-        <img src="mockups/05_devops_engineer.png" alt="Figure 23.1: Autonomous DevOps Maintainer — AST symbol mapping, zero-division error test reproduction, and GitHub PR #142 creation">
-      </div>
-      <div class="deck-mockup-caption">Figure 23.1: Autonomous DevOps Maintainer — AST symbol mapping, zero-division error test reproduction, and GitHub PR #142 creation</div>
-    </div>
-    
+{mockup("05_devops_engineer.png", "Figure 23.1: Autonomous DevOps Maintainer — AST symbol mapping, zero-division error test reproduction, and GitHub PR #142 creation")}
 
 <div class="grid-2">
   <div class="card card-accent">
@@ -1752,53 +1125,21 @@
 <div class="callout callout-info" style="margin-bottom: 0;">
   <strong>Developer Superpower:</strong> Senior engineers focus on high-level system architecture while digital coworkers handle routine bugs, dependency upgrades, and test coverage.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 23 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">REAL-WORLD USE CASE · SCENARIO 07</span>
-      </div>
-      <div class="header-title-main">Regulatory & Legal Document Auditor</div>
-      <div class="header-subtitle">Multi-Jurisdiction Compliance Verification, Clause Extraction & Risk Highlighting</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 24 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 24: Real-World Scenario 07: Legal & Regulatory Document Auditor
+set_page(24, "REAL-WORLD USE CASE · SCENARIO 07",
+"Regulatory & Legal Document Auditor",
+"Multi-Jurisdiction Compliance Verification, Clause Extraction & Risk Highlighting",
+f"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Scenario Brief: Contract & Compliance Audit for EuroTrust Legal Advisory</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     <strong>Objective:</strong> Audit 200 vendor Master Services Agreements (MSAs) for GDPR compliance, data liability caps, non-compete clauses, and jurisdiction risks with paragraph-level citation traceability.
   </p>
 </div>
 
-
-    <div class="deck-mockup-container">
-      <div class="deck-mockup-frame">
-        <img src="mockups/12_legal_compliance_auditor.png" alt="Figure 24.1: Legal Compliance Auditor — 200 vendor MSAs evaluated for GDPR clauses and liability cap risk matrix">
-      </div>
-      <div class="deck-mockup-caption">Figure 24.1: Legal Compliance Auditor — 200 vendor MSAs evaluated for GDPR clauses and liability cap risk matrix</div>
-    </div>
-    
+{mockup("12_legal_compliance_auditor.png", "Figure 24.1: Legal Compliance Auditor — 200 vendor MSAs evaluated for GDPR clauses and liability cap risk matrix")}
 
 <div class="grid-3">
   <div class="card card-accent">
@@ -1820,39 +1161,14 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>Audit Acceleration:</strong> A 3-week manual legal paralegal review is accomplished in <strong>under 30 minutes</strong> with total clause traceability and zero human oversight fatigue.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 24 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">SYSTEM ARCHITECTURE · VIRTUAL OFFICE</span>
-      </div>
-      <div class="header-title-main">How the Virtual Office Operates</div>
-      <div class="header-subtitle">The Conceptual Architecture of an Autonomous Multi-Agent Organization</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 25 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 25: How the Virtual Office Operates
+set_page(25, "SYSTEM ARCHITECTURE · VIRTUAL OFFICE",
+"How the Virtual Office Operates",
+"The Conceptual Architecture of an Autonomous Multi-Agent Organization",
+"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">The Virtual Office Model: Conceptual Elegance Meets Execution Rigor</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Fathom does not operate as a single bloated AI model trying to do everything. Instead, it mirrors a <strong>high-performing corporate department</strong>: a hierarchical topology of specialized digital workers collaborating asynchronously over a shared event bus and persistent memory fabric.
@@ -1903,39 +1219,14 @@
 <div class="callout callout-info" style="margin-bottom: 0;">
   <strong>Architectural Triumph:</strong> Decomposing monolithic tasks into specialized worker swarms completely eliminates hallucinations, keeps context windows razor-sharp, and enables massive horizontal parallelism.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 25 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">SYSTEM ARCHITECTURE · PERFORMANCE</span>
-      </div>
-      <div class="header-title-main">Why Rust? The Architecture of Performance</div>
-      <div class="header-subtitle">Zero-Cost Abstractions, Memory Safety, Microsecond Dispatch & Concurrency</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 26 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-accent">
+# Page 26: Why Rust? The Systems Architecture of Performance
+set_page(26, "SYSTEM ARCHITECTURE · PERFORMANCE",
+"Why Rust? The Architecture of Performance",
+"Zero-Cost Abstractions, Memory Safety, Microsecond Dispatch & Concurrency",
+"""
+<div class="card-accent">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Systems Engineering Showdown: Why Rust is the Only Choice for Production AI</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Most AI frameworks are written in Python (LangChain, AutoGPT, CrewAI). While Python is fine for toy prototypes, it fails catastrophically under enterprise production loads due to high RAM overhead, GIL bottlenecks, and GC pause spikes. <strong>Fathom is written in 100% native Rust</strong>.
@@ -2008,53 +1299,21 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>Hardware Density Reality:</strong> A single $80/month Hetzner dedicated server running Fathom matches the operational output of a $2,500/month Kubernetes cluster running bloated Python agents.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 26 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">RUNTIME INTERNALS · SWARM ENGINE</span>
-      </div>
-      <div class="header-title-main">Coordinator & Worker Swarm Execution</div>
-      <div class="header-subtitle">Crate Topology: crates/core, crates/llm, crates/agent & Tokio JoinSet trees</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 27 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 27: Coordinator & Worker Swarm Execution
+set_page(27, "RUNTIME INTERNALS · SWARM ENGINE",
+"Coordinator & Worker Swarm Execution",
+"Crate Topology: crates/core, crates/llm, crates/agent & Tokio JoinSet trees",
+f"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Inside the Rust Workspace: 12 High-Cohesion Modular Crates</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Fathom's architecture is structured as a tightly optimized Rust workspace comprising 12 specialized crates, each with explicit boundary contracts, zero circular dependencies, and dedicated sub-millisecond execution loops.
   </p>
 </div>
 
-
-    <div class="deck-mockup-container">
-      <div class="deck-mockup-frame">
-        <img src="mockups/11_swarm_coordinator.png" alt="Figure 27.1: Swarm Coordinator — Tokio JoinSet DAG execution across 4 parallel CPU worker pods with fair-share token budgets">
-      </div>
-      <div class="deck-mockup-caption">Figure 27.1: Swarm Coordinator — Tokio JoinSet DAG execution across 4 parallel CPU worker pods with fair-share token budgets</div>
-    </div>
-    
+{mockup("11_swarm_coordinator.png", "Figure 27.1: Swarm Coordinator — Tokio JoinSet DAG execution across 4 parallel CPU worker pods with fair-share token budgets")}
 
 <div class="grid-2">
   <div class="card card-accent">
@@ -2080,53 +1339,21 @@
 <div class="callout callout-info" style="margin-bottom: 0;">
   <strong>Architectural Cleanliness:</strong> Zero circular dependencies; strictly decoupled domain boundaries allow enterprise developers to extend Fathom with custom internal tools in minutes.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 27 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">RUNTIME INTERNALS · GOVERNANCE & BUS</span>
-      </div>
-      <div class="header-title-main">The Broadcast Message Bus & Security Vault</div>
-      <div class="header-subtitle">Nanosecond Event Relays, SSE Streaming Protocols & AES-256-GCM Vault</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 28 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-accent">
+# Page 28: The Broadcast Message Bus & Security Vault
+set_page(28, "RUNTIME INTERNALS · GOVERNANCE & BUS",
+"The Broadcast Message Bus & Security Vault",
+"Nanosecond Event Relays, SSE Streaming Protocols & AES-256-GCM Vault",
+f"""
+<div class="card-accent">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Real-Time Communication & Bank-Grade Security Architecture</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Enterprise operations require both instant real-time visibility and zero-compromise credential security. Fathom implements an in-memory <strong>broadcast message bus</strong> coupled with an <strong>AES-256-GCM hardware security vault</strong>.
   </p>
 </div>
 
-
-    <div class="deck-mockup-container">
-      <div class="deck-mockup-frame">
-        <img src="mockups/10_security_credentials_vault.png" alt="Figure 28.1: Enterprise Security Vault & Telemetry — AES-256-GCM hardware key derivation with zero LLM prompt exposure">
-      </div>
-      <div class="deck-mockup-caption">Figure 28.1: Enterprise Security Vault & Telemetry — AES-256-GCM hardware key derivation with zero LLM prompt exposure</div>
-    </div>
-    
+{mockup("10_security_credentials_vault.png", "Figure 28.1: Enterprise Security Vault & Telemetry — AES-256-GCM hardware key derivation with zero LLM prompt exposure")}
 
 <div class="grid-2">
   <div class="card card-purple">
@@ -2151,39 +1378,14 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>Enterprise Security Standard:</strong> Security officers can configure enterprise CRM integrations with complete confidence that keys remain cryptographically locked and completely invisible to LLMs.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 28 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">RUNTIME INTERNALS · RESILIENCE</span>
-      </div>
-      <div class="header-title-main">Reliability & Self-Healing Workflows</div>
-      <div class="header-subtitle">setsid Process Decoupling, Durable SQLite State Hydration & Error Stack Reflection</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 29 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 29: Reliability & Self-Healing Workflows
+set_page(29, "RUNTIME INTERNALS · RESILIENCE",
+"Reliability & Self-Healing Workflows",
+"setsid Process Decoupling, Durable SQLite State Hydration & Error Stack Reflection",
+"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Fault-Tolerant Daemon Architecture: Surviving Server Restarts and Network Outages</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Toy agent frameworks crash when terminal sessions disconnect or when third-party APIs return rate limits. Fathom is engineered as a <strong>resilient Unix daemon service</strong> with automated process detachment, SQLite state hydration, and multi-turn error reflection.
@@ -2228,53 +1430,21 @@
 <div class="callout callout-info" style="margin-bottom: 0;">
   <strong>Enterprise Resilience:</strong> Set it and forget it. Fathom coworkers run continuously month after month with zero maintenance intervention required.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 29 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">COMPUTER USE · ACCESSIBILITY ARCHITECTURE</span>
-      </div>
-      <div class="header-title-main">How Workers See & Control Computers</div>
-      <div class="header-subtitle">Operating Complex SaaS Portals via Accessibility Trees Rather Than Fragile Coordinates</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 30 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-accent">
+# Page 30: How Workers See & Control Computers
+set_page(30, "COMPUTER USE · ACCESSIBILITY ARCHITECTURE",
+"How Workers See & Control Computers",
+"Operating Complex SaaS Portals via Accessibility Trees Rather Than Fragile Coordinates",
+f"""
+<div class="card-accent">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">The Evolution of Computer Use: From Brittle Vision to Semantic Trees</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Early computer-use agents relied on taking full-screen screenshots and guessing X/Y pixel coordinates—a slow, expensive, and fragile approach that breaks on responsive screens. <strong>Fathom controls computers via structured Accessibility Trees (ARIA DOM)</strong>.
   </p>
 </div>
 
-
-    <div class="deck-mockup-container">
-      <div class="deck-mockup-frame">
-        <img src="mockups/06_computer_2fa_takeover.png" alt="Figure 30.1: Governed Computer Use — Safe pause on 2FA SMS challenge with live operator takeover lease">
-      </div>
-      <div class="deck-mockup-caption">Figure 30.1: Governed Computer Use — Safe pause on 2FA SMS challenge with live operator takeover lease</div>
-    </div>
-    
+{mockup("06_computer_2fa_takeover.png", "Figure 30.1: Governed Computer Use — Safe pause on 2FA SMS challenge with live operator takeover lease")}
 
 <div class="grid-2">
   <div class="card card-emerald">
@@ -2299,39 +1469,14 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>Deterministic Computer Interaction:</strong> Fathom digital employees operate enterprise portals, QuickBooks, and internal admin dashboards with flawless accuracy and lightning speed.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 30 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">COMPUTER USE · ANTI-BREAKAGE</span>
-      </div>
-      <div class="header-title-main">Why Opaque Refs Beat Brittle Selectors</div>
-      <div class="header-subtitle">Anti-Staleness Verification, Form Sanitization & Deterministic Element Resolution</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 31 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-accent">
+# Page 31: Why Opaque Refs Beat Brittle Selectors
+set_page(31, "COMPUTER USE · ANTI-BREAKAGE",
+"Why Opaque Refs Beat Brittle Selectors",
+"Anti-Staleness Verification, Form Sanitization & Deterministic Element Resolution",
+"""
+<div class="card-accent">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">The Fragility Crisis in Browser Automation</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Web portals are hostile environments for traditional automation. Modern client-side SPAs (React, Vue, Next.js) dynamically re-render DOM trees, hydrate elements asynchronously, and obfuscate CSS class names on every CI/CD deployment. Fathom replaces brittle XPath/CSS queries with an immutable, tokenized <strong>Accessibility Tree</strong> and an active <strong>Anti-Staleness Guard</strong>.
@@ -2375,53 +1520,21 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>Zero-Glitch Determinism:</strong> By decoupling semantic intent from visual CSS rendering, Fathom turns fragile web scraping into a rock-solid, production-grade API interface.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 31 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">COMPUTER USE · HUMAN IN THE LOOP</span>
-      </div>
-      <div class="header-title-main">Screen Streaming & Seamless Takeover</div>
-      <div class="header-subtitle">Real-Time Browser Feeds and Operator Interventions for CAPTCHAs and 2FA</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 32 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 32: Screen Streaming & Seamless Takeover
+set_page(32, "COMPUTER USE · HUMAN IN THE LOOP",
+"Screen Streaming & Seamless Takeover",
+"Real-Time Browser Feeds and Operator Interventions for CAPTCHAs and 2FA",
+f"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Governed Operator Collaboration: The Human Takeover Lease</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     True enterprise autonomy does not mean zero human oversight. When autonomous coworkers encounter high-security barriers—such as multi-factor SMS codes, bank logins, or complex CAPTCHA puzzles—Fathom pauses safely and invites the operator into the live session via a low-latency WebRTC/WebSocket stream.
   </p>
 </div>
 
-
-    <div class="deck-mockup-container">
-      <div class="deck-mockup-frame">
-        <img src="mockups/06_computer_2fa_takeover.png" alt="Figure 32.1: Governed Computer Viewport — Live WebSocket screen feed (/screen) with safe pause and operator takeover lease during 2FA challenge.">
-      </div>
-      <div class="deck-mockup-caption">Figure 32.1: Governed Computer Viewport — Live WebSocket screen feed (/screen) with safe pause and operator takeover lease during 2FA challenge.</div>
-    </div>
-    
+{mockup("06_computer_2fa_takeover.png", "Figure 32.1: Governed Computer Viewport — Live WebSocket screen feed (/screen) with safe pause and operator takeover lease during 2FA challenge.")}
 
 <div class="grid-2">
   <div class="card card-accent">
@@ -2442,39 +1555,14 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>The 99/1 Hybrid Ideal:</strong> 99% autonomous execution throughput paired with 1% strategic human intervention at critical security checkpoints ensures 100% mission success without bottlenecks.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 32 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">SECURITY SANDBOXING · DOCKER SUPERVISOR</span>
-      </div>
-      <div class="header-title-main">Docker Sandboxes & Network Egress</div>
-      <div class="header-subtitle">Per-Agent Container Isolation, Port Sandboxing & Zero Data Leakage</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 33 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-accent">
+# Page 33: Docker Sandboxes & Network Egress
+set_page(33, "SECURITY SANDBOXING · DOCKER SUPERVISOR",
+"Docker Sandboxes & Network Egress",
+"Per-Agent Container Isolation, Port Sandboxing & Zero Data Leakage",
+"""
+<div class="card-accent">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Zero Trust Process Isolation: One Sandbox Per Digital Coworker</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Deploying autonomous agents that execute shell commands, parse untrusted web payloads, and run browser instances requires kernel-level confinement. In <code>crates/supervisor</code>, Fathom dynamically provisions, governs, and terminates isolated Docker containers with strict security profiles.
@@ -2528,39 +1616,14 @@
 <div class="callout callout-info" style="margin-bottom: 0;">
   <strong>Sovereign Data Security:</strong> Fully contained Docker pods ensure that enterprise workflows comply with SOC 2 Type II, ISO 27001, and HIPAA sandboxing isolation requirements.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 33 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">KNOWLEDGE ENGINE · PERSISTENT MEMORY</span>
-      </div>
-      <div class="header-title-main">How Coworkers Remember Across Months</div>
-      <div class="header-subtitle">Long-Term Semantic Memory: Zero SaaS Cost, Local SQLite & True Institutional Knowledge</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 34 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 34: How Coworkers Remember Across Months
+set_page(34, "KNOWLEDGE ENGINE · PERSISTENT MEMORY",
+"How Coworkers Remember Across Months",
+"Long-Term Semantic Memory: Zero SaaS Cost, Local SQLite & True Institutional Knowledge",
+"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Compounding Institutional Intelligence vs. Stateless AI</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Human employees become dramatically more valuable over time because they accumulate institutional knowledge, organizational context, and client preferences. In <code>crates/memory</code>, Fathom gives digital coworkers an in-process, persistent <strong>Semantic Memory Engine</strong> that operates with zero third-party cloud database costs.
@@ -2608,39 +1671,14 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>An Appreciating Asset:</strong> Unlike human turnover where institutional knowledge is lost upon resignation, Fathom digital workers retain, organize, and compound organizational knowledge indefinitely.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 34 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">MEMORY ENGINE · ABSORB PIPELINE</span>
-      </div>
-      <div class="header-title-main">Sub-Millisecond Knowledge Ingestion</div>
-      <div class="header-subtitle">The 4-Stage Absorb Pipeline: Deduplication, Lineage Chains & Secret Redaction</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 35 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-accent">
+# Page 35: Sub-Millisecond Knowledge Ingestion
+set_page(35, "MEMORY ENGINE · ABSORB PIPELINE",
+"Sub-Millisecond Knowledge Ingestion",
+"The 4-Stage Absorb Pipeline: Deduplication, Lineage Chains & Secret Redaction",
+"""
+<div class="card-accent">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Curated Fact Ingestion: High-Signal Knowledge Distillation</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Uncontrolled ingestion of noisy web search results quickly pollutes memory. Fathom routes all discovered facts through an ultra-fast 4-stage curation pipeline in <code>crates/memory</code>, processing and indexing new business facts in under <strong>94 microseconds per fact</strong>.
@@ -2676,53 +1714,21 @@
 <div class="callout callout-info" style="margin-bottom: 0;">
   <strong>Deterministic Memory Compaction:</strong> Background cron routines automatically compact, prune low-confidence facts, and optimize SQLite indexes during idle hours without interrupting active coworkers.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 35 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">KNOWLEDGE GRAPH · ENTITY TOPOLOGY</span>
-      </div>
-      <div class="header-title-main">The Enterprise Entity Knowledge Graph</div>
-      <div class="header-subtitle">Mapping People, Companies, Roles and Technologies into an Interconnected Web</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 36 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 36: The Enterprise Entity Knowledge Graph
+set_page(36, "KNOWLEDGE GRAPH · ENTITY TOPOLOGY",
+"The Enterprise Entity Knowledge Graph",
+"Mapping People, Companies, Roles and Technologies into an Interconnected Web",
+f"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Relational Intelligence: Beyond Flat Unstructured Records</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Enterprise intelligence is fundamentally relational. In <code>crates/memory</code>, Fathom structures verified facts into a directional <strong>Entity Knowledge Graph</strong> that automatically connects individuals, corporate entities, funding events, job titles, and technology stacks into a unified queryable web.
   </p>
 </div>
 
-
-    <div class="deck-mockup-container">
-      <div class="deck-mockup-frame">
-        <img src="mockups/09_entity_knowledge_graph.png" alt="Figure 36.1: Enterprise Entity Knowledge Graph Explorer — 3-hop relationship traversal across 5,420 nodes in 1.62 ms.">
-      </div>
-      <div class="deck-mockup-caption">Figure 36.1: Enterprise Entity Knowledge Graph Explorer — 3-hop relationship traversal across 5,420 nodes in 1.62 ms.</div>
-    </div>
-    
+{mockup("09_entity_knowledge_graph.png", "Figure 36.1: Enterprise Entity Knowledge Graph Explorer — 3-hop relationship traversal across 5,420 nodes in 1.62 ms.")}
 
 <div class="grid-2">
   <div class="card">
@@ -2737,8 +1743,8 @@
   <div class="card card-purple">
     <div class="card-title-sm">Directional Edge Types & Traversal</div>
     <ul style="font-size: 7.0pt; line-height: 1.30; margin-bottom: 0;">
-      <li><code>Person ──[works_at {{title, since}}]──► Organization</code></li>
-      <li><code>Organization ──[uses_tech {{confidence}}]──► Technology</code></li>
+      <li><code>Person ──[works_at {{{{title, since}}}}]──► Organization</code></li>
+      <li><code>Organization ──[uses_tech {{{{confidence}}}}]──► Technology</code></li>
       <li>6-hop traversal queries execute in &lt;1.8ms via SQLite recursive CTEs.</li>
     </ul>
   </div>
@@ -2747,39 +1753,14 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>Networked Collective IQ:</strong> As more digital coworkers join the fleet, the shared Knowledge Graph compounds in density and accuracy, accelerating discovery across all business units.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 36 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">ENTERPRISE SECURITY · GOVERNANCE ENGINE</span>
-      </div>
-      <div class="header-title-main">Enterprise Guardrails & Policy Engine</div>
-      <div class="header-subtitle">Fail-Closed Security Posture, Allow/Deny Glob Rules & Controlled Autonomy</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 37 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-accent">
+# Page 37: Enterprise Guardrails & Policy Engine
+set_page(37, "ENTERPRISE SECURITY · GOVERNANCE ENGINE",
+"Enterprise Guardrails & Policy Engine",
+"Fail-Closed Security Posture, Allow/Deny Glob Rules & Controlled Autonomy",
+"""
+<div class="card-accent">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Deterministic Safety: The Governance Policy Engine</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Deploying autonomous agents in mission-critical enterprise environments requires mathematically provable guardrails. In <code>crates/governance</code>, Fathom implements a <strong>fail-closed policy engine</strong> where every single tool call is authorized against declarative security rules prior to execution.
@@ -2826,53 +1807,21 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>Enterprise Peace of Mind:</strong> Restrict coworkers to precise operational lanes with mathematical certainty, eliminating hallucinations, unauthorized data egress, and rogue API actions.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 37 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">SECURITY VAULT · CREDENTIAL ISOLATION</span>
-      </div>
-      <div class="header-title-main">The Ironclad Credentials Vault</div>
-      <div class="header-subtitle">AES-256-GCM Encryption: Zero Secret Visibility in Model Prompts</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 38 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 38: The Ironclad Credentials Vault
+set_page(38, "SECURITY VAULT · CREDENTIAL ISOLATION",
+"The Ironclad Credentials Vault",
+"AES-256-GCM Encryption: Zero Secret Visibility in Model Prompts",
+f"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Protecting Secrets Against Prompt Injection & Extraction Attacks</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     The most catastrophic security vulnerability in AI application development is passing plaintext API keys, database credentials, or OAuth bearer tokens into LLM prompt contexts. Fathom permanently isolates all secrets behind an <strong>AES-256-GCM authenticated vault</strong> using the Rust <code>ring</code> cryptography library.
   </p>
 </div>
 
-
-    <div class="deck-mockup-container">
-      <div class="deck-mockup-frame">
-        <img src="mockups/10_security_credentials_vault.png" alt="Figure 38.1: Enterprise Security Vault & Telemetry — AES-256-GCM hardware key derivation with zero LLM prompt exposure">
-      </div>
-      <div class="deck-mockup-caption">Figure 38.1: Enterprise Security Vault & Telemetry — AES-256-GCM hardware key derivation with zero LLM prompt exposure</div>
-    </div>
-    
+{mockup("10_security_credentials_vault.png", "Figure 38.1: Enterprise Security Vault & Telemetry — AES-256-GCM hardware key derivation with zero LLM prompt exposure")}
 
 <div class="grid-2">
   <div class="card card-emerald">
@@ -2897,53 +1846,21 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>Bank-Grade Secret Security:</strong> Security officers can configure enterprise CRM integrations and database connections with complete confidence that keys remain cryptographically locked.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 38 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">FLEET MANAGEMENT · AGENCY & ENTERPRISE SCALING</span>
-      </div>
-      <div class="header-title-main">Agency Fleet Scaling & Multi-Tenant Operations</div>
-      <div class="header-subtitle">12 Managed Client Fleets, White-Label Distribution & 92% Net Margin Economics</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 39 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-accent">
+# Page 39: Agency Fleet Scaling & Multi-Tenant Operations
+set_page(39, "FLEET MANAGEMENT · AGENCY & ENTERPRISE SCALING",
+"Agency Fleet Scaling & Multi-Tenant Operations",
+"12 Managed Client Fleets, White-Label Distribution & 92% Net Margin Economics",
+f"""
+<div class="card-accent">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">The White-Label Agency Growth Engine</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Marketing agencies, lead-gen consultancies, and B2B service providers use Fathom to transition from labor-intensive services into high-margin, scalable software-enabled operators. An agency can manage dozens of isolated client coworker fleets from a unified multi-tenant control plane.
   </p>
 </div>
 
-
-    <div class="deck-mockup-container">
-      <div class="deck-mockup-frame">
-        <img src="mockups/15_agency_fleet_manager.png" alt="Figure 39.1: Agency White-Label Fleet Manager — 12 client worker pods operating in isolation with 92% net profit margin.">
-      </div>
-      <div class="deck-mockup-caption">Figure 39.1: Agency White-Label Fleet Manager — 12 client worker pods operating in isolation with 92% net profit margin.</div>
-    </div>
-    
+{mockup("15_agency_fleet_manager.png", "Figure 39.1: Agency White-Label Fleet Manager — 12 client worker pods operating in isolation with 92% net profit margin.")}
 
 <div class="grid-3">
   <div class="card card-emerald">
@@ -2965,39 +1882,14 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>Exponential Agency Leverage:</strong> Scale from $10k to $100k+ in monthly recurring revenue without hiring a single additional human operations staff member.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 39 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">BENCHMARKS · EMPIRICAL VERIFICATION</span>
-      </div>
-      <div class="header-title-main">Definitive Microbenchmarks: Rust vs. Python</div>
-      <div class="header-subtitle">Empirical Latency, Memory RSS, Concurrency & Cold-Start Measurements</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 40 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 40: Definitive Microbenchmarks: Rust vs. Python
+set_page(40, "BENCHMARKS · EMPIRICAL VERIFICATION",
+"Definitive Microbenchmarks: Rust vs. Python",
+"Empirical Latency, Memory RSS, Concurrency & Cold-Start Measurements",
+"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Empirical Performance Rigor: Hard System Measurements</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     All benchmarks were executed on Apple Silicon M4 (16GB RAM) and AMD EPYC 7763 Linux servers under reproducible, production-grade test suites. Fathom consistently outperforms Python-based agent frameworks by <strong>10x to 500x across all core execution vectors</strong>.
@@ -3076,39 +1968,14 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>The Engineering Truth:</strong> Performance is not just about speed—it is the foundation of economic scalability, multi-agent concurrency, and mission-critical enterprise reliability.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 40 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">HARDWARE ECONOMICS · DENSITY</span>
-      </div>
-      <div class="header-title-main">Hardware Efficiency & Enterprise Hosting Density</div>
-      <div class="header-subtitle">Hosting 500+ Digital Employees on a Single $80/mo Dedicated Server</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 41 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-accent">
+# Page 41: Hardware Efficiency & Hosting Density
+set_page(41, "HARDWARE ECONOMICS · DENSITY",
+"Hardware Efficiency & Enterprise Hosting Density",
+"Hosting 500+ Digital Employees on a Single $80/mo Dedicated Server",
+"""
+<div class="card-accent">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Maximizing Compute Density: Slashing Infrastructure Overhead</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     Because Fathom compiles to a lean native binary consuming just <strong>15.4 MB of baseline RAM</strong>, enterprise hosting costs collapse to near zero. A single commodity dedicated server hosts hundreds of active, concurrent digital coworkers with zero CPU contention.
@@ -3152,39 +2019,14 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>Sovereign Bare-Metal Advantage:</strong> Enterprises deploy on their own existing on-premise hardware or low-cost bare-metal clouds, retaining 100% data sovereignty while eliminating cloud provider markup.
 </div>
-  </div>
+""")
 
-  <!-- Footer -->
-  <div class="footer">
-    <div class="footer-left">
-      <span>Fathom Autonomous Workforce Runtime</span>
-      <span class="footer-bullet">•</span>
-      <span>Elastic-2.0 License</span>
-      <span class="footer-bullet">•</span>
-      <span>Strategic Whitepaper Presentation</span>
-    </div>
-    <div class="footer-right">v0.3.0 · Page 41 of 42</div>
-  </div>
-</div>
-<div class="page">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-meta">
-        <span class="brand-badge">FATHOM</span>
-        <span class="header-category">STRATEGIC ROADMAP & SUMMARY</span>
-      </div>
-      <div class="header-title-main">The Operating System for the Autonomous Economy</div>
-      <div class="header-subtitle">Deploy Your First Digital Workforce in Under 60 Seconds</div>
-    </div>
-    <div class="header-right">
-      <span class="page-badge">PAGE 42 / 42</span>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="content-body">
-    <div class="card-dark">
+# Page 42: Strategic Roadmap & Executive Summary
+set_page(42, "STRATEGIC ROADMAP & SUMMARY",
+"The Operating System for the Autonomous Economy",
+"Deploy Your First Digital Workforce in Under 60 Seconds",
+"""
+<div class="card-dark">
   <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">The Definitive Choice: Stagnate with Headcount or Scale with Fathom</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
     The competitive landscape of the next decade will be defined by a single metric: <strong>operational leverage per human employee</strong>. Organizations that continue to scale linearly by adding human headcount to perform repetitive research, outreach, and computer tasks will be out-competed on speed, accuracy, and margin.
@@ -3232,6 +2074,45 @@
 <div class="callout callout-success" style="margin-bottom: 0;">
   <strong>The Future Belongs to the Autonomous:</strong> Join the hundreds of high-growth scaleups, agencies, and enterprises building the next generation of business on Fathom.
 </div>
+""")
+
+# ==============================================================================
+# WRITE ALL 42 HTML FILES
+# ==============================================================================
+print(f"Writing all {len(pages)} dense HTML files...")
+
+full_deck_pages = []
+
+for num in range(1, 43):
+    data = pages[num]
+    
+    if data["is_cover"]:
+        page_html = f"""
+<div class="page simple-cover">
+  {data['html']}
+</div>
+"""
+    else:
+        page_html = f"""
+<div class="page">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-meta">
+        <span class="brand-badge">FATHOM</span>
+        <span class="header-category">{data['category']}</span>
+      </div>
+      <div class="header-title-main">{data['title']}</div>
+      <div class="header-subtitle">{data['subtitle']}</div>
+    </div>
+    <div class="header-right">
+      <span class="page-badge">PAGE {num:02d} / 42</span>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content-body">
+    {data['html']}
   </div>
 
   <!-- Footer -->
@@ -3243,8 +2124,69 @@
       <span class="footer-bullet">•</span>
       <span>Strategic Whitepaper Presentation</span>
     </div>
-    <div class="footer-right">v0.3.0 · Page 42 of 42</div>
+    <div class="footer-right">v0.3.0 · Page {num:02d} of 42</div>
   </div>
 </div>
+"""
+    full_deck_pages.append(page_html.strip())
+    
+    standalone_html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Page {num:02d} · {data['title']}</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+{page_html}
 </body>
-</html>
+</html>"""
+    with open(os.path.join(WP_DIR, f"page_{num:02d}.html"), "w", encoding="utf-8") as f:
+        f.write(standalone_html)
+
+# Write Full Deck HTML
+full_deck_html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fathom Whitepaper — Full 42-Page Deck</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  @media print {{
+    body {{ margin: 0; padding: 0; }}
+    .page {{ page-break-after: always !important; page-break-inside: avoid !important; }}
+  }}
+  @media screen {{
+    body {{ background: #070a12; padding: 20px 0; display: flex; flex-direction: column; align-items: center; gap: 30px; }}
+  }}
+</style>
+</head>
+<body>
+{chr(10).join(full_deck_pages)}
+</body>
+</html>"""
+
+with open(os.path.join(WP_DIR, "Fathom_Full_Whitepaper.html"), "w", encoding="utf-8") as f:
+    f.write(full_deck_html)
+
+print("All 42 HTML files + Fathom_Full_Whitepaper.html successfully generated!")
+
+# Compile Master PDF with Chrome
+cmd = [
+    CHROME_PATH,
+    "--headless",
+    "--disable-gpu",
+    "--no-margins",
+    f"--print-to-pdf={WP_DIR}/Fathom_Whitepaper.pdf",
+    f"file://{WP_DIR}/Fathom_Full_Whitepaper.html"
+]
+print("Compiling Fathom_Whitepaper.pdf via headless Chrome...")
+subprocess.run(cmd, capture_output=True)
+
+out_pdf = f"{WP_DIR}/Fathom_Whitepaper.pdf"
+reader = PdfReader(out_pdf)
+print(f"\n>>> MASTER PDF SUCCESSFULLY COMPILED: {out_pdf}")
+print(f">>> File Size: {os.path.getsize(out_pdf):,} bytes ({os.path.getsize(out_pdf)/(1024*1024):.2f} MB)")
+print(f">>> Total Page Count: {len(reader.pages)} pages")
+assert len(reader.pages) == 42, f"Expected 42 pages, got {len(reader.pages)}"
+print(">>> Verification PASSED: Exactly 42 pages!")

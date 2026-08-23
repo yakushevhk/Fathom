@@ -1,75 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Fathom Whitepaper — Sub-Millisecond Knowledge Ingestion</title>
-  <link rel="stylesheet" href="styles.css">
+<meta charset="utf-8">
+<title>Page 33 · Docker Sandboxes & Network Egress</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="page">
-    <div class="header">
-      <div class="header-left">
-        <div class="header-meta">
-          <span class="brand-badge">FATHOM</span>
-          <span class="header-category">MEMORY ENGINE · ABSORB PIPELINE</span>
-        </div>
-        <div class="header-title-main">Sub-Millisecond Knowledge Ingestion</div>
-        <div class="header-subtitle">The 4-Stage Absorb Pipeline: Deduplication, Lineage Chains & Secret Redaction</div>
-      </div>
-      <div class="header-right">
-        <span class="page-badge">PAGE 33 / 42</span>
-      </div>
-    </div>
 
-    <div class="content-body">
-<div class="card-dark" style="padding: 7px 10px;">
-  <div class="card-title" style="font-size: 8.8pt;">The 4-Stage Memory Absorb Pipeline (94 µs / Fact)</div>
-  <p style="font-size: 7.4pt;">
-    Raw information from web searches cannot be dumped blindly into memory. Fathom processes facts through a strict, multi-stage curation pipeline in under <strong>94 microseconds per fact</strong>.
+<div class="page">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-meta">
+        <span class="brand-badge">FATHOM</span>
+        <span class="header-category">SECURITY SANDBOXING · DOCKER SUPERVISOR</span>
+      </div>
+      <div class="header-title-main">Docker Sandboxes & Network Egress</div>
+      <div class="header-subtitle">Per-Agent Container Isolation, Port Sandboxing & Zero Data Leakage</div>
+    </div>
+    <div class="header-right">
+      <span class="page-badge">PAGE 33 / 42</span>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content-body">
+    <div class="card-accent">
+  <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Zero Trust Process Isolation: One Sandbox Per Digital Coworker</div>
+  <p style="font-size: 7.6pt; line-height: 1.38;">
+    Deploying autonomous agents that execute shell commands, parse untrusted web payloads, and run browser instances requires kernel-level confinement. In <code>crates/supervisor</code>, Fathom dynamically provisions, governs, and terminates isolated Docker containers with strict security profiles.
   </p>
 </div>
 
-<div class="diagram-flow">
-  <div class="flow-step"><div class="flow-title">1. Secret Scrubbing</div><div class="flow-desc">Regex strips keys & passwords</div></div>
-  <div class="flow-arrow">→</div>
-  <div class="flow-step"><div class="flow-title">2. SHA-256 Fast Dedup</div><div class="flow-desc">Skips known facts in 5.1ms</div></div>
-  <div class="flow-arrow">→</div>
-  <div class="flow-step"><div class="flow-title">3. Lineage Versioning</div><div class="flow-desc">Marks old facts superseded</div></div>
-  <div class="flow-arrow">→</div>
-  <div class="flow-step"><div class="flow-title">4. Entity Linking</div><div class="flow-desc">Builds typed graph edges</div></div>
+<div class="grid-3">
+  <div class="card card-emerald">
+    <div class="card-title-sm">Capability Stripping</div>
+    <ul style="font-size: 7.0pt; line-height: 1.35; margin-bottom: 0;">
+      <li><code>cap_drop: ["ALL"]</code> drops all capabilities.</li>
+      <li><code>no-new-privileges: true</code> prevents setuid.</li>
+      <li>Read-only root with ephemeral tmpfs.</li>
+    </ul>
+  </div>
+
+  <div class="card card-indigo">
+    <div class="card-title-sm">Resource Sandboxing</div>
+    <ul style="font-size: 7.0pt; line-height: 1.35; margin-bottom: 0;">
+      <li>cgroups v2: 2 CPU cores, 512MB RAM cap.</li>
+      <li>Host daemon protected against OOM.</li>
+      <li>I/O throttled to 50MB/s write maximum.</li>
+    </ul>
+  </div>
+
+  <div class="card card-purple">
+    <div class="card-title-sm">Ephemeral Volumes</div>
+    <ul style="font-size: 7.0pt; line-height: 1.35; margin-bottom: 0;">
+      <li>Per-job volume mount (<code>/data/workspace</code>).</li>
+      <li>Chromium profile isolated per client.</li>
+      <li>Cryptographic shredding on termination.</li>
+    </ul>
+  </div>
 </div>
 
-<div class="grid-2">
-  <div class="card card-emerald" style="padding: 5px 8px;">
-    <div class="card-title-sm">Append-Only Truth & Lineage Chains</div>
-    <p style="font-size: 7.2pt;">
-      Facts are never silently overwritten. If a company raises a Series B round after previously raising Series A, the old fact is marked with a <code>supersedes</code> edge, preserving the historical evolution of truth for auditing.
-    </p>
-  </div>
-
-  <div class="card card-accent" style="padding: 5px 8px;">
-    <div class="card-title-sm">Hybrid Retrieval: 0.70 Vector + 0.30 BM25</div>
-    <p style="font-size: 7.2pt;">
-      Queries combine SQLite FTS5 keyword precision with semantic vector similarity, delivering <strong>sub-2ms search latencies</strong> across thousands of memories.
-    </p>
-  </div>
+<div class="card">
+  <div class="card-title" style="font-size: 8.2pt;">Strict Network Egress Firewall Ruleset</div>
+  <table>
+    <thead>
+      <tr><th>Destination / CIDR Subnet</th><th>Protocol & Ports</th><th>Policy Verdict</th><th>Security Target & Protection Goal</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>169.254.169.254/32</code> (AWS/GCP IMDS)</td><td>HTTP (80/443)</td><td><span class="badge badge-red">REJECT (DROP)</span></td><td>Blocks cloud instance metadata & IAM credentials theft</td></tr>
+      <tr><td><code>10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16</code></td><td>All TCP/UDP Ports</td><td><span class="badge badge-red">REJECT (DROP)</span></td><td>Blocks private RFC1918 internal corporate LAN scanning</td></tr>
+      <tr><td><code>127.0.0.1/8</code> (Host Loopback)</td><td>All TCP Ports</td><td><span class="badge badge-red">REJECT (DROP)</span></td><td>Prohibits probing host Axum daemon or local databases</td></tr>
+      <tr><td><code>0.0.0.0/0</code> (Public Web)</td><td>HTTPS (443), DNS (53)</td><td><span class="badge badge-green">ALLOW (LOGGED)</span></td><td>Permits verified OSINT scraping and public API calls</td></tr>
+    </tbody>
+  </table>
 </div>
 
 <div class="callout callout-info" style="margin-bottom: 0;">
-  <strong>Deterministic Fact Compaction:</strong> The knowledge base stays lean and focused on high-signal business facts without accumulating noisy search fragments.
+  <strong>Sovereign Data Security:</strong> Fully contained Docker pods ensure that enterprise workflows comply with SOC 2 Type II, ISO 27001, and HIPAA sandboxing isolation requirements.
 </div>
-    </div>
-
-    <div class="footer">
-      <div class="footer-left">
-        <span>Fathom Autonomous Workforce Runtime</span>
-        <span class="footer-bullet">•</span>
-        <span>Elastic-2.0 License</span>
-        <span class="footer-bullet">•</span>
-        <span>Strategic Whitepaper Presentation</span>
-      </div>
-      <div class="footer-right">v0.3.0 · Page 33 of 42</div>
-    </div>
   </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-left">
+      <span>Fathom Autonomous Workforce Runtime</span>
+      <span class="footer-bullet">•</span>
+      <span>Elastic-2.0 License</span>
+      <span class="footer-bullet">•</span>
+      <span>Strategic Whitepaper Presentation</span>
+    </div>
+    <div class="footer-right">v0.3.0 · Page 33 of 42</div>
+  </div>
+</div>
+
 </body>
 </html>

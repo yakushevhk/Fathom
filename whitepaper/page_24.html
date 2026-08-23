@@ -1,84 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Fathom Whitepaper — Why Rust? The Architecture of Performance</title>
-  <link rel="stylesheet" href="styles.css">
+<meta charset="utf-8">
+<title>Page 24 · Regulatory & Legal Document Auditor</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="page">
-    <div class="header">
-      <div class="header-left">
-        <div class="header-meta">
-          <span class="brand-badge">FATHOM</span>
-          <span class="header-category">SYSTEMS ENGINEERING · WHY RUST</span>
-        </div>
-        <div class="header-title-main">Why Rust? The Architecture of Performance</div>
-        <div class="header-subtitle">Zero-Cost Abstractions, Memory Safety & The Elimination of Python Bottlenecks</div>
-      </div>
-      <div class="header-right">
-        <span class="page-badge">PAGE 24 / 42</span>
-      </div>
-    </div>
 
-    <div class="content-body">
-<div class="card-accent" style="padding: 7px 10px;">
-  <div class="card-title" style="font-size: 8.8pt;">The Engineering Foundation: Why We Chose Rust</div>
-  <p style="font-size: 7.4pt;">
-    Traditional agent frameworks built on Python suffer from high latency, heavy memory consumption, fragile type errors, and concurrency bottlenecks caused by the Global Interpreter Lock (GIL). <strong>Fathom is built natively in Rust</strong> to provide enterprise-grade reliability and speed.
+<div class="page">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-meta">
+        <span class="brand-badge">FATHOM</span>
+        <span class="header-category">REAL-WORLD USE CASE · SCENARIO 07</span>
+      </div>
+      <div class="header-title-main">Regulatory & Legal Document Auditor</div>
+      <div class="header-subtitle">Multi-Jurisdiction Compliance Verification, Clause Extraction & Risk Highlighting</div>
+    </div>
+    <div class="header-right">
+      <span class="page-badge">PAGE 24 / 42</span>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content-body">
+    <div class="card-dark">
+  <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Scenario Brief: Contract & Compliance Audit for EuroTrust Legal Advisory</div>
+  <p style="font-size: 7.6pt; line-height: 1.38;">
+    <strong>Objective:</strong> Audit 200 vendor Master Services Agreements (MSAs) for GDPR compliance, data liability caps, non-compete clauses, and jurisdiction risks with paragraph-level citation traceability.
   </p>
 </div>
 
-<div class="grid-2">
-  <div class="card card-amber" style="padding: 5px 8px;">
-    <div class="card-title-sm">The Python Framework Trap</div>
-    <ul style="font-size: 6.8pt; margin-bottom: 0;">
-      <li><strong>Massive Memory Footprint:</strong> Idle Python runtimes consume 400MB–1.5GB RAM per agent process.</li>
-      <li><strong>GIL Concurrency Deadlocks:</strong> Asynchronous I/O is serialized, choking multi-agent swarms.</li>
-      <li><strong>Slow Startup Latency:</strong> 2.5 to 8.0 seconds just to load interpreter and dependency trees.</li>
-    </ul>
+
+    <div class="deck-mockup-container">
+      <div class="deck-mockup-frame">
+        <img src="mockups/12_legal_compliance_auditor.png" alt="Figure 24.1: Legal Compliance Auditor — 200 vendor MSAs evaluated for GDPR clauses and liability cap risk matrix">
+      </div>
+      <div class="deck-mockup-caption">Figure 24.1: Legal Compliance Auditor — 200 vendor MSAs evaluated for GDPR clauses and liability cap risk matrix</div>
+    </div>
+    
+
+<div class="grid-3">
+  <div class="card card-accent">
+    <div class="card-title-sm">1. Parallel Ingestion</div>
+    <p style="font-size: 6.8pt; line-height: 1.25;">Spawns 5 analyst agents to ingest 200 legal PDFs into structured JSON schemas in &lt;8 minutes.</p>
   </div>
 
-  <div class="card card-emerald" style="padding: 5px 8px;">
-    <div class="card-title-sm">The Fathom Rust Advantage</div>
-    <ul style="font-size: 6.8pt; margin-bottom: 0;">
-      <li><strong>Microscopic RAM Footprint:</strong> Lean 15–35 MB baseline RAM allows 100+ agents per server.</li>
-      <li><strong>True Multi-Core Parallelism:</strong> Tokio async tasks utilize all CPU cores without locks.</li>
-      <li><strong>Instant Binary Startup:</strong> Starts in under 5 milliseconds from cold execution.</li>
-    </ul>
+  <div class="card card-purple">
+    <div class="card-title-sm">2. Cross-Jurisdiction</div>
+    <p style="font-size: 6.8pt; line-height: 1.25;">Cross-references liability clauses against EU GDPR, UK DPA, and Delaware statutory limits.</p>
   </div>
-</div>
 
-<div class="card" style="padding: 5px 8px;">
-  <div class="card-title">Architectural Efficiency Comparison</div>
-  <table>
-    <thead>
-      <tr><th>Engineering Metric</th><th>Python Agent Frameworks</th><th>Fathom Rust Runtime</th></tr>
-    </thead>
-    <tbody>
-      <tr><td><strong>Tool Dispatch Latency</strong></td><td>25.0 – 150.0 ms</td><td><strong>0.75 ms (Microsecond Level)</strong></td></tr>
-      <tr><td><strong>Memory Usage (100 Agents)</strong></td><td>40 – 120 GB RAM (Requires Cluster)</td><td><strong>1.5 – 3.5 GB RAM (Single Modest VM)</strong></td></tr>
-      <tr><td><strong>HTML Parsing Speed</strong></td><td>15,000 rows/sec (BeautifulSoup)</td><td><strong>350,000+ rows/sec (Scraper Rust)</strong></td></tr>
-      <tr><td><strong>Binary Packaging</strong></td><td>Fragile venv + wheels</td><td><strong>Single Static Binary (Zero Dependencies)</strong></td></tr>
-    </tbody>
-  </table>
+  <div class="card card-emerald">
+    <div class="card-title-sm">3. Executive Risk Matrix</div>
+    <p style="font-size: 6.8pt; line-height: 1.25;">Compiles a high-contrast matrix categorizing contracts into Green, Yellow, and Red risk tiers.</p>
+  </div>
 </div>
 
 <div class="callout callout-success" style="margin-bottom: 0;">
-  <strong>Speed Equals Intelligence:</strong> Microsecond tool execution means agents spend 99.9% of their time waiting for model tokens, not framework overhead.
+  <strong>Audit Acceleration:</strong> A 3-week manual legal paralegal review is accomplished in <strong>under 30 minutes</strong> with total clause traceability and zero human oversight fatigue.
 </div>
-    </div>
-
-    <div class="footer">
-      <div class="footer-left">
-        <span>Fathom Autonomous Workforce Runtime</span>
-        <span class="footer-bullet">•</span>
-        <span>Elastic-2.0 License</span>
-        <span class="footer-bullet">•</span>
-        <span>Strategic Whitepaper Presentation</span>
-      </div>
-      <div class="footer-right">v0.3.0 · Page 24 of 42</div>
-    </div>
   </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-left">
+      <span>Fathom Autonomous Workforce Runtime</span>
+      <span class="footer-bullet">•</span>
+      <span>Elastic-2.0 License</span>
+      <span class="footer-bullet">•</span>
+      <span>Strategic Whitepaper Presentation</span>
+    </div>
+    <div class="footer-right">v0.3.0 · Page 24 of 42</div>
+  </div>
+</div>
+
 </body>
 </html>

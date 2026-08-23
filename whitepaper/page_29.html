@@ -1,73 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Fathom Whitepaper — Why Opaque Refs Beat Brittle Selectors</title>
-  <link rel="stylesheet" href="styles.css">
+<meta charset="utf-8">
+<title>Page 29 · Reliability & Self-Healing Workflows</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="page">
-    <div class="header">
-      <div class="header-left">
-        <div class="header-meta">
-          <span class="brand-badge">FATHOM</span>
-          <span class="header-category">COMPUTER USE · ANTI-BREAKAGE</span>
-        </div>
-        <div class="header-title-main">Why Opaque Refs Beat Brittle Selectors</div>
-        <div class="header-subtitle">Anti-Staleness Verification, Form Sanitization & Deterministic Element Resolution</div>
-      </div>
-      <div class="header-right">
-        <span class="page-badge">PAGE 29 / 42</span>
-      </div>
-    </div>
 
-    <div class="content-body">
-<div class="card-dark" style="padding: 7px 10px;">
-  <div class="card-title" style="font-size: 8.8pt;">Deterministic Element Targeting: Eliminating Broken Clicks</div>
-  <p style="font-size: 7.4pt;">
-    In modern web portals, asynchronous JavaScript frequently alters DOM elements between agent reasoning steps. Fathom implements an active <strong>Anti-Staleness Guard</strong> to guarantee that actions are executed only on valid, intended targets.
+<div class="page">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-meta">
+        <span class="brand-badge">FATHOM</span>
+        <span class="header-category">RUNTIME INTERNALS · RESILIENCE</span>
+      </div>
+      <div class="header-title-main">Reliability & Self-Healing Workflows</div>
+      <div class="header-subtitle">setsid Process Decoupling, Durable SQLite State Hydration & Error Stack Reflection</div>
+    </div>
+    <div class="header-right">
+      <span class="page-badge">PAGE 29 / 42</span>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content-body">
+    <div class="card-dark">
+  <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Fault-Tolerant Daemon Architecture: Surviving Server Restarts and Network Outages</div>
+  <p style="font-size: 7.6pt; line-height: 1.38;">
+    Toy agent frameworks crash when terminal sessions disconnect or when third-party APIs return rate limits. Fathom is engineered as a <strong>resilient Unix daemon service</strong> with automated process detachment, SQLite state hydration, and multi-turn error reflection.
   </p>
 </div>
 
 <div class="grid-2">
-  <div class="card" style="padding: 5px 8px;">
-    <div class="card-title-sm">1. Pre-Execution Freshness Check</div>
-    <p style="font-size: 7.2pt;">
-      Before executing a <code>computer_click</code> or <code>computer_type</code> command, the runtime takes a microsecond snapshot to confirm that the target element ref (<code>@e14</code>) still exists and matches its original role fingerprint.
-    </p>
+  <div class="card card-emerald">
+    <div class="card-title-sm">1. Detached setsid Process Management</div>
+    <ul style="font-size: 7.0pt; line-height: 1.35; margin-bottom: 0;">
+      <li><strong>Background Decoupling:</strong> Long-running sessions fork into Unix process groups via <code>setsid</code>.</li>
+      <li><strong>Terminal Immunity:</strong> SSH disconnects do not interrupt active research swarms or jobs.</li>
+      <li><strong>Signal Trapping:</strong> Gracefully handles <code>SIGTERM</code>, flushing CRM writes before shutdown.</li>
+    </ul>
   </div>
 
-  <div class="card card-emerald" style="padding: 5px 8px;">
-    <div class="card-title-sm">2. Stale-Ref Rejection & Self-Recovery</div>
-    <p style="font-size: 7.2pt;">
-      If the page navigated or a popup closed during agent thinking, the ref is rejected immediately with an explicit error: <em>"Ref @e14 is stale."</em> The agent captures a fresh snapshot and re-evaluates safely.
-    </p>
+  <div class="card card-purple">
+    <div class="card-title-sm">2. Durable SQLite State Hydration</div>
+    <ul style="font-size: 7.0pt; line-height: 1.35; margin-bottom: 0;">
+      <li><strong>WAL-Mode Reliability:</strong> Every tool execution and lead is written to SQLite with WAL logging.</li>
+      <li><strong>Instant Recovery:</strong> On power failure, the daemon reboots in &lt;5ms and resumes from the last step.</li>
+      <li><strong>Zero Corrupted State:</strong> Atomic transactions ensure zero orphan records or duplicate outreach.</li>
+    </ul>
   </div>
 </div>
 
-<div class="card" style="padding: 5px 8px;">
-  <div class="card-title">Form Data Security & Workspace Confinement</div>
-  <div class="grid-2">
-    <div><strong>Automatic Password Scrubbing</strong><p style="font-size: 6.8pt;">Password inputs and token fields are automatically masked in accessibility snapshots.</p></div>
-    <div><strong>Confined File Workspace</strong><p style="font-size: 6.8pt;">Browser downloads are strictly confined to an isolated directory (<code>/data/browser</code>).</p></div>
+<div class="timeline">
+  <div class="timeline-item">
+    <div class="timeline-time">Step 1</div>
+    <div class="timeline-content"><div class="timeline-title">Execution Exception Trapped</div><div class="timeline-desc">A web portal changes its login flow or returns an HTTP 429 Too Many Requests rate-limit error.</div></div>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-time">Step 2</div>
+    <div class="timeline-content"><div class="timeline-title">Error Stack Reflection & Memory Injection</div><div class="timeline-desc">The runtime captures the exact error trace and injects it into the agent's next reasoning loop.</div></div>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-time">Step 3</div>
+    <div class="timeline-content"><div class="timeline-title">Autonomous Strategy Adaptation</div><div class="timeline-desc">The coworker applies exponential backoff, rotates proxies, adapts its selector strategy, and finishes.</div></div>
   </div>
 </div>
 
 <div class="callout callout-info" style="margin-bottom: 0;">
-  <strong>Zero Phantom Interactions:</strong> Fathom ensures that automated browser actions are as predictable, deterministic, and safe as compiled software code.
+  <strong>Enterprise Resilience:</strong> Set it and forget it. Fathom coworkers run continuously month after month with zero maintenance intervention required.
 </div>
-    </div>
-
-    <div class="footer">
-      <div class="footer-left">
-        <span>Fathom Autonomous Workforce Runtime</span>
-        <span class="footer-bullet">•</span>
-        <span>Elastic-2.0 License</span>
-        <span class="footer-bullet">•</span>
-        <span>Strategic Whitepaper Presentation</span>
-      </div>
-      <div class="footer-right">v0.3.0 · Page 29 of 42</div>
-    </div>
   </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-left">
+      <span>Fathom Autonomous Workforce Runtime</span>
+      <span class="footer-bullet">•</span>
+      <span>Elastic-2.0 License</span>
+      <span class="footer-bullet">•</span>
+      <span>Strategic Whitepaper Presentation</span>
+    </div>
+    <div class="footer-right">v0.3.0 · Page 29 of 42</div>
+  </div>
+</div>
+
 </body>
 </html>

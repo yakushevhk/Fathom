@@ -242,7 +242,87 @@ The supervisor crate (`crates/supervisor`) provisions **one isolated computer pe
 3. **Use** — all computer tool calls are routed to the container
 4. **Teardown** — when the agent finishes or is cancelled, the container is stopped and removed
 
-### API routes
+---
+
+## Computer Relay Modes
+
+Fathom supports two computer relay modes, each with its own set of API routes:
+
+### Single-Computer Mode
+
+**Routes:** `/api/v1/computers/*` (unscoped, no agent_id)
+
+- Routes directly to the computer service at `FATHOM_COMPUTER_SERVICE_URL` (default: `http://127.0.0.1:8765`)
+- All agents share the same browser instance
+- Suitable for single-agent use or when the computer service is already running externally
+- No supervisor configuration required
+
+**Available routes:**
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/v1/computers/health` | Health check |
+| `GET` | `/api/v1/computers/snapshot` | Accessibility-tree snapshot |
+| `POST` | `/api/v1/computers/navigate` | Navigate to URL |
+| `POST` | `/api/v1/computers/click` | Click an element by ref |
+| `POST` | `/api/v1/computers/type` | Type text |
+| `POST` | `/api/v1/computers/key` | Press a key |
+| `GET` | `/api/v1/computers/screenshot` | Take a screenshot |
+| `GET` | `/api/v1/computers/screen` | Screen streaming WebSocket |
+| `GET/POST` | `/api/v1/computers/files/*` | File workspace operations |
+| `POST` | `/api/v1/computers/control/take` | Take human control |
+| `POST` | `/api/v1/computers/control/release` | Release human control |
+| `POST` | `/api/v1/computers/session` | Start/refresh browser session |
+
+### Agent-Scoped Mode (Docker Supervisor)
+
+**Routes:** `/api/v1/computers/:agent_id/*` (scoped by agent_id)
+
+- Resolves each agent's supervised computer container via the supervisor
+- Each agent gets its own isolated browser session, workspace, and network
+- The `agent_id` is the agent's unique ID (e.g., `019fd38a-9a7c-7322-a671-64427832f0eb`)
+- Requires Docker supervisor to be configured (`COMPUTER_TOKEN` set)
+
+**How `agent_id` is derived:**
+- The agent_id is passed as a URL path parameter in the request
+- The supervisor uses this ID to look up the agent's container
+- The container's loopback URL is computed deterministically: `base_port + (agent_id.hash() % 1000)`
+- If no container exists for the agent, the supervisor returns `502 Bad Gateway`
+
+**Available routes:**
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/v1/computers/:agent_id/health` | Health check of agent's computer |
+| `GET` | `/api/v1/computers/:agent_id/snapshot` | Accessibility-tree snapshot |
+| `POST` | `/api/v1/computers/:agent_id/navigate` | Navigate to URL |
+| `POST` | `/api/v1/computers/:agent_id/click` | Click an element by ref |
+| `POST` | `/api/v1/computers/:agent_id/type` | Type text |
+| `POST` | `/api/v1/computers/:agent_id/key` | Press a key |
+| `GET` | `/api/v1/computers/:agent_id/screenshot` | Take a screenshot |
+| `GET` | `/api/v1/computers/:agent_id/screen` | Screen streaming WebSocket |
+| `GET/POST` | `/api/v1/computers/:agent_id/files/*` | File workspace operations |
+| `POST` | `/api/v1/computers/:agent_id/control/take` | Take human control |
+| `POST` | `/api/v1/computers/:agent_id/control/release` | Release human control |
+| `POST` | `/api/v1/computers/:agent_id/ensure` | Ensure container exists (create if missing) |
+| `POST` | `/api/v1/computers/:agent_id/stop` | Stop the container |
+| `POST` | `/api/v1/computers/:agent_id/reset` | Reset to clean state |
+
+**Key differences:**
+
+| Aspect | Single-Computer | Agent-Scoped |
+|--------|----------------|--------------|
+| Browser instances | Shared across agents | One per agent |
+| Workspace isolation | None | Per-agent confined workspace |
+| Network isolation | None | Per-agent loopback network |
+| Supervisor required | No | Yes (`COMPUTER_TOKEN` set) |
+| Container lifecycle | Not managed | Supervisor manages creation/destruction |
+| Port allocation | Fixed (single service) | Deterministic per agent (hash-based) |
+| Use case | Single agent, external computer | Multi-agent, isolated environments |
+
+---
+
+## API routes
+
+The supervisor-managed agent-scoped routes are the primary interface for computer use. The single-computer routes are available as a fallback when the supervisor is not configured.
 
 | Method | Path | Description |
 |--------|------|-------------|
