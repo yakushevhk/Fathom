@@ -88,7 +88,7 @@ export default function HomePage() {
       <div className="h-9 flex items-center px-4 border-b border-white/[0.06] text-xs text-gray-400 shrink-0">
         Fathom Operations Overview
       </div>
-      <main className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-6">
+      <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-6">
         <header className="max-w-3xl">
           <p className="ops-kicker">Control plane</p>
           <h1 className="text-xl sm:text-2xl text-gray-100 font-medium tracking-tight mt-2">Autonomous workers, at a glance</h1>
@@ -212,7 +212,7 @@ export default function HomePage() {
             )}
           </div>
         </section>
-      </main>
+      </div>
     </div>
   )
 }

@@ -8,20 +8,19 @@ Fathom can run workers on infrastructure you control: coworkers are durable prof
 
 ## Coworkers
 
-A **coworker** is a persistent agent profile stored in SQLite. Each coworker has its own identity, goals, and optional linked Fathom session or channel.
+A **coworker** is a persistent agent profile stored in SQLite. Each coworker has its own identity, role, and optional linked session.
 
 ### Coworker fields
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `id` | UUID v7 | Unique identifier |
-| `name` | string | Human-readable name |
-| `description` | string | Natural-language description of the coworker's role and goals |
-| `system_prompt` | string? | Optional system prompt override |
-| `profile` | string? | Persona profile name (hunter, analyst, validator, or custom) |
-| `session_id` | UUID v7? | Linked session output |
-| `channel_id` | UUID v7? | Linked channel for results delivery |
-| `enabled` | bool | Whether the coworker is active |
+| `id` | string | Unique identifier (alphanumeric, dashes, underscores, dots) |
+| `name` | string | Human-readable name (max 200 chars) |
+| `title` | string | Short title describing the coworker's purpose (max 200 chars) |
+| `role` | string | Role identifier (max 100 chars) |
+| `prompt` | string | System prompt / instructions for the coworker (max 32,000 chars) |
+| `visibility` | string | Scope visibility — `"private"` (default) or `"shared"` (max 32 chars) |
+| `active` | bool | Whether the coworker is enabled (default: `true`) |
 | `created_at` | datetime | Creation timestamp |
 | `updated_at` | datetime | Last update timestamp |
 
@@ -35,14 +34,27 @@ A **coworker** is a persistent agent profile stored in SQLite. Each coworker has
 | `PUT` | `/api/v1/coworkers/:id` | Update coworker |
 | `DELETE` | `/api/v1/coworkers/:id` | Delete coworker |
 
+**Create request body:**
+
+```json
+{
+  "name": "market-watcher",
+  "title": "Daily market monitoring",
+  "role": "analyst",
+  "prompt": "Monitor AI startup funding news daily",
+  "visibility": "private",
+  "active": true
+}
+```
+
 ### Run lifecycle
 
 Coworkers and schedules are persisted configuration. The server exposes schedule claiming, but this endpoint does not spawn jobs; an external scheduler or operator must submit the resulting task through the session or jobs API.
 
 When an external runner starts a coworker task:
 
-1. The coworker's profile and prompt are loaded
-2. A new session is created from the configured coworker query/description
+1. The coworker's prompt and role are loaded
+2. A new session is created from the schedule's query text
 3. Results are delivered when a linked channel and its transport are configured
 4. The session ID is stored in the coworker record for retrieval
 
@@ -52,38 +64,35 @@ A schedule or channel does not provision external infrastructure or credentials;
 
 ## Channels
 
-**Channels** link coworkers to surfaces where they can be addressed and where results are delivered. A channel is a symbolic communication endpoint.
+**Channels** link coworkers to sessions where they can be addressed and where results are delivered. A channel is a lightweight symbolic mapping — it associates a title with an optional linked session.
 
-### Channel types
+### Channel fields
 
-| Type | Description |
-|------|-------------|
-| `cli` | Command-line interface — results printed to stdout |
-| `http` | HTTP webhook — results POSTed to a URL |
-| `telegram` | Configured Telegram delivery |
-| `email` | Configured email delivery |
-| `slack` | Configured Slack/webhook delivery, when supported by the deployment |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique identifier |
+| `coworker_id` | string | The coworker this channel belongs to |
+| `title` | string | Human-readable channel name |
+| `session_id` | string? | Optional linked Fathom session for results delivery |
+| `created_at` | datetime | Creation timestamp |
+| `updated_at` | datetime | Last update timestamp |
 
 ### API
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/v1/channels` | List all channels |
+| `GET` | `/api/v1/channels?coworker_id=<id>` | List channels for a coworker |
 | `POST` | `/api/v1/channels` | Create a new channel |
-| `GET` | `/api/v1/channels/:id` | Get channel details |
-| `PUT` | `/api/v1/channels/:id` | Update channel |
+| `PUT` | `/api/v1/channels/:id` | Update channel title/session mapping |
 | `DELETE` | `/api/v1/channels/:id` | Delete channel |
 
-### Channel configuration
+**Create request body:**
 
 ```json
 {
-  "name": "team-alerts",
-  "type": "telegram",
-  "config": {
-    "bot_token": "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11",
-    "chat_id": "-1001234567890"
-  }
+  "coworker_id": "<coworker-id>",
+  "title": "team-alerts",
+  "session_id": "<session-id>"
 }
 ```
 
@@ -97,29 +106,20 @@ A schedule or channel does not provision external infrastructure or credentials;
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `id` | UUID v7 | Unique identifier |
-| `coworker_id` | UUID v7 | The coworker to run |
-| `cron` | string | Cron expression (e.g., `0 */4 * * *` for every 4 hours) |
-| `timezone` | string | Timezone (default: UTC) |
-| `enabled` | bool | Whether the schedule is active |
-| `last_run_at` | datetime? | Timestamp of the last run |
-| `next_run_at` | datetime? | Calculated next run time |
+| `id` | string | Unique identifier |
+| `coworker_id` | string | The coworker to run |
+| `cron_expression` | string | Five-field cron expression (e.g., `0 */4 * * *` for every 4 hours) |
+| `timezone` | string | IANA timezone or UTC offset (default: `"UTC"`) |
+| `query` | string | The task query/prompt sent to the coworker session (max 20,000 chars) |
+| `enabled` | bool | Whether the schedule is active (default: `true`) |
+| `next_run` | string? | Calculated next run time (RFC 3339) |
+| `last_run` | datetime? | Timestamp of the last run |
 | `created_at` | datetime | Creation timestamp |
+| `updated_at` | datetime | Last update timestamp |
 
 ### Atomic claim
 
-When the scheduler fires, it **atomically claims** the schedule by updating `next_run_at` to a future time in a single SQLite transaction. This prevents two concurrent scheduler processes from running the same task:
-
-```sql
-UPDATE schedules
-SET last_run_at = CURRENT_TIMESTAMP,
-    next_run_at = calculate_next(cron, CURRENT_TIMESTAMP)
-WHERE id = ?
-  AND next_run_at <= CURRENT_TIMESTAMP
-  AND enabled = 1
-```
-
-If the UPDATE affects 0 rows, another scheduler already claimed this task — the current process skips it.
+When the scheduler fires, it **atomically claims** due schedules by updating `next_run` to a future time in a single SQLite transaction. This prevents two concurrent scheduler processes from running the same task. If the claim affects 0 rows for a given schedule, another scheduler already claimed it.
 
 ### API
 
@@ -130,7 +130,19 @@ If the UPDATE affects 0 rows, another scheduler already claimed this task — th
 | `GET` | `/api/v1/schedules/:id` | Get schedule details |
 | `PUT` | `/api/v1/schedules/:id` | Update schedule |
 | `DELETE` | `/api/v1/schedules/:id` | Delete schedule |
-| `POST` | `/api/v1/schedules/claim` | Atomic claim endpoint (internal, used by the scheduler) |
+| `POST` | `/api/v1/schedules/claim` | Atomic claim due schedules (internal, used by the scheduler) |
+
+**Create request body:**
+
+```json
+{
+  "coworker_id": "<coworker-id>",
+  "cron_expression": "0 */4 * * *",
+  "timezone": "UTC",
+  "query": "Monitor AI startup funding news today",
+  "enabled": true
+}
+```
 
 ### Example cron expressions
 
@@ -148,20 +160,29 @@ If the UPDATE affects 0 rows, another scheduler already claimed this task — th
 
 Notifications deliver results to configured symbolic channels. Delivery still requires the corresponding `[notifications]` settings, credentials, and reachable external transport; Fathom does not provide those services.
 
-### Notification types
+### Supported channels
 
-| Type | Description |
-|------|-------------|
-| `session.completed` | Coworker session completed successfully |
-| `session.failed` | Coworker session failed |
-| `watch.new_contacts` | New contacts discovered in a scheduled run |
-| `schedule.missed` | A scheduled run was missed (e.g., system was down) |
+| Channel | Description |
+|---------|-------------|
+| `webhook` | HTTP webhook — sends to the configured `webhook_url` |
+| `email` | SMTP email delivery (configured via `smtp_host`, `email_to`, etc.) |
+| `telegram` | Telegram bot delivery (configured via `telegram_bot_token`, `telegram_chat_id`) |
 
 ### API
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/api/v1/notifications/test` | Send a test notification to a channel |
+| `POST` | `/api/v1/notifications/test` | Send a test notification through a configured channel |
+
+**Test notification request body:**
+
+```json
+{
+  "channel": "telegram"
+}
+```
+
+The `channel` field accepts `"webhook"`, `"email"`, or `"telegram"` — it references a channel already configured in `[notifications]`, not an arbitrary destination.
 
 ### Configuration
 
@@ -169,14 +190,13 @@ Notifications deliver results to configured symbolic channels. Delivery still re
 # ~/.fathom/config.toml
 
 [notifications]
-# Global notification settings (also used by sessions)
 webhook_url = ""
 email_to = ""
+smtp_host = "localhost"
+smtp_port = 25
+email_from = "fathom@localhost"
 telegram_bot_token = ""
 telegram_chat_id = ""
-
-# Coworker-specific notification channels are configured per-channel
-# in the channels API and linked to coworkers via channel_id.
 ```
 
 ---
@@ -184,23 +204,22 @@ telegram_chat_id = ""
 ## Complete workflow example
 
 ```bash
-# 1. Create a channel (Telegram)
-curl -X POST http://localhost:8080/api/v1/channels \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "alerts",
-    "type": "telegram",
-    "config": { "bot_token": "...", "chat_id": "..." }
-  }'
-
-# 2. Create a coworker
+# 1. Create a coworker
 curl -X POST http://localhost:8080/api/v1/coworkers \
   -H "Content-Type: application/json" \
   -d '{
     "name": "market-watcher",
-    "description": "Monitor AI startup funding news daily",
-    "profile": "analyst",
-    "channel_id": "<channel-id>"
+    "title": "Daily market monitoring",
+    "role": "analyst",
+    "prompt": "Monitor AI startup funding news daily"
+  }'
+
+# 2. Create a channel linked to a session
+curl -X POST http://localhost:8080/api/v1/channels \
+  -H "Content-Type: application/json" \
+  -d '{
+    "coworker_id": "<coworker-id>",
+    "title": "team-alerts"
   }'
 
 # 3. Schedule the coworker to run every 4 hours
@@ -208,16 +227,16 @@ curl -X POST http://localhost:8080/api/v1/schedules \
   -H "Content-Type: application/json" \
   -d '{
     "coworker_id": "<coworker-id>",
-    "cron": "0 */4 * * *",
-    "timezone": "UTC"
+    "cron_expression": "0 */4 * * *",
+    "timezone": "UTC",
+    "query": "Monitor AI startup funding news today"
   }'
 
 # 4. Test the notification channel
 curl -X POST http://localhost:8080/api/v1/notifications/test \
   -H "Content-Type: application/json" \
   -d '{
-    "channel_id": "<channel-id>",
-    "message": "Hello from Fathom!"
+    "channel": "webhook"
   }'
 ```
 

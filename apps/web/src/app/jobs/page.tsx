@@ -11,19 +11,25 @@ export default function JobsPage() {
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [actionStatus, setActionStatus] = useState<string | null>(null)
   const [logId, setLogId] = useState<string | null>(null)
   const [logContent, setLogContent] = useState('')
   const [logLoading, setLogLoading] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const [busyAction, setBusyAction] = useState<string | null>(null)
 
-  const load = async () => {
+  const load = async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true)
+    else setLoading(true)
     setFetchError(null)
     try {
       const resp = await api.jobs.list()
       setJobs(resp.jobs ?? [])
     } catch (e) {
-      setFetchError(String(e))
+      setFetchError(e instanceof Error ? e.message : 'Unable to load jobs')
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }
 
@@ -34,9 +40,11 @@ export default function JobsPage() {
     if (!nextTask || creating) return
     setCreating(true)
     setCreateError(null)
+    setActionStatus(null)
     try {
       await api.jobs.create(nextTask)
       setTask('')
+      setActionStatus('Job dispatched successfully.')
     } catch (e) {
       setCreateError(String(e))
       setCreating(false)
@@ -62,32 +70,47 @@ export default function JobsPage() {
   }
 
   const handleRerun = async (id: string) => {
+    if (busyAction) return
+    setBusyAction(`rerun:${id}`)
     setActionError(null)
+    setActionStatus(null)
     try {
       await api.jobs.rerun(id)
-      await load()
+      setActionStatus(`Job ${id.slice(0, 8)} rerun successfully.`)
+      await load(true)
     } catch (e) {
-      setActionError(`Could not rerun task: ${String(e)}`)
+      setActionError(`Could not rerun task: ${e instanceof Error ? e.message : String(e)}`)
+    } finally {
+      setBusyAction(null)
     }
   }
 
   const handleCancel = async (id: string) => {
+    if (busyAction || !window.confirm('Cancel this queued job?')) return
+    setBusyAction(`cancel:${id}`)
     setActionError(null)
+    setActionStatus(null)
     try {
       await api.jobs.cancel(id)
-      await load()
+      setActionStatus(`Job ${id.slice(0, 8)} cancelled successfully.`)
+      await load(true)
     } catch (e) {
-      setActionError(`Could not cancel task: ${String(e)}`)
+      setActionError(`Could not cancel task: ${e instanceof Error ? e.message : String(e)}`)
+    } finally {
+      setBusyAction(null)
     }
   }
 
   return (
     <div className="flex-1 flex flex-col min-w-0">
-      <div className="h-9 flex items-center px-4 border-b border-white/[0.06] text-xs text-gray-400 shrink-0">
-        Work / Jobs
+      <div className="ops-toolbar shrink-0">
+        <span className="ops-toolbar-title">Work / Jobs</span>
+        <button type="button" className="ops-button-secondary ml-auto" onClick={() => void load(true)} disabled={loading || refreshing}>
+          {refreshing ? 'Refreshing…' : 'Refresh'}
+        </button>
       </div>
-      <main className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-6">
-        <header>
+      <div className="ops-page p-4 sm:p-6 space-y-6">
+        <header className="ops-page-header">
           <p className="ops-kicker">Work queue</p>
           <h1 className="text-xl sm:text-2xl text-gray-100 font-medium tracking-tight mt-2">Dispatch and monitor jobs</h1>
           <p className="text-sm text-gray-500 mt-2 max-w-2xl">Dispatch work to the remote worker runtime and follow each job from queue to completion. Active jobs cannot be rerun until they finish or are cancelled.</p>
@@ -101,9 +124,9 @@ export default function JobsPage() {
             </div>
           </div>
           <form onSubmit={e => { e.preventDefault(); create() }} className="flex flex-col sm:flex-row gap-2">
-            <label htmlFor="new-task" className="sr-only">Task description</label>
+            <label htmlFor="jobs-new-task" className="sr-only">Task description</label>
             <input
-              id="new-task"
+              id="jobs-new-task"
               value={task}
               onChange={e => setTask(e.target.value)}
               placeholder="Describe work for a remote worker…"
@@ -120,10 +143,11 @@ export default function JobsPage() {
         {fetchError && (
           <div className="ops-alert flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" role="alert">
             <div><span>WORK QUEUE UNAVAILABLE</span>{fetchError}</div>
-            <button type="button" onClick={load} className="ops-button-secondary shrink-0">Retry</button>
+            <button type="button" onClick={() => void load(true)} className="ops-button-secondary shrink-0" disabled={refreshing}>Retry</button>
           </div>
         )}
         {actionError && <div className="ops-alert" role="alert"><span>TASK ACTION FAILED</span>{actionError}</div>}
+        {actionStatus && <div className="sr-only" role="status" aria-live="polite">{actionStatus}</div>}
 
         <section aria-labelledby="task-queue-heading">
           <div className="ops-panel-head">
@@ -150,9 +174,9 @@ export default function JobsPage() {
                       <span className="text-[10px] text-gray-600">attempt {j.attempt}/{j.max_attempts}</span>
                     </div>
                     <div className="flex flex-wrap gap-1 sm:ml-auto" aria-label={`Actions for task ${j.id.slice(0, 8)}`}>
-                      <button type="button" onClick={() => viewLog(j.id)} className="ops-button-secondary text-[10px] px-2 py-1">Log</button>
-                      {j.status !== 'running' && j.status !== 'queued' && <button type="button" onClick={() => handleRerun(j.id)} className="ops-button-secondary text-[10px] px-2 py-1">Rerun</button>}
-                      {(j.status === 'running' || j.status === 'queued') && <button type="button" onClick={() => handleCancel(j.id)} className="text-[10px] text-red-400 hover:text-red-300 px-2 py-1 rounded border border-red-500/20 hover:border-red-500/40">Cancel</button>}
+                      <button type="button" onClick={() => void viewLog(j.id)} className="ops-button-secondary text-[10px] px-2 py-1" disabled={logLoading && logId === j.id}>Log</button>
+                      {j.status !== 'running' && j.status !== 'queued' && <button type="button" onClick={() => void handleRerun(j.id)} className="ops-button-secondary text-[10px] px-2 py-1" disabled={busyAction !== null}>{busyAction === `rerun:${j.id}` ? 'Rerunning…' : 'Rerun'}</button>}
+                      {(j.status === 'running' || j.status === 'queued') && <button type="button" onClick={() => void handleCancel(j.id)} className="text-[10px] text-red-400 hover:text-red-300 px-2 py-1 rounded border border-red-500/20 hover:border-red-500/40 disabled:opacity-40" disabled={busyAction !== null}>{busyAction === `cancel:${j.id}` ? 'Cancelling…' : 'Cancel'}</button>}
                     </div>
                   </div>
                   <p className="text-sm text-gray-300 mt-3 break-words">{j.task}</p>
@@ -169,7 +193,7 @@ export default function JobsPage() {
             </div>
           )}
         </section>
-      </main>
+      </div>
     </div>
   )
 }

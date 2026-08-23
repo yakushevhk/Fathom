@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `pr-tui` crate is a terminal user interface (TUI) for the Fathom Agent. Built on the **ratatui** library (a fork of tui-rs) using **crossterm** as the backend. It implements an interactive console with query input, real-time agent progress display, LLM output streaming, and session history.
+The `pr-tui` crate is a terminal user interface (TUI) for the Fathom Agent. Built on the **ratatui** library (a fork of tui-rs) using **crossterm** as the backend. It implements an interactive console with query input, real-time agent progress display, LLM output streaming, session history, background job monitoring, long-term memory panel, and operator control (questions and approvals).
 
 ---
 
@@ -10,11 +10,11 @@ The `pr-tui` crate is a terminal user interface (TUI) for the Fathom Agent. Buil
 
 | File | Purpose |
 |------|---------|
-| `lib.rs` | Re-export of all modules |
-| `app.rs` | Application state, key handling and agent events |
-| `event.rs` | EventHandler: terminal reading + subscription to agent broadcast channel |
-| `streaming.rs` | StreamingBuffer — line-by-line streaming buffer |
-| `ui.rs` | Widget rendering (header, body, footer) |
+| `lib.rs` | Module entry point, re-exports |
+| `app.rs` | Application state, key handling, agent events |
+| `event.rs` | EventHandler: terminal reading + broadcast channel subscription |
+| `ui.rs` | Widget rendering (header, body, footer, overlays) |
+| `streaming.rs` | StreamingBuffer — line-by-line streaming display optimization |
 
 ---
 
@@ -22,12 +22,15 @@ The `pr-tui` crate is a terminal user interface (TUI) for the Fathom Agent. Buil
 
 ```rust
 pub mod app;
+pub mod ui;
 pub mod event;
 pub mod streaming;
-pub mod ui;
+
+pub use app::*;
+pub use streaming::*;
 ```
 
-All modules are public, but the main entry point is `App::run()`.
+All modules are public. The main entry point is `App::new()` followed by the host loop.
 
 ---
 
@@ -43,99 +46,283 @@ pub enum InputMode {
 }
 ```
 
-- **Normal** — navigation through the agent list, tab switching, commands
+- **Normal** — navigation, tab switching, commands
 - **Insert** — typing a text query in the input field
-- **Paste** — multi-line text insertion (supports `Ctrl+V`)
+- **Paste** — multi-line text insertion via bracketed paste (`Ctrl+V`)
 
-### 2.2 `HistoryTab` enum
+### 2.2 `Panel` enum (replaces HistoryTab)
 
 ```rust
-pub enum HistoryTab {
-    Current,
-    Past,
-    PastDetail,
+pub enum Panel {
+    Agents,
+    Output,
+    Log,
+    Jobs,
+    Memory,
+    Input,
 }
 ```
 
-- **Current** — current active session
-- **Past** — list of past sessions
-- **PastDetail** — detailed view of a selected past session
+Six navigable panels. `Tab`/`BackTab` cycles through them in order: `Agents → Output → Log → Jobs → Memory → Input → Agents`.
 
-### 2.3 `App` struct
+### 2.3 `Dialog` enum
+
+```rust
+pub enum Dialog {
+    Help,              // Keymap overlay (`?` toggles)
+    SessionBrowser,    // List/search past sessions
+    Confirm(String),   // Confirm action (y/n)
+    FilePicker,        // File reference picker for @ autocomplete
+}
+```
+
+### 2.4 `App` struct
 
 ```rust
 pub struct App {
-    pub mode: InputMode,
-    pub input: String,
-    pub paste_buffer: Vec<String>,
-    pub history_tab: HistoryTab,
-    pub session_history: Vec<SessionSummary>,
-    pub history_cursor: usize,
-    pub agents: Vec<AgentInfo>,
-    pub selected_agent: usize,
-    pub output_text: String,
-    pub status_message: String,
-    pub is_running: bool,
+    // --- Core state ---
     pub should_quit: bool,
-    pub thinking: ThinkingState,
-    pub config: AppConfig,
-    pub scroll_offset: u16,
-    pub output_scroll_offset: u16,
-    pub history_scroll_offset: u16,
-    pub past_detail_scroll_offset: u16,
-    pub use_streaming: bool,
-    pub streaming_buffers: HashMap<String, StreamingBuffer>,
-    pub input_cursor: usize,
-    pub input_scroll: usize,
     pub session_id: Option<SessionId>,
-    pub session_details: Option<SessionDetails>,
-    pub selected_finding_idx: Option<usize>,
-    pub findings: Vec<pr_persistence::Finding>,
-    pub event_rx: Option<broadcast::Receiver<AgentEvent>>,
-    pub db: Option<Arc<Persistence>>,
-    pub session_history_store: Option<SessionHistory>,
+    pub query: String,
+    pub input: String,
+    pub input_cursor: usize,
+    pub input_mode: InputMode,
+
+    // --- Agent tracking ---
+    pub agents: HashMap<AgentId, AgentInfo>,
+    pub event_log: Vec<EventLogEntry>,
+    pub total_tokens: u64,
+    pub context_window: u64,        // default 128_000
+    pub total_agents: u32,
+    pub start_time: std::time::Instant,
+    pub scroll_offset: u16,
+    pub selected_panel: Panel,
+
+    // --- Input history ---
+    pub input_history: Vec<String>,
+    pub history_index: Option<usize>,
+    pub input_snapshot: String,
+
+    // --- Mid-run steering ---
     pub steer_tx: Option<tokio::sync::mpsc::UnboundedSender<String>>,
-    pub cancel_tx: Option<tokio_util::sync::CancellationToken>,
-    pub completion_rx: Option<tokio::sync::mpsc::Receiver<SessionResult>>,
+
+    // --- Thinking/reasoning ---
+    pub thinking: HashMap<AgentId, ThinkingState>,
+    pub thinking_collapsed: bool,
+    pub last_thinking_time: Option<std::time::Instant>,
+
+    // --- Streaming ---
+    pub streams: HashMap<AgentId, StreamingBuffer>,
+    pub output_text: String,
+
+    // --- Paste ---
+    pub paste_buffer: String,
+    pub in_paste: bool,
+
+    // --- Tool calls ---
+    pub tool_calls: Vec<ToolCallEntry>,
+    pub active_tools: HashMap<AgentId, String>,
+
+    // --- Background jobs ---
+    pub jobs: Vec<pr_persistence::JobRow>,
+
+    // --- Memory ---
+    pub memory: Option<std::sync::Arc<pr_memory::Memory>>,
+    pub memory_snapshot: MemorySnapshot,
+
+    // --- Operator control plane ---
+    pub pending_question: Option<PendingQuestion>,
+    pub pending_approval: Option<PendingApproval>,
+
+    // --- Agent tree ---
+    pub collapsed: std::collections::HashSet<AgentId>,
+    pub agents_cursor: usize,
+
+    // --- Sparkline ---
+    pub token_history: Vec<u64>,
+
+    // --- UI state ---
+    pub show_help: bool,
+    pub replay_mode: bool,
+    pub dialog: Option<Dialog>,
+
+    // --- File references (@ autocomplete) ---
+    pub file_refs: Vec<String>,
+    pub in_file_ref: bool,
+    pub file_ref_query: String,
+    pub file_ref_selected: usize,
+
+    // --- Session browser ---
+    pub session_list: Vec<pr_persistence::SessionSummary>,
+
+    // --- Mouse ---
+    pub mouse_pos: (u16, u16),
 }
 ```
 
-#### Key fields:
-- `mode` — current input mode
-- `input` — text in the input field
-- `paste_buffer` — buffer for multi-line paste
-- `agents` — current session agent list
-- `selected_agent` — index of the selected agent
+#### Key field descriptions:
 
-### 2.4 `AgentInfo` struct
+| Field | Type | Purpose |
+|-------|------|---------|
+| `agents` | `HashMap<AgentId, AgentInfo>` | All agents in current session (flat map, tree via parent links) |
+| `event_log` | `Vec<EventLogEntry>` | Timestamped log entries for the Log panel |
+| `total_tokens` | `u64` | Aggregate token count across all agents |
+| `context_window` | `u64` | Context window size (default 128k) |
+| `selected_panel` | `Panel` | Currently focused panel |
+| `thinking` | `HashMap<AgentId, ThinkingState>` | Per-agent reasoning content |
+| `streams` | `HashMap<AgentId, StreamingBuffer>` | Per-agent streaming display buffers |
+| `tool_calls` | `Vec<ToolCallEntry>` | Tool call history with timing |
+| `active_tools` | `HashMap<AgentId, String>` | Currently executing tool per agent |
+| `jobs` | `Vec<JobRow>` | Durable background jobs (newest first) |
+| `memory` | `Option<Arc<Memory>>` | Long-term memory store reference |
+| `memory_snapshot` | `MemorySnapshot` | Periodic memory stats for display |
+| `pending_question` | `Option<PendingQuestion>` | Question awaiting user input |
+| `pending_approval` | `Option<PendingApproval>` | Side-effect awaiting y/n approval |
+| `collapsed` | `HashSet<AgentId>` | Collapsed agent tree nodes |
+| `agents_cursor` | `usize` | Cursor row in agents panel |
+| `token_history` | `Vec<u64>` | Time series for header sparkline |
+| `show_help` | `bool` | Help overlay visible |
+| `replay_mode` | `bool` | Showing a stored session (`tui --replay`) |
+| `dialog` | `Option<Dialog>` | Active modal dialog |
+| `session_list` | `Vec<SessionSummary>` | Session browser data |
+
+### 2.5 `AgentInfo` struct
 
 ```rust
 pub struct AgentInfo {
     pub id: AgentId,
+    pub parent: Option<AgentId>,
+    pub role: String,
     pub task: String,
-    pub status: pr_core::AgentStatus,
-    pub thinking: String,
-    pub summary: String,
-    pub tokens_used: u64,
-    pub findings_count: usize,
-    pub tools_used: Vec<String>,
-    pub children: Vec<AgentInfo>,
+    pub state: AgentState,
+    pub tokens: u64,
+    pub depth: u32,
+    pub tool_calls: Vec<String>,
+    pub start_time: std::time::Instant,
 }
 ```
 
-Tree-like structure: `children` allows rendering the agent hierarchy with indentation.
+| Field | Type | Purpose |
+|-------|------|---------|
+| `id` | `AgentId` | Unique agent identifier |
+| `parent` | `Option<AgentId>` | Parent agent ID (for tree rendering) |
+| `role` | `String` | Agent role description |
+| `task` | `String` | Agent's assigned task |
+| `state` | `AgentState` | Current state (Spawned/Running/Thinking/Completed/Failed/Cancelled) |
+| `tokens` | `u64` | Tokens used by this agent |
+| `depth` | `u32` | Nesting depth in agent tree |
+| `tool_calls` | `Vec<String>` | Tools this agent has called |
+| `start_time` | `Instant` | When the agent was spawned |
 
-### 2.5 Constructor `App::new(query: String)`
+### 2.6 Supporting types
 
-1. Creates `AppState::new()` with configuration
-2. Starts execution via `app_state.spawn_run(query.clone())`
-3. Returns `App` with:
-   - `is_running = true`
-   - `status_message = "Agent started..."`
-   - `mode = Insert`
-   - populated `event_rx`, `db`, `session_history_store`, `steer_tx`, `cancel_tx`, `completion_rx`
+#### `PendingQuestion`
 
-### 2.6 Key press handling — `handle_key(key: KeyCode)`
+```rust
+pub struct PendingQuestion {
+    pub request_id: String,
+    pub agent_id: AgentId,
+    pub question: String,
+    pub reply: tokio::sync::oneshot::Sender<String>,
+}
+```
+
+#### `PendingApproval`
+
+```rust
+pub struct PendingApproval {
+    pub request_id: String,
+    pub agent_id: AgentId,
+    pub tool: String,
+    pub args_preview: String,
+    pub reply: tokio::sync::oneshot::Sender<bool>,
+}
+```
+
+#### `EventLogEntry`
+
+```rust
+pub struct EventLogEntry {
+    pub time: chrono::DateTime<chrono::Local>,
+    pub message: String,
+    pub level: LogLevel,
+}
+```
+
+#### `LogLevel`
+
+```rust
+pub enum LogLevel {
+    Info,
+    Success,
+    Error,
+    Tool,
+}
+```
+
+#### `ToolCallEntry`
+
+```rust
+pub struct ToolCallEntry {
+    pub agent_id: AgentId,
+    pub tool: String,
+    pub start_time: std::time::Instant,
+    pub duration_ms: Option<u64>,
+    pub result_preview: Option<String>,
+}
+```
+
+#### `ThinkingState`
+
+```rust
+pub struct ThinkingState {
+    pub content: String,
+    pub last_update: std::time::Instant,
+}
+```
+
+#### `MemorySnapshot`
+
+```rust
+pub struct MemorySnapshot {
+    pub agent_active: usize,
+    pub user_active: usize,
+    pub run_active: usize,
+    pub entity_nodes: i64,
+    pub entity_edges: i64,
+    pub recent: Vec<MemoryLine>,
+    pub refreshed: bool,
+}
+
+pub struct MemoryLine {
+    pub id: String,       // last 8 chars of memory id
+    pub scope: String,
+    pub content: String,
+}
+```
+
+`MemorySnapshot::refresh(mem)` reloads counts + the 15 newest active memories from the store (synchronous reads — rusqlite is fast enough for the UI loop).
+
+### 2.7 Constructor — `App::new()`
+
+Takes **no arguments**. Initializes all fields to defaults:
+
+- `context_window = 128_000`
+- `input_mode = InputMode::Normal`
+- `selected_panel = Panel::Input`
+- All maps, vectors, and options empty/None
+
+The host loop is responsible for connecting to the event bus and spawning sessions.
+
+### 2.8 Key press handling — `handle_key(key)`
+
+#### Dialog-specific keys (when `dialog` is Some):
+
+Handled by `handle_dialog_key()` before other modes.
+
+#### File reference mode (when `in_file_ref` is true):
+
+Handled by `handle_file_ref_key()`.
 
 #### Paste mode:
 
@@ -143,173 +330,84 @@ Tree-like structure: `children` allows rendering the agent hierarchy with indent
 |-----|--------|
 | `Esc` | Exit paste mode → Insert |
 | `Enter` | Adds a line to `paste_buffer` |
-| `Ctrl+V` | Finishes paste: merges `paste_buffer` + `input` → `input`, clears buffer → Insert |
-| Other | Adds character to `input` (multi-line input) |
+| `Ctrl+V` | Finishes paste: merges buffer + input → input |
+| Other | Adds character to `paste_buffer` (multi-line) |
 
 #### Insert mode:
 
 | Key | Action |
 |-----|--------|
-| `Esc` | Switches to Normal |
-| `Enter` | Submits query (`submit_query`) |
-| `Ctrl+V` | Switches to Paste |
-| `Backspace` | Deletes character before cursor |
-| `Delete` | Deletes character after cursor |
-| `Left` / `Right` | Moves cursor |
+| `Esc` | Switch to Normal |
+| `Enter` | Submit query |
+| `Ctrl+V` | Switch to Paste mode |
+| `Backspace` | Delete character before cursor |
+| `Delete` | Delete character after cursor |
+| `Left` / `Right` | Move cursor |
 | `Home` / `End` | Beginning/end of line |
-| Characters | Inserts character at cursor position |
+| `Up` / `Down` | Navigate input history |
+| `@` | Enter file reference mode |
+| Characters | Insert at cursor |
 
 #### Normal mode:
 
 | Key | Action |
 |-----|--------|
-| `i` | → Insert |
-| `Tab` | Next tab (Current → Past → PastDetail) |
-| `Shift+Tab` | Previous tab |
-| `j` / `Down` | Next agent |
-| `k` / `Up` | Previous agent |
-| `g` / `Home` | First agent |
-| `G` / `End` | Last agent |
-| `Ctrl+E` | Scroll output down |
-| `Ctrl+Y` | Scroll output up |
-| `f` | Toggle fullscreen output |
-| `c` | Cancel session (with confirmation via status) |
-| `Esc` | Reset selection or exit |
-| `q` | Quit (only if session is not running) |
+| `i` | Enter Insert mode |
+| `Tab` | Next panel (Agents→Output→Log→Jobs→Memory→Input) |
+| `BackTab` | Previous panel |
+| `Up` / `Down` | Scroll or navigate agents cursor |
+| `Left` | Collapse agent node (Agents panel) |
+| `Right` | Expand agent node (Agents panel) |
+| `?` | Toggle help overlay |
+| `Ctrl+C` | Quit |
+| `q` | Quit |
+| `Esc` | Return to Input panel |
 
-### 2.7 Session cancellation confirmation
+### 2.9 Agent tree navigation
 
-`cancel_session()` uses a two-step confirmation:
-1. First call → sets `status_message = "Press c again to cancel session"`
-2. Second call (within 2 seconds, checked via `Instant::elapsed`) → sends cancel token, sets `is_running = false`
-3. If more than 2 seconds have passed — resets confirmation
+The `agents` field is a flat `HashMap<AgentId, AgentInfo>`. Tree structure is derived from `parent` links. `visible_agents()` computes the display order by walking the tree, respecting `collapsed` nodes. `agents_cursor` tracks the selected row; `Left`/`Right` toggle collapse state.
 
-### 2.8 Agent event handling — `handle_agent_event(event: AgentEvent)`
-
-Filters events by `session_id` (ignores foreign sessions).
-
-#### Handling by variant:
+### 2.10 Agent event handling — `handle_agent_event(event)`
 
 | Event | Action |
 |-------|--------|
-| `SessionStarted { session_id }` | Saves `session_id` |
-| `AgentSpawned` | Adds new `AgentInfo` to the list. Updates `session_id`. Loads previous agent messages from DB (batch of 50 for resume). Initializes `StreamingBuffer` |
-| `AgentThinking { agent_id, thinking }` | Finds the agent, appends thinking to accumulated (`push_thinking`). If selected — updates `output_text`. Updates `status_message` with thinking preview |
-| `ToolCallStarted` | Updates `status_message`: "🔧 Calling {tool_name}..." |
-| `ToolCallCompleted` | Updates `status_message`: "✓ {tool_name} completed ({duration}ms)" |
-| `MessageDelta` | Updates `output_text` via `update_output_text` |
-| `MessageCompleted` | Replaces streaming buffer with final content |
-| `AgentProgress` | Updates `status_message` |
-| `AgentCompleted` | Sets agent status to `Completed`, updates `tokens_used` and `summary`. If streaming is off — updates `output_text` |
-| `AgentFailed` | Sets status to `Failed`, updates `status_message` |
-| `SessionCompleted` | Sets `is_running = false`, `status_message = "Session completed"` |
-| `SessionFailed` | Sets `is_running = false`, `status_message = "Session failed"` |
-| `FindingDiscovered` | Increments agent's `findings_count` |
-| `StreamDelta` | Calls `push()` on the corresponding `StreamingBuffer` |
-| `SubtaskSpawned` | Updates `status_message` |
-| `SubtaskCompleted` | Updates `status_message` |
-| `SteeringInjected` | Updates `status_message` |
-| `Cancelled` | Updates `status_message` |
+| `SessionStarted` | Saves session_id |
+| `AgentSpawned` | Adds AgentInfo with parent/role/task/state/depth/tokens/start_time |
+| `ToolCallStarted` | Records ToolCallEntry, updates active_tools, adds EventLogEntry |
+| `ToolCallCompleted` | Sets duration_ms on entry, removes from active_tools, adds EventLogEntry |
+| `AgentStateChanged` | Updates agent state, adds EventLogEntry |
+| `AgentCompleted` | Sets Completed, updates tokens, adds EventLogEntry |
+| `AgentFailed` | Sets Failed, adds EventLogEntry |
+| `SessionCompleted` | Marks session done, adds EventLogEntry |
+| `SessionFailed` | Marks session failed, adds EventLogEntry |
+| `Finding` | Adds EventLogEntry |
+| `StreamDelta` | Pushes to StreamingBuffer for the agent |
+| `LlmStreamChunk` | Pushes to StreamingBuffer |
+| `QuestionAsked` | Creates PendingQuestion |
+| `ApprovalRequested` | Creates PendingApproval |
+| `SessionForked` | Adds EventLogEntry |
+| `FileChangeUndone` | Adds EventLogEntry |
+| `TitleGenerated` | Adds EventLogEntry |
 
-### 2.9 Thinking accumulation — `push_thinking(current, new)`
+### 2.11 Thinking accumulation
 
-```rust
-fn push_thinking(current: &mut String, new: &str) {
-    if current.is_empty() {
-        *current = new.to_string();
-    } else {
-        current.push_str("\n");
-        current.push_str(new);
-    }
-}
-```
-
-Thinking is accumulated with newline separation. On each `AgentThinking` event the string is appended to the existing one.
-
-### 2.10 Auto-hide thinking (30-second timeout)
-
-In `tick()`:
-```rust
-if let Some(last) = self.thinking.last_update {
-    if last.elapsed() > Duration::from_secs(30) {
-        self.thinking.clear();
-    }
-}
-```
-
-If more than 30 seconds have passed without a new thinking event, thinking is cleared and `output_text` is updated.
-
-### 2.11 `update_output_text()`
-
-Recalculates `output_text` based on the selected agent:
-1. If `use_streaming = true` and a streaming buffer exists for the agent → shows `buffer.text()`
-2. If the agent has a `summary` → shows the summary
-3. If there is thinking → shows thinking with the "💭 " prefix
-4. Otherwise → "Waiting for output..."
+`ThinkingState` stores accumulated reasoning content per agent. Auto-hide: if `last_thinking_time` exceeds 30 seconds without a new thinking event, thinking is cleared and `output_text` is updated.
 
 ### 2.12 Agent navigation — `navigate_agents(delta)`
 
-```rust
-fn navigate_agents(&mut self, delta: isize) {
-    if self.agents.is_empty() { return; }
-    let new = self.selected_agent as isize + delta;
-    self.selected_agent = new.max(0).min(self.agents.len() as isize - 1) as usize;
-    self.update_output_text();
-    self.scroll_offset = 0;
-    self.output_scroll_offset = 0;
-}
-```
-
-Bounds: `[0, len-1]`. Scrolls are reset on navigation.
-
-### 2.13 Main loop — `run(terminal)`
-
-```rust
-pub async fn run(&mut self, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> anyhow::Result<()>
-```
-
-Algorithm:
-1. Creates `EventHandler::new(250)` (250ms tick rate)
-2. Loop `loop`:
-   a. Renders UI via `ui::draw(terminal, self)`
-   b. Gets the next event: `self.events.next().await?`
-   c. Matches by event type:
-      - `Tick` → calls `self.tick()`
-      - `Key(key)` → calls `self.handle_key(key.code)`
-      - `AgentEvent(event)` → calls `self.handle_agent_event(event)`
-      - `Quit` → `break`
-   d. If `should_quit` → `break`
-3. Returns `Ok(())`
-
-### 2.14 `tick()` — periodic update
-
-1. Checks session completion via `completion_rx.try_recv()`
-   - `SessionResult::Success` → `is_running = false`, `status_message = "Session completed"`
-   - `SessionResult::Failure(e)` → `is_running = false`, `status_message = "Error: {e}"`
-2. Auto-hide thinking (30 seconds)
-3. Updates `output_text` if session is completed (final summary)
-
-### 2.15 Query submission — `submit_query()`
-
-Algorithm:
-1. Concatenates `input.trim()` (if non-empty)
-2. If `paste_buffer` exists — merges it with input via `\n`
-3. If query is empty — returns
-4. Clears input and paste_buffer
-5. Switches to Normal mode
-6. Calls `App::new(query)` — starts a new session
+Bounds: `[0, visible_agents().len() - 1]`. Scrolls are reset on navigation.
 
 ---
 
 ## 3. `event.rs` — `EventHandler`
 
-### 3.1 `Event` enum
+### 3.1 `AppEvent` enum
 
 ```rust
-pub enum Event {
+pub enum AppEvent {
+    Terminal(CrosstermEvent),
+    Agent(AgentEvent),
     Tick,
-    Key(KeyEvent),
-    AgentEvent(AgentEvent),
     Quit,
 }
 ```
@@ -318,400 +416,187 @@ pub enum Event {
 
 ```rust
 pub struct EventHandler {
-    rx: mpsc::Receiver<Event>,
-    _terminal_handle: JoinHandle<()>,
-    _agent_handle: JoinHandle<()>,
+    rx: mpsc::UnboundedReceiver<AppEvent>,
+    _tx: mpsc::UnboundedSender<AppEvent>,
 }
 ```
 
-Stores the receiver and two JoinHandles for background tasks (automatically aborted on drop).
+### 3.3 Constructor — `EventHandler::new()`
 
-### 3.3 Constructor `EventHandler::new(tick_rate: Duration)`
+Takes **no arguments** (no tick rate parameter). Returns `(Self, mpsc::UnboundedSender<AppEvent>)`.
 
-1. Creates `mpsc::channel::<Event>(100)` — buffer of 100 events
-2. Clones the sender for two tasks
-3. Spawns `spawn_terminal_reader(tx.clone(), tick_rate)`
-4. Spawns `spawn_agent_reader(tx.clone())`
-5. Returns `EventHandler { rx, _terminal_handle, _agent_handle }`
+Spawns two background tasks:
+1. `spawn_terminal_reader(tx)` — polls crossterm events at **50ms** interval (`crossterm::event::poll(Duration::from_millis(50))`)
+2. `spawn_agent_reader(tx, agent_rx)` — subscribes to `pr_core::event_bus()` broadcast channel
 
-### 3.4 `spawn_terminal_reader(tx, tick_rate)` — terminal reading
+### 3.4 `spawn_terminal_reader(tx)` — terminal reading
 
-Background task `tokio::task::spawn_blocking`:
-1. Sets `keyboard::set_cursor_shape(CursorShape::SteadyBlock)` (best effort)
-2. Loop `loop`:
-   a. **Polling with timeout**: `crossterm::event::poll(tick_rate)` every `tick_rate`
-   b. If `poll` returned `true` — reads `crossterm::event::read()`
-   c. Handles:
-      - `Key(k)` if `Ctrl+C` → sends `Event::Quit`, break
-      - `Key(k)` if `Ctrl+D` → sends `Event::Quit`, break
-      - `Key(k)` → sends `Event::Key(k)`
-      - Paste events are ignored (paste is handled via `Ctrl+V` in Insert mode)
-   d. If `poll` returned `false` (timeout) → sends `Event::Tick`
-3. If channel is closed (`send` returned `Err`) — break
+Background task (`tokio::spawn`):
+1. Polls `crossterm::event::poll(50ms)` — on timeout, sends `Tick`
+2. On event: reads `crossterm::event::read()`
+3. `Ctrl+C` / `Ctrl+D` → sends `Quit`
+4. Key events → sends `AppEvent::Terminal(event)`
+5. Paste events ignored (handled via `Ctrl+V` in Insert mode)
 
-**Polling every 100 ms** — standard interval for terminal TUIs. Too frequent polling loads the CPU, too rare polling makes the UI unresponsive.
+### 3.5 `spawn_agent_reader(tx, agent_rx)` — broadcast subscription
 
-### 3.5 `spawn_agent_reader(tx)` — subscription to agent broadcast channel
+Subscribes to `pr_core::event_bus()` and forwards events as `AppEvent::Agent(event)`. Handles `Lagged(n)` gracefully.
 
-Background task `tokio::spawn`:
-1. Attempts to subscribe to `pr_core::event_bus()` (broadcast channel)
-2. If broadcast channel is not initialized — logs a warning and exits
-3. Loop `loop`:
-   a. `rx.recv().await` — receives the next event
-   b. Matches:
-      - `Ok(event)` → `tx.send(Event::AgentEvent(event)).await`
-      - `Err(Lagged(n))` → logs warning (missed events)
-      - `Err(RecvError::Closed)` → break (channel closed)
-4. If mpsc channel is closed — break
+### 3.6 `EventHandler::next() -> Option<AppEvent>`
 
-**Channel conversion**: broadcast → mpsc. The broadcast channel can lose slow subscribers (Lagged), mpsc guarantees delivery.
-
-### 3.6 `EventHandler::next() -> Result<Event>`
-
-```rust
-pub async fn next(&self) -> Result<Event> {
-    self.rx.recv().await.ok_or(anyhow::anyhow!("Event channel closed"))
-}
-```
-
-Asynchronously waits for the next event. Returns an error if all senders are disconnected.
+Async wait on the mpsc receiver. Returns `None` when all senders are dropped.
 
 ---
 
 ## 4. `streaming.rs` — `StreamingBuffer`
 
-### 4.1 Struct
+### 4.1 Purpose
+
+Buffers incoming LLM tokens and only publishes completed lines to the display. A trailing partial line is hidden until it completes (receives a newline), reducing re-renders during streaming.
+
+### 4.2 Struct
 
 ```rust
 pub struct StreamingBuffer {
+    buffer: String,
+    published_lines: Vec<String>,
     partial_line: String,
-    lines: Vec<String>,
-    last_published: Instant,
+    has_new: bool,
 }
 ```
 
-- `partial_line` — current accumulated line (does not yet contain `\n`)
-- `lines` — array of completed lines
-- `last_published` — timestamp of the last publication
+### 4.3 Methods
 
-### 4.2 Constructor `StreamingBuffer::new()`
-
-```rust
-pub fn new() -> Self {
-    Self {
-        partial_line: String::new(),
-        lines: Vec::new(),
-        last_published: Instant::now(),
-    }
-}
-```
-
-### 4.3 `push(delta: &str)` — accumulation algorithm
-
-```rust
-pub fn push(&mut self, delta: &str) {
-    for ch in delta.chars() {
-        if ch == '\n' {
-            self.lines.push(std::mem::take(&mut self.partial_line));
-        } else {
-            self.partial_line.push(ch);
-        }
-    }
-    self.last_published = Instant::now();
-}
-```
-
-**Step-by-step algorithm:**
-1. Iterates over characters of the incoming `delta`
-2. If character is `\n` — current `partial_line` is moved to `lines` (via `mem::take`, zero-copy move), `partial_line` becomes an empty string
-3. If character is not `\n` — it is appended to `partial_line`
-4. Updates `last_published`
-
-This guarantees that lines are published only when a complete newline is received. Intermediate tokens accumulate in `partial_line`.
-
-### 4.4 `text() -> String` — getting the full text
-
-```rust
-pub fn text(&self) -> String {
-    let mut result = self.lines.join("\n");
-    if !self.partial_line.is_empty() {
-        if !result.is_empty() {
-            result.push('\n');
-        }
-        result.push_str(&self.partial_line);
-    }
-    result
-}
-```
-
-Joins all completed lines via `\n`, appends `partial_line` (if non-empty) with a preceding newline.
-
-### 4.5 `flush()` — forced publication of partial_line
-
-```rust
-pub fn flush(&mut self) {
-    if !self.partial_line.is_empty() {
-        self.lines.push(std::mem::take(&mut self.partial_line));
-    }
-}
-```
-
-Moves `partial_line` to `lines` even without `\n`. Used when streaming completes.
-
-### 4.6 `line_count() -> usize`
-
-```rust
-pub fn line_count(&self) -> usize {
-    self.lines.len() + if self.partial_line.is_empty() { 0 } else { 1 }
-}
-```
-
-Accounts for both completed lines and the incomplete partial_line.
-
-### 4.7 `last_updated() -> Instant`
-
-Returns `last_published` for external timeout checks.
+| Method | Description |
+|--------|-------------|
+| `new()` | Empty buffer |
+| `push(delta)` | Accumulates text; newline moves completed line to `published_lines` |
+| `published_text()` | All published lines joined with newlines |
+| `has_new_content()` | Whether new content is available since last ack |
+| `ack_new_content()` | Resets the new-content flag |
+| `partial_line()` | Current incomplete line (not yet published) |
+| `flush()` | Force-publish the partial line |
+| `line_count()` | Number of published lines |
+| `clear()` | Reset all content |
 
 ---
 
 ## 5. `ui.rs` — widget rendering
 
-### 5.1 Main function `draw(frame, app)`
-
-Builds a layout of 3 vertical blocks:
+### 5.1 Main layout — `draw(frame, app)`
 
 ```
 ┌─────────────────────────────────┐
-│           Header                │  ← draw_header()
+│           Header                │  ← sparkline, session info
 ├─────────────────────────────────┤
 │                                 │
-│             Body                │  ← draw_body()
+│             Body                │  ← panel-dependent content
 │                                 │
 ├─────────────────────────────────┤
-│           Footer                │  ← draw_footer()
+│           Footer/Input          │  ← input field or status bar
 └─────────────────────────────────┘
 ```
 
-**Sizes**:
-- Header: `Length(3)`
-- Body: `Min(0)` (takes remaining space)
-- Footer: `Length(3)`
+If `show_help` is true, a help overlay is drawn on top.
+If `dialog` is Some, the appropriate dialog is drawn (SessionBrowser, Confirm, FilePicker).
 
-### 5.2 `draw_header(frame, app, area)` — header
+### 5.2 `draw_header(frame, app, area)`
 
-Panel styled as `" Fathom "` with white text on blue background. `Span::styled` with `Style::default().fg(Color::White).bg(Color::Blue).add_modifier(Modifier::BOLD)`.
+Shows session ID, agent count, token count, and a sparkline from `token_history`.
 
-### 5.3 `draw_body(frame, app, area)` — main body
+### 5.3 `draw_body(frame, app, area)`
 
-Two display variants:
+Dispatches to the active panel's draw function:
 
-#### Current session (`HistoryTab::Current`):
-```
-┌────────────┬──────────────────────────┐
-│   Agent    │         Output           │
-│   Tree     │   (streaming/thinking/   │
-│   (30%)    │    summary) (70%)        │
-└────────────┴──────────────────────────┘
-```
-- Left panel (30%): `draw_agent_tree` — agent tree
-- Right panel (70%): `draw_output_panel` — selected agent's output
+| Panel | Rendered by |
+|-------|-------------|
+| `Agents` | `draw_agents_panel` — collapsible tree from `agents` HashMap |
+| `Output` | `draw_output_panel` — output text, thinking sub-panel, streaming |
+| `Log` | `draw_log_panel` — event log entries with level coloring |
+| `Jobs` | `draw_jobs_panel` — background job list |
+| `Memory` | `draw_memory_panel` — memory snapshot stats + recent entries |
+| `Input` | Inline in footer |
 
-#### Past sessions list (`HistoryTab::Past`):
-```
-┌─────────────────────────────────────┐
-│         Past Sessions               │
-│  Session 1: "query..." (completed)  │
-│  Session 2: "query..." (failed)     │
-│  ...                                │
-└─────────────────────────────────────┘
-```
+### 5.4 `draw_agents_panel(frame, app, area)`
 
-#### Past session details (`HistoryTab::PastDetail`):
-```
-┌────────────┬──────────────────────────┐
-│   Agent    │         Findings         │
-│   Tree     │                          │
-│   (30%)    │   (70%)                  │
-└────────────┴──────────────────────────┘
-```
+Renders the agent tree using `parent` links and `depth`. Collapsed nodes hide their children. Status icons per state:
 
-### 5.4 `draw_agent_tree(frame, app, area)` — agent tree
+| State | Icon |
+|-------|------|
+| Spawned | ⏳ |
+| Running | ⚡ |
+| Thinking | 💭 |
+| Completed | ✅ |
+| Failed | ❌ |
+| Cancelled | 🚫 |
 
-#### If no agents:
-Shows `Line::from("No agents yet...")` with gray color.
+### 5.5 `draw_output_panel(frame, app, area)`
 
-#### If agents exist:
-For each agent calls `render_agent_recursive` with initial `depth = 0`.
+Two sub-panels:
+- **Thinking** (top): shows `thinking` content for selected agent (if any)
+- **Output** (bottom): shows `output_text` (streaming buffer or summary)
 
-### 5.5 `render_agent_recursive(agent, lines, depth)` — recursive rendering
+If `pending_question` or `pending_approval` is present, a control banner is rendered.
 
-**Algorithm:**
-1. Creates indentation: `" ".repeat(depth * 3)` (3 spaces per level)
-2. Builds status icon:
-   - `Spawned` → `"⏳"`
-   - `Running` → `"⚡"`
-   - `Thinking` → `"💭"`
-   - `Completed` → `"✅"`
-   - `Failed` → `"❌"`
-   - `Cancelled` → `"🚫"`
-3. Truncates agent ID: `&agent.id.0[..8.min(agent.id.0.len())]`
-4. Truncates task to `max_task_len = (area_width - depth*3 - 16).max(10)` characters
-5. Adds `Line::from(vec![
-       Span::raw(indent),
-       Span::raw(icon),
-       Span::styled(short_id, Style::default().fg(Color::DarkGray)),
-       Span::raw(" "),
-       Span::raw(truncated_task),
-   ])`
-6. Recursively calls `render_agent_recursive` for each `child` with `depth + 1`
+### 5.6 `draw_log_panel(frame, app, area)`
 
-#### Example output:
-```
-⏳ abc12345 Research quantum computing
-  ⚡ def67890 Analyze recent papers
-    ✅ ghi11111 Summarize findings
-  ⏳ jkl22222 Search patents
-```
+Lists `event_log` entries with timestamp, level-colored icon, and message.
 
-### 5.6 `draw_output_panel(frame, app, area)` — output panel
+### 5.7 `draw_jobs_panel(frame, app, area)`
 
-#### If `fullscreen_output`:
-Renders `output_text` in a `" Output "` block spanning the entire available area.
+Lists `jobs` with status, query, and timestamps.
 
-#### Otherwise:
-Two vertical blocks:
-- **Output** (`Min(0)`): `output_text` in a `" Output "` block
-- **Status** (`Length(3)`): `status_message` in a `" Status "` block
+### 5.8 `draw_memory_panel(frame, app, area)`
 
-#### Output scroll:
-For `output_scroll_offset`:
-```rust
-let visible_lines = output_area.height as usize;
-let total_lines = output_text.lines().count().max(1);
-let scroll = app.output_scroll_offset.min(total_lines.saturating_sub(visible_lines) as u16);
-let text = output_text.lines().skip(scroll as usize).collect::<Vec<_>>().join("\n");
-```
+Shows `memory_snapshot` stats (agent/user/run counts, entity nodes/edges) and the 15 most recent active memories.
 
-### 5.7 `draw_footer(frame, app, area)` — footer panel
+### 5.9 `draw_footer(frame, app, area)`
 
-#### Insert mode:
-```
-┌────────────────────────────────────────┐
-│ > [input text]                         │
-│ Mode: INSERT │ Enter: submit │ Esc: normal │ Ctrl+V: paste │ Tab: switch │
-└────────────────────────────────────────┘
-```
+- **Insert mode**: `"> "` prefix + input text with cursor
+- **Normal mode**: Key hints
+- **Pending question**: Question text + input field
+- **Pending approval**: Tool name + args preview + y/n prompt
 
-- First line: `"> "` prefix + cursor
-- Second line: key hints
+### 5.10 Overlays
 
-#### Normal mode:
-```
-┌────────────────────────────────────────┐
-│ i: input │ Tab: switch │ j/k: navigate │ c: cancel │ q: quit │
-└────────────────────────────────────────┘
-```
+- `draw_help_overlay` — modal keymap reference
+- `draw_session_browser` — list/search past sessions
+- `draw_confirm_dialog` — confirm action
+- `draw_file_picker` — @ file reference autocomplete
 
-#### Paste mode:
-```
-┌────────────────────────────────────────┐
-│ Paste mode (Ctrl+V to finish): [text]  │
-│ Lines: N │ Enter: new line │ Esc: cancel │ Ctrl+V: finish │
-└────────────────────────────────────────┘
-```
+### 5.11 Helpers
 
-### 5.8 Agent tree rendering with depth indentation
-
-Recursive traversal of `AgentInfo::children` tree:
-- Each depth level adds 3 spaces to indentation
-- Child agents always follow directly after their parent
-- This creates a visual hierarchy:
-  ```
-  ⚡ root_agent    Research topic
-    ⚡ child_1     Analyze papers
-      ✅ grandchild Summarize
-    ⏳ child_2     Search patents
-  ```
+- `format_tokens(n)` — human-readable ("12.5k", "1.2M")
+- `format_elapsed_short(d)` — short duration ("1.2s", "3m 12s")
 
 ---
 
-## 6. `AppState` — internal state (helper struct)
-
-### 6.1 `AppState` struct
-
-```rust
-pub struct AppState {
-    pub config: AppConfig,
-    pub db: Arc<Persistence>,
-    pub llm: Arc<dyn LlmProvider>,
-    pub tools: Arc<ToolRegistry>,
-    pub events: broadcast::Sender<AgentEvent>,
-    pub steer_tx: tokio::sync::mpsc::UnboundedSender<String>,
-    pub steer_rx: tokio::sync::mpsc::UnboundedReceiver<String>,
-    pub cancel: tokio_util::sync::CancellationToken,
-    pub completion_tx: tokio::sync::mpsc::Sender<SessionResult>,
-}
-```
-
-### 6.2 `AppState::new()` — constructor
-
-1. Loads `AppConfig::load()`
-2. Creates output directory
-3. Opens `Persistence::open`
-4. Creates LLM provider (falls back to `DeepSeekProvider`)
-5. Creates `ToolRegistry::with_builtins()`
-6. Initializes broadcast channel (capacity 1024)
-7. Creates steer channel (unbounded mpsc)
-8. Creates completion channel (capacity 1)
-9. Creates `CancellationToken`
-
-### 6.3 `spawn_run(query)` — execution startup
-
-Background task `tokio::spawn`:
-1. Creates `Coordinator::new(...)` with full dependencies
-2. Connects steer, cancel, completion_tx
-3. Calls `coordinator.execute().await`
-4. On success — sends `SessionResult::Success`
-5. On error — sends `SessionResult::Failure`
-
----
-
-## 7. Data flow
+## 6. Data flow
 
 ```
 User Input (Terminal)
        │
        ▼
- EventHandler ──── tick_rate: 250ms ──── Tick
+ EventHandler ──── 50ms poll ──── Tick
        │
-       ├── KeyEvent → App::handle_key()
+       ├── TerminalEvent → App::handle_key()
+       │                        │
+       │                        ▼
+       │                  submit_query()
+       │                        │
+       │                  spawn session via server API
+       │
+       ├── AgentEvent → App::handle_agent_event()
        │                    │
-       │                    ▼
-       │              submit_query()
-       │                    │
-       │                    ▼
-       │              AppState::spawn_run()
-       │                    │
-       │                    ▼
-       │              Coordinator::execute()
-       │                    │
-       │                    ├── broadcast::Sender<AgentEvent>
-       │                    │         │
-       │                    │         ▼
-       │                    │   spawn_agent_reader()
-       │                    │         │
-       │                    │         ▼
-       │              EventHandler::AgentEvent
-       │                    │
-       │                    ▼
-       │              App::handle_agent_event()
-       │                    │
-       │                    ├── Update agents[]
-       │                    ├── Update streaming_buffers
+       │                    ├── Update agents HashMap
+       │                    ├── Update streams (StreamingBuffer)
        │                    ├── Update thinking
+       │                    ├── Update tool_calls
+       │                    ├── Update event_log
+       │                    ├── Handle pending_question/pending_approval
        │                    └── Update output_text
        │
-       └──────────────────────────────────────────────
+       └── Tick → refresh UI state
                               │
                               ▼
                     Terminal (ratatui)
@@ -720,22 +605,36 @@ User Input (Terminal)
 
 ---
 
-## 8. Key features
+## 7. Key features
 
-### 8.1 Thread safety
-- `EventHandler` uses `mpsc::channel` to pass events from background threads to the main thread
+### 7.1 Thread safety
+- `EventHandler` uses `mpsc::UnboundedChannel` for event delivery
 - `broadcast::channel` for multicast agent events (multiple subscribers)
 - All `App` state is modified in a single thread (main loop)
 
-### 8.2 Graceful degradation
-- If the broadcast channel is not initialized — `spawn_agent_reader` logs a warning and exits
-- If the database is unavailable — history is not loaded, sessions work without persistence
-- If streaming is disabled — falls back to summary
+### 7.2 Graceful degradation
+- If broadcast channel is not initialized — `spawn_agent_reader` logs warning and exits
+- If database is unavailable — history not loaded, sessions work without persistence
+- If streaming disabled — falls back to summary
 
-### 8.3 Resume support
-On `AgentSpawned`, previous agent messages are loaded from the DB (up to 50), so context can continue after a restart.
+### 7.3 Collapsible agent tree
+- `collapsed: HashSet<AgentId>` tracks which nodes are folded
+- `Left`/`Right` keys toggle collapse in the Agents panel
+- `visible_agents()` computes display order respecting collapse state
 
-### 8.4 Memory management
-- `StreamingBuffer` uses `mem::take` for zero-copy string moves
-- `paste_buffer` is cleared after submission
-- The `agents` list grows linearly (no automatic cleanup of completed agents)
+### 7.4 Operator control plane
+- `PendingQuestion` / `PendingApproval` enable mid-run user interaction
+- Questions and approvals block the agent until answered via `reply` oneshot channel
+
+### 7.5 Memory panel
+- `MemorySnapshot::refresh()` runs synchronous SQLite reads (fast enough for UI loop)
+- Shows agent/user/run scope counts, entity graph stats, and 15 newest active memories
+
+### 7.6 Replay mode
+- `replay_mode: bool` — set by `tui --replay` flag
+- UI shows a stored session instead of a live run
+
+### 7.7 File references (@ autocomplete)
+- Typing `@` enters file reference mode
+- `file_refs`, `file_ref_query`, `file_ref_selected` manage the autocomplete state
+- `FilePicker` dialog renders the selection

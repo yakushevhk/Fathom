@@ -125,7 +125,7 @@ and SQLite tracing makes every session debuggable after the fact.
 
 | Metric | Value |
 |---|---|
-| Built-in tools | 51 (+6 computer CDP conditional, + MCP tools dynamic) |
+| Built-in tools | 51 always-available (+6 computer use, +5 browser CDP conditional; + MCP tools dynamic) |
 | Dispatch overhead for a 1-call batch | ~141 µs over raw call |
 | Per-call overhead in an 8-call batch | ≈0 µs (amortized) |
 | serde tool-argument speed | ~316 ns per round-trip |

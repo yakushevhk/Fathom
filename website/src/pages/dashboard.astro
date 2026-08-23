@@ -83,25 +83,20 @@ open http://localhost:8080/dashboard
       <div class="dash-cta">
         <div class="bench-card-lg">
           <h3 data-i18n="dashboardPage.cta.title">Try the dashboard</h3>
-          <p class="bench-sub" data-i18n="dashboardPage.cta.sub">Install Fathom, start the server and open /dashboard in your browser.</p>
-          <div class="code-card code-card--xs">
-            <pre><code>git clone https://github.com/yakushevhk/Fathom.git
-cd Fathom
-cargo build --release
-./target/release/fathom serve</code></pre>
-          </div>
-                    <div class="mt-16">
+          <p class="bench-sub" data-i18n="dashboardPage.cta.sub">Request access to a provisioned server and open /dashboard in your browser.</p>
+          <div class="mt-16">
+            <a href="mailto:hello@fathom.uz" class="btn btn-outline">Request access</a>
           </div>
         </div>
       </div>
 
-      <!-- Playground cross-link -->
+      <!-- Repository cross-link -->
       <div class="dash-cta dash-cta--alt">
         <div class="bench-card-lg">
-          <h3 data-i18n="dashboardPage.cta.playground">Open Playground</h3>
-          <p class="bench-sub" data-i18n="dashboardPage.cta.playgroundNote">Want to run research interactively? The Playground launches sessions, streams agent progress live and renders the report — right in the site.</p>
+          <h3 data-i18n="dashboardPage.cta.playground">Open the repository</h3>
+          <p class="bench-sub" data-i18n="dashboardPage.cta.playgroundNote">Explore the full source: 12 crates, tools, apps, and documentation — all in one GitHub repository.</p>
           <div class="mt-16">
-            <a href="/playground" class="btn btn-primary" data-i18n="dashboardPage.cta.playground">Open Playground</a>
+            <a href="https://github.com/yakushevhk/Fathom" class="btn btn-primary" target="_blank" rel="noopener" data-i18n="dashboardPage.cta.playground">View on GitHub</a>
           </div>
         </div>
       </div>

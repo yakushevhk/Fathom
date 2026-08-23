@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fathom Whitepaper — How Digital Workers See & Control Computers</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <div class="header-left">
+        <div class="header-meta">
+          <span class="brand-badge">FATHOM</span>
+          <span class="header-category">COMPUTER USE · ACCESSIBILITY PARADIGM</span>
+        </div>
+        <div class="header-title-main">How Digital Workers See & Control Computers</div>
+        <div class="header-subtitle">Accessibility-Tree Snapshots: Semantic Understanding Over Brittle Visual Pixels</div>
+      </div>
+      <div class="header-right">
+        <span class="page-badge">PAGE 28 / 42</span>
+      </div>
+    </div>
+
+    <div class="content-body">
+<div class="card-accent">
+  <div class="card-title">The Semantic Revolution in Browser Automation</div>
+  <p>
+    Traditional browser automation fails because web pages frequently change CSS classes, responsive layouts, and visual styling. Fathom bypasses visual fragility by operating browsers via the <strong>Accessibility Tree</strong> (the standard semantic model used by screen readers).
+  </p>
+</div>
+
+<div class="grid-2">
+  <div class="card card-amber">
+    <div class="card-title-sm">Legacy Pixel / CSS Automation (Fragile)</div>
+    <ul style="font-size: 7.2pt; margin-bottom: 0;">
+      <li><strong>Obfuscated CSS:</strong> Class names like <code>.sc-82f_btn</code> change on every frontend software deployment.</li>
+      <li><strong>Pixel Drift:</strong> Screen scaling or window resizing causes mouse clicks to hit empty whitespace.</li>
+      <li><strong>High Latency:</strong> Uploading high-res screenshots to vision models consumes massive bandwidth and tokens.</li>
+    </ul>
+  </div>
+
+  <div class="card card-emerald">
+    <div class="card-title-sm">Fathom Semantic Accessibility (Rock Solid)</div>
+    <ul style="font-size: 7.2pt; margin-bottom: 0;">
+      <li><strong>Semantic Roles:</strong> The agent sees functional elements: <code>Button: "Login"</code>, <code>TextBox: "Email"</code>.</li>
+      <li><strong>Opaque Numerical Refs:</strong> Direct addressing via stable tokens (e.g. <code>@e14</code>) regardless of visual layout.</li>
+      <li><strong>10x Token Efficiency:</strong> Lightweight accessibility snapshots use 90% fewer tokens than raw images.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Accessibility Snapshot Architecture</div>
+  <div class="diagram-flow">
+    <div class="flow-step">
+      <div class="flow-title">1. Chromium Page</div>
+      <div class="flow-desc">Dynamic DOM & SPAs</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-title">2. ARIA Snapshot</div>
+      <div class="flow-desc">Extracts semantic accessibility tree</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-title">3. Opaque Token Mapping</div>
+      <div class="flow-desc">Assigns stable refs (@e1, @e2)</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-title">4. Agent Interaction</div>
+      <div class="flow-desc">click(@e1), type(@e2, "text")</div>
+    </div>
+  </div>
+</div>
+
+<div class="card-slate">
+  <div class="card-title-sm">Screen-Reader Simplicity for AI Models</div>
+  <p style="font-size: 7.4pt;">
+    By translating complex visual layouts into clean, hierarchical text trees (role, name, value, state), foundation models can reason over web applications with 99%+ accuracy while consuming a fraction of the token budget required by vision models.
+  </p>
+</div>
+
+<div class="callout callout-success">
+  <strong>Layout-Agnostic Stability:</strong> Whether a website is redesigned, translated into Japanese, or resized to mobile viewport, the accessibility tree retains functional semantic integrity.
+</div>
+    </div>
+
+    <div class="footer">
+      <div class="footer-left">
+        <span>Fathom Autonomous Workforce Runtime</span>
+        <span class="footer-bullet">•</span>
+        <span>Elastic-2.0 License</span>
+        <span class="footer-bullet">•</span>
+        <span>Strategic Whitepaper Presentation</span>
+      </div>
+      <div class="footer-right">v0.3.0 · Page 28 of 42</div>
+    </div>
+  </div>
+</body>
+</html>

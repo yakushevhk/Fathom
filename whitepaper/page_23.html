@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fathom Whitepaper — How the Virtual Office Operates</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <div class="header-left">
+        <div class="header-meta">
+          <span class="brand-badge">FATHOM</span>
+          <span class="header-category">SYSTEM ARCHITECTURE · VIRTUAL OFFICE</span>
+        </div>
+        <div class="header-title-main">How the Virtual Office Operates</div>
+        <div class="header-subtitle">The Conceptual Architecture of an Autonomous Multi-Agent Organization</div>
+      </div>
+      <div class="header-right">
+        <span class="page-badge">PAGE 23 / 42</span>
+      </div>
+    </div>
+
+    <div class="content-body">
+<div class="card-dark">
+  <div class="card-title">The Virtual Office Hierarchy: Division of Labor in Action</div>
+  <p>
+    Fathom does not operate as a single monolithic prompt. It structures work like an agile digital consulting agency where a Coordinator (Manager) delegates to specialized Worker Pods, supervised by Analysts and formatted by Writers.
+  </p>
+</div>
+
+<div class="card">
+  <div class="card-title">Organizational Workflow Topology</div>
+  <div class="diagram-flow">
+    <div class="flow-step">
+      <div class="flow-title">1. Client Request</div>
+      <div class="flow-desc">Submitted via API / Slack / Cron</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-title">2. Coordinator (Manager)</div>
+      <div class="flow-desc">Plans & decomposes into subtasks</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-title">3. Parallel Worker Pods</div>
+      <div class="flow-desc">Researchers, Scrapers & Coders</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-title">4. Verifier & Writer</div>
+      <div class="flow-desc">SMTP checks, QA & Final Report</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-3">
+  <div class="card card-accent">
+    <div class="card-title-sm">1. Coordinator Agent</div>
+    <p style="font-size: 7.2pt;">Analyzes the objective, sets token budgets, establishes task trees, and tracks progress across child sub-agents with fair-share scheduling.</p>
+  </div>
+
+  <div class="card card-emerald">
+    <div class="card-title-sm">2. Parallel Workers</div>
+    <p style="font-size: 7.2pt;">Execute discrete searches, scrape registries, run Python data transformations, and operate web browsers simultaneously across CPU threads.</p>
+  </div>
+
+  <div class="card card-purple">
+    <div class="card-title-sm">3. Quality Judge & Writer</div>
+    <p style="font-size: 7.2pt;">Validates data completeness against the initial goal, triggers gap-filling rounds, and compiles clean deliverables into PDF/Excel.</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Context Protection & Disk-Spill Backing Architecture</div>
+  <div class="grid-2">
+    <div>
+      <p style="font-size: 7.4pt;"><strong>Executive Summaries Only:</strong> Sub-agents return concise executive findings (200–500 tokens) to the coordinator manager.</p>
+    </div>
+    <div>
+      <p style="font-size: 7.4pt;"><strong>Raw Disk Spill:</strong> Gigabyte-scale raw HTML, JSON payloads, and scrape dumps are written to disk workspaces (<code>~/.fathom/jobs/</code>), keeping LLM context clean.</p>
+    </div>
+  </div>
+</div>
+
+<div class="callout callout-info">
+  <strong>Enterprise Impact:</strong> High-level managers never experience context overflow or degraded reasoning quality, even during massive 1,000-page research runs.
+</div>
+    </div>
+
+    <div class="footer">
+      <div class="footer-left">
+        <span>Fathom Autonomous Workforce Runtime</span>
+        <span class="footer-bullet">•</span>
+        <span>Elastic-2.0 License</span>
+        <span class="footer-bullet">•</span>
+        <span>Strategic Whitepaper Presentation</span>
+      </div>
+      <div class="footer-right">v0.3.0 · Page 23 of 42</div>
+    </div>
+  </div>
+</body>
+</html>

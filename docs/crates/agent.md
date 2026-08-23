@@ -19,6 +19,10 @@
 11. [doom_loop.rs — Loop detector](#11-doom_looprs)
 12. [resume.rs — Session resumption](#12-resumers)
 13. [tool_executor.rs — Parallel tool executor](#13-tool_executorrs)
+14. [task_tree.rs — Task-tree blackboard](#14-task_treers)
+15. [reflection.rs — Post-task reflection engine](#15-reflectionrs)
+16. [improvement.rs — Durable improvement backlog](#16-improvementrs)
+17. [control.rs — Operator control plane](#17-controlrs)
 
 ---
 
@@ -808,7 +812,96 @@ Sends the event to the bus.
 2. **summary.md** — writes `synthesis`.
 3. **index.md** — builds Markdown with metadata (query, date, agents, tokens) and links to finding files.
 4. **findings/finding-{i}.md** — writes `summary` for each finding.
-5. **sources.md** — collects unique sources from all `finding.sources`, builds the list `"- [title](url)"`. If there are no sources — `_No structured sources were recorded._`.
+### 3.26. Goal Mode: `evaluate_and_replan(&self, findings) -> Option<Vec<String>>` — async
+
+**Purpose:** After the initial fan-out and collection phases, an LLM judge reviews whether the collected findings fully satisfy the original research goal. If gaps remain, the coordinator generates targeted sub-tasks to fill them. This runs at the end of `execute()`, between Step 2 (collection) and Step 3 (synthesis), and is gated by `was_planned && config.agent.replan_rounds > 0`.
+
+**Activation conditions (in `execute()`):**
+1. The initial plan must have produced sub-tasks (`was_planned = !sub_tasks.is_empty()`).
+2. `config.agent.replan_rounds` must be > 0 (default: 1, set via `[agent] replan_rounds` in `config.toml`; profiles can override with `replan_rounds = 0` to disable).
+
+**Algorithm:**
+
+```
+for round in 0..config.agent.replan_rounds {
+    evaluate_and_replan(&findings)
+        → None   → break (goal satisfied or budget exhausted)
+        → Some(tasks) → spawn_researchers(&tasks), extend findings
+}
+```
+
+**`evaluate_and_replan` step-by-step:**
+
+1. **Budget gates — token budget:** if `self.budget_exhausted()` returns `true` (session token limit reached), return `None` immediately. Replanning into an exhausted session is never useful.
+
+2. **Budget gates — agent count:** if `self.total_agents >= config.agent.max_agents` (default: 20), return `None`. The coordinator cannot spawn more workers.
+
+3. **Build the digest:** iterate over `findings`, truncating each `AgentOutput.summary` to 800 characters, and concatenate into a single string with `--- Result N ---` separators. If no findings exist, uses `"(no results collected)"`.
+
+4. **Construct the judge prompt:** a two-message conversation (system + user) with `temperature=0.2`, `max_tokens=1024`, no tools. The system message is:
+   ```
+   You are a rigorous research goal-checker. Output only valid JSON.
+   ```
+   The user message contains:
+   ```
+   You are the goal-checker for a research session.
+
+   ORIGINAL GOAL: {self.query}
+   RESULTS COLLECTED SO FAR:
+   {digest}
+
+   Decide whether the collected results FULLY satisfy the original goal.
+   Be strict but fair: only flag a gap if something concrete and important
+   is missing — not nice-to-haves.
+
+   Respond with ONLY JSON:
+   {"complete": true, "new_subtasks": []}
+   or, if concrete gaps remain:
+   {"complete": false, "new_subtasks": ["<gap-filling task>", ...]}
+
+   Rules: at most 3 new_subtasks; each must be independently executable
+   by a researcher and target a specific gap; if the goal is met return
+   complete=true with an empty array.
+   ```
+
+5. **Call the LLM:** uses `self.llm_for_role(AgentRole::Coordinator)` (see §3.5). On LLM error, logs a warning and returns `None` (fail-open).
+
+6. **Parse the verdict:** deserializes the assistant response into a `Verdict { complete: bool, new_subtasks: Vec<String> }`. Robust parsing: first tries full-string JSON parse; if that fails, extracts the substring between the first `{` and last `}` and retries. If parsing fails entirely, returns `None`.
+
+7. **Extract gap tasks:** if `!complete && !new_subtasks.is_empty()`:
+   - Filters out empty strings.
+   - Caps at **3** tasks (`.take(3)`).
+   - Returns `Some(tasks)` if non-empty, else `None`.
+
+8. **Termination:** returns `None` when:
+   - Budget exhausted (token or agent count).
+   - LLM call fails.
+   - JSON parsing fails.
+   - Goal is `complete: true`.
+   - No concrete gaps remain.
+
+**Config interaction:**
+
+| Config key | Default | Effect |
+|-----------|---------|--------|
+| `[agent] replan_rounds` | 1 | Max gap-filling rounds (0 disables Goal Mode) |
+| `[agent] max_agents` | 20 | Hard cap on total agents spawned in the session |
+| `[agent] session_token_limit` | 0 (unlimited) | Total token budget for the session |
+
+Profiles (§profile.rs) can override `replan_rounds` — e.g. a `"tight"` profile may set it to `0` to skip replanning entirely.
+
+**Integration with coordinator flow (§3.15 `execute()`):**
+
+```
+Step 2.5: LeadGen supplemental fan-out (if applicable)
+Step 2.7: Goal Mode loop ← this method
+    for round in 0..replan_rounds:
+        evaluate_and_replan(&findings)
+        if gap tasks → spawn_researchers, extend findings
+Step 3: synthesize(&findings)
+```
+
+---
 
 ---
 
@@ -1801,6 +1894,437 @@ The default `ToolExecutor` marks read-only tools such as `web_search`, `web_fetc
 
 ---
 
+---
+
+## 14. task_tree.rs
+
+**File:** `src/task_tree.rs` — task-tree blackboard for coordinating a swarm of sub-agents. Shared, append-only JSONL journal for the whole task tree rooted at one session.
+
+### 14.1. Purpose
+
+Unlike the per-agent transcript (private to one agent), the blackboard is a **shared, durable journal for the whole task tree**. Coordinator and every sub-agent read from / write to the same append-only JSONL vector. Its two jobs:
+
+1. **Coordination records** (`contract`, `decision`, `fact`, `note`) keep a shared picture of what the swarm decided and discovered, independent of any single agent's context.
+2. **Typed child→parent beacons** (`partial_finding`, `milestone`, `blocker`, `question`, `interface_contract`, `delegation_constraint`) carry high-signal, attention-worthy signals. A parent can ask "what did my children flag since time T?" and act on blockers/milestones without waiting for full completion (the "letters home" pattern).
+
+### 14.2. Constants
+
+| Constant | Value | Purpose |
+|----------|-------|---------|
+| `COORDINATION_KINDS` | `["contract", "decision", "fact", "note"]` | Non-blocking shared records |
+| `BEACON_KINDS` | `["milestone", "partial_finding", "blocker", "question", "interface_contract", "delegation_constraint"]` | Child→parent signal records |
+| `ATTENTION_KINDS` | `["blocker", "question", "interface_contract", "delegation_constraint"]` | Kinds that must wake the parent immediately |
+| `DELEGATION_CONSTRAINT_DIRECTIVES` | `["halt_fanout", "cap_children", "require_lane", "block_surface"]` | Actionable directives in delegation constraints |
+| `MAX_TEXT_CHARS` | `4000` | Hard cap on the text of any single row |
+| `MAX_LEDGER_BYTES` | `2 * 1024 * 1024` (2 MB) | Hard cap on the ledger file size before writes are refused |
+
+### 14.3. The `TreeRow` struct
+
+Each append-only row in the tree ledger:
+
+```rust
+pub struct TreeRow {
+    pub ts: u64,              // Unix epoch milliseconds (monotonic-ish)
+    pub kind: String,         // One of COORDINATION_KINDS or BEACON_KINDS
+    pub text: String,         // Human-readable content (capped at MAX_TEXT_CHARS)
+    pub task_id: String,      // Agent ID that wrote this row
+    pub role: String,         // Role of the writer ("coordinator", "researcher", …)
+    pub needs_parent_attention: bool,  // True for attention-kind beacons
+    pub payload: Option<serde_json::Value>,  // Optional structured payload
+}
+```
+
+`TreeRow::is_attention_kind()` returns `true` if the row's `kind` is in `ATTENTION_KINDS`.
+
+### 14.4. The `TaskTreeLedger` struct
+
+```rust
+pub struct TaskTreeLedger {
+    path: PathBuf,                      // JSONL file on disk
+    state: Arc<Mutex<LedgerState>>,     // In-memory view + size accumulator
+}
+```
+
+### 14.5. File location
+
+`TaskTreeLedger::for_session(dir, session_id) -> PathBuf` derives the default path:
+```
+<dir>/task_tree/<session_id>.jsonl
+```
+where `dir` is typically `~/.fathom/ledger`. The session ID is sanitized (only alphanumerics, `-`, `_` allowed) to prevent directory traversal.
+
+### 14.6. `new(path) -> Self`
+
+Creates a new ledger with empty in-memory state.
+
+### 14.7. `load() -> Result<()>` — async
+
+Reads the entire JSONL file from disk, parsing each non-empty line as a `TreeRow`. Malformed lines are logged and skipped (never fatal). Updates the in-memory byte counter to match the file size. Called once at session start.
+
+### 14.8. `append(kind, text, task_id, role, needs_parent_attention, payload) -> Result<()>` — async
+
+**Algorithm:**
+1. Validates `kind` against `COORDINATION_KINDS ∪ BEACON_KINDS`; returns `Err` if unknown.
+2. Validates `text.len() <= MAX_TEXT_CHARS`; returns `Err` if too long.
+3. Creates a `TreeRow` with `ts = now_ts()` (millisecond-precision timestamp).
+4. Checks the in-memory byte counter against `MAX_LEDGER_BYTES`; returns `Err` if exceeded.
+5. Ensures the parent directory exists.
+6. Serializes the row to JSON, appends a newline, and writes to the file in append mode.
+7. Updates the in-memory byte counter and row vector.
+
+### 14.9. `attention_after(after_ts) -> (Vec<TreeRow>, usize)` — async
+
+Returns all attention-worthy beacons (`needs_parent_attention == true`) appended strictly after `after_ts`, plus a count of earlier rows. This is the "letters home" pattern — a parent can poll for blockers/milestones since its last checkpoint without scanning the entire ledger.
+
+### 14.10. `tail(limit) -> Vec<TreeRow>` — async
+
+Returns the latest `limit` rows in append order. Used for injecting the recent blackboard state into an agent's context.
+
+### 14.11. `len() -> usize` and `counts_by_kind() -> HashMap<String, usize>` — async
+
+Row count and per-kind distribution for diagnostics.
+
+### 14.12. Integration with coordinator
+
+The coordinator creates a `TaskTreeLedger` at session start (lazily) and stores it in `self.tree_ledger`. Sub-agents receive the same `Arc<Mutex<LedgerState>>` and append coordination records and beacons as they work. The coordinator reads `attention_after()` at each fan-out checkpoint to detect blockers that require immediate action.
+
+---
+
+## 15. reflection.rs
+
+**File:** `src/reflection.rs` — post-task reflection and bounded Pattern Register.
+
+### 15.1. Purpose
+
+After a non-trivial task the agent writes a short reflection and folds what it learned into a bounded **Pattern Register** — a Markdown table of the form `Error class | Count | Root cause | Structural fix | Status`. Rather than an ever-growing log, the register is *merged*: a new class appends a row; a recurring class bumps its count and (optionally) improves the root cause / fix. The register stays ≤ a fixed number of rows, so it stays useful and cheap to inject into context.
+
+### 15.2. Constants
+
+| Constant | Value | Purpose |
+|----------|-------|---------|
+| `MAX_PATTERN_ROWS` | `20` | Max rows in the pattern register |
+| `PATTERN_FILE_CAP` | `16_000` | Cap on the register file (chars) |
+| `NONTRIVIAL_ROUNDS` | `15` | Minimum agent rounds/errors to trigger reflection |
+
+### 15.3. The `PatternRow` struct
+
+```rust
+pub struct PatternRow {
+    pub class: String,        // Error class identifier (e.g. "source_fetch_error")
+    pub count: u64,           // Recurrence count
+    pub root_cause: String,   // Diagnosed root cause
+    pub structural_fix: String,  // Recommended structural fix
+    pub status: String,       // "open" or "closed"
+}
+```
+
+### 15.4. The `PatternRegister` struct
+
+```rust
+pub struct PatternRegister {
+    path: PathBuf,                           // patterns.md (Markdown table)
+    history: PathBuf,                        // patterns_history.jsonl (append-only log)
+    inner: Arc<TokioMutex<HashMap<String, PatternRow>>>,  // class → row index
+}
+```
+
+**Constructor:** `PatternRegister::new(dir)` creates files at `dir/patterns.md` and `dir/patterns_history.jsonl`.
+
+### 15.5. `load() -> Result<()>` — async
+
+Reads `patterns.md` from disk, parses the Markdown table back into `PatternRow` entries, and populates the in-memory `HashMap`. Absent file → empty register.
+
+### 15.6. `rows() -> Vec<PatternRow>` — async
+
+Returns all rows sorted by `count` descending (most frequent patterns first).
+
+### 15.7. `upsert(class, root_cause, fix) -> Result<()>` — async — deterministic merge
+
+**Algorithm:**
+1. Lock the inner `HashMap`.
+2. If the class already exists: bump `count += 1`; update `root_cause` and `structural_fix` if non-empty.
+3. If the class is new and the register is at `MAX_PATTERN_ROWS`: evict the row with the lowest `count` to keep the table bounded.
+4. Insert the new row with `count = 1`.
+5. Release the lock, then:
+   - **Persist** the entire register as a Markdown table (`patterns.md`).
+   - **Record history** by appending `{ ts, old, new }` to `patterns_history.jsonl`.
+
+### 15.8. `upsert_with_llm` (documented path)
+
+Referenced in doc comments as the LLM-assisted merge path. When a fast LLM is available, it can propose improved root causes / fixes during the upsert rather than using the deterministic path above.
+
+### 15.9. Merge logic (detailed)
+
+The deterministic upsert is the fast path. The LLM merge path (when available) sends the existing row and the new observation to the LLM, which can:
+- Improve the `root_cause` or `structural_fix` description.
+- Decide whether the new observation is truly the same class or a new one.
+- Suggest `status: "closed"` if the structural fix resolves the class.
+
+### 15.10. Persistence format (`patterns.md`)
+
+```markdown
+| Error class | Count | Root cause | Structural fix | Status |
+|---|---|---|---|---|
+| source_fetch_error | 5 | network timeout | use DoH fallback | open |
+| mx_timeout | 2 | DNS failure | retry with timeout | open |
+```
+
+The file is regenerated on every upsert (full overwrite), sorted by count descending. Truncated at `PATTERN_FILE_CAP` characters to prevent unbounded growth.
+
+### 15.11. The `ReflectionRecord` struct
+
+```rust
+pub struct ReflectionRecord {
+    pub ts: String,                         // RFC3339 timestamp
+    pub session_id: String,
+    pub task_summary: String,
+    pub observations: Vec<String>,          // Free-form observations
+    pub pattern_upserts: Vec<PatternRow>,   // Pattern register changes from this reflection
+    pub backlog_candidates: Vec<String>,    // Items to fold into the improvement backlog
+}
+```
+
+### 15.12. The `ReflectionLog` struct
+
+```rust
+pub struct ReflectionLog {
+    path: PathBuf,  // reflections.jsonl
+}
+```
+
+**Constructor:** `ReflectionLog::new(dir)` creates `dir/reflections.jsonl`.
+
+### 15.13. `ReflectionLog::append(rec) -> Result<()>` — async
+
+Serializes a `ReflectionRecord` to JSON and appends it as a single line to `reflections.jsonl`. Creates the file if absent. This is an append-only journal — entries are never modified or deleted.
+
+### 15.14. Integration with coordinator
+
+The coordinator (or a post-task hook) creates a `ReflectionLog` and `PatternRegister` under the ledger directory. After a non-trivial run (≥ `NONTRIVIAL_ROUNDS` iterations), it writes a `ReflectionRecord` containing observations, the pattern-register upserts derived from the run, and any backlog candidates for the improvement engine.
+
+---
+
+## 16. improvement.rs
+
+**File:** `src/improvement.rs` — durable improvement backlog.
+
+### 16.1. Purpose
+
+Self-improvement that remembers: rather than shipping one-off fixes, the agent records candidate improvements durably, keyed by a stable fingerprint, re-triggering the same item bumps a recurrence count instead of writing a second look-alike row, and the whole list survives restarts. An optional LLM pass performs semantic de-dup *outside* the file lock so a reformulated version of the same idea folds into the existing row rather than spawning a duplicate.
+
+### 16.2. Constants
+
+| Constant | Value | Purpose |
+|----------|-------|---------|
+| `BACKLOG_REL_PATH` | `"improvement-backlog.md"` | Default backlog file name under ledger dir |
+| `DEDUP_CANDIDATE_CAP` | `20` | Max candidates offered to semantic de-dup |
+| `GROOM_CAP` | `30` | Grooming cap to keep the file bounded |
+
+### 16.3. The `Priority` enum
+
+```rust
+pub enum Priority {
+    High,
+    Medium,
+    Low,
+}
+```
+
+Sorted `High > Medium > Low`. Serializes as `"high"`, `"med"`, `"low"` in the Markdown file.
+
+### 16.4. The `BacklogEntry` struct
+
+```rust
+pub struct BacklogEntry {
+    pub fingerprint: String,          // Stable SHA-256 dedup key
+    pub summary: String,              // Human-readable description
+    pub category: String,             // e.g. "tool", "prompt", "infra"
+    pub source: String,               // Where this was observed
+    pub status: String,               // "open" or "done"
+    pub priority: Priority,           // high / medium / low
+    pub kind: String,                 // "bug" | "improvement" | "capability_idea"
+    pub count: u64,                   // Recurrence count
+    pub last_seen: String,            // RFC3339
+    pub created_at: String,           // RFC3339
+    pub closed_at: Option<String>,    // RFC3339, set when status → "done"
+    pub requires_plan_review: bool,   // True if fix requires architectural review
+    pub context: Option<String>,      // Additional context
+    pub proposed_next_step: Option<String>,  // Suggested action
+}
+```
+
+### 16.5. Fingerprint-based deduplication
+
+`stable_fingerprint(summary, category, source) -> String` computes a SHA-256 hash of the normalized triple `(summary, category, source)`:
+1. Each field is normalized: whitespace collapsed, lowercased.
+2. Joined as `"summary | category | source"`.
+3. SHA-256 hashed, truncated to 12 hex characters.
+
+The same idea expressed with different casing/whitespace maps to the same fingerprint.
+
+### 16.6. The `ImprovementBacklog` struct
+
+```rust
+pub struct ImprovementBacklog {
+    path: PathBuf,                        // improvement-backlog.md
+    inner: Arc<TokioMutex<State>>,        // fingerprint → entry index
+}
+```
+
+### 16.7. `default_path() -> Result<PathBuf>`
+
+Returns `~/.fathom/ledger/improvement-backlog.md`.
+
+### 16.8. `load() -> Result<()>` — async
+
+Reads the Markdown backlog file, parses it into `BacklogEntry` values, and populates the in-memory fingerprint index. Absent file → empty backlog.
+
+### 16.9. `add(summary, category, source, kind, priority, requires_plan_review, context, proposed_next_step, semantic_llm) -> Result<()>` — async
+
+**Algorithm:**
+
+1. **Fast path (exact fingerprint):** compute `stable_fingerprint(summary, category, source)` and look it up under lock. If found: bump `count += 1`, update `last_seen`, reopen if previously closed. Persist and return.
+
+2. **Semantic de-dup (outside lock):** if `semantic_llm` is `Some` and no exact match:
+   - Collect up to `DEDUP_CANDIDATE_CAP` existing entries with the same `category` and `source`.
+   - Call `semantic_llm(summary, &candidates)` — the LLM returns `Some(fingerprint)` if the summary is semantically equivalent to an existing entry.
+   - If a duplicate is found: bump its count under lock, persist, return.
+
+3. **Fresh row:** create a new `BacklogEntry` with `count = 1`, insert under lock, persist.
+
+### 16.10. `close(task_id_or_fps) -> Result<usize>` — async
+
+Closes entries by fingerprint or by summary/source match. Sets `status = "done"` and `closed_at = now`. Returns the count of newly closed entries. Called when a fix is committed or an improvement is implemented.
+
+### 16.11. `digest(limit) -> String` — async
+
+Returns a short Markdown digest of up to `limit` open entries, sorted by priority (high first) then count descending. Used for injecting the backlog into an agent's context:
+
+```markdown
+Open improvements:
+- [high] (x5 | tool) Source fetch timeout on slow networks
+- [med] (x3 | prompt) Planner sometimes over-decomposes
+```
+
+### 16.12. Markdown persistence format
+
+```markdown
+# Improvement Backlog
+
+### <fingerprint>
+- status: open
+- priority: high
+- kind: improvement
+- count: 5
+- created_at: 2025-01-15T10:30:00Z
+- last_seen: 2025-01-20T14:22:00Z
+- source: web_search tool
+- category: tool
+- requires_plan_review: false
+- summary: Source fetch timeout on slow networks
+- context: Observed 5 times in research sessions
+- proposed_next_step: Add retry with exponential backoff
+```
+
+The file is regenerated on every mutation (full overwrite), sorted by priority then last_seen descending.
+
+### 16.13. Integration
+
+The reflection engine (§15) produces `backlog_candidates` in `ReflectionRecord` — these are fed to `ImprovementBacklog::add()`. The coordinator injects `digest()` into system prompts so agents are aware of known issues and can avoid or work around them.
+
+---
+
+## 17. control.rs
+
+**File:** `src/control.rs` — operator control plane: mid-run questions and approvals.
+
+### 17.1. Purpose
+
+Agents interact with a human operator through two request channels (wired by the host — TUI, HTTP server, or nothing in headless runs):
+
+- **questions** — the `question` tool blocks until the operator answers (or a timeout returns an "operator unavailable" notice).
+- **approvals** — tools listed in `[agent] approval_tools` block until the operator allows or denies the call (timeout falls back to `[agent] approval_fallback`).
+
+Every request carries a oneshot reply channel; dropping the receiver is treated as "operator went away" and handled by the caller's fallback.
+
+### 17.2. The `QuestionRequest` struct
+
+```rust
+pub struct QuestionRequest {
+    pub agent_id: AgentId,
+    pub request_id: String,     // Correlation id surfaced in events / HTTP endpoints
+    pub question: String,
+    pub reply: oneshot::Sender<String>,  // Operator's answer
+}
+```
+
+### 17.3. The `ApprovalRequest` struct
+
+```rust
+pub struct ApprovalRequest {
+    pub agent_id: AgentId,
+    pub request_id: String,
+    pub tool: String,               // Tool name requesting approval
+    pub args_preview: String,       // Short human-readable preview of call arguments
+    pub reply: oneshot::Sender<bool>,  // true = allow, false = deny
+}
+```
+
+### 17.4. Channel type aliases
+
+```rust
+pub type QuestionTx = mpsc::UnboundedSender<QuestionRequest>;
+pub type ApprovalTx = mpsc::UnboundedSender<ApprovalRequest>;
+```
+
+Both are unbounded MPSC channels — the agent sends a request and awaits the oneshot reply. Unbounded because the agent may queue requests faster than the operator processes them (e.g. rapid tool calls).
+
+### 17.5. The `ApprovalVerdict` enum
+
+```rust
+pub enum ApprovalVerdict {
+    Allowed,
+    Denied,
+}
+```
+
+### 17.6. Approval handling flow
+
+1. **Agent tool call:** when a tool listed in `[agent] approval_tools` (default: `["save_contacts", "git_push"]`) is invoked, the agent builds an `ApprovalRequest` with a `args_preview` and sends it via `approval_tx`.
+2. **Host routes the request:** the TUI or HTTP server receives the `ApprovalRequest` and presents it to the operator with the tool name and arguments preview.
+3. **Operator responds:** sends `true` (allow) or `false` (deny) through the oneshot channel.
+4. **Timeout/fallback:** if the operator doesn't respond within `[agent] approval_timeout_seconds`, the agent falls back to `[agent] approval_fallback` (default: `"deny"` — deny the call).
+5. **Dropped receiver:** if the operator process disconnects, `reply.send()` returns `Err`, and the agent treats it as a denial.
+
+### 17.7. Question routing flow
+
+1. **Agent asks:** the agent calls the `question` tool, which builds a `QuestionRequest` and sends it via `question_tx`.
+2. **Host routes:** the TUI or HTTP server presents the question to the operator.
+3. **Operator answers:** sends the answer string through the oneshot channel.
+4. **Timeout:** if no answer within the tool's timeout, the agent receives an "operator unavailable" notice and continues.
+
+### 17.8. Steer injection (mid-run directives)
+
+While not directly in `control.rs`, the steering channel (`steer_rx`) is closely related:
+
+- **User → agent:** the user sends mid-run instructions via the `steer_tx` channel (fleet E1). These are drained at each turn boundary in the agent's main loop (§2.12, Step 1a) and injected as `Message::user("[USER INSTRUCTION] {msg}")`.
+- **Peer → agent:** peer agents can send instructions via `peer_steer_rx` (drained in Step 1b).
+- **Child propagation:** the coordinator forwards `steer_rx` to child agents via `with_steer_rx()`.
+
+### 17.9. Integration with server endpoints
+
+The coordinator holds optional `question_tx: Option<QuestionTx>` and `approval_tx: Option<ApprovalTx>` channels, set during construction if an operator is connected. These are passed to every `AgentRuntime` via builder methods. The HTTP server (`pr-server`) exposes:
+
+| Endpoint | Purpose |
+|----------|---------|
+| `POST /approve` | Accepts `{ request_id, approved: bool }` — resolves a pending approval request |
+| `POST /answer` | Accepts `{ request_id, answer: string }` — resolves a pending question request |
+| `POST /steer` | Accepts `{ text: string }` — injects a mid-run instruction to the top-level agent |
+
+In headless mode (no operator connected), all channels are `None`, and approval tools fall back to the configured default.
+
+---
+
 ## Overall architectural picture
 
 ### Session lifecycle
@@ -1808,55 +2332,12 @@ The default `ToolExecutor` marks read-only tools such as `web_search`, `web_fetc
 ```
 CLI → Coordinator::execute()
   → plan()                    # LLM decomposition into subtasks
-  → fan-out:
-    - spawn_researchers()     # in-process (tokio tasks)
-    - run_multiprocess_fanout() # out-of-process (Unix sockets)
-  → synthesize()              # LLM report assembly
-  → write_output()            # Files: summary.md, index.md, sources.md, findings/
-```
-
-### Agent lifecycle (runtime loop)
-
-```
-init: [system_prompt, user_task]
-loop while iterations < max:
-  drain steer_rx
-  inject bg_results
-  check cancellation
-  reset turn_budget
-  check compaction threshold
-  LLM call
-  if no tool_calls:
-    run Stop hooks → break or continue
-  for each tool_call:
-    doom_loop check
-    cascade cancel check
-    role gate
-    PreToolUse hooks
-    execute tool
-    sub-agent delegation check
-    PostToolUse hooks
-    auto-persist contacts
-    harvest findings
-    truncation + turn budget
-  run spawn_agent batch
-```
-
-### Context compaction system
-
-```
-should_compact? (tokens >= threshold)
-  → is_in_cooldown? → skip
-  → micro_compact (no LLM):
-    - deduplication by content_hash
-    - prune old tool output > 40000 tokens
-  → if still above the threshold:
-    - split head(4) / middle / tail(4) with tool-group safety
-    - LLM summarize middle → system message
-    - reassemble: head + summary + tail
-  → update_effectiveness:
-    - < 5% reduction → ineffective_passes++
-    - 2 ineffective passes → cooldown 300 sec
+  → spawn_researchers()       # Fan-out to researcher agents
+  → evaluate_and_replan()     # Goal Mode gap-filling (§3.26)
+  → synthesize()              # Combine findings into report
+  → write_output()            # Persist to disk
+  → ReflectionLog::append()   # Post-task learning (§15)
+  → ImprovementBacklog::add() # Record candidate fixes (§16)
 ```
 
 ### Hooks system

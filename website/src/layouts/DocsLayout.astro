@@ -31,7 +31,7 @@ const navSections: NavSection[] = [
     title: 'Getting Started', i18nKey: 'docsNav.start',
     items: [
       { label: 'Quickstart', href: '/docs/quickstart', id: 'quickstart', i18nKey: 'docsNav.quickstart' },
-      { label: 'Installation', href: '/docs/quickstart#installation', id: 'installation', i18nKey: 'docsNav.installation' },
+      { label: 'Request Access', href: '/docs/quickstart#request-access', id: 'installation', i18nKey: 'docsNav.installation' },
     ],
   },
   {
@@ -178,7 +178,7 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
         </div>
         <div class="docstop-actions">
           <button class="docs-btn-ghost theme-toggle" data-theme-toggle aria-label="Toggle theme">◐</button>
-          <a href="/install" class="docs-btn-ghost">Install</a>
+          <a href="/install" class="docs-btn-ghost">Get Access</a>
           <a href="/docs/quickstart" class="docs-btn-primary">Get Started →</a>
         </div>
         <button class="docs-mobile-toggle" aria-label="Menu" id="docs-menu-toggle">
@@ -216,6 +216,7 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
           ))}
         </nav>
         <p class="sidebar-empty" id="sidebar-empty" hidden data-i18n="docsNav.noMatches">No matches</p>
+        <div class="sidebar-location">Based in Tashkent, Uzbekistan</div>
       </aside>
 
       <main class="docs-main" id="main">
@@ -466,6 +467,15 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
         font-size: 0.8125rem;
         color: var(--text-tertiary);
         padding: 0 12px;
+      }
+
+      .sidebar-location {
+        font-size: 0.6875rem;
+        color: var(--text-tertiary);
+        padding: 12px;
+        text-align: center;
+        border-top: 1px solid var(--border);
+        margin-top: 8px;
       }
 
       .sidebar-section-title {

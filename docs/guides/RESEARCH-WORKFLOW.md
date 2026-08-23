@@ -663,7 +663,7 @@ Agents can ask you questions via the built-in `question` tool — for example, w
 | Memory digest empty | Memory subsystem not enabled or no relevant facts | Enable `[memory] enabled = true` and run `fathom memory distill` |
 | Agents stuck on tool | Tool timeout or network issue | Check `RUST_LOG=debug` output. Increase `timeout_seconds` in profile |
 | "replan skipped: max_agents reached" | Too many agents in initial plan, leaving no room for gap-fillers | Increase `max_agents` in config or profile |
-| Contact dedup not working | Contacts from different sessions have slightly different names | Use `fathom contacts merge` to merge duplicates manually |
+| Contact dedup not working | Contacts from different sessions have slightly different names | Use `fathom contacts dedup --merge` to merge duplicates automatically |
 
 ---
 

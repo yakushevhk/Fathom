@@ -23,9 +23,30 @@ export function Sidebar() {
   const [submitting, setSubmitting] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isMobileViewport, setIsMobileViewport] = useState(false)
   const [engineOk, setEngineOk] = useState<boolean | null>(null)
+  const sidebarOpenRef = useRef(false)
   const searchRef = useRef<HTMLInputElement>(null)
-  const closeSidebar = () => setSidebarOpen(false)
+  const asideRef = useRef<HTMLElement>(null)
+  const toggleRef = useRef<HTMLButtonElement>(null)
+  const previousBodyOverflow = useRef('')
+  const previousPathname = useRef(pathname)
+  type SidebarCloseReason = 'escape' | 'overlay' | 'navigation'
+  const closeSidebar = (reason: SidebarCloseReason) => {
+    setSidebarOpen(false)
+    // Escape and the overlay return keyboard users to the control that opened the drawer.
+    // Route navigation must not move focus back into the now-hidden mobile context.
+    if (reason !== 'navigation') toggleRef.current?.focus()
+  }
+
+  // Keep mobile-only drawer semantics separate from the persistent desktop sidebar.
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 767px)')
+    const updateViewport = () => setIsMobileViewport(mediaQuery.matches)
+    updateViewport()
+    mediaQuery.addEventListener('change', updateViewport)
+    return () => mediaQuery.removeEventListener('change', updateViewport)
+  }, [])
 
   // Filter sessions by search query
   const filtered = searchQuery.trim()
@@ -46,14 +67,54 @@ export function Sidebar() {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
-  // Close the mobile navigation with Escape.
+  // Close the mobile navigation with Escape and keep the drawer from trapping the page.
   useEffect(() => {
     if (!sidebarOpen) return
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeSidebar()
+      if (e.key === 'Escape') {
+        closeSidebar('escape')
+        return
+      }
+      if (e.key !== 'Tab') return
+      const focusable = asideRef.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      )
+      if (!focusable?.length) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
     }
     window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
+    previousBodyOverflow.current = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', handler)
+      document.body.style.overflow = previousBodyOverflow.current
+    }
+  }, [sidebarOpen])
+
+  // Route transitions should always dismiss the mobile drawer.
+  useEffect(() => {
+    sidebarOpenRef.current = sidebarOpen
+  }, [sidebarOpen])
+
+  useEffect(() => {
+    if (previousPathname.current === pathname) return
+    previousPathname.current = pathname
+    if (!sidebarOpenRef.current) return
+    const closeTimer = window.setTimeout(() => closeSidebar('navigation'), 0)
+    return () => window.clearTimeout(closeTimer)
+  }, [pathname])
+
+  // Put focus into the drawer when it opens so keyboard users can navigate immediately.
+  useEffect(() => {
+    if (sidebarOpen) searchRef.current?.focus()
   }, [sidebarOpen])
 
   // Poll engine health every 5s
@@ -89,9 +150,11 @@ export function Sidebar() {
     <>
       {/* Mobile toggle button */}
       <button
+        ref={toggleRef}
+        type="button"
         onClick={() => setSidebarOpen(o => !o)}
-        className="fixed top-3 left-3 z-50 md:hidden p-2 rounded-md bg-[#141414] border border-white/[0.06] text-gray-400 hover:text-gray-200 transition-colors"
-        aria-label={sidebarOpen ? 'Close navigation' : 'Open navigation'}
+        className="fixed left-3 top-3 z-50 flex h-9 w-9 items-center justify-center rounded-md border border-white/[0.1] bg-[#141414] text-gray-400 shadow-lg shadow-black/20 transition-colors hover:border-white/20 hover:text-gray-100 md:hidden"
+        aria-label={sidebarOpen ? 'Close primary navigation' : 'Open primary navigation'}
         aria-expanded={sidebarOpen}
         aria-controls="primary-navigation"
       >
@@ -115,18 +178,21 @@ export function Sidebar() {
       {sidebarOpen && (
         <button
           type="button"
-          className="fixed inset-0 z-30 cursor-default bg-black/50 md:hidden"
-          onClick={closeSidebar}
-          aria-label="Close navigation"
+          className="fixed inset-0 z-30 cursor-default bg-black/60 backdrop-blur-[1px] md:hidden"
+          onClick={() => closeSidebar('overlay')}
+          aria-label="Close primary navigation"
         />
       )}
 
       <aside
+        ref={asideRef}
         id="primary-navigation"
         aria-label="Primary navigation"
+        aria-hidden={isMobileViewport && !sidebarOpen ? true : undefined}
+        inert={isMobileViewport && !sidebarOpen ? true : undefined}
         className={`
-          w-64 min-w-64 h-full flex flex-col bg-[#060606] border-r border-white/[0.06]
-          fixed md:relative z-40 transition-transform duration-200
+          h-full w-[min(18rem,calc(100vw-1.25rem))] min-w-0 flex flex-col border-r border-white/[0.08] bg-[#060606]
+          fixed z-40 shadow-2xl shadow-black/40 transition-transform duration-200 md:relative md:w-64 md:min-w-64 md:shadow-none
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}
       >
@@ -172,9 +238,11 @@ export function Sidebar() {
           </div>
 
           <button
+            type="button"
             onClick={refresh}
-            className="text-gray-500 hover:text-gray-300 transition-colors"
+            className="rounded p-1 text-gray-500 transition-colors hover:text-gray-300"
             title="Refresh worker runtime"
+            aria-label="Refresh worker runtime"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5" />
@@ -190,7 +258,7 @@ export function Sidebar() {
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Dispatch a worker session…"
-            className="w-full p-2 rounded-md bg-[#141414] border border-white/[0.06] text-xs text-gray-200 placeholder-gray-600 outline-none focus:border-gray-500 transition-colors"
+            className="ops-input"
           />
         </form>
 
@@ -203,7 +271,7 @@ export function Sidebar() {
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search worker sessions…"
-            className="w-full p-1.5 rounded-md bg-[#141414] border border-white/[0.06] text-xs text-gray-200 placeholder-gray-600 outline-none focus:border-gray-500 transition-colors"
+            className="ops-input"
           />
         </div>
 
@@ -233,7 +301,7 @@ export function Sidebar() {
               }`}>
                 <Link
                   href={`/chat/${s.id}`}
-                  onClick={closeSidebar}
+                  onClick={() => closeSidebar('navigation')}
                   aria-current={active ? 'page' : undefined}
                   className="flex min-w-0 flex-1 items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/70"
                 >
@@ -285,7 +353,7 @@ export function Sidebar() {
           ].map(([href, label]) => {
             const active = pathname === href
             return (
-              <Link key={href} href={href} aria-current={active ? 'page' : undefined} className={active ? 'text-gray-200' : 'hover:text-gray-300'} onClick={closeSidebar}>
+              <Link key={href} href={href} aria-current={active ? 'page' : undefined} className={active ? 'text-gray-200' : 'hover:text-gray-300'} onClick={() => closeSidebar('navigation')}>
                 {label}
               </Link>
             )

@@ -20,7 +20,8 @@ Common issues encountered while running Fathom, their root causes, and how to re
 - [Memory Search Returns Nothing](#memory-search-returns-nothing)
 - [Approval Timeout](#approval-timeout)
 - [Sandboxed Container Has No Internet](#sandboxed-container-has-no-internet)
-- [Cargo Build Failures](#cargo-build-failures)
+- [Development / Testing](#development--testing)
+- [SSRF Loopback Escape Hatch](#ssrf-loopback-escape-hatch)
 
 ---
 
@@ -85,9 +86,10 @@ LLM error: received invalid response
 
 1. **Verify the endpoint and model name:**
 
+   Inspect `~/.fathom/config.toml` or run:
+
    ```bash
-   fathom config get llm.base_url
-   fathom config get llm.model
+   fathom config show | grep -E 'base_url|model'
    ```
 
    Defaults are `https://api.deepseek.com` and `deepseek-chat`. For OpenAI-compatible providers, point `base_url` to the correct endpoint.
@@ -95,10 +97,10 @@ LLM error: received invalid response
 2. **Test connectivity with curl:**
 
    ```bash
-   curl -s "$(fathom config get llm.base_url)/chat/completions" \
-     -H "Authorization: Bearer $(fathom config get llm.api_key)" \
+   curl -s "$(grep 'base_url' ~/.fathom/config.toml | head -1 | cut -d'"' -f2)/chat/completions" \
+     -H "Authorization: Bearer $(grep 'api_key' ~/.fathom/config.toml | head -1 | cut -d'"' -f2)" \
      -H "Content-Type: application/json" \
-     -d '{"model":"'"$(fathom config get llm.model)"'","messages":[{"role":"user","content":"hi"}]}'
+     -d '{"model":"'"$(grep 'model' ~/.fathom/config.toml | head -1 | cut -d'"' -f2)"'","messages":[{"role":"user","content":"hi"}]}'
    ```
 
 3. **Check the provider status page** for an ongoing outage.
@@ -134,13 +136,7 @@ The LLM provider returned HTTP 429, meaning your API key has exceeded its rate q
 
 1. **Wait.** The built-in retry logic (`crates/llm/src/retry.rs`) automatically retries up to 3 times with exponential backoff (500ms → 1s → 2s, ±25% jitter). If the provider's `Retry-After` header is present, it is honoured (capped at 60s).
 
-2. **Reduce concurrency** if you hit 429s frequently:
-
-   ```bash
-   fathom config set llm.max_concurrency 2
-   ```
-
-   This lowers the `ModelSemaphore` permit count.
+2. **Reduce the rate of requests.** The `ModelSemaphore` concurrency limit is hardcoded at 3 in `crates/llm/src/concurrency.rs` and is not user-configurable. Consider spacing out sub-agent fan-outs or upgrading your provider plan.
 
 3. **Upgrade your provider plan** for a higher rate limit.
 
@@ -234,7 +230,7 @@ A "doom loop" occurs when the LLM retries a failing operation with exactly the s
    ```toml
    [context]
    tool_output_max_bytes = 100_000
-   tool_output_max_lines = 4_000
+   tool_output_max_lines = 2_000
    ```
 
 ---
@@ -484,10 +480,10 @@ or resuming a session returns empty results.
    fathom sessions list --search "quantum computing"
    ```
 
-3. **Check the database path.** By default, sessions are stored in `./sessions.db` (the current working directory). If you ran Fathom from a different directory, the sessions may be in a different database:
+3. **Check the session directory.** By default, sessions are stored in `./sessions/` (the current working directory). If you ran Fathom from a different directory, the sessions may be in a different location:
 
    ```bash
-   fathom sessions list --db /absolute/path/to/sessions.db
+   fathom sessions --output /path/to/session-dir list
    ```
 
 4. **If the session was created by a detached agent** (background job), the session is persisted in the jobs database (`~/.fathom/jobs.db`). List jobs instead:
@@ -602,7 +598,7 @@ Common reasons for empty results:
 1. **Check memory is enabled:**
 
    ```bash
-   fathom config get memory.enabled
+   fathom config show | grep -A1 '\[memory\]' | grep enabled
    ```
 
 2. **Lower the minimum score threshold:**
@@ -839,16 +835,28 @@ Message priority: waiter (blocking wait) → agent channel → mailbox → reviv
 
 ---
 
-## Daemon Process Failed
+---
 
-### Symptom
+## Development / Testing
 
-`daemon` tool returns an error or a Failed status.
+### SSRF Loopback Escape Hatch
 
-### Root Cause
+By default, Fathom's SSRF guard (`crates/tools/src/guard.rs`) blocks all fetches to loopback and private-network addresses. This protects against server-side request forgery in production, but prevents integration tests and local development from reaching mock servers on `localhost`.
 
-The process crashed, did not start within the timeout, or the port did not open.
+Set the environment variable to permit loopback fetches:
 
-### Resolution
+```bash
+export PR_SSRF_ALLOW_LOOPBACK=1
+```
 
-Check the process log, increase `timeout_secs`, and verify the command is correct.
+| Variable | Value | Effect |
+|----------|-------|--------|
+| `PR_SSRF_ALLOW_LOOPBACK` | `1` | Permits `http://127.0.0.1`, `http://localhost`, and RFC 1918 addresses |
+| unset / any other value | — | All loopback/private IPs rejected (default) |
+
+**When to use:**
+
+- Local development with a mock HTTP server (`127.0.0.1:8080`).
+- Integration tests that need to verify fetch behaviour against a local service.
+
+**Warning:** Never set this variable in production. It disables a critical security boundary. The constant `SSRF_LOOPBACK_ENV` is defined in `crates/tools/src/guard.rs` and the check `loopback_allowed_for_tests()` is evaluated on every fetch validation.

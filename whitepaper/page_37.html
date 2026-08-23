@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fathom Whitepaper — Complete Compliance & Audit Trails</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <div class="header-left">
+        <div class="header-meta">
+          <span class="brand-badge">FATHOM</span>
+          <span class="header-category">REGULATORY COMPLIANCE · AUDIT TRAILS</span>
+        </div>
+        <div class="header-title-main">Complete Compliance & Audit Trails</div>
+        <div class="header-subtitle">Immutable Decision Ledgers, Automatic Secret Redaction & GDPR / 152-FZ Readiness</div>
+      </div>
+      <div class="header-right">
+        <span class="page-badge">PAGE 37 / 42</span>
+      </div>
+    </div>
+
+    <div class="content-body">
+<div class="card-dark">
+  <div class="card-title">Auditable AI: Immutable Records for Every Decision</div>
+  <p>
+    Enterprise compliance requires full traceability for every autonomous action. Fathom logs all authorization decisions into an append-only, tamper-resistant <strong>Audit Ledger</strong> (<code>/api/v1/governance/audit</code>).
+  </p>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title-sm">Audit Record Fields</div>
+    <ul style="font-size: 7.2pt; margin-bottom: 0;">
+      <li><code>timestamp</code>: Nanosecond-precision RFC 3339 timestamp.</li>
+      <li><code>agent_id</code> & <code>session_id</code>: Full UUIDv7 session tracing.</li>
+      <li><code>tool</code> & <code>intent</code>: Declared action and reasoning rationale.</li>
+      <li><code>target</code> & <code>decision</code>: URL / file path and Allow/Deny verdict.</li>
+    </ul>
+  </div>
+
+  <div class="card card-emerald">
+    <div class="card-title-sm">Automatic Secret Redaction</div>
+    <p style="font-size: 7.4pt;">
+      Before audit records are written to SQLite, a built-in redaction engine scans tool arguments with regex scanners, stripping API keys, bearer tokens, and passwords to prevent credential leakage into logs.
+    </p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Data Privacy & Regulatory Framework Compliance</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Regulation</th>
+        <th>Compliance Invariant</th>
+        <th>Fathom Implementation Mechanism</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>GDPR (EU)</strong></td>
+        <td>Lawful processing of public data & right to be forgotten</td>
+        <td>Strict OSINT confidence scoring + <code>ContactDb</code> delete APIs.</td>
+      </tr>
+      <tr>
+        <td><strong>152-FZ (Russia)</strong></td>
+        <td>Personal data localization & verifiable storage</td>
+        <td>Self-hosted local SQLite / PostgreSQL storage on sovereign infrastructure.</td>
+      </tr>
+      <tr>
+        <td><strong>SOC 2 Type II</strong></td>
+        <td>Access control, auditability, and data isolation</td>
+        <td>AES-256-GCM vault, per-agent Docker sandboxes, immutable audit trail.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card-slate">
+  <div class="card-title-sm">Historical Session Replay (Replay Debugger)</div>
+  <p style="font-size: 7.4pt;">
+    Compliance officers can use the <code>GET /api/v1/replay</code> endpoint to reconstruct and step through any historical session turn-by-turn, inspecting exact tool inputs, outputs, and model reasoning steps.
+  </p>
+</div>
+
+<div class="callout callout-info">
+  <strong>Audit Replay Ready:</strong> Compliance teams can use the <code>GET /api/v1/replay</code> endpoint to reconstruct and step through any historical session turn-by-turn.
+</div>
+    </div>
+
+    <div class="footer">
+      <div class="footer-left">
+        <span>Fathom Autonomous Workforce Runtime</span>
+        <span class="footer-bullet">•</span>
+        <span>Elastic-2.0 License</span>
+        <span class="footer-bullet">•</span>
+        <span>Strategic Whitepaper Presentation</span>
+      </div>
+      <div class="footer-right">v0.3.0 · Page 37 of 42</div>
+    </div>
+  </div>
+</body>
+</html>

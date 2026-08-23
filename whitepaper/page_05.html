@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fathom Whitepaper — A Day in the Life of a Digital Employee</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <div class="header-left">
+        <div class="header-meta">
+          <span class="brand-badge">FATHOM</span>
+          <span class="header-category">DAY IN THE LIFE · OPERATIONAL WORKFLOW</span>
+        </div>
+        <div class="header-title-main">A Day in the Life of a Digital Employee</div>
+        <div class="header-subtitle">24-Hour Continuous Execution Cycle of an Autonomous Fathom Worker</div>
+      </div>
+      <div class="header-right">
+        <span class="page-badge">PAGE 05 / 42</span>
+      </div>
+    </div>
+
+    <div class="content-body">
+<div class="card-dark">
+  <div class="card-title">Continuous 24/7 Autonomy: Zero Idle Time, Zero Latency</div>
+  <p>
+    While human teams sleep, Fathom coworkers execute scheduled background operations, monitor market shifts, prepare outbound campaigns, verify deliverability, and stage pipeline deliverables for morning review.
+  </p>
+</div>
+
+<div class="timeline">
+  <div class="timeline-item">
+    <div class="timeline-time">02:00 AM</div>
+    <div class="timeline-content">
+      <div class="timeline-title">Scheduled Pipeline Trigger (Atomic Cron Lock)</div>
+      <div class="timeline-desc">The SDR coworker wakes via atomic cron claim (<code>0 2 * * *</code>) in SQLite, loads target market parameters from persistent memory, and initializes its search session.</div>
+    </div>
+  </div>
+
+  <div class="timeline-item">
+    <div class="timeline-time">02:15 AM</div>
+    <div class="timeline-content">
+      <div class="timeline-title">Parallel Multi-Engine Web Scraping Swarm</div>
+      <div class="timeline-desc">The coordinator spawns 4 worker sub-agents querying business registries, Google Serper, and corporate websites concurrently, extracting 85 candidate records in parallel.</div>
+    </div>
+  </div>
+
+  <div class="timeline-item">
+    <div class="timeline-time">03:30 AM</div>
+    <div class="timeline-content">
+      <div class="timeline-title">Multi-Signal Verification & Non-Intrusive SMTP Probing</div>
+      <div class="timeline-desc">Validates syntax, verifies DNS MX records, and conducts gentle port 25 SMTP handshakes. 62 emails confirmed deliverable (0.95+ confidence); disposable addresses purged.</div>
+    </div>
+  </div>
+
+  <div class="timeline-item">
+    <div class="timeline-time">05:00 AM</div>
+    <div class="timeline-content">
+      <div class="timeline-title">Goal Mode LLM Judge Review & Gap-Filling Sweep</div>
+      <div class="timeline-desc">Evaluates lead quality against the goal. Identifies 8 missing LinkedIn URLs; launches targeted gap-filling subtasks to resolve them via executive social search tools.</div>
+    </div>
+  </div>
+
+  <div class="timeline-item">
+    <div class="timeline-time">07:00 AM</div>
+    <div class="timeline-content">
+      <div class="timeline-title">Deduplication & Long-Term Memory Assimilation</div>
+      <div class="timeline-desc">Deduplicates records against the local contact registry; absorbs new company facts and executive relationships into the SQLite entity graph at 94 µs per fact.</div>
+    </div>
+  </div>
+
+  <div class="timeline-item">
+    <div class="timeline-time">08:30 AM</div>
+    <div class="timeline-content">
+      <div class="timeline-title">CRM Synchronization & Morning Executive Briefing</div>
+      <div class="timeline-desc">Pushes 62 verified leads into amoCRM/HubSpot with full enrichment, and dispatches a structured executive briefing with attached Excel (.xlsx) to the team's Telegram channel.</div>
+    </div>
+  </div>
+</div>
+
+<div class="card-slate">
+  <div class="card-title-sm">Operational Outcome Summary</div>
+  <p style="font-size: 7.4pt;">
+    When human account executives arrive at their desks at 9:00 AM, fresh, fully verified, and enriched leads are already waiting in the CRM pipeline ready for high-conversion closing calls—with zero human prospecting time required.
+  </p>
+</div>
+
+<div class="callout callout-success">
+  <strong>The Compounding Advantage:</strong> 6 hours of autonomous nighttime execution delivers more qualified pipeline than a full-time human SDR produces in an entire work week.
+</div>
+    </div>
+
+    <div class="footer">
+      <div class="footer-left">
+        <span>Fathom Autonomous Workforce Runtime</span>
+        <span class="footer-bullet">•</span>
+        <span>Elastic-2.0 License</span>
+        <span class="footer-bullet">•</span>
+        <span>Strategic Whitepaper Presentation</span>
+      </div>
+      <div class="footer-right">v0.3.0 · Page 05 of 42</div>
+    </div>
+  </div>
+</body>
+</html>

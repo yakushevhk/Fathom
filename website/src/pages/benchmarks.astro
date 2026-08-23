@@ -237,12 +237,7 @@ import PageHero from '../components/PageHero.astro';
       <!-- ============ REPRODUCE ============ -->
       <div class="bench-card-lg reproduce">
         <h3 data-i18n="benchmarks.repro.title">Reproduce</h3>
-        <pre class="code-block"><code>cargo build --release
-./target/release/fathom bench --scenario all &gt; bench.md
-# individual scenarios: dispatch | parallel-io | parallel-cpu | mixed |
-#                       parse-scale | extract-json | feed-parse | code-map | memory
-./target/release/fathom stats -o &lt;output-dir&gt;   # p50/p95 per tool</code></pre>
-        <p class="bench-note" data-i18n="benchmarks.repro.note">Benchmarks use no network and no LLM (offline TF-IDF embedder) — runnable in CI. Numbers above are a snapshot on macOS arm64 (10 cores), release build.</p>
+        <p class="bench-note">Benchmarks run on provisioned servers. See the <a href="https://github.com/yakushevhk/Fathom" target="_blank" rel="noopener">GitHub repository</a> for the benchmark source and reproduction instructions. Numbers above are a snapshot on macOS arm64 (10 cores), release build.</p>
       </div>
 
       <!-- ============ QUALITY & TESTING ============ -->

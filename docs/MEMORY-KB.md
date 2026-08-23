@@ -190,7 +190,7 @@ When absorbing, a fact can be marked with a durability class via the `memory_cla
 Durability classes let the caller express *how long a fact should matter* at
 write time, which GC then respects: durable facts are the permanent knowledge
 base, ephemeral facts are session noise that distillation promotes or archives,
-and expiring facts carry an explicit shelf life (either the 30-day default or a
+and expiring facts carry an explicit shelf life (either the 90-day default or a
 specific `metadata.expires_at` timestamp that GC honors).
 
 ### Cross-call consolidation

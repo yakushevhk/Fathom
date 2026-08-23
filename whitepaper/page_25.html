@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fathom Whitepaper — Coordinator & Worker Swarm Execution</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <div class="header-left">
+        <div class="header-meta">
+          <span class="brand-badge">FATHOM</span>
+          <span class="header-category">EXECUTION RUNTIME · TASK DECOMPOSITION</span>
+        </div>
+        <div class="header-title-main">Coordinator & Worker Swarm Execution</div>
+        <div class="header-subtitle">How Complex High-Level Tasks Are Broken Down and Executed in Parallel</div>
+      </div>
+      <div class="header-right">
+        <span class="page-badge">PAGE 25 / 42</span>
+      </div>
+    </div>
+
+    <div class="content-body">
+<div class="card-dark">
+  <div class="card-title">Dynamic Hierarchical Task Decomposition</div>
+  <p>
+    When a user assigns a complex project, the Coordinator uses a structured planning prompt to analyze dependencies, formulate execution branches, and launch parallel sub-agents via the <code>spawn_agent</code> tool.
+  </p>
+</div>
+
+<div class="card">
+  <div class="card-title">Sample Task Decomposition Tree</div>
+  <div class="diagram-flow" style="flex-direction: column; align-items: stretch; gap: 4px;">
+    <div style="background: white; border: 1px solid var(--border-color); padding: 4px 8px; border-radius: 4px;">
+      <strong>Root Coordinator:</strong> "Comprehensive Due Diligence on European AI FinTechs"
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px;">
+      <div style="background: #eff6ff; border-left: 3px solid var(--primary-accent); padding: 4px 6px; border-radius: 3px; font-size: 6.8pt;">
+        <strong>Branch 1 (Registry Agent):</strong><br>Scrapes Companies House & Handelsregister for corporate registration & filings.
+      </div>
+      <div style="background: #f0fdf4; border-left: 3px solid var(--emerald); padding: 4px 6px; border-radius: 3px; font-size: 6.8pt;">
+        <strong>Branch 2 (OSINT Agent):</strong><br>Harvests C-level leadership, LinkedIn profiles, and verified work emails.
+      </div>
+      <div style="background: #faf5ff; border-left: 3px solid var(--purple); padding: 4px 6px; border-radius: 3px; font-size: 6.8pt;">
+        <strong>Branch 3 (Tech Stack Agent):</strong><br>Fingerprints homepage HTML for 40+ technology signatures (AWS, Stripe, Next.js).
+      </div>
+    </div>
+    <div style="background: #fffbeb; border-left: 3px solid var(--amber); padding: 4px 6px; border-radius: 3px; font-size: 7pt;">
+      <strong>Synthesis Node (Analyst & Writer):</strong> Merges all 3 branches, reconciles conflicts, and formats final executive PDF report.
+    </div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card card-emerald">
+    <div class="card-title-sm">Recursive Depth Limits & Guardrails</div>
+    <p style="font-size: 7.4pt;">
+      To prevent runaway sub-agent spawning loops, Fathom enforces strict depth limits (default max depth: 2). Coordinators can spawn workers, but workers cannot spawn infinite child trees without explicit permission.
+    </p>
+  </div>
+
+  <div class="card card-accent">
+    <div class="card-title-sm">Tokio JoinSet Multi-Threading</div>
+    <p style="font-size: 7.4pt;">
+      All spawned workers run as concurrent tasks inside a Tokio <code>JoinSet</code>. If one branch encounters a slow network request or rate limit, sibling branches continue executing at full speed.
+    </p>
+  </div>
+</div>
+
+<div class="card-slate">
+  <div class="card-title-sm">Token Budget Fair-Share Scheduling</div>
+  <p style="font-size: 7.4pt;">
+    The coordinator assigns token quotas to each sub-agent branch (e.g. max 16k tokens per worker). When a worker approaches 80% of its budget, it enters Economy Mode, truncating verbose tool outputs to prevent waste.
+  </p>
+</div>
+
+<div class="callout callout-info">
+  <strong>Fault-Tolerant Merging:</strong> If one sub-agent fails due to an anti-bot block, the coordinator gracefully incorporates partial findings from other branches without failing the overall run.
+</div>
+    </div>
+
+    <div class="footer">
+      <div class="footer-left">
+        <span>Fathom Autonomous Workforce Runtime</span>
+        <span class="footer-bullet">•</span>
+        <span>Elastic-2.0 License</span>
+        <span class="footer-bullet">•</span>
+        <span>Strategic Whitepaper Presentation</span>
+      </div>
+      <div class="footer-right">v0.3.0 · Page 25 of 42</div>
+    </div>
+  </div>
+</body>
+</html>

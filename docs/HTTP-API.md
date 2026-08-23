@@ -45,22 +45,19 @@ Health check — returns `200 OK` with the current server status and a count of 
 
 ---
 
-### `GET /metrics`
+**Available metrics:**
 
-Prometheus metrics in text exposition format. Exposes counters and histograms for session lifecycle, agent spawning, token usage, tool calls, and HTTP request timing. This endpoint is outside the `/api/v1` namespace and is not rate-limited, making it suitable for Prometheus scrapers.
+| Metric | Type | Description |
+|--------|------|-------------|
+| `pr_sessions_total` | Counter | Total number of research sessions created |
+| `pr_sessions_active` | Gauge | Number of research sessions currently running |
+| `pr_agents_spawned_total` | Counter | Total number of research agents spawned |
+| `pr_tokens_used_total` | Counter | Total number of LLM tokens consumed by completed agents |
+| `pr_tool_calls_total` | Counter | Total number of tool invocations completed |
+| `pr_http_requests_total` | Counter | Total number of HTTP requests served |
+| `pr_request_duration_seconds` | Histogram | HTTP request duration in seconds (buckets: 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0) |
 
-**Response 200** (text/plain, Prometheus format):
-```
-pr_sessions_total 42
-pr_sessions_active 2
-pr_agents_spawned_total 128
-pr_tokens_used_total 15234567
-pr_tool_calls_total 890
-pr_http_requests_total 234
-pr_request_duration_seconds_bucket{le="0.1"} 100
-pr_request_duration_seconds_bucket{le="1"} 200
-...
-```
+Metrics are recorded by middleware wrapping all API routes. Counters and gauges are atomic integers; the histogram uses fixed bucket counts. The `pr_sessions_active` gauge is decremented exactly once per session regardless of cancellation path, using an `AtomicBool` guard in the session's Drop handler.
 
 ---
 
@@ -927,15 +924,9 @@ scrape_configs:
     metrics_path: '/metrics'
 ```
 
-Available metrics:
-| Metric | Type | Description |
-|--------|------|-------------|
-| `pr_sessions_total` | Counter | Total sessions created |
-| `pr_sessions_active` | Gauge | Currently active sessions |
-| `pr_agents_spawned_total` | Counter | Total agents spawned |
-| `pr_tokens_used_total` | Counter | Total tokens used |
-| `pr_tool_calls_total` | Counter | Total tool calls |
-| `pr_http_requests_total` | Counter | HTTP requests to the API |
+| `pr_request_duration_seconds` | Histogram | Request duration (buckets: 0.005–10 s) |
+
+The metrics are recorded by a middleware that wraps all API routes. Counters and gauges are lock-free atomic integers; the histogram uses fixed cumulative buckets. The `pr_sessions_active` gauge is decremented exactly once per session regardless of cancellation path, using an `AtomicBool` guard in the session's Drop handler.
 | `pr_request_duration_seconds` | Histogram | Request duration in buckets (0.1, 1, 10, +Inf) |
 
 The metrics are recorded by a middleware that wraps all API routes. The `sessions_active` gauge is decremented exactly once per session regardless of cancellation path (normal completion, failure, or cancellation), using an `AtomicBool` guard in the session's Drop handler. Metrics are thread-safe lock-free counters and gauges implemented with `AtomicU64` and a histogram backed by `AtomicU64` buckets.

@@ -20,6 +20,29 @@ export default function EventsPage() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const reconnectTimer = useRef<number | null>(null)
   const [autoScroll, setAutoScroll] = useState(true)
+  const [paused, setPaused] = useState(false)
+  const [liveAnnouncement, setLiveAnnouncement] = useState('')
+  const pausedRef = useRef(false)
+  const lastAnnouncedEventRef = useRef<string | null>(null)
+  const announcementTimer = useRef<number | null>(null)
+  const pendingAnnouncement = useRef<{ count: number; latest: string }>({ count: 0, latest: '' })
+  const MAX_EVENTS = 500
+
+  const queueLiveAnnouncement = (event: DisplayEvent) => {
+    pendingAnnouncement.current = {
+      count: pendingAnnouncement.current.count + 1,
+      latest: event.summary,
+    }
+    if (announcementTimer.current !== null) return
+    announcementTimer.current = window.setTimeout(() => {
+      const pending = pendingAnnouncement.current
+      setLiveAnnouncement(pending.count === 1
+        ? `New worker event: ${pending.latest}`
+        : `${pending.count} new worker events. Latest: ${pending.latest}`)
+      pendingAnnouncement.current = { count: 0, latest: '' }
+      announcementTimer.current = null
+    }, 1500)
+  }
 
   // SSE connection
   useEffect(() => {
@@ -49,10 +72,16 @@ export default function EventsPage() {
             if (!line.startsWith('data: ')) continue
             try {
               const raw = JSON.parse(line.slice(6)) as AgentEvent
+              const display = eventToDisplay(raw)
+              if (pausedRef.current) continue
+              if (lastAnnouncedEventRef.current !== display.id) {
+                lastAnnouncedEventRef.current = display.id
+                queueLiveAnnouncement(display)
+              }
               setEvents(prev => {
-                const display = eventToDisplay(raw)
                 if (prev.some(e => e.id === display.id)) return prev
-                return [...prev, display]
+                const next = [...prev, display]
+                return next.length > MAX_EVENTS ? next.slice(-MAX_EVENTS) : next
               })
             } catch {
               // Ignore malformed events while keeping the stream alive.
@@ -87,6 +116,10 @@ export default function EventsPage() {
     }
   }, [events, autoScroll])
 
+  useEffect(() => () => {
+    if (announcementTimer.current !== null) window.clearTimeout(announcementTimer.current)
+  }, [])
+
   const handleScroll = () => {
     const el = scrollRef.current
     if (!el) return
@@ -94,21 +127,29 @@ export default function EventsPage() {
   }
 
   const handleClear = () => setEvents([])
+  const handlePause = () => {
+    const next = !pausedRef.current
+    pausedRef.current = next
+    setPaused(next)
+  }
 
   return (
     <div className="flex-1 flex flex-col min-w-0">
       {/* Header */}
-      <div className="h-9 flex items-center px-4 border-b border-white/[0.06] text-xs text-gray-400 shrink-0">
-        <span className="text-gray-500 mr-2">Worker events</span>
+      <div className="ops-toolbar shrink-0 flex-wrap">
+        <h1 id="events-heading" className="ops-toolbar-title">Worker events</h1>
         <span aria-hidden="true" className={`w-1.5 h-1.5 rounded-full mr-1.5 ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
-        <span role="status" className="text-gray-500">{connected ? 'Live' : connectionError ? 'Offline' : 'Connecting'}</span>
-        <span className="ml-auto text-gray-500">{events.length} events</span>
+        <span role="status" aria-live="polite" className="text-gray-500">{paused ? 'Paused' : connected ? 'Live' : connectionError ? 'Offline' : 'Connecting'}</span>
+        <span className="ops-toolbar-meta w-full sm:w-auto sm:ml-auto">{events.length} events · max {MAX_EVENTS}</span>
+        <button type="button" onClick={handlePause} className="ops-button-secondary px-2 py-0.5 text-[10px]" aria-pressed={paused}>
+          {paused ? 'Resume' : 'Pause'}
+        </button>
         {events.length > 0 && (
           <button
             onClick={handleClear}
             type="button"
             aria-label="Clear worker events"
-            className="ml-3 px-2 py-0.5 rounded text-[10px] bg-white/[0.06] hover:bg-white/[0.1] text-gray-400 hover:text-gray-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gray-300 transition-colors"
+            className="ml-2 px-2 py-0.5 rounded text-[10px] bg-white/[0.06] hover:bg-white/[0.1] text-gray-400 hover:text-gray-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gray-300 transition-colors"
           >
             Clear events
           </button>
@@ -120,15 +161,21 @@ export default function EventsPage() {
         ref={scrollRef}
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto"
+        role="log"
+        aria-labelledby="events-heading"
+        aria-live="off"
+        aria-relevant="additions"
+        tabIndex={0}
       >
+        <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">{liveAnnouncement}</div>
         {events.length === 0 && (
           <div role={connectionError ? 'alert' : 'status'} className="flex items-center justify-center py-12 text-gray-600 text-xs">
-            {connectionError ? `Activity unavailable: ${connectionError}` : connected ? 'Waiting for worker events…' : 'Connecting to the live worker event stream…'}
+            {connectionError ? `Activity unavailable: ${connectionError}` : paused ? 'Stream paused. Resume to receive new worker events.' : connected ? 'Waiting for worker events…' : 'Connecting to the live worker event stream…'}
           </div>
         )}
-        <div className="divide-y divide-white/[0.03]">
+        <div className="divide-y divide-white/[0.03]" role="list" aria-label="Worker event entries">
           {events.map(e => (
-            <div key={e.id} className="px-4 py-2.5 hover:bg-white/[0.01] transition-colors animate-fade-in">
+            <div key={e.id} role="listitem" tabIndex={0} aria-label={`${e.type.replace(/_/g, ' ')}: ${e.summary}`} className="px-4 py-2.5 hover:bg-white/[0.01] transition-colors animate-fade-in focus-visible:outline focus-visible:outline-2 focus-visible:outline-gray-500">
               <div className="flex items-center gap-2 mb-1">
                 <span className={`text-[10px] font-semibold uppercase tracking-wider ${
                   e.type === 'session_started' ? 'text-blue-400' :
@@ -181,9 +228,16 @@ function eventToDisplay(event: AgentEvent): DisplayEvent {
     case 'session_started':
       summary = `Session started: ${String(event.query ?? '').slice(0, 200)}`
       break
-    case 'session_completed':
-      summary = `Session completed — ${event.total_agents ?? 0} agents, ${event.total_tokens ?? 0} tokens`
+    case 'session_completed': {
+      const totalAgents = event.total_agents
+      const totalTokens = event.total_tokens
+      const metrics = [
+        typeof totalAgents === 'number' ? `${totalAgents} worker${totalAgents === 1 ? '' : 's'}` : null,
+        typeof totalTokens === 'number' ? `${totalTokens.toLocaleString()} tokens` : null,
+      ].filter(Boolean).join(', ')
+      summary = metrics ? `Session completed — ${metrics}` : 'Session completed'
       break
+    }
     case 'session_failed':
       summary = `Session failed: ${event.error ?? ''}`
       break

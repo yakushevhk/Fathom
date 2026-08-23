@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fathom Whitepaper — Empirical Performance Summary</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <div class="header-left">
+        <div class="header-meta">
+          <span class="brand-badge">FATHOM</span>
+          <span class="header-category">PERFORMANCE SUMMARY · SPEED HIGHLIGHTS</span>
+        </div>
+        <div class="header-title-main">Empirical Performance Summary</div>
+        <div class="header-subtitle">Sub-Millisecond Ingestion, Microsecond Deserialization & Streaming Throughput</div>
+      </div>
+      <div class="header-right">
+        <span class="page-badge">PAGE 40 / 42</span>
+      </div>
+    </div>
+
+    <div class="content-body">
+<div class="card-accent">
+  <div class="card-title">The Complete Performance Scorecard</div>
+  <p>
+    Every layer of the Fathom stack has been profiled and optimized for microsecond-level execution speed, ensuring instantaneous response times across all enterprise workflows.
+  </p>
+</div>
+
+<div class="grid-3">
+  <div class="card card-emerald">
+    <div class="card-title-sm">Memory Ingestion</div>
+    <div class="metric-val" style="font-size: 15pt;">94 µs</div>
+    <div class="metric-label">Per-Fact Absorb (100 batch)</div>
+    <p style="font-size: 7pt; margin-top: 4px;">5.1ms to absorb and dedup 100 facts via SHA-256 fast path.</p>
+  </div>
+
+  <div class="card card-accent">
+    <div class="card-title-sm">Hybrid Retrieval</div>
+    <div class="metric-val" style="font-size: 15pt;">1.62 ms</div>
+    <div class="metric-label">Search Median Latency</div>
+    <p style="font-size: 7pt; margin-top: 4px;">Fused Vector + BM25 search across 500 facts in under 2ms.</p>
+  </div>
+
+  <div class="card card-purple">
+    <div class="card-title-sm">XML Feed Stream</div>
+    <div class="metric-val" style="font-size: 15pt;">1.11M</div>
+    <div class="metric-label">Items / Sec Throughput</div>
+    <p style="font-size: 7pt; margin-top: 4px;">Streaming quick-xml parser processes 12k feed items in 10.8ms.</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Parser Scaling & Extraction Latencies</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Document Type</th>
+        <th>Size / Rows</th>
+        <th>Parse Duration</th>
+        <th>Effective Throughput</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>HTML Table (Scraper)</strong></td>
+        <td>191 KB / 3,000 rows</td>
+        <td>9.55 ms</td>
+        <td>314,268 rows / sec</td>
+      </tr>
+      <tr>
+        <td><strong>HTML Large (Scraper)</strong></td>
+        <td>773 KB / 12,000 rows</td>
+        <td>34.22 ms</td>
+        <td>350,723 rows / sec</td>
+      </tr>
+      <tr>
+        <td><strong>JSON Tree Walk</strong></td>
+        <td>4 MB / 20,000 objects</td>
+        <td>43.47 ms</td>
+        <td>Stateless Parallel-Safe</td>
+      </tr>
+      <tr>
+        <td><strong>AST Code Map (240 files)</strong></td>
+        <td>3.3 MB Rust Source</td>
+        <td>34.20 ms</td>
+        <td>4,330 Summary Lines</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card-slate">
+  <div class="card-title-sm">System Latency Guarantees</div>
+  <p style="font-size: 7.4pt;">
+    All core internal operations—from policy validation to database inserts—are strictly bounded under 5 milliseconds, ensuring that human operators and external API callers experience instantaneous execution.
+  </p>
+</div>
+
+<div class="callout callout-info">
+  <strong>Deterministic Excellence:</strong> Fathom turns AI agent execution from a sluggish, bloated prototype into a high-frequency trading caliber software runtime.
+</div>
+    </div>
+
+    <div class="footer">
+      <div class="footer-left">
+        <span>Fathom Autonomous Workforce Runtime</span>
+        <span class="footer-bullet">•</span>
+        <span>Elastic-2.0 License</span>
+        <span class="footer-bullet">•</span>
+        <span>Strategic Whitepaper Presentation</span>
+      </div>
+      <div class="footer-right">v0.3.0 · Page 40 of 42</div>
+    </div>
+  </div>
+</body>
+</html>

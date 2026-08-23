@@ -1,272 +1,120 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import PageHero from '../components/PageHero.astro';
-
-const tiers = [
-  {
-    name: 'Local',
-    desc: 'Run Fathom on a workstation for personal tasks, experiments and local research.',
-    feats: [
-      ['Runtime', 'CLI, TUI and local state'],
-      ['Build', 'curl installer or cargo build --release'],
-      ['Storage', 'SQLite in your Fathom state directory'],
-      ['Network', 'Choose the LLM and search endpoints'],
-      ['Cost', 'Your machine, model and external API usage'],
-    ],
-  },
-  {
-    name: 'Server',
-    desc: 'Operate the HTTP API and dashboard on a server you administer for a team or workflow.',
-    feats: [
-      ['Deploy', 'Self-hosted Linux, VM or container'],
-      ['Access', 'HTTP API and dashboard on your network'],
-      ['Storage', 'Persistent SQLite or configured PostgreSQL'],
-      ['Operations', 'Backups, updates and logs are yours'],
-      ['Cost', 'Compute, storage, network and model usage'],
-    ],
-  },
-  {
-    name: 'Air-gapped',
-    desc: 'Keep processing inside your perimeter when your environment supplies local model endpoints.',
-    feats: [
-      ['Network', 'No external calls when configured locally'],
-      ['Deploy', 'On-premise host or isolated network'],
-      ['Storage', 'Databases and credentials under your control'],
-      ['Extend', 'Configure the integrations your policy allows'],
-      ['Cost', 'Hardware, operations and local model capacity'],
-    ],
-  },
-];
-
-const entChips = ['Source available', 'Self-hosted', 'Your infrastructure', 'Local models', 'No hosted plan'];
-
-const faqs = [
-  ['How is it distributed?', 'Fathom is source-available under the Elastic License 2.0. Clone the public GitHub repository, use the curl installer, or build the Rust workspace with cargo build --release. The project is intended for self-hosted deployment, not as a hosted service.'],
-  ['What does it cost to run?', 'There is no hosted subscription or usage meter on this site. Plan for the infrastructure you choose, plus any LLM, search, email, CRM or other third-party API charges. Local models and offline workflows can reduce external API costs, but still require hardware and operations.'],
-  ['Where does data live?', 'Fathom runs on infrastructure you control. Sessions, contacts, memory and reports use local state or a PostgreSQL database configured by you; external services receive data only when you enable and call those integrations.'],
-  ['Can it run air-gapped?', 'The runtime can use offline embeddings and local model endpoints. A fully air-gapped deployment still depends on the capabilities and data available inside your environment, and requires you to configure and operate that environment.'],
-];
 ---
 
-<Layout title="Self-hosting — Fathom">
+<Layout title="Pricing — Fathom">
   <main class="pricing-page">
-        <PageHero cls="pricing-hero">
-        <p class="eyebrow" data-i18n="pricing.hero.badge">Self-hosting</p>
-        <h1 class="h2-sec" data-i18n-html data-i18n="pricing.hero.title">Run it <em class="it">where you work.</em></h1>
-        <p class="hero-mono" data-i18n="pricing.hero.sub">Fathom is source-available and self-hosted — choose a local machine, your own server or an isolated environment, then budget for infrastructure and the services you connect.</p>
+    <PageHero cls="pricing-hero">
+      <p class="eyebrow" data-i18n="pricingPage.hero.badge">Pricing</p>
+      <h1 class="h2-sec" data-i18n-html data-i18n="pricingPage.hero.title">Remote AI workers <em class="it">on your team.</em></h1>
+      <p class="copy-lg mx-auto" data-i18n="pricingPage.hero.sub">Fathom deploys on dedicated infrastructure for your team. Contact us for access — we'll set up a server with full runtime, API, dashboard, and memory.</p>
     </PageHero>
     <div class="container">
 
-      <!-- Tiers -->
-      <div class="price-grid">
-        {tiers.map((t, ti) => (
-          <div class="price-card">
-            <span class="pc-name" data-i18n={'pricing.tier.' + ti + '.name'}>{t.name}</span>
-            <span class="pc-desc" data-i18n={'pricing.tier.' + ti + '.desc'}>{t.desc}</span>
-            <div class="pc-price" data-i18n="pricing.tier.price">Source available <span>operational costs vary</span></div>
-            <div class="pc-feats">
-              {t.feats.map((f, fi) => (
-                <span data-i18n-html data-i18n={'pricing.tier.' + ti + '.feat.' + fi}><kbd>{f[0]}</kbd> {f[1]}</span>
-              ))}
-            </div>
-            <a class="pc-btn" href="https://github.com/yakushevhk/Fathom" data-i18n="pricing.requestAccess">View source</a>
-          </div>
-        ))}
-      </div>
-
-      <!-- Operational costs -->
-      <div class="enterprise">
-        <div class="ent-body">
-          <h3 data-i18n="pricing.enterprise.title">Budget the operation, not a hosted plan</h3>
-          <p data-i18n="pricing.enterprise.sub">You provide the host, persistent storage, backups and updates. Add the cost of any LLM, search, browser, email or CRM services you configure; local endpoints and offline embeddings are options, not promises.</p>
-          <div class="ent-features">
-            {entChips.map((c, i) => <span data-i18n={'pricing.enterprise.chip.' + i}>{c}</span>)}
-          </div>
+      <!-- Contact CTA -->
+      <div class="contact-card">
+        <div class="contact-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
         </div>
-        <a class="btn-ghost" href="https://github.com/yakushevhk/Fathom" data-i18n="pricing.enterprise.cta">Open the repository →</a>
+        <h2 data-i18n="pricingPage.contact.title">Request access</h2>
+        <p class="contact-body" data-i18n="pricingPage.contact.body">
+          We provision servers for your team with full access to the Fathom runtime, CLI, TUI, API, dashboard, and integrations. Email us to get started.
+        </p>
+        <a href="mailto:hello@fathom.uz" class="contact-btn">hello@fathom.uz</a>
+        <p class="contact-footnote" data-i18n="pricingPage.contact.footnote">We'll respond within 24 hours with server credentials and documentation.</p>
       </div>
 
-      <!-- Comparison -->
-      <div class="cmp-section">
-        <div class="sec-head">
-          <p class="eyebrow" data-i18n="pricing.compare.badge">Compare</p>
-          <h2 class="h3-sec" data-i18n="pricing.compare.title">Same runtime, different operations</h2>
-          <p class="copy-lg" data-i18n="pricing.compare.sub">The source and binary capabilities are not split into hosted plans. Compare the practical trade-offs between local, server and isolated deployments: storage, networking, integrations and the work required to operate them.</p>
+      <!-- What you get -->
+      <div class="sec-head" id="includes">
+        <p class="eyebrow" data-i18n="pricingPage.includes.badge">What's included</p>
+        <h2 class="h3-sec" data-i18n="pricingPage.includes.title">Full worker platform</h2>
+      </div>
+      <div class="includes-grid">
+        <div class="include-card">
+          <div class="include-name" data-i18n="pricingPage.includes.1.name">Autonomous workers</div>
+          <p data-i18n="pricingPage.includes.1.d">Research, outreach, code, computer use, and scheduled operations — one runtime, every capability.</p>
         </div>
-        <div class="compute-tabs" id="cmpTabs">
-          <button class="is-active" data-c="tools" data-i18n="pricing.compare.tab.tools">Tools</button>
-          <button data-c="memory" data-i18n="pricing.compare.tab.memory">Memory</button>
-          <button data-c="ops" data-i18n="pricing.compare.tab.ops">Ops</button>
-          <button data-c="support" data-i18n="pricing.compare.tab.support">Support</button>
+        <div class="include-card">
+          <div class="include-name" data-i18n="pricingPage.includes.2.name">Web dashboard &amp; API</div>
+          <p data-i18n="pricingPage.includes.2.d">Full control plane with REST API, SSE streaming, AG-UI compatibility, and the embedded web dashboard.</p>
         </div>
-        <div class="cmp-body" id="cmpBody"></div>
+        <div class="include-card">
+          <div class="include-name" data-i18n="pricingPage.includes.3.name">Durable memory</div>
+          <p data-i18n="pricingPage.includes.3.d">Hybrid vector + BM25 semantic memory, entity graph, and append-only knowledge that persists across sessions.</p>
+        </div>
+        <div class="include-card">
+          <div class="include-name" data-i18n="pricingPage.includes.4.name">Governance &amp; approvals</div>
+          <p data-i18n="pricingPage.includes.4.d">Approval gates, policy hooks, secret scanning, and audit trails keep every side effect reviewable.</p>
+        </div>
+        <div class="include-card">
+          <div class="include-name" data-i18n="pricingPage.includes.5.name">Integrations</div>
+          <p data-i18n="pricingPage.includes.5.d">CRM push (amoCRM, Bitrix24, HubSpot), MCP, notifications (webhook, email, Telegram), and search backends.</p>
+        </div>
+        <div class="include-card">
+          <div class="include-name" data-i18n="pricingPage.includes.6.name">Support</div>
+          <p data-i18n="pricingPage.includes.6.d">Server provisioning, configuration assistance, and ongoing operational support from the Fathom team.</p>
+        </div>
       </div>
 
-      <!-- FAQ -->
-      <div class="sec-head center">
-        <p class="eyebrow" data-i18n="pricing.faq.badge">FAQ</p>
-        <h2 class="h3-sec" data-i18n="pricing.faq.title">Questions, answered</h2>
-      </div>
-      <div class="faq" id="faq">
-        {faqs.map((f, i) => (
-          <div class="faq-row">
-            <button class="faq-q"><span data-i18n={'pricing.faq.' + i + '.q'}>{f[0]}</span><span class="chev">+</span></button>
-            <div class="faq-a"><p data-i18n={'pricing.faq.' + i + '.a'}>{f[1]}</p></div>
-          </div>
-        ))}
-      </div>
-
+      <!-- CTA -->
       <div class="cta-strip">
-        <h2 data-i18n="pricing.cta.title">Ready to deploy it yourself?</h2>
-        <a href="https://github.com/yakushevhk/Fathom" class="btn btn-primary">GitHub repository →</a>
+        <div class="cta-copy">
+          <h3 data-i18n="pricingPage.cta.title">Ready to deploy workers for your team?</h3>
+          <p data-i18n="pricingPage.cta.sub">Email us and we'll get you set up with a dedicated server environment.</p>
+        </div>
+        <div class="cta-actions">
+          <a href="mailto:hello@fathom.uz" class="cta-btn" data-i18n="pricingPage.cta.access">Request access →</a>
+          <a href="/docs" class="cta-link" data-i18n="pricingPage.cta.docs">Read the docs</a>
+        </div>
       </div>
     </div>
   </main>
 </Layout>
 
-<script>
-  /* Comparison tables */
-  const tables: Record<string, { hd: string[]; rows: string[][] }> = {
-    tools: {
-      hd: ['Capability', 'Local', 'Server', 'Air-gapped'],
-      rows: [
-        ['Agent tools', 'Available from the same source', 'Available from the same source', 'Available from the same source'],
-        ['Search and model endpoints', 'Local or configured endpoints', 'Configured endpoints on your network', 'Local endpoints only when available'],
-        ['Browser automation (CDP)', 'Optional local service', 'Optional service you operate', 'Requires an in-network service'],
-        ['HTTP API + dashboard', 'Run locally when needed', 'Expose and secure on your network', 'Expose only inside your perimeter'],
-        ['Custom tools / MCP servers', 'Configure what you need', 'Configure what you need', 'Configure what policy allows'],
-      ],
-    },
-    memory: {
-      hd: ['Capability', 'Local', 'Server', 'Air-gapped'],
-      rows: [
-        ['Knowledge store', 'Local SQLite', 'SQLite or configured PostgreSQL', 'Local database on your host'],
-        ['Contact DB', 'SQLite', 'SQLite or PostgreSQL', 'Database inside your perimeter'],
-        ['Embeddings', 'Configured provider or offline option', 'Configured provider or offline option', 'Offline option when configured'],
-        ['State and credentials', 'Your workstation', 'Your server and backups', 'Your isolated environment'],
-      ],
-    },
-    ops: {
-      hd: ['Capability', 'Local', 'Server', 'Air-gapped'],
-      rows: [
-        ['Durable jobs', 'Run on your workstation', 'Run on your server', 'Run inside your environment'],
-        ['Process isolation', 'Choose your local setup', 'Choose your service isolation', 'Choose controls for your perimeter'],
-        ['HTTP API + dashboard', 'Optional local service', 'Network service you secure', 'Internal service you secure'],
-        ['Watch mode + diff alerts', 'Schedule on your machine', 'Schedule on your server', 'Schedule inside your environment'],
-        ['CRM and notifications', 'Only configured integrations', 'Only configured integrations', 'Only in-network integrations'],
-        ['Metrics and logs', 'Local logs', 'Logs and monitoring you operate', 'Monitoring you operate inside'],
-      ],
-    },
-    support: {
-      hd: ['Capability', 'Local', 'Server', 'Air-gapped'],
-      rows: [
-        ['Documentation', 'Public repository and docs', 'Public repository and docs', 'Public repository and docs'],
-        ['Support model', 'Community and self-support', 'Community and self-support', 'Community and self-support'],
-        ['Updates', 'Pull and rebuild or reinstall', 'Schedule updates you control', 'Validate and update inside your process'],
-        ['Operations', 'Your workstation', 'Your server, backups and monitoring', 'Your hardware and controls'],
-      ],
-    },
-  };
-
-  const nav = document.getElementById('cmpTabs');
-  const body = document.getElementById('cmpBody');
-
-  function show(k: string) {
-    if (!nav || !body) return;
-    nav.querySelectorAll('button').forEach((x) => x.classList.remove('is-active'));
-    nav.querySelector(`[data-c="${k}"]`)?.classList.add('is-active');
-    const t = tables[k];
-    let html = '<table class="comp-table"><thead><tr>';
-    t.hd.forEach((h) => { html += '<th>' + h + '</th>'; });
-    html += '</tr></thead><tbody>';
-    t.rows.forEach((r) => {
-      html += '<tr>';
-      r.forEach((c, i) => { html += '<td' + (i === 0 ? ' class="cap-cell"' : '') + '>' + c + '</td>'; });
-      html += '</tr>';
-    });
-    html += '</tbody></table>';
-    body.innerHTML = html;
-  }
-
-  nav?.querySelectorAll('button').forEach((b) => {
-    b.addEventListener('click', () => show((b as HTMLButtonElement).dataset.c || 'tools'));
-  });
-  show('tools');
-
-  /* FAQ accordion */
-  document.querySelectorAll('.faq-row').forEach((row) => {
-    row.querySelector('.faq-q')?.addEventListener('click', () => {
-      const a = row.querySelector('.faq-a') as HTMLElement | null;
-      if (!a) return;
-      const open = row.classList.toggle('is-open');
-      a.style.maxHeight = open ? a.scrollHeight + 'px' : '0';
-    });
-  });
-</script>
-
 <style>
   .pricing-page { padding: 70px 0 90px; }
   .eyebrow { font-family: var(--font-mono); font-size: 13px; letter-spacing: .16px; text-transform: uppercase; color: var(--grey-600); }
-  .h3-sec { font-size: clamp(20px, 2.4vw, 34px); font-weight: 500; letter-spacing: -0.02em; margin: 12px 0 0; }
+  .h3-sec { font-size: clamp(20px, 2.4vw, 34px); font-weight: 500; letter-spacing: -0.02em; margin: 12px 0 16px; }
   .copy-lg { color: var(--grey-700); font-size: 17px; line-height: 1.55; max-width: 640px; }
+  .mx-auto { margin-left: auto; margin-right: auto; }
 
-  .pricing-hero { max-width: 860px; margin: 0 auto 46px; text-align: center; padding: 0 24px; }
+  .pricing-hero { max-width: 820px; margin: 0 auto 48px; text-align: center; padding: 0 24px; }
   .pricing-hero h1 { font-size: clamp(34px, 5vw, 68px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.02; margin-top: 12px; }
-  .hero-mono { font-family: var(--font-mono); color: var(--grey-600); font-size: 15px; margin-top: 18px; line-height: 1.5; }
+  .pricing-hero .copy-lg { margin-top: 20px; }
 
-  .price-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-  @media (max-width: 1100px) { .price-grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 640px) { .price-grid { grid-template-columns: 1fr; } }
+  .contact-card {
+    max-width: 640px; margin: 0 auto; text-align: center;
+    background: var(--bg-card); border: 1px solid var(--grey-200);
+    border-radius: var(--radius-xl); padding: 56px 40px;
+  }
+  .contact-icon { color: var(--grey-500); margin-bottom: 20px; }
+  .contact-card h2 { font-size: clamp(26px, 3.4vw, 38px); font-weight: 500; letter-spacing: -0.025em; margin-bottom: 16px; }
+  .contact-body { color: var(--grey-600); font-size: 16px; line-height: 1.6; max-width: 480px; margin: 0 auto 28px; }
+  .contact-btn {
+    display: inline-block; font-family: var(--font-mono); font-size: 18px; font-weight: 600;
+    color: var(--grey-900); background: var(--grey-100); border: 1px solid var(--grey-300);
+    padding: 14px 32px; border-radius: var(--radius-md); transition: all .2s;
+  }
+  .contact-btn:hover { background: var(--grey-900); color: var(--on-accent); border-color: var(--grey-900); }
+  .contact-footnote { color: var(--grey-500); font-size: 13px; margin-top: 18px; }
 
-  .price-card { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 12px; transition: box-shadow .25s, transform .25s var(--ease-out), border-color .25s; }
-  .price-card:hover { box-shadow: 0 20px 50px -25px rgba(0, 0, 0, .25); transform: translateY(-3px); border-color: var(--grey-400); }
-  .price-card .pc-name { font-family: var(--font-mono); font-weight: 600; font-size: 15px; }
-  .price-card .pc-desc { color: var(--grey-600); font-size: 14px; line-height: 1.5; flex: 1; }
-  .price-card .pc-price { font-size: 30px; font-weight: 500; letter-spacing: -.02em; }
-  .price-card .pc-price span { font-size: 15px; color: var(--grey-600); }
-  .price-card .pc-feats { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--grey-200); padding-top: 14px; margin-top: 4px; }
-  .price-card .pc-feats span { font-size: 13px; color: var(--grey-700); }
-  .price-card .pc-feats kbd { font-family: var(--font-mono); font-size: 12px; color: var(--grey-600); background: var(--grey-100); padding: 1px 6px; border-radius: 4px; }
-  .price-card .pc-btn { margin-top: auto; text-align: center; font-family: var(--font-mono); font-size: 13px; color: var(--grey-900); border: 1px solid var(--grey-300); padding: 10px; border-radius: 8px; transition: all .2s; }
-  .price-card .pc-btn:hover { background: var(--grey-900); color: #fff; border-color: var(--grey-900); }
+  .sec-head { max-width: 720px; margin: 56px 0 24px; }
 
-  .enterprise { max-width: 960px; margin: 48px auto 0; background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: 12px; padding: 32px; display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; }
-  .enterprise .ent-body { max-width: 560px; }
-  .enterprise .ent-body h3 { font-size: 24px; font-weight: 500; margin-bottom: 8px; }
-  .enterprise .ent-body p { color: var(--grey-600); font-size: 14px; line-height: 1.55; margin-bottom: 12px; }
-  .enterprise .ent-features { display: flex; flex-wrap: wrap; gap: 8px; }
-  .enterprise .ent-features span { font-family: var(--font-mono); font-size: 12px; color: var(--grey-700); background: var(--grey-100); border: 1px solid var(--grey-200); padding: 4px 10px; border-radius: 6px; }
-  .enterprise .btn-ghost { font-family: var(--font-mono); font-size: 14px; border: 1px solid var(--grey-300); padding: 12px 20px; border-radius: 8px; color: var(--grey-900); transition: all .2s; white-space: nowrap; }
-  .enterprise .btn-ghost:hover { background: var(--grey-900); color: #fff; border-color: var(--grey-900); }
+  .includes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--grey-300); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--grey-300); }
+  .include-card { background: var(--bg-primary); padding: 26px 24px; display: flex; flex-direction: column; gap: 8px; transition: background .25s var(--ease-out); }
+  .include-card:hover { background: var(--bg-card-hover); }
+  .include-name { font-family: var(--font-mono); font-weight: 600; font-size: 15px; }
+  .include-card p { color: var(--grey-600); font-size: 14px; line-height: 1.5; }
+  @media (max-width: 800px) { .includes-grid { grid-template-columns: 1fr; } }
 
-  .cmp-section { padding: 72px 0 0; }
-  .sec-head { max-width: 720px; margin-bottom: 30px; }
-  .sec-head.center { margin: 64px auto 28px; text-align: center; }
-  .sec-head .copy-lg { margin-top: 14px; }
-
-  .compute-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
-  .compute-tabs button { font-family: var(--font-mono); font-size: 13px; color: var(--grey-600); padding: 7px 14px; border-radius: 100px; border: 1px solid var(--grey-300); background: var(--bg-card); transition: all .2s; }
-  .compute-tabs button.is-active { background: var(--grey-900); color: #fff; border-color: var(--grey-900); }
-
-  .cmp-body { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 960px; }
-
-  /* JS-rendered table — styles must be global */
-  :global(.comp-table) { width: 100%; border-collapse: collapse; font-size: 14px; background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: 10px; overflow: hidden; min-width: 640px; }
-  :global(.comp-table th) { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--grey-600); text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--grey-200); background: #faf9f7; white-space: nowrap; }
-  :global(.comp-table td) { padding: 12px 16px; border-bottom: 1px solid var(--grey-100); color: var(--grey-800); }
-  :global(.comp-table tr:hover td) { background: var(--grey-50); }
-  :global(.comp-table td.cap-cell) { font-weight: 500; color: var(--grey-900); }
-  @media (max-width: 660px) { :global(.comp-table) { min-width: 560px; } }
-
-  .faq { max-width: 800px; margin: 0 auto; }
-  .faq-row { border-bottom: 1px solid var(--grey-200); }
-  .faq-q { width: 100%; text-align: left; padding: 22px 4px; display: flex; justify-content: space-between; align-items: center; font-size: 18px; font-weight: 500; gap: 16px; }
-  .faq-q .chev { transition: transform .3s var(--ease-out); font-family: var(--font-mono); color: var(--grey-600); }
-  .faq-row.is-open .chev { transform: rotate(45deg); }
-  .faq-a { max-height: 0; overflow: hidden; transition: max-height .4s var(--ease-out); }
-  .faq-a p { padding: 0 4px 24px; color: var(--grey-700); line-height: 1.6; max-width: 700px; }
-
-  .cta-strip { margin-top: 72px; background: var(--grey-900); border-radius: var(--radius-xl); padding: 48px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
-  .cta-strip h2 { color: #fff; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; }
-  .cta-strip .btn-primary { background: var(--bg-card); color: var(--grey-900); }
+  .cta-strip { margin-top: 64px; background: var(--bg-dark); border-radius: var(--radius-xl); padding: 40px 44px; display: flex; align-items: center; justify-content: space-between; gap: 32px; }
+  .cta-copy h3 { color: #fff; font-size: 24px; font-weight: 500; letter-spacing: -0.02em; }
+  .cta-copy p { color: var(--grey-500); font-size: 14.5px; line-height: 1.6; margin-top: 8px; max-width: 480px; }
+  .cta-actions { display: flex; align-items: center; gap: 20px; flex-shrink: 0; }
+  .cta-btn { background: var(--bg-card); color: var(--grey-900); font-weight: 600; font-size: 15px; padding: 13px 26px; border-radius: var(--radius-md); white-space: nowrap; transition: transform var(--duration) var(--ease-out), box-shadow var(--duration); }
+  .cta-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 30px -12px rgba(255, 255, 255, 0.35); }
+  .cta-link { color: var(--grey-400); font-size: 14px; font-weight: 500; white-space: nowrap; }
+  .cta-link:hover { color: #fff; }
+  @media (max-width: 800px) { .cta-strip { flex-direction: column; align-items: flex-start; padding: 32px 28px; } }
 </style>

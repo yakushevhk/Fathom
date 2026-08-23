@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fathom Whitepaper — 42-Page Master Presentation Deck</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .deck-nav {
+      position: fixed;
+      top: 12px;
+      right: 16px;
+      z-index: 9999;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 30px;
+      padding: 6px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+      color: #ffffff;
+      font-size: 8.5pt;
+    }
+    .deck-btn {
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: #ffffff;
+      padding: 4px 10px;
+      border-radius: 16px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 8pt;
+      transition: all 0.15s ease;
+    }
+    .deck-btn:hover {
+      background: var(--primary-accent);
+    }
+    .deck-btn-primary {
+      background: var(--primary-accent);
+    }
+    .deck-select {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 7.8pt;
+      font-family: inherit;
+      outline: none;
+    }
+    .deck-select option {
+      background: #0f172a;
+      color: #ffffff;
+    }
+    iframe.page-frame {
+      width: 210mm;
+      height: 297mm;
+      border: none;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12);
+      border-radius: 4px;
+      background: #ffffff;
+    }
+    @media print {
+      .deck-nav {
+        display: none !important;
+      }
+      iframe.page-frame {
+        box-shadow: none !important;
+        page-break-after: always !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="deck-nav no-print">
+    <span style="font-weight: 800; letter-spacing: 0.05em; color: #38bdf8;">FATHOM 42-PAGE DECK</span>
+    <button class="deck-btn" onclick="prevPage()">◀ Prev</button>
+    <select class="deck-select" id="pageSelect" onchange="jumpToPage(this.value)">
+      <option value="1">Page 01: Universal Autonomous AI Workforce Runtime</option>
+      <option value="2">Page 02: The Broken Remote Hiring Landscape</option>
+      <option value="3">Page 03: Digital Coworkers vs. Scripted Chatbots</option>
+      <option value="4">Page 04: The 5 Core Digital Worker Archetypes</option>
+      <option value="5">Page 05: A Day in the Life of a Digital Employee</option>
+      <option value="6">Page 06: The Virtual Employee Subscription Model</option>
+      <option value="7">Page 07: Unlimited Neural Compute Engine</option>
+      <option value="8">Page 08: Total Cost of Ownership (TCO) & ROI</option>
+      <option value="9">Page 09: Scalability Economics: 1 to 1,000 Workers</option>
+      <option value="10">Page 10: Enterprise & Agency Monetization Models</option>
+      <option value="11">Page 11: The Self-Replicating Growth Loop</option>
+      <option value="12">Page 12: Go-To-Market Channels & Customer Acquisition</option>
+      <option value="13">Page 13: The 'Free Value Audit to Paid Seat' Funnel</option>
+      <option value="14">Page 14: Agency & B2B Partner Ecosystem</option>
+      <option value="15">Page 15: Skill Marketplace & Template Network</option>
+      <option value="16">Page 16: Autonomous Sales Development Rep (SDR)</option>
+      <option value="17">Page 17: Executive Headhunter & Talent Scout</option>
+      <option value="18">Page 18: 24/7 Market Intelligence & Competitor Tracker</option>
+      <option value="19">Page 19: Automated Customer Onboarding & Support</option>
+      <option value="20">Page 20: Back-Office & Invoice Reconciliation</option>
+      <option value="21">Page 21: Autonomous Software Engineer & Maintainer</option>
+      <option value="22">Page 22: Regulatory & Legal Document Auditor</option>
+      <option value="23">Page 23: How the Virtual Office Operates</option>
+      <option value="24">Page 24: Why Rust? The Architecture of Performance</option>
+      <option value="25">Page 25: Coordinator & Worker Swarm Execution</option>
+      <option value="26">Page 26: The Broadcast Message Bus</option>
+      <option value="27">Page 27: Reliability & Self-Healing Workflows</option>
+      <option value="28">Page 28: How Digital Workers See & Control Computers</option>
+      <option value="29">Page 29: Why Opaque Refs Beat Brittle Selectors</option>
+      <option value="30">Page 30: Screen Streaming & Seamless Takeover</option>
+      <option value="31">Page 31: Docker Sandboxes & Network Egress</option>
+      <option value="32">Page 32: How Coworkers Remember Across Months</option>
+      <option value="33">Page 33: Sub-Millisecond Knowledge Ingestion</option>
+      <option value="34">Page 34: The Enterprise Entity Knowledge Graph</option>
+      <option value="35">Page 35: Enterprise Guardrails & Policy Engine</option>
+      <option value="36">Page 36: The Ironclad Credentials Vault</option>
+      <option value="37">Page 37: Complete Compliance & Audit Trails</option>
+      <option value="38">Page 38: Speed Showdown: Fathom vs. Python</option>
+      <option value="39">Page 39: Hardware Efficiency & Worker Density</option>
+      <option value="40">Page 40: Empirical Performance Summary</option>
+      <option value="41">Page 41: Strategic Product Roadmap (2026–2027)</option>
+      <option value="42">Page 42: The Autonomous Enterprise OS</option>
+      <option value="all">View All 42 Pages (Printable)</option>
+    </select>
+    <button class="deck-btn" onclick="nextPage()">Next ▶</button>
+    <button class="deck-btn deck-btn-primary" onclick="window.print()">Print / Save PDF</button>
+  </div>
+
+  <div id="deckContainer" style="display: flex; flex-direction: column; align-items: center; gap: 24px; width: 100%;">
+    <iframe id="singleFrame" class="page-frame" src="page_01.html"></iframe>
+  </div>
+
+  <script>
+    let currentPage = 1;
+    const totalPages = 42;
+
+    function padZero(num) {
+      return num < 10 ? '0' + num : num;
+    }
+
+    function updateView() {
+      const container = document.getElementById('deckContainer');
+      const select = document.getElementById('pageSelect');
+      
+      if (select.value === 'all') {
+        container.innerHTML = '';
+        for (let i = 1; i <= totalPages; i++) {
+          const frame = document.createElement('iframe');
+          frame.className = 'page-frame';
+          frame.src = `page_${padZero(i)}.html`;
+          container.appendChild(frame);
+        }
+      } else {
+        container.innerHTML = `<iframe id="singleFrame" class="page-frame" src="page_${padZero(currentPage)}.html"></iframe>`;
+        select.value = currentPage;
+      }
+    }
+
+    function jumpToPage(val) {
+      if (val === 'all') {
+        updateView();
+      } else {
+        currentPage = parseInt(val, 10);
+        updateView();
+      }
+    }
+
+    function prevPage() {
+      if (currentPage > 1) {
+        currentPage--;
+        document.getElementById('pageSelect').value = currentPage;
+        updateView();
+      }
+    }
+
+    function nextPage() {
+      if (currentPage < totalPages) {
+        currentPage++;
+        document.getElementById('pageSelect').value = currentPage;
+        updateView();
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') prevPage();
+      if (e.key === 'ArrowRight') nextPage();
+    });
+  </script>
+</body>
+</html>

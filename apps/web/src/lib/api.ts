@@ -97,6 +97,25 @@ export interface MemoryStats {
   entity_graph: { nodes: number; edges: number }
 }
 
+export interface DistillReport {
+  promoted: number
+  skipped: number
+  archived: number
+  errors: number
+  dry_run: boolean
+}
+
+export interface GcReport {
+  expired_archived: number
+  stale_archived: number
+  confidence_archived: number
+  confidence_decayed: number
+  groups_compacted: number
+  facts_compacted: number
+  errors: number
+  dry_run: boolean
+}
+
 export interface AgentEvent {
   type: string
   id?: string
@@ -272,7 +291,18 @@ export interface AuditResponse {
   next_cursor?: string | null
 }
 
+export interface ComputerHealth {
+  ok: boolean
+  service?: string
+  status?: string
+  control?: { owner?: 'bot' | 'human'; humanSince?: number }
+  [key: string]: unknown
+}
+
 export interface ComputerSession {
+  /** Session responses identify the active browser through their snapshot tab. */
+  tab_id?: string
+  session_id?: string
   id?: string
   ok?: boolean
   status?: string
@@ -280,10 +310,13 @@ export interface ComputerSession {
   browser?: string
   url?: string
   snapshot?: ComputerSnapshot
-  control?: { owner?: 'bot' | 'human'; humanSince?: string }
+  control?: { owner?: 'bot' | 'human'; humanSince?: number }
 }
 
 export interface ComputerSnapshot {
+  /** Opaque active-tab identity returned by the computer service. */
+  tab_id?: string
+  /** Legacy session identity accepted from older relay responses. */
   session_id?: string
   url?: string
   title?: string
@@ -291,6 +324,7 @@ export interface ComputerSnapshot {
   elements?: Array<{ ref: string; role?: string; name?: string; text?: string; tag?: string; value?: string }>
   aria?: unknown
   screenshot?: string
+  control?: { owner?: 'bot' | 'human'; humanSince?: number }
   [key: string]: unknown
 }
 
@@ -306,8 +340,9 @@ export interface ComputerScreenshot {
 export interface ComputerActionResult {
   ok?: boolean
   owner?: 'bot' | 'human'
-  humanSince?: string
-  control?: { owner?: 'bot' | 'human'; humanSince?: string }
+  humanSince?: number
+  control?: { owner?: 'bot' | 'human'; humanSince?: number }
+  tab_id?: string
   session_id?: string
   message?: string
   [key: string]: unknown
@@ -320,10 +355,16 @@ export const SERVER_URL_KEY = 'fathom_base_url'
 export const API_KEY_KEY = 'fathom_api_key'
 
 function getBase(): string {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem(SERVER_URL_KEY) || DEFAULT_BASE
+  if (typeof window === 'undefined') return DEFAULT_BASE
+  const configured = localStorage.getItem(SERVER_URL_KEY)?.trim()
+  if (!configured) return DEFAULT_BASE
+  try {
+    const url = new URL(configured)
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) return DEFAULT_BASE
+    return url.toString().replace(/\/$/, '')
+  } catch {
+    return DEFAULT_BASE
   }
-  return DEFAULT_BASE
 }
 
 function getApiKey(): string | null {
@@ -514,7 +555,7 @@ export const api = {
       if (options?.agent) params.set('agent', options.agent)
       if (options?.session) params.set('session', options.session)
       const query = params.toString()
-      return request<AuditEvent[]>(`/api/v1/governance/audit${query ? `?${query}` : ''}`)
+      return request<AuditEvent[] | AuditResponse>(`/api/v1/governance/audit${query ? `?${query}` : ''}`)
     },
     decide: (context: ActionContext) =>
       request<Decision>('/api/v1/governance/decide', {
@@ -531,7 +572,7 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(options ?? {}),
       }),
-    health: () => request<Health>('/api/v1/computers/health'),
+    health: () => request<ComputerHealth>('/api/v1/computers/health'),
     snapshot: () => request<ComputerSnapshot>('/api/v1/computers/snapshot'),
     navigate: (url: string) =>
       request<ComputerSnapshot>('/api/v1/computers/navigate', {
@@ -566,15 +607,27 @@ export const api = {
   memories: {
     list: () => request<MemoryListResponse>('/api/v1/memories'),
     get: (id: string) => request<{ memories: Memory[] }>(`/api/v1/memories/${encodeURIComponent(id)}`),
-    archive: (id: string) => request<{ archived: string }>(`/api/v1/memories/${id}`, { method: 'DELETE' }),
+    archive: (id: string) => request<{ archived: string }>(`/api/v1/memories/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     absorb: (content: string, source = 'web') => request<unknown>('/api/v1/memories/absorb', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ facts: [{ content, metadata: {} }], source }),
     }),
     stats: () => request<MemoryStats>('/api/v1/memories/stats'),
-    distill: () => request<{ action: string }>('/api/v1/memories/distill', { method: 'POST' }),
-    gc: () => request<{ removed: number }>('/api/v1/memories/gc', { method: 'POST' }),
+    distill: (options?: { session?: string; dryRun?: boolean }) => {
+      const params = new URLSearchParams()
+      if (options?.session) params.set('session', options.session)
+      if (options?.dryRun !== undefined) params.set('dry_run', String(options.dryRun))
+      const query = params.toString()
+      return request<DistillReport>(`/api/v1/memories/distill${query ? `?${query}` : ''}`, { method: 'POST' })
+    },
+    gc: (options?: { ttlDays?: number; dryRun?: boolean }) => {
+      const params = new URLSearchParams()
+      if (options?.ttlDays !== undefined) params.set('ttl_days', String(options.ttlDays))
+      if (options?.dryRun !== undefined) params.set('dry_run', String(options.dryRun))
+      const query = params.toString()
+      return request<GcReport>(`/api/v1/memories/gc${query ? `?${query}` : ''}`, { method: 'POST' })
+    },
   },
 
   raw: (path: string, options?: RequestInit) => request<unknown>(path, options),

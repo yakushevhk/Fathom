@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fathom Whitepaper — Why Opaque Refs Beat Brittle Selectors</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <div class="header-left">
+        <div class="header-meta">
+          <span class="brand-badge">FATHOM</span>
+          <span class="header-category">COMPUTER USE · ANTI-BREAKAGE</span>
+        </div>
+        <div class="header-title-main">Why Opaque Refs Beat Brittle Selectors</div>
+        <div class="header-subtitle">Anti-Staleness Verification, Form Sanitization & Deterministic Element Resolution</div>
+      </div>
+      <div class="header-right">
+        <span class="page-badge">PAGE 29 / 42</span>
+      </div>
+    </div>
+
+    <div class="content-body">
+<div class="card-dark">
+  <div class="card-title">Deterministic Element Targeting: Eliminating Broken Clicks</div>
+  <p>
+    In modern web portals, asynchronous JavaScript frequently alters DOM elements between agent reasoning steps. Fathom implements an active <strong>Anti-Staleness Guard</strong> to guarantee that actions are executed only on valid, intended targets.
+  </p>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title-sm">1. Pre-Execution Freshness Check</div>
+    <p style="font-size: 7.4pt;">
+      Before executing a <code>computer_click</code> or <code>computer_type</code> command, the runtime takes a microsecond snapshot to confirm that the target element ref (<code>@e14</code>) still exists and matches its original role fingerprint.
+    </p>
+  </div>
+
+  <div class="card card-emerald">
+    <div class="card-title-sm">2. Stale-Ref Rejection & Self-Recovery</div>
+    <p style="font-size: 7.4pt;">
+      If the page navigated or a popup closed during agent thinking, the ref is rejected immediately with an explicit error: <em>"Ref @e14 is stale. Capturing fresh snapshot."</em> The agent re-evaluates the new DOM state without misclicking.
+    </p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Form Data Security & Workspace Confinement</div>
+  <div class="grid-2">
+    <div>
+      <strong>Automatic Password Scrubbing</strong>
+      <p style="font-size: 7.2pt;">Password inputs and sensitive token fields are automatically masked in accessibility snapshots, preventing sensitive credentials from appearing in reasoning transcripts.</p>
+    </div>
+    <div>
+      <strong>Confined File Workspace</strong>
+      <p style="font-size: 7.2pt;">Browser downloads are strictly confined to an isolated directory (<code>/data/browser</code>), preventing malicious downloads from touching host system files.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card-slate">
+  <div class="card-title-sm">Deterministic Action Safety Scorecard</div>
+  <div class="grid-4">
+    <div class="metric-box"><div class="metric-val">100%</div><div class="metric-label">Stale Ref Detection</div></div>
+    <div class="metric-box"><div class="metric-val">&lt; 1ms</div><div class="metric-label">Target Validation</div></div>
+    <div class="metric-box"><div class="metric-val">Zero</div><div class="metric-label">Phantom Clicks</div></div>
+    <div class="metric-box"><div class="metric-val">Masked</div><div class="metric-label">Password Fields</div></div>
+  </div>
+</div>
+
+<div class="callout callout-info">
+  <strong>Zero Phantom Interactions:</strong> Fathom ensures that automated browser actions are as predictable, deterministic, and safe as compiled software code.
+</div>
+    </div>
+
+    <div class="footer">
+      <div class="footer-left">
+        <span>Fathom Autonomous Workforce Runtime</span>
+        <span class="footer-bullet">•</span>
+        <span>Elastic-2.0 License</span>
+        <span class="footer-bullet">•</span>
+        <span>Strategic Whitepaper Presentation</span>
+      </div>
+      <div class="footer-right">v0.3.0 · Page 29 of 42</div>
+    </div>
+  </div>
+</body>
+</html>

@@ -11,12 +11,12 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="h-screen overflow-hidden">
+      <body className="ops-app h-screen overflow-hidden">
         <a className="skip-link" href="#main-content">Skip to main content</a>
         <SessionsProvider>
-          <div className="flex h-full">
+          <div className="ops-shell flex h-full min-h-0">
             <Sidebar />
-            <main id="main-content" tabIndex={-1} className="flex-1 flex flex-col min-w-0">{children}</main>
+            <main id="main-content" tabIndex={-1} className="ops-main flex min-w-0 flex-1 flex-col overflow-hidden">{children}</main>
           </div>
         </SessionsProvider>
       </body>

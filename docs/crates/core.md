@@ -33,19 +33,6 @@
 22. [protected.rs — Protected Surfaces](#22-protectedrs)
 23. [profile.rs — Profile System](#23-profilers)
 24. [capability.rs — Capability Evidence & Window Profile](#24-capabilityrs)
-12. [skill.rs — Skill System](#12-skillrs)
-13. [session.rs — Session Results](#13-sessionrs)
-14. [export.rs — Result Export](#14-exportrs)
-15. [notify.rs — Notification System](#15-notifyrs)
-16. [contact.rs — Contacts](#16-contactrs)
-17. [crm.rs — CRM Integration](#17-crmrs)
-18. [irc.rs — Process-Global Message Bus](#18-ircrs)
-19. [steer.rs — Steering Channel Registry](#19-steerrs)
-20. [async_job.rs — Async Job Manager](#20-async_jobrs)
-21. [daemon.rs — Daemon Registry](#21-daemonrs)
-22. [protected.rs — Protected Surfaces](#22-protectedrs)
-23. [profile.rs — Profile System](#23-profilers)
-24. [capability.rs — Capability Evidence & Window Profile](#24-capabilityrs)
 
 ---
 

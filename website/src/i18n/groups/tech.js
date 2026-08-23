@@ -199,8 +199,8 @@ export default {
     },
     cta: {
       title: { en: 'Try the TUI now', ru: 'Попробуйте TUI сейчас' },
-      sub: { en: 'Install Fathom and launch autonomous work from the interactive terminal in one command.', ru: 'Установите Fathom и запускайте автономную работу из интерактивного терминала одной командой.' },
-      install: { en: 'Installation guide', ru: 'Руководство по установке' },
+      sub: { en: 'Request access to a provisioned server and launch the interactive terminal.', ru: 'Запросите доступ к серверу и запускайте интерактивный терминал.' },
+      install: { en: 'Access guide', ru: 'Гайд по доступу' },
     },
   },
   profilesPage: {
@@ -313,7 +313,7 @@ export default {
     },
     cta: {
       title: { en: 'Run your first research', ru: 'Запустите первое исследование' },
-      sub: { en: 'Install Fathom and complete a verified research or outreach task in minutes.', ru: 'Установите Fathom и выполните проверенную исследовательскую или outreach-задачу за минуты.' },
+      sub: { en: 'Request access to a provisioned server, configure the worker\'s tools and ask it to produce reviewable findings.', ru: 'Запросите доступ к серверу, настройте инструменты воркера и попросите его подготовить проверяемые результаты.' },
       docs: { en: 'Outreach & leads docs', ru: 'Документация по аутричу' },
     },
   },
@@ -349,8 +349,8 @@ export default {
       title: { en: 'Try the dashboard', ru: 'Попробуйте дашборд' },
       sub: { en: 'Install Fathom, start the server and open /dashboard in your browser.', ru: 'Установите Fathom, запустите сервер и откройте /dashboard в браузере.' },
       docs: { en: 'API reference', ru: 'API-справка' },
-      playground: { en: 'Open Playground', ru: 'Открыть плейграунд' },
-      playgroundNote: { en: 'Want to run autonomous work interactively? The Playground launches tasks, streams worker progress live and renders the result — right in the site.', ru: 'Хотите запускать автономную работу интерактивно? Плейграунд запускает задачи, показывает прогресс воркеров вживую и отображает результат — прямо на сайте.' },
+      playground: { en: 'Open the repository', ru: 'Открыть репозиторий' },
+      playgroundNote: { en: 'Explore the full source: 12 crates, tools, apps, and documentation — all in one GitHub repository.', ru: 'Изучите исходный код: 12 крейтов, инструменты, приложения и документацию — всё в одном GitHub-репозитории.' },
     },
   },
   securityPage: {

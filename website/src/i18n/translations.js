@@ -73,8 +73,8 @@ export const translations = {
       "ru": "Исследование"
     },
     "playground": {
-      "en": "Playground",
-      "ru": "Плейграунд"
+      "en": "Repository",
+      "ru": "Репозиторий"
     },
     "security": {
       "en": "Security",
@@ -151,8 +151,8 @@ export const translations = {
       "ru": "Конфиденциальность"
     },
     "rights": {
-      "en": "© 2026 Fathom. All rights reserved.",
-      "ru": "© 2026 Fathom. Все права защищены."
+      "en": "© 2026 Fathom == IP Yakushev German Konstantinovich. Tashkent, Uzbekistan.",
+      "ru": "© 2026 Fathom == ИП Якушев Герман Константинович. Ташкент, Узбекистан."
     },
     "cli": {
       "en": "CLI Reference",
@@ -558,7 +558,7 @@ export const translations = {
   "docsNav":  {
     "start": { "en": "Getting Started", "ru": "Начало работы" },
     "quickstart": { "en": "Quickstart", "ru": "Быстрый старт" },
-    "installation": { "en": "Installation", "ru": "Установка" },
+    "installation": { "en": "Request Access", "ru": "Запросить доступ" },
     "outreach": { "en": "Outreach", "ru": "Аутрич" },
     "outreachGuide": { "en": "Outreach & Leads", "ru": "Аутрич и лиды" },
     "personalization": { "en": "Personalization", "ru": "Персонализация" },
@@ -643,8 +643,8 @@ export const translations = {
         "ru": "Один воркер.<br /><em class=\"it\">Все</em> задачи закрыты."
       },
       "subtitle": {
-        "en": "Fathom is a universal AI worker you self-host: it runs outreach, does deep research, writes code, operates a computer, and works on a schedule — with durable memory, governance, and human review built into one runtime.",
-        "ru": "Fathom — универсальный ИИ-воркер, который вы разворачиваете у себя: он ведёт аутрич, проводит глубокий ресёрч, пишет код, работает за компьютером и выполняет задачи по расписанию — с постоянной памятью, контролем и проверкой человеком в одном рантайме."
+        "en": "Fathom is your autonomous remote AI workforce: it runs outreach, does deep research, writes code, operates a computer, and works on a schedule — with durable memory, governance, and human review built into one runtime.",
+        "ru": "Fathom — это ваш автономный штат удалённых ИИ-сотрудников: аутрич, глубокий ресёрч, код, работа за компьютером и задачи по расписанию — с постоянной памятью, контролем и проверкой человеком в одном рантайме."
       },
       "cta1": {
         "en": "Start building",
@@ -657,6 +657,10 @@ export const translations = {
       "hero_mono": {
         "en": "Rust · one binary · memory · governance · schedules",
         "ru": "Rust · один бинарник · память · контроль · расписания"
+      },
+      "hero_gh": {
+        "en": "GitHub demo",
+        "ru": "Демо на GitHub"
       },
       "term": {
         "tag_plan": {
@@ -1169,16 +1173,16 @@ export const translations = {
         "ru": "Посадите воркера на задачу <em class=\"it\">уже сегодня</em>"
       },
       "cta_sub": {
-        "en": "Self-hosted and reviewable. No vendor lock-in. Give your workers access to the tools, memory, and schedules your team controls.",
-        "ru": "Self-hosted и проверяемо. Без vendor lock-in. Дайте воркерам доступ к инструментам, памяти и расписаниям, которые контролирует ваша команда."
+        "en": "Deployed on infrastructure provisioned for your team. Give your workers access to the tools, memory, and schedules your team controls.",
+        "ru": "Развёрнуто на инфраструктуре для вашей команды. Дайте воркерам доступ к инструментам, памяти и расписаниям, которые контролирует ваша команда."
       },
-      "cta_access": {
-        "en": "Read installation guide →",
-        "ru": "Гайд по установке →"
+      "cta_gh": {
+        "en": "See the demo on GitHub",
+        "ru": "Демо на GitHub"
       },
-      "cta_play": {
-        "en": "Try the playground",
-        "ru": "Попробовать playground"
+      "cta_mail": {
+        "en": "Request access →",
+        "ru": "Запросить доступ →"
       },
       "cta_mono": {
         "en": "fathom run \"your task here\" · docs · request access",
@@ -1214,8 +1218,8 @@ export const translations = {
           "ru": "Мои данные хранятся на ваших серверах?"
         },
         "a3": {
-          "en": "No. Fathom is distributed as a self-hosted binary — sessions, contacts and memory live in your own SQLite/PostgreSQL databases on your infrastructure. There is no cloud lock-in.",
-          "ru": "Нет. Fathom распространяется как self-hosted бинарник — сессии, контакты и память живут в ваших SQLite/PostgreSQL на вашей инфраструктуре. Никакого облачного lock-in."
+          "en": "Fathom runs on servers we provision and manage for you. Sessions, contacts and memory live in your isolated environment. Contact us at hello@fathom.uz for details.",
+          "ru": "Fathom работает на серверах, которые мы предоставляем и обслуживаем для вас. Сессии, контакты и память живут в вашей изолированной среде. Свяжитесь с нами по адресу hello@fathom.uz для подробностей."
         },
         "q4": {
           "en": "Which interfaces can operators use?",

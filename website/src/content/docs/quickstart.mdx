@@ -1,74 +1,42 @@
 ---
 title: "Quickstart — Fathom"
-description: "Install Fathom, configure an LLM endpoint, and launch your first autonomous worker task from the CLI, TUI, or HTTP server."
+description: "Get started with Fathom autonomous AI workers. Server deployment and access are available by request."
 sidebarId: "quickstart"
 ---
 <div class="doc-header">
     <span class="doc-badge" data-i18n="docsQuickstart.badge">Getting Started</span>
     <h1 data-i18n="docsQuickstart.title">Quickstart</h1>
     <p class="doc-lead" data-i18n="docsQuickstart.lead">
-      Get Fathom's universal autonomous worker runtime up and running quickly.
-      This guide covers installation, configuration, and your first task session.
+      Fathom is a universal autonomous AI worker runtime. Server deployment and full access are available by request — get in touch and we'll set you up.
     </p>
   </div>
 
-  <section id="prerequisites">
-    <h2 data-i18n="docsQuickstart.prereqTitle">Prerequisites</h2>
-    <p data-i18n="docsQuickstart.prereqSub">Before installing Fathom, make sure you have:</p>
-    <ul class="check-list">
-      <li data-i18n-html="docsQuickstart.pre1"><strong>Rust 1.97</strong> — required for building from source</li>
-      <li data-i18n-html="docsQuickstart.pre2"><strong>API key</strong> — for the DeepSeek OpenAI-compatible endpoint (or another OpenAI-compatible endpoint)</li>
-      <li data-i18n-html="docsQuickstart.pre3"><strong>Optional:</strong> Chrome with <code>--remote-debugging-port=9222</code> for browser CDP tools; Python/Node for REPL</li>
-    </ul>
+  <section id="request-access">
+    <h2 data-i18n="docsQuickstart.reqTitle">Request Access</h2>
+    <p data-i18n="docsQuickstart.reqSub">
+      Self-hosted deployment is currently available by request. To get started, email us and we'll provision a server for you with full access to the runtime, API, and dashboard.
+    </p>
     <div class="callout">
-      <div class="callout-icon">💡</div>
-      <div class="callout-content" data-i18n-html="docsQuickstart.callout1">
-        <strong>Don't have Rust?</strong> Install it with:
-        <div class="code-block compact">
-          <pre><code set:html={`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`} /></pre>
-        </div>
+      <div class="callout-icon">📧</div>
+      <div class="callout-content">
+        <strong>Contact us:</strong> <a href="mailto:hello@fathom.uz">hello@fathom.uz</a> — we'll respond within 24 hours with server credentials and documentation.
       </div>
     </div>
   </section>
 
-  <section id="installation">
-    <h2 data-i18n="docsQuickstart.installTitle">Installation</h2>
-
-    <h3 id="install-source" data-i18n="docsQuickstart.instOptionA">Build from Source (Recommended)</h3>
-    <p data-i18n="docsQuickstart.instADesc">Clone the public repository and build the release binary with Cargo. Requires the Rust toolchain.</p>
-    <div class="code-block">
-      <div class="code-header">
-        <span class="code-lang">bash</span>
-      </div>
-      <pre><code set:html={`git clone https://github.com/yakushevhk/Fathom.git
-cd Fathom
-cargo build --release`} /></pre>
-    </div>
-    <p data-i18n-html="docsQuickstart.instAFoot">Run <code>./target/release/fathom</code>, or optionally install the checkout with <code>cargo install --path .</code>.</p>
-
-    <h3 id="install-cargo" data-i18n="docsQuickstart.instOptionB">Option B: Cargo Install</h3>
-    <p data-i18n="docsQuickstart.instBDesc">From a Fathom source checkout, install the release binary with Cargo.</p>
-    <div class="code-block">
-      <div class="code-header">
-        <span class="code-lang">bash</span>
-      </div>
-      <pre><code set:html={`cargo install --path .`} /></pre>
-    </div>
-
-    <h3 id="install-source-dev" data-i18n="docsQuickstart.instOptionC">Option C: Debug Build</h3>
-    <p data-i18n="docsQuickstart.instCDesc">Clone the repository and build locally for development.</p>
-    <div class="code-block">
-      <div class="code-header">
-        <span class="code-lang">bash</span>
-      </div>
-      <pre><code set:html={`cargo build`} /></pre>
-    </div>
-    <p data-i18n-html="docsQuickstart.instCFoot">The debug binary will be at <code>./target/debug/fathom</code>.</p>
+  <section id="prerequisites">
+    <h2 data-i18n="docsQuickstart.prereqTitle">Prerequisites</h2>
+    <p data-i18n="docsQuickstart.prereqSub">Before using Fathom, make sure you have:</p>
+    <ul class="check-list">
+      <li data-i18n-html="docsQuickstart.pre1"><strong>Server credentials</strong> — provided after your access request is approved</li>
+      <li data-i18n-html="docsQuickstart.pre2"><strong>API key</strong> — for the DeepSeek OpenAI-compatible endpoint (or another OpenAI-compatible endpoint)</li>
+      <li data-i18n-html="docsQuickstart.pre3"><strong>Optional:</strong> Chrome with <code>--remote-debugging-port=9222</code> for browser CDP tools; Python/Node for REPL</li>
+    </ul>
   </section>
 
   <section id="first-run">
     <h2 data-i18n="docsQuickstart.firstRunTitle">First Run</h2>
-    <p data-i18n="docsQuickstart.firstRunSub">Run your first autonomous worker task with a single command. Research is one built-in workflow; the same worker runtime also supports outreach, code, computer use and scheduled operations:</p>
+    <p data-i18n="docsQuickstart.firstRunSub">Once you have server access, run your first autonomous worker task with a single command. Research is one built-in workflow; the same worker runtime also supports outreach, code, computer use and scheduled operations:</p>
     <div class="code-block">
       <div class="code-header">
         <span class="code-lang">bash</span>

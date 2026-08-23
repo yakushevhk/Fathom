@@ -1,203 +1,41 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import PageHero from '../components/PageHero.astro';
-
-const installers = [
-  {
-    name: 'Cargo / source checkout',
-    d: 'Clone the public GitHub workspace and build the release binary with Rust 1.97 or newer. Run it from target/release or install it with Cargo.',
-    code: `git clone https://github.com/yakushevhk/Fathom.git
-cd Fathom
-cargo build --release
-./target/release/fathom --help`,
-  },
-  {
-    name: 'Cargo',
-    d: 'From a Fathom source checkout, build or install the self-contained release binary with Rust 1.97 or newer.',
-    code: `cargo build --release
-./target/release/fathom --help
-
-# optionally install into Cargo\'s bin directory
-cargo install --path .`,
-  },
-  {
-    name: 'Docker',
-    d: 'Multi-stage image with a slim runtime. Run the Fathom binary as a non-root user and mount your chosen output directory and ~/.fathom state as needed.',
-    code: `docker build -t fathom .
-
-docker run -it --rm \\
-  -e FATHOM_API_KEYS="your-api-key" \\
-  -v research-data:/data \\
-  fathom run "your query" --output /data/results/`,
-  },
-  {
-    name: 'Operator Compose (optional)',
-    d: 'Compose is not shipped in this repository. Use the Docker image directly, or provide your own compose file with port 8080 and persistent state volumes.',
-    code: `# Build and run the shipped image
-docker build -t fathom .
-docker run --rm -p 8080:8080 \\
-  -v ~/.fathom:/home/researcher/.fathom \\
-  fathom serve --port 8080`,
-  },
-];
-
-const deps = [
-  { name: 'pandoc', enables: 'PDF and DOCX report export (HTML / JSON export always works)' },
-  { name: 'ripgrep', enables: 'speeds up the grep tool; built-in fallback when absent' },
-  { name: 'python3 / node', enables: 'REPL and code-execution tools' },
-  { name: 'Chrome + CDP', enables: 'up to 5 browser tools; enabled only when a CDP endpoint is reachable' },
-];
-
-const envVars = [
-  { name: 'FATHOM_API_KEYS', purpose: 'Comma-separated keys protecting /api/v1/*. Required when serve binds to a non-loopback address.' },
-  { name: 'FATHOM_RATE_LIMIT', purpose: 'Per-client HTTP API requests per minute (default: 120).' },
-  { name: 'PR_CONFIG', purpose: 'Config file path override (default: ~/.fathom/config.toml).' },
-  { name: 'PR_MEMORY_DB', purpose: 'Semantic memory SQLite database path override; default is ~/.fathom/memory.db.' },
-  { name: 'FATHOM_CREDENTIAL_KEY', purpose: 'Encryption key for the credential vault (32 bytes, represented as 64 hex characters).' },
-  { name: 'COMPUTER_URL', purpose: 'Computer service URL used by agent computer tools (default: http://127.0.0.1:8765).' },
-  { name: 'COMPUTER_TOKEN', purpose: 'Required when a supervised computer relay is enabled; shared token for relay and supervisor requests.' },
-  { name: 'COMPUTER_ALLOW_PRIVATE_HOSTS', purpose: 'Allow private or localhost browser targets for development only (default: false).' },
-  { name: 'RUST_LOG', purpose: 'Log level filter (default: info).' },
-];
 ---
 
 <Layout title="Installation — Fathom">
   <main class="inst-page">
-        <PageHero cls="inst-hero">
-        <p class="eyebrow" data-i18n="install.hero.badge">Install</p>
-        <h1 class="h2-sec" data-i18n="install.hero.title">One binary. Every runtime.</h1>
-        <p class="copy-lg mx-auto" data-i18n="install.hero.sub">Fathom is a source-available, self-hosted runtime for autonomous work. Clone the public repository and build it with Cargo, or package that checkout in Docker — then operate it on infrastructure you control.</p>
+    <PageHero cls="inst-hero">
+      <p class="eyebrow" data-i18n="install.hero.badge">Install</p>
+      <h1 class="h2-sec" data-i18n="install.hero.title">One binary. Every runtime.</h1>
+      <p class="copy-lg mx-auto" data-i18n="install.hero.sub">Fathom is a source-available, self-hosted runtime for autonomous work. Server deployment and access are available by request.</p>
     </PageHero>
     <div class="container">
 
-      <!-- Installers -->
-      <div class="api-grid">
-        {
-          installers.map((m, i) => (
-            <div class="api-card">
-              <div class="api-name">{m.name}</div>
-              <p data-i18n={'install.api.' + i + '.d'}>{m.d}</p>
-              <pre class="card-code"><code>{m.code}</code></pre>
-            </div>
-          ))
-        }
-      </div>
-
-      <!-- Systemd -->
-      <div class="feat" id="systemd">
-        <div class="feat-copy">
-          <p class="eyebrow" data-i18n="install.systemd.badge">Linux service</p>
-          <h2 class="h3-sec" data-i18n="install.systemd.title">Configure systemd when needed</h2>
-          <p class="copy-lg" data-i18n-html data-i18n="install.systemd.sub">The installer does not ship a systemd unit. For a Linux server, create a unit for <code class="ic">fathom serve</code>, choose the service user and writable state directory, and set <code class="ic">FATHOM_API_KEYS</code> before exposing a non-loopback host. The example below is a starting point for your deployment.</p>
+      <!-- Contact -->
+      <div class="contact-card">
+        <div class="contact-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
         </div>
-        <div class="code-card">
-          <pre><code>{`# after creating /etc/systemd/system/fathom.service
-# The repository does not ship a unit file; set ExecStart and environment for your deployment.
-sudo systemctl daemon-reload
-sudo systemctl enable --now fathom
-
-# status and live logs
-systemctl status fathom
-journalctl -u fathom -f`}</code></pre>
-        </div>
-      </div>
-
-      <!-- Optional dependencies -->
-      <div class="feat feat-reverse" id="dependencies">
-        <div class="feat-copy">
-          <p class="eyebrow" data-i18n="install.deps.badge">Optional dependencies</p>
-          <h2 class="h3-sec" data-i18n="install.deps.title">Nothing required, everything upgradeable</h2>
-          <p class="copy-lg" data-i18n="install.deps.sub">The binary works standalone. These tools unlock extra capabilities — each one is detected automatically at runtime, and every absence has a graceful fallback.</p>
-        </div>
-        <div>
-          <div class="mini-table-wrap">
-            <table class="mini-table">
-              <thead><tr><th data-i18n="install.deps.colTool">Tool</th><th data-i18n="install.deps.colEnables">What it enables</th></tr></thead>
-              <tbody>
-                {deps.map((d, i) => (
-                  <tr>
-                    <td>{d.name}</td>
-                    <td data-i18n={'install.deps.' + i + '.enables'}>{d.enables}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div class="code-card code-card--gap">
-            <pre><code>{`# macOS
-brew install pandoc ripgrep
-
-# Debian / Ubuntu
-sudo apt install pandoc ripgrep
-
-# Chrome with a CDP endpoint for the browser tools
-google-chrome --remote-debugging-port=9222 --headless`}</code></pre>
-          </div>
-        </div>
-      </div>
-
-      <!-- Requirements -->
-      <div class="sec-head" id="requirements">
-        <p class="eyebrow" data-i18n="install.req.badge">Requirements</p>
-        <h2 class="h3-sec" data-i18n="install.req.title">Small footprint, no surprises</h2>
-      </div>
-      <div class="chips">
-        <span class="chip">Rust 1.97 · edition 2021 (source builds)</span>
-        <span class="chip">macOS / Linux · Windows via WSL</span>
-        <span class="chip">SQLite bundled (WAL)</span>
-        <span class="chip">PostgreSQL optional · tokio-postgres</span>
-        <span class="chip">single static binary</span>
-      </div>
-
-      <!-- Env vars -->
-      <div class="sec-head" id="env-vars">
-        <p class="eyebrow" data-i18n="install.env.badge">Environment</p>
-        <h2 class="h3-sec" data-i18n="install.env.title">Env vars reference</h2>
-        <p class="copy-lg" data-i18n="install.env.sub">Environment variables override config-file values. API keys for external services are only ever read from the environment or your local config.</p>
-      </div>
-      <div class="mini-table-wrap">
-        <table class="mini-table">
-          <thead><tr><th data-i18n="install.env.colVar">Variable</th><th data-i18n="install.env.colPurpose">Purpose</th></tr></thead>
-          <tbody>
-            {envVars.map((v, i) => (
-              <tr>
-                <td>{v.name}</td>
-                <td data-i18n={'install.env.' + i + '.purpose'}>{v.purpose}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Verify -->
-      <div class="feat" id="verify">
-        <div class="feat-copy">
-          <p class="eyebrow" data-i18n="install.verify.badge">Verify</p>
-          <h2 class="h3-sec" data-i18n="install.verify.title">Check the installation</h2>
-          <p class="copy-lg" data-i18n-html data-i18n="install.verify.sub"><code class="ic">bench</code> exercises the tool-execution layer with zero network and zero LLM calls — a safe smoke test on any machine. Then start the server or the TUI.</p>
-          <div class="more-links">
-            <a href="/benchmarks" class="btn btn-secondary" data-i18n="install.verify.bench">Benchmarks</a>
-            <a href="/docs/cli" class="btn btn-secondary" data-i18n="install.verify.cli">CLI reference</a>
-          </div>
-        </div>
-        <div class="code-card">
-          <pre><code>{`fathom bench     # tool layer — no network, no LLM
-fathom serve     # HTTP API + dashboard on :8080
-fathom tui       # interactive terminal UI
-
-curl http://localhost:8080/health`}</code></pre>
-        </div>
+        <h2 data-i18n="install.contact.title">Contact us for access</h2>
+        <p class="contact-body" data-i18n="install.contact.body">
+          Self-hosted deployment is currently available by request. Get in touch and we'll set up a server for you with full access to the runtime, API, and dashboard.
+        </p>
+        <a href="mailto:hello@fathom.uz" class="contact-btn">hello@fathom.uz</a>
+        <p class="contact-footnote" data-i18n="install.contact.footnote">
+          We'll respond within 24 hours with server credentials and documentation.
+        </p>
       </div>
 
       <!-- CTA -->
       <div class="cta-strip">
         <div class="cta-copy">
-          <h3 data-i18n="install.cta.title">Installed? Run your first research.</h3>
-          <p data-i18n="install.cta.sub">Configure the LLM endpoint and any optional integrations, then launch a self-hosted worker task.</p>
+          <h3 data-i18n="install.cta.title">Ready to get started?</h3>
+          <p data-i18n="install.cta.sub">Email us to request server access and we'll get you set up.</p>
         </div>
         <div class="cta-actions">
-          <a href="/docs/quickstart" class="cta-btn" data-i18n="install.cta.next">Next: quickstart →</a>
-          <a href="/docs/cli" class="cta-link" data-i18n="install.cta.cli">CLI reference</a>
+          <a href="mailto:hello@fathom.uz" class="cta-btn" data-i18n="install.cta.next">Contact us →</a>
+          <a href="/docs" class="cta-link" data-i18n="install.cta.docs">Documentation</a>
         </div>
       </div>
     </div>
@@ -207,8 +45,6 @@ curl http://localhost:8080/health`}</code></pre>
 <style>
   .inst-page { padding: 70px 0 90px; }
   .eyebrow { font-family: var(--font-mono); font-size: 13px; letter-spacing: .16px; text-transform: uppercase; color: var(--grey-600); }
-  .h3-sec { font-size: clamp(20px, 2.4vw, 34px); font-weight: 500; letter-spacing: -0.02em; margin: 12px 0 16px; }
-  .ic { font-family: var(--font-mono); font-size: .85em; background: var(--grey-100); border: 1px solid var(--grey-200); padding: 1px 6px; border-radius: 5px; }
   .copy-lg { color: var(--grey-700); font-size: 17px; line-height: 1.55; max-width: 640px; }
   .mx-auto { margin-left: auto; margin-right: auto; }
 
@@ -216,37 +52,21 @@ curl http://localhost:8080/health`}</code></pre>
   .inst-hero h1 { font-size: clamp(34px, 5vw, 68px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.02; margin-top: 12px; }
   .inst-hero .copy-lg { margin-top: 20px; }
 
-  .api-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px; background: var(--grey-300); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--grey-300); }
-  .api-card { background: var(--bg-card); padding: 26px 24px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-  .api-card .api-name { font-family: var(--font-mono); font-weight: 600; font-size: 15px; }
-  .api-card p { color: var(--grey-600); font-size: 14px; line-height: 1.55; }
-  .card-code { margin-top: auto; background: var(--grey-900); border-radius: var(--radius-md); padding: 14px 16px; overflow-x: auto; }
-  .card-code code { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.7; color: var(--grey-100); white-space: pre; }
-  @media (max-width: 800px) { .api-grid { grid-template-columns: 1fr; } }
-
-  .feat { display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: center; padding: 56px 0; }
-  .feat-reverse { direction: rtl; }
-  .feat-reverse > * { direction: ltr; }
-  @media (max-width: 900px) { .feat, .feat-reverse { grid-template-columns: 1fr; gap: 28px; direction: ltr; } }
-
-  .code-card { border: 1px solid var(--grey-200); border-radius: var(--radius-md); background: var(--bg-dark); overflow: hidden; box-shadow: var(--shadow-lg); }
-  .code-card pre { margin: 0; padding: 22px; overflow-x: auto; }
-  .code-card code { font-family: var(--font-mono); font-size: 13px; line-height: 1.8; color: var(--grey-100); white-space: pre; }
-  .code-card--gap { margin-top: 14px; }
-
-  .mini-table-wrap { border: 1px solid var(--grey-200); border-radius: 8px; overflow: auto; background: var(--bg-card); }
-  .mini-table { width: 100%; border-collapse: collapse; font-size: 13px; font-family: var(--font-mono); }
-  .mini-table th { font-size: 10px; text-transform: uppercase; letter-spacing: .6px; color: var(--grey-600); text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--grey-200); background: var(--grey-50); }
-  .mini-table td { padding: 10px 14px; border-bottom: 1px solid var(--grey-100); color: var(--grey-800); }
-  .mini-table td:first-child { white-space: nowrap; font-weight: 500; }
-  .mini-table tr:last-child td { border-bottom: none; }
-
-  .sec-head { max-width: 720px; margin: 56px 0 24px; }
-
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chip { font-family: var(--font-mono); font-size: 12.5px; color: var(--grey-700); background: var(--bg-card); border: 1px solid var(--grey-300); border-radius: var(--radius-full); padding: 7px 14px; }
-
-  .more-links { display: flex; gap: 10px; margin-top: 24px; }
+  .contact-card {
+    max-width: 640px; margin: 0 auto; text-align: center;
+    background: var(--bg-card); border: 1px solid var(--grey-200);
+    border-radius: var(--radius-xl); padding: 56px 40px;
+  }
+  .contact-icon { color: var(--grey-500); margin-bottom: 20px; }
+  .contact-card h2 { font-size: clamp(26px, 3.4vw, 38px); font-weight: 500; letter-spacing: -0.025em; margin-bottom: 16px; }
+  .contact-body { color: var(--grey-600); font-size: 16px; line-height: 1.6; max-width: 480px; margin: 0 auto 28px; }
+  .contact-btn {
+    display: inline-block; font-family: var(--font-mono); font-size: 18px; font-weight: 600;
+    color: var(--grey-900); background: var(--grey-100); border: 1px solid var(--grey-300);
+    padding: 14px 32px; border-radius: var(--radius-md); transition: all .2s;
+  }
+  .contact-btn:hover { background: var(--grey-900); color: var(--on-accent); border-color: var(--grey-900); }
+  .contact-footnote { color: var(--grey-500); font-size: 13px; margin-top: 18px; }
 
   .cta-strip { margin-top: 64px; background: var(--bg-dark); border-radius: var(--radius-xl); padding: 40px 44px; display: flex; align-items: center; justify-content: space-between; gap: 32px; }
   .cta-copy h3 { color: #fff; font-size: 24px; font-weight: 500; letter-spacing: -0.02em; }

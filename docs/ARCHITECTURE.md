@@ -272,12 +272,71 @@ When the process crashes or is killed, sessions remain in the database with stat
 - Completed agent outputs are recovered from the DB
 - Unfinished agent tasks are collected for re-execution
 - Subtree token counts are computed so the budget is accurate
-- The session is marked as `resumed` and the coordinator picks up from where it left off
+### Park/Revive Lifecycle
+
+After an agent completes its work, the [`AgentLifecycleManager`] can park it — serializing its state to disk and removing it from the live bus while keeping it discoverable in the registry. When a new message arrives for the parked agent, the global reviver callback restores it.
+
+**AgentLifecycleManager** — singleton per process, created with shared infrastructure (tools, event bus, persistence, LLM provider, cancellation token):
+
+| Method | Purpose |
+|--------|---------|
+| `park(runtime)` | Serialize agent state, write to disk, unregister from IrcBus, set registry status to `Parked` |
+| `revive(id)` | Load state from disk, rebuild `AgentRuntime`, register on IrcBus, return runtime |
+| `release(id)` | Remove state file, unregister from IrcBus and AgentRegistry entirely |
+| `is_parked(id)` | Check if a checkpoint file exists |
+| `list_parked()` | List all parked agent IDs |
+
+**ParkedAgentState** — JSON-serialized checkpoint:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `AgentId` | Agent UUID |
+| `session_id` | `String` | Parent session ID |
+| `parent_id` | `Option<AgentId>` | Parent agent (if sub-agent) |
+| `role` | `AgentRole` | Researcher, analyst, verifier, writer, coordinator |
+| `task` | `String` | Original task description |
+| `depth` | `u32` | Agent depth in hierarchy |
+| `messages` | `Vec<Message>` | Full conversation history |
+| `tokens_used` | `u64` | Token consumption |
+| `descendant_tokens` | `u64` | Token consumption of spawned children |
+| `estimated_tokens` | `u32` | Current context size estimate |
+| `config` | `AppConfig` | Agent configuration snapshot |
+| `created_at` | `DateTime<Utc>` | When the agent was created |
+
+**Park directory:** `~/.fathom/parked/` (one `{agent_id}.json` file per parked agent). The manager creates the directory on startup. State files are written atomically (write to `.tmp`, then rename).
+
+**IrcReviver callback:** Registered globally via `register_reviver()` on manager construction. When a new message arrives on the IrcBus for an unregistered agent, the bus invokes `revive(id, msg)`:
+
+1. Check if a checkpoint file exists for `id`
+2. Load and deserialize `ParkedAgentState` from disk
+3. Rebuild a fresh `AgentRuntime` with restored messages, token counts, and config
+4. Push the incoming message into the agent's history as `[INBOX from agent {from}] {content}`
+5. Spawn a tokio task to run the agent for one more turn
+6. On success, remove the checkpoint file; on failure, keep it for retry
+
+**IrcBus integration:**
+
+- `park()` calls `IrcBus::global().unregister(&id)` — removes from the live message bus
+- `AgentRegistry::global().update_status(&id, PeerStatus::Parked)` — keeps it visible in the registry but marked as parked
+- `revive()` calls `agent.register_with_bus()` — re-registers on the IrcBus before returning
+
+**Lifecycle transitions:**
+
+```
+Running ──park()──► Parked ──revive()──► Running ──release()──► Removed
+   │                  │                      │
+   │ (agent loop      │ (new IrcBus          │ (checkpoint
+   │  finishes)       │  message arrives)    │  deleted)
+```
+
+- **Running → Parked**: Agent completes its task; `park()` serializes state, unregisters from bus, sets `PeerStatus::Parked` in registry
+- **Parked → Running**: New message arrives for the agent; `IrcReviver::revive()` loads state, rebuilds runtime, re-registers on bus
+- **Running → Removed**: Revived agent finishes processing the message; checkpoint file deleted, or `release()` called explicitly
+- **Session end**: `release()` removes the checkpoint file and fully unregisters from both IrcBus and AgentRegistry
 
 ---
 
 ## crates/tools
-
 **51 always-registered tools**, plus up to 5 CDP browser tools and 6 computer tools when their services are available; all implement the `Tool` trait:
 
 ```rust
@@ -411,6 +470,8 @@ Axum HTTP API (details in [HTTP-API.md](HTTP-API.md)):
 | `POST /api/v1/schedules/claim` | Atomic claim a schedule |
 | `GET /api/v1/governance/audit` | List audit records |
 | `POST /api/v1/governance/decide` | Evaluate an action against policy |
+| `GET /api/v1/governance/policy` | Get current policy configuration |
+| `PUT /api/v1/governance/policy` | Replace the active policy |
 | `GET /api/v1/observability/summary` | Cluster-wide observability summary |
 | `POST /api/v1/notifications/test` | Send a test notification |
 | `GET /ag-ui/events` | AG-UI versioned event stream |
@@ -427,7 +488,7 @@ Axum HTTP API (details in [HTTP-API.md](HTTP-API.md)):
 - **Embedded dashboard** — The server serves its embedded dashboard page at `GET /dashboard`. It provides a read-only live view of sessions, agents, events, and memory state, consuming the same REST/SSE API that external clients use.
 - **AG-UI compatibility stream** — `GET /api/v1/ag-ui/events` exposes read-only versioned event envelopes with bounded reconnect replay via `Last-Event-ID`; `GET /api/v1/ag-ui/health` reports bridge capabilities.
 - **Computer relay** — `GET/POST /api/v1/computers/:agent_id/*` proxies the computer service (snapshot, navigate, click, type, key, screenshot, screen, files, control, ensure, stop, reset) and routes to the right Docker container per agent via the supervisor.
-- **Governance** — `GET /api/v1/governance/audit` lists authorization decisions and `POST /api/v1/governance/decide` evaluates actions; `/api/v1/credentials` manages the AES-256-GCM encrypted credentials vault behind the configured API-key boundary; plaintext is never returned.
+- **Governance** — `GET /api/v1/governance/audit` lists authorization decisions and `POST /api/v1/governance/decide` evaluates actions; `GET/PUT /api/v1/governance/policy` retrieves or replaces the active policy; `/api/v1/credentials` manages the AES-256-GCM encrypted credentials vault behind the configured API-key boundary; plaintext is never returned.
 - **Coworkers / channels / schedules** — full lifecycle management of persistent autonomous workers: lifelong profiles (`/coworkers`), symbolic delivery channels (`/channels`), and cron-like timers with atomic claim (`/schedules`, `/schedules/claim`).
 - **Observability** — `GET /api/v1/observability/summary` aggregates cluster-wide state; `POST /api/v1/notifications/test` exercises notification channels.
 
@@ -435,39 +496,50 @@ Axum HTTP API (details in [HTTP-API.md](HTTP-API.md)):
 
 ## crates/governance
 
-Policy engine and audit trail — see [GOVERNANCE.md](GOVERNANCE.md) for the full reference.
+Policy engine, audit events, and action evaluation — implemented as a single `lib.rs` (no submodules). See [GOVERNANCE.md](GOVERNANCE.md) for the full reference.
 
-| Module | Purpose |
-|--------|---------|
-| `policy` | `PolicyEngine` — loads allow/deny rules from `policy.toml`, evaluates `<tool, target>` pairs, fail-closed on no match |
-| `audit` | `AuditTrail` — immutable append-only SQLite-backed decision log with secret redaction and queryable by tool/agent/verdict/date-range |
-| `vault` | `CredentialsVault` — AES-256-GCM encrypted secret store, operator-only access, no secret-input tool in the agent registry |
-| `relay` | `ServerRelay` — intercepts tool calls that need authentication, injects vault credentials, adds `x-fathom-operator` claim |
+| Type | Purpose |
+|------|---------|
+| `PolicyEngine` | Loads allow/deny `PolicyRule` list, evaluates `ActionContext` against rules, fail-closed on no match |
+| `PolicyRule` | A single rule with `effect` (`allow`/`deny`) and optional glob-match filters: `tool`, `host`, `path`, `intent` |
+| `PolicyEffect` | Enum: `Allow` / `Deny` |
+| `PolicyConfig` | Container holding `Vec<PolicyRule>` |
+| `ActionContext` | The action being evaluated — `agent`, `session`, `tool`, `args`, plus optional `url`, `element`, `file`, `intent`, `mcp_metadata` |
+| `Decision` | Evaluation result: `Allow` / `Deny` |
+| `AuditEvent` | Persisted decision record — id, timestamp, redacted `ActionContext`, `AuditDecision` |
+| `AuditDecision` | Enum: `Allow` / `Deny` (mirrors `Decision` for serialization) |
+| `AuditSink` | Trait for persisting audit events (implemented by the persistence crate) |
+| `TargetResolver` | Resolves only references that were explicitly present in a snapshot |
+| `Governance` | Facade combining `PolicyEngine` with an optional `AuditSink` |
+| `redact_secrets()` | Recursively redacts values below common credential/secret keys |
+
+The credentials vault (`CredentialsVault`) lives in `crates/persistence`, not here. `ServerRelay` does not exist.
 
 **Key architectural decisions:**
 - **Deny wins** — if any matching rule denies, the call is blocked regardless of any allow rules that also match
-- **Fail-closed** — unmatched tool+target pairs are denied by default
+- **Fail-closed** — unmatched actions are denied by default
 - **Redact on write** — secret-like values (API keys, tokens, PEM, base64) are detected by regex and replaced with `[REDACTED]` before audit persistence
-- **No credential exposure** — the agent registry has no tool for reading or writing credentials; only the operator relay injects them
+- **No credential exposure** — the agent registry has no tool for reading or writing credentials; only the operator injects them through the HTTP API
 
 ---
 
 ## crates/supervisor
 
-Docker per-agent computer provisioning — see [COMPUTER-USE.md](COMPUTER-USE.md) for the full reference.
+Docker per-agent computer provisioning — implemented as a single `lib.rs` (no submodules). See [COMPUTER-USE.md](COMPUTER-USE.md) for the full reference.
 
-| Module | Purpose |
-|--------|---------|
-| `provision` | `Provisioner` — pulls the computer image, creates per-agent containers with persistent workspace volumes and browser profiles |
-| `network` | `NetworkManager` — manages the Docker network, loopback port mapping, and restrictive capabilities |
-| `health` | `HealthChecker` — liveness probe on the computer service port, timeout-based container recycling |
-| `lifecycle` | `ContainerLifecycle` — create, start, stop, remove containers with RAII cleanup |
+| Type | Purpose |
+|------|---------|
+| `ComputerSupervisor` | Owns Docker lifecycle operations for computer agents — create, start, stop, reset, inspect containers via the `bollard` Docker client |
+| `SupervisorConfig` | Configuration for the supervisor (image, network, base port, timeouts). Values can be supplied explicitly or loaded from `COMPUTER_*` env vars via `from_env()` |
+| `AgentContainer` | Metadata returned for a managed container — agent_id, container_name, workspace_volume, profile_volume, port, running status, health |
+| `SupervisorError` | Error type for supervisor operations (Docker API errors, validation failures, timeouts) |
 
 **Key architectural decisions:**
 - **One container per agent** — each agent gets an isolated computer with its own workspace, browser profile, and network namespace
 - **Loopback isolation** — containers are mapped to unique ports (`COMPUTER_BASE_PORT + agent_index`) so agents never share state
-- **Restrictive by default** — no `--privileged`, no host networking, no read-write host mounts, limited syscalls via seccomp
+- **Restrictive by default** — no `--privileged`, no host networking, no read-write host mounts
 - **Auto-cleanup** — containers are stopped and removed when the agent finishes or is cancelled (via cancellation token propagation)
+- **Private Docker client** — the Docker client is intentionally private to this crate; callers can only create, stop, reset, and inspect a managed container
 
 ---
 

@@ -16,10 +16,6 @@ function redact(value: unknown): unknown {
 function normaliseRules(value: { policy?: { rules?: PolicyRule[] } } | PolicyRule[]): PolicyRule[] {
   return Array.isArray(value) ? value : value.policy?.rules ?? []
 }
-function normaliseAudit(value: AuditEvent[]): AuditEvent[] {
-  return value
-}
-
 function decisionAllowed(value: Decision): boolean {
   return typeof value === 'string' ? value === 'allow' : value.allowed
 }
@@ -61,7 +57,7 @@ export default function GovernanceConsole() {
       const [policy, audit] = await Promise.all([api.governance.policy(), api.governance.audit({ limit: 30 })])
       setPolicyEnabled(typeof policy.enabled === 'boolean' ? policy.enabled : null)
       setRules(normaliseRules(policy))
-      setEvents(normaliseAudit(audit))
+      setEvents(Array.isArray(audit) ? audit : audit.events ?? [])
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Governance service unavailable')
     } finally { setLoading(false) }
@@ -103,7 +99,8 @@ export default function GovernanceConsole() {
           {error && <div role="alert" className="ops-alert"><span>CONNECTION ERROR</span><p>{error}</p></div>}
           {notice && <div className="ops-notice">{notice}</div>}
           <section className="ops-panel">
-            <div className="ops-panel-head"><div><p className="ops-kicker">Configured rules · {enabledCount}</p><h2>Execution policy</h2></div><button type="button" onClick={addRule} className="ops-button-secondary">+ Add rule</button></div>
+            <div className="ops-panel-head"><div><p className="ops-kicker">Configured rules · {enabledCount}</p><h2>Execution policy</h2></div><button type="button" onClick={addRule} disabled={loading} className="ops-button-secondary">+ Add rule</button></div>
+            {policyEnabled === false && <div className="mb-4 border border-amber-300/20 bg-amber-300/[0.06] px-3 py-2 text-xs text-amber-200/80" role="status"><strong className="font-medium text-amber-200">Policy enforcement is disabled.</strong> Rules remain stored for review, but the server will not enforce them until governance is enabled.</div>}
             <div className="hidden grid-cols-[minmax(0,1fr)_92px_minmax(0,1fr)_28px] gap-2 border-b border-white/[0.08] pb-2 text-[10px] uppercase tracking-widest text-gray-600 sm:grid"><span>Tool</span><span>Effect</span><span>Path</span><span /></div>
             {loading ? <div className="ops-empty">Loading policy…</div> : rules.length === 0 ? <div className="ops-empty">No policy rules published. Add a rule to govern worker actions; behavior follows the server governance mode.</div> : rules.map((rule, index) => <RuleRow key={rule.id ?? `rule-${index}`} rule={rule} onChange={next => updateRule(index, next)} onRemove={() => setRules(current => current.filter((_, i) => i !== index))} />)}
             <div className="mt-4 flex justify-end"><button type="button" onClick={save} disabled={saving || loading} className="ops-button-primary">{saving ? 'Publishing…' : 'Publish policy'}</button></div>

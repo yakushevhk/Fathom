@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { api, apiKeyHeaders, type AgentEvent, type SessionResults } from '@/lib/api'
 import { Markdown } from './Markdown'
@@ -35,13 +36,43 @@ export function ChatView({ sessionId }: ChatViewProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
+  const [answering, setAnswering] = useState(false)
+  const [approving, setApproving] = useState(false)
+  const [bootstrapError, setBootstrapError] = useState<string | null>(null)
   const [question, setQuestion] = useState<PendingQuestion | null>(null)
   const [approval, setApproval] = useState<PendingApproval | null>(null)
   const [answer, setAnswer] = useState('')
   const [results, setResults] = useState<SessionResults | null>(null)
   const [streamStatus, setStreamStatus] = useState<'connecting' | 'live' | 'offline'>('connecting')
+  const [session, setSession] = useState<{ query?: string; status?: string; total_tokens?: number; total_agents?: number } | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const seenEventsRef = useRef<Set<string>>(new Set())
+  const clientEventSequenceRef = useRef(0)
   const [autoScroll, setAutoScroll] = useState(true)
+  const terminalSession = isTerminalSessionStatus(session?.status)
+
+  // Bootstrap deep links with durable session metadata and completed results.
+  useEffect(() => {
+    let cancelled = false
+    setBootstrapError(null)
+    setSession(null)
+    setQuestion(null)
+    setApproval(null)
+    setMessages([])
+    setResults(null)
+    setSession(null)
+    seenEventsRef.current.clear()
+    clientEventSequenceRef.current = 0
+    void api.sessions.get(sessionId).then(value => {
+      if (!cancelled) setSession(value)
+    }).catch(error => {
+      if (!cancelled) setBootstrapError(error instanceof Error ? error.message : 'Session metadata unavailable')
+    })
+    void api.sessions.results(sessionId).then(value => {
+      if (!cancelled) setResults(value)
+    }).catch(() => { /* active sessions do not have results yet */ })
+    return () => { cancelled = true }
+  }, [sessionId])
 
   // SSE stream
   useEffect(() => {
@@ -86,6 +117,10 @@ export function ChatView({ sessionId }: ChatViewProps) {
     }
 
     const handleEvent = (event: AgentEvent) => {
+      const clientEventSequence = ++clientEventSequenceRef.current
+      const eventKey = stableEventKey(event, clientEventSequence)
+      if (seenEventsRef.current.has(eventKey)) return
+      seenEventsRef.current.add(eventKey)
       switch (event.type) {
         case 'question_asked':
           setQuestion({
@@ -93,7 +128,7 @@ export function ChatView({ sessionId }: ChatViewProps) {
             agentId: event.agent_id as string,
             question: event.question as string,
           })
-          setMessages(prev => [...prev, {
+          setMessages(prev => prev.some(message => message.id === `question-${event.request_id}`) ? prev : [...prev, {
             id: `question-${event.request_id}`,
             type: 'system',
             content: `❓ Worker needs an operator answer: ${event.question as string}`,
@@ -108,7 +143,7 @@ export function ChatView({ sessionId }: ChatViewProps) {
             tool: event.tool as string,
             argsPreview: event.args_preview as string,
           })
-          setMessages(prev => [...prev, {
+          setMessages(prev => prev.some(message => message.id === `approval-${event.request_id}`) ? prev : [...prev, {
             id: `approval-${event.request_id}`,
             type: 'system',
             content: `🔒 ${event.tool as string} requires approval`,
@@ -117,9 +152,15 @@ export function ChatView({ sessionId }: ChatViewProps) {
           }])
           break
         case 'session_completed':
-        case 'session_failed':
+        case 'session_failed': {
+          const terminalStatus = event.type === 'session_completed' ? 'completed' : 'failed'
+          setSession(prev => ({ ...prev, status: terminalStatus }))
+          setQuestion(null)
+          setApproval(null)
+          setAnswer('')
+          setInput('')
           setMessages(prev => [...prev, {
-            id: `end-${Date.now()}`,
+            id: `end-${clientEventSequence}`,
             type: 'system',
             content: event.type === 'session_completed'
               ? `✅ Session completed — ${event.total_agents} workers, ${event.total_tokens} tokens`
@@ -129,9 +170,10 @@ export function ChatView({ sessionId }: ChatViewProps) {
           // Load final results
           api.sessions.results(sessionId).then(setResults).catch(() => {})
           break
+        }
         default: {
-          const msg = eventToMessage(event)
-          if (msg) setMessages(prev => [...prev, msg])
+          const msg = eventToMessage(event, clientEventSequence)
+          if (msg) setMessages(prev => reconcileMessages(prev, msg))
         }
       }
     }
@@ -159,7 +201,7 @@ export function ChatView({ sessionId }: ChatViewProps) {
 
   const handleSend = async () => {
     const text = input.trim()
-    if (!text || sending) return
+    if (!text || sending || terminalSession) return
     setSending(true)
     setInput('')
     setMessages(prev => [...prev, {
@@ -183,9 +225,10 @@ export function ChatView({ sessionId }: ChatViewProps) {
   }
 
   const submitAnswer = async () => {
-    if (!question) return
+    if (!question || terminalSession) return
     const text = answer.trim()
-    if (!text) return
+    if (!text || answering) return
+    setAnswering(true)
     try {
       await api.sessions.answer(sessionId, question.requestId, text)
       setQuestion(null)
@@ -197,11 +240,14 @@ export function ChatView({ sessionId }: ChatViewProps) {
         content: `Answer failed: ${e}`,
         timestamp: new Date(),
       }])
+    } finally {
+      setAnswering(false)
     }
   }
 
   const submitApproval = async (approved: boolean) => {
-    if (!approval) return
+    if (!approval || approving || terminalSession) return
+    setApproving(true)
     try {
       await api.sessions.approve(sessionId, approval.requestId, approved)
       setApproval(null)
@@ -212,6 +258,8 @@ export function ChatView({ sessionId }: ChatViewProps) {
         content: `Approval failed: ${e}`,
         timestamp: new Date(),
       }])
+    } finally {
+      setApproving(false)
     }
   }
 
@@ -219,17 +267,19 @@ export function ChatView({ sessionId }: ChatViewProps) {
     <div className="flex-1 flex flex-col min-w-0">
       {/* Header */}
       <div className="h-9 flex items-center px-4 border-b border-white/[0.06] text-xs text-gray-400 shrink-0">
-        <SessionHeader sessionId={sessionId} />
+        <SessionHeader sessionId={sessionId} session={session} />
         <span role="status" className="ml-3 inline-flex items-center gap-1 text-[10px] text-gray-500">
           <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${streamStatus === 'live' ? 'bg-green-500' : streamStatus === 'offline' ? 'bg-red-500' : 'bg-yellow-400 animate-pulse'}`} />
           {streamStatus === 'live' ? 'Live' : streamStatus === 'offline' ? 'Offline — retrying' : 'Connecting'}
         </span>
       </div>
 
+      {bootstrapError && <div role="status" className="border-b border-yellow-500/20 bg-yellow-500/5 px-4 py-2 text-xs text-yellow-200">Session metadata unavailable: {bootstrapError}. Live events may still appear.</div>}
+
       {/* Pending question banner */}
       {question && (
-        <div className="border-b border-blue-500/20 bg-blue-500/5 p-3 animate-fade-in shrink-0">
-          <div className="text-xs text-blue-300 font-medium mb-2">Worker needs your input</div>
+        <div role="group" aria-labelledby="pending-question-title" aria-live="polite" aria-atomic="true" className="border-b border-blue-500/20 bg-blue-500/5 p-3 animate-fade-in shrink-0">
+          <div id="pending-question-title" className="text-xs text-blue-300 font-medium mb-2">Worker needs your input</div>
           <div className="text-sm text-gray-200 mb-2">{question.question}</div>
           <div className="flex gap-2">
             <input
@@ -238,12 +288,12 @@ export function ChatView({ sessionId }: ChatViewProps) {
               onKeyDown={e => { if (e.key === 'Enter') submitAnswer() }}
               aria-label="Answer worker question"
               placeholder="Your answer..."
-              autoFocus
-              className="flex-1 p-2 rounded-md bg-[#141414] border border-blue-500/30 text-sm text-gray-200 placeholder-gray-600 outline-none focus:border-blue-400"
+              disabled={terminalSession}
+              className="flex-1 p-2 rounded-md bg-[#141414] border border-blue-500/30 text-sm text-gray-200 placeholder-gray-600 outline-none focus:border-blue-400 disabled:opacity-40"
             />
-            <button type="button" onClick={submitAnswer} disabled={!answer.trim()}
+            <button type="button" onClick={submitAnswer} disabled={!answer.trim() || answering || terminalSession}
               className="px-4 py-2 rounded-md bg-blue-500 text-black text-xs font-semibold hover:bg-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300 disabled:opacity-30 transition-colors">
-              Answer
+              {answering ? 'Sending…' : 'Answer'}
             </button>
           </div>
         </div>
@@ -251,25 +301,36 @@ export function ChatView({ sessionId }: ChatViewProps) {
 
       {/* Pending approval banner */}
       {approval && (
-        <div className="border-b border-yellow-500/20 bg-yellow-500/5 p-3 animate-fade-in shrink-0">
-          <div className="text-xs text-yellow-300 font-medium mb-1">Worker action needs operator approval</div>
+        <div role="group" aria-labelledby="pending-approval-title" aria-live="polite" aria-atomic="true" className="border-b border-yellow-500/20 bg-yellow-500/5 p-3 animate-fade-in shrink-0">
+          <div id="pending-approval-title" className="text-xs text-yellow-300 font-medium mb-1">Worker action needs operator approval</div>
           <div className="text-sm text-gray-200 font-mono mb-1">{approval.tool}</div>
           <div className="text-xs text-gray-400 font-mono bg-black/40 rounded p-2 mb-2 whitespace-pre-wrap max-h-20 overflow-y-auto">{approval.argsPreview}</div>
           <div className="flex gap-2">
-            <button type="button" aria-label={`Allow ${approval.tool}`} onClick={() => submitApproval(true)}
-              className="px-4 py-1.5 rounded-md bg-green-600 text-black text-xs font-semibold hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-green-300 transition-colors">
-              Allow
+            <button type="button" aria-label={`Allow ${approval.tool}`} onClick={() => submitApproval(true)} disabled={approving || terminalSession}
+              className="px-4 py-1.5 rounded-md bg-green-600 text-black text-xs font-semibold hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-green-300 transition-colors disabled:opacity-40">
+              {approving ? 'Working…' : 'Allow'}
             </button>
-            <button type="button" aria-label={`Deny ${approval.tool}`} onClick={() => submitApproval(false)}
-              className="px-4 py-1.5 rounded-md bg-red-600 text-white text-xs font-semibold hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-300 transition-colors">
+            <button type="button" aria-label={`Deny ${approval.tool}`} onClick={() => submitApproval(false)} disabled={approving || terminalSession}
+              className="px-4 py-1.5 rounded-md bg-red-600 text-white text-xs font-semibold hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-300 transition-colors disabled:opacity-40">
               Deny
             </button>
           </div>
         </div>
       )}
 
+      {terminalSession && (
+        <div role="status" aria-live="polite" className="border-b border-white/[0.06] bg-black/20 px-4 py-2 text-xs text-gray-400">
+          Session {session?.status === 'failed' ? 'failed' : 'completed'}; steering and operator actions are disabled.
+        </div>
+      )}
+
       {/* Messages */}
-      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto px-4 py-2">
+      <div ref={scrollRef} onScroll={handleScroll} role="log" aria-live="polite" aria-relevant="additions text" className="flex-1 overflow-y-auto px-4 py-2">
+        {messages.length === 0 && !results && (
+          <div className="flex min-h-40 items-center justify-center text-center text-xs text-gray-600">
+            {streamStatus === 'connecting' ? 'Connecting to the session…' : 'No events recorded for this session yet.'}
+          </div>
+        )}
         {messages.map(msg => (
           <div key={msg.id} className="py-2 animate-fade-in">
             <div className="flex items-center gap-2 mb-1">
@@ -279,6 +340,7 @@ export function ChatView({ sessionId }: ChatViewProps) {
                 {msg.type === 'user' ? 'You' : msg.type === 'assistant' ? 'Worker' : msg.type === 'tool_call' ? (msg.toolName ?? 'Tool') : 'System'}
               </span>
               {msg.agentId && <span className="text-[9px] text-gray-700 font-mono">{msg.agentId.slice(0, 6)}</span>}
+              <time dateTime={msg.timestamp.toISOString()} className="text-[9px] text-gray-700">{msg.timestamp.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</time>
             </div>
             {msg.type === 'tool_call' ? (
               <div className="rounded-md border border-white/[0.06] bg-[#141414] overflow-hidden">
@@ -339,13 +401,14 @@ export function ChatView({ sessionId }: ChatViewProps) {
               }
             }}
             aria-label="Send a message to the worker"
-            placeholder="Send guidance or steer this worker…"
-            className="flex-1 p-2.5 rounded-md bg-[#141414] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 outline-none focus:border-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gray-300 transition-colors"
+            placeholder={terminalSession ? 'Session is no longer accepting guidance' : 'Send guidance or steer this worker…'}
+            disabled={terminalSession}
+            className="flex-1 p-2.5 rounded-md bg-[#141414] border border-white/[0.06] text-sm text-gray-200 placeholder-gray-600 outline-none focus:border-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gray-300 disabled:opacity-40 transition-colors"
           />
           <button
             type="button"
             onClick={handleSend}
-            disabled={!input.trim() || sending}
+            disabled={!input.trim() || sending || terminalSession}
             className="px-4 py-2 rounded-md bg-gray-600 text-black text-xs font-semibold hover:bg-gray-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gray-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
             {sending ? '...' : 'Send'}
@@ -356,24 +419,44 @@ export function ChatView({ sessionId }: ChatViewProps) {
   )
 }
 
-function SessionHeader({ sessionId }: { sessionId: string }) {
+function SessionHeader({ sessionId, session }: { sessionId: string; session: { query?: string; status?: string; total_tokens?: number; total_agents?: number } | null }) {
   return (
     <>
-      <span className="text-gray-500 mr-2">Worker session</span>
-      <span className="font-mono text-gray-300">{sessionId.slice(0, 8)}</span>
-      <a
-        href={`${typeof window !== 'undefined' ? localStorage.getItem('fathom_base_url') || 'http://127.0.0.1:8080' : ''}/`}
-        target="_blank"
-        rel="noreferrer"
-        className="ml-auto text-gray-500 hover:text-gray-300"
-      >
-        Dashboard ↗
-      </a>
+      <h1 className="text-gray-500 mr-2 text-xs font-normal">Worker session</h1>
+      <span className="font-mono text-gray-300" title={sessionId}>{sessionId.slice(0, 8)}</span>
+      {session?.status && <span className="ml-2 rounded-full border border-white/10 px-1.5 py-0.5 text-[10px] text-gray-400">{session.status}</span>}
+      {session?.query && <span className="hidden md:block ml-2 max-w-[30vw] truncate text-gray-600" title={session.query}>{session.query}</span>}
+      <Link href="/" className="ml-auto text-gray-500 hover:text-gray-300">
+        Dashboard
+      </Link>
     </>
   )
 }
 
-function eventToMessage(event: AgentEvent): Message | null {
+function stableEventKey(event: AgentEvent, clientEventSequence: number): string {
+  if (event.id) return `${event.type}:${event.id}`
+  if (event.request_id) return `${event.type}:${event.request_id}`
+  return `${event.type}:client-${clientEventSequence}`
+}
+
+function reconcileMessages(previous: Message[], next: Message): Message[] {
+  if (next.type === 'tool_call') {
+    const existingIndex = previous.findIndex(message => message.type === 'tool_call' && message.id === next.id)
+    if (existingIndex >= 0) {
+      const updated = [...previous]
+      updated[existingIndex] = { ...updated[existingIndex], ...next }
+      return updated
+    }
+  }
+  return previous.some(message => message.id === next.id) ? previous : [...previous, next]
+}
+
+function toolLifecycleId(event: AgentEvent, clientEventSequence?: number): string {
+  const identity = event.request_id ?? event.id ?? `client-${clientEventSequence ?? 'unknown'}`
+  return `tool-${event.agent_id ?? ''}-${event.tool ?? ''}-${identity}`
+}
+
+function eventToMessage(event: AgentEvent, clientEventSequence?: number): Message | null {
   switch (event.type) {
     case 'session_started':
       return { id: `start-${event.id}`, type: 'system', content: `Session started: ${event.query ?? ''}`, timestamp: new Date() }
@@ -384,9 +467,9 @@ function eventToMessage(event: AgentEvent): Message | null {
     case 'agent_failed':
       return { id: `fail-${event.id}`, type: 'system', content: `Worker failed: ${event.error ?? ''}`, timestamp: new Date(), agentId: event.id as string }
     case 'tool_call_started':
-      return { id: `tool-${event.agent_id}-${event.tool}-${event.request_id ?? event.id ?? Date.now()}`, type: 'tool_call', content: JSON.stringify(event.args, null, 2), timestamp: new Date(), toolName: event.tool as string, toolStatus: 'running', agentId: event.agent_id as string }
+      return { id: toolLifecycleId(event), type: 'tool_call', content: JSON.stringify(event.args, null, 2), timestamp: new Date(), toolName: event.tool as string, toolStatus: 'running', agentId: event.agent_id as string }
     case 'tool_call_completed':
-      return { id: `tool-done-${event.agent_id}-${event.tool}-${event.request_id ?? event.id ?? Date.now()}`, type: 'tool_call', content: String(event.result_preview ?? '').slice(0, 500), timestamp: new Date(), toolName: event.tool as string, toolStatus: 'completed', agentId: event.agent_id as string }
+      return { id: toolLifecycleId(event), type: 'tool_call', content: String(event.result_preview ?? '').slice(0, 500), timestamp: new Date(), toolName: event.tool as string, toolStatus: 'completed', agentId: event.agent_id as string }
     case 'finding':
       return { id: `finding-${event.agent_id}-${event.id ?? event.request_id ?? Date.now()}`, type: 'system', content: `Finding: ${(event.finding as Record<string, unknown>)?.title ?? ''}`, timestamp: new Date(), agentId: event.agent_id as string }
     default:

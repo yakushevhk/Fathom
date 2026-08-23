@@ -103,9 +103,9 @@ export default function ObservabilityPage() {
 
   return (
     <div className="flex-1 flex flex-col min-w-0">
-      <div className="h-9 flex items-center justify-between gap-3 px-4 border-b border-white/[0.06] shrink-0">
-        <span className="text-xs text-gray-400">Observability / worker controls</span>
-        <button type="button" className="ops-button-secondary" onClick={() => void load(true)} disabled={loading || refreshing}>
+      <div className="ops-toolbar shrink-0">
+        <span className="ops-toolbar-title">Observability / worker controls</span>
+        <button type="button" className="ops-button-secondary ml-auto" onClick={() => void load(true)} disabled={loading || refreshing}>
           {refreshing ? 'Refreshing…' : 'Refresh'}
         </button>
       </div>

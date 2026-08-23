@@ -1,6 +1,6 @@
 # Crate Documentation `crates/llm`
 
-The `llm` crate is responsible for interacting with language models via the OpenAI-compatible chat-completions protocol. It includes typed request/response structures, a trait provider, a single `DeepSeekProvider` implementation (compatible with any OpenAI-compatible endpoint), a retry mechanism with exponential backoff, and a provider factory. The default runtime model is `deepseek-chat`; the provider is OpenAI-compatible rather than a native Anthropic or Gemini adapter. Anthropic Messages API and Google Gemini API require separate provider implementations.
+The `llm` crate is responsible for interacting with language models via the OpenAI-compatible chat-completions protocol. It includes typed request/response structures, a trait provider, a single `DeepSeekProvider` implementation (compatible with any OpenAI-compatible endpoint), a retry mechanism with exponential backoff, a provider factory, and per-model concurrency throttles. The default runtime model is `deepseek-chat`; the provider is OpenAI-compatible rather than a native Anthropic or Gemini adapter. Anthropic Messages API and Google Gemini API require separate provider implementations.
 
 ---
 
@@ -12,12 +12,11 @@ The `llm` crate is responsible for interacting with language models via the Open
 4. [deepseek.rs — DeepSeekProvider implementation](#deepseekrs)
 5. [retry.rs — retry mechanism](#retryrs)
 6. [factory.rs — provider factory](#factoryrs)
+7. [concurrency.rs — per-model throttles](#concurrencyrs)
 
 ---
 
-## lib.rs
-
-The file [lib.rs](../../crates/llm/src/lib.rs) declares five public modules and re-exports all their contents via `pub use`:
+The file [lib.rs](../../crates/llm/src/lib.rs) declares six public modules and re-exports all their contents via `pub use`:
 
 ```rust
 pub mod provider;
@@ -25,15 +24,17 @@ pub mod deepseek;
 pub mod types;
 pub mod retry;
 pub mod factory;
+pub mod concurrency;
 
 pub use provider::*;
 pub use deepseek::*;
 pub use types::*;
 pub use retry::*;
 pub use factory::*;
+pub use concurrency::*;
 ```
 
-This means consumers of the crate can write `use llm::LlmProvider`, `use llm::CompletionRequest`, etc. directly, without specifying the internal modules.
+This means consumers of the crate can write `use llm::LlmProvider`, `use llm::CompletionRequest`, `use llm::ModelSemaphore`, etc. directly, without specifying the internal modules.
 
 ---
 
@@ -456,4 +457,79 @@ Algorithm:
 5. Applies `.with_provider_name(cfg.provider.clone())` — so that `name()` returns the name from the configuration.
 6. Wraps in `Arc::new(...)` and returns.
 
-**Note**: `LlmConfig` (from `pr_core`) contains fields: `provider`, `base_url`, `api_key`, `model`, `max_tokens`, `temperature`. Of these, only `provider`, `base_url`, `api_key`, and `model` are used in the factory. The `max_tokens` and `temperature` fields are ignored at the factory level — they should be set in `CompletionRequest` by the calling code.
+---
+
+## concurrency.rs
+
+The file [concurrency.rs](../../crates/llm/src/concurrency.rs) provides per-model concurrency throttles to prevent a multi-agent swarm from self-inflicting provider rate limits. Two orthogonal throttles are implemented:
+
+### Constants
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `DEFAULT_LANE_CONCURRENCY` | 3 | Default concurrent requests allowed per model lane |
+| `DEFAULT_COOLDOWN` | 30 s | Default cooldown after a generic 5xx before retry |
+| `RATE_LIMIT_COOLDOWN` | 60 s | Cooldown after an explicit HTTP 429 (stricter) |
+
+### `ModelSemaphore`
+
+A bounded per-model semaphore keyed by model id. Prevents a fan-out of sub-agents from saturating a single model with too many concurrent requests.
+
+```rust
+pub struct ModelSemaphore {
+    lanes: Arc<Mutex<HashMap<String, Arc<Semaphore>>>>,
+    permits: usize,  // default 3
+}
+```
+
+| Method | Description |
+|--------|-------------|
+| `new(permits)` | Create with the given concurrency limit per lane (minimum 1). |
+| `acquire(model, f)` | Acquire a permit for `model`, run `f` while holding it, then release. Each model gets its own independent semaphore lane, so different models do not block each other. |
+
+Each model lane is created lazily on first use. Two models with `permits=1` can still run concurrently because their lanes are independent.
+
+### `FallbackCooldown`
+
+A 429/5xx-aware cooldown per model lane. After the provider signals throttling, the lane is placed in cooldown and refuses to be used until the window elapses — preventing the swarm from hammering a rate-limited endpoint round after round.
+
+```rust
+pub struct FallbackCooldown {
+    expires: Arc<Mutex<HashMap<String, u64>>>,
+    default: Duration,      // 30 s for generic 5xx
+    rate_limit: Duration,   // 60 s for explicit 429
+}
+```
+
+| Method | Description |
+|--------|-------------|
+| `new(default, rate_limit)` | Create with configurable cooldown windows. |
+| `note_limit(model, is_rate_limit)` | Record that `model` was throttled. `is_rate_limit=true` selects the longer window (60 s) for HTTP 429; `false` uses the shorter window (30 s) for generic 5xx. |
+| `is_cooldown(model)` | Whether `model` is currently in cooldown. Lazily prunes expired entries. |
+| `wait_hint(model)` | Returns `Some(Duration)` if cooling down (time remaining), or `None` if available. |
+
+### Usage pattern
+
+The swarm agent runtime wraps LLM calls with both throttles:
+
+```rust
+semaphore.acquire(model, async {
+    if cooldown.is_cooldown(model).await {
+        // skip or fallback to another model
+    }
+    match provider.complete(&req).await {
+        Ok(resp) => resp,
+        Err(e) if e.is_rate_limit() => {
+            cooldown.note_limit(model, true).await;
+            Err(e)
+        }
+        Err(e) if e.is_server_error() => {
+            cooldown.note_limit(model, false).await;
+            Err(e)
+        }
+        Err(e) => Err(e),
+    }
+}).await
+```
+
+This ensures that the swarm naturally backs off when the provider is under load, without any central coordinator or shared state beyond these two primitives.

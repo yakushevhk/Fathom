@@ -77,6 +77,8 @@ export default function CoworkerConsole() {
   const [saving, setSaving] = useState(false)
   const [channelLoading, setChannelLoading] = useState(false)
   const [scheduleSaving, setScheduleSaving] = useState(false)
+  const [archiving, setArchiving] = useState(false)
+  const [deletingChannelId, setDeletingChannelId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [offline, setOffline] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
@@ -140,12 +142,13 @@ export default function CoworkerConsole() {
 
   const archiveCoworker = async () => {
     if (!selected || !window.confirm(`Archive ${selected.name}?`)) return
-    setError(null); setNotice(null)
+    setArchiving(true); setError(null); setNotice(null)
     try {
       await api.coworkers.archive(selected.id)
       const remaining = coworkers.filter(item => item.id !== selected.id)
       setCoworkers(remaining); setSelectedId(remaining[0]?.id ?? null); setNotice('Coworker archived')
     } catch (e) { setError(messageFor(e, 'Could not archive coworker')); setOffline(isOffline(e)) }
+    finally { setArchiving(false) }
   }
 
   const createChannel = async (event: React.FormEvent) => {
@@ -159,9 +162,10 @@ export default function CoworkerConsole() {
   }
 
   const deleteChannel = async (channel: Channel) => {
-    setError(null)
+    setDeletingChannelId(channel.id); setError(null)
     try { await api.channels.delete(channel.id); setChannels(current => current.filter(item => item.id !== channel.id)); setNotice('Channel deleted') }
     catch (e) { setError(messageFor(e, 'Could not delete channel')); setOffline(isOffline(e)) }
+    finally { setDeletingChannelId(null) }
   }
 
   const createSchedule = async (event: React.FormEvent) => {
@@ -180,7 +184,7 @@ export default function CoworkerConsole() {
       <header className="border-b border-white/[0.08] px-5 py-5 md:px-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div><p className="ops-kicker">Work / autonomous worker fleet</p><h1 className="mt-1 text-xl tracking-tight text-gray-100">Coworkers &amp; recurring operations</h1><p className="mt-1 max-w-2xl text-xs text-gray-500">Configure workers, route their conversations, and save recurring operations for a scheduler to claim.</p></div>
-          <button onClick={() => void load()} disabled={loading} className="ops-button-secondary">{loading ? 'Syncing…' : '↻ Refresh'}</button>
+          <button type="button" onClick={() => void load()} disabled={loading} className="ops-button-secondary" aria-label="Refresh coworkers and schedules">{loading ? 'Syncing…' : '↻ Refresh'}</button>
         </div>
       </header>
       <div className="grid gap-5 p-5 md:p-8 xl:grid-cols-[minmax(230px,.75fr)_minmax(0,1.45fr)]">
@@ -188,22 +192,22 @@ export default function CoworkerConsole() {
           {error && <div role="alert" className="ops-alert"><span>{offline ? 'SERVICE OFFLINE' : 'SERVICE NOTICE'}</span><p>{error}</p></div>}
           {notice && <div className="ops-notice">{notice}</div>}
           <section className="ops-panel">
-            <div className="ops-panel-head"><div><p className="ops-kicker">Worker directory · {coworkers.length}</p><h2>Configured workers</h2></div><button type="button" onClick={createMode} className="ops-button-secondary">+ New worker</button></div>
+            <div className="ops-panel-head"><div><p className="ops-kicker">Worker directory · {coworkers.length}</p><h2>Configured workers</h2></div><button type="button" onClick={createMode} className="ops-button-secondary" aria-label="Create a new coworker">+ New worker</button></div>
             {loading ? <div className="ops-empty">Loading worker directory…</div> : coworkers.length === 0 ? <div className="ops-empty">No workers configured. Create one to make a worker available for new tasks.</div> : <div className="space-y-1">{coworkers.map(item => <button type="button" key={item.id} onClick={() => { setSelectedId(item.id); setEditing(false) }} aria-current={selectedId === item.id ? 'true' : undefined} className={`w-full border-l-2 px-3 py-2.5 text-left transition-colors ${selectedId === item.id ? 'border-[#b9d0c8] bg-white/[0.07]' : 'border-transparent hover:bg-white/[0.03]'}`}><span className="flex items-center justify-between gap-2"><span className="truncate text-xs text-gray-200">{item.name}</span><span className={`h-1.5 w-1.5 shrink-0 rounded-full ${item.active ? 'bg-emerald-400' : 'bg-gray-600'}`} /></span><span className="mt-1 block truncate text-[10px] text-gray-600">{item.title || item.role || 'Unassigned role'} · {item.visibility}</span></button>)}</div>}
           </section>
           <section className="ops-panel">
             <div className="ops-panel-head"><div><p className="ops-kicker">Recurring operations · {schedules.length}</p><h2>Saved worker schedules</h2></div></div>
-            {loading ? <div className="ops-empty">Loading schedules…</div> : schedules.length === 0 ? <div className="ops-empty">No recurring worker schedules yet. Add one to save recurring work for a scheduler claim.</div> : <div className="max-h-64 space-y-3 overflow-y-auto">{schedules.map(schedule => <article key={schedule.id} className="border-l border-white/[0.12] pl-3"><div className="flex items-center justify-between gap-2"><code className="text-[11px] text-gray-300">{schedule.cron_expression}</code><span className={`text-[9px] uppercase tracking-wider ${schedule.enabled ? 'text-emerald-400' : 'text-gray-600'}`}>{schedule.enabled ? 'enabled' : 'paused'}</span></div><p className="mt-1 line-clamp-2 text-[11px] text-gray-500">{schedule.query}</p><p className="mt-1 font-mono text-[9px] text-gray-700">next {new Date(schedule.next_run).toLocaleString()} · {schedule.timezone}</p></article>)}</div>}
+            {loading ? <div className="ops-empty">Loading schedules…</div> : schedules.length === 0 ? <div className="ops-empty">No recurring worker schedules yet. Add one to save recurring work for a scheduler claim.</div> : <div className="max-h-72 space-y-3 overflow-y-auto pr-1">{schedules.map(schedule => <article key={schedule.id} className="border-l border-white/[0.12] pl-3"><div className="flex items-center justify-between gap-2"><code className="text-[11px] text-gray-300">{schedule.cron_expression}</code><span className={`text-[9px] uppercase tracking-wider ${schedule.enabled ? 'text-emerald-400' : 'text-gray-600'}`}>{schedule.enabled ? 'enabled' : 'paused'}</span></div><p className="mt-1 line-clamp-2 text-[11px] text-gray-500">{schedule.query}</p><p className="mt-1 font-mono text-[9px] text-gray-700">next {new Date(schedule.next_run).toLocaleString()} · {schedule.timezone}</p></article>)}</div>}
           </section>
         </aside>
         <div className="space-y-5">
           <section className="ops-panel">
-            <div className="ops-panel-head"><div><p className="ops-kicker">{editing ? 'Edit profile' : selected ? 'Selected profile' : 'New profile'}</p><h2>{selected && !editing ? selected.name : 'Worker profile'}</h2></div>{selected && !editing && <div className="flex gap-2"><button type="button" onClick={editMode} className="ops-button-secondary">Edit</button><button type="button" onClick={() => void archiveCoworker()} className="ops-button-secondary text-red-300 hover:border-red-300/40">Archive</button></div>}</div>
+            <div className="ops-panel-head"><div><p className="ops-kicker">{editing ? 'Edit profile' : selected ? 'Selected profile' : 'New profile'}</p><h2>{selected && !editing ? selected.name : 'Worker profile'}</h2></div>{selected && !editing && <div className="flex gap-2"><button type="button" onClick={editMode} className="ops-button-secondary">Edit</button><button type="button" onClick={() => void archiveCoworker()} disabled={archiving || saving} className="ops-button-secondary text-red-300 hover:border-red-300/40">{archiving ? 'Archiving…' : 'Archive'}</button></div>}</div>
             <CoworkerEditor draft={draft} editing={editing} saving={saving} readOnly={Boolean(selected && !editing)} onChange={setDraft} onSubmit={saveCoworker} onCancel={() => setEditing(false)} />
           </section>
           <section className="ops-panel">
             <div className="ops-panel-head"><div><p className="ops-kicker">Worker conversation routing · {channels.length}</p><h2>{selected ? `${selected.name}'s channels` : 'Channels'}</h2></div></div>
-            {!selected ? <div className="ops-empty">Select a coworker to manage worker channels.</div> : <><form onSubmit={createChannel} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"><label className="sr-only" htmlFor="channel-title">Channel title</label><input id="channel-title" required maxLength={200} className="ops-input" value={channelTitle} onChange={e => setChannelTitle(e.target.value)} placeholder="Channel title" /><label className="sr-only" htmlFor="channel-session">Session ID (optional)</label><input id="channel-session" maxLength={128} className="ops-input font-mono" value={sessionId} onChange={e => setSessionId(e.target.value)} placeholder="Session ID (optional)" /><button type="submit" className="ops-button-secondary" disabled={channelLoading || !channelTitle.trim()}>{channelLoading ? 'Adding…' : 'Add channel'}</button></form>{channels.length === 0 ? <div className="ops-empty">No channels yet. Add one above.</div> : <div className="mt-4 divide-y divide-white/[0.06]">{channels.map(channel => <div key={channel.id} className="flex items-center justify-between gap-3 py-2 text-xs"><div><span className="text-gray-300">{channel.title}</span>{channel.session_id && <span className="ml-2 font-mono text-[10px] text-gray-600">{channel.session_id.slice(0, 12)}</span>}</div><button onClick={() => void deleteChannel(channel)} className="text-[10px] text-gray-600 hover:text-red-300">Delete</button></div>)}</div>}</>}
+            {!selected ? <div className="ops-empty">Select a coworker to manage worker channels.</div> : <><form onSubmit={createChannel} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"><label className="sr-only" htmlFor="channel-title">Channel title</label><input id="channel-title" required maxLength={200} className="ops-input" value={channelTitle} onChange={e => setChannelTitle(e.target.value)} placeholder="Channel title" /><label className="sr-only" htmlFor="channel-session">Session ID (optional)</label><input id="channel-session" maxLength={128} className="ops-input font-mono" value={sessionId} onChange={e => setSessionId(e.target.value)} placeholder="Session ID (optional)" /><button type="submit" className="ops-button-secondary" disabled={channelLoading || !channelTitle.trim()}>{channelLoading ? 'Adding…' : 'Add channel'}</button></form>{channels.length === 0 ? <div className="ops-empty">No channels yet. Add one above.</div> : <div className="mt-4 divide-y divide-white/[0.06]">{channels.map(channel => <div key={channel.id} className="flex items-center justify-between gap-3 py-2 text-xs"><div><span className="text-gray-300">{channel.title}</span>{channel.session_id && <span className="ml-2 font-mono text-[10px] text-gray-600">{channel.session_id.slice(0, 12)}</span>}</div><button type="button" onClick={() => void deleteChannel(channel)} disabled={deletingChannelId === channel.id} aria-label={`Delete channel ${channel.title}`} className="text-[10px] text-gray-600 hover:text-red-300 disabled:opacity-50">{deletingChannelId === channel.id ? 'Deleting…' : 'Delete'}</button></div>)}</div>}</>}
           </section>
           <section className="ops-panel">
             <div className="ops-panel-head"><div><p className="ops-kicker">Persisted configuration</p><h2>Save a recurring operation</h2><p className="mt-1 text-[11px] text-gray-500">Schedules are stored here for an external scheduler to claim; saving does not dispatch a job.</p></div></div>

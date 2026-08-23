@@ -428,20 +428,16 @@ Enabled when the loopback Playwright computer service (`apps/computer`) is runni
 
 Requires the computer service and configuration: `FATHOM_COMPUTER_SERVICE_URL` / `COMPUTER_SERVICE_URL` + `COMPUTER_TOKEN` (or `COMPUTER_IMAGE`/`COMPUTER_NETWORK`/`COMPUTER_BASE_PORT` for the Docker supervisor). See `docs/COMPUTER-USE.md`.
 
-### `computer_snapshot`
-Captures the current accessibility-tree snapshot of the active tab (or a tab). Returns structured UI elements with opaque refs for subsequent actions.
+Captures the current accessibility-tree snapshot of the active tab. Returns structured UI elements with opaque refs for subsequent actions.
 
-| Parameter | Type | Description |
-|----------|------|-------------|
-| `tab` | string? | Tab id to snapshot |
+**Parameters**: none (empty params).
 
 ### `computer_navigate`
-Navigates the active tab (or a tab) to a URL. Egress guard rejects localhost/private/link-local/multicast/metadata targets by default.
+Navigates the active tab to a URL. Egress guard rejects localhost/private/link-local/multicast/metadata targets by default.
 
 | Parameter | Type | Description |
 |----------|------|-------------|
 | `url` | string | URL to open |
-| `tab` | string? | Tab id (or open a new tab) |
 
 ### `computer_click`
 Clicks a UI element by its opaque snapshot ref.
@@ -780,46 +776,15 @@ Entity graph person↔company↔location: node dedup by (name+type), multi-hop t
 | `entity_type` | string? | Type filter |
 | `depth` | usize? | Traversal depth (1–4, default 2) |
 
-## Control plane
-
-### `question`
-Ask a question to the operator and wait for an answer (TUI input or
-`POST /sessions/:id/answer` in API). In headless mode without an operator
-the agent receives a "continue on your own" response and does not block. Intercepted by the
-runtime (like `spawn_agent`) — the tool itself only validates the question.
-
-| Parameter | Type | Description |
-|----------|------|-------------|
-| `question` | string | One specific question (up to 500 characters) |
+> **Headless mode:** When no operator is connected (headless/automated run), the question tool returns a "proceed on your own" response immediately, allowing agents to continue without human input. In operator-connected mode (TUI or HTTP API), the question blocks until answered or timed out.
 
 ---
 
-## hub — Inter-Agent Coordination Tool
-
-Unified peer-to-peer coordination using the IRC message bus. Agents can send messages to each other, wait for replies, read their inbox, discover live peers, manage async jobs, and update their activity description.
-
-| Command | Parameters | Description |
-|---------|-----------|-------------|
-| `send` | `to` (string?), `message` (string), `await_reply` (bool), `steer` (bool) | Send a message to a peer. Omit `to` for broadcast. When `steer=true`, delivers as a steering directive (mid-run instruction). When `await_reply=true`, blocks until the target replies (120s timeout). |
-| `wait` | `from` (string?), `timeout_secs` (u64) | Block until a message arrives from a specific peer (or any). Default timeout 60s; 0 = no timeout (5 min max). |
-| `inbox` | `peek` (bool) | Read pending messages without blocking. If `peek=true`, messages are not consumed. |
-| `list` | — | List all live agents with their role, status, and activity. |
-| `jobs` | — | List all async jobs owned by this agent (id, label, status, tokens). |
-| `set_activity` | `activity` (string) | Update this agent's activity description visible to other agents. |
+> **Steer mode:** The `steer` parameter on `send` delivers messages as steering directives rather than regular inbox messages. Steering messages are injected mid-run as operator instructions, allowing an operator to redirect an agent's focus during execution without restarting the session. This is distinct from `await_reply` — steer messages are fire-and-forget operator directives, not conversational turns.
 
 ---
 
-## daemon — Daemon Process Management Tool
-
-Manage long-running background processes (dev servers, watchers, REPLs). Each daemon is identified by a unique name per agent.
-
-| Command | Parameters | Description |
-|---------|-----------|-------------|
-| `start` | `name` (string), `shell` (string), `cwd` (string?), `port` (u16?), `ready_pattern` (string?), `timeout_secs` (u64) | Start a new daemon process. Optionally block until a TCP port is reachable or a regex pattern appears in stdout/stderr. Default timeout 30s. |
-| `stop` | `name` (string) | Stop a running daemon by sending SIGTERM (unix) or taskkill (windows). |
-| `restart` | `name` (string) | Kill and re-spawn a daemon with the same command. |
-| `status` | `name` (string?) | Check a specific daemon's status and metadata (pid, port, command), or list all daemons when name is omitted. |
-| `list` | — | List all daemons owned by this agent. |
+> **Log following:** The `ready_pattern` parameter accepts a regex that is matched against stdout/stderr. When set, the tool blocks until the pattern matches or the timeout expires, enabling wait-for-startup-message semantics beyond simple port binding. The daemon registry stores stdout/stderr history for later retrieval via the `status` command.
 
 ### `skill`
 Loads full skill instructions by name.

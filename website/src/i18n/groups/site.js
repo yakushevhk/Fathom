@@ -7,184 +7,54 @@ export default {
       badge: { en: 'Install', ru: 'Установка' },
       title: { en: 'One binary. Every runtime.', ru: 'Один бинарник. Любой рантайм.' },
       sub: {
-        en: 'Fathom is a source-available, self-hosted runtime for autonomous work. Install the public build with curl, compile it with Cargo, or package it in Docker — then operate it on infrastructure you control.',
-        ru: 'Fathom — доступный по исходному коду self-hosted рантайм для автономной работы. Установите публичную сборку через curl, соберите её Cargo или упакуйте в Docker — и запускайте на своей инфраструктуре.',
+        en: 'Fathom is a source-available, self-hosted runtime for autonomous work. Server deployment and access are available by request.',
+        ru: 'Fathom — доступный по исходному коду self-hosted рантайм для автономной работы. Развёртывание на сервере и доступ доступны по запросу.',
       },
     },
-    api: {
-      0: { d: { en: 'One-line installer for the public source-available project. It builds the Fathom release binary and installs it to /usr/local/bin (or $PREFIX/bin). A systemd unit is not shipped; configure one yourself when deploying on Linux.', ru: 'Установщик в одну строку для публичного проекта с доступным исходным кодом. Собирает релизный бинарник Fathom и устанавливает его в /usr/local/bin (или $PREFIX/bin). Systemd-юнит не поставляется; при деплое на Linux настройте его самостоятельно.' } },
-      1: { d: { en: 'Build the public GitHub workspace from source with Rust 1.97 or newer. A release build produces the self-contained Fathom binary.', ru: 'Соберите публичный workspace GitHub из исходников с Rust 1.97 или новее. Релизная сборка создаёт автономный бинарник Fathom.' } },
-      2: { d: { en: 'Build the shipped multi-stage Docker image with rust:1.97-bookworm and run its debian:bookworm-slim runtime as a non-root user; mount /data for output and state.', ru: 'Соберите поставляемый многоступенчатый Docker-образ с rust:1.97-bookworm и запускайте рантайм debian:bookworm-slim от non-root пользователя; подключите /data для вывода и состояния.' } },
-      3: { d: { en: 'Docker Compose is not shipped. Use the image directly, or provide your own compose file with port 8080 and persistent volumes for state and output.', ru: 'Docker Compose не поставляется. Используйте образ напрямую или создайте собственный compose-файл с портом 8080 и постоянными томами для состояния и вывода.' } },
-    },
-    systemd: {
-      badge: { en: 'Linux service', ru: 'Linux-сервис' },
-      title: { en: 'Configure systemd when needed', ru: 'Настройте systemd при необходимости' },
-      sub: {
-        en: 'The installer does not ship a systemd unit. For a Linux server, create a unit for <code class="ic">fathom serve</code>, choose the service user and writable state directory, and set <code class="ic">FATHOM_API_KEYS</code> before exposing a non-loopback host. The example below is a starting point for your deployment.',
-        ru: 'Установщик не поставляет systemd-юнит. Для Linux-сервера создайте юнит для <code class="ic">fathom serve</code>, выберите пользователя сервиса и каталог состояния с правом записи, а перед публикацией на non-loopback-адресе задайте <code class="ic">FATHOM_API_KEYS</code>. Пример ниже — отправная точка для вашего деплоя.',
+    contact: {
+      title: { en: 'Contact us for access', ru: 'Свяжитесь с нами для доступа' },
+      body: {
+        en: 'Self-hosted deployment is currently available by request. Get in touch and we\'ll set up a server for you with full access to the runtime, API, and dashboard.',
+        ru: 'Self-hosted развёртывание сейчас доступно по запросу. Свяжитесь с нами, и мы настроим для вас сервер с полным доступом к рантайму, API и дашборду.',
       },
-    },
-    deps: {
-      badge: { en: 'Optional dependencies', ru: 'Опциональные зависимости' },
-      title: { en: 'Nothing required, everything upgradeable', ru: 'Ничего обязательного, всё расширяемо' },
-      sub: {
-        en: 'The binary works standalone. These tools unlock extra capabilities — each one is detected automatically at runtime, and every absence has a graceful fallback.',
-        ru: 'Бинарник работает автономно. Эти инструменты открывают дополнительные возможности — каждый обнаруживается автоматически во время выполнения, и их отсутствие всегда имеет корректный запасной вариант.',
+      footnote: {
+        en: 'We\'ll respond within 24 hours with server credentials and documentation.',
+        ru: 'Мы ответим в течение 24 часов с учётными данными сервера и документацией.',
       },
-      colTool: { en: 'Tool', ru: 'Инструмент' },
-      colEnables: { en: 'What it enables', ru: 'Что даёт' },
-      0: { enables: { en: 'PDF and DOCX report export (HTML / JSON export always works)', ru: 'Экспорт отчётов в PDF и DOCX (экспорт HTML / JSON работает всегда)' } },
-      1: { enables: { en: 'speeds up the grep tool; built-in fallback when absent', ru: 'ускоряет инструмент grep; встроенный запасной вариант при отсутствии' } },
-      2: { enables: { en: 'REPL and code-execution tools', ru: 'инструменты REPL и выполнения кода' } },
-      3: { enables: { en: 'Up to 5 browser tools; auto-detected via PARALLEL_CDP_ENDPOINT, plus up to 6 computer tools via COMPUTER_URL', ru: 'До 5 браузерных через PARALLEL_CDP_ENDPOINT и до 6 компьютерных через COMPUTER_URL' } },
-    },
-    req: {
-      badge: { en: 'Requirements', ru: 'Требования' },
-      title: { en: 'Small footprint, no surprises', ru: 'Малый след, без сюрпризов' },
-    },
-    env: {
-      badge: { en: 'Environment', ru: 'Окружение' },
-      title: { en: 'Env vars reference', ru: 'Справочник env-переменных' },
-      sub: {
-        en: 'Environment variables override config-file values. API keys for external services are only ever read from the environment or your local config.',
-        ru: 'Переменные окружения переопределяют значения из конфигурационного файла. API-ключи внешних сервисов всегда читаются только из окружения или локальной конфигурации.',
-      },
-      colVar: { en: 'Variable', ru: 'Переменная' },
-      colPurpose: { en: 'Purpose', ru: 'Назначение' },
-      0: { purpose: { en: 'Comma-separated keys protecting /api/v1/*. Required when serve binds to a non-loopback address.', ru: 'Ключи через запятую, защищающие /api/v1/*. Требуется, когда serve привязан к не-loopback адресу.' } },
-      1: { purpose: { en: 'Per-client HTTP API requests per minute (default: 120).', ru: 'HTTP API-запросов на клиента в минуту (по умолчанию: 120).' } },
-      2: { purpose: { en: 'Config file path override (default: ~/.fathom/config.toml).', ru: 'Переопределение пути к конфигурационному файлу (по умолчанию: ~/.fathom/config.toml).' } },
-      3: { purpose: { en: 'Semantic memory SQLite database path override; default is ~/.fathom/memory.db.', ru: 'Переопределение пути к SQLite-базе семантической памяти; по умолчанию — ~/.fathom/memory.db.' } },
-      4: { purpose: { en: 'Encryption key for the credential vault (32 bytes, represented as 64 hex characters).', ru: 'Ключ шифрования хранилища учётных данных (32 байта, представленные 64 шестнадцатеричными символами).' } },
-      5: { purpose: { en: 'Computer service URL used by agent computer tools (default: http://127.0.0.1:8765).', ru: 'URL сервиса computer для инструментов агента (по умолчанию: http://127.0.0.1:8765).' } },
-      6: { purpose: { en: 'Required when a supervised computer relay is enabled; shared token for relay and supervisor requests.', ru: 'Требуется при включённом управляемом computer relay; общий токен для запросов relay и supervisor.' } },
-      7: { purpose: { en: 'Allow private or localhost browser targets for development only (default: false).', ru: 'Разрешает приватные или localhost-цели браузера только для разработки (по умолчанию: false).' } },
-      8: { purpose: { en: 'Log level filter (default: info).', ru: 'Фильтр уровня логов (по умолчанию: info).' } },
-    },
-    verify: {
-      badge: { en: 'Verify', ru: 'Проверка' },
-      title: { en: 'Check the installation', ru: 'Проверьте установку' },
-      sub: {
-        en: '<code class="ic">bench</code> exercises the tool-execution layer with zero network and zero LLM calls — a safe smoke test on any machine. Then start the server or the TUI.',
-        ru: '<code class="ic">bench</code> проверяет слой выполнения инструментов без сети и без обращений к LLM — безопасный smoke-тест на любой машине. Затем запустите сервер или TUI.',
-      },
-      bench: { en: 'Benchmarks', ru: 'Бенчмарки' },
-      cli: { en: 'CLI reference', ru: 'Справочник CLI' },
     },
     cta: {
-      title: { en: 'Installed? Run your first autonomous task.', ru: 'Установили? Запустите первую автономную задачу.' },
-      sub: { en: 'Configure the LLM endpoint and any optional integrations, then launch a self-hosted worker task.', ru: 'Настройте LLM-эндпоинт и нужные опциональные интеграции, затем запустите self-hosted задачу воркера.' },
-      next: { en: 'Next: quickstart →', ru: 'Далее: быстрый старт →' },
-      cli: { en: 'CLI reference', ru: 'Справочник CLI' },
+      title: { en: 'Ready to get started?', ru: 'Готовы начать?' },
+      sub: { en: 'Email us to request server access and we\'ll get you set up.', ru: 'Напишите нам, чтобы запросить доступ к серверу, и мы всё настроим.' },
+      next: { en: 'Contact us →', ru: 'Свяжитесь с нами →' },
+      docs: { en: 'Documentation', ru: 'Документация' },
     },
   },
-  pricing: {
+  pricingPage: {
     hero: {
-      badge: { en: 'Self-hosting', ru: 'Self-hosting' },
-      title: { en: 'Run it <em class="it">where you work.</em>', ru: 'Запускайте там, <em class="it">где работаете.</em>' },
-      sub: { en: 'Fathom is source-available and self-hosted — choose a local machine, your own server or an isolated environment, then budget for infrastructure and the services you connect.', ru: 'Fathom доступен по исходному коду и предназначен для self-hosting — выберите локальную машину, собственный сервер или изолированную среду и учтите инфраструктуру и подключаемые сервисы.' },
+      badge: { en: 'Access', ru: 'Доступ' },
+      title: { en: 'Remote AI workers <em class="it">on your team.</em>', ru: 'Удалённые ИИ-воркеры <em class="it">в вашей команде.</em>' },
+      sub: { en: 'Fathom deploys on dedicated infrastructure for your team. Contact us for access — we\'ll set up a server with full runtime, API, dashboard, and memory.', ru: 'Fathom разворачивается на выделенной инфраструктуре для вашей команды. Свяжитесь с нами для доступа — мы настроим сервер с полным рантаймом, API, дашбордом и памятью.' },
     },
-    requestAccess: { en: 'View source', ru: 'Открыть исходный код' },
-    tier: {
-      price: { en: 'Source available <span>operational costs vary</span>', ru: 'Исходный код доступен <span>операционные расходы зависят от среды</span>' },
-      0: {
-        name: { en: 'Local', ru: 'Локальный' },
-        desc: { en: 'Run Fathom on a workstation for personal tasks, experiments and local research.', ru: 'Запускайте Fathom на рабочей станции для личных задач, экспериментов и локальных исследований.' },
-        feat: {
-          0: { en: '<kbd>Runtime</kbd> CLI, TUI and local state', ru: '<kbd>Рантайм</kbd> CLI, TUI и локальное состояние' },
-          1: { en: '<kbd>Build</kbd> curl installer or cargo build --release', ru: '<kbd>Сборка</kbd> curl-установщик или cargo build --release' },
-          2: { en: '<kbd>Storage</kbd> SQLite in your Fathom state directory', ru: '<kbd>Хранилище</kbd> SQLite в вашем каталоге состояния Fathom' },
-          3: { en: '<kbd>Network</kbd> Choose the LLM and search endpoints', ru: '<kbd>Сеть</kbd> Вы выбираете LLM- и поисковые эндпоинты' },
-          4: { en: '<kbd>Cost</kbd> Your machine, model and external API usage', ru: '<kbd>Стоимость</kbd> Ваша машина, модель и внешние API' },
-        },
-      },
-      1: {
-        name: { en: 'Server', ru: 'Сервер' },
-        desc: { en: 'Operate the HTTP API and dashboard on a server you administer for a team or workflow.', ru: 'Запускайте HTTP API и дашборд на сервере под вашим управлением для команды или рабочего процесса.' },
-        feat: {
-          0: { en: '<kbd>Deploy</kbd> Self-hosted Linux, VM or container', ru: '<kbd>Деплой</kbd> Self-hosted Linux, VM или контейнер' },
-          1: { en: '<kbd>Access</kbd> HTTP API and dashboard on your network', ru: '<kbd>Доступ</kbd> HTTP API и дашборд в вашей сети' },
-          2: { en: '<kbd>Storage</kbd> Persistent SQLite or configured PostgreSQL', ru: '<kbd>Хранилище</kbd> Постоянный SQLite или настроенный PostgreSQL' },
-          3: { en: '<kbd>Operations</kbd> Backups, updates and logs are yours', ru: '<kbd>Операции</kbd> Резервные копии, обновления и логи — ваши' },
-          4: { en: '<kbd>Cost</kbd> Compute, storage, network and model usage', ru: '<kbd>Стоимость</kbd> Вычисления, хранилище, сеть и модели' },
-        },
-      },
-      2: {
-        name: { en: 'Air-gapped', ru: 'Air-gapped' },
-        desc: { en: 'Keep processing inside your perimeter when your environment supplies local model endpoints.', ru: 'Оставляйте обработку внутри периметра, если среда предоставляет локальные модельные эндпоинты.' },
-        feat: {
-          0: { en: '<kbd>Network</kbd> No external calls when configured locally', ru: '<kbd>Сеть</kbd> Без внешних обращений при локальной настройке' },
-          1: { en: '<kbd>Deploy</kbd> On-premise host or isolated network', ru: '<kbd>Деплой</kbd> On-premise-хост или изолированная сеть' },
-          2: { en: '<kbd>Storage</kbd> Databases and credentials under your control', ru: '<kbd>Хранилище</kbd> Базы и учётные данные под вашим контролем' },
-          3: { en: '<kbd>Extend</kbd> Configure the integrations your policy allows', ru: '<kbd>Расширение</kbd> Настраивайте разрешённые политикой интеграции' },
-          4: { en: '<kbd>Cost</kbd> Hardware, operations and local model capacity', ru: '<kbd>Стоимость</kbd> Оборудование, эксплуатация и локальная модельная мощность' },
-        },
-      },
+    contact: {
+      title: { en: 'Request access', ru: 'Запросить доступ' },
+      body: { en: 'We provision servers for your team with full access to the Fathom runtime, CLI, TUI, API, dashboard, and integrations. Email us to get started.', ru: 'Мы предоставляем серверы для вашей команды с полным доступом к рантайму Fathom, CLI, TUI, API, дашборду и интеграциям. Напишите нам, чтобы начать.' },
+      footnote: { en: 'We\'ll respond within 24 hours with server credentials and documentation.', ru: 'Мы ответим в течение 24 часов с учётными данными сервера и документацией.' },
     },
-    enterprise: {
-      title: { en: 'Budget the operation, not a hosted plan', ru: 'Планируйте эксплуатацию, а не hosted-тариф' },
-      sub: {
-        en: 'You provide the host, persistent storage, backups and updates. Add the cost of any LLM, search, browser, email or CRM services you configure; local endpoints and offline embeddings are options, not promises.',
-        ru: 'Вы предоставляете хост, постоянное хранилище, резервные копии и обновления. Добавьте стоимость настроенных LLM-, поисковых, браузерных, почтовых и CRM-сервисов; локальные эндпоинты и офлайн-эмбеддинги — это опции, а не обещания.',
-      },
-      chip: {
-        0: { en: 'Source available', ru: 'Исходный код доступен' },
-        1: { en: 'Self-hosted', ru: 'Self-hosted' },
-        2: { en: 'Your infrastructure', ru: 'Ваша инфраструктура' },
-        3: { en: 'Local models', ru: 'Локальные модели' },
-        4: { en: 'No hosted plan', ru: 'Без hosted-тарифа' },
-      },
-      cta: { en: 'Open the repository →', ru: 'Открыть репозиторий →' },
-    },
-    compare: {
-      badge: { en: 'Compare', ru: 'Сравнение' },
-      title: { en: 'Same runtime, different operations', ru: 'Тот же рантайм, другая эксплуатация' },
-      sub: {
-        en: 'The source and binary capabilities are not split into hosted plans. Compare the practical trade-offs between local, server and isolated deployments: storage, networking, integrations and the work required to operate them.',
-        ru: 'Возможности исходного кода и бинарника не разделены на hosted-тарифы. Сравните практические различия локального, серверного и изолированного деплоя: хранилище, сеть, интеграции и эксплуатационные задачи.',
-      },
-      tab: {
-        tools: { en: 'Tools', ru: 'Инструменты' },
-        memory: { en: 'Memory', ru: 'Память' },
-        ops: { en: 'Ops', ru: 'Ops' },
-        support: { en: 'Support', ru: 'Поддержка' },
-      },
-    },
-    faq: {
-      badge: { en: 'FAQ', ru: 'FAQ' },
-      title: { en: 'Questions, answered', ru: 'Вопросы и ответы' },
-      0: {
-        q: { en: 'How is it distributed?', ru: 'Как это распространяется?' },
-        a: {
-          en: 'Fathom is source-available under the Elastic License 2.0. Clone the public GitHub repository, use the curl installer, or build the Rust workspace with cargo build --release. The project is intended for self-hosted deployment, not as a hosted service.',
-          ru: 'Fathom доступен по исходному коду под лицензией Elastic License 2.0. Клонируйте публичный репозиторий GitHub, используйте curl-установщик или соберите Rust workspace командой cargo build --release. Проект предназначен для self-hosted-деплоя, а не как hosted-сервис.',
-        },
-      },
-      1: {
-        q: { en: 'What does it cost to run?', ru: 'Сколько стоит эксплуатация?' },
-        a: {
-          en: 'There is no hosted subscription or usage meter on this site. Plan for the infrastructure you choose, plus any LLM, search, email, CRM or other third-party API charges. Local models and offline workflows can reduce external API costs, but still require hardware and operations.',
-          ru: 'На этом сайте нет hosted-подписки или тарификации за использование. Планируйте выбранную инфраструктуру, а также расходы на LLM-, поисковые, почтовые, CRM и другие сторонние API. Локальные модели и офлайн-процессы могут снизить расходы на внешние API, но требуют оборудования и эксплуатации.',
-        },
-      },
-      2: {
-        q: { en: 'Where does data live?', ru: 'Где хранятся данные?' },
-        a: {
-          en: 'Fathom runs on infrastructure you control. Sessions, contacts, memory and reports use local state or a PostgreSQL database configured by you; external services receive data only when you enable and call those integrations.',
-          ru: 'Fathom работает на инфраструктуре под вашим контролем. Сессии, контакты, память и отчёты используют локальное состояние или настроенную вами базу PostgreSQL; внешние сервисы получают данные только при включении и вызове этих интеграций.',
-        },
-      },
-      3: {
-        q: { en: 'Can it run air-gapped?', ru: 'Может ли он работать офлайн (air-gapped)?' },
-        a: {
-          en: 'The runtime can use offline embeddings and local model endpoints. A fully air-gapped deployment still depends on the capabilities and data available inside your environment, and requires you to configure and operate that environment.',
-          ru: 'Рантайм может использовать офлайн-эмбеддинги и локальные модельные эндпоинты. Полностью air-gapped-деплой зависит от возможностей и данных внутри вашей среды и требует самостоятельной настройки и эксплуатации этой среды.',
-        },
-      },
+    includes: {
+      badge: { en: 'What\'s included', ru: 'Что входит' },
+      title: { en: 'Full worker platform', ru: 'Полная платформа воркеров' },
+      '1': { name: { en: 'Autonomous workers', ru: 'Автономные воркеры' }, d: { en: 'Research, outreach, code, computer use, and scheduled operations — one runtime, every capability.', ru: 'Исследования, аутрич, код, работа за компьютером и задачи по расписанию — один рантайм, все возможности.' } },
+      '2': { name: { en: 'Web dashboard & API', ru: 'Веб-дашборд и API' }, d: { en: 'Full control plane with REST API, SSE streaming, AG-UI compatibility, and the embedded web dashboard.', ru: 'Полная панель управления с REST API, SSE-потоками, AG-UI-совместимостью и встроенным веб-дашбордом.' } },
+      '3': { name: { en: 'Durable memory', ru: 'Долговечная память' }, d: { en: 'Hybrid vector + BM25 semantic memory, entity graph, and append-only knowledge that persists across sessions.', ru: 'Гибридная векторная + BM25 семантическая память, граф сущностей и знания, сохраняющиеся между сессиями.' } },
+      '4': { name: { en: 'Governance & approvals', ru: 'Управление и одобрения' }, d: { en: 'Approval gates, policy hooks, secret scanning, and audit trails keep every side effect reviewable.', ru: 'Шлюзы одобрения, хуки политик, сканирование секретов и журналы аудита делают каждый побочный эффект проверяемым.' } },
+      '5': { name: { en: 'Integrations', ru: 'Интеграции' }, d: { en: 'CRM push (amoCRM, Bitrix24, HubSpot), MCP, notifications (webhook, email, Telegram), and search backends.', ru: 'CRM-синхронизация (amoCRM, Bitrix24, HubSpot), MCP, уведомления (webhook, email, Telegram) и поисковые бэкенды.' } },
+      '6': { name: { en: 'Support', ru: 'Поддержка' }, d: { en: 'Server provisioning, configuration assistance, and ongoing operational support from the Fathom team.', ru: 'Предоставление сервера, помощь в настройке и постоянная поддержка от команды Fathom.' } },
     },
     cta: {
-      title: { en: 'Ready to deploy it yourself?', ru: 'Готовы развернуть самостоятельно?' },
+      title: { en: 'Ready to deploy workers for your team?', ru: 'Готовы развернуть воркеров для вашей команды?' },
+      sub: { en: 'Email us and we\'ll get you set up with a dedicated server environment.', ru: 'Напишите нам, и мы настроим для вас выделенную серверную среду.' },
+      access: { en: 'Request access →', ru: 'Запросить доступ →' },
+      docs: { en: 'Read the docs', ru: 'Читать документацию' },
     },
   },
   changelog: {

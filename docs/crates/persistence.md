@@ -2,9 +2,9 @@
 
 ## Overview
 
-The `pr-persistence` crate is responsible for persistent storage of research sessions, agents, messages, findings, tool results, subtasks, and contacts. It supports two backends:
+The `pr-persistence` crate is responsible for persistent storage of research sessions, agents, messages, findings, tool results, subtasks, contacts, credentials, coworkers, channels, jobs, replay, and schedules. It supports two backends:
 
-- **SQLite** (default, via `rusqlite`) — the primary backend for `Persistence`, `ContactDb`
+- **SQLite** (default, via `rusqlite`) — the primary backend for `Persistence`, `ContactDb`, `JobsDb`
 - **PostgreSQL** (optional, feature `postgres`, via `deadpool_postgres` + `tokio_postgres`) — `PgContactDb`
 
 ---
@@ -19,6 +19,11 @@ The `pr-persistence` crate is responsible for persistent storage of research ses
 | `pg.rs` | `PgContactDb` — contact store (PostgreSQL) |
 | `store.rs` | `ContactStore` — unified async trait + `open_contact_store` factory |
 | `history.rs` | `SessionHistory` — facade for reading session history |
+| `credentials.rs` | `CredentialRow` — AES-256-GCM encrypted credential vault on `Persistence` |
+| `coworkers.rs` | `CoworkerRow`, `ChannelRow` — coworker and channel CRUD on `Persistence` |
+| `jobs.rs` | `JobsDb` — standalone durable background-job registry |
+| `replay.rs` | `ReplayActionRow` — redacted governed-action replay timeline on `Persistence` |
+| `schedules.rs` | `ScheduleRow` — cron schedule CRUD and atomic due-claim on `Persistence` |
 
 ---
 
@@ -26,16 +31,26 @@ The `pr-persistence` crate is responsible for persistent storage of research ses
 
 ```rust
 pub mod contacts;
+pub mod credentials;
+pub mod coworkers;
 pub mod db;
 pub mod history;
+pub mod jobs;
+pub mod replay;
 pub mod store;
+pub mod schedules;
 
 #[cfg(feature = "postgres")]
 pub mod pg;
 
 pub use contacts::*;
+pub use credentials::*;
+pub use coworkers::*;
 pub use db::*;
 pub use history::*;
+pub use jobs::*;
+pub use replay::*;
+pub use schedules::*;
 pub use store::*;
 
 #[cfg(feature = "postgres")]
@@ -52,11 +67,11 @@ The `pg` module is compiled only when the `postgres` feature is enabled. All mai
 
 ```rust
 pub struct Persistence {
-    conn: Mutex<Connection>,
+    pub(crate) conn: ConnPool,
 }
 ```
 
-A wrapper around `rusqlite::Connection` with a `Mutex` for thread safety. All methods acquire the lock before executing SQL.
+`ConnPool` is an internal round-robin pool of `Mutex<Connection>` slots (default pool size configured via `POOL_SIZE`). WAL mode allows concurrent reads across pooled connections; writers serialize through their slot's mutex. The pool is grown in `open()` after the schema exists; `in_memory()` uses a single-slot pool. All methods acquire a lock via `self.conn.lock()` before executing SQL.
 
 ### 2.2 Constructors
 
@@ -85,7 +100,7 @@ Creates an in-memory database (for tests). PRAGMA settings are not applied (not 
 
 ### 2.3 Schema initialization — `init_schema()`
 
-Executes `CREATE TABLE IF NOT EXISTS` for all 6 tables + indexes + migration:
+Executes `CREATE TABLE IF NOT EXISTS` for all tables + indexes + migration:
 
 #### `sessions` table
 ```sql
@@ -923,18 +938,401 @@ Empty query → `list_sessions(usize::MAX)`. Otherwise — `db.search_sessions(q
 
 ---
 
-## 7. Common patterns
+## 7. `credentials.rs` — Encrypted Credential Vault
 
-### 7.1 Thread safety
-All structs hold a `Mutex<Connection>` and acquire the lock on every call. This is a simple but effective strategy for low-contention workloads.
+### 7.1 Overview
 
-### 7.2 Timestamps
+AES-256-GCM encrypted credential storage, exposed as methods on `Persistence`. Secrets are never stored in plaintext — every write encrypts via `ring::aead::LessSafeKey`; every read decrypts on the fly. The encryption key is loaded from the `FATHOM_CREDENTIAL_KEY` environment variable (hex, base64 standard, or base64 URL-safe, exactly 32 bytes decoded).
+
+### 7.2 `CredentialRow`
+
+```rust
+pub struct CredentialRow {
+    pub id: String,
+    pub name: String,
+    pub kind: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+```
+
+Note: the actual ciphertext is never exposed through `CredentialRow` — `name` is unique and acts as the human-friendly lookup key; `kind` is an arbitrary label (e.g. `"api_key"`, `"oauth_token"`).
+
+### 7.3 Schema
+
+```sql
+CREATE TABLE IF NOT EXISTS credentials (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    kind TEXT NOT NULL,
+    ciphertext BLOB NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_credentials_updated_at ON credentials(updated_at);
+```
+
+### 7.4 Methods (on `Persistence`)
+
+| Method | Signature | SQL / Behaviour |
+|--------|-----------|-----------------|
+| `store_credential` | `(&self, name, kind, secret) -> Result<CredentialRow>` | Encrypts `secret`, upserts by unique `name` (`ON CONFLICT(name) DO UPDATE`), returns the row |
+| `list_credentials` | `(&self) -> Result<Vec<CredentialRow>>` | `SELECT id,name,kind,created_at,updated_at ORDER BY updated_at DESC,id` — ciphertext never returned |
+| `delete_credential` | `(&self, id) -> Result<bool>` | `DELETE FROM credentials WHERE id=?1`; returns true if a row was deleted |
+| `resolve_secret` | `(&self, id) -> Result<Option<String>>` | Fetches ciphertext blob, decrypts, returns plaintext or `None` if id not found |
+
+### 7.5 Limits
+
+| Constant | Value |
+|----------|-------|
+| `MAX_NAME` | 128 bytes |
+| `MAX_KIND` | 64 bytes |
+| `MAX_SECRET` | 65 536 bytes |
+| `NONCE_LEN` | 12 bytes (AES-GCM standard) |
+
+---
+
+## 8. `coworkers.rs` — Coworkers & Channels
+
+### 8.1 Overview
+
+Named AI coworker definitions and their conversation channels, persisted as rows on the shared `Persistence` SQLite database. Channels are child rows of a coworker and optionally linked to a session.
+
+### 8.2 Types
+
+#### `CoworkerRow`
+
+```rust
+pub struct CoworkerRow {
+    pub id: String,
+    pub name: String,
+    pub title: String,
+    pub role: String,
+    pub prompt: String,
+    pub visibility: String,
+    pub active: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+```
+
+#### `ChannelRow`
+
+```rust
+pub struct ChannelRow {
+    pub id: String,
+    pub coworker_id: String,
+    pub title: String,
+    pub session_id: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+```
+
+### 8.3 Schema
+
+```sql
+-- (created in db.rs init_schema)
+CREATE TABLE IF NOT EXISTS coworkers (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    title TEXT NOT NULL,
+    role TEXT NOT NULL,
+    prompt TEXT NOT NULL,
+    visibility TEXT NOT NULL,
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS channels (
+    id TEXT PRIMARY KEY,
+    coworker_id TEXT NOT NULL REFERENCES coworkers(id),
+    title TEXT NOT NULL,
+    session_id TEXT REFERENCES sessions(id),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+```
+
+### 8.4 Methods (on `Persistence`)
+
+#### Coworker CRUD
+
+| Method | Signature | Notes |
+|--------|-----------|-------|
+| `create_coworker` | `(&self, name, title, role, prompt, visibility, active) -> Result<CoworkerRow>` | UUIDv7 id, timestamps set |
+| `get_coworker` | `(&self, id) -> Result<Option<CoworkerRow>>` | Exact id lookup |
+| `list_coworkers` | `(&self) -> Result<Vec<CoworkerRow>>` | `ORDER BY updated_at DESC, id` |
+| `update_coworker` | `(&self, id, name, title, role, prompt, visibility, active) -> Result<Option<CoworkerRow>>` | Returns `None` if id not found |
+| `delete_coworker` | `(&self, id) -> Result<bool>` | Deletes channels first (cascade), then coworker; returns true if deleted |
+
+#### Channel CRUD
+
+| Method | Signature | Notes |
+|--------|-----------|-------|
+| `create_channel` | `(&self, coworker_id, title, session_id) -> Result<ChannelRow>` | Validates coworker exists; validates session exists if provided |
+| `get_channel` | `(&self, id) -> Result<Option<ChannelRow>>` | Exact id lookup |
+| `list_channels` | `(&self, coworker_id) -> Result<Vec<ChannelRow>>` | `ORDER BY updated_at DESC, id` |
+| `update_channel` | `(&self, id, title, session_id) -> Result<Option<ChannelRow>>` | Returns `None` if id not found |
+| `delete_channel` | `(&self, id) -> Result<bool>` | Returns true if a row was deleted |
+
+### 8.5 Field limits
+
+| Field | Max length |
+|-------|-----------|
+| `id` | 128 |
+| `name` | 200 |
+| `title` | 200 |
+| `role` | 100 |
+| `prompt` | 32 000 |
+| `visibility` | 32 |
+
+---
+
+## 9. `jobs.rs` — Durable Background-Job Registry
+
+### 9.1 Overview
+
+`JobsDb` is a **standalone** SQLite database (separate from the main `Persistence` database, default path `~/.fathom/jobs.db`, overridable via `PR_JOBS_DB` env var). Jobs survive process restarts: the runner (`fathom job-run <id>`) updates its row as attempts start, fail, and complete. Failed attempts are retried with an augmented task carrying the previous error so the agent can diagnose and fix its own failure.
+
+### 9.2 `JobRow`
+
+```rust
+pub struct JobRow {
+    pub id: String,
+    pub task: String,
+    pub status: String,
+    pub attempt: i64,
+    pub max_attempts: i64,
+    pub output_dir: String,
+    pub error: Option<String>,
+    pub pid: Option<i64>,
+    pub created_at: String,
+    pub updated_at: String,
+    pub started_at: Option<String>,
+    pub completed_at: Option<String>,
+}
+```
+
+`is_terminal()` returns true when `status` is `"completed"`, `"failed"`, or `"cancelled"`.
+
+### 9.3 Schema
+
+```sql
+CREATE TABLE IF NOT EXISTS jobs (
+    id            TEXT PRIMARY KEY,
+    task          TEXT NOT NULL,
+    status        TEXT NOT NULL DEFAULT 'queued',
+    attempt       INTEGER NOT NULL DEFAULT 0,
+    max_attempts  INTEGER NOT NULL DEFAULT 1,
+    output_dir    TEXT NOT NULL,
+    error         TEXT,
+    pid           INTEGER,
+    created_at    TEXT NOT NULL,
+    updated_at    TEXT NOT NULL,
+    started_at    TEXT,
+    completed_at  TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs (status);
+```
+
+### 9.4 `JobsDb` struct
+
+```rust
+pub struct JobsDb {
+    conn: Mutex<Connection>,
+}
+```
+
+Open via `JobsDb::open(path)` or `JobsDb::in_memory()` (tests).
+
+### 9.5 Methods
+
+| Method | Signature | Notes |
+|--------|-----------|-------|
+| `create` | `(&self, task, max_attempts, output_dir) -> Result<JobRow>` | Status starts as `"queued"`, attempt = 0 |
+| `get` | `(&self, id) -> Result<Option<JobRow>>` | Supports exact match and unique prefix lookup; ambiguous prefix → error |
+| `list` | `(&self) -> Result<Vec<JobRow>>` | `ORDER BY created_at DESC` |
+| `set_output_dir` | `(&self, id, dir) -> Result<()>` | Update output dir post-creation |
+| `mark_running` | `(&self, id, attempt, pid) -> Result<()>` | Sets `status='running'`, records pid; `started_at` is set once on first attempt only (`COALESCE`) |
+| `mark_completed` | `(&self, id) -> Result<()>` | Sets `status='completed'`, clears pid and error |
+| `mark_failed` | `(&self, id, error) -> Result<()>` | Sets `status='failed'`, records error |
+| `record_attempt_error` | `(&self, id, error) -> Result<()>` | Records non-terminal error text (before retry) |
+| `mark_cancelled` | `(&self, id) -> Result<bool>` | Only cancels jobs in `queued`/`running` states; returns true if cancelled |
+| `reset_for_rerun` | `(&self, id) -> Result<bool>` | Resets terminal state (`failed`/`cancelled`/`completed`) back to `queued` with attempt=0 |
+| `reset_running_with_pid` | `(&self, id, dead_pid) -> Result<bool>` | Resets a `running` job only if the stored pid matches `dead_pid` — guards against racing a live runner |
+
+### 9.6 Free functions
+
+| Function | Purpose |
+|----------|---------|
+| `default_jobs_db_path()` | Returns `~/.fathom/jobs.db` (or `PR_JOBS_DB` override) |
+| `default_jobs_root()` | Returns `~/.fathom/jobs/` (or `PR_JOBS_DIR` override) |
+| `pid_alive(pid)` | `kill -0` check |
+| `terminate_pid(pid)` | Best-effort SIGTERM |
+| `spawn_detached_runner(exe, job_id, log_path)` | Spawns `<exe> job-run <job_id>` fully detached, in its own session on unix; returns child pid |
+
+---
+
+## 10. `replay.rs` — Governed-Action Replay Timeline
+
+### 10.1 Overview
+
+Persists a redacted timeline of governed tool-execution actions. Rows are deliberately separate from governance *audit* decisions: audit records explain *why* an action was allowed or denied; replay rows describe the bounded execution timeline. This module never creates synthetic execution records.
+
+All stored payloads (`args_redacted`, `result_redacted`) are defensively redacted on write via `redact_value()` — secret-key JSON fields (password, token, apikey, etc.) are replaced with `[REDACTED]`.
+
+### 10.2 `ReplayActionRow`
+
+```rust
+pub struct ReplayActionRow {
+    pub id: String,
+    pub agent: String,
+    pub session: String,
+    pub tool: String,
+    pub args_redacted: String,
+    pub decision: String,
+    pub started_at: String,
+    pub completed_at: Option<String>,
+    pub duration_ms: Option<i64>,
+    pub result_redacted: Option<String>,
+    pub screenshot_before: Option<String>,
+    pub screenshot_after: Option<String>,
+    pub policy_version: String,
+}
+```
+
+### 10.3 Constants
+
+| Constant | Value |
+|----------|-------|
+| `MAX_REPLAY_LIMIT` | 200 — max rows per query |
+| `MAX_REPLAY_TEXT_BYTES` | 64 KiB — max payload size |
+| `MAX_REPLAY_FIELD_BYTES` | 2 048 bytes — max identifier/reference length |
+
+### 10.4 Schema (created in `db.rs` `init_schema`)
+
+```sql
+CREATE TABLE IF NOT EXISTS replay_actions (
+    id TEXT PRIMARY KEY,
+    agent TEXT NOT NULL,
+    session TEXT NOT NULL,
+    tool TEXT NOT NULL,
+    args_redacted TEXT NOT NULL,
+    decision TEXT NOT NULL,
+    started_at TEXT NOT NULL,
+    completed_at TEXT,
+    duration_ms INTEGER,
+    result_redacted TEXT,
+    screenshot_before TEXT,
+    screenshot_after TEXT,
+    policy_version TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_replay_actions_started ON replay_actions(started_at);
+CREATE INDEX IF NOT EXISTS idx_replay_actions_session ON replay_actions(session);
+CREATE INDEX IF NOT EXISTS idx_replay_actions_agent ON replay_actions(agent);
+```
+
+### 10.5 Methods (on `Persistence`)
+
+| Method | Signature | Notes |
+|--------|-----------|-------|
+| `record_replay_action` | `(&self, action: &ReplayActionRow) -> Result<()>` | Validates all required fields, redacts JSON payloads, rejects negative `duration_ms` and sensitive screenshot references; uses `INSERT OR REPLACE` |
+| `list_replay_actions` | `(&self, session, agent, limit) -> Result<Vec<ReplayActionRow>>` | Optional `session`/`agent` filters; bounded by `MAX_REPLAY_LIMIT`; returns newest-first |
+
+### 10.6 Redaction logic
+
+`redact_value()` recursively walks JSON:
+- Object keys matching `password`, `passwd`, `secret`, `token`, `apikey`, `authorization`, `credential`, `privatekey`, `accesskey`, `clientsecret`, `cookie` (case-insensitive) → replaced with `[REDACTED]`
+- String values containing those markers → `[REDACTED]`
+- Non-JSON results with secret markers are rejected outright (callers must pre-redact)
+
+---
+
+## 11. `schedules.rs` — Cron Schedules & Due-Claim
+
+### 11.1 Overview
+
+Cron-based schedule definitions attached to coworkers. Each schedule has a five-field cron expression, an IANA timezone (or UTC/fixed offset), and an optional explicit `next_run` timestamp. The `claim_due_schedules` method atomically fetches and advances due schedules in a single transaction, making it safe for multiple scheduler processes.
+
+### 11.2 `ScheduleRow`
+
+```rust
+pub struct ScheduleRow {
+    pub id: String,
+    pub coworker_id: String,
+    pub cron_expression: String,
+    pub timezone: String,
+    pub query: String,
+    pub enabled: bool,
+    pub next_run: String,
+    pub last_run: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+```
+
+### 11.3 Schema (created lazily in `ensure_schema`)
+
+```sql
+CREATE TABLE IF NOT EXISTS schedules (
+    id TEXT PRIMARY KEY,
+    coworker_id TEXT NOT NULL,
+    cron_expression TEXT NOT NULL,
+    timezone TEXT NOT NULL,
+    query TEXT NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    next_run TEXT NOT NULL,
+    last_run TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_schedules_due ON schedules(enabled, next_run);
+CREATE INDEX IF NOT EXISTS idx_schedules_coworker ON schedules(coworker_id);
+```
+
+### 11.4 Methods (on `Persistence`)
+
+| Method | Signature | Notes |
+|--------|-----------|-------|
+| `create_schedule` | `(&self, coworker_id, cron_expression, timezone, query, enabled, next_run) -> Result<ScheduleRow>` | Validates cron, timezone, and that `coworker_id` exists; auto-computes `next_run` if not provided |
+| `list_schedules` | `(&self) -> Result<Vec<ScheduleRow>>` | `ORDER BY next_run, id` |
+| `get_schedule` | `(&self, id) -> Result<Option<ScheduleRow>>` | Exact id lookup |
+| `update_schedule` | `(&self, id, coworker_id, cron_expression, timezone, query, enabled, next_run) -> Result<Option<ScheduleRow>>` | Re-validates all fields; returns `None` if id not found |
+| `delete_schedule` | `(&self, id) -> Result<bool>` | Returns true if a row was deleted |
+| `claim_due_schedules` | `(&self, now, limit) -> Result<Vec<ScheduleRow>>` | Atomically selects enabled schedules where `next_run <= now`, advances `next_run` to the next cron occurrence, records `last_run`, all within one transaction; `limit` capped at `MAX_CLAIM = 100` |
+
+### 11.5 Validation helpers (module-level functions)
+
+| Function | Purpose |
+|----------|---------|
+| `validate_cron(expr)` | Validates a five-field cron expression (minute, hour, day-of-month, month, day-of-week); rejects `@`-prefixed shorthand; supports `*`, ranges, steps |
+| `validate_timezone(tz)` | Accepts `"UTC"`, `"Etc/UTC"`, fixed offsets (`UTC+5`, `UTC-3:30`), `Etc/GMT+N`/`Etc/GMT-N`, or verifies `/usr/share/zoneinfo` path exists; rejects path traversal |
+
+### 11.6 Field limits
+
+| Field | Max length |
+|-------|-----------|
+| `id` | 128 |
+| `cron_expression` | 256 |
+| `timezone` | 128 |
+| `query` | 20 000 |
+
+---
+
+## 12. Common patterns
+
+### 12.1 Thread safety
+`Persistence` uses a `ConnPool` (round-robin of `Mutex<Connection>` slots) — all methods acquire a slot lock before executing SQL. `ContactDb` and `JobsDb` each hold a single `Mutex<Connection>`.
+
+### 12.2 Timestamps
 All `created_at`/`updated_at` values are stored as ISO 8601/RFC 3339 strings (`chrono::Utc::now().to_rfc3339()`).
 
-### 7.3 Error handling
+### 12.3 Error handling
 - `db.rs` and `contacts.rs` return `anyhow::Result`
 - `ContactStore` trait errors — `anyhow::Result`
 - `SessionHistory` degrades gracefully: errors are logged, empty values are returned
 
-### 7.4 Contact deduplication
+### 12.4 Contact deduplication
 Normalization via `normalize_email` (trim + lowercase) and `normalize_phone` (digits only). The index on `phone_norm` provides fast lookup.

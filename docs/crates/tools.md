@@ -1,8 +1,3 @@
-# Documentation: `pr-tools` module — all Runtime tools
-
-> Full documentation on the internal structure of each tool in `crates/tools/src/`.
-> Based on direct source code reading (~33 files, ~7000 lines).
-
 ---
 
 ## Table of Contents
@@ -38,6 +33,33 @@
 29. [File history: file_history.rs](#29-file_historyrs)
 30. [File locking: file_lock.rs](#30-file_lockrs)
 31. [Autosave: autosave.rs](#31-autosavers)
+32. [Computer use (Playwright service): computer.rs](#32-computerrs)
+33. [Web crawling and feed parsing: crawl.rs](#33-crawlrs)
+34. [Structured HTML/JSON parsing: parse.rs](#34-parsers)
+35. [Code intelligence: code.rs](#35-coders)
+36. [Inter-agent coordination: hub.rs](#36-hubrs)
+37. [Daemon process management: daemon.rs](#37-daemonrs)
+38. [Verification receipt ledger: receipt.rs](#38-receiptrers)
+39. [Long-term semantic memory: memory_kb.rs](#39-memory_kbrs)
+40. [Operator question tool: question.rs](#40-questionrs)
+41. [Output truncation and budgets: truncate.rs](#41-truncaters)
+> Based on direct source code reading (~33 files, ~7000 lines).
+
+---
+
+## Table of Contents
+
+32. [Computer use (Playwright service): computer.rs](#32-computerrs)
+33. [Web crawling and feed parsing: crawl.rs](#33-crawlrs)
+34. [Structured HTML/JSON parsing: parse.rs](#34-parsers)
+35. [Code intelligence: code.rs](#35-coders)
+36. [Inter-agent coordination: hub.rs](#36-hubrs)
+37. [Daemon process management: daemon.rs](#37-daemonrs)
+38. [Verification receipt ledger: receipt.rs](#38-receiptrers)
+39. [Long-term semantic memory: memory_kb.rs](#39-memory_kbrs)
+40. [Operator question tool: question.rs](#40-questionrs)
+41. [Output truncation and budgets: truncate.rs](#41-truncaters)
+42. [Injections protection: injection.rs](#12-injectionrs)
 
 ---
 
@@ -1426,19 +1448,413 @@ Async file lock manager:
 
 - `with_lock(path, closure)` — acquires a lock on the file, executes the closure, releases the lock.
 - Uses `tokio::sync::Mutex` per-file.
-- Guarantees that two tools do not write to the same file simultaneously.
-
----
-
 ## 31. autosave.rs
 
 **File:** `crates/tools/src/autosave.rs`
 
-### 31.1 Session state autosave
+Deterministic contact auto-persistence (fleet report C1). Prompt-only steering ("ALWAYS call save_contacts after extraction") leaks yield whenever the model forgets — especially after compaction prunes the tool result. The runtime therefore calls these helpers right after a successful `extract_contacts` / `find_leads`, so harvested contacts reach the database no matter what the model does next.
 
-Automatically saves the agent session state (scratchpad, memory, file history) to the `~/.fathom/autosave/` directory. Allows session recovery after a crash.
+### 31.1 `AutoSaveSummary`
+
+```rust
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct AutoSaveSummary {
+    pub saved: usize,   // new contacts inserted
+    pub merged: usize,  // existing contacts updated via dedup
+    pub failed: usize,  // contacts that failed to persist
+}
+```
+
+### 31.2 `autosave_extracted`
+
+Persist contacts produced by `extract_contacts` (metadata `contacts`). Each extracted email, phone, and person becomes its own `Contact` row.
+
+**Input:** `contacts_meta` JSON with structure:
+```json
+{
+  "emails": [{"email": "...", "source": "...", "context": "..."}],
+  "phones": [{"phone": "...", "normalized": "...", "source": "..."}],
+  "persons": [{"name": "...", "title": "...", "company": "...", "email": "...", "phone": "...", "social": [...]}]
+}
+```
+
+**Processing:**
+- **Emails**: Creates `Contact` with `email` field; source tag `extract_contacts:{source}:{origin}`; context snippet (first 160 chars) in notes
+- **Phones**: Prefers normalized E.164 form when present; falls back to raw phone; source tag `extract_contacts:phone:{origin}`
+- **Persons**: Creates full contact with name, title, company, email, phone, social profiles; source tag `extract_contacts:person:{origin}`
+
+**Dedup:** Each contact passes through `save_with_dedup()` → `ContactStore::save_deduped()`:
+1. Normalize email (lowercase, trim) and phone (E.164)
+2. Look up existing contact by email first, then by phone
+3. If found: merge (new fields fill blanks, social profiles deduplicated by platform+url+username, tags unioned, notes appended)
+4. If not found: insert new row
+5. Returns `(contact_id, was_merged: bool)`
+
+### 31.3 `autosave_leads`
+
+Persist leads produced by `find_leads` (metadata `leads`).
+
+**Input:** `leads_meta` JSON array:
+```json
+[
+  {
+    "person": {"name": "...", "role": "...", "email": "...", "phone": "...", "profile_url": "..."},
+    "company": {"name": "...", "website": "..."},
+    "confidence": 0.85,
+    "source": "..."
+  }
+]
+```
+
+**Processing:**
+- Extracts person name, title (from `role`), email, phone, company name
+- Adds LinkedIn social profile from `profile_url`
+- Appends confidence score as note (`lead confidence: {conf:.2}`)
+- Source tag `find_leads:{source}`
+- Skips entries where both person name and company name are empty
+
+**Dedup:** Same `save_with_dedup()` flow as `autosave_extracted`.
+
+### 31.4 `persist_all`
+
+Shared persistence loop for both functions:
+
+1. Load verification ledger (`open_default_ledger()`) — if available, auto-tags contacts with verification status:
+   - `EMAIL_SMTP` verdict `Pass` → `Verification::Verified`
+   - `EMAIL_DOMAIN_MX` or `EMAIL_SYNTAX` verdict `Pass` → `Verification::Partial`
+2. Skip contacts without email, phone, or name
+3. Call `save_with_dedup(db, &contact)` for each
+4. Track saved/merged/failed counts in `AutoSaveSummary`
+
+### 31.5 When autosave triggers
+
+The runtime calls autosave helpers immediately after:
+- `extract_contacts` tool completes successfully
+- `find_leads` tool completes successfully
+
+This happens in the tool executor's post-tool hook, before the model sees the result. The model does not need to call `save_contacts` explicitly — autosave ensures contacts reach the database regardless of model behavior.
+
+### 31.6 Integration with contact database
+
+Both functions write to `ContactStore` (trait in `crates/persistence`):
+- **SQLite backend** (`ContactDb`): `~/.fathom/contacts.db`
+- **PostgreSQL backend** (`PgContactDb`): production deployments
+
+Tables written to:
+- `contacts` — main contact row (email, phone, phone_norm, name, title, company, source, crm_id, timestamps)
+- `social_profiles` — social links (contact_id, platform, url, username)
+- `tags` — contact tags (contact_id, tag)
+- `notes` — contact notes (contact_id, note, created_at)
+
+Dedup is database-level: normalized email/phone lookup in `contacts` table, then merge logic updates existing row and re-parents social_profiles/tags/notes.
+
+## 32. computer.rs
+
+**File:** `crates/tools/src/computer.rs`
+
+Provides 6 tools for controlling a governed remote browser/computer service via HTTP. These are separate from the CDP-based `browser_*` tools — the computer tools target a policy-controlled remote browser through `COMPUTER_URL` / `COMPUTER_TOKEN` environment variables. The service must be running (Docker supervisor or standalone).
+
+### 32.1 `computer_snapshot` (ComputerSnapshotTool)
+
+Captures the current accessibility-tree snapshot of the active tab. Returns structured UI elements with opaque refs for subsequent actions. Takes no parameters (`EmptyParams = {}`).
+
+### 32.2 `computer_navigate` (ComputerNavigateTool)
+
+Navigates the active tab to a URL. Egress guard rejects localhost, private, link-local, multicast, and metadata targets by default.
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| `url` | string? | URL to open |
+
+### 32.3 `computer_click` (ComputerClickTool)
+
+Clicks a UI element by its opaque snapshot ref.
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| `reference` | string | Element ref from a snapshot |
+
+### 32.4 `computer_type` (ComputerTypeTool)
+
+Types text into a focused element (or one addressed by ref).
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| `reference` | string | Element ref from a snapshot |
+| `text` | string | Text to type |
+
+### 32.5 `computer_key` (ComputerKeyTool)
+
+Sends a keyboard key or chord (Enter, Tab, Ctrl+C…).
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| `key` | string | Key name or chord |
+
+### 32.6 `computer_screenshot` (ComputerScreenshotTool)
+
+Takes a screenshot of the current page. Takes no parameters (`EmptyParams = {}`). Returns base64 image data.
 
 ---
+
+## 33. crawl.rs
+
+**File:** `crates/tools/src/crawl.rs`
+
+Multi-page BFS crawling with politeness and RSS / Atom / sitemap feed parsing.
+
+### 33.1 `web_crawl` (WebCrawlTool)
+
+BFS crawl of a site from a seed URL with deduplication and a politeness delay between requests.
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| `url` | string | Starting http(s) URL |
+| `max_depth` | usize | Crawl depth (default 1, hard cap 3) |
+| `max_pages` | usize | Max pages (default 10, hard cap 50) |
+| `same_domain` | bool | Stay within the seed's domain (default true) |
+| `delay_ms` | u64 | Politeness delay between fetches in ms (default 500, cap 5000) |
+| `selector` | string? | CSS selector scoping text extraction per page (default: whole body) |
+| `chars_per_page` | usize | Max characters of text kept per page (default 1500, cap 8000) |
+
+URL normalization for deduplication: drops fragments, lowercases the host, trims a single trailing slash on non-root paths. Only followable links are enqueued (http/https, non-anchor, non-javascript).
+
+### 33.2 `web_feed` (WebFeedTool)
+
+Parses RSS/Atom/sitemap from a URL or local file. Uses `quick-xml` for tolerant XML parsing.
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| `source` | string | Feed URL or local file path |
+| `limit` | usize | Max items (default 50, 1–200) |
+| `include_summaries` | bool | Include descriptions (default true, truncated to 500 chars) |
+
+**Returns**: `kind` (`rss` | `atom` | `sitemap`), `count`, and items (title, link, date?, summary?).
+
+---
+
+## 34. parse.rs
+
+**File:** `crates/tools/src/parse.rs`
+
+Structured parsing tools: CSS-selector extraction from HTML and path queries over JSON. Complements `web_fetch` (plain text) with machine-readable output for tables, lists, links, and API responses.
+
+### 34.1 `parse_html` (ParseHtmlTool)
+
+Extracts structured data from an HTML page or file using CSS selectors.
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| `source` | string | URL or file path of the HTML document |
+| `selector` | string? | CSS selector scoping extraction (default `body`) |
+| `mode` | string? | `texts` (default) \| `html` \| `attr` \| `links` \| `tables` |
+| `attribute` | string? | Attribute name for `attr` mode (e.g. `href`, `src`) |
+| `limit` | usize | Max elements (default 100, hard cap 500) |
+
+URLs go through the shared cached fetcher (SSRF guard + redirects + session cache); local files are read directly. Output is truncated to 50 000 characters.
+
+### 34.2 `extract_json` (ExtractJsonTool)
+
+Queries a JSON document (API response, file, or inline string) via a dot-path expression.
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| `source` | string | URL, file path, or inline JSON starting with `{` or `[` |
+| `path` | string? | Dot-path like `data.items.0.name`, iterate all `items[*].email` |
+| `limit` | usize | Max results (default 100, hard cap 500) |
+
+Path segments support object keys, numeric indices, and the `[*]` wildcard for iteration. Returns selected values as a JSON array.
+
+---
+
+## 35. code.rs
+
+**File:** `crates/tools/src/code.rs`
+
+Code intelligence tools: regex-based symbol extraction and a compact repository map. No LSP or tree-sitter required — line-level heuristics over common languages.
+
+### 35.1 `code_symbols` (CodeSymbolsTool)
+
+Finds code definitions (functions, classes, structs, traits, methods) in a file or directory.
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| `path` | string | File or directory to scan |
+| `query` | string? | Case-insensitive substring filter on symbol names |
+| `limit` | usize | Max symbols to return (default 200, cap 1000) |
+
+Supports Rust, Python, JS/TS, Go, Ruby, Java/Kotlin, C/C++/C#, and PHP. Files larger than 2 MB are skipped. Regex patterns are compiled once and reused across files for performance.
+
+### 35.2 `repo_map` (RepoMapTool)
+
+Builds a compact map of a codebase: files by language plus top symbols per file.
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| `path` | string? | Directory to map (default: working directory) |
+| `max_files` | usize | Max files in the map (default 300, cap 2000) |
+| `symbols_per_file` | usize | Top symbols per file (default 3, cap 10; 0 = file list only) |
+
+Skips `.git`, `target`, `node_modules`, `dist`, `build`, `__pycache__`, `.venv`, `.next`, `vendor`, etc. Files larger than 2 MB are counted but not parsed.
+
+---
+
+## 36. hub.rs
+
+**File:** `crates/tools/src/hub.rs`
+
+Unified peer-to-peer coordination tool using the IRC message bus. Agents can send messages to each other, wait for replies, read their inbox, discover live peers, manage async jobs, and update their activity description.
+
+The tool uses a tagged-enum schema (`HubCommand` with `#[serde(tag = "command")]`), so each operation is a distinct sub-command.
+
+| Command | Parameters | Description |
+|---------|-----------|-------------|
+| `send` | `to` (string?), `message` (string), `await_reply` (bool, default false), `steer` (bool, default false) | Send a message to a peer agent. Omit `to` for broadcast. When `steer=true`, delivers as a steering directive (mid-run instruction). When `await_reply=true`, blocks until the target replies (120s timeout). |
+| `wait` | `from` (string?), `timeout_secs` (u64, default 60; 0 = no timeout, 5 min max) | Block until a message arrives from a specific peer (or any). |
+| `inbox` | `peek` (bool, default false) | Read pending messages without blocking. If `peek=true`, messages are not consumed. |
+| `list` | — | List all live agents with their role, status, and activity description. |
+| `jobs` | — | List all async jobs owned by this agent (id, label, status, tokens). |
+| `set_activity` | `activity` (string) | Update this agent's activity description visible to other agents. |
+
+---
+
+## 37. daemon.rs
+
+**File:** `crates/tools/src/daemon.rs`
+
+Manage long-running background processes (dev servers, watchers, REPLs). Each daemon is identified by a unique name per agent. Uses a tagged-enum schema (`DaemonOp` with `#[serde(tag = "op")]`).
+
+| Command | Parameters | Description |
+|---------|-----------|-------------|
+| `start` | `name` (string), `shell` (string), `cwd` (string?), `port` (u16?), `ready_pattern` (string?), `timeout_secs` (u64, default 30) | Start a new daemon. Optionally block until a TCP port is reachable or a regex pattern appears in stdout/stderr. |
+| `stop` | `name` (string) | Stop a running daemon (SIGTERM on unix, taskkill on windows). |
+| `restart` | `name` (string) | Kill and re-spawn a daemon with the same command. |
+| `status` | `name` (string?) | Check a specific daemon's status (pid, port, command), or list all when omitted. |
+| `list` | — | List all daemons owned by this agent. |
+
+---
+
+## 38. receipt.rs
+
+**File:** `crates/tools/src/receipt.rs`
+
+A durable append-only JSONL verification-receipt ledger for contact verification. This is a **library module** — it does not register any `Tool` implementations. Instead it provides `ReceiptLedger`, which is consumed by OSINT tools (`verify_email`, `verify_phone`, etc.) and the `ToolContext`.
+
+Key concepts:
+
+- **`ReceiptKind`**: a typed category (e.g. `email_smtp`, `email_domain_mx`, `social_profile`). Newtype wrapper prevents accidental kind mixing.
+- **`Verdict`**: the check result — `Pass`, `Fail`, `Inconclusive`, or `PossiblyLaundered`.
+- **`Receipt`**: one durable record keyed by `(kind, canonical_value)`.
+- **`ReceiptLedger`**: thread-safe, append-only on disk, with an in-memory latest-wins projection. Methods: `record()`, `verdict()`, `is_passing()`, `get()`.
+- Default path: `~/.fathom/ledger/verify_receipts.jsonl`.
+
+The ledger ensures that a PASS on one check kind cannot mask a FAIL on a different kind for the same entity.
+
+---
+
+## 39. memory_kb.rs
+
+**File:** `crates/tools/src/memory_kb.rs`
+
+Long-term semantic memory tools operating on the `pr_memory::Memory` store. These are distinct from the small file-backed `memory` tool (MEMORY.md / USER.md) — this is the unbounded knowledge base with hybrid search, supersession chains, and an absorb pipeline.
+
+### 39.1 `memory_absorb` (MemoryAbsorbTool)
+
+Store facts with deduplication and conflict handling via the full absorb pipeline (secrets detection → consolidation → classification as duplicate/supersede/contradict/related/new).
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| `facts` | array | `[{content, tags?, confidence?, metadata?}]` — 50–500 chars each recommended |
+| `source` | string? | Origin (default: current session) |
+| `scope` | string? | `agent` \| `user` \| `run` (default `agent`) |
+| `context` | string? | Hint for the classifier (not saved) |
+| `dry_run` | bool | Preview the plan without writing |
+
+### 39.2 `memory_search` (MemorySearchTool)
+
+Hybrid search (vectors + BM25 + freshness decay), optionally LLM-reranked.
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| `query` | string | Search query (if no `id`) |
+| `id` | string? | Read a single record by id/prefix |
+| `follow` | string? | `active` \| `latest` \| `full_history` (used with `id`) |
+| `top_k` | usize? | Result set size |
+
+### 39.3 `memory_digest` (MemoryDigestTool)
+
+Deterministic digest on a topic: relevant facts + open TODOs + recent activity.
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| `topic` | string | Topic/task |
+
+### 39.4 `memory_boost` (MemoryBoostTool)
+
+Increase or decrease a record's importance score (affects ranking).
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| `id` | string | Record id/prefix |
+| `amount` | f64 | Delta (default +0.5; negative to decrease) |
+
+### 39.5 `memory_link` (MemoryLinkTool)
+
+Create a typed edge between two records.
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| `from` / `to` | string | Record ids/prefixes |
+| `edge_type` | string | `related_to` \| `supersedes` \| `contradicts` \| `implements` \| `extends` \| `references` |
+| `reason` | string? | Explanation |
+
+### 39.6 `memory_graph` (MemoryGraphTool)
+
+Entity graph (person ↔ company ↔ location): node dedup by (name+type), multi-hop traversal.
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| `action` | string | `add` \| `query` \| `list` |
+| `entities` | array? | `[{name, type}]` for `add` |
+| `relations` | array? | `[{from, to, relation, confidence?}]` for `add` |
+| `name` | string? | Starting entity for `query` |
+| `entity_type` | string? | Type filter for `query` |
+| `depth` | usize? | Traversal depth (1–4, default 2) |
+
+---
+
+## 40. question.rs
+
+**File:** `crates/tools/src/question.rs`
+
+The `question` tool — ask the human operator a mid-run question. Like `spawn_agent`, the tool only validates and packages the request; the agent runtime performs the actual operator round-trip and returns the answer as the tool result. Headless runs without an operator get a "continue on your own" notice.
+
+### 40.1 `question` (QuestionTool)
+
+| Parameter | Type | Description |
+|----------|------|-------------|
+| `question` | string | One specific question (up to 500 characters) |
+
+**Rules** (enforced in the tool description): use only when genuinely blocked; one concise question per call; do not use for things findable with other tools; limit to 2–3 calls per session.
+
+---
+
+## 41. truncate.rs
+
+**File:** `crates/tools/src/truncate.rs`
+
+Output truncation and per-turn budget management. This is a **library module** — it does not register any `Tool` implementations. Instead it provides the truncation logic used by the agent runtime to keep LLM context windows from overflowing.
+
+### Key types and functions
+
+| Item | Description |
+|------|-------------|
+| `Truncated` enum | `Unchanged(ToolOutput)` or `Truncated { replacement, persisted_path, original_bytes }` |
+| `truncate_tool_output(tool_name, output, max_bytes, max_lines, working_dir)` | Per-tool truncation. Pinned tools (currently `file_read`) are never truncated. Outputs over 5 MB are truncated in memory only (no disk spill). |
+| `TurnBudget` | Aggregate budget tracker for a single agent turn. Tracks bytes consumed; when exhausted, subsequent outputs are aggressively truncated. |
+| `apply_turn_budget(tool_name, output, max_bytes, max_lines, turn_budget, working_dir)` | Combines per-tool truncation with the per-turn aggregate limit. |
+
+When truncation occurs, the full output is persisted to `.pr-context/<tool>_<timestamp>.txt` (up to 5 MB), and a preview (first 2 KB) is returned to the LLM with a pointer to the full file.
 
 ## Cross-dependencies between tools
 
