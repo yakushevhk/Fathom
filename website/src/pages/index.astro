@@ -7,13 +7,13 @@ import OceanField from '../components/OceanField.astro';
 import HeroField from '../components/HeroField.astro';
 
 const agents = [
-  { name: 'Coordinator', mode: 'coordinator', hue: 206, href: '/profiles' },
+  { name: 'Coordinator', mode: 'coordinator', hue: 206, href: '/agents/coordinator' },
   { name: 'Researcher', mode: 'researcher', hue: 180, href: '/agents/researcher' },
-  { name: 'Coder', mode: 'coder', hue: 25, href: '/tools' },
-  { name: 'Operator', mode: 'operator', hue: 260, href: '/ops' },
-  { name: 'Browser', mode: 'browser', hue: 55, href: '/tools' },
-  { name: 'Memory keeper', mode: 'memoring', hue: 25, href: '/memory' },
-  { name: 'Reviewer', mode: 'reviewer', hue: 205, href: '/security' },
+  { name: 'Coder', mode: 'coder', hue: 25, href: '/agents/coder' },
+  { name: 'Operator', mode: 'operator', hue: 260, href: '/agents/operator' },
+  { name: 'Browser', mode: 'browser', hue: 55, href: '/agents/browser' },
+  { name: 'Memory keeper', mode: 'memoring', hue: 25, href: '/agents/memoring' },
+  { name: 'Reviewer', mode: 'reviewer', hue: 205, href: '/agents/reviewer' },
 ];
 
 const backends = ['Linkup', 'Exa', 'Tavily', 'Serper', 'Brave', 'Parallel.ai', 'DuckDuckGo'];

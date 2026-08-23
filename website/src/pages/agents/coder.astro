@@ -1,0 +1,65 @@
+---
+import AgentPage from '../../components/AgentPage.astro';
+
+const crew = [
+  { name: 'Coordinator', href: '/agents/coordinator' },
+  { name: 'Researcher', href: '/agents/researcher' },
+  { name: 'Coder', href: '/agents/coder', current: true },
+  { name: 'Operator', href: '/agents/operator' },
+  { name: 'Browser', href: '/agents/browser' },
+  { name: 'Memory keeper', href: '/agents/memoring' },
+  { name: 'Reviewer', href: '/agents/reviewer' },
+];
+
+const capabilities = [
+  { name: 'AST symbol mapping', d: 'Extracts classes, structs, traits, and functions across hundreds of files in sub-50ms using Tree-sitter.' },
+  { name: 'Isolated execution', d: 'Executes Python, Node.js, and shell commands inside restricted Docker sandboxes with CPU/memory limits.' },
+  { name: 'File edit with undo', d: 'Performs precision code replacements with atomic rollback history and path conflict prevention.' },
+  { name: 'Git version control', d: 'Inspects diffs, commits clean semantic patches, and stages pull requests subject to operator approval.' },
+  { name: 'Syntax verification', d: 'Runs compiler checks (cargo check, tsc, pytest) before declaring tasks completed.' },
+  { name: 'Protected surfaces', d: 'Prevents self-modification of system configuration, security rules, and database stores.' },
+];
+
+const flow = [
+  { t: 'Repo mapping', d: 'Constructs an AST symbol index of the repository to locate relevant functions and definitions.' },
+  { t: 'Reproduce & diagnose', d: 'Runs tests in an isolated sandbox to reproduce the reported issue or verify existing behavior.' },
+  { t: 'Edit & refactor', d: 'Applies targeted code edits with transactional backup tracking.' },
+  { t: 'Verify & test', d: 'Executes test suites and linter passes to verify zero regressions.' },
+  { t: 'Commit & stage PR', d: 'Stages git commits and submits pull request drafts for human review.' },
+];
+
+const hood = [
+  ['AST indexing', 'Tree-sitter native symbol extraction across 240+ files in 34ms'],
+  ['sandboxing', 'OS subprocess isolation with CPU quota and memory bounds'],
+  ['diff safety', 'Unified diff validation with rollback journals on disk'],
+  ['shell guard', 'Destructive command patterns (rm -rf, mkfs) blocked at executor'],
+];
+
+const tools = [
+  'code_symbols', 'repo_map', 'file_read', 'file_write', 'file_edit',
+  'grep', 'glob', 'shell', 'python_exec', 'git_status', 'git_diff', 'git_commit',
+];
+---
+
+<AgentPage
+  pageTitle="Coder Specialist — Fathom AI Workers"
+  pageDesc="Autonomous software engineer: AST symbol extraction, sandboxed execution, precision code edits, and verified Git commits."
+  k="agents.coder"
+  index="03"
+  title="Coder"
+  sub="An autonomous systems developer. It navigates massive codebases using AST symbol maps, reproduces bugs in sandboxes, and writes verified code with atomic undo support."
+  mode="coder"
+  hue={25}
+  crew={crew}
+  caps={capabilities}
+  capsTitle="Precision code analysis & editing"
+  flow={flow}
+  flowTitle="From issue diagnosis to verified commit"
+  hood={hood}
+  tools={tools}
+  toolsTitle="Engineering toolset"
+  ctaTitle="Autonomous software engineering with ironclad safety."
+  prev={{ href: '/agents/researcher', label: '← Researcher' }}
+  middle={{ href: '/tools', label: 'Tools →' }}
+  next={{ href: '/agents/operator', label: 'Operator →' }}
+/>

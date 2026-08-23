@@ -1,0 +1,66 @@
+---
+import AgentPage from '../../components/AgentPage.astro';
+
+const crew = [
+  { name: 'Coordinator', href: '/agents/coordinator', current: true },
+  { name: 'Researcher', href: '/agents/researcher' },
+  { name: 'Coder', href: '/agents/coder' },
+  { name: 'Operator', href: '/agents/operator' },
+  { name: 'Browser', href: '/agents/browser' },
+  { name: 'Memory keeper', href: '/agents/memoring' },
+  { name: 'Reviewer', href: '/agents/reviewer' },
+];
+
+const capabilities = [
+  { name: 'Goal decomposition', d: 'Deconstructs high-level human objectives into independent, non-overlapping sub-tasks for parallel execution.' },
+  { name: 'Tokio JoinSet fan-out', d: 'Spawns and manages worker green threads across CPU cores with bounded fair-share token budgets.' },
+  { name: 'Goal Mode reflection', d: 'An LLM judge compares intermediate findings against the original objective and schedules gap-filling iterations.' },
+  { name: 'Durable handoffs', d: 'Marshals structured results from child workers and writes synthesized reports to persistent storage.' },
+  { name: 'Stall & loop guard', d: 'Monitors descendant worker progress, detects doom loops, and propagates cancellation tokens gracefully.' },
+  { name: 'Multi-persona routing', d: 'Assigns tasks to specialized personas (SDR, Scout, Maintainer, Auditor) based on required toolsets.' },
+];
+
+const flow = [
+  { t: 'Intake & parse', d: 'Receives the high-level objective and queries the long-term memory graph for existing company context.' },
+  { t: 'DAG generation', d: 'Constructs an execution dependency graph (DAG) and partitions sub-tasks with allocated token budgets.' },
+  { t: 'Batch spawn', d: 'Dispatches worker pods concurrently via Tokio JoinSet green threads.' },
+  { t: 'Progress aggregation', d: 'Streams partial results, handles human approval requests, and coordinates shared scratchpad notes.' },
+  { t: 'Synthesis & delivery', d: 'Compiles final deliverables, updates memory graph nodes, and dispatches webhook notifications.' },
+];
+
+const hood = [
+  ['concurrency', 'Tokio JoinSet async I/O multiplexer across multi-core CPU pools'],
+  ['budgeting', 'Session token limit split dynamically with floor caps per worker'],
+  ['reflection', 'LLM judge evaluate pass: up to replan_rounds gap-filling iterations'],
+  ['cancellation', 'tokio::sync::watch cancellation tokens propagate through the worker tree'],
+  ['memory digest', 'Deterministic system prompt digest injected before task execution'],
+];
+
+const tools = [
+  'spawn_agent', 'hub', 'memory_search', 'memory_absorb', 'memory_graph',
+  'scratchpad', 'question', 'undo', 'git_status', 'save_contacts',
+];
+---
+
+<AgentPage
+  pageTitle="Coordinator Specialist — Fathom AI Workers"
+  pageDesc="The central orchestrator: decomposes goals, spawns parallel Tokio worker swarms, reflects on quality, and synthesizes deliverables."
+  k="agents.coordinator"
+  index="01"
+  title="Coordinator"
+  sub="The maestro of the digital workforce. It breaks complex objectives into parallel worker streams, enforces token budgets, and ensures finished deliverables meet quality standards."
+  mode="coordinator"
+  hue={206}
+  crew={crew}
+  caps={capabilities}
+  capsTitle="Swarm orchestration & synthesis"
+  flow={flow}
+  flowTitle="From goal to coordinated execution"
+  hood={hood}
+  tools={tools}
+  toolsTitle="Orchestration tools"
+  ctaTitle="Coordinate complex fleets with zero chaos."
+  prev={{ href: '/agents/reviewer', label: '← Reviewer' }}
+  middle={{ href: '/architecture', label: 'Architecture →' }}
+  next={{ href: '/agents/researcher', label: 'Researcher →' }}
+/>

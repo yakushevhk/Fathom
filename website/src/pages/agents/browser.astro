@@ -1,0 +1,65 @@
+---
+import AgentPage from '../../components/AgentPage.astro';
+
+const crew = [
+  { name: 'Coordinator', href: '/agents/coordinator' },
+  { name: 'Researcher', href: '/agents/researcher' },
+  { name: 'Coder', href: '/agents/coder' },
+  { name: 'Operator', href: '/agents/operator' },
+  { name: 'Browser', href: '/agents/browser', current: true },
+  { name: 'Memory keeper', href: '/agents/memoring' },
+  { name: 'Reviewer', href: '/agents/reviewer' },
+];
+
+const capabilities = [
+  { name: 'ARIA accessibility tree', d: 'Navigates complex web applications using semantic accessibility element IDs (@e1..@eN) rather than brittle pixels.' },
+  { name: 'Live screen streaming', d: 'Streams browser viewports over WebSockets at 1080p for real-time human observation and debugging.' },
+  { name: '2FA & CAPTCHA takeover', d: 'Pauses safely when encountering SMS/2FA challenges and grants an exclusive human control mutex lease.' },
+  { name: 'CDP browser driving', d: 'Direct Chrome DevTools Protocol automation for navigation, clicks, keystrokes, and structured DOM extraction.' },
+  { name: 'Session state persistence', d: 'Maintains authenticated cookies and local storage across workflows inside isolated Playwright profiles.' },
+  { name: 'Token-efficient parsing', d: 'Reduces visual browser loop token usage by 90% by processing text trees rather than raw screenshots.' },
+];
+
+const flow = [
+  { t: 'Target navigation', d: 'Launches headless or headed Chrome session and navigates to the target web portal.' },
+  { t: 'ARIA snapshot', d: 'Captures the accessibility tree and maps interactive elements to unambiguous token IDs.' },
+  { t: 'Action execution', d: 'Executes clicks, form inputs, dropdown selections, and tab switches via CDP commands.' },
+  { t: 'Verification & pause', d: 'Detects 2FA challenges; requests operator assistance if manual intervention is required.' },
+  { t: 'Data extraction', d: 'Extracts clean structured tables and documents directly into the worker memory store.' },
+];
+
+const hood = [
+  ['protocol', 'Direct Chrome DevTools Protocol (CDP) and Playwright service layer'],
+  ['accessibility', 'Normalized ARIA snapshot tree with depth bounding and interactive element filtering'],
+  ['streaming', 'Binary WebSocket JPEG stream with adaptive quality and cursor overlay'],
+  ['takeover', 'Human-in-the-loop mutex lease with operator timeout and session recovery'],
+];
+
+const tools = [
+  'browser_navigate', 'browser_click', 'browser_type', 'browser_screenshot',
+  'browser_extract', 'analyze_image', 'parse_html',
+];
+---
+
+<AgentPage
+  pageTitle="Browser Specialist — Fathom AI Workers"
+  pageDesc="Governed computer use: ARIA accessibility tree navigation, live WebSocket screen streaming, and 2FA human takeover."
+  k="agents.browser"
+  index="05"
+  title="Browser"
+  sub="The digital computer operator. It drives web portals via ARIA accessibility trees, handles complex forms, and streams live viewports with 2FA takeover support."
+  mode="browser"
+  hue={55}
+  crew={crew}
+  caps={capabilities}
+  capsTitle="Governed web & desktop interaction"
+  flow={flow}
+  flowTitle="From URL to verified web action"
+  hood={hood}
+  tools={tools}
+  toolsTitle="Browser toolset"
+  ctaTitle="Autonomous computer use with enterprise governance."
+  prev={{ href: '/agents/operator', label: '← Operator' }}
+  middle={{ href: '/tools', label: 'Tools →' }}
+  next={{ href: '/agents/memoring', label: 'Memory keeper →' }}
+/>

@@ -1,0 +1,64 @@
+---
+import AgentPage from '../../components/AgentPage.astro';
+
+const crew = [
+  { name: 'Coordinator', href: '/agents/coordinator' },
+  { name: 'Researcher', href: '/agents/researcher' },
+  { name: 'Coder', href: '/agents/coder' },
+  { name: 'Operator', href: '/agents/operator' },
+  { name: 'Browser', href: '/agents/browser' },
+  { name: 'Memory keeper', href: '/agents/memoring' },
+  { name: 'Reviewer', href: '/agents/reviewer', current: true },
+];
+
+const capabilities = [
+  { name: 'Human approval gates', d: 'Enforces mandatory operator approval before executing side-effect tools (save_contacts, git_push, bank transfers).' },
+  { name: 'Hardware secret scanning', d: 'Scans all inputs and outputs for API keys, passwords, and private tokens before persistence.' },
+  { name: 'Prompt injection defense', d: 'Detects and neutralizes jailbreak patterns in untrusted web content before it reaches LLM models.' },
+  { name: 'SSRF & redirect guard', d: 'Blocks access to private RFC1918 subnets, metadata endpoints, and DNS rebinding attacks.' },
+  { name: 'Verification receipts', d: 'Writes typed, immutable JSONL verification logs for complete auditability.' },
+  { name: 'Regulatory compliance', d: 'Evaluates actions against GDPR, CCPA, and enterprise safety policies.' },
+];
+
+const flow = [
+  { t: 'Action interception', d: 'Interceps proposed worker actions and evaluates them against active policy rules.' },
+  { t: 'Security scan', d: 'Runs regex secret scanners and prompt-injection detectors on all payloads.' },
+  { t: 'Gate evaluation', d: 'If a policy boundary is crossed, pauses execution and generates a human approval request.' },
+  { t: 'Receipt logging', d: 'Records a typed verification receipt to the append-only audit ledger.' },
+  { t: 'Handoff or deny', d: 'Grants execution clearance upon approval or triggers a safe fail-closed denial.' },
+];
+
+const hood = [
+  ['policy engine', 'Fail-closed rule evaluation with configurable risk tiers'],
+  ['vault integration', 'AES-256-GCM hardware key isolation via Rust ring crate'],
+  ['receipt ledger', 'Append-only JSONL receipt ledger keyed by (kind, value)'],
+  ['SSRF filter', 'Per-hop redirect validation blocking loopback and cloud metadata IPs'],
+];
+
+const tools = [
+  'question', 'save_contacts', 'git_push', 'memory_absorb',
+];
+---
+
+<AgentPage
+  pageTitle="Reviewer Specialist — Fathom AI Workers"
+  pageDesc="Enterprise security and governance reviewer: approval gates, hardware secret scanning, injection defense, and verification receipts."
+  k="agents.reviewer"
+  index="07"
+  title="Reviewer"
+  sub="The vigilant security officer. It guards sensitive surfaces, enforces human approval gates on high-impact actions, detects prompt injection, and maintains immutable audit trails."
+  mode="reviewer"
+  hue={205}
+  crew={crew}
+  caps={capabilities}
+  capsTitle="Ironclad safety & governance"
+  flow={flow}
+  flowTitle="From intercepted action to verified approval"
+  hood={hood}
+  tools={tools}
+  toolsTitle="Governance toolset"
+  ctaTitle="Enterprise AI autonomy with zero compliance risk."
+  prev={{ href: '/agents/memoring', label: '← Memory keeper' }}
+  middle={{ href: '/security', label: 'Security & Vault →' }}
+  next={{ href: '/agents/coordinator', label: 'Coordinator →' }}
+/>

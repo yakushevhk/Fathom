@@ -1,0 +1,64 @@
+---
+import AgentPage from '../../components/AgentPage.astro';
+
+const crew = [
+  { name: 'Coordinator', href: '/agents/coordinator' },
+  { name: 'Researcher', href: '/agents/researcher' },
+  { name: 'Coder', href: '/agents/coder' },
+  { name: 'Operator', href: '/agents/operator', current: true },
+  { name: 'Browser', href: '/agents/browser' },
+  { name: 'Memory keeper', href: '/agents/memoring' },
+  { name: 'Reviewer', href: '/agents/reviewer' },
+];
+
+const capabilities = [
+  { name: 'Durable job execution', d: 'Manages long-running background tasks with retry policies, state reconstruction, and restart survival.' },
+  { name: 'Cron-like scheduling', d: 'Triggers periodic coworker workflows on precise cadences (watch mode, nightly inbox sweeps).' },
+  { name: 'Multi-channel dispatch', d: 'Routes alerts and reports to webhooks, email SMTP, Slack, and Telegram channels.' },
+  { name: 'Daemon process control', d: 'Starts, stops, monitors, and restarts background companion daemons with health probes.' },
+  { name: 'Atomic schedule claiming', d: 'Coordinates multiple server worker instances using SQLite atomic state locks.' },
+  { name: 'Operational telemetry', d: 'Exposes Prometheus metrics and structured runtime tracing for enterprise monitoring.' },
+];
+
+const flow = [
+  { t: 'Job submission', d: 'Enqueues background jobs with structured parameter schemas and retry policies.' },
+  { t: 'Schedule evaluation', d: 'Evaluates cron triggers and claims tasks with atomic lock protection.' },
+  { t: 'Execution & heartbeat', d: 'Monitors worker health, emits progress heartbeats, and tracks memory usage.' },
+  { t: 'Error diagnosis', d: 'On failure, inspects error telemetry and applies intelligent self-healing retry strategies.' },
+  { t: 'Alert dispatch', d: 'Delivers formatted PDF/HTML reports to configured team communication channels.' },
+];
+
+const hood = [
+  ['durability', 'Durable background job queue persisted in SQLite with state replay'],
+  ['scheduler', 'Cron-syntax scheduler with microsecond precision and atomic claim locks'],
+  ['telemetry', 'Prometheus metrics (/metrics) and structured tracing spans'],
+  ['daemons', 'Child process manager with auto-restart and stdout regex health checks'],
+];
+
+const tools = [
+  'daemon', 'hub', 'scratchpad', 'undo', 'question', 'memory_search',
+];
+---
+
+<AgentPage
+  pageTitle="Operator Specialist — Fathom AI Workers"
+  pageDesc="Autonomous systems operator: durable background jobs, cron scheduling, daemon management, and multi-channel alert dispatch."
+  k="agents.operator"
+  index="04"
+  title="Operator"
+  sub="The reliable systems administrator. It schedules recurring workflows, manages durable background queues, keeps daemons healthy, and routes executive notifications."
+  mode="operator"
+  hue={260}
+  crew={crew}
+  caps={capabilities}
+  capsTitle="Unattended automation & scheduling"
+  flow={flow}
+  flowTitle="From scheduled trigger to verified execution"
+  hood={hood}
+  tools={tools}
+  toolsTitle="Operations toolset"
+  ctaTitle="Run autonomous digital operations 24/7 without fail."
+  prev={{ href: '/agents/coder', label: '← Coder' }}
+  middle={{ href: '/ops', label: 'Operations →' }}
+  next={{ href: '/agents/browser', label: 'Browser →' }}
+/>

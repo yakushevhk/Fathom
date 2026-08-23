@@ -123,7 +123,12 @@ const { hue = 206, mode = 'researcher', height = 340, label = '' } = Astro.props
     function initOrb(canvas) {
       const wrap = canvas.parentElement;
       const hue = Number(canvas.dataset.hue || 206);
-      const mode = canvas.dataset.mode || 'researcher';
+      const rawMode = canvas.dataset.mode || 'researcher';
+      const mode = (rawMode === 'coder') ? 'extracting' :
+                   (rawMode === 'operator') ? 'cleaning' :
+                   (rawMode === 'browser') ? 'searching' :
+                   (rawMode === 'reviewer') ? 'outreach' :
+                   (rawMode === 'memory keeper' || rawMode === 'memory-keeper') ? 'memoring' : rawMode;
 
       let W = Math.max(200, wrap.clientWidth);
       let H = Math.max(200, wrap.clientHeight);
