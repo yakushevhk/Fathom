@@ -93,19 +93,14 @@ import OrbScene from '../components/OrbScene.astro';
         <div class="feat-copy">
           <p class="eyebrow" data-i18n="memoryPage.graph.badge">Entity graph</p>
           <h2 class="h3-sec" data-i18n="memoryPage.graph.title">person ↔ company ↔ location</h2>
-          <p class="copy-lg" data-i18n-html data-i18n="memoryPage.graph.sub">Alongside facts, the store can maintain an entity graph: nodes (person, company, project, technology, role, location, event, product), typed edges (<code class="ic">works_at</code>, <code class="ic">leads</code>, <code class="ic">founded</code>…) and multi-hop queries. Entities may be attached during absorb when the relevant workflow is enabled.</p>
+          <p class="copy-lg" data-i18n-html data-i18n="memoryPage.graph.sub">Alongside facts, the store maintains a directional entity graph: nodes (person, company, project, technology, role, location, event, product), typed edges (<code class="ic">works_at</code>, <code class="ic">leads</code>, <code class="ic">founded</code>…) and sub-2ms multi-hop recursive queries in SQLite.</p>
           <p class="copy-lg graph-cmd"><code class="ic">memory_graph add · query · list</code></p>
         </div>
-        <div class="graph-demo">
-          <div class="gnode gnode--company">Acme Corp</div>
-          <div class="gedge"><span>works_at</span></div>
-          <div class="gnode">Ivan Petrov</div>
-          <div class="gedge"><span>leads</span></div>
-          <div class="gnode gnode--company">Engineering</div>
-          <div class="gedge"><span>located_in</span></div>
-          <div class="gnode gnode--loc">Kazan</div>
+        <div class="product-screenshot-frame" style="width:100%;">
+          <img src="/images/mockups/09_entity_knowledge_graph.png" alt="Fathom Enterprise Entity Knowledge Graph Explorer" loading="lazy" width="1220" height="780" />
         </div>
       </div>
+      <p class="screenshot-caption" style="margin-bottom: 40px;">Fig 4.1 — Enterprise Entity Knowledge Graph: 3-hop relationship traversal across 5,420 interconnected entities in 1.62 ms with zero cloud Vector DB fees.</p>
 
       <!-- OSINT integration -->
       <div class="feat" id="osint">
