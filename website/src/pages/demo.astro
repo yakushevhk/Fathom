@@ -1,0 +1,550 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const BOTS = [
+  { id: 'sdr', icon: '✉️', color: '#f59e0b', name: 'Sales Outbound', role: 'SDR', desc: 'Lead discovery, SMTP verification, CRM staging', preview: 'idle — pick a task', mockup: '/images/mockups/01_sales_outbound_sdr.png',
+    prompt: 'Enrich 50 verified CISO and VP IT contacts at mid-market financial firms in London. For each: name, title, company, verified email (SMTP 250 OK). Push to CRM. Zero bounces.' },
+  { id: 'intel', icon: '📡', color: '#3b82f6', name: 'Market Intelligence', role: 'Researcher', desc: '24/7 competitor pricing, features, exec hires', preview: 'idle — pick a task', mockup: '/images/mockups/02_market_intelligence.png',
+    prompt: 'Monitor 15 competitors in fintech/payments for pricing changes, new features, executive hires, regulatory filings. Diff against stored state, alert on any shift.' },
+  { id: 'talent', icon: '🎯', color: '#ec4899', name: 'Talent Scout', role: 'Researcher', desc: 'GitHub AST mining, dossiers with icebreakers', preview: 'idle — pick a task', mockup: '/images/mockups/03_talent_scout.png',
+    prompt: 'Source 30 senior Rust/systems engineers for a robotics startup. Mine GitHub (Tokio, Axum, Polars), cross-check LinkedIn, verify emails. Deliver dossiers with commit-level icebreakers.' },
+  { id: 'support', icon: '🛟', color: '#10b981', name: 'Onboarding Agent', role: 'Analyst', desc: 'Webhook config, sandbox REPL, ticket triage', preview: 'idle — pick a task', mockup: '/images/mockups/13_customer_success_onboarding.png',
+    prompt: 'New client DataStream needs webhook configuration: API key provisioning, test payload verification, sandbox validation. Diagnose setup errors in an isolated REPL.' },
+  { id: 'backoffice', icon: '📊', color: '#8b5cf6', name: 'Finance Ops', role: 'Analyst', desc: 'Invoice parsing, 3-way match, QuickBooks sync', preview: 'idle — pick a task', mockup: '/images/mockups/04_backoffice_invoice.png',
+    prompt: 'Ingest 500 PDF vendor invoices. Cross-reference against warehouse receipts and PO records. Stage approved payments in QuickBooks. Flag discrepancies. 100% accuracy.' },
+  { id: 'devops', icon: '🔧', color: '#ef4444', name: 'Software Maintainer', role: 'Developer', desc: 'AST mapping, sandbox repro, fix + test + PR', preview: 'idle — pick a task', mockup: '/images/mockups/05_devops_engineer.png',
+    prompt: 'Triage Sentry zero-division error in a Python analytics CLI. Map the repo (240+ files), reproduce in sandbox, write fix + test, submit PR. All tests must pass.' },
+  { id: 'legal', icon: '⚖️', color: '#06b6d4', name: 'Compliance Auditor', role: 'Verifier', desc: 'MSA audit, GDPR, liability risk matrix', preview: 'idle — pick a task', mockup: '/images/mockups/12_legal_compliance_auditor.png',
+    prompt: 'Audit 200 vendor MSAs for GDPR compliance, data liability caps, non-compete clauses, jurisdiction risks. Parallel ingestion across 5 analysts. Deliver Green/Yellow/Red risk matrix.' },
+  { id: 'coordinator', icon: '◈', color: '#a78bfa', name: 'Orchestrator', role: 'Coordinator', desc: 'Swarm decomposer, parallel dispatch, synthesis', preview: 'idle — pick a task', mockup: '/images/mockups/11_swarm_coordinator.png',
+    prompt: 'Coordinate the full swarm: decompose an enterprise research task, delegate to specialists, verify quality, synthesize, and deliver. Use the full Fathom runtime — planning, spawning, tools, memory, governance, verification.' },
+];
+
+const ROUTINES = [
+  { icon: '◷', name: 'Morning sweep', when: 'Weekdays 6am' },
+  { icon: '◷', name: 'Deep research', when: 'Daily 9am' },
+  { icon: '◷', name: 'Market scan', when: 'Every 4h' },
+];
+---
+<Layout
+  title="Live Demo — Fathom"
+  description="Interactive demos of Fathom autonomous AI workers. Pick a worker, type a task, and watch it plan, run tools, absorb memory, verify, and deliver — backed by a live LLM."
+>
+    <section class="demo-hero">
+      <div class="container demo-hero__grid">
+        <div class="demo-hero__main">
+          <p class="eyebrow"><span class="eyebrow__dot" aria-hidden="true"></span><span>Live worker demo</span></p>
+          <h1>Pick a worker.<br /><em class="it">Watch the swarm.</em></h1>
+          <p class="copy-lg">
+            Every bot mirrors a real Fathom worker — the coordinator decomposes, researchers execute in
+            parallel, the analyst synthesizes, the verifier gates, the writer delivers. Behind this page:
+            <strong>kimi/k3</strong> via <strong>router.y7.hk/v1</strong>, prompted to act as the full Rust runtime.
+          </p>
+          <div class="demo-hero__meta">
+            <span class="dm chip">model: kimi/k3</span>
+            <span class="dm chip">engine: router.y7.hk/v1</span>
+            <span class="dm chip">8 workers</span>
+            <span class="dm chip">multi-agent swarm</span>
+            <span class="dm chip">50+ tools</span>
+          </div>
+        </div>
+        <div class="demo-hero__side">
+          <div class="demo-status">
+            <div class="demo-status__head">
+              <span class="demo-status__pulse" aria-hidden="true"></span>
+              <span class="demo-status__label">runtime status</span>
+            </div>
+            <div class="demo-status__body">
+              <div class="ds-row"><span class="ds-k">provider</span><span class="ds-v" data-ds-provider>router.y7.hk/v1</span></div>
+              <div class="ds-row"><span class="ds-k">model</span><span class="ds-v">kimi/k3</span></div>
+              <div class="ds-row"><span class="ds-k">latency</span><span class="ds-v" data-ds-latency>00:00</span></div>
+              <div class="ds-row"><span class="ds-k">tokens</span><span class="ds-v" data-ds-tokens>0</span></div>
+              <div class="ds-row"><span class="ds-k">runs</span><span class="ds-v" data-ds-runs>0</span></div>
+              <div class="ds-row"><span class="ds-k">status</span><span class="ds-v ds-v--ok" data-ds-status>idle</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PRODUCT DEMO BLOCK (rakazo-style) ============ -->
+    <section class="demo-app-section">
+      <div class="container">
+        <div class="product-demo">
+          <div class="product-demo__frame">
+            <!-- ===== SIDEBAR: WORKERS ===== -->
+            <aside class="product-demo__sidebar" id="demo-sidebar">
+              <div class="product-demo__chrome">
+                <div class="product-demo__traffic"><span></span><span></span><span></span></div>
+                <span class="product-demo__drawer-title">Workers</span>
+                <div class="product-demo__chrome-actions">
+                  <button type="button" class="product-demo__new" aria-label="Spawn new worker" title="Spawn new worker">+</button>
+                  <button type="button" class="product-demo__sidebar-close" aria-label="Hide sidebar" title="Close">&#x2715;</button>
+                </div>
+              </div>
+              <label class="product-demo__search">
+                <span class="pd-search-icon" aria-hidden="true">&#x2315;</span>
+                <input type="search" placeholder="Search workers" data-bot-search autocomplete="off" />
+              </label>
+              <div class="product-demo__bot-list" data-bot-list>
+                {BOTS.map((b) => (
+                  <button type="button" class="product-demo__bot-row" data-bot-id={b.id} aria-label={'Open ' + b.name}>
+                    <span class="pd-avatar" style={'background:' + b.color}>{b.icon}</span>
+                    <span class="product-demo__bot-copy">
+                      <span class="product-demo__bot-meta">
+                        <span class="product-demo__bot-name">{b.name}</span>
+                        <span class="product-demo__bot-time" data-bot-time={b.id}>idle</span>
+                      </span>
+                      <span class="product-demo__bot-preview" data-bot-preview={b.id}>{b.preview}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <div class="product-demo__user">
+                <span class="product-demo__user-badge">FH</span>
+                <span>Fathom User</span>
+              </div>
+            </aside>
+
+            <!-- ===== MAIN: CHAT THREAD ===== -->
+            <main class="product-demo__main">
+              <div class="product-demo__topbar">
+                <div class="product-demo__topbar-left">
+                  <button type="button" class="product-demo__menu-btn" aria-label="Show workers">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+                  </button>
+                  <button type="button" class="product-demo__name-btn">
+                    <span class="pd-avatar pd-avatar--sm" style="background:#a78bfa" data-active-avatar data-bot-avatar>◈</span>
+                    <span class="product-demo__active-name" data-active-name>Orchestrator</span>
+                  </button>
+                  <span class="product-demo__role-badge" data-active-role>Coordinator</span>
+                  <span class="product-demo__run-state" data-run-state>idle</span>
+                </div>
+                <div class="product-demo__topbar-right">
+                  <button type="button" class="product-demo__panel-toggle" aria-pressed="true" data-panel-toggle aria-label="Toggle computer panel" title="Computer">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="4" width="20" height="13" rx="2"></rect><path d="M8 21h8M12 17v4"></path></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="product-demo__thread" data-thread>
+                <div class="product-demo__thread-empty">
+                  <div class="td-icon">&#x25C8;</div>
+                  <p>Pick a worker from the sidebar to start a conversation. Each worker is a Fathom autonomous agent with real tools, memory, and governance — dispatched live through the API.</p>
+                  <div class="td-suggestions">
+                    {BOTS.slice(0, 4).map((b) => (
+                      <button type="button" class="td-suggestion" data-bot-id={b.id}>
+                        <span class="pd-avatar pd-avatar--xs" style={'background:' + b.color}>{b.icon}</span>
+                        {b.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div class="product-demo__composer">
+                <div class="product-demo__input-shell">
+                  <span class="product-demo__composer-plus" aria-hidden="true">+</span>
+                  <input type="text" placeholder="Message worker…" aria-label="Message worker" data-composer />
+                  <button type="button" class="product-demo__send" aria-label="Send" data-send>&#x2191;</button>
+                </div>
+                <div class="product-demo__composer-hint">
+                  <span data-composer-bot>Orchestrator</span> — any message is dispatched as a task to this worker
+                </div>
+              </div>
+            </main>
+
+            <!-- ===== RIGHT PANEL: COMPUTER + ROUTINES ===== -->
+            <aside class="product-demo__panel" data-computer-panel>
+              <div class="product-demo__panel-head">
+                <span class="pd-panel-title" data-computer-title>Orchestrator's computer</span>
+                <div class="product-demo__panel-actions">
+                  <button type="button" aria-label="Bot settings" title="Settings">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6h.09A1.65 1.65 0 0 0 10 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                  </button>
+                  <button type="button" aria-label="Close panel" title="Close" data-panel-close>&#x2715;</button>
+                </div>
+              </div>
+              <button type="button" class="product-demo__screen" data-take-control aria-label="Take control of computer">
+                <div class="product-demo__desktop">
+                  <div class="product-demo__window">
+                    <div class="product-demo__window-bar">
+                      <span></span><span></span><span></span>
+                      <div class="product-demo__window-url" data-computer-url>fathom://orchestrator</div>
+                    </div>
+                    <div class="product-demo__window-body" data-computer-body>
+                      <div class="pd-window-empty">
+                        <span class="pd-we-icon">&#x25C8;</span>
+                        <span>Worker idle — open a worker</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <div class="product-demo__screen-meta">
+                <span class="dsm-label" data-computer-status>screen idle</span>
+                <button type="button" class="pd-take-control" data-take-control-sm>Take control</button>
+              </div>
+              <div class="product-demo__panel-label">Routines</div>
+              <div class="pd-routines" data-routines>
+                {ROUTINES.map((r) => (
+                  <button type="button" class="product-demo__routine" data-routine>
+                    <span class="product-demo__routine-icon">{r.icon}</span>
+                    <span class="product-demo__routine-name">{r.name}</span>
+                    <span class="product-demo__routine-when">{r.when}</span>
+                  </button>
+                ))}
+                <button type="button" class="product-demo__quiet" data-new-routine>+ New routine</button>
+              </div>
+            </aside>
+          </div>
+          <p class="product-demo__caption">
+            Live demo — pick a worker, type a task, watch it plan, run tools, absorb memory, and deliver. Backed by <strong>kimi/k3</strong> via router.y7.hk/v1.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ARCHITECTURE TABS ============ -->
+    <section class="arch-section">
+      <div class="container">
+        <div class="tabs">
+          <button class="tab tab--active" data-arch-tab="swarm" type="button">Swarm tree</button>
+          <button class="tab" data-arch-tab="memory" type="button">Memory graph</button>
+          <button class="tab" data-arch-tab="audit" type="button">Audit trail</button>
+          <button class="tab" data-arch-tab="stats" type="button">Runtime stats</button>
+        </div>
+
+        <div class="tab-pane tab-pane--active" data-arch-pane="swarm">
+          <div class="fleet-layout">
+            <div class="swarm-tree" data-swarm-tree>
+              <div class="swarm-empty">
+                <span class="te-glyph">&#x25C8;</span>
+                <p>Run a worker task first. The coordinator spawns sub-agents, visible here as a live tree.</p>
+              </div>
+            </div>
+            <div class="side-stats">
+              <div class="side-stats__head">Fleet metrics</div>
+              <div class="fs-row"><span class="fs-k">spawned</span><span class="fs-v" data-fleet-spawned>0</span></div>
+              <div class="fs-row"><span class="fs-k">running</span><span class="fs-v" data-fleet-running>0</span></div>
+              <div class="fs-row"><span class="fs-k">completed</span><span class="fs-v" data-fleet-completed>0</span></div>
+              <div class="fs-row"><span class="fs-k">failed</span><span class="fs-v" data-fleet-failed>0</span></div>
+              <div class="fs-row"><span class="fs-k">tool calls</span><span class="fs-v" data-fleet-tools>0</span></div>
+              <div class="fs-row"><span class="fs-k">fan-out</span><span class="fs-v">JoinSet · Tokio</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane" data-arch-pane="memory">
+          <div class="memory-layout">
+            <div class="memory-list" data-memory-list>
+              <div class="memory-empty">
+                <span class="te-glyph">&#x25C8;</span>
+                <p>No facts absorbed yet. Run a scenario to populate the memory graph — companies, contacts, and findings persist across sessions.</p>
+              </div>
+            </div>
+            <div class="side-stats">
+              <div class="side-stats__head">Memory engine</div>
+              <div class="fs-row"><span class="fs-k">facts</span><span class="fs-v" data-mem-facts>0</span></div>
+              <div class="fs-row"><span class="fs-k">avg confidence</span><span class="fs-v" data-mem-confidence>—</span></div>
+              <div class="fs-row"><span class="fs-k">store</span><span class="fs-v">SQLite FTS5</span></div>
+              <div class="fs-row"><span class="fs-k">absorption</span><span class="fs-v">94&#x00B5;s</span></div>
+              <div class="fs-row"><span class="fs-k">GC</span><span class="fs-v" data-mem-gc>—</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane" data-arch-pane="audit">
+          <div class="audit-layout">
+            <div class="audit-list" data-audit-list>
+              <div class="audit-empty">
+                <span class="te-glyph">&#x25C8;</span>
+                <p>No events recorded. The fail-closed policy engine checks every tool call against role-based rules. All decisions are logged with AES-256-GCM vault sealing.</p>
+              </div>
+            </div>
+            <div class="side-stats">
+              <div class="side-stats__head">Governance</div>
+              <div class="fs-row"><span class="fs-k">allowed</span><span class="fs-v" data-audit-allowed>0</span></div>
+              <div class="fs-row"><span class="fs-k">denied</span><span class="fs-v" data-audit-denied>0</span></div>
+              <div class="fs-row"><span class="fs-k">policy rules</span><span class="fs-v">12 active</span></div>
+              <div class="fs-row"><span class="fs-k">vault</span><span class="fs-v">AES-256-GCM</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane" data-arch-pane="stats">
+          <div class="stats-grid">
+            <div class="stat-card"><div class="stat-card__value" data-stat-runs>0</div><div class="stat-card__label">tasks dispatched</div></div>
+            <div class="stat-card"><div class="stat-card__value" data-stat-tools>0</div><div class="stat-card__label">tool calls</div></div>
+            <div class="stat-card"><div class="stat-card__value" data-stat-agents>0</div><div class="stat-card__label">agents spawned</div></div>
+            <div class="stat-card"><div class="stat-card__value" data-stat-memory>0</div><div class="stat-card__label">memory facts</div></div>
+            <div class="stat-card"><div class="stat-card__value" data-stat-tokens>0</div><div class="stat-card__label">tokens used</div></div>
+            <div class="stat-card"><div class="stat-card__value" data-stat-latency>00:00</div><div class="stat-card__label">wall clock</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LIGHTBOX ============ -->
+    <div class="lightbox" data-lightbox hidden>
+      <button type="button" class="lightbox__close" aria-label="Close" data-lightbox-close>&#x2715;</button>
+      <div class="lightbox__frame">
+        <div class="lightbox__bar">
+          <span class="lightbox__traffic"><i></i><i></i><i></i></span>
+          <span class="lightbox__url" data-lightbox-url>fathom://screen</span>
+        </div>
+        <img class="lightbox__img" data-lightbox-img alt="Worker computer screen" />
+        <p class="lightbox__caption" data-lightbox-caption>Take control — real-time desktop view</p>
+      </div>
+    </div>
+
+    <style is:global>
+      .demo-page { padding: 0 0 90px; }
+      .demo-page .container { max-width: var(--container-max); margin: 0 auto; padding: 0 var(--container-padding); }
+
+      /* ===== HERO ===== */
+      .demo-hero { padding: 60px 0 40px; }
+      .demo-hero__grid { display: grid; grid-template-columns: 1fr 320px; gap: 48px; align-items: start; }
+      .demo-hero__main .eyebrow { margin-bottom: 12px; }
+      .demo-hero__main h1 { font-size: 48px; line-height: 1.1; font-weight: 500; letter-spacing: -0.03em; margin-bottom: 16px; }
+      .demo-hero__main .it { font-family: var(--font-serif); font-style: italic; font-weight: 400; }
+      .demo-hero__main .copy-lg { font-size: 17px; line-height: 1.5; color: var(--text-secondary); max-width: 620px; }
+      .demo-hero__meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+      .dm.chip { font-size: 12px; padding: 3px 10px; border-radius: var(--radius-full); background: var(--bg-tertiary); color: var(--text-secondary); font-family: var(--font-mono); }
+      .demo-status { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; background: var(--bg-card); }
+      .demo-status__head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+      .demo-status__pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--grey-500); transition: background 0.3s; }
+      .demo-status__pulse.active { background: #22c55e; box-shadow: 0 0 8px rgba(34, 197, 94, 0.4); animation: pulseGlow 1.6s ease-in-out infinite; }
+      @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); } 50% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); } }
+      .demo-status__label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); }
+      .demo-status__body { display: flex; flex-direction: column; gap: 6px; }
+      .ds-row { display: flex; justify-content: space-between; font-size: 13px; }
+      .ds-k { color: var(--text-tertiary); }
+      .ds-v { font-family: var(--font-mono); color: var(--text-primary); font-weight: 500; }
+      .ds-v--ok { color: #22c55e; }
+      .ds-v--busy { color: #eab308; }
+      .ds-v--err { color: #ef4444; }
+
+      /* ===== PRODUCT DEMO BLOCK ===== */
+      .demo-app-section { margin-bottom: 48px; }
+      .product-demo { border: 1px solid var(--border); border-radius: var(--radius-xl); overflow: hidden; background: var(--bg-card); box-shadow: var(--shadow-md); }
+      .product-demo__frame { display: grid; grid-template-columns: 280px minmax(0, 1fr) 320px; min-height: 600px; }
+      .product-demo__caption { padding: 12px 24px; font-size: 13px; color: var(--text-tertiary); border-top: 1px solid var(--border); background: var(--bg-secondary); font-family: var(--font-sans); }
+      .product-demo__caption strong { color: var(--text-secondary); }
+
+      /* ---- Sidebar ---- */
+      .product-demo__sidebar { border-right: 1px solid var(--border); display: flex; flex-direction: column; background: var(--bg-secondary); }
+      .product-demo__chrome { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+      .product-demo__traffic { display: flex; gap: 6px; }
+      .product-demo__traffic span { width: 10px; height: 10px; border-radius: 50%; }
+      .product-demo__traffic span:nth-child(1) { background: #ef4444; }
+      .product-demo__traffic span:nth-child(2) { background: #eab308; }
+      .product-demo__traffic span:nth-child(3) { background: #22c55e; }
+      .product-demo__drawer-title { font-size: 13px; font-weight: 600; flex: 1; }
+      .product-demo__chrome-actions { display: flex; gap: 4px; }
+      .product-demo__new, .product-demo__sidebar-close { background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 4px; line-height: 1; font-family: var(--font-sans); }
+      .product-demo__new:hover, .product-demo__sidebar-close:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+      .product-demo__search { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--border); }
+      .pd-search-icon { font-size: 16px; color: var(--text-tertiary); }
+      .product-demo__search input { border: none; background: none; outline: none; font-size: 13px; color: var(--text-primary); width: 100%; font-family: var(--font-sans); }
+      .product-demo__search input::placeholder { color: var(--text-tertiary); }
+      .product-demo__bot-list { flex: 1; overflow-y: auto; overscroll-behavior: contain; }
+      .product-demo__bot-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: none; background: none; width: 100%; text-align: left; cursor: pointer; border-bottom: 1px solid var(--border-light); transition: background 0.15s; font-family: var(--font-sans); }
+      .product-demo__bot-row:hover { background: var(--bg-card-hover); }
+      .product-demo__bot-row.is-active { background: var(--accent-light); }
+      .product-demo__bot-row.is-hidden { display: none; }
+      .pd-avatar { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #fff; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15); }
+      .pd-avatar--sm { width: 28px; height: 28px; font-size: 13px; border-radius: 8px; }
+      .pd-avatar--xs { width: 24px; height: 24px; font-size: 12px; border-radius: 6px; }
+      .product-demo__bot-copy { flex: 1; min-width: 0; }
+      .product-demo__bot-meta { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+      .product-demo__bot-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+      .product-demo__bot-time { font-size: 11px; color: var(--text-tertiary); font-family: var(--font-mono); flex-shrink: 0; }
+      .product-demo__bot-preview { font-size: 12px; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; margin-top: 2px; }
+      .product-demo__user { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-secondary); }
+      .product-demo__user-badge { width: 28px; height: 28px; border-radius: 8px; background: var(--accent); color: var(--on-accent); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; }
+
+      /* ---- Main chat ---- */
+      .product-demo__main { display: flex; flex-direction: column; min-width: 0; }
+      .product-demo__topbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+      .product-demo__topbar-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+      .product-demo__topbar-right { display: flex; align-items: center; gap: 8px; }
+      .product-demo__menu-btn { background: none; border: none; color: var(--text-tertiary); cursor: pointer; padding: 4px; border-radius: 6px; display: none; font-family: var(--font-sans); }
+      .product-demo__menu-btn:hover { background: var(--bg-tertiary); }
+      .product-demo__name-btn { display: flex; align-items: center; gap: 8px; background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 8px; min-width: 0; font-family: var(--font-sans); }
+      .product-demo__name-btn:hover { background: var(--bg-tertiary); }
+      .product-demo__active-name { font-size: 14px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .product-demo__role-badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: var(--radius-full); background: var(--bg-tertiary); color: var(--text-tertiary); font-family: var(--font-mono); flex-shrink: 0; }
+      .product-demo__run-state { font-size: 11px; font-family: var(--font-mono); color: var(--text-tertiary); flex-shrink: 0; }
+      .product-demo__run-state.running { color: #eab308; }
+      .product-demo__run-state.done { color: #22c55e; }
+      .product-demo__run-state.error { color: #ef4444; }
+      .product-demo__panel-toggle { background: none; border: none; color: var(--text-tertiary); cursor: pointer; padding: 6px; border-radius: 6px; }
+      .product-demo__panel-toggle:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+      .product-demo__panel-toggle[aria-pressed="true"] { color: var(--accent); }
+
+      /* Thread */
+      .product-demo__thread { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 6px; min-height: 420px; overscroll-behavior: contain; }
+      .product-demo__thread-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 12px; color: var(--text-tertiary); text-align: center; padding: 40px; }
+      .td-icon { font-size: 32px; opacity: 0.3; }
+      .product-demo__thread-empty p { font-size: 14px; max-width: 420px; line-height: 1.5; }
+      .td-suggestions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; }
+      .td-suggestion { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg-card); cursor: pointer; font-size: 13px; color: var(--text-primary); transition: all 0.15s; font-family: var(--font-sans); }
+      .td-suggestion:hover { border-color: var(--accent); background: var(--accent-light); }
+
+      .pd-time { font-size: 11px; color: var(--text-tertiary); text-align: center; padding: 6px 0 4px; font-family: var(--font-mono); }
+      .pd-message { display: flex; gap: 8px; max-width: 88%; }
+      .pd-message--user { align-self: flex-end; flex-direction: row-reverse; }
+      .pd-message--bot { align-self: flex-start; }
+      .pd-message-avatar { width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #fff; flex-shrink: 0; margin-top: 4px; }
+      .pd-message-avatar--user { background: var(--accent); }
+      .pd-bubble { padding: 9px 13px; border-radius: 14px; font-size: 14px; line-height: 1.5; }
+      .pd-bubble--user { background: var(--accent); color: var(--on-accent); border-bottom-right-radius: 4px; white-space: pre-wrap; word-break: break-word; }
+      .pd-bubble--bot { background: var(--bg-tertiary); color: var(--text-primary); border-bottom-left-radius: 4px; }
+      .pd-bubble--plan, .pd-bubble--tool, .pd-bubble--memory, .pd-bubble--verify, .pd-bubble--done, .pd-bubble--thinking, .pd-bubble--info, .pd-bubble--error {
+        background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; font-family: var(--font-mono); font-size: 13px; width: 100%;
+      }
+      .pd-bubble--plan { border-left: 3px solid #8b5cf6; }
+      .pd-bubble--tool { border-left: 3px solid #3b82f6; }
+      .pd-bubble--memory { border-left: 3px solid #10b981; }
+      .pd-bubble--verify { border-left: 3px solid #f59e0b; }
+      .pd-bubble--done { border-left: 3px solid #22c55e; }
+      .pd-bubble--thinking { border-left: 3px solid #a78bfa; opacity: 0.85; }
+      .pd-bubble--info { border-left: 3px solid var(--grey-400); }
+      .pd-bubble--error { border-left: 3px solid #ef4444; }
+      .pd-bubble__tag { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; display: flex; gap: 8px; align-items: center; }
+      .pd-bubble--plan .pd-bubble__tag { color: #8b5cf6; }
+      .pd-bubble--tool .pd-bubble__tag { color: #3b82f6; }
+      .pd-bubble--memory .pd-bubble__tag { color: #10b981; }
+      .pd-bubble--verify .pd-bubble__tag { color: #f59e0b; }
+      .pd-bubble--done .pd-bubble__tag { color: #22c55e; }
+      .pd-bubble--thinking .pd-bubble__tag { color: #a78bfa; }
+      .pd-bubble--info .pd-bubble__tag { color: var(--text-tertiary); }
+      .pd-bubble--error .pd-bubble__tag { color: #ef4444; }
+      .pd-bubble__time { font-weight: 400; text-transform: none; letter-spacing: 0; opacity: 0.7; }
+      .pd-bubble__body { font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+      .pd-bubble__body strong { font-weight: 600; }
+      .pd-bubble__body em { font-style: italic; }
+      .pd-bubble__body code { background: var(--bg-tertiary); padding: 1px 4px; border-radius: 3px; font-size: 12px; font-family: var(--font-mono); }
+      .pd-stream-cursor::after { content: '\\258D'; color: var(--accent); animation: cursorBlink 1s step-start infinite; margin-left: 2px; }
+      @keyframes cursorBlink { 50% { opacity: 0; } }
+
+      /* Composer */
+      .product-demo__composer { border-top: 1px solid var(--border); padding: 12px 16px 8px; }
+      .product-demo__input-shell { display: flex; align-items: center; gap: 8px; background: var(--bg-tertiary); border-radius: var(--radius-lg); padding: 4px 8px 4px 12px; }
+      .product-demo__composer-plus { color: var(--text-tertiary); font-size: 18px; line-height: 1; }
+      .product-demo__input-shell input { flex: 1; border: none; background: none; outline: none; font-size: 14px; color: var(--text-primary); padding: 8px 0; font-family: var(--font-sans); min-width: 0; }
+      .product-demo__input-shell input::placeholder { color: var(--text-tertiary); }
+      .product-demo__send { width: 32px; height: 32px; border-radius: 8px; border: none; background: var(--accent); color: var(--on-accent); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: opacity 0.15s, transform 0.1s; font-family: var(--font-sans); }
+      .product-demo__send:hover { opacity: 0.85; }
+      .product-demo__send:active { transform: scale(0.95); }
+      .product-demo__send.busy { background: var(--bg-tertiary); color: var(--text-tertiary); }
+      .product-demo__composer-hint { font-size: 11px; color: var(--text-tertiary); padding: 6px 4px 0; font-family: var(--font-mono); }
+      .product-demo__composer-hint span { color: var(--text-secondary); font-weight: 500; }
+
+      /* ---- Computer panel ---- */
+      .product-demo__panel { border-left: 1px solid var(--border); display: flex; flex-direction: column; background: var(--bg-secondary); overflow-y: auto; }
+      .product-demo__panel-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+      .pd-panel-title { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .product-demo__panel-actions { display: flex; gap: 4px; flex-shrink: 0; }
+      .product-demo__panel-actions button { background: none; border: none; color: var(--text-tertiary); cursor: pointer; padding: 4px; border-radius: 4px; line-height: 1; }
+      .product-demo__panel-actions button:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+      .product-demo__screen { display: block; border: none; background: none; cursor: pointer; padding: 14px 14px 8px; width: 100%; text-align: left; }
+      .product-demo__desktop { aspect-ratio: 4/3; background: #16162b; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.1); min-height: 150px; }
+      .product-demo__window { padding: 8px; height: 100%; }
+      .product-demo__window-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+      .product-demo__window-bar span { width: 8px; height: 8px; border-radius: 50%; }
+      .product-demo__window-bar span:nth-child(1) { background: #ef4444; }
+      .product-demo__window-bar span:nth-child(2) { background: #eab308; }
+      .product-demo__window-bar span:nth-child(3) { background: #22c55e; }
+      .product-demo__window-url { font-size: 10px; color: rgba(255, 255, 255, 0.5); margin-left: 6px; font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .product-demo__window-body { padding: 4px 8px; font-size: 11px; color: rgba(255, 255, 255, 0.85); line-height: 1.65; font-family: var(--font-mono); height: calc(100% - 26px); overflow: hidden; }
+      .pd-window-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; height: 100%; color: rgba(255, 255, 255, 0.3); }
+      .pd-we-icon { font-size: 24px; }
+      .pd-window-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .pd-window-line--run { color: #eab308; }
+      .pd-window-line--ok { color: #22c55e; }
+      .pd-window-line--tool { color: #93c5fd; }
+      .pd-window-line--mem { color: #6ee7b7; }
+      .pd-window-line--dim { color: rgba(255, 255, 255, 0.4); }
+      .pd-window-shot { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; border-radius: 4px; }
+      .product-demo__screen-meta { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; border-top: 1px solid var(--border); }
+      .dsm-label { font-size: 12px; color: var(--text-tertiary); font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .pd-take-control { padding: 5px 12px; border-radius: 13px; border: 1px solid var(--border); background: none; color: var(--text-primary); font-size: 13px; cursor: pointer; flex-shrink: 0; font-family: var(--font-sans); transition: background 0.15s; }
+      .pd-take-control:hover { background: var(--bg-card-hover); }
+      .product-demo__panel-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); padding: 14px 14px 6px; }
+      .pd-routines { padding: 0 14px 14px; }
+      .product-demo__routine { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border: none; background: none; cursor: pointer; border-radius: 8px; transition: background 0.15s; font-family: var(--font-sans); }
+      .product-demo__routine:hover { background: var(--bg-card-hover); }
+      .product-demo__routine-icon { font-size: 14px; color: var(--text-tertiary); }
+      .product-demo__routine-name { font-size: 13px; color: var(--text-primary); flex: 1; text-align: left; }
+      .product-demo__routine-when { font-size: 11px; color: var(--text-tertiary); font-family: var(--font-mono); }
+      .product-demo__quiet { display: block; width: 100%; padding: 8px 10px; border: 1px dashed var(--border); border-radius: 8px; background: none; color: var(--text-tertiary); font-size: 13px; cursor: pointer; margin-top: 4px; text-align: center; font-family: var(--font-sans); transition: all 0.15s; }
+      .product-demo__quiet:hover { border-color: var(--accent); color: var(--accent); }
+      .product-demo__quiet-input { display: none; margin-top: 4px; }
+      .product-demo__quiet-input.open { display: block; width: 100%; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: none; color: var(--text-primary); font-size: 13px; font-family: var(--font-sans); }
+
+      /* ===== ARCHITECTURE TABS ===== */
+      .arch-section { padding: 40px 0; }
+      .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+      .tab { padding: 10px 20px; border: none; background: none; color: var(--text-tertiary); font-size: 14px; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s, border-color 0.15s; font-family: var(--font-sans); }
+      .tab:hover { color: var(--text-primary); }
+      .tab--active { color: var(--accent); border-bottom-color: var(--accent); }
+      .tab-pane { display: none; }
+      .tab-pane--active { display: block; }
+      .fleet-layout, .memory-layout, .audit-layout { display: grid; grid-template-columns: 1fr 240px; gap: 24px; }
+      .swarm-tree, .memory-list, .audit-list { min-height: 200px; padding: 24px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--bg-card); }
+      .swarm-empty, .memory-empty, .audit-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; height: 200px; color: var(--text-tertiary); text-align: center; }
+      .te-glyph { font-size: 28px; opacity: 0.3; }
+      .swarm-empty p, .memory-empty p, .audit-empty p { font-size: 14px; max-width: 380px; line-height: 1.5; }
+      .side-stats { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; background: var(--bg-card); align-self: start; }
+      .side-stats__head { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); margin-bottom: 12px; }
+      .fs-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; }
+      .fs-row .fs-k { color: var(--text-tertiary); }
+      .fs-row .fs-v { font-family: var(--font-mono); font-weight: 500; color: var(--text-primary); }
+      .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+      .stat-card { padding: 24px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--bg-card); text-align: center; }
+      .stat-card__value { font-size: 36px; font-weight: 600; font-family: var(--font-mono); letter-spacing: -0.02em; color: var(--text-primary); margin-bottom: 4px; }
+      .stat-card__label { font-size: 13px; color: var(--text-tertiary); }
+
+      /* ===== LIGHTBOX ===== */
+      .lightbox { position: fixed; inset: 0; z-index: 1000; background: rgba(0, 0, 0, 0.8); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(6px); }
+      .lightbox[hidden] { display: none; }
+      .lightbox__close { position: absolute; top: 20px; right: 24px; background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; z-index: 10; font-family: var(--font-sans); }
+      .lightbox__frame { max-width: 90vw; max-height: 88vh; display: flex; flex-direction: column; }
+      .lightbox__bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #1a1a2e; border-radius: 10px 10px 0 0; }
+      .lightbox__traffic { display: flex; gap: 6px; }
+      .lightbox__traffic i { width: 10px; height: 10px; border-radius: 50%; display: block; }
+      .lightbox__traffic i:nth-child(1) { background: #ef4444; }
+      .lightbox__traffic i:nth-child(2) { background: #eab308; }
+      .lightbox__traffic i:nth-child(3) { background: #22c55e; }
+      .lightbox__url { font-size: 12px; color: rgba(255, 255, 255, 0.5); font-family: var(--font-mono); margin-left: 8px; }
+      .lightbox__img { max-width: 100%; max-height: 70vh; object-fit: contain; background: #0a0a1a; border-radius: 0 0 10px 10px; }
+      .lightbox__caption { text-align: center; padding: 12px 0 0; font-size: 14px; color: rgba(255, 255, 255, 0.7); }
+
+      /* ===== RESPONSIVE ===== */
+      @media (max-width: 1100px) {
+        .product-demo__frame { grid-template-columns: 240px minmax(0, 1fr); }
+        .product-demo__panel { display: none; }
+        .product-demo__panel.is-open { display: flex; position: fixed; top: 0; right: 0; bottom: 0; width: 360px; z-index: 100; border-left: 1px solid var(--border); box-shadow: var(--shadow-lg); }
+      }
+      @media (max-width: 900px) {
+        .demo-hero__grid { grid-template-columns: 1fr; }
+        .demo-hero__side { display: none; }
+        .product-demo__frame { grid-template-columns: 1fr; }
+        .product-demo__sidebar { display: none; }
+        .product-demo__sidebar.is-open { display: flex; position: fixed; top: 0; left: 0; bottom: 0; width: 300px; z-index: 100; box-shadow: var(--shadow-lg); }
+        .product-demo__menu-btn { display: inline-flex; }
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        .fleet-layout, .memory-layout, .audit-layout { grid-template-columns: 1fr; }
+      }
+      @media (max-width: 640px) {
+        .demo-hero__main h1 { font-size: 32px; }
+        .product-demo__thread { min-height: 320px; }
+        .stats-grid { grid-template-columns: 1fr; }
+        .pd-message { max-width: 100%; }
+      }
+    </style>
+
+    <script is:inline src="/js/demo.client.js"></script>
+  </Layout>
