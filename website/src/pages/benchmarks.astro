@@ -31,7 +31,7 @@ import PageHero from '../components/PageHero.astro';
           <p class="bench-sub" data-i18n="benchmarks.panels.dispatch.sub">How much machinery sits between the LLM's tool call and the actual work.</p>
           <div class="mini-table-wrap">
             <table class="mini-table">
-              <thead><tr><th>Measurement</th><th>Iterations</th><th>Per-call</th></tr></thead>
+              <thead><tr><th data-i18n="benchmarks.th.measurement">Measurement</th><th data-i18n="benchmarks.th.iterations">Iterations</th><th data-i18n="benchmarks.th.perCall">Per-call</th></tr></thead>
               <tbody>
                 <tr><td>registry.execute (raw dispatch)</td><td>300</td><td>5140 µs</td></tr>
                 <tr><td>execute_batch, 1 call</td><td>300</td><td>7614 µs</td></tr>
@@ -92,7 +92,7 @@ import PageHero from '../components/PageHero.astro';
           <p class="bench-sub" data-i18n="benchmarks.panels.mixed.sub">A realistic agent turn: reads (parallel-safe) + writes (sequential) in one batch. 5 ran concurrently, 3 serialized; total 70.9 ms, 8 succeeded. Order preserved.</p>
           <div class="mini-table-wrap">
             <table class="mini-table">
-              <thead><tr><th>Tool</th><th>Phase</th><th>Success</th><th>Duration</th></tr></thead>
+              <thead><tr><th data-i18n="benchmarks.th.tool">Tool</th><th data-i18n="benchmarks.th.phase">Phase</th><th data-i18n="benchmarks.th.success">Success</th><th data-i18n="benchmarks.th.duration">Duration</th></tr></thead>
               <tbody>
                 <tr><td>file_read (r0)</td><td>parallel</td><td>✅</td><td>16 ms</td></tr>
                 <tr><td>file_read (r1)</td><td>parallel</td><td>✅</td><td>20 ms</td></tr>
@@ -115,7 +115,7 @@ import PageHero from '../components/PageHero.astro';
           <p class="bench-sub" data-i18n="benchmarks.panels.parse.sub">Same selector (`tr.item`, texts mode), increasing document sizes. Up to 531k rows/s.</p>
           <div class="mini-table-wrap">
             <table class="mini-table">
-              <thead><tr><th>Document</th><th>Rows</th><th>Avg parse</th><th>Throughput</th></tr></thead>
+              <thead><tr><th data-i18n="benchmarks.th.document">Document</th><th data-i18n="benchmarks.th.rows">Rows</th><th data-i18n="benchmarks.th.avgParse">Avg parse</th><th data-i18n="benchmarks.th.throughput">Throughput</th></tr></thead>
               <tbody>
                 <tr><td>6 KB</td><td>100</td><td>0.19 ms</td><td>531,915 rows/s</td></tr>
                 <tr><td>63 KB</td><td>1000</td><td>4.08 ms</td><td>245,339 rows/s</td></tr>
@@ -134,7 +134,7 @@ import PageHero from '../components/PageHero.astro';
           <p class="bench-sub" data-i18n="benchmarks.panels.json.sub">~4 MB JSON document with 20,000 objects. Stateless &amp; parallel-safe (re-parsed per call).</p>
           <div class="mini-table-wrap">
             <table class="mini-table">
-              <thead><tr><th>Query</th><th>Iterations</th><th>Avg</th></tr></thead>
+              <thead><tr><th data-i18n="benchmarks.th.query">Query</th><th data-i18n="benchmarks.th.iterations">Iterations</th><th data-i18n="benchmarks.th.avg">Avg</th></tr></thead>
               <tbody>
                 <tr><td>wildcard scan `items[*].value` (limit 500)</td><td>10</td><td>71.24 ms</td></tr>
                 <tr><td>deep single key `items.12345.meta.score`</td><td>10</td><td>67.78 ms</td></tr>
@@ -152,7 +152,7 @@ import PageHero from '../components/PageHero.astro';
           <p class="bench-sub" data-i18n="benchmarks.panels.feed.sub">Local RSS fixture; tolerance to feed size and CPU-bound speed under parallelism. Up to 1.1M items/s.</p>
           <div class="mini-table-wrap">
             <table class="mini-table">
-              <thead><tr><th>Feed items</th><th>Avg parse</th><th>Items/s</th></tr></thead>
+              <thead><tr><th data-i18n="benchmarks.th.feedItems">Feed items</th><th data-i18n="benchmarks.th.avgParse">Avg parse</th><th data-i18n="benchmarks.th.itemsPerSec">Items/s</th></tr></thead>
               <tbody>
                 <tr><td>1000</td><td>0.93 ms</td><td>1,077,586</td></tr>
                 <tr><td>5000</td><td>4.78 ms</td><td>1,045,588</td></tr>
@@ -176,7 +176,7 @@ import PageHero from '../components/PageHero.astro';
           <p class="bench-sub" data-i18n="benchmarks.panels.code.sub">240 Rust files (~14 KB each, 40 fns + 40 structs + impls per file).</p>
           <div class="mini-table-wrap">
             <table class="mini-table">
-              <thead><tr><th>Tool</th><th>Mode</th><th>Wall time</th><th>Items</th></tr></thead>
+              <thead><tr><th data-i18n="benchmarks.th.tool">Tool</th><th data-i18n="benchmarks.th.mode">Mode</th><th data-i18n="benchmarks.th.wallTime">Wall time</th><th data-i18n="benchmarks.th.items">Items</th></tr></thead>
               <tbody>
                 <tr><td>code_symbols</td><td>single</td><td>7.2 ms</td><td>7007 lines</td></tr>
                 <tr><td>repo_map</td><td>single</td><td>34.2 ms</td><td>4330 lines</td></tr>
@@ -199,7 +199,7 @@ import PageHero from '../components/PageHero.astro';
           <p class="bench-sub" data-i18n="benchmarks.panels.memory.sub">Offline TF-IDF embedder (no network, no LLM); in-memory SQLite.</p>
           <div class="mini-table-wrap">
             <table class="mini-table">
-              <thead><tr><th>Batch</th><th>Absorbed</th><th>Wall time</th><th>Per fact</th></tr></thead>
+              <thead><tr><th data-i18n="benchmarks.th.batch">Batch</th><th data-i18n="benchmarks.th.absorbed">Absorbed</th><th data-i18n="benchmarks.th.wallTime">Wall time</th><th data-i18n="benchmarks.th.perFact">Per fact</th></tr></thead>
               <tbody>
                 <tr><td>10</td><td>10</td><td>10.2 ms</td><td>1020 µs</td></tr>
                 <tr><td>100</td><td>89</td><td>9.4 ms</td><td>94 µs</td></tr>
@@ -210,7 +210,7 @@ import PageHero from '../components/PageHero.astro';
           <p class="bench-note" data-i18n="benchmarks.panels.memory.note1">Re-absorbing 100 known facts: 93 skipped, 0 created in 5.1 ms (dedup fast path).</p>
           <div class="mini-table-wrap">
             <table class="mini-table">
-              <thead><tr><th>Hybrid search (vector + BM25)</th><th>Matches</th><th>Median</th></tr></thead>
+              <thead><tr><th data-i18n="benchmarks.th.hybridSearch">Hybrid search (vector + BM25)</th><th data-i18n="benchmarks.th.matches">Matches</th><th data-i18n="benchmarks.th.median">Median</th></tr></thead>
               <tbody>
                 <tr><td>Acme revenue units filing</td><td>5</td><td>2.30 ms</td></tr>
                 <tr><td>Globex churn rate report</td><td>5</td><td>1.62 ms</td></tr>
@@ -222,7 +222,7 @@ import PageHero from '../components/PageHero.astro';
           </div>
           <div class="mini-table-wrap">
             <table class="mini-table">
-              <thead><tr><th>Store size</th><th>Fill time</th><th>Search (median)</th></tr></thead>
+              <thead><tr><th data-i18n="benchmarks.th.storeSize">Store size</th><th data-i18n="benchmarks.th.fillTime">Fill time</th><th data-i18n="benchmarks.th.searchMedian">Search (median)</th></tr></thead>
               <tbody>
                 <tr><td>1000 memories</td><td>53 ms</td><td>5.28 ms</td></tr>
                 <tr><td>5000 memories</td><td>926 ms</td><td>23.52 ms</td></tr>
@@ -250,7 +250,7 @@ import PageHero from '../components/PageHero.astro';
         <h3 data-i18n="benchmarks.quality.title">Quality &amp; Testing</h3>
         <div class="mini-table-wrap">
           <table class="mini-table">
-            <thead><tr><th>Metric</th><th>Detail</th></tr></thead>
+                          <thead><tr><th data-i18n="benchmarks.th.metric">Metric</th><th data-i18n="benchmarks.th.detail">Detail</th></tr></thead>
             <tbody>
               <tr><td>Unit tests</td><td>1000+ tests across 12 workspace crates</td></tr>
               <tr><td>Property-based testing</td><td>proptest for email/phone parsers, SSE parser, absorb pipeline, tokenizer</td></tr>

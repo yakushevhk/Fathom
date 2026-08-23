@@ -1,4 +1,5 @@
 import { LANGS, DEFAULT_LANG } from './translations.js';
+import { translations } from './translations.js';
 
 const LANGS_SET = ['en', 'ru'];
 
@@ -32,6 +33,13 @@ export function getLang() {
 export function resolveKey(key, lang) {
   // Deep resolve from the module-loaded dictionary. Maintained for JS fallback
   // in dev mode (no build-time translation). Returns null if unknown.
+    const parts = key.split('.');
+  let obj = translations;
+  for (const part of parts) {
+    if (obj == null || typeof obj !== 'object') return null;
+    obj = obj[part];
+  }
+  if (obj && typeof obj === 'object' && lang in obj) return obj[lang];
   return null;
 }
 

@@ -12,6 +12,7 @@ export default {
     },
     tabs: {
       dispatch: { en: 'Dispatch', ru: 'Диспетчеризация' },
+      dispatch: { en: 'Dispatch', ru: 'Диспетчеризация' },
       io: { en: 'Fathom I/O', ru: 'Fathom I/O' },
       cpu: { en: 'Fathom CPU', ru: 'Fathom CPU' },
       mixed: { en: 'Mixed batch', ru: 'Смешанный батч' },

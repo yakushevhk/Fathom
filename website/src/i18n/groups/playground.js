@@ -7,7 +7,7 @@ export default {
   playground: {
     hero: {
       badge: { en: 'Playground', ru: 'Плейграунд' },
-      title: { en: 'Deep research, live.', ru: 'Глубокий исследование вживую.' },
+      title: { en: 'Deep research, live.', ru: 'Глубокое исследование вживую.' },
       sub: {
         en: 'Launch a research session, watch the agent fleet work in real time, steer it mid-run, browse long-term memory, manage background jobs and inspect live metrics — the whole platform in one console.',
         ru: 'Запустите исследовательскую сессию, наблюдайте за флотом агентов в реальном времени, корректируйте курс на лету, работайте с долгосрочной памятью, управляйте фоновыми задачами и смотрите живые метрики — вся платформа в одной консоли.',

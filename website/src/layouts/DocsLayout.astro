@@ -118,6 +118,7 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <meta name="theme-color" content="#0a0a0a" />
     <link rel="canonical" href={canonical} />
+    <meta name="robots" content="index, follow" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="article" />
@@ -133,7 +134,8 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={`${SITE}/og-image.png`} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
     <title>{title}</title>
     <JsonLd data={{
       '@context': 'https://schema.org',
@@ -156,7 +158,8 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
     </script>
   </head>
   <body>
-    <nav class="docstop-nav">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <nav class="docstop-nav" aria-label="Documentation">
       <div class="docstop-nav-inner">
         <a href="/" class="docs-logo">
           <svg class="docs-logo-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -187,11 +190,12 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
     <div class="docs-layout">
       <aside class="docs-sidebar" id="docs-sidebar">
         <div class="sidebar-filter">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line></svg>
+          <label for="sidebar-filter-input" class="sr-only" data-i18n="docsNav.filterPh">Filter pages</label>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line></svg>
           <input type="text" id="sidebar-filter-input" data-i18n-placeholder="docsNav.filterPh" placeholder="Filter pages…" autocomplete="off" spellcheck="false" />
           <kbd>/</kbd>
         </div>
-        <nav class="sidebar-nav">
+        <nav class="sidebar-nav" aria-label="Documentation sections">
           {navSections.map((section) => (
             <div class="sidebar-section">
               {section.i18nKey ? <h3 class="sidebar-section-title" data-i18n={section.i18nKey}>{section.title}</h3> : <h3 class="sidebar-section-title">{section.title}</h3>}
@@ -214,7 +218,7 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
         <p class="sidebar-empty" id="sidebar-empty" hidden data-i18n="docsNav.noMatches">No matches</p>
       </aside>
 
-      <main class="docs-main">
+      <main class="docs-main" id="main">
         <div class="docs-content">
           <nav class="docs-crumbs" aria-label="Breadcrumb">
             <a href="/" data-i18n="docsNav.crumbHome">Home</a>

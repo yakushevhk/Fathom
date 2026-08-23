@@ -3,15 +3,14 @@ import Layout from '../../layouts/Layout.astro';
 ---
 
 <Layout title="Five gates: verification before side effects — Fathom Blog">
-  <main class="article-page">
-    <div class="article-wrap">
+  <article class="article-wrap">
 
       <!-- Breadcrumb -->
-      <div class="breadcrumb">
+      <nav aria-label="Breadcrumb" class="breadcrumb">
         <a href="/blog">Blog</a>
         <span>›</span>
         <span>Verification</span>
-      </div>
+      </nav>
 
       <!-- Hero -->
       <header class="article-hero">
@@ -66,13 +65,11 @@ import Layout from '../../layouts/Layout.astro';
         </div>
       </div>
 
-    </div>
-  </main>
+  </article>
 </Layout>
 
 <style>
-  .article-page { padding: 48px 0 80px; }
-  .article-wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+  .article-wrap { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
 
   .breadcrumb { display: flex; gap: 8px; align-items: center; font-family: var(--font-mono); font-size: 13px; color: var(--grey-500); margin-bottom: 32px; }
   .breadcrumb a { color: var(--grey-600); }

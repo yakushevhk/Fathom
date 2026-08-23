@@ -53,7 +53,7 @@ const STATUS = {
   }
 </div>
 
-<script define:vars={{ agents }}>
+<script>
   const SIZE = 128;
   const SCALE = 2;
 
@@ -397,9 +397,9 @@ const STATUS = {
     reviewer: 'outreach',
   };
 
-  const items = Array.from(document.querySelectorAll('.agent-canvas canvas')).map((cv, idx) => {
-    const a = agents[idx];
-    const mode = MODES[a.mode] ? a.mode : (ALIAS[a.mode] && MODES[ALIAS[a.mode]] ? ALIAS[a.mode] : 'researcher');
+  const items = Array.from(document.querySelectorAll('.agent-canvas canvas')).map((cv) => {
+    const m = cv.dataset.mode;
+    const mode = MODES[m] ? m : (ALIAS[m] && MODES[ALIAS[m]] ? ALIAS[m] : 'researcher');
     cv.width = SIZE * SCALE;
     cv.height = SIZE * SCALE;
     const ctx = cv.getContext('2d');
@@ -407,7 +407,7 @@ const STATUS = {
     return {
       ctx,
       mode: MODES[mode],
-      cfg: { ...(CONFIGS[mode] || { speed: 1 }), hue: a.hue, lit: a.lit ?? 55 },
+      cfg: { ...(CONFIGS[mode] || { speed: 1 }), hue: Number(cv.dataset.hue) || 0, lit: Number(cv.dataset.lit) || 55 },
     };
   });
 
@@ -425,8 +425,7 @@ const STATUS = {
         if (anyVisible) start(); else stop();
       }, { rootMargin: '40px' })
     : null;
-  const grid = document.querySelector('.agent-grid');
-  io && grid && io.observe(grid);
+  document.querySelectorAll('.agent-grid').forEach((g) => io && io.observe(g));
 
   let raf = null;
   function loop() { drawAll(performance.now()); raf = requestAnimationFrame(loop); }

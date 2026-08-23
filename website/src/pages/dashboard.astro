@@ -43,7 +43,7 @@ const features = [
       </div>
 
       <!-- Features -->
-      <div class="sec-head center reveal" style="margin-top:64px">
+      <div class="sec-head center reveal sec-head--mt64">
         <p class="eyebrow" data-i18n="dashboardPage.features.badge">Features</p>
         <h2 class="h2-sec" data-i18n-html data-i18n="dashboardPage.features.title">Built for operators</h2>
       </div>
@@ -58,13 +58,13 @@ const features = [
       </div>
 
       <!-- Access -->
-      <div class="sec-head center reveal" style="margin-top:64px">
+      <div class="sec-head center reveal sec-head--mt64">
         <p class="eyebrow" data-i18n="dashboardPage.code.badge">Access</p>
         <h2 class="h2-sec" data-i18n-html data-i18n="dashboardPage.code.title">One endpoint, zero config</h2>
         <p class="copy-lg mx-auto" data-i18n-html data-i18n="dashboardPage.code.sub">The embedded single-file dashboard is served at GET /dashboard when you run <code class="ic">fathom serve</code>. No separate Astro build, npm install, or CDN is needed.</p>
       </div>
 
-      <div class="code-card" style="max-width:640px; margin:0 auto;">
+      <div class="code-card code-card--narrow">
         <pre><code># Start the server
 fathom serve --port 8080
 
@@ -84,24 +84,23 @@ open http://localhost:8080/dashboard
         <div class="bench-card-lg">
           <h3 data-i18n="dashboardPage.cta.title">Try the dashboard</h3>
           <p class="bench-sub" data-i18n="dashboardPage.cta.sub">Install Fathom, start the server and open /dashboard in your browser.</p>
-          <div class="code-card" style="max-width:480px">
+          <div class="code-card code-card--xs">
             <pre><code>git clone https://github.com/yakushevhk/Fathom.git
 cd Fathom
 cargo build --release
 ./target/release/fathom serve</code></pre>
           </div>
-          <div style="margin-top:16px">
-            <a href="/api" class="btn btn-outline" data-i18n="dashboardPage.cta.docs">API reference</a>
+                    <div class="mt-16">
           </div>
         </div>
       </div>
 
       <!-- Playground cross-link -->
-      <div class="dash-cta" style="margin-top:24px">
+      <div class="dash-cta dash-cta--alt">
         <div class="bench-card-lg">
           <h3 data-i18n="dashboardPage.cta.playground">Open Playground</h3>
           <p class="bench-sub" data-i18n="dashboardPage.cta.playgroundNote">Want to run research interactively? The Playground launches sessions, streams agent progress live and renders the report — right in the site.</p>
-          <div style="margin-top:16px">
+          <div class="mt-16">
             <a href="/playground" class="btn btn-primary" data-i18n="dashboardPage.cta.playground">Open Playground</a>
           </div>
         </div>
@@ -123,6 +122,7 @@ cargo build --release
   .dash-hero .copy-lg { margin-top: 20px; }
 
   .sec-head { max-width: 820px; margin: 0 auto 32px; padding: 0 24px; }
+  .sec-head--mt64 { margin-top: 64px; }
   .h2-sec { font-size: clamp(26px, 3.5vw, 48px); font-weight: 500; letter-spacing: -0.025em; line-height: 1.08; margin-top: 12px; }
 
   .dash-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
@@ -139,6 +139,8 @@ cargo build --release
   @media (max-width: 500px) { .dash-feat-grid { grid-template-columns: 1fr; } }
 
   .code-card { border: 1px solid var(--grey-200); border-radius: var(--radius-md); background: var(--grey-900); overflow: hidden; }
+  .code-card--narrow { max-width: 640px; margin: 0 auto; }
+  .code-card--xs { max-width: 480px; }
   .code-card pre { padding: 20px 24px; margin: 0; overflow-x: auto; }
   .code-card code { color: var(--grey-200); font-family: var(--font-mono); font-size: 13px; line-height: 1.7; white-space: pre; }
 
@@ -147,7 +149,9 @@ cargo build --release
   .btn-outline:hover { border-color: var(--grey-500); background: var(--grey-100); }
 
   .dash-cta { max-width: 900px; margin: 48px auto 0; }
+  .dash-cta--alt { margin-top: 24px; }
   .bench-card-lg { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 28px; }
   .bench-card-lg h3 { font-size: 22px; font-weight: 500; }
   .bench-sub { color: var(--grey-600); font-size: 14px; margin: 8px 0 18px; line-height: 1.6; }
+  .mt-16 { margin-top: 16px; }
 </style>

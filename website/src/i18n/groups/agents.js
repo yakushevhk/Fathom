@@ -250,7 +250,10 @@ export default {
         '8': { k: { en: 'Social verification', ru: 'Верификация соцсетей' }, d: { en: 'soft-404 content scan on HTTP 200 · 404/410 dead · 401/403/429 reported as bot-blocked · og:title name + follower count when public', ru: 'сканирование контента на soft-404 при HTTP 200 · 404/410 — мёртвые · 401/403/429 — блокировка бота · og:title, имя + число подписчиков, если публично' } },
         '9': { k: { en: 'Dedup & merge', ru: 'Дедупликация и слияние' }, d: { en: 'normalized email (trim + lowercase) and digits-only phone keys · atomic merge fills blanks and moves socials/tags/notes', ru: 'нормализованные ключи email (trim + нижний регистр) и только цифры для телефона · атомарное слияние заполняет пустые поля и переносит соцсети/теги/заметки' } },
       },
-      tools: { eyebrow: { en: 'Tools', ru: 'Инструменты' }, title: { en: 'The verification toolbox', ru: 'Набор инструментов проверки' } },
+      results: {
+        eyebrow: { en: 'Results', ru: 'Результаты' },
+        title: { en: 'What cleaning buys you', ru: 'Что даёт очистка' },
+      },
       feeds: {
         eyebrow: { en: 'Feeds downstream workers', ru: 'Работает на флот воркеров' },
         title: { en: 'Verified inputs keep actions safe', ru: 'Чистый список — это бюджет, который остаётся у вас' },
@@ -303,7 +306,10 @@ export default {
         '8': { k: { en: 'Housekeeping', ru: 'Обслуживание' }, d: { en: 'distill promotes run facts into agent knowledge · GC archives expired/stale rows and compacts groups > 200 — nothing is deleted', ru: 'distill повышает факты запуска до знаний агента · GC архивирует просроченные/устаревшие строки и уплотняет группы > 200 — ничего не удаляется' } },
         '9': { k: { en: 'Benchmarks', ru: 'Бенчмарки' }, d: { en: 'absorb 49–521 µs/fact · hybrid search 0.6–0.9 ms at 1K rows · digest ~2 ms', ru: 'поглощение 49–521 мкс/факт · гибридный поиск 0,6–0,9 мс при 1 тыс. строк · дайджест ~2 мс' } },
       },
-      tools: { eyebrow: { en: 'Tools', ru: 'Инструменты' }, title: { en: 'The Memoring toolset', ru: 'Набор инструментов Memoring' } },
+      tiers: {
+        eyebrow: { en: 'Three tiers', ru: 'Три уровня' },
+        title: { en: 'Profile, skills, archive', ru: 'Профиль, навыки, архив' },
+      },
       feeds: {
         eyebrow: { en: 'Feeds the worker fleet', ru: 'Питает флот воркеров' },
         title: { en: 'Every operation starts smarter', ru: 'Аутрич, который помнит каждое касание' },

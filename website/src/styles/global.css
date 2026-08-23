@@ -3,8 +3,6 @@
    Warm minimalism for autonomous remote workers
    ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
-
 :root {
   /* ---- Warm neutral palette (parallelcopy) ---- */
   --grey-50: #fcfbfa;
@@ -57,8 +55,9 @@
   --teal: #8fc9c2;
 
   /* ---- Typography ---- */
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Helvetica, Arial, sans-serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', 'Fira Code', Menlo, Monaco, monospace;
+  --font-serif: 'Instrument Serif', Georgia, 'Times New Roman', serif;
 
   /* ---- Spacing ---- */
   --section-gap: 120px;
@@ -136,6 +135,33 @@ html {
 
 body {
   overflow-x: hidden;
+}
+/* ---- Skip link (keyboard a11y) ---- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 1000;
+  padding: 10px 18px;
+  background: var(--bg-dark);
+  color: var(--text-inverse);
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 0 0 var(--radius-md) 0;
+  text-decoration: none;
+}
+.skip-link:focus {
+  left: 0;
 }
 
 a {

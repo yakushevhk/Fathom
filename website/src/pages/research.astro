@@ -52,7 +52,7 @@ const techs = [
       </div>
 
       <!-- DATA SOURCES -->
-      <div class="sec-head center reveal" style="margin-top:72px">
+      <div class="sec-head center reveal sec-head--mt72">
         <p class="eyebrow" data-i18n="researchPage.sources.badge">Configured sources</p>
         <h2 class="h2-sec" data-i18n-html data-i18n="researchPage.sources.title">Choose the sources your worker can use</h2>
       </div>
@@ -73,7 +73,7 @@ const techs = [
       </div>
 
       <!-- VERIFICATION -->
-      <div class="sec-head center reveal" style="margin-top:72px">
+      <div class="sec-head center reveal sec-head--mt72">
         <p class="eyebrow" data-i18n="researchPage.verification.badge">Verification and review</p>
         <h2 class="h2-sec" data-i18n-html data-i18n="researchPage.verification.title">Evidence gates before side effects</h2>
         <p class="copy-lg mx-auto" data-i18n="researchPage.verification.sub">Workers can apply syntax and DNS checks, flag disposable or role-based addresses and—when network access is configured—probe SMTP. Receipts and confidence keep uncertainty visible; governance can require human approval before saving or syncing.</p>
@@ -103,7 +103,7 @@ const techs = [
       </div>
 
       <!-- ENRICHMENT -->
-      <div class="sec-head center reveal" style="margin-top:72px">
+      <div class="sec-head center reveal sec-head--mt72">
         <p class="eyebrow" data-i18n="researchPage.enrich.badge">Context enrichment</p>
         <h2 class="h2-sec" data-i18n-html data-i18n="researchPage.enrich.title">Add context when evidence supports it</h2>
         <p class="copy-lg mx-auto" data-i18n="researchPage.enrich.sub">enrich_company can inspect HTML signatures for CMS, JS frameworks, analytics, payments and hosting. enrich_person can compare public web evidence and configured social sources; workers preserve gaps instead of filling them with guesses.</p>
@@ -119,7 +119,7 @@ const techs = [
       </div>
 
       <!-- QUALITY TRACKING -->
-      <div class="sec-head center reveal" style="margin-top:72px">
+      <div class="sec-head center reveal sec-head--mt72">
         <p class="eyebrow" data-i18n="researchPage.quality.badge">Quality tracking</p>
         <h2 class="h2-sec" data-i18n-html data-i18n="researchPage.quality.title">Append-only verification receipts</h2>
         <p class="copy-lg mx-auto" data-i18n="researchPage.quality.sub">Verification checks can write durable receipts to a JSONL ledger. Receipts are keyed by (kind, value), so a PASS on one check does not silence a FAIL on another. Reviewers and governance policies can use the resulting Verified, Partial or Unverified status before any external action.</p>
@@ -141,7 +141,7 @@ const techs = [
       </div>
 
       <!-- SCHEDULED HARVESTING -->
-      <div class="feat reveal" style="margin-top:72px">
+      <div class="feat reveal feat--mt72">
         <div class="feat-copy">
           <p class="eyebrow" data-i18n="researchPage.harvesting.badge">Repeatable workflows</p>
           <h2 class="h2-sec" data-i18n-html data-i18n="researchPage.harvesting.title">Schedule, compare, notify</h2>
@@ -160,7 +160,7 @@ fathom run --repeat 86400 \
       </div>
 
       <!-- CRM & EXPORT -->
-      <div class="sec-head center reveal" style="margin-top:72px">
+      <div class="sec-head center reveal sec-head--mt72">
 <p class="eyebrow" data-i18n="researchPage.crm.badge">Handoff and export</p>
         <h2 class="h2-sec" data-i18n-html data-i18n="researchPage.crm.title">Prepare findings for the next step</h2>
         <p class="copy-lg mx-auto" data-i18n="researchPage.crm.sub">Export contacts and reports as CSV, vCard, JSON or Excel. A worker can hand findings to amoCRM, Bitrix24, HubSpot or another configured integration after review and any required approval; integrations are not enabled by default.</p>
@@ -190,14 +190,13 @@ fathom run --repeat 86400 \
         <div class="bench-card-lg">
           <h3 data-i18n="researchPage.cta.title">Run a research workflow</h3>
           <p class="bench-sub" data-i18n="researchPage.cta.sub">Install Fathom, configure the worker's tools and ask it to produce reviewable findings.</p>
-          <div class="code-card" style="max-width:560px">
+          <div class="code-card code-card--md">
             <pre><code>git clone https://github.com/yakushevhk/Fathom.git
 cd Fathom
 cargo build --release
 ./target/release/fathom run "Find CTOs at fintech startups in Berlin"</code></pre>
           </div>
-          <div style="margin-top:16px">
-            <a href="/docs/outreach" class="btn btn-outline" data-i18n="researchPage.cta.docs">Outreach &amp; leads docs</a>
+                    <div class="mt-16">
           </div>
         </div>
       </div>
@@ -218,6 +217,8 @@ cargo build --release
   .research-hero .copy-lg { margin-top: 20px; }
 
   .sec-head { max-width: 820px; margin: 0 auto 32px; padding: 0 24px; }
+  .sec-head--mt72 { margin-top: 72px; }
+  .feat--mt72 { margin-top: 72px; }
   .h2-sec { font-size: clamp(26px, 3.5vw, 48px); font-weight: 500; letter-spacing: -0.025em; line-height: 1.08; margin-top: 12px; }
 
   /* Pipeline grid */
@@ -271,6 +272,7 @@ cargo build --release
   @media (max-width: 800px) { .feat { grid-template-columns: 1fr; gap: 24px; } }
 
   .code-card { border: 1px solid var(--grey-200); border-radius: var(--radius-md); background: var(--grey-900); overflow: hidden; }
+  .code-card--md { max-width: 560px; }
   .code-card pre { padding: 20px 24px; margin: 0; overflow-x: auto; }
   .code-card code { color: var(--grey-200); font-family: var(--font-mono); font-size: 13px; line-height: 1.7; white-space: pre; }
 
@@ -291,4 +293,5 @@ cargo build --release
   .btn { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 13px; font-weight: 600; padding: 10px 20px; border-radius: var(--radius-sm); transition: all .15s; }
   .btn-outline { border: 1px solid var(--grey-300); color: var(--grey-800); }
   .btn-outline:hover { border-color: var(--grey-500); background: var(--grey-100); }
+  .mt-16 { margin-top: 16px; }
 </style>

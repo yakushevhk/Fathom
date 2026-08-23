@@ -509,6 +509,9 @@ export const translations = {
       "title": { "en": "Metrics for the runtime you operate", "ru": "Метрики управляемого вами рантайма" },
       "sub": { "en": "Scrape /metrics and use the authenticated observability summary for bounded live counters and audit totals. Event streams expose worker progress without polling.", "ru": "Считывайте /metrics и используйте защищённую сводку наблюдаемости для ограниченных текущих счётчиков и итогов аудита. Потоки событий показывают прогресс воркеров без опроса." }
     },
+    "thMetric": { "en": "Metric", "ru": "Метрика" },
+    "thType": { "en": "Type", "ru": "Тип" },
+    "thCount": { "en": "What it counts", "ru": "Что считает" },
     "ops": {
       "prom": { "name": { "en": "Prometheus", "ru": "Prometheus" }, "d": { "en": "Metrics expose request counts, latencies, and session and tool activity for dashboards.", "ru": "Метрики показывают количество запросов, задержки, а также активность сессий и инструментов для дашбордов." } },
       "sse": { "name": { "en": "SSE streaming", "ru": "Потоки SSE" }, "d": { "en": "Token deltas, tool calls, worker lifecycle events and findings arrive as server-sent events.", "ru": "Изменения токенов, вызовы инструментов, события жизненного цикла и находки поступают как события, отправленные сервером." } },
@@ -598,6 +601,9 @@ export const translations = {
     "noMatches": { "en": "No matches", "ru": "Ничего не найдено" }
   },
   "arch_perf": {
+    "built_on": { "en": "Built on", "ru": "Построен на" },
+    "stack_title": { "en": "Battle-tested <em class=\"it\">Rust</em> stack", "ru": "Боевой <em class=\"it\">Rust</em>-стек" },
+    "stack_note": { "en": "Rust workspace · edition 2021 · release builds with LTO + strip · Elastic License 2.0", "ru": "Rust workspace · edition 2021 · релизные сборки с LTO + strip · Elastic License 2.0" },
     "l_tools": {
       "en": "built-ins + browser tools",
       "ru": "встроенных + браузерных инструментов"
@@ -1236,7 +1242,7 @@ export const translations = {
       "en": "1 fathom = 1.829 m · depth of work",
       "ru": "1 fathom = 1,829 м · глубина работы"
     },
-    "run": {
+    "runDemo": {
       "s1": { "en": "Goal", "ru": "Цель" },
       "s2": { "en": "Plan", "ru": "План" },
       "s3": { "en": "Research", "ru": "Ресёрч" },
@@ -1253,6 +1259,63 @@ export const translations = {
       "log7": { "en": "delivered: report + CRM sync · webhook · telegram", "ru": "доставлено: отчёт + синк CRM · webhook · telegram" }
     }
     },
+  "code": {
+    "hero": {
+      "badge": { "en": "Source & runtime map", "ru": "Карта исходников и рантайма" },
+      "title": { "en": "Source & runtime, <em class=\"it\">mapped.</em>", "ru": "Исходники и рантайм — <em class=\"it\">на карте.</em>" },
+      "sub": { "en": "A current map of the Fathom binary, its 12 workspace crates, and the tools available at runtime.", "ru": "Актуальная карта бинарника Fathom, его 12 крейтов воркспейса и инструментов, доступных в рантайме." }
+    },
+    "stats": {
+      "crates": { "en": "Workspace crates", "ru": "Крейтов воркспейса" },
+      "tools": { "en": "Built-ins + conditional browser tools", "ru": "Встроенные + условные браузерные инструменты" },
+      "binary": { "en": "Binary", "ru": "Бинарник" }
+    },
+    "download": {
+      "text": { "en": "Fathom is distributed as a single binary rather than a stale archive download. Browse the source repository and build the workspace with Cargo.", "ru": "Fathom распространяется как один бинарник, а не как устаревший архив для скачивания. Смотрите исходный репозиторий и собирайте воркспейс через Cargo." },
+      "btn": { "en": "View Fathom on GitHub", "ru": "Fathom на GitHub" }
+    },
+    "features": {
+      "title": { "en": "Current coordination and runtime", "ru": "Текущая координация и рантайм" },
+      "items": {
+        "discovery": { "en": "IrcBus and AgentRegistry for peer discovery and hub messaging", "ru": "IrcBus и AgentRegistry для обнаружения пиров и обмена сообщениями через hub" },
+        "lifecycle": { "en": "Steering plus park/revive lifecycle controls", "ru": "Стиринг и управление жизненным циклом park/revive" },
+        "batch": { "en": "Batch spawn with output_schema, isolated workers and handoff", "ru": "Пакетный спавн с output_schema, изолированными воркерами и передачей задач" },
+        "jobs": { "en": "In-process async jobs and daemon management", "ru": "Внутрипроцессные асинхронные задачи и управление демонами" }
+      }
+    },
+    "workspace": {
+      "title": { "en": "Workspace crates", "ru": "Крейты воркспейса" },
+      "name": { "en": "Fathom Rust workspace", "ru": "Rust-воркспейс Fathom" },
+      "crates": {
+        "core": { "desc": { "en": "Shared agent types, coordination, steering and in-process async jobs", "ru": "Общие типы агентов, координация, стиринг и внутрипроцессные асинхронные задачи" } },
+        "llm": { "desc": { "en": "Streaming LLM provider abstraction", "ru": "Абстракция стримингового провайдера LLM" } },
+        "agent": { "desc": { "en": "Hierarchical agents, batch spawn, output schemas and handoff", "ru": "Иерархические агенты, пакетный спавн, схемы вывода и передача задач" } },
+        "tools": { "desc": { "en": "51 always-registered tools, plus up to 5 CDP browser tools and up to 6 computer tools when configured", "ru": "51 постоянно зарегистрированный инструмент, плюс до 5 браузерных инструментов CDP и до 6 инструментов computer use при настройке" } },
+        "mcp": { "desc": { "en": "MCP client and server integration", "ru": "Интеграция MCP-клиента и сервера" } },
+        "persistence": { "desc": { "en": "SQLite/PostgreSQL sessions, contacts and durable jobs", "ru": "Сессии, контакты и устойчивые задачи в SQLite/PostgreSQL" } },
+        "memory": { "desc": { "en": "Semantic memory with vector search, BM25 and entity graph", "ru": "Семантическая память с векторным поиском, BM25 и графом сущностей" } },
+        "server": { "desc": { "en": "HTTP API, SSE events, steering, jobs and daemon management", "ru": "HTTP API, SSE-события, стиринг, задачи и управление демонами" } },
+        "tui": { "desc": { "en": "Terminal interface for live sessions, agents and approvals", "ru": "Терминальный интерфейс для живых сессий, агентов и одобрений" } },
+        "lsp": { "desc": { "en": "Language Server Protocol tool integration", "ru": "Интеграция инструментов через Language Server Protocol" } },
+        "governance": { "desc": { "en": "Policy, capability and coordination governance", "ru": "Управление политиками, возможностями и координацией" } },
+        "supervisor": { "desc": { "en": "Supervisor and lifecycle runtime services", "ru": "Супервизор и сервисы жизненного цикла рантайма" } }
+      }
+    },
+    "techStack": {
+      "title": { "en": "Tech Stack", "ru": "Технологический стек" },
+      "rows": {
+        "lang": { "cat": { "en": "Language", "ru": "Язык" }, "items": { "en": "Rust 2021 edition", "ru": "Rust 2021 edition" } },
+        "runtime": { "cat": { "en": "Async Runtime", "ru": "Асинхронный рантайм" }, "items": { "en": "tokio (full)", "ru": "tokio (full)" } },
+        "cli": { "cat": { "en": "CLI", "ru": "CLI" }, "items": { "en": "clap (derive) — the fathom binary", "ru": "clap (derive) — бинарник fathom" } },
+        "serialization": { "cat": { "en": "Serialization", "ru": "Сериализация" }, "items": { "en": "serde, serde_json, toml", "ru": "serde, serde_json, toml" } },
+        "http": { "cat": { "en": "HTTP", "ru": "HTTP" }, "items": { "en": "reqwest, axum, SSE", "ru": "reqwest, axum, SSE" } },
+        "database": { "cat": { "en": "Database", "ru": "База данных" }, "items": { "en": "rusqlite (SQLite), tokio-postgres + deadpool (PostgreSQL)", "ru": "rusqlite (SQLite), tokio-postgres + deadpool (PostgreSQL)" } },
+        "tui": { "cat": { "en": "TUI", "ru": "TUI" }, "items": { "en": "ratatui + crossterm", "ru": "ratatui + crossterm" } },
+        "lsp": { "cat": { "en": "LSP", "ru": "LSP" }, "items": { "en": "Language Server Protocol integration", "ru": "Интеграция Language Server Protocol" } },
+        "mcp": { "cat": { "en": "MCP", "ru": "MCP" }, "items": { "en": "Model Context Protocol (client + server)", "ru": "Model Context Protocol (клиент + сервер)" } }
+      }
+    }
+  },
   "lang_aria": {
     "en": "Change language",
     "ru": "Сменить язык"

@@ -5,92 +5,93 @@ import PageHero from '../components/PageHero.astro';
 const workspaces = [
   {
     name: 'Fathom Rust workspace',
+    key: 'main',
     crates: [
-      { name: 'pr-core', desc: 'Shared agent types, coordination, steering and in-process async jobs' },
-      { name: 'pr-llm', desc: 'Streaming LLM provider abstraction' },
-      { name: 'pr-agent', desc: 'Hierarchical agents, batch spawn, output schemas and handoff' },
-      { name: 'pr-tools', desc: '51 always-registered tools, plus up to 5 CDP browser tools and up to 6 computer tools when configured' },
-      { name: 'pr-mcp', desc: 'MCP client and server integration' },
-      { name: 'pr-persistence', desc: 'SQLite/PostgreSQL sessions, contacts and durable jobs' },
-      { name: 'pr-memory', desc: 'Semantic memory with vector search, BM25 and entity graph' },
-      { name: 'pr-server', desc: 'HTTP API, SSE events, steering, jobs and daemon management' },
-      { name: 'pr-tui', desc: 'Terminal interface for live sessions, agents and approvals' },
-      { name: 'pr-lsp', desc: 'Language Server Protocol tool integration' },
-      { name: 'pr-governance', desc: 'Policy, capability and coordination governance' },
-      { name: 'pr-supervisor', desc: 'Supervisor and lifecycle runtime services' },
-    ]
+      { name: 'pr-core', key: 'core', desc: 'Shared agent types, coordination, steering and in-process async jobs' },
+      { name: 'pr-llm', key: 'llm', desc: 'Streaming LLM provider abstraction' },
+      { name: 'pr-agent', key: 'agent', desc: 'Hierarchical agents, batch spawn, output schemas and handoff' },
+      { name: 'pr-tools', key: 'tools', desc: '51 always-registered tools, plus up to 5 CDP browser tools and up to 6 computer tools when configured' },
+      { name: 'pr-mcp', key: 'mcp', desc: 'MCP client and server integration' },
+      { name: 'pr-persistence', key: 'persistence', desc: 'SQLite/PostgreSQL sessions, contacts and durable jobs' },
+      { name: 'pr-memory', key: 'memory', desc: 'Semantic memory with vector search, BM25 and entity graph' },
+      { name: 'pr-server', key: 'server', desc: 'HTTP API, SSE events, steering, jobs and daemon management' },
+      { name: 'pr-tui', key: 'tui', desc: 'Terminal interface for live sessions, agents and approvals' },
+      { name: 'pr-lsp', key: 'lsp', desc: 'Language Server Protocol tool integration' },
+      { name: 'pr-governance', key: 'governance', desc: 'Policy, capability and coordination governance' },
+      { name: 'pr-supervisor', key: 'supervisor', desc: 'Supervisor and lifecycle runtime services' },
+    ],
   }
 ];
 
 const features = [
-  'IrcBus and AgentRegistry for peer discovery and hub messaging',
-  'Steering plus park/revive lifecycle controls',
-  'Batch spawn with output_schema, isolated workers and handoff',
-  'In-process async jobs and daemon management',
+  { key: 'discovery', text: 'IrcBus and AgentRegistry for peer discovery and hub messaging' },
+  { key: 'lifecycle', text: 'Steering plus park/revive lifecycle controls' },
+  { key: 'batch', text: 'Batch spawn with output_schema, isolated workers and handoff' },
+  { key: 'jobs', text: 'In-process async jobs and daemon management' },
 ];
 
 const techStack = [
-  { category: 'Language', items: 'Rust 2021 edition' },
-  { category: 'Async Runtime', items: 'tokio (full)' },
-  { category: 'CLI', items: 'clap (derive) — the fathom binary' },
-  { category: 'Serialization', items: 'serde, serde_json, toml' },
-  { category: 'HTTP', items: 'reqwest, axum, SSE' },
-  { category: 'Database', items: 'rusqlite (SQLite), tokio-postgres + deadpool (PostgreSQL)' },
-  { category: 'TUI', items: 'ratatui + crossterm' },
-  { category: 'LSP', items: 'Language Server Protocol integration' },
-  { category: 'MCP', items: 'Model Context Protocol (client + server)' },
+  { category: 'Language', key: 'lang', items: 'Rust 2021 edition' },
+  { category: 'Async Runtime', key: 'runtime', items: 'tokio (full)' },
+  { category: 'CLI', key: 'cli', items: 'clap (derive) — the fathom binary' },
+  { category: 'Serialization', key: 'serialization', items: 'serde, serde_json, toml' },
+  { category: 'HTTP', key: 'http', items: 'reqwest, axum, SSE' },
+  { category: 'Database', key: 'database', items: 'rusqlite (SQLite), tokio-postgres + deadpool (PostgreSQL)' },
+  { category: 'TUI', key: 'tui', items: 'ratatui + crossterm' },
+  { category: 'LSP', key: 'lsp', items: 'Language Server Protocol integration' },
+  { category: 'MCP', key: 'mcp', items: 'Model Context Protocol (client + server)' },
 ];
 ---
 
 <Layout title="Code & Tools - Fathom">
   <main class="code-page">
         <PageHero cls="code-hero">
-        <p class="eyebrow">Source &amp; runtime map</p>
-        <h1 class="h2-sec">Source &amp; runtime, <em class="it">mapped.</em></h1>
-        <p class="copy-lg mx-auto">A current map of the Fathom binary, its 12 workspace crates, and the tools available at runtime.</p>
+        <p class="eyebrow" data-i18n="code.hero.badge">Source &amp; runtime map</p>
+        <h1 class="h2-sec" data-i18n-html data-i18n="code.hero.title">Source &amp; runtime, <em class="it">mapped.</em></h1>
+        <p class="copy-lg mx-auto" data-i18n="code.hero.sub">A current map of the Fathom binary, its 12 workspace crates, and the tools available at runtime.</p>
     </PageHero>
     <div class="container">
 
       <div class="stats-row">
         <div class="stat-card">
           <span class="stat-value">12</span>
-          <span class="stat-label">Workspace crates</span>
+          <span class="stat-label" data-i18n="code.stats.crates">Workspace crates</span>
         </div>
         <div class="stat-card">
           <span class="stat-value">51 + 5</span>
-          <span class="stat-label">Built-ins + conditional browser tools</span>
+          <span class="stat-label" data-i18n="code.stats.tools">Built-ins + conditional browser tools</span>
         </div>
         <div class="stat-card">
           <span class="stat-value">fathom</span>
-          <span class="stat-label">Binary</span>
+          <span class="stat-label" data-i18n="code.stats.binary">Binary</span>
         </div>
       </div>
 
       <div class="download-section">
-        <p class="copy-lg mx-auto">Fathom is distributed as a single binary rather than a stale archive download. Browse the source repository and build the workspace with Cargo.</p>
-        <a href="https://github.com/yakushev/fathom" class="btn btn-primary download-btn">View Fathom on GitHub</a>
+        <p class="copy-lg mx-auto" data-i18n="code.download.text">Fathom is distributed as a single binary rather than a stale archive download. Browse the source repository and build the workspace with Cargo.</p>
+        <a href="https://github.com/yakushevhk/Fathom" class="btn btn-primary download-btn" data-i18n="code.download.btn">View Fathom on GitHub</a>
       </div>
 
       <div class="workspace-section">
-        <h2 class="sec-head">Current coordination and runtime</h2>
+        <h2 class="sec-head" data-i18n="code.features.title">Current coordination and runtime</h2>
         <ul class="feature-list">
-          {features.map((feature) => <li>{feature}</li>)}
+          {features.map((feature) => <li data-i18n={'code.features.items.' + feature.key}>{feature.text}</li>)}
         </ul>
       </div>
 
       <div class="workspace-section">
-        <h2 class="sec-head">Workspace crates</h2>
+        <h2 class="sec-head" data-i18n="code.workspace.title">Workspace crates</h2>
 
         {
           workspaces.map((ws) => (
             <div class="ws-block">
-              <h3 class="ws-name">{ws.name}</h3>
+              <h3 class="ws-name" data-i18n="code.workspace.name">{ws.name}</h3>
               <div class="crate-grid">
                 {
                   ws.crates.map((c) => (
                     <div class="crate-card">
                       <code class="crate-name">{c.name}</code>
-                      <p class="crate-desc">{c.desc}</p>
+                      <p class="crate-desc" data-i18n={'code.workspace.crates.' + c.key + '.desc'}>{c.desc}</p>
                     </div>
                   ))
                 }
@@ -101,13 +102,13 @@ const techStack = [
       </div>
 
       <div class="stack-section">
-        <h2 class="sec-head">Tech Stack</h2>
+        <h2 class="sec-head" data-i18n="code.techStack.title">Tech Stack</h2>
         <div class="stack-table">
           {
             techStack.map((row) => (
               <div class="stack-row">
-                <span class="stack-cat">{row.category}</span>
-                <span class="stack-items">{row.items}</span>
+                <span class="stack-cat" data-i18n={'code.techStack.rows.' + row.key + '.cat'}>{row.category}</span>
+                <span class="stack-items" data-i18n={'code.techStack.rows.' + row.key + '.items'}>{row.items}</span>
               </div>
             ))
           }

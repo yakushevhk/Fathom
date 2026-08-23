@@ -38,13 +38,13 @@ const profiles = [
       </div>
 
       <!-- Custom profiles -->
-      <div class="sec-head center reveal" style="margin-top:64px">
+      <div class="sec-head center reveal sec-head--mt64">
         <p class="eyebrow" data-i18n="profilesPage.custom.badge">Custom profiles</p>
         <h2 class="h2-sec" data-i18n-html data-i18n="profilesPage.custom.title">Your rules, your TOML</h2>
         <p class="copy-lg mx-auto" data-i18n-html data-i18n="profilesPage.custom.sub">Create a TOML file in <code class="ic">~/.fathom/profiles/&lt;name&gt;.toml</code> to override model, fast_model, temperature, max_depth, max_agents, max_iterations, timeout_seconds, replan_rounds and deny_tools. A user file with the same name takes priority over the built-in preset.</p>
       </div>
 
-      <div class="code-card" style="max-width:640px; margin:0 auto;">
+      <div class="code-card code-card--narrow">
         <pre><code># ~/.fathom/profiles/my-profile.toml
 
 model = "deepseek-chat"
@@ -60,7 +60,7 @@ deny_tools = ["git_push"]</code></pre>
       </div>
 
       <!-- CLI usage -->
-      <div class="sec-head center reveal" style="margin-top:64px">
+      <div class="sec-head center reveal sec-head--mt64">
         <p class="eyebrow" data-i18n="profilesPage.cli.badge">CLI usage</p>
         <h2 class="h2-sec" data-i18n-html data-i18n="profilesPage.cli.title">List, show, create, run</h2>
       </div>
@@ -108,6 +108,7 @@ deny_tools = ["git_push"]</code></pre>
   .profiles-hero .copy-lg { margin-top: 20px; }
 
   .sec-head { max-width: 820px; margin: 0 auto 32px; padding: 0 24px; }
+  .sec-head--mt64 { margin-top: 64px; }
   .h2-sec { font-size: clamp(26px, 3.5vw, 48px); font-weight: 500; letter-spacing: -0.025em; line-height: 1.08; margin-top: 12px; }
 
   .profiles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
@@ -119,6 +120,7 @@ deny_tools = ["git_push"]</code></pre>
   .profiles-card p { color: var(--grey-600); font-size: 14px; line-height: 1.55; }
 
   .code-card { border: 1px solid var(--grey-200); border-radius: var(--radius-md); background: var(--grey-900); overflow: hidden; }
+  .code-card--narrow { max-width: 640px; margin: 0 auto; }
   .code-card pre { padding: 20px 24px; margin: 0; overflow-x: auto; }
   .code-card code { color: var(--grey-200); font-family: var(--font-mono); font-size: 13px; line-height: 1.7; white-space: pre; }
   .ic { font-family: var(--font-mono); font-size: 0.9em; background: var(--grey-100); padding: 2px 6px; border-radius: 4px; }

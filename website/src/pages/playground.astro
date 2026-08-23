@@ -214,7 +214,7 @@ import PageHero from '../components/PageHero.astro';
                 </div>
                 <div class="pg-mem-maint-block">
                   <span class="pg-mem-maint-label">Garbage collect</span>
-                  <label class="pg-field pg-field-inline"><span>TTL days</span><input id="pg-gc-ttl" type="number" value="30" style="width:70px" /></label>
+                  <label class="pg-field pg-field-inline"><span>TTL days</span>            <input id="pg-gc-ttl" type="number" value="30" class="pg-input--w70" /></label>
                   <label class="pg-check"><input id="pg-gc-dry" type="checkbox" checked /> dry_run</label>
                   <button class="pg-ghost-btn" id="pg-gc-btn">Run GC</button>
                 </div>
@@ -236,7 +236,7 @@ import PageHero from '../components/PageHero.astro';
               <div class="pg-panel-head"><h4 data-i18n="playground.jobs.new">New job</h4><span class="pg-endpoint">POST /api/v1/jobs</span></div>
               <div class="pg-job-create">
                 <input id="pg-job-task" type="text" data-i18n-placeholder="playground.jobs.taskPh" placeholder="Task description…" />
-                <label class="pg-field pg-field-inline"><span>attempts</span><input id="pg-job-attempts" type="number" value="3" min="1" max="10" style="width:80px" /></label>
+                <label class="pg-field pg-field-inline"><span>attempts</span>            <input id="pg-job-attempts" type="number" value="3" min="1" max="10" class="pg-input--w80" /></label>
                 <button class="btn btn-primary" id="pg-job-create-btn" data-i18n="playground.jobs.create">Create</button>
               </div>
             </div>
@@ -282,6 +282,8 @@ import PageHero from '../components/PageHero.astro';
     .pg-page { padding: 72px 0 96px; }
     .pg-hero { text-align: center; max-width: 760px; margin: 0 auto 40px; }
     .pg-hero .copy-lg { color: var(--text-secondary); }
+    .pg-input--w70 { width: 70px; }
+    .pg-input--w80 { width: 80px; }
 
     .pg-console {
       background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-xl);

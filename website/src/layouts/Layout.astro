@@ -24,6 +24,7 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <meta name="theme-color" content="#0a0a0a" />
     <link rel="canonical" href={canonical} />
+    <meta name="robots" content="index, follow" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
@@ -40,7 +41,7 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
     <meta name="twitter:image" content={`${SITE}/og-image.png`} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
     <title>{title}</title>
     <JsonLd data={{
       '@context': 'https://schema.org',
@@ -86,7 +87,8 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
     </script>
   </head>
   <body>
-    <nav class="topnav">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <nav class="topnav" aria-label="Main navigation">
       <div class="container nav-inner">
         <a href="/" class="brand">
           <svg class="mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -129,7 +131,7 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
           </div>
           <a href="/#cta" class="nav-cta" data-i18n="nav.cta">Get Started</a>
         </div>
-        <button class="menu-btn" aria-label="Menu" data-i18n-aria="nav.menu" id="menu-toggle">
+        <button class="menu-btn" aria-label="Menu" data-i18n-aria="nav.menu" id="menu-toggle" aria-expanded="false">
           <span></span><span></span><span></span>
         </button>
       </div>
@@ -161,6 +163,7 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
       <a href="/#cta" class="btn btn-primary mobile-cta" data-i18n="nav.cta">Get Started</a>
     </div>
 
+    <div id="main" tabindex="-1"></div>
     <slot />
 
     <footer class="footer">
@@ -635,7 +638,8 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
 
       const toggle = document.getElementById('menu-toggle');
       toggle?.addEventListener('click', () => {
-        document.body.classList.toggle('mobile-nav-open');
+        const isOpen = document.body.classList.toggle('mobile-nav-open');
+      toggle.setAttribute('aria-expanded', String(isOpen));
       });
       document.querySelectorAll('.mobile-link, .mobile-cta').forEach((link) => {
         link.addEventListener('click', () => {

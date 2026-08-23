@@ -151,13 +151,13 @@ const stack = [
     <section class="section">
       <div class="container">
         <div class="sec-head center">
-          <p class="eyebrow"><span class="eyebrow__num">03</span><span>Built on</span></p>
-          <h2 class="h2">Battle-tested <em class="it">Rust</em> stack</h2>
+          <p class="eyebrow"><span class="eyebrow__num">03</span><span data-i18n="arch_perf.built_on">Built on</span></p>
+          <h2 class="h2"><span data-i18n-html="arch_perf.stack_title">Battle-tested <em class="it">Rust</em> stack</span></h2>
         </div>
         <div class="stack-chips">
           {stack.map((s) => <span class="stack-chip">{s}</span>)}
         </div>
-        <p class="sec-sub mx-auto stack-note">Rust workspace · edition 2021 · release builds with LTO + strip · Elastic License 2.0</p>
+        <p class="sec-sub mx-auto stack-note" data-i18n="arch_perf.stack_note">Rust workspace · edition 2021 · release builds with LTO + strip · Elastic License 2.0</p>
       </div>
     </section>
 
