@@ -1,4 +1,5 @@
 import { defineConfig } from 'astro/config';
+import vercel from '@astrojs/vercel';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 
@@ -8,6 +9,7 @@ const DEFAULT_LOCALE = 'en';
 
 export default defineConfig({
   site: SITE,
+  adapter: vercel(),
   integrations: [
     mdx(),
     sitemap({

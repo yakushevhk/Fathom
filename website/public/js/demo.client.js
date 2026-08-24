@@ -1,5 +1,5 @@
 // ===== DEMO CLIENT ==============================================
-const API_BASE = 'https://router.y7.hk/v1';
+const API_BASE = '/api';  // proxied via Vercel Edge Function
 const API_KEY = 'sk-haus';
 const MODEL = 'kimi/k3';
 
