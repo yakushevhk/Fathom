@@ -19,7 +19,7 @@ import Layout from '../../layouts/Layout.astro';
     <p class="article-intro" data-i18n="postAnatomy.intro">Give Fathom a mission and the coordinator decomposes it, fans it out to a fleet of workers, collects their outputs under token budgets, lets an LLM judge compare the result against the goal, and synthesizes a deliverable. Research is one mission; the same pipeline supports code, operations, and knowledge work. Here is the whole pipeline — and the failure modes it is built to survive.</p>
 
     <div class="highlights">
-      <h4 data-i18n="postAnatomy.highlightsTitle">Highlights</h4>
+      <div class="highlights-title" data-i18n="postAnatomy.highlightsTitle">Highlights</div>
       <ul>
         <li data-i18n="postAnatomy.hl1">Plan → Fan-out → Collect → Reflection → Synthesize, driven by one coordinator</li>
         <li data-i18n="postAnatomy.hl2">Sub-agents run as tokio tasks in a JoinSet or as isolated OS processes</li>
@@ -79,7 +79,7 @@ import Layout from '../../layouts/Layout.astro';
   .article-intro { margin-top: 28px; font-size: 18px; line-height: 1.65; color: var(--grey-700); }
 
   .highlights { margin: 36px 0; background: var(--grey-50); border: 1px solid var(--grey-200); border-radius: 10px; padding: 24px 28px; }
-  .highlights h4 { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--grey-600); margin-bottom: 14px; }
+  .highlights-title, .highlights h4 { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--grey-600); margin-bottom: 14px; }
   .highlights ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
   .highlights li { position: relative; padding-left: 18px; font-size: 15px; line-height: 1.55; color: var(--grey-800); }
   .highlights li::before { content: ""; position: absolute; left: 0; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--grey-900); }

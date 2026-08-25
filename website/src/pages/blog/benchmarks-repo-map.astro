@@ -19,7 +19,7 @@ import Layout from '../../layouts/Layout.astro';
     <p class="article-intro" data-i18n-html data-i18n="postBench.hero.intro">The self-hosted runtime ships a benchmark harness: <code>fathom bench</code>. It is not a showcase of flattering numbers — it is an instrument the tool layer runs against itself. It catches regressions in worker orchestration, repository mapping, and tool parallelism before they affect autonomous runs.</p>
 
     <div class="highlights">
-      <h4 data-i18n="postBench.hl.title">Highlights</h4>
+      <div class="highlights-title" data-i18n="postBench.hl.title">Highlights</div>
       <ul>
         <li data-i18n-html data-i18n="postBench.hl.item.0">repo_map got 31× faster after a benchmark exposed per-file regex compilation</li>
         <li data-i18n-html data-i18n="postBench.hl.item.1">Four tools were silently serialized — caught only because the harness printed 1.00×</li>
@@ -99,7 +99,7 @@ import Layout from '../../layouts/Layout.astro';
   .article-intro { margin-top: 28px; font-size: 18px; line-height: 1.65; color: var(--grey-700); }
 
   .highlights { margin: 36px 0; background: var(--grey-50); border: 1px solid var(--grey-200); border-radius: 10px; padding: 24px 28px; }
-  .highlights h4 { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--grey-600); margin-bottom: 14px; }
+  .highlights-title, .highlights h4 { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--grey-600); margin-bottom: 14px; }
   .highlights ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
   .highlights li { position: relative; padding-left: 18px; font-size: 15px; line-height: 1.55; color: var(--grey-800); }
   .highlights li::before { content: ""; position: absolute; left: 0; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--grey-900); }

@@ -6,26 +6,26 @@ import PageHero from '../../components/PageHero.astro';
 <Layout title="Back-Office & Invoice Reconciliation — Fathom Enterprise Solutions" description="Autonomous back-office finance employee: 3-way invoice matching in QuickBooks and ERPs, PDF OCR extraction, and audit log generation.">
   <main class="sol-detail-page">
     <PageHero cls="sol-detail-hero">
-      <p class="eyebrow"><a href="/solutions">Solutions</a> / <span>Back-Office Finance</span></p>
-      <h1 class="h2-sec">Autonomous <em class="it">Back-Office Finance</em></h1>
-      <p class="copy-lg mx-auto">Automate invoice processing, 3-way purchase order reconciliation in QuickBooks/Xero, payment batch staging, and regulatory audit trail generation.</p>
+      <p class="eyebrow"><a href="/solutions" data-i18n="solutionsDetail.breadcrumb">Solutions</a> / <span data-i18n="solutionsDetail.finance.crumb">Back-Office Finance</span></p>
+      <h1 class="h2-sec" data-i18n-html data-i18n="solutionsDetail.finance.title">Autonomous <em class="it">Back-Office Finance</em></h1>
+      <p class="copy-lg mx-auto" data-i18n="solutionsDetail.finance.sub">Automate invoice processing, 3-way purchase order reconciliation in QuickBooks/Xero, payment batch staging, and regulatory audit trail generation.</p>
       
       <div class="sol-hero-metrics">
         <div class="metric-card">
-          <div class="metric-val">30 hrs</div>
-          <div class="metric-lbl">Saved / Week per Admin</div>
+          <div class="metric-val" data-i18n="solutionsDetail.finance.m1Val">30 hrs</div>
+          <div class="metric-lbl" data-i18n="solutionsDetail.finance.m1Lbl">Saved / Week per Admin</div>
         </div>
         <div class="metric-card">
-          <div class="metric-val">100%</div>
-          <div class="metric-lbl">3-Way Match Accuracy</div>
+          <div class="metric-val" data-i18n="solutionsDetail.finance.m2Val">100%</div>
+          <div class="metric-lbl" data-i18n="solutionsDetail.finance.m2Lbl">3-Way Match Accuracy</div>
         </div>
         <div class="metric-card">
-          <div class="metric-val">0</div>
-          <div class="metric-lbl">Duplicate Invoices Paid</div>
+          <div class="metric-val" data-i18n="solutionsDetail.finance.m3Val">0</div>
+          <div class="metric-lbl" data-i18n="solutionsDetail.finance.m3Lbl">Duplicate Invoices Paid</div>
         </div>
         <div class="metric-card">
-          <div class="metric-val">100%</div>
-          <div class="metric-lbl">Audit Compliance</div>
+          <div class="metric-val" data-i18n="solutionsDetail.finance.m4Val">100%</div>
+          <div class="metric-lbl" data-i18n="solutionsDetail.finance.m4Lbl">Audit Compliance</div>
         </div>
       </div>
     </PageHero>
@@ -33,30 +33,30 @@ import PageHero from '../../components/PageHero.astro';
     <div class="container">
       <div class="sol-section">
         <div class="sec-head center">
-          <p class="eyebrow"><span>Finance Automation</span></p>
-          <h2 class="h3-sec">3-Way PO &amp; Invoice Reconciliation</h2>
-          <p class="copy-lg mx-auto">Autonomous computer use logs into financial portals, extracts structured line items, flags tax anomalies, and stages transactions behind human approval gates.</p>
+          <p class="eyebrow"><span data-i18n="solutionsDetail.finance.sec1Eyebrow">Finance Automation</span></p>
+          <h2 class="h3-sec" data-i18n="solutionsDetail.finance.sec1Title">3-Way PO &amp; Invoice Reconciliation</h2>
+          <p class="copy-lg mx-auto" data-i18n="solutionsDetail.finance.sec1Sub">Autonomous computer use logs into financial portals, extracts structured line items, flags tax anomalies, and stages transactions behind human approval gates.</p>
         </div>
         <div class="product-screenshot-frame">
-          <img src="/images/mockups/04_backoffice_invoice.png" alt="Back-Office Invoice Reconciliation" loading="lazy" />
+          <img src="/images/mockups/04_backoffice_invoice.png" alt="Back-Office Invoice Reconciliation" loading="lazy" decoding="async" width="1220" height="780" />
         </div>
-        <p class="screenshot-caption">Fig 5.1 — Back-Office Finance: Multi-vendor PDF invoice parsing, PO balance matching, and stage payment submission.</p>
+        <p class="screenshot-caption" data-i18n="solutionsDetail.finance.sec1Caption">Fig 5.1 — Back-Office Finance: Multi-vendor PDF invoice parsing, PO balance matching, and stage payment submission.</p>
       </div>
 
       <div class="whitepaper-banner" style="margin-top: 80px;">
         <div>
-          <p class="eyebrow" style="color:#60a5fa;"><span>Finance Modernization</span></p>
-          <h2 style="font-size: 2.2rem; font-weight: 900; margin: 8px 0 16px 0;">Automate Repetitive Ledger Work</h2>
-          <p style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6; margin-bottom: 24px;">
+          <p class="eyebrow" style="color:#60a5fa;"><span data-i18n="solutionsDetail.finance.bannerEyebrow">Finance Modernization</span></p>
+          <h2 style="font-size: 2.2rem; font-weight: 900; margin: 8px 0 16px 0;" data-i18n="solutionsDetail.finance.bannerTitle">Automate Repetitive Ledger Work</h2>
+          <p style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6; margin-bottom: 24px;" data-i18n="solutionsDetail.finance.bannerSub">
             Eliminate manual data entry errors and late vendor penalties with private self-hosted financial workers.
           </p>
           <div style="display:flex; gap: 16px; flex-wrap: wrap;">
-            <a href="/#cta" class="btn btn-primary btn-lg">Request Dedicated Server Access →</a>
-            <a href="/whitepaper" class="btn btn-secondary btn-lg">Read 42-Page Whitepaper</a>
+            <a href="/#cta" class="btn btn-primary btn-lg" data-i18n="solutionsDetail.requestAccess">Request Dedicated Server Access →</a>
+            <a href="/whitepaper" class="btn btn-secondary btn-lg" data-i18n="solutionsDetail.readWp">Read 42-Page Whitepaper</a>
           </div>
         </div>
         <div class="product-screenshot-frame" style="border-radius: var(--radius-md);">
-          <img src="/images/mockups/12_legal_compliance_auditor.png" alt="Compliance Auditor" loading="lazy" />
+          <img src="/images/mockups/12_legal_compliance_auditor.png" alt="Compliance Auditor" loading="lazy" decoding="async" width="1220" height="780" />
         </div>
       </div>
     </div>
@@ -71,4 +71,7 @@ import PageHero from '../../components/PageHero.astro';
   .metric-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; text-align: center; }
   .metric-val { font-size: 2.2rem; font-weight: 800; color: var(--accent); }
   .metric-lbl { font-size: 0.84rem; font-weight: 600; color: var(--text-secondary); margin-top: 4px; }
+  .product-screenshot-frame { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--bg-dark); box-shadow: var(--shadow-xl); }
+  .product-screenshot-frame img { width: 100%; height: auto; display: block; }
+  .screenshot-caption { text-align: center; font-size: 0.82rem; color: var(--text-tertiary); font-family: var(--font-mono); margin-top: 14px; }
 </style>

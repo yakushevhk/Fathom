@@ -1,0 +1,17 @@
+{
+  "name": "Fathom — Autonomous AI Workers",
+  "short_name": "Fathom",
+  "description": "Self-hosted Rust runtime for autonomous remote AI workers.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

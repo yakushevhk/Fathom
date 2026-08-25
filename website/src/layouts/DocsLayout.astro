@@ -10,7 +10,11 @@ interface Props {
 
 const { title, description = 'Fathom documentation for a universal autonomous AI worker runtime: tools, sessions, HTTP API, MCP, security, and architecture.', activePage = '' } = Astro.props;
 const SITE = 'https://fathom.uz';
-const canonical = SITE + Astro.url.pathname;
+const isRu = Astro.currentLocale === 'ru';
+const rawPath = Astro.url.pathname.replace(/^\/ru(\/|$)/, '$1') || '/';
+const canonicalEn = `${SITE}${rawPath === '/' ? '' : rawPath}`;
+const canonicalRu = `${SITE}/ru${rawPath === '/' ? '' : rawPath}`;
+const canonical = isRu ? canonicalRu : canonicalEn;
 const crumbLabel = title.replace(/ — Fathom(?: Research)?$/, '');
 
 interface NavItem {
@@ -116,14 +120,19 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#0a0a0a" />
     <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang="en" href={canonicalEn} />
+    <link rel="alternate" hreflang="ru" href={canonicalRu} />
+    <link rel="alternate" hreflang="x-default" href={canonicalEn} />
     <meta name="robots" content="index, follow" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="article" />
     <meta property="og:url" content={canonical} />
-    <meta property="og:locale" content={Astro.currentLocale === 'ru' ? 'ru_RU' : 'en_US'} />
+    <meta property="og:locale" content={isRu ? 'ru_RU' : 'en_US'} />
+    <meta property="og:locale:alternate" content={isRu ? 'en_US' : 'ru_RU'} />
     <meta property="og:site_name" content="Fathom — Autonomous AI Workers" />
     <meta property="og:image" content={`${SITE}/og-image.png`} />
     <meta property="og:image:width" content="1200" />
@@ -134,15 +143,15 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={`${SITE}/og-image.png`} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Cormorant+Garamond:ital,wght@1,400;1,500;1,600&display=swap" rel="stylesheet" />
     <title>{title}</title>
     <JsonLd data={{
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE}/` },
-        { '@type': 'ListItem', position: 2, name: 'Documentation', item: `${SITE}/docs/` },
+        { '@type': 'ListItem', position: 1, name: Astro.currentLocale === 'ru' ? 'Главная' : 'Home', item: `${SITE}/` },
+        { '@type': 'ListItem', position: 2, name: Astro.currentLocale === 'ru' ? 'Документация' : 'Documentation', item: `${SITE}/docs/` },
         ...(Astro.url.pathname !== '/docs/'
           ? [{ '@type': 'ListItem', position: 3, name: crumbLabel, item: canonical }]
           : []),
@@ -150,10 +159,13 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
     }} />
     <script is:inline>
       (function () {
+        document.documentElement.classList.add('js');
         var t = localStorage.getItem('fathom-theme') || localStorage.getItem('Fathom-theme');
         if (t && !localStorage.getItem('fathom-theme')) localStorage.setItem('fathom-theme', t);
         if (!t && window.matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
         if (t) document.documentElement.dataset.theme = t;
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', t === 'dark' ? '#0a0a0a' : '#fcfbfa');
       })();
     </script>
   </head>
@@ -163,8 +175,8 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
       <div class="docstop-nav-inner">
         <a href="/" class="docs-logo">
           <svg class="docs-logo-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <rect width="24" height="24" rx="5" fill="#181818"/>
-            <rect x="6" y="6" width="12" height="12" rx="2" fill="#fcfbfa"/>
+            <rect width="24" height="24" rx="5" style="fill:var(--grey-900)"/>
+            <rect x="6" y="6" width="12" height="12" rx="2" style="fill:var(--grey-50)"/>
           </svg>
           <span class="docs-logo-text">Fathom</span>
         </a>
@@ -178,6 +190,21 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
         </div>
         <div class="docstop-actions">
           <button class="docs-btn-ghost theme-toggle" data-theme-toggle aria-label="Toggle theme">◐</button>
+          <div class="lang-switcher">
+            <button class="lang-toggle" data-lang-toggle data-i18n-aria="lang_aria" aria-label="Change language">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+              <span data-lang-current>EN</span>
+              <svg class="lang-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="lang-dropdown" data-lang-dropdown>
+              <button class="lang-option" data-lang-option="en">
+                <span class="lang-option-label">English</span><span class="lang-option-code">EN</span>
+              </button>
+              <button class="lang-option" data-lang-option="ru">
+                <span class="lang-option-label">Русский</span><span class="lang-option-code">RU</span>
+              </button>
+            </div>
+          </div>
           <a href="/install" class="docs-btn-ghost">Get Access</a>
           <a href="/docs/quickstart" class="docs-btn-primary">Get Started →</a>
         </div>
@@ -723,14 +750,26 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
       initTheme();
       initI18n();
 
+      // copy-to-clipboard buttons on every code block
       document.querySelectorAll('pre').forEach((pre) => {
+        if (pre.querySelector('.copy-btn')) return;
         const btn = document.createElement('button');
         btn.className = 'copy-btn';
-        btn.textContent = 'copy';
-        btn.addEventListener('click', () => {
-          navigator.clipboard?.writeText(pre.innerText.replace(/\ncopy$/, ''));
-          btn.textContent = 'copied';
-          setTimeout(() => { btn.textContent = 'copy'; }, 1500);
+        btn.setAttribute('type', 'button');
+        btn.setAttribute('aria-label', 'Copy code to clipboard');
+        btn.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>copy</span>`;
+        btn.addEventListener('click', async () => {
+          const codeEl = pre.querySelector('code');
+          const text = (codeEl ? codeEl.textContent : pre.textContent) || '';
+          try {
+            await navigator.clipboard.writeText(text.trim());
+            btn.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#a8ccb0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span style="color:#a8ccb0;">copied</span>`;
+            setTimeout(() => {
+              btn.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>copy</span>`;
+            }, 1800);
+          } catch (e) {
+            console.error('Copy failed', e);
+          }
         });
         pre.style.position = 'relative';
         pre.appendChild(btn);
@@ -739,7 +778,8 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
       const toggle = document.getElementById('docs-menu-toggle');
       const sidebar = document.getElementById('docs-sidebar');
       toggle?.addEventListener('click', () => {
-        sidebar?.classList.toggle('open');
+        const isOpen = sidebar?.classList.toggle('open');
+        document.body.style.overflow = isOpen ? 'hidden' : '';
       });
 
       const filterInput = document.getElementById('sidebar-filter-input');
@@ -768,19 +808,31 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
             filterInput?.focus();
           }
         }
-        if (e.key === 'Escape' && document.activeElement === filterInput) {
-          filterInput.value = '';
-          applyFilter();
-          filterInput.blur();
+        if (e.key === 'Escape') {
+          if (document.activeElement === filterInput) {
+            filterInput.value = '';
+            applyFilter();
+            filterInput.blur();
+          }
+          if (sidebar?.classList.contains('open')) {
+            sidebar.classList.remove('open');
+            document.body.style.overflow = '';
+          }
         }
       });
 
       const headings = document.querySelectorAll('.docs-content h2, .docs-content h3');
       const tocNav = document.getElementById('toc-nav');
       if (tocNav && headings.length > 0) {
-        headings.forEach((heading) => {
-          const id = heading.id || heading.textContent?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || '';
-          if (!heading.id) heading.id = id;
+        headings.forEach((heading, idx) => {
+          let id = heading.id;
+          if (!id) {
+            id = (heading.textContent || '').trim().toLowerCase()
+              .replace(/[^\p{L}\p{N}]+/gu, '-')
+              .replace(/(^-|-$)/g, '');
+            if (!id) id = `section-${idx + 1}`;
+            heading.id = id;
+          }
           const link = document.createElement('a');
           link.href = `#${id}`;
           link.textContent = heading.textContent || '';

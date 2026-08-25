@@ -54,49 +54,119 @@ const solutions = [
 <Layout title="Enterprise Solutions — Fathom Autonomous AI Workforce" description="Turnkey autonomous AI employee solutions for sales outbound, talent scouting, market intelligence, agency fleets, and back-office operations.">
   <main class="solutions-page">
     <PageHero cls="sol-hero">
-      <p class="eyebrow"><span>Enterprise Playbooks &amp; Solutions</span></p>
-      <h1 class="h2-sec">Turnkey Autonomous <em class="it">Workforce</em></h1>
-      <p class="copy-lg mx-auto">Deploy specialized autonomous AI employees engineered for high-value business workflows with guaranteed governance and durable memory.</p>
+      <p class="eyebrow"><span data-i18n="solutionsPage.hero.eyebrow">Enterprise Playbooks &amp; Solutions</span></p>
+      <h1 class="h2-sec" data-i18n-html data-i18n="solutionsPage.hero.title">Turnkey Autonomous <em class="it">Workforce</em></h1>
+      <p class="copy-lg mx-auto" data-i18n="solutionsPage.hero.sub">Deploy specialized autonomous AI employees engineered for high-value business workflows with guaranteed governance and durable memory.</p>
     </PageHero>
 
     <div class="container">
       <div class="sol-grid">
-        {solutions.map((s) => (
-          <div class="sol-card">
-            <div class="sol-img-wrap">
-              <img src={s.image} alt={s.title} loading="lazy" />
+        <div class="sol-card">
+          <div class="sol-img-wrap">
+            <img src="/images/mockups/08_lead_audit_report.png" alt="Autonomous Outbound SDR" loading="lazy" decoding="async" width="1220" height="780" />
+          </div>
+          <div class="sol-body">
+            <div class="sol-badges">
+              <span class="badge-stat" data-i18n="solutionsPage.cards.b2b.stat">0% Email Bounce Rate</span>
+              <span class="badge-roi" data-i18n="solutionsPage.cards.b2b.roi">Replaces $6k/mo SDR agency + ZoomInfo</span>
             </div>
-            <div class="sol-body">
-              <div class="sol-badges">
-                <span class="badge-stat">{s.stat}</span>
-                <span class="badge-roi">{s.roi}</span>
-              </div>
-              <h2 class="sol-title">{s.title}</h2>
-              <p class="sol-tagline">{s.tagline}</p>
-              <p class="sol-desc">{s.desc}</p>
-              <div class="sol-footer">
-                <a href={`/solutions/${s.slug}`} class="btn btn-primary btn-sm">Explore Solution Playbook →</a>
-              </div>
+            <h2 class="sol-title" data-i18n="solutionsPage.cards.b2b.title">Autonomous Outbound SDR</h2>
+            <p class="sol-tagline" data-i18n="solutionsPage.cards.b2b.tagline">50 Verified B2B Decision-Makers Daily with 0% Bounces</p>
+            <p class="sol-desc" data-i18n="solutionsPage.cards.b2b.desc">Goal Mode OSINT research across 7 search backends, 5-stage SMTP mailbox probes, personalized multi-stage sequences, and direct CRM sync.</p>
+            <div class="sol-footer">
+              <a href="/solutions/b2b-outbound" class="btn btn-primary btn-sm" data-i18n="solutionsDetail.exploreAll">Explore Solution Playbook →</a>
             </div>
           </div>
-        ))}
+        </div>
+
+        <div class="sol-card">
+          <div class="sol-img-wrap">
+            <img src="/images/mockups/03_talent_scout.png" alt="Technical Talent Scout" loading="lazy" decoding="async" width="1220" height="780" />
+          </div>
+          <div class="sol-body">
+            <div class="sol-badges">
+              <span class="badge-stat" data-i18n="solutionsPage.cards.recruiting.stat">15 Candidates / 20 min</span>
+              <span class="badge-roi" data-i18n="solutionsPage.cards.recruiting.roi">Replaces 20% recruiter placement fee</span>
+            </div>
+            <h2 class="sol-title" data-i18n="solutionsPage.cards.recruiting.title">Technical Talent Scout</h2>
+            <p class="sol-tagline" data-i18n="solutionsPage.cards.recruiting.tagline">GitHub AST Commit Mining & Candidate Dossiers</p>
+            <p class="sol-desc" data-i18n="solutionsPage.cards.recruiting.desc">Autonomous developer sourcing: parsing GitHub repos, AST symbol analysis, cross-referencing LinkedIn and personal blogs, producing vetted technical dossiers.</p>
+            <div class="sol-footer">
+              <a href="/solutions/executive-recruiting" class="btn btn-primary btn-sm" data-i18n="solutionsDetail.exploreAll">Explore Solution Playbook →</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="sol-card">
+          <div class="sol-img-wrap">
+            <img src="/images/mockups/02_market_intelligence.png" alt="Real-Time Market Intelligence" loading="lazy" decoding="async" width="1220" height="780" />
+          </div>
+          <div class="sol-body">
+            <div class="sol-badges">
+              <span class="badge-stat" data-i18n="solutionsPage.cards.market.stat">15-min Alert Latency</span>
+              <span class="badge-roi" data-i18n="solutionsPage.cards.market.roi">100% automated competitor monitoring</span>
+            </div>
+            <h2 class="sol-title" data-i18n="solutionsPage.cards.market.title">Real-Time Market Intelligence</h2>
+            <p class="sol-tagline" data-i18n="solutionsPage.cards.market.tagline">24/7 Competitor DOM Tracking & Pricing Sweeps</p>
+            <p class="sol-desc" data-i18n="solutionsPage.cards.market.desc">Continuous web surveillance: crawling 200+ competitor domains, detecting feature and pricing diffs in 15 minutes, sending executive alerts to Telegram.</p>
+            <div class="sol-footer">
+              <a href="/solutions/market-intelligence" class="btn btn-primary btn-sm" data-i18n="solutionsDetail.exploreAll">Explore Solution Playbook →</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="sol-card">
+          <div class="sol-img-wrap">
+            <img src="/images/mockups/15_agency_fleet_manager.png" alt="Agency Multi-Tenant Fleets" loading="lazy" decoding="async" width="1220" height="780" />
+          </div>
+          <div class="sol-body">
+            <div class="sol-badges">
+              <span class="badge-stat" data-i18n="solutionsPage.cards.agency.stat">92% Agency Margin</span>
+              <span class="badge-roi" data-i18n="solutionsPage.cards.agency.roi">$24k MRR on $80 server cost</span>
+            </div>
+            <h2 class="sol-title" data-i18n="solutionsPage.cards.agency.title">Agency Multi-Tenant Fleets</h2>
+            <p class="sol-tagline" data-i18n="solutionsPage.cards.agency.tagline">Deploy 12+ Client Pods with 92% Net Margin</p>
+            <p class="sol-desc" data-i18n="solutionsPage.cards.agency.desc">Unified control plane for agencies: dedicated client Docker sandboxes, separate SQLite memory graphs, custom branding, and flat-rate compute.</p>
+            <div class="sol-footer">
+              <a href="/solutions/agency-whitelabel" class="btn btn-primary btn-sm" data-i18n="solutionsDetail.exploreAll">Explore Solution Playbook →</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="sol-card">
+          <div class="sol-img-wrap">
+            <img src="/images/mockups/04_backoffice_invoice.png" alt="Back-Office & Invoice Reconciliation" loading="lazy" decoding="async" width="1220" height="780" />
+          </div>
+          <div class="sol-body">
+            <div class="sol-badges">
+              <span class="badge-stat" data-i18n="solutionsPage.cards.finance.stat">100% Audit Compliance</span>
+              <span class="badge-roi" data-i18n="solutionsPage.cards.finance.roi">Eliminates 30 hrs/wk manual entry</span>
+            </div>
+            <h2 class="sol-title" data-i18n="solutionsPage.cards.finance.title">Back-Office & Invoice Reconciliation</h2>
+            <p class="sol-tagline" data-i18n="solutionsPage.cards.finance.tagline">3-Way Invoice Matching in QuickBooks & ERPs</p>
+            <p class="sol-desc" data-i18n="solutionsPage.cards.finance.desc">Autonomous accounting: OCR PDF invoice ingestion, PO line-item reconciliation, payment staging, and flagging duplicate invoices.</p>
+            <div class="sol-footer">
+              <a href="/solutions/backoffice-finance" class="btn btn-primary btn-sm" data-i18n="solutionsDetail.exploreAll">Explore Solution Playbook →</a>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- CTA Section -->
       <div class="whitepaper-banner" style="margin-top: 80px;">
         <div>
-          <p class="eyebrow" style="color:#60a5fa;"><span>Custom Enterprise Solutions</span></p>
-          <h2 style="font-size: 2.2rem; font-weight: 900; margin: 8px 0 16px 0; letter-spacing: -0.02em;">Need a Custom Worker Fleet?</h2>
-          <p style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6; margin-bottom: 24px;">
+          <p class="eyebrow" style="color:#60a5fa;"><span data-i18n="solutionsPage.cta.eyebrow">Custom Enterprise Solutions</span></p>
+          <h2 style="font-size: 2.2rem; font-weight: 900; margin: 8px 0 16px 0; letter-spacing: -0.02em;" data-i18n="solutionsPage.cta.title">Need a Custom Worker Fleet?</h2>
+          <p style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6; margin-bottom: 24px;" data-i18n="solutionsPage.cta.sub">
             We provision and tune dedicated self-hosted Fathom server environments tailored to your company's CRM, internal APIs, and governance guidelines.
           </p>
           <div style="display:flex; gap: 16px; flex-wrap: wrap;">
-            <a href="/#cta" class="btn btn-primary btn-lg">Request Dedicated Server Access →</a>
-            <a href="/whitepaper" class="btn btn-secondary btn-lg">Read 42-Page Whitepaper</a>
+            <a href="/#cta" class="btn btn-primary btn-lg" data-i18n="solutionsPage.cta.start">Request Dedicated Server Access →</a>
+            <a href="/whitepaper" class="btn btn-secondary btn-lg" data-i18n="solutionsPage.cta.docs">Read 42-Page Whitepaper</a>
           </div>
         </div>
         <div class="product-screenshot-frame" style="border-radius: var(--radius-md);">
-          <img src="/images/mockups/01_sales_outbound_sdr.png" alt="Fathom Command Center" loading="lazy" />
+          <img src="/images/mockups/01_sales_outbound_sdr.png" alt="Fathom Command Center" loading="lazy" decoding="async" width="1220" height="780" />
         </div>
       </div>
     </div>

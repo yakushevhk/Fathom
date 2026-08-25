@@ -7,7 +7,7 @@ import PageHero from '../components/PageHero.astro';
   <main class="bench-page">
         <PageHero cls="bench-hero">
         <p class="eyebrow" data-i18n="benchmarks.hero.badge">Benchmarks</p>
-        <h2 class="h2-sec" data-i18n-html data-i18n="benchmarks.hero.title"><em class="it">Measured</em>, not claimed.</h2>
+        <h1 class="h2-sec" data-i18n-html data-i18n="benchmarks.hero.title"><em class="it">Measured</em>, not claimed.</h1>
         <p data-i18n="benchmarks.hero.sub">Release build on macOS arm64 · 10 cores · 16 × ~2047 KB files. All scenarios are offline — no network, no LLM — so they run in CI.</p>
     </PageHero>
     <div class="container">
@@ -268,17 +268,17 @@ import PageHero from '../components/PageHero.astro';
   .eyebrow { font-family: var(--font-mono); font-size: 13px; letter-spacing: .16px; text-transform: uppercase; color: var(--grey-600); }
 
   .bench-hero { max-width: 820px; margin: 0 auto 44px; text-align: center; padding: 0 24px; }
-  .bench-hero h2 { font-size: clamp(30px, 4.5vw, 64px); font-weight: 500; letter-spacing: -0.03em; margin-top: 10px; }
+  .bench-hero h1, .bench-hero h2 { font-size: clamp(30px, 4.5vw, 64px); font-weight: 500; letter-spacing: -0.03em; margin-top: 10px; }
   .bench-hero p { color: var(--grey-700); font-size: 17px; line-height: 1.55; max-width: 640px; margin: 16px auto 0; }
 
   .bench-nav { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 34px; }
   .bench-nav button {
     font-family: var(--font-mono); font-size: 13px; color: var(--grey-600);
     padding: 7px 14px; border-radius: 100px; border: 1px solid var(--grey-300);
-    background: var(--bg-card); transition: all .2s;
+    background: var(--bg-card); transition: all .2s; cursor: pointer;
   }
   .bench-nav button:hover { color: var(--grey-900); border-color: var(--grey-500); }
-  .bench-nav button.is-active { background: var(--grey-900); color: #fff; border-color: var(--grey-900); }
+  .bench-nav button.is-active { background: var(--grey-900); color: var(--on-accent); border-color: var(--grey-900); }
 
   .bench-panel { display: none; }
   .bench-panel.is-active { display: block; animation: contentShow .35s ease; }
@@ -321,13 +321,27 @@ import PageHero from '../components/PageHero.astro';
 
 <script>
   const nav = document.querySelector('[data-bench-nav]');
+  function activateTab(panelId) {
+    if (!panelId) return;
+    const btn = nav?.querySelector(`button[data-panel="${panelId}"]`);
+    const body = document.querySelector(`[data-panel-body="${panelId}"]`);
+    if (btn && body) {
+      nav?.querySelectorAll('button').forEach((b) => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      document.querySelectorAll('[data-panel-body]').forEach((p) => p.classList.remove('is-active'));
+      body.classList.add('is-active');
+    }
+  }
+
   nav?.addEventListener('click', (e) => {
     const btn = e.target.closest('button');
-    if (!btn) return;
-    nav.querySelectorAll('button').forEach((b) => b.classList.remove('is-active'));
-    btn.classList.add('is-active');
-    document.querySelectorAll('[data-panel-body]').forEach((p) => p.classList.remove('is-active'));
-    const body = document.querySelector(`[data-panel-body="${btn.dataset.panel}"]`);
-    body?.classList.add('is-active');
+    if (!btn || !btn.dataset.panel) return;
+    activateTab(btn.dataset.panel);
+    if (window.location.hash !== `#${btn.dataset.panel}` && history.replaceState) {
+      history.replaceState(null, '', '#' + btn.dataset.panel);
+    }
   });
+
+  const initialHash = window.location.hash.replace('#', '');
+  if (initialHash) activateTab(initialHash);
 </script>

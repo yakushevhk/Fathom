@@ -4,42 +4,49 @@ import PageHero from '../components/PageHero.astro';
 
 const comparisons = [
   {
+    key: 'latency',
     feature: 'Tool Dispatch Latency',
     fathom: '~0.75 ms per batch (compiled Rust native)',
     python: '180 – 450 ms (Pydantic validation + Python runtime)',
     advantage: '240× – 600× Faster'
   },
   {
+    key: 'memory',
     feature: 'Memory Footprint (per worker)',
     fathom: '15.4 MB RAM (jemalloc, zero garbage collection)',
     python: '450 – 850 MB RAM (PyTorch/LangChain dependencies)',
     advantage: '30× – 55× Less RAM'
   },
   {
+    key: 'concurrency',
     feature: 'Multi-Agent Concurrency',
     fathom: 'Tokio JoinSet async I/O multiplexing across CPU cores',
     python: 'Global Interpreter Lock (GIL) / heavy multiprocessing',
     advantage: '100+ workers on $40/mo VPS'
   },
   {
+    key: 'storage',
     feature: 'Long-Term Memory Storage',
     fathom: 'Embedded SQLite FTS5 + Hybrid BM25/Vector (1.62 ms)',
     python: 'External Vector DB required ($300-$1000/mo Cloud API)',
     advantage: 'Zero external cloud DB fees'
   },
   {
+    key: 'computer',
     feature: 'Computer Use & Browser',
     fathom: 'Tokenized ARIA DOM + WebSocket live streaming + 2FA lease',
     python: 'Heavy visual screenshot loops (50k tokens/step)',
     advantage: '90% token cost reduction'
   },
   {
+    key: 'security',
     feature: 'Secret & API Key Security',
     fathom: 'AES-256-GCM hardware vault, memory-only TLS injection',
     python: 'Plaintext API keys injected into LLM system prompts',
     advantage: 'Zero-prompt leak protection'
   },
   {
+    key: 'deployment',
     feature: 'Deployment Artifact',
     fathom: 'Single static binary (zero runtime dependencies)',
     python: 'Python virtualenv, 140+ pip packages, Docker bloat',
@@ -51,9 +58,9 @@ const comparisons = [
 <Layout title="Fathom vs. Python AI Frameworks — LangChain & CrewAI Architectural Comparison" description="Why Fathom was built in Rust: 0.75 ms tool dispatch, 15.4 MB RAM footprint, hardware security vault, and 100+ concurrent workers per server.">
   <main class="vs-page">
     <PageHero cls="vs-hero">
-      <p class="eyebrow"><span>Systems Architecture &amp; Performance</span></p>
-      <h1 class="h2-sec">Fathom (Rust) vs. <em class="it">Python Frameworks</em></h1>
-      <p class="copy-lg mx-auto">Why high-concurrency autonomous enterprise agent fleets cannot run on interpreted Python runtimes.</p>
+      <p class="eyebrow"><span data-i18n="vsPython.hero.eyebrow">Systems Architecture &amp; Performance</span></p>
+      <h1 class="h2-sec" data-i18n-html data-i18n="vsPython.hero.title">Fathom (Rust) vs. <em class="it">Python Frameworks</em></h1>
+      <p class="copy-lg mx-auto" data-i18n="vsPython.hero.sub">Why high-concurrency autonomous enterprise agent fleets cannot run on interpreted Python runtimes.</p>
     </PageHero>
 
     <div class="container">
@@ -61,56 +68,56 @@ const comparisons = [
       <div class="vs-stats-grid">
         <div class="vs-stat-card">
           <div class="vs-stat-num">~0.75 ms</div>
-          <div class="vs-stat-label">Tool Dispatch Latency</div>
-          <div class="vs-stat-comp">vs 240 ms in Python</div>
+          <div class="vs-stat-label" data-i18n="vsPython.stats.s1.label">Tool Dispatch Latency</div>
+          <div class="vs-stat-comp" data-i18n="vsPython.stats.s1.comp">vs 240 ms in Python</div>
         </div>
         <div class="vs-stat-card">
           <div class="vs-stat-num">15.4 MB</div>
-          <div class="vs-stat-label">Memory Footprint</div>
-          <div class="vs-stat-comp">vs 650 MB per Python worker</div>
+          <div class="vs-stat-label" data-i18n="vsPython.stats.s2.label">Memory Footprint</div>
+          <div class="vs-stat-comp" data-i18n="vsPython.stats.s2.comp">vs 650 MB per Python worker</div>
         </div>
         <div class="vs-stat-card">
           <div class="vs-stat-num">100+</div>
-          <div class="vs-stat-label">Concurrent Digital Employees</div>
-          <div class="vs-stat-comp">on a single $80/mo VPS</div>
+          <div class="vs-stat-label" data-i18n="vsPython.stats.s3.label">Concurrent Digital Employees</div>
+          <div class="vs-stat-comp" data-i18n="vsPython.stats.s3.comp">on a single $80/mo VPS</div>
         </div>
         <div class="vs-stat-card">
           <div class="vs-stat-num">0.00%</div>
-          <div class="vs-stat-label">LLM Secret Exposure</div>
-          <div class="vs-stat-comp">AES-256-GCM hardware vault</div>
+          <div class="vs-stat-label" data-i18n="vsPython.stats.s4.label">LLM Secret Exposure</div>
+          <div class="vs-stat-comp" data-i18n="vsPython.stats.s4.comp">AES-256-GCM hardware vault</div>
         </div>
       </div>
 
       <!-- Detailed Comparison Matrix -->
       <section class="section" style="padding: 40px 0;">
         <div class="sec-head center">
-          <p class="eyebrow"><span>Direct Matrix</span></p>
-          <h2 class="h3-sec">Architectural Comparison</h2>
+          <p class="eyebrow"><span data-i18n="vsPython.matrix.eyebrow">Direct Matrix</span></p>
+          <h2 class="h3-sec" data-i18n="vsPython.matrix.title">Architectural Comparison</h2>
         </div>
 
         <div class="vs-table-wrap">
           <table class="vs-table">
             <thead>
               <tr>
-                <th style="width: 22%;">System Characteristic</th>
-                <th style="width: 32%; background: var(--bg-card);">Fathom (Rust Native Runtime)</th>
-                <th style="width: 32%;">Python Stacks (LangChain / CrewAI / AutoGPT)</th>
-                <th style="width: 14%;">Fathom Advantage</th>
+                <th style="width: 22%;" data-i18n="vsPython.matrix.thCharacteristic">System Characteristic</th>
+                <th style="width: 32%; background: var(--bg-card);" data-i18n="vsPython.matrix.thFathom">Fathom (Rust Native Runtime)</th>
+                <th style="width: 32%;" data-i18n="vsPython.matrix.thPython">Python Stacks (LangChain / CrewAI / AutoGPT)</th>
+                <th style="width: 14%;" data-i18n="vsPython.matrix.thAdvantage">Fathom Advantage</th>
               </tr>
             </thead>
             <tbody>
               {comparisons.map((c) => (
                 <tr>
-                  <td><strong>{c.feature}</strong></td>
+                  <td><strong data-i18n={`vsPython.matrix.${c.key}.feat`}>{c.feature}</strong></td>
                   <td class="fathom-cell">
                     <span class="badge-ok">● Fathom</span>
-                    <p>{c.fathom}</p>
+                    <p data-i18n={`vsPython.matrix.${c.key}.fathom`}>{c.fathom}</p>
                   </td>
                   <td class="python-cell">
                     <span class="badge-warn">● Python</span>
-                    <p>{c.python}</p>
+                    <p data-i18n={`vsPython.matrix.${c.key}.python`}>{c.python}</p>
                   </td>
-                  <td class="advantage-cell"><strong>{c.advantage}</strong></td>
+                  <td class="advantage-cell"><strong data-i18n={`vsPython.matrix.${c.key}.adv`}>{c.advantage}</strong></td>
                 </tr>
               ))}
             </tbody>
@@ -121,31 +128,31 @@ const comparisons = [
       <!-- Visual Showcase -->
       <div style="margin: 40px 0 60px 0;">
         <div class="sec-head center">
-          <p class="eyebrow"><span>Concurrency In Action</span></p>
-          <h2 class="h3-sec">Tokio JoinSet Swarm Coordinator</h2>
-          <p class="copy-lg mx-auto">4 parallel CPU workers executing 12 tool calls concurrently with zero thread contention and sub-millisecond dispatch.</p>
+          <p class="eyebrow"><span data-i18n="vsPython.showcase.eyebrow">Concurrency In Action</span></p>
+          <h2 class="h3-sec" data-i18n="vsPython.showcase.title">Tokio JoinSet Swarm Coordinator</h2>
+          <p class="copy-lg mx-auto" data-i18n="vsPython.showcase.sub">4 parallel CPU workers executing 12 tool calls concurrently with zero thread contention and sub-millisecond dispatch.</p>
         </div>
         <div class="product-screenshot-frame">
-          <img src="/images/mockups/11_swarm_coordinator.png" alt="Swarm Coordinator Tokio JoinSet Concurrency" loading="lazy" width="1220" height="780" />
+          <img src="/images/mockups/11_swarm_coordinator.png" alt="Swarm Coordinator Tokio JoinSet Concurrency" loading="lazy" decoding="async" width="1220" height="780" />
         </div>
-        <p class="screenshot-caption">Fig 8.1 — Rust Swarm Coordinator: Tokio JoinSet DAG execution across 4 parallel CPU worker pods with fair-share token budgeting.</p>
+        <p class="screenshot-caption" data-i18n="vsPython.showcase.caption">Fig 8.1 — Rust Swarm Coordinator: Tokio JoinSet DAG execution across 4 parallel CPU worker pods with fair-share token budgeting.</p>
       </div>
 
       <!-- CTA Section -->
       <div class="whitepaper-banner">
         <div>
-          <p class="eyebrow" style="color:#60a5fa;"><span>Verified Systems Proof</span></p>
-          <h2 style="font-size: 2.2rem; font-weight: 900; margin: 8px 0 16px 0; letter-spacing: -0.02em;">Read the Full Empirical Benchmark Suite</h2>
-          <p style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6; margin-bottom: 24px;">
+          <p class="eyebrow" style="color:#60a5fa;"><span data-i18n="vsPython.banner.eyebrow">Verified Systems Proof</span></p>
+          <h2 style="font-size: 2.2rem; font-weight: 900; margin: 8px 0 16px 0; letter-spacing: -0.02em;" data-i18n="vsPython.banner.title">Read the Full Empirical Benchmark Suite</h2>
+          <p style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6; margin-bottom: 24px;" data-i18n="vsPython.banner.sub">
             Chapter VII of our Whitepaper details the complete microbenchmark test harness with memory profiles, flame graphs, and tokens/sec throughput data.
           </p>
           <div style="display:flex; gap: 16px; flex-wrap: wrap;">
-            <a href="/Fathom_Whitepaper.pdf" class="btn btn-primary btn-lg" target="_blank" download>⬇ Download Whitepaper (PDF, 7.6 MB)</a>
-            <a href="/whitepaper" class="btn btn-secondary btn-lg">View Interactive Deck</a>
+            <a href="/Fathom_Whitepaper.pdf" class="btn btn-primary btn-lg" target="_blank" download data-i18n="vsPython.banner.download">⬇ Download Whitepaper (PDF, 7.6 MB)</a>
+            <a href="/whitepaper" class="btn btn-secondary btn-lg" data-i18n="vsPython.banner.deck">View Interactive Deck</a>
           </div>
         </div>
         <div class="product-screenshot-frame" style="border-radius: var(--radius-md);">
-          <img src="/images/mockups/05_devops_engineer.png" alt="DevOps Code Maintainer" loading="lazy" />
+          <img src="/images/mockups/05_devops_engineer.png" alt="DevOps Code Maintainer" loading="lazy" decoding="async" width="1220" height="780" />
         </div>
       </div>
     </div>

@@ -27,6 +27,7 @@
   const canvas = document.querySelector('[data-ocean]');
   if (canvas) import('three').then((THREE) => {
     const wrap = canvas.parentElement;
+    if (!wrap) return;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     let W = Math.max(320, wrap.clientWidth);
@@ -34,12 +35,12 @@
 
     let renderer;
     try {
-      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'low-power' });
     } catch {
       wrap.remove();
       return;
     }
-    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1));
     renderer.setSize(W, H, false);
     renderer.setClearColor(0x000000, 0);
 
@@ -50,22 +51,22 @@
     camera.position.set(0, 3.4, 10.5);
     camera.lookAt(0, 0.4, -5);
 
-    const SEG_X = 120, SEG_Y = 70;
+    // Optimized grid resolution for smooth 60fps on mobile
+    const SEG_X = 76, SEG_Y = 46;
     const geo = new THREE.PlaneGeometry(52, 34, SEG_X, SEG_Y);
     const pos = geo.attributes.position;
     const count = pos.count;
     const colors = new Float32Array(count * 3);
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-    const deep = new THREE.Color('#122733');
-    const crest = new THREE.Color('#8fb6cc');
-    const tmp = new THREE.Color();
+    const deepR = 0.07, deepG = 0.15, deepB = 0.20;
+    const crestR = 0.56, crestG = 0.71, crestB = 0.80;
 
     const mat = new THREE.MeshBasicMaterial({
       wireframe: true,
       vertexColors: true,
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.48,
       fog: true,
     });
     const mesh = new THREE.Mesh(geo, mat);
@@ -73,9 +74,8 @@
     mesh.position.set(0, -1.6, -4);
     scene.add(mesh);
 
-    // second faint layer, offset phase — gives the sea volume
     const mat2 = mat.clone();
-    mat2.opacity = 0.16;
+    mat2.opacity = 0.15;
     const mesh2 = new THREE.Mesh(geo.clone(), mat2);
     mesh2.rotation.x = -Math.PI / 2;
     mesh2.position.set(3, -2.4, -8);
@@ -88,29 +88,29 @@
       baseY[i] = pos.getY(i);
     }
 
-    function wave(x, y, t) {
-      return (
-        0.42 * Math.sin(x * 0.42 + t * 0.9) +
-        0.28 * Math.sin(y * 0.55 + t * 0.62 + x * 0.18) +
-        0.16 * Math.sin((x + y) * 0.32 + t * 1.35) +
-        0.09 * Math.sin(x * 1.1 - t * 1.8)
-      );
-    }
+    const posArray1 = mesh.geometry.attributes.position.array;
+    const colorArray1 = mesh.geometry.attributes.color.array;
+    const posArray2 = mesh2.geometry.attributes.position.array;
+    const colorArray2 = mesh2.geometry.attributes.color.array;
 
-    function deform(m, t, phase) {
-      const p = m.geometry.attributes.position;
-      const c = m.geometry.attributes.color;
+    function deformFast(posArr, colArr, t, phase) {
       for (let i = 0; i < count; i++) {
         const x = baseX[i];
         const y = baseY[i];
-        const z = wave(x, y, t + phase);
-        p.setZ(i, z);
+        const z = (
+          0.42 * Math.sin(x * 0.42 + t * 0.9 + phase) +
+          0.28 * Math.sin(y * 0.55 + t * 0.62 + x * 0.18 + phase) +
+          0.16 * Math.sin((x + y) * 0.32 + t * 1.35) +
+          0.09 * Math.sin(x * 1.1 - t * 1.8)
+        );
+        const i3 = i * 3;
+        posArr[i3 + 2] = z;
         const k = Math.min(1, Math.max(0, (z + 0.7) / 1.4));
-        tmp.copy(deep).lerp(crest, k * k);
-        c.setXYZ(i, tmp.r, tmp.g, tmp.b);
+        const k2 = k * k;
+        colArr[i3] = deepR + (crestR - deepR) * k2;
+        colArr[i3 + 1] = deepG + (crestG - deepG) * k2;
+        colArr[i3 + 2] = deepB + (crestB - deepB) * k2;
       }
-      p.needsUpdate = true;
-      c.needsUpdate = true;
     }
 
     let raf = 0;
@@ -120,8 +120,14 @@
 
     function draw() {
       const t = (performance.now() - start) / 1000;
-      deform(mesh, t, 0);
-      deform(mesh2, t, 2.4);
+      deformFast(posArray1, colorArray1, t, 0);
+      mesh.geometry.attributes.position.needsUpdate = true;
+      mesh.geometry.attributes.color.needsUpdate = true;
+
+      deformFast(posArray2, colorArray2, t, 2.4);
+      mesh2.geometry.attributes.position.needsUpdate = true;
+      mesh2.geometry.attributes.color.needsUpdate = true;
+
       camera.position.x = Math.sin(t * 0.1) * 0.6;
       camera.lookAt(0, 0.4, -5);
       renderer.render(scene, camera);
@@ -148,18 +154,32 @@
       new IntersectionObserver((es) => {
         visible = es[0].isIntersecting;
         if (visible) startLoop(); else stopLoop();
-      }, { rootMargin: '120px' }).observe(wrap);
+      }, { rootMargin: '100px' }).observe(wrap);
       startLoop();
     }
 
+    let resizeTimer;
     function resize() {
-      W = Math.max(320, wrap.clientWidth);
-      H = Math.max(280, wrap.clientHeight);
-      camera.aspect = W / H;
-      camera.updateProjectionMatrix();
-      renderer.setSize(W, H, false);
-      if (reduced) draw();
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (!wrap) return;
+        W = Math.max(320, wrap.clientWidth);
+        H = Math.max(280, wrap.clientHeight);
+        camera.aspect = W / H;
+        camera.updateProjectionMatrix();
+        renderer.setSize(W, H, false);
+        if (reduced) draw();
+      }, 100);
     }
     new ResizeObserver(resize).observe(wrap);
+
+    canvas.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();
+      stopLoop();
+    }, false);
+
+    canvas.addEventListener('webglcontextrestored', () => {
+      startLoop();
+    }, false);
   });
 </script>

@@ -19,7 +19,7 @@ import Layout from '../../layouts/Layout.astro';
     <p class="article-intro" data-i18n="postMemory.intro">Fathom's self-hosted runtime gives workers a durable semantic knowledge base in SQLite: append-only versioning, a six-outcome absorb pipeline, hybrid search with freshness decay, a frozen prompt snapshot that protects the prefix cache, and an entity graph alongside the facts.</p>
 
     <div class="highlights">
-      <h4 data-i18n="postMemory.highlightsTitle">Highlights</h4>
+      <div class="highlights-title" data-i18n="postMemory.highlightsTitle">Highlights</div>
       <ul>
         <li data-i18n-html="postMemory.hl1">Facts are never overwritten — a new version is a new record plus a <code>supersedes</code> edge</li>
         <li data-i18n="postMemory.hl2">Absorb pipeline with 6 outcomes: duplicate · supersede · contradict · coexist · related · new</li>
@@ -81,7 +81,7 @@ import Layout from '../../layouts/Layout.astro';
   .article-intro { margin-top: 28px; font-size: 18px; line-height: 1.65; color: var(--grey-700); }
 
   .highlights { margin: 36px 0; background: var(--grey-50); border: 1px solid var(--grey-200); border-radius: 10px; padding: 24px 28px; }
-  .highlights h4 { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--grey-600); margin-bottom: 14px; }
+  .highlights-title, .highlights h4 { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--grey-600); margin-bottom: 14px; }
   .highlights ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
   .highlights li { position: relative; padding-left: 18px; font-size: 15px; line-height: 1.55; color: var(--grey-800); }
   .highlights li::before { content: ""; position: absolute; left: 0; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--grey-900); }

@@ -6,26 +6,26 @@ import PageHero from '../../components/PageHero.astro';
 <Layout title="Market Intelligence & Competitor Tracking — Fathom Enterprise Solutions" description="Autonomous real-time market intelligence: 24/7 competitor DOM change detection, pricing sweeps, and executive Telegram alerts.">
   <main class="sol-detail-page">
     <PageHero cls="sol-detail-hero">
-      <p class="eyebrow"><a href="/solutions">Solutions</a> / <span>Market Intelligence</span></p>
-      <h1 class="h2-sec">Real-Time <em class="it">Market Intelligence</em></h1>
-      <p class="copy-lg mx-auto">Continuous autonomous surveillance of competitor websites, pricing matrix updates, product feature launches, and executive personnel shifts.</p>
+      <p class="eyebrow"><a href="/solutions" data-i18n="solutionsDetail.breadcrumb">Solutions</a> / <span data-i18n="solutionsDetail.market.crumb">Market Intelligence</span></p>
+      <h1 class="h2-sec" data-i18n-html data-i18n="solutionsDetail.market.title">Real-Time <em class="it">Market Intelligence</em></h1>
+      <p class="copy-lg mx-auto" data-i18n="solutionsDetail.market.sub">Continuous autonomous surveillance of competitor websites, pricing matrix updates, product feature launches, and executive personnel shifts.</p>
       
       <div class="sol-hero-metrics">
         <div class="metric-card">
-          <div class="metric-val">15 min</div>
-          <div class="metric-lbl">Change Detection Alert</div>
+          <div class="metric-val" data-i18n="solutionsDetail.market.m1Val">15 min</div>
+          <div class="metric-lbl" data-i18n="solutionsDetail.market.m1Lbl">Change Detection Alert</div>
         </div>
         <div class="metric-card">
-          <div class="metric-val">200+</div>
-          <div class="metric-lbl">Domains Crawled Daily</div>
+          <div class="metric-val" data-i18n="solutionsDetail.market.m2Val">200+</div>
+          <div class="metric-lbl" data-i18n="solutionsDetail.market.m2Lbl">Domains Crawled Daily</div>
         </div>
         <div class="metric-card">
-          <div class="metric-val">24/7</div>
-          <div class="metric-lbl">Automated Watch Mode</div>
+          <div class="metric-val" data-i18n="solutionsDetail.market.m3Val">24/7</div>
+          <div class="metric-lbl" data-i18n="solutionsDetail.market.m3Lbl">Automated Watch Mode</div>
         </div>
         <div class="metric-card">
-          <div class="metric-val">100%</div>
-          <div class="metric-lbl">Diff Traceability</div>
+          <div class="metric-val" data-i18n="solutionsDetail.market.m4Val">100%</div>
+          <div class="metric-lbl" data-i18n="solutionsDetail.market.m4Lbl">Diff Traceability</div>
         </div>
       </div>
     </PageHero>
@@ -33,30 +33,30 @@ import PageHero from '../../components/PageHero.astro';
     <div class="container">
       <div class="sol-section">
         <div class="sec-head center">
-          <p class="eyebrow"><span>Live Surveillance</span></p>
-          <h2 class="h3-sec">DOM Diff Tracking &amp; Feature Audits</h2>
-          <p class="copy-lg mx-auto">Automated DOM structure comparisons highlighting new pricing tiers, enterprise add-ons, and blog announcements.</p>
+          <p class="eyebrow"><span data-i18n="solutionsDetail.market.sec1Eyebrow">Live Surveillance</span></p>
+          <h2 class="h3-sec" data-i18n="solutionsDetail.market.sec1Title">DOM Diff Tracking &amp; Feature Audits</h2>
+          <p class="copy-lg mx-auto" data-i18n="solutionsDetail.market.sec1Sub">Automated DOM structure comparisons highlighting new pricing tiers, enterprise add-ons, and blog announcements.</p>
         </div>
         <div class="product-screenshot-frame">
-          <img src="/images/mockups/02_market_intelligence.png" alt="Market Intelligence DOM Diff Tracker" loading="lazy" />
+          <img src="/images/mockups/02_market_intelligence.png" alt="Market Intelligence DOM Diff Tracker" loading="lazy" decoding="async" width="1220" height="780" />
         </div>
-        <p class="screenshot-caption">Fig 3.1 — Market Intelligence: Competitor tier changes detected, synthesized, and routed to executive Slack/Telegram channels.</p>
+        <p class="screenshot-caption" data-i18n="solutionsDetail.market.sec1Caption">Fig 3.1 — Market Intelligence: Competitor tier changes detected, synthesized, and routed to executive Slack/Telegram channels.</p>
       </div>
 
       <div class="whitepaper-banner" style="margin-top: 80px;">
         <div>
-          <p class="eyebrow" style="color:#60a5fa;"><span>Surveillance Deployment</span></p>
-          <h2 style="font-size: 2.2rem; font-weight: 900; margin: 8px 0 16px 0;">Never Miss a Competitor Move</h2>
-          <p style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6; margin-bottom: 24px;">
+          <p class="eyebrow" style="color:#60a5fa;"><span data-i18n="solutionsDetail.market.bannerEyebrow">Surveillance Deployment</span></p>
+          <h2 style="font-size: 2.2rem; font-weight: 900; margin: 8px 0 16px 0;" data-i18n="solutionsDetail.market.bannerTitle">Never Miss a Competitor Move</h2>
+          <p style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6; margin-bottom: 24px;" data-i18n-html data-i18n="solutionsDetail.market.bannerSub">
             Set up persistent scheduled worker watchdogs (<code>fathom run --repeat 6h</code>) on your private infrastructure with webhook dispatch.
           </p>
           <div style="display:flex; gap: 16px; flex-wrap: wrap;">
-            <a href="/#cta" class="btn btn-primary btn-lg">Request Dedicated Server Access →</a>
-            <a href="/whitepaper" class="btn btn-secondary btn-lg">Read 42-Page Whitepaper</a>
+            <a href="/#cta" class="btn btn-primary btn-lg" data-i18n="solutionsDetail.requestAccess">Request Dedicated Server Access →</a>
+            <a href="/whitepaper" class="btn btn-secondary btn-lg" data-i18n="solutionsDetail.readWp">Read 42-Page Whitepaper</a>
           </div>
         </div>
         <div class="product-screenshot-frame" style="border-radius: var(--radius-md);">
-          <img src="/images/mockups/07_inbox_manager.png" alt="Inbox Triage" loading="lazy" />
+          <img src="/images/mockups/07_inbox_manager.png" alt="Inbox Triage" loading="lazy" decoding="async" width="1220" height="780" />
         </div>
       </div>
     </div>
@@ -71,4 +71,7 @@ import PageHero from '../../components/PageHero.astro';
   .metric-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; text-align: center; }
   .metric-val { font-size: 2.2rem; font-weight: 800; color: var(--accent); }
   .metric-lbl { font-size: 0.84rem; font-weight: 600; color: var(--text-secondary); margin-top: 4px; }
+  .product-screenshot-frame { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--bg-dark); box-shadow: var(--shadow-xl); }
+  .product-screenshot-frame img { width: 100%; height: auto; display: block; }
+  .screenshot-caption { text-align: center; font-size: 0.82rem; color: var(--text-tertiary); font-family: var(--font-mono); margin-top: 14px; }
 </style>

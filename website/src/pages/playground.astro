@@ -8,7 +8,7 @@ import PageHero from '../components/PageHero.astro';
     <PageHero cls="repo-hero">
       <p class="eyebrow" data-i18n="repo.hero.badge">Repository</p>
       <h1 class="h2-sec" data-i18n-html data-i18n="repo.hero.title">The source, <em class="it">crate by crate.</em></h1>
-      <p class="copy-lg mx-auto" data-i18n="repo.hero.sub">12 workspace crates, 3 apps, 50+ built-in tools, and a Rust CLI — everything in one public repository at <a href="https://github.com/yakushevhk/Fathom" target="_blank" rel="noopener">github.com/yakushevhk/Fathom</a>.</p>
+      <p class="copy-lg mx-auto" data-i18n-html data-i18n="repo.hero.sub">12 workspace crates, 3 apps, 50+ built-in tools, and a Rust CLI — everything in one public repository at <a href="https://github.com/yakushevhk/Fathom" target="_blank" rel="noopener">github.com/yakushevhk/Fathom</a>.</p>
     </PageHero>
     <div class="container">
 
@@ -16,7 +16,7 @@ import PageHero from '../components/PageHero.astro';
       <div class="sec-head" id="workspace">
         <p class="eyebrow"><span class="eyebrow__num">01</span><span data-i18n="repo.workspace.badge">Workspace</span></p>
         <h2 class="h3-sec" data-i18n="repo.workspace.title">12 crates, one binary</h2>
-        <p class="copy-lg" data-i18n="repo.workspace.sub">Cargo workspace with resolver 2. Each crate is a focused module — together they compile into a single <code>fathom</code> binary, plus optional apps.</p>
+        <p class="copy-lg" data-i18n-html data-i18n="repo.workspace.sub">Cargo workspace with resolver 2. Each crate is a focused module — together they compile into a single <code>fathom</code> binary, plus optional apps.</p>
       </div>
 
       <div class="crate-grid">
@@ -25,7 +25,7 @@ import PageHero from '../components/PageHero.astro';
             <span class="crate-name">pr-core</span>
             <span class="crate-path">crates/core</span>
           </div>
-          <p class="crate-desc">Shared types, config, error handling, event bus (<code>IrcBus</code>), session management, tool trait, token accounting, async jobs, daemon registry, and capability definitions. Foundation every other crate depends on.</p>
+          <p class="crate-desc" data-i18n-html data-i18n="repo.workspace.coreDesc">Shared types, config, error handling, event bus (<code>IrcBus</code>), session management, tool trait, token accounting, async jobs, daemon registry, and capability definitions. Foundation every other crate depends on.</p>
           <div class="crate-mods">
             <span class="crate-mod">config</span><span class="crate-mod">session</span><span class="crate-mod">agent</span><span class="crate-mod">tool</span><span class="crate-mod">event</span><span class="crate-mod">finding</span><span class="crate-mod">profile</span><span class="crate-mod">token</span><span class="crate-mod">irc</span>
           </div>
@@ -36,7 +36,7 @@ import PageHero from '../components/PageHero.astro';
             <span class="crate-name">pr-llm</span>
             <span class="crate-path">crates/llm</span>
           </div>
-          <p class="crate-desc">Streaming LLM provider abstraction. Provider factory (DeepSeek, OpenAI-compatible), concurrency-limited dispatch, retry with backoff, token-aware response streaming.</p>
+          <p class="crate-desc" data-i18n="repo.workspace.llmDesc">Streaming LLM provider abstraction. Provider factory (DeepSeek, OpenAI-compatible), concurrency-limited dispatch, retry with backoff, token-aware response streaming.</p>
           <div class="crate-mods">
             <span class="crate-mod">provider</span><span class="crate-mod">deepseek</span><span class="crate-mod">concurrency</span><span class="crate-mod">retry</span>
           </div>
@@ -47,7 +47,7 @@ import PageHero from '../components/PageHero.astro';
             <span class="crate-name">pr-agent</span>
             <span class="crate-path">crates/agent</span>
           </div>
-          <p class="crate-desc">Agent runtime: hierarchical agent loop, coordinator with fan-out, budget tracking, context compaction, doom-loop detection, process manager, task tree, goal mode with reflection, lifecycle hooks, and crash recovery.</p>
+          <p class="crate-desc" data-i18n="repo.workspace.agentDesc">Agent runtime: hierarchical agent loop, coordinator with fan-out, budget tracking, context compaction, doom-loop detection, process manager, task tree, goal mode with reflection, lifecycle hooks, and crash recovery.</p>
           <div class="crate-mods">
             <span class="crate-mod">coordinator</span><span class="crate-mod">runtime</span><span class="crate-mod">compaction</span><span class="crate-mod">hooks</span><span class="crate-mod">reflection</span><span class="crate-mod">resume</span><span class="crate-mod">ipc</span>
           </div>
@@ -58,7 +58,7 @@ import PageHero from '../components/PageHero.astro';
             <span class="crate-name">pr-tools</span>
             <span class="crate-path">crates/tools</span>
           </div>
-          <p class="crate-desc">50+ built-in tools: web search/fetch/crawl, file I/O, shell, Python/Node REPL, Git, PDF, LSP, browser CDP, computer use, OSINT extraction, email/social verification, CRM sync, memory, hub coordination, and spawn agent.</p>
+          <p class="crate-desc" data-i18n="repo.workspace.toolsDesc">50+ built-in tools: web search/fetch/crawl, file I/O, shell, Python/Node REPL, Git, PDF, LSP, browser CDP, computer use, OSINT extraction, email/social verification, CRM sync, memory, hub coordination, and spawn agent.</p>
           <div class="crate-mods">
             <span class="crate-mod">search</span><span class="crate-mod">web</span><span class="crate-mod">crawl</span><span class="crate-mod">extract</span><span class="crate-mod">verify_email</span><span class="crate-mod">browser</span><span class="crate-mod">computer</span><span class="crate-mod">git</span><span class="crate-mod">hub</span><span class="crate-mod">spawn</span>
           </div>
@@ -69,7 +69,7 @@ import PageHero from '../components/PageHero.astro';
             <span class="crate-name">pr-mcp</span>
             <span class="crate-path">crates/mcp</span>
           </div>
-          <p class="crate-desc">Model Context Protocol client and server. Client connects to external MCP servers over stdio or HTTP, discovers tools dynamically. Server exposes Fathom's tool registry to any MCP-compatible host.</p>
+          <p class="crate-desc" data-i18n="repo.workspace.mcpDesc">Model Context Protocol client and server. Client connects to external MCP servers over stdio or HTTP, discovers tools dynamically. Server exposes Fathom's tool registry to any MCP-compatible host.</p>
           <div class="crate-mods">
             <span class="crate-mod">client</span><span class="crate-mod">server</span><span class="crate-mod">bridge</span>
           </div>
@@ -80,7 +80,7 @@ import PageHero from '../components/PageHero.astro';
             <span class="crate-name">pr-persistence</span>
             <span class="crate-path">crates/persistence</span>
           </div>
-          <p class="crate-desc">SQLite/PostgreSQL persistence layer: sessions, agents, messages, findings, contacts, credentials, coworkers, channels, schedules, jobs, replay logs, and file history.</p>
+          <p class="crate-desc" data-i18n="repo.workspace.persistenceDesc">SQLite/PostgreSQL persistence layer: sessions, agents, messages, findings, contacts, credentials, coworkers, channels, schedules, jobs, replay logs, and file history.</p>
           <div class="crate-mods">
             <span class="crate-mod">contacts</span><span class="crate-mod">jobs</span><span class="crate-mod">coworkers</span><span class="crate-mod">schedules</span><span class="crate-mod">credentials</span><span class="crate-mod">replay</span><span class="crate-mod">pg</span>
           </div>
@@ -91,7 +91,7 @@ import PageHero from '../components/PageHero.astro';
             <span class="crate-name">pr-memory</span>
             <span class="crate-path">crates/memory</span>
           </div>
-          <p class="crate-desc">Semantic memory: append-only knowledge base with hybrid vector + BM25 search, entity graph, secret scanning, 5-outcome absorb pipeline, distillation, and automatic garbage collection.</p>
+          <p class="crate-desc" data-i18n="repo.workspace.memoryDesc">Semantic memory: append-only knowledge base with hybrid vector + BM25 search, entity graph, secret scanning, 5-outcome absorb pipeline, distillation, and automatic garbage collection.</p>
           <div class="crate-mods">
             <span class="crate-mod">absorb</span><span class="crate-mod">search</span><span class="crate-mod">graph</span><span class="crate-mod">embed</span><span class="crate-mod">distill</span><span class="crate-mod">gc</span><span class="crate-mod">secrets</span>
           </div>
@@ -102,7 +102,7 @@ import PageHero from '../components/PageHero.astro';
             <span class="crate-name">pr-server</span>
             <span class="crate-path">crates/server</span>
           </div>
-          <p class="crate-desc">Axum HTTP server: REST API for sessions, agents, jobs, memory, governance, credentials, coworkers, schedules, computer relay, and SSE event streaming. Prometheus metrics and AG-UI compatibility.</p>
+          <p class="crate-desc" data-i18n="repo.workspace.serverDesc">Axum HTTP server: REST API for sessions, agents, jobs, memory, governance, credentials, coworkers, schedules, computer relay, and SSE event streaming. Prometheus metrics and AG-UI compatibility.</p>
           <div class="crate-mods">
             <span class="crate-mod">auth</span><span class="crate-mod">agui</span><span class="crate-mod">metrics</span><span class="crate-mod">jobs_api</span><span class="crate-mod">memory_api</span><span class="crate-mod">governance_api</span>
           </div>
@@ -113,7 +113,7 @@ import PageHero from '../components/PageHero.astro';
             <span class="crate-name">pr-tui</span>
             <span class="crate-path">crates/tui</span>
           </div>
-          <p class="crate-desc">Ratatui-based terminal interface: live agent tree, streaming output, event log, memory and jobs panels, approval flow, session replay, and mid-run steering.</p>
+          <p class="crate-desc" data-i18n="repo.workspace.tuiDesc">Ratatui-based terminal interface: live agent tree, streaming output, event log, memory and jobs panels, approval flow, session replay, and mid-run steering.</p>
           <div class="crate-mods">
             <span class="crate-mod">app</span><span class="crate-mod">ui</span><span class="crate-mod">event</span><span class="crate-mod">streaming</span>
           </div>
@@ -124,7 +124,7 @@ import PageHero from '../components/PageHero.astro';
             <span class="crate-name">pr-lsp</span>
             <span class="crate-path">crates/lsp</span>
           </div>
-          <p class="crate-desc">Language Server Protocol integration. Auto-detects language servers (rust-analyzer, pyright, typescript-language-server), manages installations, and exposes code intelligence tools.</p>
+          <p class="crate-desc" data-i18n="repo.workspace.lspDesc">Language Server Protocol integration. Auto-detects language servers (rust-analyzer, pyright, typescript-language-server), manages installations, and exposes code intelligence tools.</p>
           <div class="crate-mods">
             <span class="crate-mod">client</span><span class="crate-mod">detect</span><span class="crate-mod">install</span><span class="crate-mod">tool</span>
           </div>
@@ -135,7 +135,7 @@ import PageHero from '../components/PageHero.astro';
             <span class="crate-name">pr-governance</span>
             <span class="crate-path">crates/governance</span>
           </div>
-          <p class="crate-desc">Policy engine: capability-based governance, approval gates, tool allow/deny lists, supervisor integration, and session-bound policy enforcement.</p>
+          <p class="crate-desc" data-i18n="repo.workspace.governanceDesc">Policy engine: capability-based governance, approval gates, tool allow/deny lists, supervisor integration, and session-bound policy enforcement.</p>
           <div class="crate-mods">
             <span class="crate-mod">lib</span>
           </div>
@@ -146,7 +146,7 @@ import PageHero from '../components/PageHero.astro';
             <span class="crate-name">pr-supervisor</span>
             <span class="crate-path">crates/supervisor</span>
           </div>
-          <p class="crate-desc">Supervisor runtime: lifecycle management, cross-session coordination, daemon oversight, and top-level process supervision.</p>
+          <p class="crate-desc" data-i18n="repo.workspace.supervisorDesc">Supervisor runtime: lifecycle management, cross-session coordination, daemon oversight, and top-level process supervision.</p>
           <div class="crate-mods">
             <span class="crate-mod">lib</span>
           </div>
@@ -160,14 +160,14 @@ import PageHero from '../components/PageHero.astro';
       </div>
       <div class="layer-diagram">
         <div class="layer-row">
-          <div class="layer-label">CLI</div>
+          <div class="layer-label" data-i18n="repo.layers.lblCli">CLI</div>
           <div class="layer-boxes">
-            <span class="layer-box layer-box--cli">fathom binary</span>
+            <span class="layer-box layer-box--cli" data-i18n="repo.layers.cliBinary">fathom binary</span>
           </div>
         </div>
         <div class="layer-arrow">↓</div>
         <div class="layer-row">
-          <div class="layer-label">Interfaces</div>
+          <div class="layer-label" data-i18n="repo.layers.lblInterfaces">Interfaces</div>
           <div class="layer-boxes">
             <span class="layer-box">pr-server</span>
             <span class="layer-box">pr-tui</span>
@@ -176,7 +176,7 @@ import PageHero from '../components/PageHero.astro';
         </div>
         <div class="layer-arrow">↓</div>
         <div class="layer-row">
-          <div class="layer-label">Orchestration</div>
+          <div class="layer-label" data-i18n="repo.layers.lblOrchestration">Orchestration</div>
           <div class="layer-boxes">
             <span class="layer-box">pr-agent</span>
             <span class="layer-box">pr-tools</span>
@@ -185,7 +185,7 @@ import PageHero from '../components/PageHero.astro';
         </div>
         <div class="layer-arrow">↓</div>
         <div class="layer-row">
-          <div class="layer-label">Persistence</div>
+          <div class="layer-label" data-i18n="repo.layers.lblPersistence">Persistence</div>
           <div class="layer-boxes">
             <span class="layer-box">pr-persistence</span>
             <span class="layer-box">pr-memory</span>
@@ -193,7 +193,7 @@ import PageHero from '../components/PageHero.astro';
         </div>
         <div class="layer-arrow">↓</div>
         <div class="layer-row">
-          <div class="layer-label">Foundation</div>
+          <div class="layer-label" data-i18n="repo.layers.lblFoundation">Foundation</div>
           <div class="layer-boxes">
             <span class="layer-box">pr-core</span>
             <span class="layer-box">pr-llm</span>
@@ -211,21 +211,21 @@ import PageHero from '../components/PageHero.astro';
       <div class="apps-grid">
         <div class="app-card">
           <div class="app-name">apps/computer</div>
-          <p class="app-desc">Playwright-based browser automation relay. Runs as a sidecar service, exposes a CDP-like API for the <code>browser_*</code> and <code>computer_*</code> tools. Docker image available.</p>
+          <p class="app-desc" data-i18n-html data-i18n="repo.apps.computerDesc">Playwright-based browser automation relay. Runs as a sidecar service, exposes a CDP-like API for the <code>browser_*</code> and <code>computer_*</code> tools. Docker image available.</p>
           <div class="app-stack">
             <span class="app-tech">TypeScript</span><span class="app-tech">Playwright</span><span class="app-tech">Node.js</span>
           </div>
         </div>
         <div class="app-card">
           <div class="app-name">apps/desktop</div>
-          <p class="app-desc">Tauri v2 desktop wrapper. Bundles the web dashboard into a native window with system tray, notifications, and auto-launch. Built with React + TypeScript.</p>
+          <p class="app-desc" data-i18n="repo.apps.desktopDesc">Tauri v2 desktop wrapper. Bundles the web dashboard into a native window with system tray, notifications, and auto-launch. Built with React + TypeScript.</p>
           <div class="app-stack">
             <span class="app-tech">Tauri v2</span><span class="app-tech">React</span><span class="app-tech">Rust</span>
           </div>
         </div>
         <div class="app-card">
           <div class="app-name">apps/web</div>
-          <p class="app-desc">Next.js 16 dashboard. Session monitoring, agent tree, memory stats, jobs management, live events, governance console, and coworker management. Talks to the server API.</p>
+          <p class="app-desc" data-i18n="repo.apps.webDesc">Next.js 16 dashboard. Session monitoring, agent tree, memory stats, jobs management, live events, governance console, and coworker management. Talks to the server API.</p>
           <div class="app-stack">
             <span class="app-tech">Next.js 16</span><span class="app-tech">React</span><span class="app-tech">TypeScript</span>
           </div>
@@ -236,26 +236,26 @@ import PageHero from '../components/PageHero.astro';
       <div class="sec-head" id="website">
         <p class="eyebrow"><span class="eyebrow__num">04</span><span data-i18n="repo.website.badge">Website</span></p>
         <h2 class="h3-sec" data-i18n="repo.website.title">This site</h2>
-        <p class="copy-lg" data-i18n="repo.website.sub">47 pages across two builds: the marketing site (Astro 7, 30+ pages, i18n en/ru, Three.js visualizations) and technical documentation (MDX content collection). Deployed at <a href="https://fathom.uz" target="_blank" rel="noopener">fathom.uz</a>.</p>
+        <p class="copy-lg" data-i18n-html data-i18n="repo.website.sub">47 pages across two builds: the marketing site (Astro 7, 30+ pages, i18n en/ru, Three.js visualizations) and technical documentation (MDX content collection). Deployed at <a href="https://fathom.uz" target="_blank" rel="noopener">fathom.uz</a>.</p>
       </div>
       <div class="website-grid">
         <div class="ws-card">
           <div class="ws-name">website/</div>
-          <p class="ws-desc">Astro 7 marketing site. Pages, components, i18n translations, Three.js scenes (orb, ocean, hero field), blog posts, agent pages, docs layout.</p>
+          <p class="ws-desc" data-i18n="repo.website.webDesc">Astro 7 marketing site. Pages, components, i18n translations, Three.js scenes (orb, ocean, hero field), blog posts, agent pages, docs layout.</p>
           <div class="ws-stack">
             <span class="tech">Astro 7</span><span class="tech">MDX</span><span class="tech">Three.js</span><span class="tech">i18n</span>
           </div>
         </div>
         <div class="ws-card">
           <div class="ws-name">whitepaper/</div>
-          <p class="ws-desc">Technical whitepaper and slide deck: architecture, agent runtime, tools, multi-agent, orchestration, business model, benchmarks. HTML slides with custom CSS.</p>
+          <p class="ws-desc" data-i18n="repo.website.wpDesc">Technical whitepaper and slide deck: architecture, agent runtime, tools, multi-agent, orchestration, business model, benchmarks. HTML slides with custom CSS.</p>
           <div class="ws-stack">
             <span class="tech">HTML</span><span class="tech">CSS</span>
           </div>
         </div>
         <div class="ws-card">
           <div class="ws-name">docs/</div>
-          <p class="ws-desc">Crate-level documentation: architecture decisions, API reference, configuration, deployment guides, OSINT pipeline, troubleshooting, and memory system docs.</p>
+          <p class="ws-desc" data-i18n="repo.website.docsDesc">Crate-level documentation: architecture decisions, API reference, configuration, deployment guides, OSINT pipeline, troubleshooting, and memory system docs.</p>
           <div class="ws-stack">
             <span class="tech">Markdown</span>
           </div>
@@ -269,43 +269,43 @@ import PageHero from '../components/PageHero.astro';
       </div>
       <div class="stack-grid">
         <div class="stack-card">
-          <div class="stack-cat">Language</div>
+          <div class="stack-cat" data-i18n="repo.stack.lblLanguage">Language</div>
           <div class="stack-items">Rust 2021 edition · MSRV 1.97</div>
         </div>
         <div class="stack-card">
-          <div class="stack-cat">Async</div>
+          <div class="stack-cat" data-i18n="repo.stack.lblAsync">Async</div>
           <div class="stack-items">tokio (full) · tokio-util · futures</div>
         </div>
         <div class="stack-card">
-          <div class="stack-cat">HTTP</div>
+          <div class="stack-cat" data-i18n="repo.stack.lblHttp">HTTP</div>
           <div class="stack-items">reqwest (rustls) · axum · SSE</div>
         </div>
         <div class="stack-card">
-          <div class="stack-cat">CLI</div>
+          <div class="stack-cat" data-i18n="repo.stack.lblCli">CLI</div>
           <div class="stack-items">clap (derive) · ratatui · crossterm</div>
         </div>
         <div class="stack-card">
-          <div class="stack-cat">Database</div>
+          <div class="stack-cat" data-i18n="repo.stack.lblDatabase">Database</div>
           <div class="stack-items">rusqlite (WAL) · tokio-postgres · deadpool</div>
         </div>
         <div class="stack-card">
-          <div class="stack-cat">Serialization</div>
+          <div class="stack-cat" data-i18n="repo.stack.lblSerialization">Serialization</div>
           <div class="stack-items">serde · serde_json · toml · schemars</div>
         </div>
         <div class="stack-card">
-          <div class="stack-cat">LLM</div>
+          <div class="stack-cat" data-i18n="repo.stack.lblLlm">LLM</div>
           <div class="stack-items">OpenAI-compatible · DeepSeek · streaming · tiktoken-rs</div>
         </div>
         <div class="stack-card">
-          <div class="stack-cat">Parsing</div>
+          <div class="stack-cat" data-i18n="repo.stack.lblParsing">Parsing</div>
           <div class="stack-items">scraper · quick-xml · lopdf · phonenumber</div>
         </div>
         <div class="stack-card">
-          <div class="stack-cat">Protocols</div>
+          <div class="stack-cat" data-i18n="repo.stack.lblProtocols">Protocols</div>
           <div class="stack-items">MCP client/server · LSP · SSE · CDP</div>
         </div>
         <div class="stack-card">
-          <div class="stack-cat">License</div>
+          <div class="stack-cat" data-i18n="repo.stack.lblLicense">License</div>
           <div class="stack-items">Elastic License 2.0</div>
         </div>
       </div>

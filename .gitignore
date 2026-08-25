@@ -4,6 +4,7 @@
 # Website build
 /website/dist/
 /website/.astro/
+/website/.vercel/
 /website/node_modules/
 
 # OS noise

@@ -160,15 +160,20 @@
       if (reduced) draw(2.4);
     }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
+    let heroResizeTimer;
     new ResizeObserver(() => {
-      W = Math.max(320, wrap.clientWidth);
-      H = Math.max(320, wrap.clientHeight);
-      camera.aspect = W / H;
-      camera.position.z = camDistance();
-      camera.updateProjectionMatrix();
-      renderer.setSize(W, H, false);
-      rebuild();
-      if (reduced) draw(2.4);
+      clearTimeout(heroResizeTimer);
+      heroResizeTimer = setTimeout(() => {
+        if (!wrap) return;
+        W = Math.max(320, wrap.clientWidth);
+        H = Math.max(320, wrap.clientHeight);
+        camera.aspect = W / H;
+        camera.position.z = camDistance();
+        camera.updateProjectionMatrix();
+        renderer.setSize(W, H, false);
+        rebuild();
+        if (reduced) draw(2.4);
+      }, 100);
     }).observe(wrap);
   });
 </script>

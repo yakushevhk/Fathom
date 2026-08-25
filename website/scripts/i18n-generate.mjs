@@ -180,6 +180,7 @@ function insertCanonicalAndHreflang(head, pageUrl, langRoot) {
   const alts = [
     mk('alternate', SITE + pageUrl, { hreflang: 'en' }),
     mk('alternate', SITE + '/ru' + pageUrl, { hreflang: 'ru' }),
+    mk('alternate', SITE + pageUrl, { hreflang: 'x-default' }),
   ];
   head.childNodes.push(mk('canonical', SITE + langRoot + pageUrl));
   for (const a of alts) head.childNodes.push(a);

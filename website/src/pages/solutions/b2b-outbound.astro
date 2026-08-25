@@ -6,72 +6,59 @@ import PageHero from '../../components/PageHero.astro';
 <Layout title="Autonomous Outbound SDR — Fathom Enterprise Solutions" description="Autonomous B2B sales development representative: 50 verified decision-makers daily, 0% email bounces, personalized sequences, and instant CRM pipeline sync.">
   <main class="sol-detail-page">
     <PageHero cls="sol-detail-hero">
-      <p class="eyebrow"><a href="/solutions">Solutions</a> / <span>Sales Outbound</span></p>
-      <h1 class="h2-sec">Autonomous <em class="it">Outbound SDR</em></h1>
-      <p class="copy-lg mx-auto">Generate 50 high-intent enterprise decision-makers every day with live 5-gate SMTP email verification, hyper-personalized copy, and direct CRM sync.</p>
+      <p class="eyebrow"><a href="/solutions" data-i18n="solutionsDetail.breadcrumb">Solutions</a> / <span data-i18n="solutionsDetail.b2b.crumb">Sales Outbound</span></p>
+      <h1 class="h2-sec" data-i18n-html data-i18n="solutionsDetail.b2b.title">Autonomous <em class="it">Outbound SDR</em></h1>
+      <p class="copy-lg mx-auto" data-i18n="solutionsDetail.b2b.sub">Generate 50 high-intent enterprise decision-makers every day with live 5-gate SMTP email verification, hyper-personalized copy, and direct CRM sync.</p>
       
       <div class="sol-hero-metrics">
         <div class="metric-card">
-          <div class="metric-val">0%</div>
-          <div class="metric-lbl">Email Bounce Rate</div>
+          <div class="metric-val" data-i18n="solutionsDetail.b2b.m1Val">0%</div>
+          <div class="metric-lbl" data-i18n="solutionsDetail.b2b.m1Lbl">Email Bounce Rate</div>
         </div>
         <div class="metric-card">
-          <div class="metric-val">50</div>
-          <div class="metric-lbl">Verified Leads / Run</div>
+          <div class="metric-val" data-i18n="solutionsDetail.b2b.m2Val">50</div>
+          <div class="metric-lbl" data-i18n="solutionsDetail.b2b.m2Lbl">Verified Leads / Run</div>
         </div>
         <div class="metric-card">
-          <div class="metric-val">100%</div>
-          <div class="metric-lbl">CRM Sync Automation</div>
+          <div class="metric-val" data-i18n="solutionsDetail.b2b.m3Val">100%</div>
+          <div class="metric-lbl" data-i18n="solutionsDetail.b2b.m3Lbl">CRM Sync Automation</div>
         </div>
         <div class="metric-card">
-          <div class="metric-val">90%</div>
-          <div class="metric-lbl">Cost Reduction vs Agency</div>
+          <div class="metric-val" data-i18n="solutionsDetail.b2b.m4Val">90%</div>
+          <div class="metric-lbl" data-i18n="solutionsDetail.b2b.m4Lbl">Cost Reduction vs Agency</div>
         </div>
       </div>
     </PageHero>
 
     <div class="container">
-      <!-- Live Deliverable Mockup -->
+      <!-- Section 1: Pre-Verified Lead Audit -->
       <div class="sol-section">
         <div class="sec-head center">
-          <p class="eyebrow"><span>Live Deliverable</span></p>
-          <h2 class="h3-sec">Pre-Verified Executive Lead Audit</h2>
-          <p class="copy-lg mx-auto">Every contact is verified via live port 25 SMTP handshake (HELO → MAIL FROM → RCPT TO). Zero spam traps, zero department aliases.</p>
+          <p class="eyebrow"><span data-i18n="solutionsDetail.b2b.sec1Eyebrow">Live Deliverable</span></p>
+          <h2 class="h3-sec" data-i18n="solutionsDetail.b2b.sec1Title">Pre-Verified Executive Lead Audit</h2>
+          <p class="copy-lg mx-auto" data-i18n="solutionsDetail.b2b.sec1Sub">Every contact is verified via live port 25 SMTP handshake (HELO → MAIL FROM → RCPT TO). Zero spam traps, zero department aliases.</p>
         </div>
         <div class="product-screenshot-frame">
-          <img src="/images/mockups/08_lead_audit_report.png" alt="OSINT Lead Audit Report" loading="lazy" />
+          <img src="/images/mockups/08_lead_audit_report.png" alt="OSINT Lead Audit Report" loading="lazy" decoding="async" width="1220" height="780" />
         </div>
-        <p class="screenshot-caption">Fig 1.1 — Fathom Lead Audit: 50 enterprise decision-makers with corporate emails, direct phone numbers, LinkedIn profiles, and confidence scoring.</p>
+        <p class="screenshot-caption" data-i18n="solutionsDetail.b2b.sec1Caption">Fig 1.1 — Fathom Lead Audit: 50 enterprise decision-makers with corporate emails, direct phone numbers, LinkedIn profiles, and confidence scoring.</p>
       </div>
 
-      <!-- Campaign Dispatcher -->
-      <div class="sol-section" style="margin-top: 60px;">
-        <div class="sec-head center">
-          <p class="eyebrow"><span>Outreach Sequences</span></p>
-          <h2 class="h3-sec">Multi-Stage Campaign Dispatcher</h2>
-          <p class="copy-lg mx-auto">Automated multi-stage sequences with custom icebreakers synthesized from recent prospect podcasts, blog posts, and GitHub commits.</p>
-        </div>
-        <div class="product-screenshot-frame">
-          <img src="/images/mockups/14_outreach_campaign_dispatcher.png" alt="Outreach Campaign Dispatcher" loading="lazy" />
-        </div>
-        <p class="screenshot-caption">Fig 1.2 — Multi-Stage Campaign Dispatcher: Adaptive delivery scheduling, DNS MX validation, and human approval gates.</p>
-      </div>
-
-      <!-- Bottom Banner -->
+      <!-- CTA Section -->
       <div class="whitepaper-banner" style="margin-top: 80px;">
         <div>
-          <p class="eyebrow" style="color:#60a5fa;"><span>Immediate Deployment</span></p>
-          <h2 style="font-size: 2.2rem; font-weight: 900; margin: 8px 0 16px 0;">Deploy an Outbound SDR Fleet</h2>
-          <p style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6; margin-bottom: 24px;">
+          <p class="eyebrow" style="color:#60a5fa;"><span data-i18n="solutionsDetail.b2b.bannerEyebrow">Immediate Deployment</span></p>
+          <h2 style="font-size: 2.2rem; font-weight: 900; margin: 8px 0 16px 0;" data-i18n="solutionsDetail.b2b.bannerTitle">Deploy an Outbound SDR Fleet</h2>
+          <p style="color: #94a3b8; font-size: 1.05rem; line-height: 1.6; margin-bottom: 24px;" data-i18n="solutionsDetail.b2b.bannerSub">
             Eliminate SDR hiring friction and expensive data subscription costs. Get dedicated server provisioning with full CRM integration.
           </p>
           <div style="display:flex; gap: 16px; flex-wrap: wrap;">
-            <a href="/#cta" class="btn btn-primary btn-lg">Request Dedicated Server Access →</a>
-            <a href="/whitepaper" class="btn btn-secondary btn-lg">Read 42-Page Whitepaper</a>
+            <a href="/#cta" class="btn btn-primary btn-lg" data-i18n="solutionsDetail.requestAccess">Request Dedicated Server Access →</a>
+            <a href="/whitepaper" class="btn btn-secondary btn-lg" data-i18n="solutionsDetail.readWp">Read 42-Page Whitepaper</a>
           </div>
         </div>
         <div class="product-screenshot-frame" style="border-radius: var(--radius-md);">
-          <img src="/images/mockups/01_sales_outbound_sdr.png" alt="Command Center" loading="lazy" />
+          <img src="/images/mockups/01_sales_outbound_sdr.png" alt="Command Center" loading="lazy" decoding="async" width="1220" height="780" />
         </div>
       </div>
     </div>
@@ -86,4 +73,7 @@ import PageHero from '../../components/PageHero.astro';
   .metric-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; text-align: center; }
   .metric-val { font-size: 2.2rem; font-weight: 800; color: var(--accent); }
   .metric-lbl { font-size: 0.84rem; font-weight: 600; color: var(--text-secondary); margin-top: 4px; }
+  .product-screenshot-frame { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--bg-dark); box-shadow: var(--shadow-xl); }
+  .product-screenshot-frame img { width: 100%; height: auto; display: block; }
+  .screenshot-caption { text-align: center; font-size: 0.82rem; color: var(--text-tertiary); font-family: var(--font-mono); margin-top: 14px; }
 </style>
