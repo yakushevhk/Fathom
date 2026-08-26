@@ -1,3 +1,5 @@
+
+
 <p align="center">
   <img src="assets/fathom.png" alt="Fathom Logo" width="75%">
 </p>
@@ -187,7 +189,7 @@ Deploying autonomous agents in mission-critical environments requires mathematic
 
 ```bash
 # Clone the repository
-git clone https://github.com/fathom-ai/fathom.git
+git clone https://github.com/yakushevhk/Fathom.git
 cd Fathom
 
 # Build native release binary
