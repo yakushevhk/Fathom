@@ -578,6 +578,21 @@ const ROUTINES = [
       @media (max-width: 640px) {
         .demo-hero__main h1 { font-size: 32px; }
         .product-demo__thread { min-height: 320px; }
+        .product-demo__panel.is-open,
+        .product-demo__sidebar.is-open {
+          width: 100vw;
+          max-width: 100%;
+          border-radius: 0;
+        }
+        .product-demo__sidebar-close,
+        .product-demo__menu-btn,
+        .product-demo__panel-actions button {
+          min-width: 44px;
+          min-height: 44px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
         .stats-grid { grid-template-columns: 1fr; }
         .pd-message { max-width: 100%; }
       }

@@ -435,11 +435,10 @@ const CATEGORIES = [
     .tl-seg.is-active { outline: 2px solid #fff; z-index: 3; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
     .tl-intro, .tl-outro { background: var(--grey-400); }
     .tl-label { font-size: 9px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; }
-    .timeline__label { font-size: 12px; color: var(--text-tertiary); font-family: var(--font-mono); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .timeline__label { font-size: 12px; color: var(--text-tertiary); font-family: var(--font-mono); text-align: center; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; line-height: 1.6; }
     .tl-text-jump { background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 11px; font-family: var(--font-mono); padding: 2px 4px; border-radius: 4px; }
     .tl-text-jump:hover { background: var(--bg-tertiary); color: var(--text-primary); }
     .tl-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; vertical-align: middle; }
-
     /* Category Filters */
     .category-filters { display: flex; gap: 8px; justify-content: center; margin-bottom: 24px; flex-wrap: wrap; }
     .category-tab { padding: 6px 14px; border-radius: var(--radius-full); border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; font-family: var(--font-sans); }
@@ -486,13 +485,10 @@ const CATEGORIES = [
     .lightbox__traffic i:nth-child(1) { background: #ef4444; }
     .lightbox__traffic i:nth-child(2) { background: #eab308; }
     .lightbox__traffic i:nth-child(3) { background: #22c55e; }
-    .lightbox__url { font-size: 12px; color: rgba(255, 255, 255, 0.5); font-family: var(--font-mono); margin-left: 8px; }
-    .lightbox__img { max-width: 100%; max-height: 65vh; object-fit: contain; background: #0a0a1a; }
-    .lightbox__caption-bar { display: flex; align-items: center; justify-content: space-between; background: #1a1a2e; padding: 12px 16px; border-radius: 0 0 10px 10px; gap: 16px; }
-    .lightbox__caption { font-size: 13px; color: rgba(255, 255, 255, 0.85); margin: 0; }
+    .lightbox__caption-bar { display: flex; align-items: center; justify-content: space-between; background: #1a1a2e; padding: 12px 16px; border-radius: 0 0 10px 10px; gap: 16px; flex-wrap: wrap; }
+    .lightbox__caption { font-size: 13px; color: rgba(255, 255, 255, 0.85); margin: 0; flex: 1; min-width: 200px; }
     .lightbox__actions { display: flex; gap: 8px; flex-shrink: 0; }
     .btn-sm { padding: 6px 12px; font-size: 12px; }
-
     /* Deck CTA */
     .deck-cta { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 40px; background: var(--bg-card); text-align: center; }
     .deck-cta__content { max-width: 500px; margin: 0 auto; }

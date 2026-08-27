@@ -307,6 +307,16 @@ import PageHero from '../components/PageHero.astro';
   .bar-row .bh-meta b { color: var(--grey-900); font-weight: 600; }
   @keyframes barGrow { from { width: 0; } }
 
+  @media (max-width: 600px) {
+    .bar-row { grid-template-columns: 100px 1fr 70px; gap: 8px; }
+    .bar-row .bh-name, .bar-row .bh-meta { font-size: 11px; }
+  }
+  @media (max-width: 420px) {
+    .bar-row { grid-template-columns: 1fr auto; grid-template-areas: "name meta" "track track"; gap: 4px; }
+    .bar-row .bh-name { grid-area: name; text-align: left; }
+    .bar-row .bh-meta { grid-area: meta; text-align: right; padding-left: 0; }
+    .bar-row .bh-track { grid-area: track; height: 26px; }
+  }
   .bench-legend { display: flex; gap: 18px; justify-content: center; margin-top: 20px; }
   .bench-legend span { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 12px; color: var(--grey-600); }
   .bench-legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }

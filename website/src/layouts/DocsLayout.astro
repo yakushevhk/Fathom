@@ -410,10 +410,13 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
       .docs-mobile-toggle {
         display: none;
         flex-direction: column;
+        min-width: 40px;
+        min-height: 40px;
+        align-items: center;
+        justify-content: center;
         gap: 4px;
         padding: 8px;
       }
-
       .docs-mobile-toggle span {
         display: block;
         width: 18px;
@@ -698,6 +701,9 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
         .docs-layout {
           grid-template-columns: 260px 1fr;
         }
+        .docs-main {
+          padding: 36px 28px 60px;
+        }
       }
 
       @media (max-width: 768px) {
@@ -705,8 +711,13 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
           display: none;
         }
 
-        .docstop-actions {
+        .docstop-actions .docs-btn-ghost:not(.theme-toggle),
+        .docstop-actions .docs-btn-primary {
           display: none;
+        }
+        .docstop-actions {
+          display: flex;
+          gap: 6px;
         }
 
         .docs-mobile-toggle {

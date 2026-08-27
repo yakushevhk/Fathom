@@ -374,8 +374,8 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 32px;
-        height: 32px;
+        min-width: 40px;
+        min-height: 40px;
         border-radius: var(--radius-sm);
         border: 1px solid var(--grey-200);
         background: var(--bg-primary);
@@ -410,6 +410,7 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
         display: flex;
         align-items: center;
         gap: 6px;
+        min-height: 40px;
         padding: 7px 11px;
         border-radius: var(--radius-sm);
         border: 1px solid var(--grey-200);
@@ -488,8 +489,8 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
 
       .menu-btn {
         display: none;
-        width: 40px;
-        height: 40px;
+        min-width: 44px;
+        min-height: 44px;
         align-items: center;
         justify-content: center;
         flex-direction: column;
@@ -527,6 +528,8 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
         flex-direction: column;
         gap: 32px;
         overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
       }
 
       body.mobile-nav-open .mobile-menu {
@@ -573,7 +576,7 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
 
       .mobile-lang-options {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
         gap: 8px;
       }
 
@@ -672,6 +675,9 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
         .footer-grid { grid-template-columns: 1fr 1fr; }
         .footer-brand { grid-column: 1 / -1; }
         .footer-bottom { flex-direction: column; text-align: center; justify-content: center; }
+      }
+      @media (max-width: 520px) {
+        .footer-grid { grid-template-columns: 1fr; gap: 28px; }
       }
     </style>
 

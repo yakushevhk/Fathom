@@ -254,7 +254,7 @@ button {
 }
 
 .section-title {
-  font-size: clamp(2rem, 4vw, 3rem);
+  font-size: clamp(1.625rem, 4.5vw, 3rem);
   font-weight: 500;
   letter-spacing: -0.03em;
   line-height: 1.08;
@@ -288,7 +288,19 @@ button {
   font-weight: 600;
   font-size: 0.9375rem;
   transition: transform var(--duration) var(--ease-out), background var(--duration);
-  white-space: nowrap;
+  transition: background var(--duration) var(--ease-soft), transform var(--duration) var(--ease-soft), border-color var(--duration) var(--ease-soft);
+}
+
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 0.8125rem;
+  min-height: 36px;
+}
+
+.btn-lg {
+  padding: 14px 28px;
+  font-size: 1rem;
+  min-height: 48px;
 }
 
 .btn-primary {
@@ -629,9 +641,11 @@ a.chip:hover,
     --section-gap: 80px;
     --container-padding: 20px;
   }
+}
 
-  .section-title {
-    font-size: 1.875rem;
+@media (max-width: 375px) {
+  :root {
+    --container-padding: 16px;
   }
 }
 

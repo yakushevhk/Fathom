@@ -27,10 +27,10 @@ const { cls = '' } = Astro.props;
     top: -240px;
     left: 50%;
     transform: translateX(-50%);
-    width: 780px;
-    height: 480px;
+    width: min(780px, 100vw);
+    height: min(480px, 60vh);
     background: radial-gradient(closest-side, rgba(143, 182, 204, 0.17), transparent 72%);
-    filter: blur(46px);
+    filter: blur(36px);
     pointer-events: none;
   }
   .phero__inner {
