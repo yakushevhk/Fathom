@@ -3,21 +3,29 @@ import Layout from '../layouts/Layout.astro';
 import PageHero from '../components/PageHero.astro';
 
 const SCENARIOS = [
-  { id: 'sdr', icon: '✉️', color: '#f59e0b', name: 'Sales Outbound SDR', role: 'Lead Generation', mockup: '01_sales_outbound_sdr.png', desc: 'Discover 50+ verified CISO contacts at London fintech firms. SMTP validation, CRM push, zero bounces.' },
-  { id: 'intel', icon: '📡', color: '#3b82f6', name: 'Market Intelligence', role: 'Competitive Research', mockup: '02_market_intelligence.png', desc: 'Track 15 competitors across fintech. Real-time alerts on pricing shifts, feature launches, exec hires.' },
-  { id: 'talent', icon: '🎯', color: '#ec4899', name: 'Talent Scout', role: 'Technical Recruiting', mockup: '03_talent_scout.png', desc: 'Source 30 senior Rust engineers. GitHub AST mining, LinkedIn cross-check, verified emails.' },
-  { id: 'onboard', icon: '🛟', color: '#10b981', name: 'Onboarding Agent', role: 'Client Setup', mockup: '13_customer_success_onboarding.png', desc: 'Provision API keys, configure webhooks, validate payloads in isolated sandbox REPL.' },
-  { id: 'finance', icon: '📊', color: '#8b5cf6', name: 'Finance Ops', role: 'Invoice Processing', mockup: '04_backoffice_invoice.png', desc: 'Ingest 500 PDF invoices. 3-way match: PO / Receipt / Invoice. QuickBooks sync.' },
-  { id: 'devops', icon: '🔧', color: '#ef4444', name: 'Software Maintainer', role: 'Bug Triage', mockup: '05_devops_engineer.png', desc: 'Triage Sentry errors. Map 240+ file repos, sandbox repro, fix + test + PR.' },
-  { id: 'legal', icon: '⚖️', color: '#06b6d4', name: 'Compliance Auditor', role: 'Legal Risk', mockup: '12_legal_compliance_auditor.png', desc: 'Audit 200 vendor MSAs for GDPR. Parallel ingestion across 5 analysts.' },
-  { id: 'orch', icon: '◈', color: '#a78bfa', name: 'Orchestrator', role: 'Swarm Coordinator', mockup: '11_swarm_coordinator.png', desc: 'Decompose research tasks, spawn sub-agents, parallel dispatch, synthesize, verify.' },
-  { id: 'inbox', icon: '📬', color: '#f97316', name: 'Inbox Manager', role: 'Email Intelligence', mockup: '07_inbox_manager.png', desc: 'Process 1,000+ emails/day. Auto-categorize, priority triage, CRM sync.' },
-  { id: 'lead', icon: '📋', color: '#14b8a6', name: 'Lead Audit Report', role: 'Data QA', mockup: '08_lead_audit_report.png', desc: 'Audit 10,000 leads. Deduplicate, validate emails, generate compliance-ready reports.' },
-  { id: 'graph', icon: '🕸️', color: '#6366f1', name: 'Entity Knowledge Graph', role: 'Relationship Mapping', mockup: '09_entity_knowledge_graph.png', desc: 'Extract entities from 500+ docs. Build knowledge graph with SQLite FTS5.' },
-  { id: 'vault', icon: '🔐', color: '#dc2626', name: 'Security Vault', role: 'Credential Governance', mockup: '10_security_credentials_vault.png', desc: 'AES-256-GCM vault. Fail-closed policy engine. Every tool call audited.' },
-  { id: 'outreach', icon: '📣', color: '#d946ef', name: 'Outreach Dispatcher', role: 'Campaign Automation', mockup: '14_outreach_campaign_dispatcher.png', desc: 'Multi-channel campaigns. Personalize at scale: email, LinkedIn, phone.' },
-  { id: 'fleet', icon: '🚀', color: '#0ea5e9', name: 'Agency Fleet Manager', role: 'Multi-Client Ops', mockup: '15_agency_fleet_manager.png', desc: 'Manage 15+ client accounts. Isolated worker fleets, SLA tracking.' },
-  { id: 'computer', icon: '🖥️', color: '#84cc16', name: 'Computer Use', role: 'Desktop Automation', mockup: '06_computer_2fa_takeover.png', desc: 'Browser CDP control. Click, type, navigate SaaS UIs. 2FA human takeover.' },
+  { id: 'sdr', category: 'growth', start: 10, icon: '✉️', color: '#f59e0b', name: 'Sales Outbound SDR', role: 'Lead Generation', mockup: '01_sales_outbound_sdr.png', deckPage: 'page_01.html', desc: 'Discover 50+ verified CISO contacts at London fintech firms. SMTP validation, CRM push, zero bounces.', demoBot: 'sdr' },
+  { id: 'intel', category: 'research', start: 41, icon: '📡', color: '#3b82f6', name: 'Market Intelligence', role: 'Competitive Research', mockup: '02_market_intelligence.png', deckPage: 'page_02.html', desc: 'Track 15 competitors across fintech. Real-time alerts on pricing shifts, feature launches, exec hires.', demoBot: 'intel' },
+  { id: 'talent', category: 'research', start: 72, icon: '🎯', color: '#ec4899', name: 'Talent Scout', role: 'Technical Recruiting', mockup: '03_talent_scout.png', deckPage: 'page_03.html', desc: 'Source 30 senior Rust engineers. GitHub AST mining, LinkedIn cross-check, verified emails.', demoBot: 'talent' },
+  { id: 'onboard', category: 'ops', start: 103, icon: '🛟', color: '#10b981', name: 'Onboarding Agent', role: 'Client Setup', mockup: '13_customer_success_onboarding.png', deckPage: 'page_13.html', desc: 'Provision API keys, configure webhooks, validate payloads in isolated sandbox REPL.', demoBot: 'support' },
+  { id: 'finance', category: 'ops', start: 134, icon: '📊', color: '#8b5cf6', name: 'Finance Ops', role: 'Invoice Processing', mockup: '04_backoffice_invoice.png', deckPage: 'page_04.html', desc: 'Ingest 500 PDF invoices. 3-way match: PO / Receipt / Invoice. QuickBooks sync.', demoBot: 'backoffice' },
+  { id: 'devops', category: 'ops', start: 165, icon: '🔧', color: '#ef4444', name: 'Software Maintainer', role: 'Bug Triage', mockup: '05_devops_engineer.png', deckPage: 'page_05.html', desc: 'Triage Sentry errors. Map 240+ file repos, sandbox repro, fix + test + PR.', demoBot: 'devops' },
+  { id: 'legal', category: 'security', start: 196, icon: '⚖️', color: '#06b6d4', name: 'Compliance Auditor', role: 'Legal Risk', mockup: '12_legal_compliance_auditor.png', deckPage: 'page_12.html', desc: 'Audit 200 vendor MSAs for GDPR. Parallel ingestion across 5 analysts.', demoBot: 'legal' },
+  { id: 'orch', category: 'ops', start: 227, icon: '◈', color: '#a78bfa', name: 'Orchestrator', role: 'Swarm Coordinator', mockup: '11_swarm_coordinator.png', deckPage: 'page_11.html', desc: 'Decompose research tasks, spawn sub-agents, parallel dispatch, synthesize, verify.', demoBot: 'coordinator' },
+  { id: 'inbox', category: 'growth', start: 258, icon: '📬', color: '#f97316', name: 'Inbox Manager', role: 'Email Intelligence', mockup: '07_inbox_manager.png', deckPage: 'page_07.html', desc: 'Process 1,000+ emails/day. Auto-categorize, priority triage, CRM sync.', demoBot: 'sdr' },
+  { id: 'lead', category: 'growth', start: 289, icon: '📋', color: '#14b8a6', name: 'Lead Audit Report', role: 'Data QA', mockup: '08_lead_audit_report.png', deckPage: 'page_08.html', desc: 'Audit 10,000 leads. Deduplicate, validate emails, generate compliance-ready reports.', demoBot: 'sdr' },
+  { id: 'graph', category: 'research', start: 320, icon: '🕸️', color: '#6366f1', name: 'Entity Knowledge Graph', role: 'Relationship Mapping', mockup: '09_entity_knowledge_graph.png', deckPage: 'page_09.html', desc: 'Extract entities from 500+ docs. Build knowledge graph with SQLite FTS5.', demoBot: 'intel' },
+  { id: 'vault', category: 'security', start: 351, icon: '🔐', color: '#dc2626', name: 'Security Vault', role: 'Credential Governance', mockup: '10_security_credentials_vault.png', deckPage: 'page_10.html', desc: 'AES-256-GCM vault. Fail-closed policy engine. Every tool call audited.', demoBot: 'legal' },
+  { id: 'outreach', category: 'growth', start: 382, icon: '📣', color: '#d946ef', name: 'Outreach Dispatcher', role: 'Campaign Automation', mockup: '14_outreach_campaign_dispatcher.png', deckPage: 'page_14.html', desc: 'Multi-channel campaigns. Personalize at scale: email, LinkedIn, phone.', demoBot: 'sdr' },
+  { id: 'fleet', category: 'ops', start: 413, icon: '🚀', color: '#0ea5e9', name: 'Agency Fleet Manager', role: 'Multi-Client Ops', mockup: '15_agency_fleet_manager.png', deckPage: 'page_15.html', desc: 'Manage 15+ client accounts. Isolated worker fleets, SLA tracking.', demoBot: 'coordinator' },
+  { id: 'computer', category: 'security', start: 444, icon: '🖥️', color: '#84cc16', name: 'Computer Use', role: 'Desktop Automation', mockup: '06_computer_2fa_takeover.png', deckPage: 'page_06.html', desc: 'Browser CDP control. Click, type, navigate SaaS UIs. 2FA human takeover.', demoBot: 'support' },
+];
+
+const CATEGORIES = [
+  { id: 'all', label: 'All Scenarios' },
+  { id: 'growth', label: 'Sales & Growth' },
+  { id: 'research', label: 'Research & Intel' },
+  { id: 'ops', label: 'Dev & Operations' },
+  { id: 'security', label: 'Security & Governance' },
 ];
 ---
 
@@ -27,9 +35,12 @@ const SCENARIOS = [
 >
   <main class="video-page">
     <PageHero cls="video-hero">
-      <p class="eyebrow"><span class="eyebrow__dot" aria-hidden="true"></span><span>Showreel</span></p>
-      <h1 class="h2-sec">8 minutes. <em class="it">15 workers.</em></h1>
-      <p class="copy-lg mx-auto">
+      <span class="eyebrow mx-auto" data-i18n="video.eyebrow">Interactive Showreel</span>
+      <h1 class="mx-auto" data-i18n="video.title">
+        8 minutes. 15 scenarios.<br />
+        <em class="it">Autonomous AI workers in action.</em>
+      </h1>
+      <p class="copy-lg mx-auto" data-i18n="video.desc">
         Every Fathom autonomous AI worker in action — from SDR outbound and market intelligence
         to computer use and 2FA takeover. <strong>60fps, 4K-ready, white backdrop.</strong>
         Full interactive demo at <a href="/demo" class="link-underline" style="color:var(--accent);">/demo</a>.
@@ -50,43 +61,87 @@ const SCENARIOS = [
           >
             <source src="https://cloud.y7.hk/videos/fathom_showreel.mp4" type="video/mp4" />
             <source src="/videos/fathom_showreel.mp4" type="video/mp4" />
+            <track kind="chapters" src="/videos/fathom_chapters.vtt" srclang="en" label="English Chapters" default />
           </video>
         </div>
+
+        <!-- Live Now Banner -->
+        <div class="video-now" data-video-now>
+          <span class="vn-pulse"></span>
+          <span class="vn-label">Currently Playing:</span>
+          <span class="vn-title" data-now-title>Introduction</span>
+          <span class="vn-time" data-now-time>00:00</span>
+          <a href="/demo" class="vn-action" data-now-demo>Run in Demo &#x2192;</a>
+        </div>
+
         <div class="video-meta">
           <span class="vm-chip">15 scenarios</span>
           <span class="vm-chip">8 min</span>
           <span class="vm-chip">60fps</span>
           <span class="vm-chip">H.264</span>
           <span class="vm-chip">10 MB</span>
+          <div class="speed-controls">
+            <span class="speed-label">Speed:</span>
+            <button type="button" class="speed-btn is-active" data-speed="1">1x</button>
+            <button type="button" class="speed-btn" data-speed="1.25">1.25x</button>
+            <button type="button" class="speed-btn" data-speed="1.5">1.5x</button>
+            <button type="button" class="speed-btn" data-speed="2">2x</button>
+          </div>
         </div>
+
         <div class="video-links">
           <a href="/demo" class="btn btn-primary">&#x25B6; Try the live demo</a>
           <a href="/deck" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">Browse the slide deck</a>
         </div>
       </div>
 
-      <!-- Timeline -->
-      <div class="timeline">
-        <div class="timeline__bar">
-          <span class="tl-seg tl-intro" style="width:2%"><span class="tl-label">Intro</span></span>
-          <span class="tl-seg" style="width:6.25%;background:#f59e0b"><span class="tl-label">SDR</span></span>
-          <span class="tl-seg" style="width:6.25%;background:#3b82f6"><span class="tl-label">Intel</span></span>
-          <span class="tl-seg" style="width:6.25%;background:#ec4899"><span class="tl-label">Scout</span></span>
-          <span class="tl-seg" style="width:6.25%;background:#10b981"><span class="tl-label">Onboard</span></span>
-          <span class="tl-seg" style="width:6.25%;background:#8b5cf6"><span class="tl-label">Finance</span></span>
-          <span class="tl-seg" style="width:6.25%;background:#ef4444"><span class="tl-label">DevOps</span></span>
-          <span class="tl-seg" style="width:6.25%;background:#06b6d4"><span class="tl-label">Audit</span></span>
-          <span class="tl-seg" style="width:6.25%;background:#a78bfa"><span class="tl-label">Orch</span></span>
-          <span class="tl-seg" style="width:6.25%;background:#f97316"><span class="tl-label">Inbox</span></span>
-          <span class="tl-seg" style="width:6.25%;background:#14b8a6"><span class="tl-label">Leads</span></span>
-          <span class="tl-seg" style="width:6.25%;background:#6366f1"><span class="tl-label">Graph</span></span>
-          <span class="tl-seg" style="width:6.25%;background:#dc2626"><span class="tl-label">Vault</span></span>
-          <span class="tl-seg" style="width:6.25%;background:#d946ef"><span class="tl-label">Outreach</span></span>
-          <span class="tl-seg" style="width:6.25%;background:#0ea5e9"><span class="tl-label">Fleet</span></span>
-          <span class="tl-seg" style="width:6.25%;background:#84cc16"><span class="tl-label">Computer</span></span>
-          <span class="tl-seg tl-outro" style="width:2.5%"><span class="tl-label">Outro</span></span>
+      <!-- Interactive Timeline -->
+      <div class="timeline" id="interactive-timeline">
+        <div class="timeline__header">
+          <span class="tl-head-title">Interactive Timeline</span>
+          <span class="tl-head-hint">Click any segment to jump</span>
         </div>
-        <p class="timeline__label">0:00 &nbsp;·&nbsp; <span class="tl-dot" style="background:#f59e0b"></span> SDR &nbsp;·&nbsp; <span class="tl-dot" style="background:#3b82f6"></span> Intel &nbsp;·&nbsp; <span class="tl-dot" style="background:#ec4899"></span> Scout &nbsp;·&nbsp; <span class="tl-dot" style="background:#10b981"></span> Onboard &nbsp;·&nbsp; <span class="tl-dot" style="background:#8b5cf6"></span> Finance &nbsp;·&nbsp; <span class="tl-dot" style="background:#ef4444"></span> DevOps &nbsp;·&nbsp; <span class="tl-dot" style="background:#06b6d4"></span> Audit &nbsp;·&nbsp; <span class="tl-dot" style="background:#a78bfa"></span> Orch &nbsp;·&nbsp; <span class="tl-dot" style="background:#f97316"></span> Inbox &nbsp;·&nbsp; <span class="tl-dot" style="background:#14b8a6"></span> Leads &nbsp;·&nbsp; <span class="tl-dot" style="background:#6366f1"></span> Graph &nbsp;·&nbsp; <span class="tl-dot" style="background:#dc2626"></span> Vault &nbsp;·&nbsp; <span class="tl-dot" style="background:#d946ef"></span> Outreach &nbsp;·&nbsp; <span class="tl-dot" style="background:#0ea5e9"></span> Fleet &nbsp;·&nbsp; <span class="tl-dot" style="background:#84cc16"></span> Computer &nbsp;·&nbsp; 8:00</p>
+        <div class="timeline__bar">
+          <button type="button" class="tl-seg tl-intro" data-start="0" data-scenario="intro" title="0:00 · Intro" style="width:2%"><span class="tl-label">Intro</span></button>
+          {SCENARIOS.map((sc) => (
+            <button
+              type="button"
+              class="tl-seg"
+              data-start={sc.start}
+              data-scenario={sc.id}
+              title={`${Math.floor(sc.start/60)}:${String(sc.start%60).padStart(2, '0')} · ${sc.name}`}
+              style={`width:6.25%;background:${sc.color}`}
+            >
+              <span class="tl-label">{sc.name.split(' ')[0]}</span>
+            </button>
+          ))}
+          <button type="button" class="tl-seg tl-outro" data-start="468" data-scenario="outro" title="7:48 · Outro" style="width:2.5%"><span class="tl-label">Outro</span></button>
+        </div>
+        <p class="timeline__label">
+          0:00 &nbsp;·&nbsp;
+          {SCENARIOS.map((sc) => (
+            <>
+              <button type="button" class="tl-text-jump" data-start={sc.start}>
+                <span class="tl-dot" style={`background:${sc.color}`}></span> {sc.name.split(' ')[0]}
+              </button>
+              &nbsp;·&nbsp;
+            </>
+          ))}
+          <button type="button" class="tl-text-jump" data-start="468">Outro</button>
+        </p>
+      </div>
+
+      <!-- Category Filter Tabs -->
+      <div class="category-filters">
+        {CATEGORIES.map((c, i) => (
+          <button
+            type="button"
+            class={`category-tab ${i === 0 ? 'is-active' : ''}`}
+            data-cat={c.id}
+          >
+            {c.label}
+          </button>
+        ))}
       </div>
 
       <!-- Scenario gallery -->
@@ -94,18 +149,34 @@ const SCENARIOS = [
         <h2 class="scenario-section__title">All 15 workers <span class="scenario-count">in the showreel</span></h2>
         <div class="scenario-grid">
           {SCENARIOS.map((sc) => (
-            <button type="button" class="scenario-card" data-scenario={sc.id} aria-label={'View ' + sc.name}>
+            <div class="scenario-card" data-scenario={sc.id} data-cat={sc.category} data-start={sc.start}>
               <span class="sc-card__bar" style={'background:' + sc.color}></span>
-              <div class="sc-card__thumb">
+              <div class="sc-card__thumb" data-action="lightbox">
                 <img src={'/images/mockups/' + sc.mockup} alt={sc.name} class="sc-card__img" loading="lazy" />
+                <span class="sc-play-badge">&#x25B6; {Math.floor(sc.start / 60)}:{String(sc.start % 60).padStart(2, '0')}</span>
               </div>
               <div class="sc-card__body">
-                <span class="sc-card__avatar" style={'background:' + sc.color}>{sc.icon}</span>
-                <span class="sc-card__name">{sc.name}</span>
-                <span class="sc-card__role">{sc.role}</span>
+                <div class="sc-card__header">
+                  <span class="sc-card__avatar" style={'background:' + sc.color}>{sc.icon}</span>
+                  <div>
+                    <span class="sc-card__name">{sc.name}</span>
+                    <span class="sc-card__role">{sc.role}</span>
+                  </div>
+                </div>
                 <span class="sc-card__desc">{sc.desc}</span>
+                <div class="sc-card__actions">
+                  <button type="button" class="sc-btn sc-btn--play" data-action="play" data-start={sc.start}>
+                    &#x25B6; Jump to Video
+                  </button>
+                  <a href={`/demo`} class="sc-btn sc-btn--demo">
+                    ⚡ Live Demo
+                  </a>
+                  <a href={`/deck/${sc.deckPage}`} target="_blank" rel="noopener noreferrer" class="sc-btn sc-btn--deck" title="Slide deck">
+                    📑
+                  </a>
+                </div>
               </div>
-            </button>
+            </div>
           ))}
         </div>
       </div>
@@ -119,7 +190,13 @@ const SCENARIOS = [
             <span class="lightbox__url" data-lightbox-url>fathom://worker/screen</span>
           </div>
           <img class="lightbox__img" data-lightbox-img alt="Worker screen" />
-          <p class="lightbox__caption" data-lightbox-caption></p>
+          <div class="lightbox__caption-bar">
+            <p class="lightbox__caption" data-lightbox-caption></p>
+            <div class="lightbox__actions">
+              <button type="button" class="btn btn-primary btn-sm" data-lightbox-play>&#x25B6; Jump in video</button>
+              <a href="/demo" class="btn btn-secondary btn-sm">Try in Demo</a>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -139,36 +216,175 @@ const SCENARIOS = [
 
   <script is:inline>
     (function() {
+      const video = document.getElementById('showreel');
+      const timelineSegs = document.querySelectorAll('.tl-seg');
+      const timelineTextJumps = document.querySelectorAll('.tl-text-jump');
+      const cards = document.querySelectorAll('.scenario-card');
+      const catTabs = document.querySelectorAll('.category-tab');
+      const speedBtns = document.querySelectorAll('.speed-btn');
+      
+      const nowTitle = document.querySelector('[data-now-title]');
+      const nowTime = document.querySelector('[data-now-time]');
+      const nowDemo = document.querySelector('[data-now-demo]');
+
       const lightbox = document.querySelector('[data-lightbox]');
       const lightboxImg = document.querySelector('[data-lightbox-img]');
       const lightboxUrl = document.querySelector('[data-lightbox-url]');
       const lightboxCaption = document.querySelector('[data-lightbox-caption]');
       const lightboxClose = document.querySelector('[data-lightbox-close]');
+      const lightboxPlay = document.querySelector('[data-lightbox-play]');
 
-      // Open lightbox on card click
-      document.querySelectorAll('.scenario-card').forEach(card => {
-        card.addEventListener('click', function() {
-          const img = this.querySelector('.sc-card__img');
-          const name = this.querySelector('.sc-card__name').textContent;
-          const role = this.querySelector('.sc-card__role').textContent;
-          const desc = this.querySelector('.sc-card__desc').textContent;
-          if (img) {
-            lightboxImg.src = img.src;
-            lightboxUrl.textContent = 'fathom://' + this.dataset.scenario + '/screen';
-            lightboxCaption.textContent = name + ' — ' + role + '. ' + desc;
-            lightbox.removeAttribute('hidden');
-          }
+      let currentScenarioStartTime = 0;
+
+      // === Video Jump Helper ===
+      function jumpToTime(seconds) {
+        if (!video) return;
+        video.currentTime = seconds;
+        video.play().catch(function() {});
+        video.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+      // === Timeline Jump Event Listeners ===
+      timelineSegs.forEach(function(seg) {
+        seg.addEventListener('click', function() {
+          const start = parseFloat(this.dataset.start || 0);
+          jumpToTime(start);
         });
       });
 
-      lightboxClose.addEventListener('click', function() {
-        lightbox.setAttribute('hidden', '');
+      timelineTextJumps.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          const start = parseFloat(this.dataset.start || 0);
+          jumpToTime(start);
+        });
       });
-      lightbox.addEventListener('click', function(e) {
-        if (e.target === lightbox) lightbox.setAttribute('hidden', '');
+
+      // === Speed Controls ===
+      speedBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          const speed = parseFloat(this.dataset.speed || 1);
+          if (video) video.playbackRate = speed;
+          speedBtns.forEach(function(b) { b.classList.remove('is-active'); });
+          this.classList.add('is-active');
+        });
       });
+
+      // === Category Filter ===
+      catTabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
+          const cat = this.dataset.cat;
+          catTabs.forEach(function(t) { t.classList.remove('is-active'); });
+          this.classList.add('is-active');
+
+          cards.forEach(function(card) {
+            if (cat === 'all' || card.dataset.cat === cat) {
+              card.style.display = 'flex';
+            } else {
+              card.style.display = 'none';
+            }
+          });
+        });
+      });
+
+      // === Card Interactions ===
+      cards.forEach(function(card) {
+        // Play button
+        const playBtn = card.querySelector('[data-action="play"]');
+        if (playBtn) {
+          playBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const start = parseFloat(this.dataset.start || 0);
+            jumpToTime(start);
+          });
+        }
+
+        // Thumb click -> Lightbox
+        const thumb = card.querySelector('[data-action="lightbox"]');
+        if (thumb) {
+          thumb.addEventListener('click', function() {
+            const img = card.querySelector('.sc-card__img');
+            const name = card.querySelector('.sc-card__name').textContent;
+            const role = card.querySelector('.sc-card__role').textContent;
+            const desc = card.querySelector('.sc-card__desc').textContent;
+            const start = parseFloat(card.dataset.start || 0);
+            currentScenarioStartTime = start;
+
+            if (img && lightbox) {
+              lightboxImg.src = img.src;
+              lightboxUrl.textContent = 'fathom://' + card.dataset.scenario + '/screen';
+              lightboxCaption.textContent = name + ' — ' + role + '. ' + desc;
+              lightbox.removeAttribute('hidden');
+            }
+          });
+        }
+      });
+
+      if (lightboxPlay) {
+        lightboxPlay.addEventListener('click', function() {
+          if (lightbox) lightbox.setAttribute('hidden', '');
+          jumpToTime(currentScenarioStartTime);
+        });
+      }
+
+      // === Timeupdate Synchronizer ===
+      const scenarioMilestones = Array.from(cards).map(function(card) {
+        return {
+          id: card.dataset.scenario,
+          start: parseFloat(card.dataset.start || 0),
+          name: card.querySelector('.sc-card__name')?.textContent || '',
+          el: card
+        };
+      }).sort(function(a, b) { return a.start - b.start; });
+
+      if (video) {
+        video.addEventListener('timeupdate', function() {
+          const ct = video.currentTime;
+          const mins = Math.floor(ct / 60);
+          const secs = Math.floor(ct % 60);
+          if (nowTime) nowTime.textContent = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+
+          let activeSc = null;
+          for (let i = scenarioMilestones.length - 1; i >= 0; i--) {
+            if (ct >= scenarioMilestones[i].start) {
+              activeSc = scenarioMilestones[i];
+              break;
+            }
+          }
+
+          // Update Now Playing Banner
+          if (activeSc) {
+            if (nowTitle) nowTitle.textContent = activeSc.name;
+            if (nowDemo) nowDemo.href = '/demo';
+          } else {
+            if (nowTitle) nowTitle.textContent = 'Introduction';
+          }
+
+          // Highlight Active Card & Timeline
+          timelineSegs.forEach(function(seg) {
+            const isMatch = activeSc && seg.dataset.scenario === activeSc.id;
+            seg.classList.toggle('is-active', isMatch);
+          });
+
+          cards.forEach(function(card) {
+            const isMatch = activeSc && card.dataset.scenario === activeSc.id;
+            card.classList.toggle('is-current-playing', isMatch);
+          });
+        });
+      }
+
+      // === Lightbox Close ===
+      if (lightboxClose) {
+        lightboxClose.addEventListener('click', function() {
+          lightbox.setAttribute('hidden', '');
+        });
+      }
+      if (lightbox) {
+        lightbox.addEventListener('click', function(e) {
+          if (e.target === lightbox) lightbox.setAttribute('hidden', '');
+        });
+      }
       document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') lightbox.setAttribute('hidden', '');
+        if (e.key === 'Escape' && lightbox) lightbox.setAttribute('hidden', '');
       });
     })();
   </script>
@@ -181,11 +397,27 @@ const SCENARIOS = [
 
     /* Video player */
     .feature-video { margin-bottom: 32px; }
-    .video-player { position: relative; aspect-ratio: 16/9; max-width: 900px; border-radius: var(--radius-lg); overflow: hidden; background: #fff; margin: 0 auto 16px; border: 1px solid var(--border); }
+    .video-player { position: relative; aspect-ratio: 16/9; max-width: 900px; border-radius: var(--radius-lg); overflow: hidden; background: #fff; margin: 0 auto 16px; border: 1px solid var(--border); box-shadow: var(--shadow-lg); }
     .video-player__video { width: 100%; height: 100%; object-fit: contain; display: block; background: #fff; }
-    .video-meta { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 12px; }
+
+    /* Live Now Banner */
+    .video-now { max-width: 900px; margin: 0 auto 12px; display: flex; align-items: center; gap: 10px; padding: 8px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 13px; }
+    .vn-pulse { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; animation: vnPulse 1.5s infinite; }
+    @keyframes vnPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.6; } }
+    .vn-label { color: var(--text-tertiary); font-weight: 500; font-size: 12px; }
+    .vn-title { font-weight: 600; color: var(--text-primary); }
+    .vn-time { font-family: var(--font-mono); color: var(--accent); font-size: 12px; }
+    .vn-action { margin-left: auto; color: var(--accent); font-weight: 500; text-decoration: none; font-size: 12px; }
+    .vn-action:hover { text-decoration: underline; }
+
+    .video-meta { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; margin-bottom: 16px; }
     .vm-chip { font-size: 12px; padding: 2px 10px; border-radius: var(--radius-full); background: var(--bg-tertiary); color: var(--text-secondary); font-family: var(--font-mono); }
-    .video-links { display: flex; gap: 12px; justify-content: center; margin-bottom: 40px; }
+    .speed-controls { display: flex; align-items: center; gap: 4px; margin-left: 12px; font-size: 12px; }
+    .speed-label { color: var(--text-tertiary); }
+    .speed-btn { border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); border-radius: 4px; padding: 2px 6px; cursor: pointer; font-size: 11px; font-family: var(--font-mono); }
+    .speed-btn.is-active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
+
+    .video-links { display: flex; gap: 12px; justify-content: center; margin-bottom: 32px; }
     .video-links .btn { padding: 10px 24px; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; cursor: pointer; border: none; text-decoration: none; font-family: var(--font-sans); }
     .video-links .btn-primary { background: var(--accent); color: var(--on-accent); }
     .video-links .btn-primary:hover { background: var(--accent-hover); }
@@ -193,35 +425,58 @@ const SCENARIOS = [
     .video-links .btn-secondary:hover { background: var(--grey-400); }
 
     /* Timeline */
-    .timeline { margin-bottom: 48px; }
-    .timeline__bar { display: flex; height: 20px; border-radius: 10px; overflow: hidden; margin-bottom: 8px; }
-    .tl-seg { position: relative; display: flex; align-items: center; justify-content: center; }
-    .tl-intro, .tl-outro { background: var(--grey-300); }
-    .tl-label { font-size: 9px; font-weight: 600; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; }
+    .timeline { margin-bottom: 36px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 20px; }
+    .timeline__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .tl-head-title { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); }
+    .tl-head-hint { font-size: 11px; color: var(--text-tertiary); font-family: var(--font-mono); }
+    .timeline__bar { display: flex; height: 26px; border-radius: 6px; overflow: hidden; margin-bottom: 12px; gap: 2px; }
+    .tl-seg { position: relative; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; transition: transform 0.15s, opacity 0.15s; }
+    .tl-seg:hover { transform: scaleY(1.15); z-index: 2; opacity: 0.9; }
+    .tl-seg.is-active { outline: 2px solid #fff; z-index: 3; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+    .tl-intro, .tl-outro { background: var(--grey-400); }
+    .tl-label { font-size: 9px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; }
     .timeline__label { font-size: 12px; color: var(--text-tertiary); font-family: var(--font-mono); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tl-text-jump { background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 11px; font-family: var(--font-mono); padding: 2px 4px; border-radius: 4px; }
+    .tl-text-jump:hover { background: var(--bg-tertiary); color: var(--text-primary); }
     .tl-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; vertical-align: middle; }
+
+    /* Category Filters */
+    .category-filters { display: flex; gap: 8px; justify-content: center; margin-bottom: 24px; flex-wrap: wrap; }
+    .category-tab { padding: 6px 14px; border-radius: var(--radius-full); border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; font-family: var(--font-sans); }
+    .category-tab:hover { border-color: var(--accent); color: var(--text-primary); }
+    .category-tab.is-active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
 
     /* Scenario gallery */
     .scenario-section { margin-bottom: 48px; }
     .scenario-section__title { font-size: 22px; font-weight: 500; margin-bottom: 20px; }
     .scenario-count { font-weight: 400; color: var(--text-tertiary); }
-    .scenario-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; }
+    .scenario-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px; }
 
-    .scenario-card { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--bg-card); cursor: pointer; text-align: left; padding: 0; transition: box-shadow var(--duration), transform 0.15s; width: 100%; font-family: var(--font-sans); }
-    .scenario-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); transform: translateY(-3px); }
-    .scenario-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .scenario-card { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--bg-card); text-align: left; padding: 0; transition: box-shadow 0.2s, transform 0.15s, border-color 0.2s; width: 100%; font-family: var(--font-sans); position: relative; }
+    .scenario-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.08); transform: translateY(-3px); border-color: var(--accent); }
+    .scenario-card.is-current-playing { border-color: #22c55e; box-shadow: 0 0 16px rgba(34, 197, 94, 0.25); transform: translateY(-2px); }
     .sc-card__bar { height: 4px; flex-shrink: 0; display: block; }
-    .sc-card__thumb { aspect-ratio: 16/9; background: var(--bg-dark-card); overflow: hidden; }
+    .sc-card__thumb { aspect-ratio: 16/9; background: var(--bg-dark-card); overflow: hidden; position: relative; cursor: pointer; }
     .sc-card__img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.3s; }
     .scenario-card:hover .sc-card__img { transform: scale(1.05); }
-    .sc-card__body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
-    .sc-card__avatar { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff; margin-bottom: 6px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15); }
-    .sc-card__name { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.01em; }
-    .sc-card__role { font-size: 11px; color: var(--text-tertiary); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; }
-    .sc-card__desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-top: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .sc-play-badge { position: absolute; bottom: 6px; right: 6px; background: rgba(0, 0, 0, 0.75); color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-family: var(--font-mono); font-weight: 600; backdrop-filter: blur(4px); }
+    .sc-card__body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+    .sc-card__header { display: flex; gap: 8px; align-items: center; }
+    .sc-card__avatar { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15); }
+    .sc-card__name { font-size: 13px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.01em; display: block; }
+    .sc-card__role { font-size: 10px; color: var(--text-tertiary); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; display: block; }
+    .sc-card__desc { font-size: 12px; color: var(--text-secondary); line-height: 1.45; margin: 4px 0 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: 1; }
+    
+    .sc-card__actions { display: flex; gap: 6px; align-items: center; border-top: 1px solid var(--border); padding-top: 8px; }
+    .sc-btn { padding: 5px 8px; border-radius: 6px; font-size: 11px; font-weight: 500; text-decoration: none; cursor: pointer; border: 1px solid var(--border); background: var(--bg-tertiary); color: var(--text-primary); transition: all 0.15s; font-family: var(--font-sans); }
+    .sc-btn:hover { background: var(--bg-card-hover); border-color: var(--accent); }
+    .sc-btn--play { background: var(--accent-light); color: var(--accent); border-color: transparent; font-weight: 600; flex: 1; text-align: center; }
+    .sc-btn--play:hover { background: var(--accent); color: var(--on-accent); }
+    .sc-btn--demo { color: var(--text-secondary); }
+    .sc-btn--deck { color: var(--text-tertiary); padding: 5px 6px; }
 
-    /* Lightbox (reuse from demo) */
-    .lightbox { position: fixed; inset: 0; z-index: 1000; background: rgba(0, 0, 0, 0.8); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(6px); }
+    /* Lightbox */
+    .lightbox { position: fixed; inset: 0; z-index: 1000; background: rgba(0, 0, 0, 0.85); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
     .lightbox[hidden] { display: none; }
     .lightbox__close { position: absolute; top: 20px; right: 24px; background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; z-index: 10; font-family: var(--font-sans); }
     .lightbox__frame { max-width: 90vw; max-height: 88vh; display: flex; flex-direction: column; }
@@ -232,8 +487,11 @@ const SCENARIOS = [
     .lightbox__traffic i:nth-child(2) { background: #eab308; }
     .lightbox__traffic i:nth-child(3) { background: #22c55e; }
     .lightbox__url { font-size: 12px; color: rgba(255, 255, 255, 0.5); font-family: var(--font-mono); margin-left: 8px; }
-    .lightbox__img { max-width: 100%; max-height: 70vh; object-fit: contain; background: #0a0a1a; border-radius: 0 0 10px 10px; }
-    .lightbox__caption { text-align: center; padding: 12px 0 0; font-size: 14px; color: rgba(255, 255, 255, 0.7); }
+    .lightbox__img { max-width: 100%; max-height: 65vh; object-fit: contain; background: #0a0a1a; }
+    .lightbox__caption-bar { display: flex; align-items: center; justify-content: space-between; background: #1a1a2e; padding: 12px 16px; border-radius: 0 0 10px 10px; gap: 16px; }
+    .lightbox__caption { font-size: 13px; color: rgba(255, 255, 255, 0.85); margin: 0; }
+    .lightbox__actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
 
     /* Deck CTA */
     .deck-cta { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 40px; background: var(--bg-card); text-align: center; }
@@ -246,8 +504,8 @@ const SCENARIOS = [
     .deck-cta .btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); }
     .deck-cta .btn-secondary:hover { background: var(--grey-400); }
 
-    @media (max-width: 1100px) { .scenario-grid { grid-template-columns: repeat(3, 1fr); } }
-    @media (max-width: 700px) { .scenario-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 450px) { .scenario-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 1200px) { .scenario-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 800px) { .scenario-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 500px) { .scenario-grid { grid-template-columns: 1fr; } }
   </style>
 </Layout>
