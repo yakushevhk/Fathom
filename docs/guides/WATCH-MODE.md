@@ -43,7 +43,7 @@ Key details:
 
 2. **Subsequent iterations re-run the full query.** Each cycle calls `run_research()` again — the same LLM decomposition, tool execution, and synthesis. This is not a lightweight scrape; it is a full agent research session.
 
-3. **Sleep is adaptive.** The loop waits `repeat_seconds` minus the time the research run took, with a minimum of 5 seconds. If a run takes 40 minutes and `--repeat 3600` was set, the next run starts in ~56 minutes.
+3. **Sleep is adaptive.** The loop waits `repeat_seconds` minus the time the research run took, with a minimum of 5 seconds. If a run takes 4 minutes (240s) and `--repeat 3600` (60m) was set, the next run starts in ~56 minutes.
 
 4. **The loop runs forever.** Interrupt with `Ctrl+C`. The contact database persists across restarts, so resuming later does not re-alert on already-known contacts — the known-keys set is rebuilt from the database on startup.
 

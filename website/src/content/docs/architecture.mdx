@@ -8,13 +8,15 @@ export const crates = [
   { name: 'core', d: 'The foundation — depends on nothing. IDs (UUID v7), messages & events, findings, AppConfig, export (PDF/HTML/JSON/DOCX), notifications, CRM sync, exact token counting.' },
   { name: 'llm', d: 'Provider abstraction. LlmProvider trait with complete() and stream(), retry with exponential backoff, streaming fallback for large responses, response size limits.' },
   { name: 'agent', d: 'The runtime itself: agent loop, coordinator, compaction, prompt builder, tool executor, result budgets, control plane, IPC, process manager, doom-loop detector, hooks, session resume.' },
-  { name: 'tools', d: '51 always-registered tools plus up to 5 CDP browser tools and up to 6 computer tools: web, files, shell, git, AST search/edit, browser CDP, computer, memory and coordination. Optional plugins and MCP add more.' },
+  { name: 'tools', d: '48 base tools plus up to 5 CDP browser tools, up to 6 computer tools, and optional LSP/MCP tools: web, files, shell, git, code analysis, browser CDP, computer use, memory and coordination.' },
   { name: 'memory', d: 'Long-term semantic memory + entity graph (mem0 / Memora model): facts, FTS5, embeddings, 5-outcome absorb pipeline, hybrid search, distillation, secret detection.' },
-  { name: 'protocol', d: 'Versioned typed RPC/events over bounded NDJSON, plus ACP and authenticated collaboration adapters.' },
-  { name: 'mcp', d: 'Model Context Protocol client with bounded connection lifecycle, reconnect, circuit breaker, refresh, and graceful shutdown.' },
-  { name: 'persistence', d: 'SQLite in WAL mode with a 4-connection pool: sessions, agents, messages, findings, sub-tasks. Contact DB, durable jobs with self-healing retry, session history.' },
-  { name: 'server', d: 'Axum HTTP API: REST endpoints for sessions, agents, jobs and memory; control-plane answers/approvals; SSE streaming; API-key auth, rate limiting, Prometheus metrics.' },
+  { name: 'mcp', d: 'Model Context Protocol client and server with bounded connection lifecycle, reconnect, circuit breaker, refresh, and stdio/HTTP transports.' },
+  { name: 'persistence', d: 'SQLite in WAL mode with a 4-connection pool + PostgreSQL: sessions, agents, messages, findings, sub-tasks, contact DB, credentials vault, and durable jobs with self-healing retry.' },
+  { name: 'server', d: 'Axum HTTP API: REST endpoints for sessions, agents, jobs, memory, credentials, coworkers, schedules, governance; control-plane answers/approvals; SSE streaming; API-key auth, rate limiting, Prometheus metrics.' },
   { name: 'tui', d: 'Ratatui interface: multi-agent tree view, live streaming buffer, jobs and memory panels, operator control — answer questions, grant approvals, watch the fleet.' },
+  { name: 'lsp', d: 'Language Server Protocol client and adapter tool for IDE code intelligence and cross-file refactoring.' },
+  { name: 'governance', d: 'Fail-closed policy engine: declarative allow/deny rules, ActionContext validation, audit trail, and credentials vault integration.' },
+  { name: 'supervisor', d: 'Docker container sandboxing & resource confinement for per-agent isolated computer environments.' },
 ];
 
 export const steps = [
@@ -65,12 +67,15 @@ export const contextStages = [
 │   ├── core/          # fundamental types & domain logic
 │   ├── llm/           # LLM provider abstraction
 │   ├── agent/         # agent runtime, coordination, control plane
-│   ├── tools/         # 51 always-registered tools plus up to 5 CDP browser tools and up to 6 computer tools + MCP/plugin tools
+│   ├── tools/         # 48 base tools plus up to 5 CDP browser tools and up to 6 computer tools + MCP/LSP tools
 │   ├── memory/        # long-term semantic memory + entity graph
 │   ├── mcp/           # Model Context Protocol (client and server)
-│   ├── persistence/   # storage (SQLite, connection pool, jobs)
-│   ├── server/        # HTTP API
-│   └── tui/           # terminal interface
+│   ├── persistence/   # storage (SQLite, PostgreSQL, connection pool, jobs, vault)
+│   ├── server/        # Axum HTTP/SSE API, AG-UI bridge, computer relay
+│   ├── tui/           # ratatui terminal interface
+│   ├── lsp/           # Language Server Protocol integration
+│   ├── governance/    # policy engine & audit trail
+│   └── supervisor/    # Docker container supervisor
 └── src/main.rs        # CLI entry point`} /></pre>
     </div>
 

@@ -185,7 +185,7 @@ export const translations = {
     },
     "osint": {
       "en": "OSINT Playbook",
-      "ru": "OSINT-плейбук"
+      "ru": "Руководство по OSINT"
     },
     "tui": {
       "en": "Terminal UI",

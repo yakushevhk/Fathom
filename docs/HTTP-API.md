@@ -45,6 +45,10 @@ Health check — returns `200 OK` with the current server status and a count of 
 
 ---
 
+### `GET /metrics`
+
+Prometheus text exposition format endpoint for scraping server telemetry and performance metrics.
+
 **Available metrics:**
 
 | Metric | Type | Description |

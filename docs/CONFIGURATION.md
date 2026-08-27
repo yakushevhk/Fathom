@@ -368,11 +368,11 @@ Long-term semantic memory (see [MEMORY-KB.md](MEMORY-KB.md) for the full design)
 | `auto_digest` | bool | `true` | Inject digest into top-agent prompts |
 | `llm_classify` | bool | `true` | LLM classification of facts in absorb |
 | `rerank` | bool | `false` | LLM-reranking of search results as second pass |
+| `gc_auto` | bool | `true` | Run background GC automatically |
 | `gc_ttl_days` | u32 | `30` | GC: age (days) after which untouched run facts are archived |
 | `gc_compact_above` | u32 | `200` | GC: active-row threshold in scope group for N→1 compaction |
 | `gc_confidence_decay_rate` | f64 | `0.02` | GC: daily confidence decay for unused facts |
 | `gc_confidence_threshold` | f64 | `0.15` | GC: minimum confidence; below this, facts are archived |
-
 **Embedding backend selection.** The `embeddings` field selects the embedding strategy:
 - `auto` — attempts to use the LLM provider's embedding endpoint (OpenAI-compatible); falls back to TF-IDF if unavailable.
 - `openai` — explicitly uses the OpenAI-compatible embedding API at `embedding_base_url` with `embedding_model`.

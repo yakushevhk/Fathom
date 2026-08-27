@@ -287,7 +287,7 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | fathom mcp-serve
 
 ### What Tools Are Exposed
 
-All built-in tools are available (50+ at the time of writing; the test suite asserts `> 30`): `read`, `write`, `edit`, `glob`, `grep`, `bash`, `eval`, `web_search`, `task`, `hub`, and many more. The exact list depends on the build configuration — inspect the `tools/list` response from `fathom mcp-serve` for the authoritative set.
+All built-in tools are available (51 unconditional built-ins, plus optional browser/computer tools): `file_read`, `file_write`, `file_edit`, `glob`, `grep`, `shell`, `python_exec`, `web_search`, `spawn_agent`, `hub`, and many more. The exact list depends on the build configuration and environment — inspect the `tools/list` response from `fathom mcp-serve` for the authoritative set.
 
 ---
 

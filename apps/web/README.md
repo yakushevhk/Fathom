@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Fathom Web Dashboard
+
+Next.js 16 control plane and visual dashboard for the **Fathom** autonomous AI worker platform.
+
+## Overview
+
+The web dashboard provides real-time monitoring and control over the Fathom engine:
+- **Chat & Steering**: Interactive task execution with live Server-Sent Events (SSE) streaming (`/sessions/:id/events`).
+- **Coworkers Console**: Manage autonomous worker personas, scheduled cron jobs, and communication channels.
+- **Governance & Policy Engine**: Inspect security policies, approve or reject gated tool executions, and review audit trails.
+- **Credentials Vault**: Secure credential management for external APIs and MCP integrations.
+- **Computer Use Panel**: Live interactive viewport for Playwright loopback automation sessions.
+- **Observability & Memory**: Explore long-term semantic knowledge graphs, facts, and token usage metrics.
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+- Node.js 20+ (or Bun / pnpm)
+- Running Fathom server daemon (`fathom serve --port 8080`)
+
+### Installation & Development
 
 ```bash
+# Install dependencies
+npm install
+
+# Run the development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Configuration
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Configure connection settings in `.env.local`:
 
-## Learn More
+```env
+# URL to the Fathom Rust HTTP backend
+NEXT_PUBLIC_FATHOM_API_URL=http://localhost:8080
 
-To learn more about Next.js, take a look at the following resources:
+# Optional API key for authenticated server deployments
+NEXT_PUBLIC_FATHOM_API_KEY=your_api_key_here
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Architecture & Routes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `/` — Live chat, agent tree visualizer, and prompt execution.
+- `/coworkers` — Multi-agent fleet management, channel bindings, and schedule definitions.
+- `/governance` — Policy configuration and audit logs.
+- `/credentials` — Secrets and API keys vault.
+- `/jobs` — Durable background jobs status and retry inspection.
+- `/memories` — Knowledge base search and memory graph exploration.

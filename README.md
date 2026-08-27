@@ -166,8 +166,7 @@ Deploying autonomous agents in mission-critical environments requires mathematic
 
 ---
 
-## 🛠️ Extensible Tool Registry (51+ Native Tools)
-
+## 🛠️ Extensible Tool Registry (48 Base Built-in + CDP Browser + Computer Use + LSP)
 | Category | Tools | Description |
 |---|---|---|
 | **Web Search** | `web_search`, `web_fetch`, `web_crawl`, `web_feed` | 7 search engines with hybrid fallback & RRF ranking |
@@ -221,7 +220,7 @@ cargo build --release
 ### 5. Start MCP (Model Context Protocol) Server
 
 ```bash
-# Expose Fathom's 51+ tools to external MCP clients (Cursor, Claude Desktop, IDEs)
+# Expose Fathom's built-in tools to external MCP clients (Cursor, Claude Desktop, IDEs)
 ./target/release/fathom mcp-serve
 ```
 
@@ -236,7 +235,7 @@ Fathom/
 │   ├── core/                  # Shared domain primitives: IDs, events, config, notifications, CRM
 │   ├── llm/                   # LlmProvider trait, OpenAI-compatible streaming, Hermes compaction
 │   ├── agent/                 # Autonomous multi-turn reasoning loops, JoinSet sub-agent swarms
-│   ├── tools/                 # 51 base tools + Playwright CDP + computer-use registry
+│   ├── tools/                 # 48 base tools + Playwright CDP + computer-use registry
 │   ├── memory/                # Long-term semantic memory: SQLite FTS5 (BM25) + vector graph
 │   ├── mcp/                   # MCP client & server (stdio / HTTP / OAuth2 transports)
 │   ├── persistence/           # SQLite WAL persistence: jobs, sessions, contacts, credentials

@@ -1,7 +1,7 @@
 export default {
   osint: {
     hero: {
-      badge: { en: 'OSINT Playbook', ru: 'OSINT-плейбук' },
+      badge: { en: 'OSINT Playbook', ru: 'Руководство по OSINT' },
       title: { en: 'Every lead, sourced<br />and <em class="it">verified.</em>', ru: 'Каждый лид — с источником<br />и <em class="it">проверкой.</em>' },
       sub: { en: 'An automated OSINT pipeline: parallel agents source companies and people across registries, maps, corporate sites and social networks, extract and verify every email and phone, then merge it all into one clean contact database — synced straight to your CRM.', ru: 'Автоматический OSINT-пайплайн: параллельные агенты черпают компании и людей из реестров, карт, корпоративных сайтов и соцсетей, извлекают и проверяют каждый email и телефон, затем сливают всё в единую чистую базу контактов — синхронизированную с CRM.' },
     },

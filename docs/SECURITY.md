@@ -471,11 +471,10 @@ The coordinator maintains `agent_tokens: Arc<Mutex<HashMap<String, CancellationT
 
 A background task monitors the event bus for per-agent progress:
 
-| Config | Default | Action |
+| Setting | Default | Description |
 |---|---|---|
-| `stall_warn_seconds` | 60 | Logs a warning when an agent has been idle |
-| `stall_kill_seconds` | 300 | Cancels the agent's token |
-
+| `stall_warn_seconds` | 450 | Logs a warning when an agent has been idle |
+| `stall_kill_seconds` | 1200 | Cancels the agent's token |
 The monitor polls every 30 seconds, tracks `last_progress` timestamps per agent, and:
 - On `warn_secs` idle: logs a warning, records the agent in the `warned` set.
 - On `kill_secs` idle: cancels the agent's `CancellationToken`, which propagates to its `tokio::select!` wrapper and returns an error.

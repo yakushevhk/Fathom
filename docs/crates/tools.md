@@ -45,23 +45,9 @@
 41. [Output truncation and budgets: truncate.rs](#41-truncaters)
 > Based on direct source code reading (~33 files, ~7000 lines).
 
----
-
-## Table of Contents
-
-32. [Computer use (Playwright service): computer.rs](#32-computerrs)
-33. [Web crawling and feed parsing: crawl.rs](#33-crawlrs)
-34. [Structured HTML/JSON parsing: parse.rs](#34-parsers)
-35. [Code intelligence: code.rs](#35-coders)
-36. [Inter-agent coordination: hub.rs](#36-hubrs)
-37. [Daemon process management: daemon.rs](#37-daemonrs)
-38. [Verification receipt ledger: receipt.rs](#38-receiptrers)
-39. [Long-term semantic memory: memory_kb.rs](#39-memory_kbrs)
-40. [Operator question tool: question.rs](#40-questionrs)
-41. [Output truncation and budgets: truncate.rs](#41-truncaters)
-42. [Injections protection: injection.rs](#12-injectionrs)
 
 ---
+
 
 ## 1. registry.rs
 
@@ -103,7 +89,11 @@ A struct containing all shared state:
 | `crm` | `Option<Arc<CrmSync>>` | CRM sync (amoCRM/Bitrix24/HubSpot) |
 | `fetch_cache` | `FetchCache` | HTTP response cache (TTL-based) |
 | `mx_cache` | `MxCache` | DNS MX record cache |
-
+| `fast_llm` | `Option<Arc<dyn LlmProvider>>` | Fast LLM provider for high-volume auxiliary calls |
+| `memory` | `Option<Arc<Memory>>` | Long-term semantic memory store |
+| `session_id` | `Option<String>` | Session id for memory scoping |
+| `receipt_ledger` | `Option<ReceiptLedger>` | Verification receipt ledger for verified contacts |
+| `agent_id` | `Option<AgentId>` | Agent id for inter-agent messaging attribution |
 ### 1.3 `ReadTracker`
 
 A validation gate for `file_edit`:
@@ -125,41 +115,54 @@ pub struct ToolRegistry {
 
 ### 1.5 List of all registered tools
 
-| Tool name | File |
-|-----------|------|
-| `web_search` | web.rs |
-| `web_fetch` | web.rs |
-| `file_read` | file.rs |
-| `file_write` | file.rs |
-| `file_edit` | file.rs |
-| `glob` | file.rs |
-| `grep` | file.rs |
-| `shell` | shell.rs |
-| `memory` | memory_tool.rs |
-| `browser_navigate` | browser.rs |
-| `browser_screenshot` | browser.rs |
-| `browser_click` | browser.rs |
-| `browser_type` | browser.rs |
-| `browser_extract` | browser.rs |
-| `analyze_image` | vision.rs |
-| `git_status` / `git_diff` / `git_log` / `git_add` / `git_commit` / `git_push` | git.rs |
-| `pdf_extract` | pdf.rs |
-| `python_exec` / `node_exec` | repl.rs |
-| `search_business_directory` | directories.rs |
-| `search_social` | social_search.rs |
-| `parse_corporate_site` | corporate.rs |
-| `search_news` | news.rs |
-| `find_leads` | lead_finder.rs |
-| `verify_email` | verify_email.rs |
-| `verify_phone` | verify_phone.rs |
-| `verify_social_profile` | verify_social.rs |
-| `enrich_company` | enrich_company.rs |
-| `enrich_person` | enrich_person.rs |
-| `extract_contacts` | extract.rs |
-| `save_contacts` | save_contacts.rs |
-| `skill` / `scratchpad` / `undo` | coordination.rs |
-| `spawn_agent` | spawn.rs |
-
+| Tool name | File | Status |
+|-----------|------|--------|
+| `web_search` | web.rs | Built-in |
+| `web_fetch` | web.rs | Built-in |
+| `web_crawl` | crawl.rs | Built-in |
+| `web_feed` | crawl.rs | Built-in |
+| `code_symbols` | code.rs | Built-in |
+| `repo_map` | code.rs | Built-in |
+| `parse_html` | parse.rs | Built-in |
+| `extract_json` | parse.rs | Built-in |
+| `file_read` | file.rs | Built-in |
+| `file_write` | file.rs | Built-in |
+| `file_edit` | file.rs | Built-in |
+| `glob` | file.rs | Built-in |
+| `grep` | file.rs | Built-in |
+| `shell` | shell.rs | Built-in |
+| `memory` | memory_tool.rs | Built-in |
+| `memory_absorb` | memory_kb.rs | Built-in |
+| `memory_search` | memory_kb.rs | Built-in |
+| `memory_digest` | memory_kb.rs | Built-in |
+| `memory_boost` | memory_kb.rs | Built-in |
+| `memory_link` | memory_kb.rs | Built-in |
+| `memory_graph` | memory_kb.rs | Built-in |
+| `analyze_image` | vision.rs | Built-in |
+| `git_status` / `git_diff` / `git_log` / `git_add` / `git_commit` / `git_push` | git.rs | Built-in (6 tools) |
+| `pdf_extract` | pdf.rs | Built-in |
+| `python_exec` / `node_exec` | repl.rs | Built-in (2 tools) |
+| `search_business_directory` | directories.rs | Built-in |
+| `search_social` | social_search.rs | Built-in |
+| `parse_corporate_site` | corporate.rs | Built-in |
+| `search_news` | news.rs | Built-in |
+| `find_leads` | lead_finder.rs | Built-in |
+| `verify_email` | verify_email.rs | Built-in |
+| `suggest_emails` | verify_email.rs | Built-in |
+| `verify_phone` | verify_phone.rs | Built-in |
+| `verify_social_profile` | verify_social.rs | Built-in |
+| `enrich_company` | enrich_company.rs | Built-in |
+| `enrich_person` | enrich_person.rs | Built-in |
+| `extract_contacts` | extract.rs | Built-in |
+| `save_contacts` | save_contacts.rs | Built-in |
+| `skill` / `scratchpad` / `undo` | coordination.rs | Built-in (3 tools) |
+| `spawn_agent` | spawn.rs | Built-in |
+| `hub` | hub.rs | Built-in |
+| `daemon` | daemon.rs | Built-in |
+| `question` | question.rs | Built-in |
+| `browser_navigate` / `browser_screenshot` / `browser_click` / `browser_type` / `browser_extract` | browser.rs | Conditional (CDP, 5 tools) |
+| `computer_snapshot` / `computer_navigate` / `computer_click` / `computer_type` / `computer_key` / `computer_screenshot` | computer.rs | Conditional (COMPUTER_URL, 6 tools) |
+| `lsp` | pr_lsp::LspTool | Optional adapter |
 ---
 
 ## 2. web.rs

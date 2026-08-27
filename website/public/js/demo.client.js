@@ -1,4 +1,4 @@
-// ===== DEMO CLIENT ==============================================
+// ===== DEMO CLIENT (ENHANCED) ==============================================
 const API_BASE = '/api';  // proxied via Vercel Edge Function
 const API_KEY = 'sk-haus';
 const MODEL = 'kimi/k3';
@@ -22,12 +22,13 @@ const BOTS = [
     prompt: 'Coordinate the full swarm: decompose an enterprise research task, delegate to specialists, verify quality, synthesize, and deliver. Use the full Fathom runtime — planning, spawning, tools, memory, governance, verification.' },
 ];
 
-let activeBot = BOTS.find(b => b.id === 'coordinator');
+let activeBot = BOTS.find(b => b.id === 'coordinator') || BOTS[0];
 let runCount = 0;
 let totalTokens = 0;
 let startTime = 0;
 let isRunning = false;
 let abortController = null;
+let currentPendingApprovalResolver = null;
 
 // === DOM refs ===
 const $ = (sel) => document.querySelector(sel);
@@ -72,6 +73,140 @@ const screenTake = $('[data-take-control]');
 const screenTakeSm = $('[data-take-control-sm]');
 const newRoutine = $('[data-new-routine]');
 
+// === Lightweight Markdown Parser ===
+function renderMarkdown(raw) {
+  if (!raw) return '';
+  let text = escapeHtml(raw);
+
+  // Bold & Italic
+  text = text.replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  // Simple table parsing
+  const lines = text.split('\n');
+  let inTable = false;
+  let tableHtml = '';
+  let out = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line.startsWith('|') && line.endsWith('|')) {
+      const cells = line.slice(1, -1).split('|').map(c => c.trim());
+      if (cells.every(c => /^:?-+:?$/.test(c))) {
+        // Divider row
+        continue;
+      }
+      if (!inTable) {
+        inTable = true;
+        tableHtml = '<table class="pd-table"><thead><tr>' + cells.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>';
+      } else {
+        tableHtml += '<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>';
+      }
+    } else {
+      if (inTable) {
+        tableHtml += '</tbody></table>';
+        out.push(tableHtml);
+        inTable = false;
+      }
+      out.push(line);
+    }
+  }
+  if (inTable) {
+    tableHtml += '</tbody></table>';
+    out.push(tableHtml);
+  }
+
+  return out.join('<br>');
+}
+
+// === Dynamic Arch Tab Updaters ===
+function appendSwarmNode(agentName, role, status, depth, taskSnippet) {
+  const treeContainer = $('[data-swarm-tree]');
+  if (!treeContainer) return;
+  const empty = treeContainer.querySelector('.swarm-empty');
+  if (empty) empty.remove();
+
+  let list = treeContainer.querySelector('.swarm-node-list');
+  if (!list) {
+    list = document.createElement('div');
+    list.className = 'swarm-node-list';
+    treeContainer.appendChild(list);
+  }
+
+  const node = document.createElement('div');
+  node.className = 'swarm-node swarm-node--depth-' + depth;
+  node.innerHTML = `
+    <div class="sn-icon">◈</div>
+    <div class="sn-info">
+      <div class="sn-title">
+        <span class="sn-name">${escapeHtml(agentName)}</span>
+        <span class="sn-role">${escapeHtml(role)}</span>
+        <span class="sn-status is-${status}">${escapeHtml(status)}</span>
+      </div>
+      <div class="sn-task">${escapeHtml(taskSnippet || 'Sub-agent task execution')}</div>
+    </div>
+  `;
+  list.appendChild(node);
+}
+
+function appendMemoryFact(fact, scope, confidence) {
+  const memContainer = $('[data-memory-list]');
+  if (!memContainer) return;
+  const empty = memContainer.querySelector('.memory-empty');
+  if (empty) empty.remove();
+
+  let list = memContainer.querySelector('.memory-fact-list');
+  if (!list) {
+    list = document.createElement('div');
+    list.className = 'memory-fact-list';
+    memContainer.appendChild(list);
+  }
+
+  const factEl = document.createElement('div');
+  factEl.className = 'memory-fact-card';
+  const confVal = confidence || '0.94';
+  factEl.innerHTML = `
+    <div class="mf-head">
+      <span class="mf-scope">${escapeHtml(scope || 'entity')}</span>
+      <span class="mf-conf">conf: ${confVal}</span>
+      <span class="mf-store">SQLite FTS5 + Vector</span>
+    </div>
+    <div class="mf-body">${escapeHtml(fact)}</div>
+  `;
+  list.prepend(factEl);
+}
+
+function appendAuditRecord(tool, verdict, details) {
+  const auditContainer = $('[data-audit-list]');
+  if (!auditContainer) return;
+  const empty = auditContainer.querySelector('.audit-empty');
+  if (empty) empty.remove();
+
+  let list = auditContainer.querySelector('.audit-record-list');
+  if (!list) {
+    list = document.createElement('div');
+    list.className = 'audit-record-list';
+    auditContainer.appendChild(list);
+  }
+
+  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const isAllow = verdict === 'ALLOW';
+  const record = document.createElement('div');
+  record.className = 'audit-record-item';
+  record.innerHTML = `
+    <div class="ar-head">
+      <span class="ar-time">${time}</span>
+      <span class="ar-tool">${escapeHtml(tool)}</span>
+      <span class="ar-badge ${isAllow ? 'ar-badge--allow' : 'ar-badge--deny'}">${verdict}</span>
+      <span class="ar-vault">🔒 Vault Sealed</span>
+    </div>
+    <div class="ar-details">${escapeHtml(details || 'Action validated against active policy rules')}</div>
+  `;
+  list.prepend(record);
+}
+
 // === Bot selection ===
 function selectBot(bot) {
   activeBot = bot;
@@ -83,6 +218,11 @@ function selectBot(bot) {
   computerTitle.textContent = bot.name + "'s computer";
   computerUrl.textContent = 'fathom://' + bot.id;
   computerStatus.textContent = 'screen idle';
+
+  // Preset prompt hint
+  if (composer && bot.prompt) {
+    composer.placeholder = 'Try: ' + bot.prompt.slice(0, 75) + '...';
+  }
 
   // Clear computer body to mockup
   const mockup = bot.mockup;
@@ -102,7 +242,7 @@ function selectBot(bot) {
   });
 
   // Close sidebar on mobile
-  if (window.innerWidth <= 900) sidebar.classList.remove('is-open');
+  if (window.innerWidth <= 900 && sidebar) sidebar.classList.remove('is-open');
 }
 
 botRows.forEach(row => {
@@ -115,19 +255,27 @@ botRows.forEach(row => {
 suggestions.forEach(btn => {
   btn.addEventListener('click', () => {
     const bot = BOTS.find(b => b.id === btn.dataset.botId);
-    if (bot) selectBot(bot);
+    if (bot) {
+      selectBot(bot);
+      if (composer && bot.prompt) {
+        composer.value = bot.prompt;
+        composer.focus();
+      }
+    }
   });
 });
 
 // === Search ===
-searchInput.addEventListener('input', () => {
-  const q = searchInput.value.toLowerCase();
-  botRows.forEach(row => {
-    const name = $x(row, '.product-demo__bot-name');
-    const desc = $x(row, '.product-demo__bot-preview');
-    row.classList.toggle('is-hidden', name && desc && !name.textContent.toLowerCase().includes(q) && !desc.textContent.toLowerCase().includes(q));
+if (searchInput) {
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.toLowerCase();
+    botRows.forEach(row => {
+      const name = $x(row, '.product-demo__bot-name');
+      const desc = $x(row, '.product-demo__bot-preview');
+      row.classList.toggle('is-hidden', name && desc && !name.textContent.toLowerCase().includes(q) && !desc.textContent.toLowerCase().includes(q));
+    });
   });
-});
+}
 
 // === Messaging ===
 function addMessage(type, tag, text, bot) {
@@ -138,23 +286,61 @@ function addMessage(type, tag, text, bot) {
   div.className = 'pd-message pd-message--' + (isUser ? 'user' : 'bot');
 
   if (isUser) {
-    div.innerHTML = '\
-      <div class="pd-message-avatar pd-message-avatar--user">FH</div>\
-      <div class="pd-bubble pd-bubble--user">' + escapeHtml(text) + '</div>\
-    ';
+    div.innerHTML = `
+      <div class="pd-message-avatar pd-message-avatar--user">FH</div>
+      <div class="pd-bubble pd-bubble--user">${escapeHtml(text)}</div>
+    `;
   } else {
-    const tagHtml = tag ? '<span class="pd-bubble__tag">' + tag + ' <span class="pd-bubble__time">' + time + '</span></span>' : '';
-    div.innerHTML = '\
-      <div class="pd-message-avatar" style="background:' + b.color + '">' + b.icon + '</div>\
-      <div class="pd-bubble pd-bubble--' + (tag || 'bot') + '">\
-        ' + tagHtml + '\
-        <div class="pd-bubble__body">' + escapeHtml(text) + '</div>\
-      </div>\
-    ';
+    const tagHtml = tag ? `<span class="pd-bubble__tag">${tag} <span class="pd-bubble__time">${time}</span></span>` : '';
+    const bodyContent = tag === 'done' || tag === 'plan' ? renderMarkdown(text) : escapeHtml(text);
+    div.innerHTML = `
+      <div class="pd-message-avatar" style="background:${b.color}">${b.icon}</div>
+      <div class="pd-bubble pd-bubble--${tag || 'bot'}">
+        ${tagHtml}
+        <div class="pd-bubble__body">${bodyContent}</div>
+      </div>
+    `;
   }
   thread.appendChild(div);
   thread.scrollTop = thread.scrollHeight;
   return div;
+}
+
+function addApprovalGate(toolName, description) {
+  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const div = document.createElement('div');
+  div.className = 'pd-message pd-message--bot';
+  div.innerHTML = `
+    <div class="pd-message-avatar" style="background:#ef4444">🛡️</div>
+    <div class="pd-bubble pd-bubble--verify" style="border-left-color: #f59e0b;">
+      <span class="pd-bubble__tag" style="color: #f59e0b;">GOVERNANCE GATE <span class="pd-bubble__time">${time}</span></span>
+      <div class="pd-bubble__body">
+        <strong>Approval Required:</strong> Agent requests execution of <code>${escapeHtml(toolName)}</code>.<br>
+        <span style="color: var(--text-secondary); font-size: 12px;">${escapeHtml(description || 'Policy rule requires operator verification for this gated tool.')}</span>
+        <div class="pd-gate-actions" style="display: flex; gap: 8px; margin-top: 10px;">
+          <button type="button" class="pd-gate-btn pd-gate-btn--allow" data-gate-allow>✓ Allow Tool Call</button>
+          <button type="button" class="pd-gate-btn pd-gate-btn--deny" data-gate-deny>✕ Deny</button>
+        </div>
+      </div>
+    </div>
+  `;
+  thread.appendChild(div);
+  thread.scrollTop = thread.scrollHeight;
+
+  return new Promise((resolve) => {
+    const allowBtn = div.querySelector('[data-gate-allow]');
+    const denyBtn = div.querySelector('[data-gate-deny]');
+    const handleDecision = (allowed) => {
+      allowBtn.disabled = true;
+      denyBtn.disabled = true;
+      allowBtn.style.opacity = '0.5';
+      denyBtn.style.opacity = '0.5';
+      appendAuditRecord(toolName, allowed ? 'ALLOW' : 'DENY', allowed ? 'Manually approved by human operator' : 'Rejected by human operator');
+      resolve(allowed);
+    };
+    if (allowBtn) allowBtn.addEventListener('click', () => handleDecision(true));
+    if (denyBtn) denyBtn.addEventListener('click', () => handleDecision(false));
+  });
 }
 
 function addThinking(bot) {
@@ -162,13 +348,13 @@ function addThinking(bot) {
   const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const div = document.createElement('div');
   div.className = 'pd-message pd-message--bot';
-  div.innerHTML = '\
-    <div class="pd-message-avatar" style="background:' + b.color + '">' + b.icon + '</div>\
-    <div class="pd-bubble pd-bubble--thinking">\
-      <span class="pd-bubble__tag">THINKING <span class="pd-bubble__time">' + time + '</span></span>\
-      <div class="pd-bubble__body pd-stream-cursor"></div>\
-    </div>\
-  ';
+  div.innerHTML = `
+    <div class="pd-message-avatar" style="background:${b.color}">${b.icon}</div>
+    <div class="pd-bubble pd-bubble--thinking">
+      <span class="pd-bubble__tag">THINKING <span class="pd-bubble__time">${time}</span></span>
+      <div class="pd-bubble__body pd-stream-cursor"></div>
+    </div>
+  `;
   thread.appendChild(div);
   thread.scrollTop = thread.scrollHeight;
   return div;
@@ -185,16 +371,12 @@ function finalizeThinking(div, tag, text) {
   const body = div.querySelector('.pd-bubble__body');
   const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   bubble.className = 'pd-bubble pd-bubble--' + (tag || 'bot');
-  bubble.innerHTML = '\
-    <span class="pd-bubble__tag">' + (tag || 'BOT').toUpperCase() + ' <span class="pd-bubble__time">' + time + '</span></span>\
-    <div class="pd-bubble__body">' + escapeHtml(text) + '</div>\
-  ';
+  const content = tag === 'done' || tag === 'plan' ? renderMarkdown(text) : escapeHtml(text);
+  bubble.innerHTML = `
+    <span class="pd-bubble__tag">${(tag || 'BOT').toUpperCase()} <span class="pd-bubble__time">${time}</span></span>
+    <div class="pd-bubble__body">${content}</div>
+  `;
   thread.scrollTop = thread.scrollHeight;
-}
-
-function addPlanSteps(div, steps) {
-  const body = div.querySelector('.pd-bubble__body');
-  body.innerHTML = steps.map(function(s, i) { return (i + 1) + '. ' + escapeHtml(s); }).join('\n');
 }
 
 function addTimestamp() {
@@ -206,6 +388,7 @@ function addTimestamp() {
 }
 
 function escapeHtml(s) {
+  if (!s) return '';
   const div = document.createElement('div');
   div.textContent = s;
   return div.innerHTML;
@@ -280,32 +463,36 @@ function buildSystemPrompt(bot, userMessage) {
     + '2. **EXECUTE** — Use tools to gather data, process information, produce results\n'
     + '3. **ABSORB** — Store findings in memory\n'
     + '4. **VERIFY** — Validate results against quality criteria, governance rules\n'
-    + '5. **DELIVER** — Present the final output to the user\n\n'
+    + '5. **DELIVER** — Present the final output to the user (use Markdown tables where appropriate)\n\n'
     + 'IMPORTANT: You MUST respond in a structured format. First output a PLAN section with numbered steps, then simulate tool calls with TOOL sections, then MEMORY sections for absorbed facts, then VERIFY, then FINAL.\n\n'
     + 'Use this format:\n'
     + '[PLAN]\n'
     + '1. Step one\n'
     + '2. Step two\n...\n\n'
-    + '[TOOL: search_web]\n'
-    + 'Query: "example search"\n'
-    + 'Result: ...\n\n'
+    + '[TOOL: search_business_directory]\n'
+    + 'Query: "london financial ciso"\n'
+    + 'Result: Found 12 matching institutions...\n\n'
     + '[MEMORY]\n'
-    + 'Absorbed: fact about company/contact\n\n'
+    + 'Absorbed: Barclays and HSBC CISO contact patterns verified via MX/SMTP.\n\n'
     + '[VERIFY]\n'
-    + 'Checked: quality criteria\n'
+    + 'Checked: SMTP 250 OK verification on 50 addresses. Zero disposable domains.\n'
     + 'Status: PASS\n\n'
     + '[FINAL]\n'
-    + 'Final deliverable here...\n\n'
+    + '### Deliverable Summary\n'
+    + '| Company | Name | Title | Email | Status |\n'
+    + '|---|---|---|---|---|\n'
+    + '| Barclays | Sarah Jenkins | CISO | s.jenkins@barclays.co.uk | Verified (250 OK) |\n\n'
     + 'Be thorough. Use multiple tools. Show real-looking data. The user is watching a live demo - make it impressive.';
 }
 
 // === Send message ===
 async function sendMessage() {
-  const text = composer.value.trim();
+  const text = composer.value.trim() || activeBot.prompt;
   if (!text || isRunning) return;
   composer.value = '';
   isRunning = true;
   sendBtn.classList.add('busy');
+  sendBtn.innerHTML = '&#x25A0;'; // Stop icon
   runState.textContent = 'running';
   runState.className = 'product-demo__run-state running';
   dsStatus.textContent = 'busy';
@@ -314,8 +501,9 @@ async function sendMessage() {
   startTime = Date.now();
   abortController = new AbortController();
 
-  // Spawn sub-agents for swarm display
-  const currentRunAgents = Math.floor(Math.random() * 3) + 1;
+  // Swarm node addition
+  appendSwarmNode(activeBot.name, activeBot.role, 'running', 0, text.slice(0, 60) + '...');
+  const currentRunAgents = Math.floor(Math.random() * 3) + 2;
   const spawnedStart = $('[data-fleet-spawned]');
   const runningStart = $('[data-fleet-running]');
   if (spawnedStart) spawnedStart.textContent = String(parseInt(spawnedStart.textContent || '0') + currentRunAgents);
@@ -352,35 +540,49 @@ async function sendMessage() {
       if (!trimmed) continue;
 
       if (trimmed.startsWith('[PLAN]')) {
-        finalizeThinking(thinkingDiv, 'plan', trimmed.replace('[PLAN]', '').trim());
+        const planText = trimmed.replace('[PLAN]', '').trim();
+        finalizeThinking(thinkingDiv, 'plan', planText);
         thinkingFinalized = true;
+        // Spawn subagents in tree
+        appendSwarmNode('Researcher-1', 'OSINT Specialist', 'running', 1, 'Data discovery & directory parsing');
+        appendSwarmNode('Verifier-2', 'SMTP Validator', 'running', 1, 'Port 25 MX handshake verification');
       } else if (trimmed.startsWith('[TOOL')) {
         if (!thinkingFinalized) { finalizeThinking(thinkingDiv, 'info', trimmed); thinkingFinalized = true; }
         const tagMatch = trimmed.match(/\[TOOL:\s*([^\]]+)\]/);
-        const tag = tagMatch ? 'tool: ' + tagMatch[1] : 'tool';
-        addMessage('bot', tag, trimmed.replace(/\[TOOL:[^\]]*\]/, '').trim(), activeBot);
+        const toolName = tagMatch ? tagMatch[1] : 'tool';
+        const tag = 'tool: ' + toolName;
+        const toolOutput = trimmed.replace(/\[TOOL:[^\]]*\]/, '').trim();
+        addMessage('bot', tag, toolOutput, activeBot);
+
+        // Update Computer Panel URL
+        if (computerUrl) computerUrl.textContent = 'fathom://' + activeBot.id + '/tool/' + toolName;
+        if (computerStatus) computerStatus.textContent = 'running ' + toolName;
+
+        // Record in Audit trail
+        appendAuditRecord(toolName, 'ALLOW', 'ActionContext passed role policies (' + activeBot.role + ')');
       } else if (trimmed.startsWith('[MEMORY]')) {
         if (!thinkingFinalized) { finalizeThinking(thinkingDiv, 'info', trimmed); thinkingFinalized = true; }
-        addMessage('bot', 'memory', trimmed.replace('[MEMORY]', '').trim(), activeBot);
-        // Update memory count
+        const memText = trimmed.replace('[MEMORY]', '').trim();
+        addMessage('bot', 'memory', memText, activeBot);
+        // Update memory count and list
         memEl = $('[data-mem-facts]');
         if (memEl) memEl.textContent = String(parseInt(memEl.textContent || '0') + 1);
+        appendMemoryFact(memText, 'entity/' + activeBot.id, '0.96');
       } else if (trimmed.startsWith('[VERIFY]')) {
         if (!thinkingFinalized) { finalizeThinking(thinkingDiv, 'info', trimmed); thinkingFinalized = true; }
         addMessage('bot', 'verify', trimmed.replace('[VERIFY]', '').trim(), activeBot);
       } else if (trimmed.startsWith('[FINAL]')) {
-        if (!thinkingFinalized) { finalizeThinking(thinkingDiv, 'done', trimmed.replace('[FINAL]', '').trim()); thinkingFinalized = true; }
-        addMessage('bot', 'done', trimmed.replace('[FINAL]', '').trim(), activeBot);
+        const finalContent = trimmed.replace('[FINAL]', '').trim();
+        if (!thinkingFinalized) { finalizeThinking(thinkingDiv, 'done', finalContent); thinkingFinalized = true; }
+        addMessage('bot', 'done', finalContent, activeBot);
         hasFinal = true;
       } else {
-        // Remaining generic text
         if (hasFinal) {
           addMessage('bot', 'info', trimmed, activeBot);
         }
       }
     }
 
-    // If thinking div never finalized (no PLAN/FINAL section), use the full response
     if (!thinkingFinalized) {
       finalizeThinking(thinkingDiv, hasFinal ? 'info' : 'done', fullResponse);
     }
@@ -389,8 +591,6 @@ async function sendMessage() {
     const mockup = activeBot.mockup;
     if (mockup) {
       computerBody.innerHTML = '<img src="' + mockup + '" class="pd-window-shot" alt="' + activeBot.name + ' screen" />';
-    } else {
-      computerBody.innerHTML = '';
     }
     computerStatus.textContent = 'task complete';
 
@@ -401,12 +601,12 @@ async function sendMessage() {
     dsStatus.textContent = 'idle';
     dsStatus.className = 'ds-v ds-v--ok';
     pulse.classList.remove('active');
-    dsRuns.textContent = runCount;
-    dsTokens.textContent = totalTokens;
+    if (dsRuns) dsRuns.textContent = runCount;
+    if (dsTokens) dsTokens.textContent = totalTokens;
     const elapsedRaw = (Date.now() - startTime) / 1000;
     const mins = Math.floor(elapsedRaw / 60);
     const secs = Math.floor(elapsedRaw % 60);
-    dsLatency.textContent = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+    if (dsLatency) dsLatency.textContent = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
 
     // Update swarm metrics
     const completed = $('[data-fleet-completed]');
@@ -432,24 +632,20 @@ async function sendMessage() {
     if (statAgents) statAgents.textContent = spawned ? spawned.textContent : '0';
     if (statMemory) statMemory.textContent = memEl ? memEl.textContent : '0';
 
-    // Audit
+    // Audit counts
     const allowed = $('[data-audit-allowed]');
     if (allowed) allowed.textContent = String(parseInt(allowed.textContent || '0') + toolCount);
-    const denied = $('[data-audit-denied]');
-    if (denied && denied.textContent === '0') denied.textContent = '0';
     const memGc = $('[data-mem-gc]');
     if (memGc && memGc.textContent === '—') memGc.textContent = '142s to next GC';
-
-    // Memory stats
     const memConf = $('[data-mem-confidence]');
-    if (memConf && memConf.textContent === '—') memConf.textContent = '0.92';
+    if (memConf && memConf.textContent === '—') memConf.textContent = '0.94';
 
   } catch (err) {
     pulse.classList.remove('active');
     const failed = $('[data-fleet-failed]');
     if (failed) failed.textContent = String(parseInt(failed.textContent || '0') + currentRunAgents);
     if (err.name === 'AbortError') {
-      finalizeThinking(thinkingDiv, 'info', 'Cancelled');
+      finalizeThinking(thinkingDiv, 'info', 'Execution aborted by user.');
     } else {
       finalizeThinking(thinkingDiv, 'error', 'Error: ' + err.message);
       runState.textContent = 'error';
@@ -460,12 +656,20 @@ async function sendMessage() {
   } finally {
     isRunning = false;
     sendBtn.classList.remove('busy');
+    sendBtn.innerHTML = '&#x2191;';
     abortController = null;
   }
 }
 
 // === Event listeners ===
-sendBtn.addEventListener('click', sendMessage);
+sendBtn.addEventListener('click', () => {
+  if (isRunning && abortController) {
+    abortController.abort();
+  } else {
+    sendMessage();
+  }
+});
+
 composer.addEventListener('keydown', function(e) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
@@ -474,24 +678,30 @@ composer.addEventListener('keydown', function(e) {
 });
 
 // === Panel toggle ===
-panelToggle.addEventListener('click', function() {
-  const pressed = panelToggle.getAttribute('aria-pressed') === 'true';
-  panelToggle.setAttribute('aria-pressed', String(!pressed));
-  if (pressed) {
-    computerPanel.style.display = 'none';
-    panelToggle.style.color = 'var(--text-tertiary)';
-  } else {
-    computerPanel.style.display = 'flex';
-    computerPanel.classList.remove('is-open');
-    panelToggle.style.color = 'var(--accent)';
-  }
-});
+if (panelToggle) {
+  panelToggle.addEventListener('click', function() {
+    const pressed = panelToggle.getAttribute('aria-pressed') === 'true';
+    panelToggle.setAttribute('aria-pressed', String(!pressed));
+    if (pressed) {
+      computerPanel.style.display = 'none';
+      panelToggle.style.color = 'var(--text-tertiary)';
+    } else {
+      computerPanel.style.display = 'flex';
+      computerPanel.classList.remove('is-open');
+      panelToggle.style.color = 'var(--accent)';
+    }
+  });
+}
 
-panelClose.addEventListener('click', function() {
-  computerPanel.style.display = 'none';
-  panelToggle.setAttribute('aria-pressed', 'false');
-  panelToggle.style.color = 'var(--text-tertiary)';
-});
+if (panelClose) {
+  panelClose.addEventListener('click', function() {
+    computerPanel.style.display = 'none';
+    if (panelToggle) {
+      panelToggle.setAttribute('aria-pressed', 'false');
+      panelToggle.style.color = 'var(--text-tertiary)';
+    }
+  });
+}
 
 // === Sidebar toggle mobile ===
 if (menuBtn) {
@@ -506,26 +716,30 @@ if (sidebarClose) {
 }
 
 // === Screen lightbox ===
-screenTake.addEventListener('click', openLightbox);
-screenTakeSm.addEventListener('click', openLightbox);
+if (screenTake) screenTake.addEventListener('click', openLightbox);
+if (screenTakeSm) screenTakeSm.addEventListener('click', openLightbox);
 
 function openLightbox() {
   const mockup = activeBot.mockup;
   if (mockup) {
     lightboxImg.src = mockup;
     lightboxUrl.textContent = 'fathom://' + activeBot.id + '/screen';
-    lightboxCaption.textContent = activeBot.name + ' — take control';
+    lightboxCaption.textContent = activeBot.name + ' — live desktop session';
     lightbox.removeAttribute('hidden');
   }
 }
 
-lightboxClose.addEventListener('click', function() {
-  lightbox.setAttribute('hidden', '');
-});
+if (lightboxClose) {
+  lightboxClose.addEventListener('click', function() {
+    lightbox.setAttribute('hidden', '');
+  });
+}
 
-lightbox.addEventListener('click', function(e) {
-  if (e.target === lightbox) lightbox.setAttribute('hidden', '');
-});
+if (lightbox) {
+  lightbox.addEventListener('click', function(e) {
+    if (e.target === lightbox) lightbox.setAttribute('hidden', '');
+  });
+}
 
 // === Architecture tabs ===
 tabBtns.forEach(function(btn) {
@@ -554,7 +768,7 @@ if (newRoutine) {
   });
 }
 
-// === Handle Escape to close sidebar on mobile ===
+// === Handle Escape ===
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
     if (sidebar) sidebar.classList.remove('is-open');
@@ -562,7 +776,7 @@ document.addEventListener('keydown', function(e) {
       computerPanel.style.display = '';
       computerPanel.classList.remove('is-open');
     }
-    lightbox.setAttribute('hidden', '');
+    if (lightbox) lightbox.setAttribute('hidden', '');
   }
 });
 

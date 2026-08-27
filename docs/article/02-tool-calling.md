@@ -72,11 +72,12 @@ session: 4 `extract_json` calls at ~840 ms each.
 Whitelist of parallel-safe tools:
 
 ```
-web_search, web_fetch, parse_html, extract_json, search_news, search_social,
-search_business_directory, parse_corporate_site, suggest_emails, verify_email,
-verify_phone, verify_social_profile, enrich_company, enrich_person,
-find_leads, extract_contacts, save_contacts, pdf, file_read, grep, glob,
-scratchpad, memory, skill_load, vision
+web_search, web_fetch, web_crawl, web_feed, parse_html, extract_json,
+code_symbols, repo_map, search_news, search_social, search_business_directory,
+parse_corporate_site, suggest_emails, verify_email, verify_phone,
+verify_social_profile, enrich_company, enrich_person, find_leads,
+extract_contacts, pdf_extract, file_read, grep, glob, analyze_image,
+memory_search, memory_digest
 ```
 
 Everything else (`shell`, `file_write`, `file_edit`, `git_*`, `python_exec`,

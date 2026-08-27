@@ -1,32 +1,42 @@
-# React + TypeScript + Vite
+# Fathom Desktop Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Tauri v2 desktop client for the **Fathom** autonomous AI worker platform, built with React 19, Vite, and Rust.
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Fathom Desktop provides an integrated, native desktop application for running and orchestrating autonomous AI worker swarms with:
+- **Embedded Engine Management**: Start, monitor, and configure the local Fathom daemon directly from the desktop shell.
+- **Native IPC & Secure Storage**: Local OS keychain integration, secure file system access, and fast native IPC bridges.
+- **Real-Time Live Event Feeds**: Full visual session trees, tool invocation logs, token budget telemetry, and prompt steering.
+- **Computer Use Viewport**: Seamless screen observation and control interface.
 
-## React Compiler
+## Prerequisites
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Rust** 1.80+ (`rustup default stable`)
+- **Node.js** 20+ (or Bun / pnpm)
+- Platform-specific Tauri v2 dependencies:
+  - **macOS**: Xcode Command Line Tools
+  - **Linux**: `libwebkit2gtk-4.1-dev`, `build-essential`, `curl`, `wget`, `file`, `libssl-dev`, `libayatana-appindicator3-dev`, `librsvg2-dev`
+  - **Windows**: Microsoft Visual Studio C++ Build Tools & WebView2
 
-## Expanding the Oxlint configuration
+## Development
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+```bash
+# Install frontend dependencies
+npm install
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+# Run desktop app in development mode with hot-reloading
+npm run tauri dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Production Build
+
+```bash
+# Build production bundle and platform installers (.dmg, .deb, .msi)
+npm run tauri build
+```
+
+## Architecture
+
+- `src/` — React 19 UI components (Chat, Coworker, Governance, System metrics).
+- `src-tauri/` — Tauri v2 Rust backend handling window lifecycle, tray icon, local process supervision, and native API bridges.

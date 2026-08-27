@@ -30,9 +30,7 @@ The capability set breaks down into four layers:
 - **Verification** — `verify_email`, `verify_phone`, `verify_social_profile` check that a harvested contact is real before it enters the database, turning guesses into curated leads.
 - **Enrichment** — `enrich_company`, `enrich_person` widen each record with additional attributes (industry, size, technologies, job titles, social links) so sales outreach has context.
 - **Persistence & distribution** — `ContactDb` stores deduplicated records, and `save_contacts` optionally pushes them into a configured CRM in the same call.
-
-All OSINT tools are **parallel-safe** (read-only): the coordinator can run multiple researchers concurrently, and each individual tool may issue sub-requests to several backends in parallel internally (verified by the tools being listed in the parallel-safe set and tools like `search_social`/`search_business_directory` merging results from multiple providers).
-
+All OSINT collection, enrichment, and verification tools are **parallel-safe** (read-only): the coordinator can run multiple researchers concurrently, and each individual tool may issue sub-requests to several backends in parallel internally. The only exception is `save_contacts`, which performs sequential writes to the database to guarantee TOCTOU-safe deduplication.
 ---
 
 ## Example Queries
