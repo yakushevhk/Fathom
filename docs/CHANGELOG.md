@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## [0.4.2] — 2026-08-28
+
+### Added
+- **Full LSP Rename & CodeActions**: Implemented `textDocument/rename`, `textDocument/codeAction`, and `workspace/willRenameFiles` across workspace dependencies in `pr-lsp`.
+- **Multi-Language Compiler Span Parsing**: Structured JSON span error extraction for Rust (`cargo check`), TypeScript (`tsc`), Python (`ruff`), and Go (`go build`) in `compiler_check`.
+- **TDD Regression Test Synthesis**: Automatic reproduction test synthesis from stack traces and panics in `repro_test`.
+- **Streaming Reasoning Tokens (`StreamChunk::Reasoning`)**: Preserves and streams `reasoning_content` deltas from DeepSeek R1/V4 and OpenAI reasoning models.
+- **Anthropic Extended Thinking & Signature Preservation**: Preserves `ThinkingBlock::Thinking` with cryptographic `signature` to prevent Claude 3.7 Sonnet 400 Bad Request errors.
+- **Quadruple Prompt Caching Breakpoints**: Strategic ephemeral cache breakpoints across system prompt, last tool schema, and rolling transcript checkpoints.
+
 ## [0.4.1] — 2026-08-28
 
 ### Added

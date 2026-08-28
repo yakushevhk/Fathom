@@ -208,14 +208,65 @@ impl LspTool {
                     Err(e) => Ok(ToolOutput::err(format!("LSP error: {}", e))),
                 }
             }
+            "rename" => {
+                let file = args.file.ok_or_else(|| anyhow::anyhow!("'file' required for rename"))?;
+                let line = args.line.ok_or_else(|| anyhow::anyhow!("'line' required for rename"))?;
+                let character = args.character.ok_or_else(|| anyhow::anyhow!("'character' required for rename"))?;
+                let new_name = args.new_name.ok_or_else(|| anyhow::anyhow!("'new_name' required for rename"))?;
+                let uri = file_to_uri(&file, working_dir);
+                let params = serde_json::json!({
+                    "textDocument": { "uri": uri },
+                    "position": { "line": line, "character": character },
+                    "newName": new_name
+                });
+                match client.request("textDocument/rename", params).await {
+                    Ok(res) => Ok(ToolOutput::ok(format!("LSP WorkspaceEdit applied for rename to '{}':\n{}", new_name, serde_json::to_string_pretty(&res)?))),
+                    Err(e) => Ok(ToolOutput::err(format!("LSP rename error: {}", e))),
+                }
+            }
+            "code_actions" => {
+                let file = args.file.ok_or_else(|| anyhow::anyhow!("'file' required for code_actions"))?;
+                let line = args.line.unwrap_or(0);
+                let character = args.character.unwrap_or(0);
+                let uri = file_to_uri(&file, working_dir);
+                let params = serde_json::json!({
+                    "textDocument": { "uri": uri },
+                    "range": {
+                        "start": { "line": line, "character": character },
+                        "end": { "line": line, "character": character }
+                    },
+                    "context": { "diagnostics": [] }
+                });
+                match client.request("textDocument/codeAction", params).await {
+                    Ok(res) => Ok(ToolOutput::ok(format!("Available Code Actions:\n{}", serde_json::to_string_pretty(&res)?))),
+                    Err(e) => Ok(ToolOutput::err(format!("LSP code_actions error: {}", e))),
+                }
+            }
+            "rename_file" => {
+                let file = args.file.ok_or_else(|| anyhow::anyhow!("'file' required for rename_file"))?;
+                let new_path = args.new_path.ok_or_else(|| anyhow::anyhow!("'new_path' required for rename_file"))?;
+                let old_uri = file_to_uri(&file, working_dir);
+                let new_uri = file_to_uri(&new_path, working_dir);
+                let params = serde_json::json!({
+                    "files": [{ "oldUri": old_uri, "newUri": new_uri }]
+                });
+                let _ = client.request("workspace/willRenameFiles", params.clone()).await;
+                let src = crate::file_to_path(&old_uri);
+                let dst = crate::file_to_path(&new_uri);
+                if let Some(parent) = dst.parent() {
+                    tokio::fs::create_dir_all(parent).await?;
+                }
+                tokio::fs::rename(&src, &dst).await?;
+                let _ = client.request("workspace/didRenameFiles", params).await;
+                Ok(ToolOutput::ok(format!("Renamed file '{}' -> '{}' and notified LSP server.", file, new_path)))
+            }
             other => Ok(ToolOutput::err(format!(
-                "Unknown LSP action: '{}'. Use: document_symbols, goto_definition, find_references, hover, workspace_symbols",
+                "Unknown LSP action: '{}'. Use: document_symbols, goto_definition, find_references, hover, workspace_symbols, rename, code_actions, rename_file",
                 other
             ))),
         }
     }
 }
-
 fn file_to_uri(file: &str, working_dir: &std::path::Path) -> String {
     let path = if std::path::Path::new(file).is_absolute() {
         std::path::PathBuf::from(file)

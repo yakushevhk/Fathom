@@ -111,7 +111,7 @@ pub fn estimate_message_tokens(msg: &Message) -> u32 {
         Message::User { content } => {
             total += estimate_tokens(content);
         }
-        Message::Assistant { content, tool_calls } => {
+        Message::Assistant { content, tool_calls, .. } => {
             if let Some(text) = content {
                 total += estimate_tokens(text);
             }

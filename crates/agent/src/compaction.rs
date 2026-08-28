@@ -356,7 +356,7 @@ fn messages_to_text(messages: &[Message]) -> String {
             Message::User { content } => {
                 out.push_str(&format!("[user]: {}\n\n", content));
             }
-            Message::Assistant { content, tool_calls } => {
+            Message::Assistant { content, tool_calls, .. } => {
                 if let Some(text) = content {
                     out.push_str(&format!("[assistant]: {}\n\n", text));
                 }

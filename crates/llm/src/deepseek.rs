@@ -182,16 +182,13 @@ impl DeepSeekProvider {
                 let func = tc.function.as_ref()?;
                 let name = func.name.as_ref()?.clone();
                 let args_str = func.arguments.as_deref().unwrap_or("{}");
-                let arguments: serde_json::Value =
-                    serde_json::from_str(args_str).unwrap_or(serde_json::json!({}));
                 Some(ToolCall::new(
                     tc.id.clone().unwrap_or_default(),
                     name,
-                    arguments,
+                    args_str,
                 ))
             })
             .collect();
-
         // Reasoning-model truncation diagnostic: when the model spent the
         // whole completion budget on reasoning, `content` comes back empty
         // (finish_reason "length") while `reasoning_content` is non-empty.
@@ -222,6 +219,8 @@ impl DeepSeekProvider {
                 prompt_tokens: u.prompt_tokens,
                 completion_tokens: u.completion_tokens,
                 total_tokens: u.total_tokens,
+                cache_creation_input_tokens: None,
+                cache_read_input_tokens: None,
             }),
             finish_reason: choice.finish_reason,
         })
@@ -233,36 +232,27 @@ impl DeepSeekProvider {
         &self,
         req: &CompletionRequest,
     ) -> PrResult<CompletionResponse> {
-        let mut stream = self.stream(req).await?;
+        let mut stream = self.stream(req).await.map_err(|e| PrError::Llm(e.to_string()))?;
         let mut content = String::new();
         let mut usage: Option<Usage> = None;
         let mut finish_reason: Option<String> = None;
 
         while let Some(chunk) = stream.next().await {
-            match chunk? {
+            match chunk.map_err(|e| PrError::Llm(e.to_string()))? {
                 StreamChunk::Text { delta } => {
-                    if content.len() + delta.len() > MAX_RESPONSE_BYTES {
-                        return Err(PrError::Llm(format!(
-                            "streaming response exceeded {} byte limit",
-                            MAX_RESPONSE_BYTES
-                        )));
-                    }
                     content.push_str(&delta);
                 }
-                StreamChunk::Done {
-                    usage: u,
-                    finish_reason: fr,
-                    ..
-                } => {
+                StreamChunk::Reasoning { .. } => {}
+                StreamChunk::ToolCallDelta { .. } => {}
+                StreamChunk::Done { usage: u, finish_reason: fr, .. } => {
                     usage = u;
                     finish_reason = fr;
                 }
-                // Ignore tool-call deltas and errors during collection;
-                // the final content string is what matters for complete().
-                StreamChunk::ToolCallDelta { .. } | StreamChunk::Error { .. } => {}
+                StreamChunk::Error { message } => {
+                    return Err(PrError::Llm(format!("Stream error: {message}")));
+                }
             }
         }
-
         Ok(CompletionResponse {
             message: Message::assistant(content),
             usage,
@@ -495,6 +485,13 @@ fn parse_sse_line(line: &str) -> Option<StreamChunk> {
     let api_resp: ApiResponse = serde_json::from_str(data).ok()?;
     let choice = api_resp.choices.into_iter().next()?;
     if let Some(delta) = choice.delta {
+        if let Some(reasoning) = &delta.reasoning_content {
+            if !reasoning.is_empty() {
+                return Some(StreamChunk::Reasoning {
+                    delta: reasoning.clone(),
+                });
+            }
+        }
         if let Some(content) = &delta.content {
             if !content.is_empty() {
                 return Some(StreamChunk::Text {
@@ -502,9 +499,6 @@ fn parse_sse_line(line: &str) -> Option<StreamChunk> {
                 });
             }
         }
-        // Tool-call deltas: `id`/`name` arrive in the FIRST delta of each
-        // index; later fragments carry only argument pieces. Emit every
-        // non-empty fragment keyed by index so the caller can reassemble.
         for tc in &delta.tool_calls {
             let Some(func) = &tc.function else { continue };
             let name = func.name.clone().unwrap_or_default();
@@ -525,6 +519,8 @@ fn parse_sse_line(line: &str) -> Option<StreamChunk> {
             prompt_tokens: u.prompt_tokens,
             completion_tokens: u.completion_tokens,
             total_tokens: u.total_tokens,
+            cache_creation_input_tokens: None,
+            cache_read_input_tokens: None,
         });
         return Some(StreamChunk::Done {
             message: Message::assistant(""),

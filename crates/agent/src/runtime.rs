@@ -824,11 +824,16 @@ impl AgentRuntime {
 
         while let Some(chunk) = stream.next().await {
             match chunk {
+                Ok(StreamChunk::Reasoning { delta }) => {
+                    if !delta.is_empty() {
+                        saw_anything = true;
+                    }
+                }
                 Ok(StreamChunk::Text { delta }) => {
                     if !delta.is_empty() {
                         saw_anything = true;
                         content.push_str(&delta);
-                        self.emit(AgentEvent::LlmStreamChunk {
+                        let _ = self.event_tx.send(pr_core::AgentEvent::LlmStreamChunk {
                             agent_id: self.id.clone(),
                             chunk: delta,
                         });
@@ -895,12 +900,13 @@ impl AgentRuntime {
             }
             let parsed: serde_json::Value =
                 serde_json::from_str(&args).unwrap_or(serde_json::json!({}));
-            let id = if id.is_empty() {
+            let call_id = if id.is_empty() {
                 format!("call_{}", uuid::Uuid::now_v7())
             } else {
                 id
             };
-            tool_calls.push(ToolCall::new(id, name, parsed));
+            let arguments_str = serde_json::to_string(&parsed).unwrap_or_default();
+            tool_calls.push(ToolCall::new(call_id, name, arguments_str));
         }
 
         Ok(CompletionResponse {
@@ -1131,7 +1137,7 @@ impl AgentRuntime {
 
             // Extract content and tool calls. Note: text already reached the
             // UI incrementally via complete_streaming — no re-emit here.
-            if let Message::Assistant { content, tool_calls } = &response.message {
+            if let Message::Assistant { content, tool_calls, .. } = &response.message {
                 if let Some(text) = content {
                     if !text.is_empty() {
                         final_content = text.clone();

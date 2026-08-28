@@ -1,9 +1,9 @@
 [package]
 name = "fathom"
-version = "0.4.1"
+version = "0.4.2"
 license = "Elastic-2.0"
+edition = "2021"
 rust-version.workspace = true
-
 [[bin]]
 name = "fathom"
 path = "src/main.rs"

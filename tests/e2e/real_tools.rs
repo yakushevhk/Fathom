@@ -104,6 +104,8 @@ impl LlmProvider for ScriptedLlm {
                     prompt_tokens: 10,
                     completion_tokens: 10,
                     total_tokens: 20,
+                    cache_creation_input_tokens: None,
+                    cache_read_input_tokens: None,
                 }),
                 finish_reason: Some("tool_calls".into()),
             }
@@ -114,6 +116,8 @@ impl LlmProvider for ScriptedLlm {
                     prompt_tokens: 10,
                     completion_tokens: 5,
                     total_tokens: 15,
+                    cache_creation_input_tokens: None,
+                    cache_read_input_tokens: None,
                 }),
                 finish_reason: Some("stop".into()),
             }

@@ -420,7 +420,7 @@ impl Persistence {
         let (role, content, tool_calls) = match message {
             pr_core::Message::System { content } => ("system", content.clone(), None),
             pr_core::Message::User { content } => ("user", content.clone(), None),
-            pr_core::Message::Assistant { content, tool_calls } => {
+            pr_core::Message::Assistant { content, tool_calls, .. } => {
                 let tc = if tool_calls.is_empty() { None } else {
                     Some(serde_json::to_string(tool_calls)?)
                 };

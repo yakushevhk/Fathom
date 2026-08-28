@@ -88,6 +88,8 @@ impl LlmProvider for MockLlm {
                 prompt_tokens: 10,
                 completion_tokens: 20,
                 total_tokens: 30,
+                cache_creation_input_tokens: None,
+                cache_read_input_tokens: None,
             }),
             finish_reason: Some("stop".to_string()),
         })
