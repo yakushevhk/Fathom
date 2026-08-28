@@ -41,6 +41,7 @@ mod credentials_api;
 pub mod webhooks;
 pub mod ws;
 pub mod openapi;
+pub mod watcher;
 
 use auth::{auth_middleware, rate_limit_middleware, ApiKeyAuth, RateLimiter};
 use axum::{

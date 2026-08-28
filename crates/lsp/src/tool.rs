@@ -32,8 +32,19 @@ struct LspArgs {
     line: Option<u32>,
     /// Column number (0-indexed)
     character: Option<u32>,
-    /// Search query (for workspace_symbols)
+    /// Search query or symbol name
     query: Option<String>,
+    /// New name for symbol rename
+    new_name: Option<String>,
+    /// Destination path for rename_file
+    new_path: Option<String>,
+    /// Auto-apply code action or rename edits
+    #[serde(default = "default_apply")]
+    apply: bool,
+}
+
+fn default_apply() -> bool {
+    true
 }
 
 impl LspTool {
@@ -49,9 +60,16 @@ impl LspTool {
     }
 
     pub fn description(&self) -> &str {
-        "Query the Language Server Protocol (LSP) for code intelligence: \
-         document symbols, go-to-definition, find references, hover info, \
-         and workspace symbol search. Requires an LSP server for the project's language."
+        "Language Server Protocol (LSP) code intelligence & refactoring tool.
+
+- `document_symbols`: list functions/classes/structs in file
+- `goto_definition`: find symbol definition
+- `find_references`: find all usages across codebase
+- `hover`: type signature and docs
+- `workspace_symbols`: global symbol search
+- `rename`: rename symbol across entire project atomically
+- `code_actions`: list/apply compiler quick-fixes and auto-imports
+- `rename_file`: move file and rewrite imports across the project"
     }
 
     pub fn schema(&self) -> ToolSchema {
@@ -63,7 +81,7 @@ impl LspTool {
                 "properties": {
                     "action": {
                         "type": "string",
-                        "enum": ["document_symbols", "goto_definition", "find_references", "hover", "workspace_symbols"],
+                        "enum": ["document_symbols", "goto_definition", "find_references", "hover", "workspace_symbols", "rename", "code_actions", "rename_file"],
                         "description": "The LSP operation to perform"
                     },
                     "file": {
@@ -80,7 +98,19 @@ impl LspTool {
                     },
                     "query": {
                         "type": "string",
-                        "description": "Search query (for workspace_symbols)"
+                        "description": "Search query or symbol name"
+                    },
+                    "new_name": {
+                        "type": "string",
+                        "description": "New name for symbol rename"
+                    },
+                    "new_path": {
+                        "type": "string",
+                        "description": "Destination path for rename_file"
+                    },
+                    "apply": {
+                        "type": "boolean",
+                        "description": "Apply edits immediately (default: true)"
                     }
                 },
                 "required": ["action"]

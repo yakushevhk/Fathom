@@ -51,6 +51,7 @@ pub mod compiler;
 pub mod repro;
 pub mod dap;
 pub mod cookie_vault;
+pub mod ast_edit;
 pub mod os_input;
 
 pub use registry::*;

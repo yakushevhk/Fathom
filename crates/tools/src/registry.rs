@@ -284,7 +284,8 @@ impl ToolRegistry {
         registry.register(Arc::new(crate::ast::AstIntelligenceTool));
         registry.register(Arc::new(crate::compiler::CompilerCheckTool));
         registry.register(Arc::new(crate::repro::ReproTestTool));
-        registry.register(Arc::new(crate::dap::DapDebugTool::new()));
+        registry.register(Arc::new(crate::dap::DapTool));
+        registry.register(Arc::new(crate::ast_edit::AstEditTool));
         registry.register(Arc::new(crate::cookie_vault::CookieVaultTool));
         registry.register(Arc::new(crate::os_input::OsInputTool));
         registry.register(Arc::new(crate::shell::ShellTool));

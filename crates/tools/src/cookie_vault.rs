@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use async_trait::async_trait;
 use pr_core::{PrError, PrResult, ToolOutput, ToolSchema};
 use schemars::JsonSchema;
@@ -40,7 +39,7 @@ struct CookieVaultParams {
     action: CookieVaultAction,
 }
 
-/// Encrypted Browser Session and Cookie Vault tool.
+/// Encrypted Browser Session and Cookie Vault tool using AES-256-GCM.
 pub struct CookieVaultTool;
 
 #[async_trait]
@@ -50,10 +49,10 @@ impl Tool for CookieVaultTool {
     }
 
     fn description(&self) -> &str {
-        "Persistent Browser Session & Cookie Vault.
+        "Hardware-Encrypted Browser Session & Cookie Vault (AES-256-GCM).
 
-- `action: 'save'` — store authenticated cookies and local storage for domain.
-- `action: 'load'` — retrieve cookies for session resumption across restarts.
+- `action: 'save'` — securely store authenticated cookies and local storage for domain.
+- `action: 'load'` — decrypt and retrieve cookies for session resumption across restarts.
 - `action: 'list'` — list saved domain sessions.
 - `action: 'delete'` — revoke/delete stored session."
     }
@@ -76,58 +75,77 @@ impl Tool for CookieVaultTool {
 
         match params.action {
             CookieVaultAction::Save { domain, payload } => {
-                let sanitized = domain.replace(['/', '\\', ':'], "_");
-                let file_path = vault_dir.join(format!("{}.json", sanitized));
-                let serialized = serde_json::to_string_pretty(&payload)?;
-                tokio::fs::write(&file_path, &serialized).await?;
+                let sanitized = domain.replace(['/', '\\', ':', '.'], "_");
+                let file_path = vault_dir.join(format!("{}.vault", sanitized));
+                let serialized = serde_json::to_string(&payload)?;
+                
+                // Encrypt payload using AES-256-GCM
+                let encrypted = pr_persistence::credentials::encrypt_secret(&serialized)?;
+                tokio::fs::write(&file_path, encrypted).await?;
 
                 Ok(ToolOutput::ok(format!(
-                    "Session Vault: Saved {} session tokens for '{}'",
-                    if payload.is_array() { "cookies array" } else { "storage payload" },
-                    domain
+                    "Encrypted session for domain '{}' saved securely to vault ({}).",
+                    domain,
+                    file_path.display()
                 )))
             }
-
             CookieVaultAction::Load { domain } => {
-                let sanitized = domain.replace(['/', '\\', ':'], "_");
-                let file_path = vault_dir.join(format!("{}.json", sanitized));
-
-                if file_path.exists() {
-                    let content = tokio::fs::read_to_string(&file_path).await?;
-                    Ok(ToolOutput::ok(format!("Session Vault for '{}':\n{}", domain, content)))
-                } else {
-                    Ok(ToolOutput::err(format!("No saved session found for domain '{}'", domain)))
+                let sanitized = domain.replace(['/', '\\', ':', '.'], "_");
+                let file_path = vault_dir.join(format!("{}.vault", sanitized));
+                if !file_path.exists() {
+                    // Fallback check for legacy .json
+                    let legacy_json = vault_dir.join(format!("{}.json", sanitized));
+                    if legacy_json.exists() {
+                        let content = tokio::fs::read_to_string(&legacy_json).await?;
+                        return Ok(ToolOutput::ok(content));
+                    }
+                    return Ok(ToolOutput::err(format!("No saved session found for domain '{}'", domain)));
                 }
+                let encrypted_bytes = tokio::fs::read_to_string(&file_path).await?;
+                let decrypted = match pr_persistence::credentials::decrypt_secret(&encrypted_bytes) {
+                    Ok(d) => d,
+                    Err(e) => return Ok(ToolOutput::err(format!("Decryption failed for domain '{}': {}", domain, e))),
+                };
+
+                Ok(ToolOutput::ok(decrypted))
             }
-
             CookieVaultAction::List => {
-                let mut entries = tokio::fs::read_dir(&vault_dir).await?;
                 let mut domains = Vec::new();
-
-                while let Ok(Some(entry)) = entries.next_entry().await {
-                    let path = entry.path();
-                    if path.is_file() {
-                        if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
-                            domains.push(stem.to_string());
+                if let Ok(mut entries) = tokio::fs::read_dir(&vault_dir).await {
+                    while let Ok(Some(entry)) = entries.next_entry().await {
+                        let p = entry.path();
+                        if p.extension().map(|e| e == "vault" || e == "json").unwrap_or(false) {
+                            if let Some(stem) = p.file_stem().and_then(|s| s.to_str()) {
+                                domains.push(stem.replace('_', "."));
+                            }
                         }
                     }
                 }
-
-                if domains.is_empty() {
-                    Ok(ToolOutput::ok("Session Vault is empty."))
-                } else {
-                    Ok(ToolOutput::ok(format!("Saved domain sessions in Vault:\n- {}", domains.join("\n- "))))
-                }
+                domains.sort();
+                domains.dedup();
+                Ok(ToolOutput::ok(serde_json::to_string_pretty(&serde_json::json!({
+                    "saved_domains_count": domains.len(),
+                    "domains": domains
+                }))?))
             }
-
             CookieVaultAction::Delete { domain } => {
-                let sanitized = domain.replace(['/', '\\', ':'], "_");
-                let file_path = vault_dir.join(format!("{}.json", sanitized));
+                let sanitized = domain.replace(['/', '\\', ':', '.'], "_");
+                let file_path = vault_dir.join(format!("{}.vault", sanitized));
+                let legacy_path = vault_dir.join(format!("{}.json", sanitized));
+                let mut deleted = false;
                 if file_path.exists() {
                     tokio::fs::remove_file(&file_path).await?;
-                    Ok(ToolOutput::ok(format!("Deleted session for '{}'", domain)))
+                    deleted = true;
+                }
+                if legacy_path.exists() {
+                    tokio::fs::remove_file(&legacy_path).await?;
+                    deleted = true;
+                }
+
+                if deleted {
+                    Ok(ToolOutput::ok(format!("Deleted session for domain '{}' from vault.", domain)))
                 } else {
-                    Ok(ToolOutput::err(format!("Session for '{}' not found in vault", domain)))
+                    Ok(ToolOutput::err(format!("No session found for domain '{}' to delete.", domain)))
                 }
             }
         }

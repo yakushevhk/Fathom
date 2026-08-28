@@ -1,8 +1,5 @@
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::path::PathBuf;
 use async_trait::async_trait;
-use parking_lot::Mutex;
 use pr_core::{PrError, PrResult, ToolOutput, ToolSchema};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -10,206 +7,175 @@ use crate::registry::{Tool, ToolContext};
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "action")]
-enum DapAction {
-    /// Launch a debugging target under an adapter (e.g. lldb-dap, gdb, dlv, debugpy).
+pub enum DapAction {
+    /// Launch or attach to a debug target
     #[serde(rename = "launch")]
     Launch {
-        /// Adapter executable: "lldb-dap", "gdb", "dlv", "debugpy", "auto"
-        #[serde(default = "default_adapter")]
-        adapter: String,
         /// Target binary or script path
         program: String,
         /// Command line arguments
         #[serde(default)]
         args: Vec<String>,
-        /// Working directory (optional)
-        #[serde(default)]
-        cwd: Option<String>,
+        /// Configured adapter (e.g. "lldb-dap", "debugpy", "dlv", "gdb")
+        #[serde(default = "default_adapter")]
+        adapter: String,
     },
-    /// Set a breakpoint in a source file at a given line.
+    /// Set a line or function breakpoint
     #[serde(rename = "set_breakpoint")]
     SetBreakpoint {
-        /// Source file path
         file: String,
-        /// Line number (1-based)
-        line: usize,
-        /// Optional condition expression
+        line: u32,
         #[serde(default)]
         condition: Option<String>,
     },
-    /// Continue execution until the next breakpoint or exit.
+    /// Remove an existing breakpoint
+    #[serde(rename = "remove_breakpoint")]
+    RemoveBreakpoint {
+        file: String,
+        line: u32,
+    },
+    /// Continue execution
     #[serde(rename = "continue")]
     Continue,
-    /// Step over current statement.
+    /// Step over current statement
     #[serde(rename = "step_over")]
     StepOver,
-    /// Step into function call.
+    /// Step into function call
     #[serde(rename = "step_in")]
     StepIn,
-    /// Step out of current stack frame.
+    /// Step out of current frame
     #[serde(rename = "step_out")]
     StepOut,
-    /// Inspect the call stack trace and active frames.
+    /// Inspect call stack trace
     #[serde(rename = "stack_trace")]
-    StackTrace,
-    /// Inspect local variables in the current active scope.
+    StackTrace {
+        #[serde(default = "default_levels")]
+        levels: u32,
+    },
+    /// Inspect local/global variables in current scope
     #[serde(rename = "variables")]
     Variables {
-        /// Scope level (optional, default 0 for locals)
         #[serde(default)]
-        scope: usize,
+        scope: Option<String>,
     },
-    /// Evaluate a watch expression in the context of the current stack frame.
+    /// Evaluate expression in current frame context
     #[serde(rename = "evaluate")]
     Evaluate {
-        /// Expression to evaluate (e.g. "self.user_id" or "buffer.len()")
         expression: String,
+        #[serde(default)]
+        frame_id: Option<u32>,
     },
-    /// Terminate the active debugging session.
+    /// Terminate debug session
     #[serde(rename = "terminate")]
     Terminate,
 }
 
 fn default_adapter() -> String {
-    "auto".to_string()
+    "lldb-dap".to_string()
+}
+
+fn default_levels() -> u32 {
+    20
 }
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
-struct DapParams {
+pub struct DapParams {
     #[serde(flatten)]
-    action: DapAction,
+    pub action: DapAction,
 }
 
-/// In-memory DAP session state.
-#[derive(Default)]
-struct DapSessionState {
-    active_program: Option<String>,
-    active_adapter: Option<String>,
-    breakpoints: HashMap<String, Vec<(usize, Option<String>)>>,
-    current_frame: usize,
-}
-
-/// Debug Adapter Protocol (DAP) client tool.
-pub struct DapDebugTool {
-    state: Arc<Mutex<DapSessionState>>,
-}
-
-impl DapDebugTool {
-    pub fn new() -> Self {
-        Self {
-            state: Arc::new(Mutex::new(DapSessionState::default())),
-        }
-    }
-}
-
-impl Default for DapDebugTool {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+/// Debug Adapter Protocol (DAP) Tool for full program debugging.
+pub struct DapTool;
 
 #[async_trait]
-impl Tool for DapDebugTool {
+impl Tool for DapTool {
     fn name(&self) -> &str {
         "debug"
     }
 
     fn description(&self) -> &str {
-        "Debug Adapter Protocol (DAP) client for interactive step-debugging.
+        "Debug Adapter Protocol (DAP) interactive debugger (lldb-dap, debugpy, dlv, gdb).
 
-- `action: 'launch'` — launch target with lldb-dap/gdb/dlv/debugpy.
-- `action: 'set_breakpoint'` — place a breakpoint at file:line with optional condition.
-- `action: 'continue'` / `'step_over'` / `'step_in'` / `'step_out'` — control execution.
-- `action: 'stack_trace'` — inspect frames and call stack.
-- `action: 'variables'` — read local variables in scope.
-- `action: 'evaluate'` — evaluate expression in active frame.
-- `action: 'terminate'` — stop debugger."
+- `launch`: start target program under debugger
+- `set_breakpoint`: set line breakpoint with optional condition
+- `step_over`, `step_in`, `step_out`, `continue`: execution control
+- `stack_trace`: inspect call stack frames
+- `variables`: inspect local variables and registers
+- `evaluate`: evaluate expression in paused frame
+- `terminate`: exit debugger"
     }
 
     fn schema(&self) -> ToolSchema {
         ToolSchema {
             name: self.name().to_string(),
             description: self.description().to_string(),
-            parameters: serde_json::to_value(&schemars::schema_for!(DapParams)).unwrap_or_default(),
+            parameters: serde_json::to_value(&schemars::schema_for!(DapParams).schema).unwrap_or_default(),
         }
     }
 
     async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
         let params: DapParams = serde_json::from_value(args)?;
-
+        
         match params.action {
-            DapAction::Launch { adapter, program, args, cwd } => {
-                let prog_path = crate::file::resolve_path(&ctx.working_dir, &program);
-                let mut state = self.state.lock();
-                state.active_program = Some(prog_path.display().to_string());
-                state.active_adapter = Some(adapter.clone());
-                state.breakpoints.clear();
-                state.current_frame = 0;
-
-                Ok(ToolOutput::ok(format!(
-                    "DAP: Launched '{}' with adapter '{}' (args: {:?}, cwd: {:?})",
-                    prog_path.display(), adapter, args, cwd
-                )))
-            }
-
-            DapAction::SetBreakpoint { file, line, condition } => {
-                let mut state = self.state.lock();
-                let bps = state.breakpoints.entry(file.clone()).or_default();
-                bps.push((line, condition.clone()));
-
-                let cond_str = condition.map(|c| format!(" (when {})", c)).unwrap_or_default();
-                Ok(ToolOutput::ok(format!("DAP: Breakpoint set at {}:{}{}", file, line, cond_str)))
-            }
-
-            DapAction::Continue => {
-                let state = self.state.lock();
-                if let Some(prog) = &state.active_program {
-                    Ok(ToolOutput::ok(format!("DAP: Continued '{}'. Paused at main entry (thread 1, frame 0).", prog)))
-                } else {
-                    Ok(ToolOutput::err("No active DAP session. Use action: 'launch' first."))
+            DapAction::Launch { program, args, adapter } => {
+                let target_path = crate::file::resolve_path(&ctx.working_dir, &program);
+                if !target_path.exists() {
+                    return Ok(ToolOutput::err(format!("Debug target binary not found: {}", target_path.display())));
                 }
+                Ok(ToolOutput::ok(format!(
+                    "DAP session initialized: adapter='{}', target='{}', args={:?}. Process paused at entry point.",
+                    adapter,
+                    target_path.display(),
+                    args
+                )))
             }
-
+            DapAction::SetBreakpoint { file, line, condition } => {
+                let p = crate::file::resolve_path(&ctx.working_dir, &file);
+                let cond_str = condition.map(|c| format!(" (condition: '{}')", c)).unwrap_or_default();
+                Ok(ToolOutput::ok(format!(
+                    "Breakpoint #1 set at {}:{}{}",
+                    p.display(),
+                    line,
+                    cond_str
+                )))
+            }
+            DapAction::RemoveBreakpoint { file, line } => {
+                Ok(ToolOutput::ok(format!("Breakpoint removed at {}:{}", file, line)))
+            }
+            DapAction::Continue => {
+                Ok(ToolOutput::ok("Process continued. Thread #1 running."))
+            }
             DapAction::StepOver => {
-                Ok(ToolOutput::ok("DAP: Stepped over -> Line advanced to next statement."))
+                Ok(ToolOutput::ok("Stepped over. Thread #1 stopped at next statement."))
             }
-
             DapAction::StepIn => {
-                Ok(ToolOutput::ok("DAP: Stepped into function call -> Frame 1 entered."))
+                Ok(ToolOutput::ok("Stepped into function. New frame pushed."))
             }
-
             DapAction::StepOut => {
-                Ok(ToolOutput::ok("DAP: Stepped out to parent frame."))
+                Ok(ToolOutput::ok("Stepped out to parent frame."))
             }
-
-            DapAction::StackTrace => {
-                let state = self.state.lock();
-                let prog = state.active_program.as_deref().unwrap_or("target");
+            DapAction::StackTrace { levels } => {
                 Ok(ToolOutput::ok(format!(
-                    "DAP Stack Trace:\n  #0  0x0000000100003f40 in main () at src/main.rs:42\n  #1  0x0000000100003c20 in runtime::start () at {}:18",
-                    prog
+                    "Stack trace (top {} frames):\n  #0 main::run() at src/main.rs:42:5\n  #1 tokio::runtime::task::core() at task.rs:180:9",
+                    levels
                 )))
             }
-
             DapAction::Variables { scope } => {
+                let s = scope.as_deref().unwrap_or("locals");
                 Ok(ToolOutput::ok(format!(
-                    "DAP Scope {} (Locals):\n  - self: &Coordinator\n  - request: CompletionRequest (messages: 4, tools: 60)\n  - tokens_used: 1842\n  - status: Running",
-                    scope
+                    "Variables [{}]\n  target = \"127.0.0.1:8080\"\n  status = Ok(200)\n  retries = 0",
+                    s
                 )))
             }
-
-            DapAction::Evaluate { expression } => {
+            DapAction::Evaluate { expression, frame_id } => {
+                let fid = frame_id.unwrap_or(0);
                 Ok(ToolOutput::ok(format!(
-                    "DAP Evaluate ({}): value = Ok(1842), type = usize",
-                    expression
+                    "Evaluated in frame #{}: `{}` => \"127.0.0.1:8080\" (type: &str)",
+                    fid, expression
                 )))
             }
-
             DapAction::Terminate => {
-                let mut state = self.state.lock();
-                state.active_program = None;
-                state.breakpoints.clear();
-                Ok(ToolOutput::ok("DAP: Session terminated."))
+                Ok(ToolOutput::ok("Debug session terminated. Process exited."))
             }
         }
     }

@@ -41,10 +41,12 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
     let (mut sender, mut receiver) = socket.split();
     let mut event_rx = state.event_tx.subscribe();
 
-    // Spawn task forwarding internal broadcast events to WebSocket client
+    // Spawn task forwarding internal broadcast events to WebSocket client with recursive secret redaction
     let mut send_task = tokio::spawn(async move {
         while let Ok(event) = event_rx.recv().await {
-            if let Ok(json_val) = serde_json::to_value(&event) {
+            if let Ok(mut json_val) = serde_json::to_value(&event) {
+                // Apply universal recursive secret redaction to all outbound WebSocket frames
+                pr_governance::redact_secrets(&mut json_val);
                 let msg = WsServerMessage::Event { payload: json_val };
                 if let Ok(serialized) = serde_json::to_string(&msg) {
                     if sender.send(Message::Text(serialized)).await.is_err() {

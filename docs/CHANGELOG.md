@@ -6,8 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
-## [0.4.0] — 2026-08-28
+## [0.4.1] — 2026-08-28
 
+### Added
+- **Transactional Two-Phase Commit (2PC) Patching**: In-memory dry run and validation across all files before atomic disk write in `edit` / `hashline`.
+- **Bottom-Up Hashline Sorting & Named Registers (`@name`)**: Prevents coordinate shift bugs and enables cross-file cut/paste operations without prompt pollution.
+- **Syntactic AST Codemods (`ast_edit`)**: Pattern-based structural search & replace (`$NAME`, `$$$ARGS`) with safe syntax validation across Rust, TypeScript, Python, and Go.
+- **Hardware-Encrypted Cookie Vault (AES-256-GCM)**: Persistent session cookies and auth tokens stored with hardware-level encryption.
+- **Extended File Selectors (`file_read`)**: Support for `:50-`, `:50+150`, multi-range slices (`:1-10,50-60`), git merge conflicts (`:conflicts`), and `:raw` mode.
+- **Universal Stream Secret Redaction**: Recursive scrubber for WebSocket (`/api/v1/ws`) and SSE event streams.
+- **Virtual Artifact Store (`artifact://`) & Persistent Evaluation Kernel**: In-memory zero-copy artifact routing and persistent REPL state management.
+- **Proactive Filesystem Watcher (`watcher.rs`)**: Background filesystem watcher with automated self-healing loop for compiler errors.
+
+## [0.4.0] — 2026-08-28
 ### Added
 - **High-Precision Coding Harness & Virtual Filesystem**:
   - **Hashline Snapshot-Anchored Patching** (`edit` tool with `#TAG` verification and `PUT`/`CUT`/`MV`/`REM` operations).

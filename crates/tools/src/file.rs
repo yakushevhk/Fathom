@@ -68,24 +68,34 @@ Reads a file at the given path (absolute or relative to the working directory) a
     async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
         let params: FileReadParams = serde_json::from_value(args)?;
         
-        // Check for inline selector like "path/file.rs:50-200" or "file.rs:raw"
+        // Parse extended selectors like "file.rs:50-200", ":50-", ":50+150", ":1-10,50-60", ":conflicts", ":raw"
         let mut raw_path = params.path.as_str();
         let mut is_raw = false;
-        let mut inline_start: Option<usize> = None;
-        let mut inline_count: Option<usize> = None;
+        let mut is_conflicts = false;
+        let mut line_ranges: Vec<(usize, usize)> = Vec::new();
 
         if let Some((p, sel)) = raw_path.split_once(':') {
             raw_path = p;
             let sel = sel.trim();
             if sel == "raw" {
                 is_raw = true;
-            } else if let Some((s_str, e_str)) = sel.split_once('-') {
-                if let (Ok(s), Ok(e)) = (s_str.parse::<usize>(), e_str.parse::<usize>()) {
-                    inline_start = Some(s);
-                    inline_count = Some(e.saturating_sub(s) + 1);
+            } else if sel == "conflicts" {
+                is_conflicts = true;
+            } else {
+                for part in sel.split(',') {
+                    let part = part.trim();
+                    if let Some((s_str, e_str)) = part.split_once('+') {
+                        if let (Ok(s), Ok(c)) = (s_str.parse::<usize>(), e_str.parse::<usize>()) {
+                            line_ranges.push((s, s + c.saturating_sub(1)));
+                        }
+                    } else if let Some((s_str, e_str)) = part.split_once('-') {
+                        let s = s_str.parse::<usize>().unwrap_or(1);
+                        let e = if e_str.is_empty() { usize::MAX } else { e_str.parse::<usize>().unwrap_or(usize::MAX) };
+                        line_ranges.push((s, e));
+                    } else if let Ok(s) = part.parse::<usize>() {
+                        line_ranges.push((s, s));
+                    }
                 }
-            } else if let Ok(s) = sel.parse::<usize>() {
-                inline_start = Some(s);
             }
         }
 
@@ -100,36 +110,77 @@ Reads a file at the given path (absolute or relative to the working directory) a
         let lines: Vec<&str> = content.lines().collect();
         let total_lines = lines.len();
 
-        let start = inline_start
-            .or_else(|| params.start_line.map(|v| v as usize))
-            .unwrap_or(1)
-            .saturating_sub(1);
-        let count = inline_count
-            .or_else(|| params.line_count.map(|v| v as usize))
-            .unwrap_or(usize::MAX);
-        let end = (start + count).min(total_lines);
-
         let display_path = path.strip_prefix(&ctx.working_dir).unwrap_or(&path).display().to_string();
         let mut output = String::new();
-        if content.is_empty() {
-            output = "(empty file)".to_string();
-        } else {
-            let mut body = String::new();
-            for (i, line) in lines[start..end].iter().enumerate() {
-                if is_raw {
-                    body.push_str(line);
-                    body.push('\n');
-                } else {
-                    body.push_str(&format!("{}:{}\n", start + i + 1, line));
+
+        if is_conflicts {
+            let mut conflict_blocks = Vec::new();
+            let mut in_conflict = false;
+            let mut block = Vec::new();
+            for (idx, line) in lines.iter().enumerate() {
+                if line.starts_with("<<<<<<<") {
+                    in_conflict = true;
+                    block.push(format!("{}:{}", idx + 1, line));
+                } else if in_conflict {
+                    block.push(format!("{}:{}", idx + 1, line));
+                    if line.starts_with(">>>>>>>") {
+                        in_conflict = false;
+                        conflict_blocks.push(block.join("\n"));
+                        block.clear();
+                    }
                 }
             }
-            output = if is_raw {
-                body
+            if conflict_blocks.is_empty() {
+                output = format!("[{}#{}]\n(no git merge conflicts found)", display_path, tag);
             } else {
-                format!("[{}#{}]\n{}", display_path, tag, body)
-            };
+                output = format!("[{}#{}]\n{}", display_path, tag, conflict_blocks.join("\n---\n"));
+            }
+        } else if line_ranges.is_empty() && params.start_line.is_none() && params.line_count.is_none() {
+            if is_raw {
+                output = content;
+            } else {
+                let mut body = String::new();
+                for (i, line) in lines.iter().enumerate() {
+                    body.push_str(&format!("{}:{}\n", i + 1, line));
+                }
+                output = format!("[{}#{}]\n{}", display_path, tag, body);
+            }
+        } else {
+            let mut selected_indices = std::collections::BTreeSet::new();
+            if !line_ranges.is_empty() {
+                for (s, e) in line_ranges {
+                    let start_idx = s.saturating_sub(1);
+                    let end_idx = e.min(total_lines);
+                    for i in start_idx..end_idx {
+                        selected_indices.insert(i);
+                    }
+                }
+            } else {
+                let s = params.start_line.unwrap_or(1).saturating_sub(1) as usize;
+                let c = params.line_count.unwrap_or(u32::MAX) as usize;
+                let e = (s + c).min(total_lines);
+                for i in s..e {
+                    selected_indices.insert(i);
+                }
+            }
+
+            let mut body = String::new();
+            for idx in selected_indices {
+                if is_raw {
+                    body.push_str(lines[idx]);
+                    body.push('\n');
+                } else {
+                    body.push_str(&format!("{}:{}\n", idx + 1, lines[idx]));
+                }
+            }
+            if is_raw {
+                output = body;
+            } else {
+                output = format!("[{}#{}]\n{}", display_path, tag, body);
+            }
         }
-        // Record this file read for the validation gate.
+
+        // Record read tracking
         if let Ok(mut tracker) = ctx.read_tracker.try_lock() {
             let _ = tracker.record_read(&path);
         }
@@ -468,17 +519,16 @@ Body lines MUST start with `+`. Keeps unchanged lines excluded from ranges. Fail
             return Ok(ToolOutput::err("No valid [path#TAG] sections found in patch input"));
         }
 
-        let mut summary = Vec::new();
+        // Two-Phase Commit (2PC) Pipeline
+        // Phase 1: In-memory dry run and tag verification across all sections
+        let mut staging_plan = Vec::new();
+        let mut reg_bank = crate::hashline::RegisterBank::new();
 
         for sec in &sections {
             let path = resolve_path(&ctx.working_dir, &sec.path.to_string_lossy());
 
-            // Handle file removal op
             if sec.ops.iter().any(|op| matches!(op, crate::hashline::HashlineOp::RemoveFile)) {
-                if path.exists() {
-                    tokio::fs::remove_file(&path).await?;
-                    summary.push(format!("Removed {}", path.display()));
-                }
+                staging_plan.push((path, None, None, true));
                 continue;
             }
 
@@ -487,33 +537,60 @@ Body lines MUST start with `+`. Keeps unchanged lines excluded from ranges. Fail
             }
 
             let content = tokio::fs::read_to_string(&path).await?;
-            let (new_content, new_tag) = match crate::hashline::apply_hashline_to_content(&content, &sec.expected_tag, &sec.ops) {
+            let (new_content, new_tag) = match crate::hashline::apply_hashline_to_content(
+                &content,
+                &sec.expected_tag,
+                &sec.ops,
+                &mut reg_bank,
+            ) {
                 Ok(res) => res,
-                Err(e) => return Ok(ToolOutput::err(format!("Patch application failed on {}: {}", path.display(), e))),
+                Err(e) => {
+                    return Ok(ToolOutput::err(format!(
+                        "Patch validation failed on {}: {}\n[2PC ABORT: Zero files modified on disk]",
+                        path.display(),
+                        e
+                    )))
+                }
             };
 
-            // Handle file move op if specified
-            let target_path = if let Some(crate::hashline::HashlineOp::MoveFile { dest }) = sec.ops.iter().find(|op| matches!(op, crate::hashline::HashlineOp::MoveFile { .. })) {
-                let d = resolve_path(&ctx.working_dir, &dest.to_string_lossy());
-                if let Some(p) = d.parent() {
-                    tokio::fs::create_dir_all(p).await?;
-                }
-                if d != path && path.exists() {
-                    let _ = tokio::fs::remove_file(&path).await;
-                }
-                d
+            let target_path = if let Some(crate::hashline::HashlineOp::MoveFile { dest }) = sec
+                .ops
+                .iter()
+                .find(|op| matches!(op, crate::hashline::HashlineOp::MoveFile { .. }))
+            {
+                resolve_path(&ctx.working_dir, &dest.to_string_lossy())
             } else {
                 path.clone()
             };
 
-            tokio::fs::write(&target_path, &new_content).await?;
+            staging_plan.push((target_path, Some(new_content), Some(new_tag), false));
+        }
 
-            // Update read tracker
-            if let Ok(mut tracker) = ctx.read_tracker.try_lock() {
-                let _ = tracker.record_read(&target_path);
+        // Phase 2: Atomic commit to disk
+        let mut summary = Vec::new();
+        for (target_path, new_content_opt, new_tag_opt, is_remove) in staging_plan {
+            if is_remove {
+                if target_path.exists() {
+                    tokio::fs::remove_file(&target_path).await?;
+                    summary.push(format!("Removed {}", target_path.display()));
+                }
+            } else if let (Some(new_content), Some(new_tag)) = (new_content_opt, new_tag_opt) {
+                if let Some(p) = target_path.parent() {
+                    tokio::fs::create_dir_all(p).await?;
+                }
+                tokio::fs::write(&target_path, &new_content).await?;
+
+                if let Ok(mut tracker) = ctx.read_tracker.try_lock() {
+                    let _ = tracker.record_read(&target_path);
+                }
+
+                summary.push(format!(
+                    "[{}#{}] ({} lines)",
+                    target_path.display(),
+                    new_tag,
+                    new_content.lines().count()
+                ));
             }
-
-            summary.push(format!("[{}#{}] ({} lines)", target_path.display(), new_tag, new_content.lines().count()));
         }
 
         Ok(ToolOutput::ok(summary.join("\n")))

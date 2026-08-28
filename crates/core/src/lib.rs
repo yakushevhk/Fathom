@@ -22,7 +22,8 @@ pub mod crm;
 pub mod capability;
 pub mod protected;
 pub mod uri;
-
+pub mod eval;
+pub mod artifact;
 pub use irc::*;
 pub use steer::*;
 pub use async_job::*;
@@ -47,7 +48,8 @@ pub use crm::*;
 pub use capability::*;
 pub use protected::*;
 pub use uri::*;
-
+pub use eval::*;
+pub use artifact::*;
 /// Shared outbound HTTP client with bounded timeouts, so a slow or hanging
 /// endpoint can never stall an agent indefinitely. Use everywhere instead of
 /// `reqwest::Client::new()`.

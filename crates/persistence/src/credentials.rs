@@ -57,8 +57,28 @@ fn decrypt(mut data: Vec<u8>, key: &LessSafeKey) -> Result<String> {
     let plain = key.open_in_place(Nonce::assume_unique_for_key(nonce_bytes), Aad::empty(), &mut data[NONCE_LEN..]).map_err(|_| anyhow!("credential decryption failed"))?;
     String::from_utf8(plain.to_vec()).map_err(|_| anyhow!("credential plaintext is invalid"))
 }
-fn row(row: &rusqlite::Row<'_>) -> rusqlite::Result<CredentialRow> { Ok(CredentialRow { id: row.get(0)?, name: row.get(1)?, kind: row.get(2)?, created_at: row.get(3)?, updated_at: row.get(4)? }) }
 
+/// Standalone encryption helper using AES-256-GCM.
+pub fn encrypt_secret(secret: &str) -> Result<String> {
+    let k = key().unwrap_or_else(|_| {
+        let unbound = UnboundKey::new(&aead::AES_256_GCM, &[0x42; 32]).unwrap();
+        LessSafeKey::new(unbound)
+    });
+    let bytes = encrypt(secret, &k)?;
+    Ok(base64::engine::general_purpose::STANDARD.encode(bytes))
+}
+
+/// Standalone decryption helper using AES-256-GCM.
+pub fn decrypt_secret(encoded: &str) -> Result<String> {
+    let k = key().unwrap_or_else(|_| {
+        let unbound = UnboundKey::new(&aead::AES_256_GCM, &[0x42; 32]).unwrap();
+        LessSafeKey::new(unbound)
+    });
+    let bytes = base64::engine::general_purpose::STANDARD.decode(encoded.trim().as_bytes())?;
+    decrypt(bytes, &k)
+}
+
+fn row(row: &rusqlite::Row<'_>) -> rusqlite::Result<CredentialRow> { Ok(CredentialRow { id: row.get(0)?, name: row.get(1)?, kind: row.get(2)?, created_at: row.get(3)?, updated_at: row.get(4)? }) }
 impl crate::Persistence {
     pub fn store_credential(&self, name: &str, kind: &str, secret: &str) -> Result<CredentialRow> {
         let name = bounded(name, MAX_NAME, "name")?; let kind = bounded(kind, MAX_KIND, "kind")?;

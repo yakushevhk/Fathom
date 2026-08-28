@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::PathBuf;
 use pr_core::{PrError, PrResult};
 
@@ -17,23 +18,80 @@ pub fn compute_tag(content: &str) -> String {
     format!("{:04X}", crc)
 }
 
+/// Global or patch-scoped named register bank for cut/paste operations.
+#[derive(Debug, Clone, Default)]
+pub struct RegisterBank {
+    pub registers: HashMap<String, Vec<String>>,
+    pub anonymous: Vec<String>,
+}
+
+impl RegisterBank {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn set(&mut self, name: Option<&str>, content: Vec<String>) {
+        if let Some(n) = name {
+            self.registers.insert(n.trim_start_matches('@').to_string(), content);
+        } else {
+            self.anonymous = content;
+        }
+    }
+
+    pub fn get(&self, name: Option<&str>) -> Option<&Vec<String>> {
+        if let Some(n) = name {
+            self.registers.get(n.trim_start_matches('@'))
+        } else {
+            Some(&self.anonymous)
+        }
+    }
+}
+
 /// A parsed hashline patch operation.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HashlineOp {
     /// Replace line range N..=M with body lines.
     PutRange { start: usize, end: usize, body: Vec<String> },
+    /// Replace syntactic/indent block starting at line N with body lines.
+    PutBlock { start: usize, body: Vec<String> },
+    /// Paste register at target gap or over range.
+    PutFromRegister {
+        start: usize,
+        end: Option<usize>,
+        register: Option<String>,
+        before: bool,
+    },
     /// Insert body lines before line N (1-based; <1 is file head).
     InsertBefore { line: usize, body: Vec<String> },
     /// Insert body lines after line N (1-based; >$ is file tail).
     InsertAfter { line: usize, body: Vec<String> },
     /// Append body lines to file tail.
     AppendTail { body: Vec<String> },
-    /// Delete inclusive lines N..=M.
-    CutRange { start: usize, end: usize },
+    /// Delete inclusive lines N..=M, optionally storing into a register.
+    CutRange { start: usize, end: usize, register: Option<String> },
+    /// Delete syntactic/indent block starting at line N, optionally storing into a register.
+    CutBlock { start: usize, register: Option<String> },
     /// Remove/delete file entirely.
     RemoveFile,
     /// Move/rename file to destination.
     MoveFile { dest: PathBuf },
+}
+
+impl HashlineOp {
+    pub fn start_line(&self) -> usize {
+        match self {
+            HashlineOp::PutRange { start, .. } => *start,
+            HashlineOp::PutBlock { start, .. } => *start,
+            HashlineOp::PutFromRegister { start, .. } => *start,
+            HashlineOp::InsertBefore { line, .. } => *line,
+            HashlineOp::InsertAfter { line, .. } => *line,
+            HashlineOp::AppendTail { .. } => usize::MAX,
+            HashlineOp::CutRange { start, .. } => *start,
+            HashlineOp::CutBlock { start, .. } => *start,
+            HashlineOp::RemoveFile => 0,
+            HashlineOp::MoveFile { .. } => 0,
+        }
+    }
 }
 
 /// A parsed section of a hashline patch script targeting a specific file.
@@ -42,6 +100,67 @@ pub struct HashlineSection {
     pub path: PathBuf,
     pub expected_tag: String,
     pub ops: Vec<HashlineOp>,
+}
+
+/// Resolve end of a syntactic/indent block starting at 1-based start line.
+pub fn resolve_block_end(lines: &[String], start_1based: usize) -> usize {
+    if start_1based == 0 || start_1based > lines.len() {
+        return start_1based;
+    }
+    let start_idx = start_1based - 1;
+    let start_line = &lines[start_idx];
+    let start_indent = start_line.chars().take_while(|c| c.is_whitespace()).count();
+
+    // Check if line contains opening brace / bracket
+    let mut brace_count = 0i32;
+    for ch in start_line.chars() {
+        if ch == '{' || ch == '(' || ch == '[' {
+            brace_count += 1;
+        } else if ch == '}' || ch == ')' || ch == ']' {
+            brace_count -= 1;
+        }
+    }
+
+    if brace_count > 0 {
+        // Find matching closing brace
+        let mut curr_idx = start_idx + 1;
+        while curr_idx < lines.len() {
+            let l = &lines[curr_idx];
+            for ch in l.chars() {
+                if ch == '{' || ch == '(' || ch == '[' {
+                    brace_count += 1;
+                } else if ch == '}' || ch == ')' || ch == ']' {
+                    brace_count -= 1;
+                }
+            }
+            if brace_count <= 0 {
+                return curr_idx + 1;
+            }
+            curr_idx += 1;
+        }
+        return lines.len();
+    }
+
+    // Indent-based block resolution (Python, YAML, Markdown headings, comments)
+    let is_markdown_heading = start_line.trim_start().starts_with('#');
+    let mut curr_idx = start_idx + 1;
+    while curr_idx < lines.len() {
+        let l = &lines[curr_idx];
+        if l.trim().is_empty() {
+            curr_idx += 1;
+            continue;
+        }
+        if is_markdown_heading && l.trim_start().starts_with('#') {
+            return curr_idx;
+        }
+        let indent = l.chars().take_while(|c| c.is_whitespace()).count();
+        if indent <= start_indent {
+            return curr_idx;
+        }
+        curr_idx += 1;
+    }
+
+    lines.len()
 }
 
 /// Parse a full multi-file hashline patch script.
@@ -105,6 +224,7 @@ pub fn parse_hashline_patch(input: &str) -> PrResult<Vec<HashlineSection>> {
             let body_text = &line[1..];
             match current_op.as_mut() {
                 Some(HashlineOp::PutRange { body, .. })
+                | Some(HashlineOp::PutBlock { body, .. })
                 | Some(HashlineOp::InsertBefore { body, .. })
                 | Some(HashlineOp::InsertAfter { body, .. })
                 | Some(HashlineOp::AppendTail { body }) => {
@@ -143,21 +263,28 @@ pub fn parse_hashline_patch(input: &str) -> PrResult<Vec<HashlineSection>> {
             });
         } else if let Some(cut_spec) = trimmed.strip_prefix("CUT ") {
             let cut_spec = cut_spec.trim();
-            if let Some((start_s, end_s)) = cut_spec.split_once(".=") {
+            // Check for register capture: CUT 5.=9 @fn or CUT 1* @fn
+            let (spec_part, reg_part) = if let Some((s, r)) = cut_spec.split_once('@') {
+                (s.trim(), Some(r.trim().to_string()))
+            } else {
+                (cut_spec, None)
+            };
+
+            if let Some((start_s, end_s)) = spec_part.split_once(".=") {
                 let start = start_s.parse::<usize>().map_err(|_| {
                     PrError::Tool(format!("Invalid start line in CUT op: '{}'", cut_spec))
                 })?;
                 let end = end_s.parse::<usize>().map_err(|_| {
                     PrError::Tool(format!("Invalid end line in CUT op: '{}'", cut_spec))
                 })?;
-                current_op = Some(HashlineOp::CutRange { start, end });
-            } else if let Some(start_s) = cut_spec.strip_suffix('*') {
+                current_op = Some(HashlineOp::CutRange { start, end, register: reg_part });
+            } else if let Some(start_s) = spec_part.strip_suffix('*') {
                 let start = start_s.parse::<usize>().map_err(|_| {
                     PrError::Tool(format!("Invalid start line in CUT block op: '{}'", cut_spec))
                 })?;
-                current_op = Some(HashlineOp::CutRange { start, end: start });
-            } else if let Ok(single) = cut_spec.parse::<usize>() {
-                current_op = Some(HashlineOp::CutRange { start: single, end: single });
+                current_op = Some(HashlineOp::CutBlock { start, register: reg_part });
+            } else if let Ok(single) = spec_part.parse::<usize>() {
+                current_op = Some(HashlineOp::CutRange { start: single, end: single, register: reg_part });
             } else {
                 return Err(PrError::Tool(format!("Unsupported CUT syntax: '{}'", trimmed)));
             }
@@ -169,7 +296,54 @@ pub fn parse_hashline_patch(input: &str) -> PrResult<Vec<HashlineSection>> {
                 put_spec.trim()
             };
 
-            if let Some((start_s, end_s)) = spec.split_once(".=") {
+            // Check for register paste: PUT >40 @name, PUT <1 @name, PUT 1.=3 @name
+            if let Some((target_spec, reg_name)) = spec.split_once('@') {
+                let target_spec = target_spec.trim();
+                let register = Some(reg_name.trim().to_string());
+
+                if let Some(target) = target_spec.strip_prefix('<') {
+                    let line_num = target.parse::<usize>().unwrap_or(1);
+                    current_op = Some(HashlineOp::PutFromRegister {
+                        start: line_num,
+                        end: None,
+                        register,
+                        before: true,
+                    });
+                } else if let Some(target) = target_spec.strip_prefix('>') {
+                    let line_num = if target == "$" { usize::MAX } else { target.parse::<usize>().unwrap_or(1) };
+                    current_op = Some(HashlineOp::PutFromRegister {
+                        start: line_num,
+                        end: None,
+                        register,
+                        before: false,
+                    });
+                } else if let Some((start_s, end_s)) = target_spec.split_once(".=") {
+                    let start = start_s.parse::<usize>().unwrap_or(1);
+                    let end = end_s.parse::<usize>().unwrap_or(start);
+                    current_op = Some(HashlineOp::PutFromRegister {
+                        start,
+                        end: Some(end),
+                        register,
+                        before: true,
+                    });
+                } else if let Some(start_s) = target_spec.strip_suffix('*') {
+                    let start = start_s.parse::<usize>().unwrap_or(1);
+                    current_op = Some(HashlineOp::PutFromRegister {
+                        start,
+                        end: None,
+                        register,
+                        before: true,
+                    });
+                } else {
+                    let line = target_spec.parse::<usize>().unwrap_or(1);
+                    current_op = Some(HashlineOp::PutFromRegister {
+                        start: line,
+                        end: Some(line),
+                        register,
+                        before: true,
+                    });
+                }
+            } else if let Some((start_s, end_s)) = spec.split_once(".=") {
                 let start = start_s.parse::<usize>().map_err(|_| {
                     PrError::Tool(format!("Invalid start line in PUT range op: '{}'", spec))
                 })?;
@@ -211,9 +385,8 @@ pub fn parse_hashline_patch(input: &str) -> PrResult<Vec<HashlineSection>> {
                 let start = start_s.parse::<usize>().map_err(|_| {
                     PrError::Tool(format!("Invalid line in PUT N* op: '{}'", spec))
                 })?;
-                current_op = Some(HashlineOp::PutRange {
+                current_op = Some(HashlineOp::PutBlock {
                     start,
-                    end: start,
                     body: Vec::new(),
                 });
             } else {
@@ -242,11 +415,13 @@ pub fn parse_hashline_patch(input: &str) -> PrResult<Vec<HashlineSection>> {
     Ok(sections)
 }
 
-/// Apply hashline patch operations to an existing file's text content.
+/// Apply hashline patch operations to an existing file's text content with register bank support.
+/// Operations are applied bottom-up (descending line order) to prevent coordinate drift.
 pub fn apply_hashline_to_content(
     original_content: &str,
     expected_tag: &str,
     ops: &[HashlineOp],
+    register_bank: &mut RegisterBank,
 ) -> PrResult<(String, String)> {
     let current_tag = compute_tag(original_content);
     if !expected_tag.is_empty() && !expected_tag.eq_ignore_ascii_case(&current_tag) {
@@ -257,11 +432,38 @@ pub fn apply_hashline_to_content(
     }
 
     let mut lines: Vec<String> = original_content.lines().map(|s| s.to_string()).collect();
-    if original_content.ends_with('\n') && lines.is_empty() {
-        // empty file with single newline
+
+    // First pass: Resolve block ends and collect cuts into register bank
+    for op in ops {
+        match op {
+            HashlineOp::CutRange { start, end, register } => {
+                let s = (*start).saturating_sub(1);
+                let e = (*end).min(lines.len());
+                if s < lines.len() {
+                    let actual_end = e.max(s);
+                    let cut_lines = lines[s..actual_end].to_vec();
+                    register_bank.set(register.as_deref(), cut_lines);
+                }
+            }
+            HashlineOp::CutBlock { start, register } => {
+                let block_end = resolve_block_end(&lines, *start);
+                let s = (*start).saturating_sub(1);
+                let e = block_end.min(lines.len());
+                if s < lines.len() {
+                    let actual_end = e.max(s);
+                    let cut_lines = lines[s..actual_end].to_vec();
+                    register_bank.set(register.as_deref(), cut_lines);
+                }
+            }
+            _ => {}
+        }
     }
 
-    for op in ops {
+    // Sort operations bottom-up (by descending start_line) to ensure zero line-shift corruption
+    let mut sorted_ops = ops.to_vec();
+    sorted_ops.sort_by(|a, b| b.start_line().cmp(&a.start_line()));
+
+    for op in &sorted_ops {
         match op {
             HashlineOp::PutRange { start, end, body } => {
                 let s = (*start).saturating_sub(1);
@@ -275,6 +477,35 @@ pub fn apply_hashline_to_content(
                 }
                 let actual_end = e.max(s);
                 lines.splice(s..actual_end, body.clone());
+            }
+            HashlineOp::PutBlock { start, body } => {
+                let block_end = resolve_block_end(&lines, *start);
+                let s = (*start).saturating_sub(1);
+                let e = block_end.min(lines.len());
+                let actual_end = e.max(s);
+                lines.splice(s..actual_end, body.clone());
+            }
+            HashlineOp::PutFromRegister { start, end, register, before } => {
+                let reg_content = register_bank
+                    .get(register.as_deref())
+                    .cloned()
+                    .unwrap_or_default();
+                if let Some(e_line) = end {
+                    let s = (*start).saturating_sub(1);
+                    let e = (*e_line).min(lines.len());
+                    let actual_end = e.max(s);
+                    lines.splice(s..actual_end, reg_content);
+                } else if *before {
+                    let pos = if *start <= 1 { 0 } else { (start - 1).min(lines.len()) };
+                    for (offset, item) in reg_content.iter().enumerate() {
+                        lines.insert(pos + offset, item.clone());
+                    }
+                } else {
+                    let pos = if *start == usize::MAX { lines.len() } else { (*start).min(lines.len()) };
+                    for (offset, item) in reg_content.iter().enumerate() {
+                        lines.insert(pos + offset, item.clone());
+                    }
+                }
             }
             HashlineOp::InsertBefore { line, body } => {
                 let pos = if *line <= 1 { 0 } else { (line - 1).min(lines.len()) };
@@ -291,9 +522,18 @@ pub fn apply_hashline_to_content(
             HashlineOp::AppendTail { body } => {
                 lines.extend(body.clone());
             }
-            HashlineOp::CutRange { start, end } => {
+            HashlineOp::CutRange { start, end, .. } => {
                 let s = (*start).saturating_sub(1);
                 let e = (*end).min(lines.len());
+                if s < lines.len() {
+                    let actual_end = e.max(s);
+                    lines.drain(s..actual_end);
+                }
+            }
+            HashlineOp::CutBlock { start, .. } => {
+                let block_end = resolve_block_end(&lines, *start);
+                let s = (*start).saturating_sub(1);
+                let e = block_end.min(lines.len());
                 if s < lines.len() {
                     let actual_end = e.max(s);
                     lines.drain(s..actual_end);
@@ -329,46 +569,52 @@ mod tests {
     }
 
     #[test]
-    fn test_apply_put_range() {
-        let content = "line 1\nline 2\nline 3\n";
+    fn test_bottom_up_sorting_prevents_index_shift() {
+        let content = "line 1\nline 2\nline 3\nline 4\nline 5\n";
         let tag = compute_tag(content);
+        let mut reg_bank = RegisterBank::new();
 
+        // Sequential operations: op 1 inserts 3 lines at line 1, op 2 modifies line 3
         let patch = format!(
-            "[test.txt#{}]\nPUT 2.=2:\n+line 2 modified\n",
+            "[test.txt#{}]\nPUT 1.=1:\n+line 1a\n+line 1b\n+line 1c\nPUT 3.=3:\n+line 3 modified\n",
             tag
         );
         let sections = parse_hashline_patch(&patch).unwrap();
-        assert_eq!(sections.len(), 1);
+        let (new_content, _) = apply_hashline_to_content(content, &tag, &sections[0].ops, &mut reg_bank).unwrap();
+        
+        let lines: Vec<&str> = new_content.lines().collect();
+        assert_eq!(lines[0], "line 1a");
+        assert_eq!(lines[1], "line 1b");
+        assert_eq!(lines[2], "line 1c");
+        assert_eq!(lines[3], "line 2");
+        assert_eq!(lines[4], "line 3 modified");
+        assert_eq!(lines[5], "line 4");
+        assert_eq!(lines[6], "line 5");
+    }
 
-        let (new_content, new_tag) = apply_hashline_to_content(content, &tag, &sections[0].ops).unwrap();
-        assert_eq!(new_content, "line 1\nline 2 modified\nline 3\n");
-        assert_ne!(new_tag, tag);
+    #[test]
+    fn test_named_register_cut_and_paste() {
+        let content = "fn greet() {\n    println!(\"hello\");\n}\n\nfn run() {\n}\n";
+        let tag = compute_tag(content);
+        let mut reg_bank = RegisterBank::new();
+
+        let patch = format!(
+            "[test.txt#{}]\nCUT 1.=3 @greet_fn\nPUT >5 @greet_fn\n",
+            tag
+        );
+        let sections = parse_hashline_patch(&patch).unwrap();
+        let (new_content, _) = apply_hashline_to_content(content, &tag, &sections[0].ops, &mut reg_bank).unwrap();
+        assert!(reg_bank.get(Some("greet_fn")).is_some());
+        assert!(!new_content.starts_with("fn greet"));
     }
 
     #[test]
     fn test_stale_tag_rejected() {
         let content = "line 1\nline 2\n";
+        let mut reg_bank = RegisterBank::new();
         let patch = "[test.txt#DEAD]\nPUT 1.=1:\n+new line 1\n";
         let sections = parse_hashline_patch(patch).unwrap();
-        let err = apply_hashline_to_content(content, "DEAD", &sections[0].ops).unwrap_err();
+        let err = apply_hashline_to_content(content, "DEAD", &sections[0].ops, &mut reg_bank).unwrap_err();
         assert!(err.to_string().contains("STALE TAG REJECTED"));
-    }
-
-    #[test]
-    fn test_insert_before_and_after() {
-        let content = "second\n";
-        let tag = compute_tag(content);
-        let ops = vec![
-            HashlineOp::InsertBefore {
-                line: 1,
-                body: vec!["first".into()],
-            },
-            HashlineOp::InsertAfter {
-                line: 2,
-                body: vec!["third".into()],
-            },
-        ];
-        let (res, _) = apply_hashline_to_content(content, &tag, &ops).unwrap();
-        assert_eq!(res, "first\nsecond\nthird\n");
     }
 }
