@@ -827,6 +827,10 @@ impl AgentRuntime {
                 Ok(StreamChunk::Reasoning { delta }) => {
                     if !delta.is_empty() {
                         saw_anything = true;
+                        let _ = self.event_tx.send(pr_core::AgentEvent::ThinkingChunk {
+                            agent_id: self.id.clone(),
+                            chunk: delta,
+                        });
                     }
                 }
                 Ok(StreamChunk::Text { delta }) => {

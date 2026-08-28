@@ -838,13 +838,16 @@ impl App {
                 self.sample_token_history();
                 format!("Session completed! {} agents, {} tokens", total_agents, total_tokens)
             }
+            AgentEvent::ThinkingChunk { agent_id, chunk } => {
+                self.handle_thinking_chunk(agent_id, chunk);
+                return;
+            }
             AgentEvent::LlmStreamChunk { agent_id, chunk } => {
                 if let Some(buf) = self.streams.get_mut(agent_id) {
                     buf.push(chunk);
                 }
-                // Update output text from the primary/first stream
                 self.update_output_text();
-                return; // Don't log every stream chunk
+                return;
             }
             AgentEvent::Finding { agent_id, finding } => {
                 format!(

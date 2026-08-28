@@ -49,6 +49,7 @@ impl AgUiEvent {
             AgentEvent::AgentCompleted { id, .. } => ("STEP_FINISHED", Some(id.0.clone())),
             AgentEvent::AgentFailed { id, .. } => ("STEP_ERROR", Some(id.0.clone())),
             AgentEvent::LlmStreamChunk { agent_id, .. } => ("TEXT_MESSAGE_CONTENT", Some(agent_id.0.clone())),
+            AgentEvent::ThinkingChunk { agent_id, .. } => ("THINKING_CONTENT", Some(agent_id.0.clone())),
             AgentEvent::ToolCallStarted { agent_id, .. } => ("TOOL_CALL_START", Some(agent_id.0.clone())),
             AgentEvent::ToolCallCompleted { agent_id, .. } => ("TOOL_CALL_END", Some(agent_id.0.clone())),
             AgentEvent::Finding { agent_id, .. } => ("STATE_DELTA", Some(agent_id.0.clone())),

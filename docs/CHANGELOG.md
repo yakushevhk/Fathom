@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## [0.4.3] — 2026-08-28
+
+### Added
+- **Live Thinking Pipeline & TUI Thinking Subpanel**: Full forwarding of `AgentEvent::ThinkingChunk` from DeepSeek/Anthropic streams to the Ratatui interactive thinking trace drawer.
+- **HMAC-SHA256 Webhook Security & Autonomous Coworker Dispatcher**: Constant-time signature validation for GitHub (`X-Hub-Signature-256`) and Stripe with automated task prompt generation.
+- **Zero-Copy In-Kernel DAG Orchestration Architecture**: Unified state abstractions for persistent REPL kernels and zero-copy `artifact://` routing across worker swarms.
+
 ## [0.4.2] — 2026-08-28
 
 ### Added

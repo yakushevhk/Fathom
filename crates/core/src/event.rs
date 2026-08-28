@@ -47,7 +47,11 @@ pub enum AgentEvent {
         agent_id: AgentId,
         chunk: String,
     },
-    #[serde(rename = "agent_completed")]
+    #[serde(rename = "thinking_chunk")]
+    ThinkingChunk {
+        agent_id: AgentId,
+        chunk: String,
+    },
     AgentCompleted {
         id: AgentId,
         summary: String,
