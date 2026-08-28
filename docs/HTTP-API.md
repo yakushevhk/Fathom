@@ -939,4 +939,33 @@ The metrics are recorded by a middleware that wraps all API routes. The `session
 
 ## CORS
 
+---
+
+### `POST /api/v1/webhooks/inbound`
+
+Ingest external webhooks (GitHub, Sentry, Email, CRM) and trigger proactive Coworker runs autonomously.
+
+**Request body:**
+```json
+{
+  "source": "github",
+  "event": "pull_request",
+  "coworker_id": "code_reviewer_1",
+  "task": "Review pull request #42 and check for security regressions",
+  "metadata": {
+    "pr_number": 42,
+    "author": "dev_user"
+  }
+}
+```
+
+**Response 202 Accepted:**
+```json
+{
+  "status": "accepted",
+  "session_id": "01918a2e-48f1-7c9e-9988-112233445566",
+  "message": "Triggered autonomous session from webhook source 'github'"
+}
+```
+
 The API uses restrictive CORS when API-key authentication is disabled. When API keys are configured, the server enables permissive CORS for authenticated clients. Review the middleware in `crates/server/src/lib.rs` before exposing the API cross-origin.

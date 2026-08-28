@@ -3,9 +3,8 @@
 </p>
 
 <p align="center">
-  <strong>Universal Autonomous AI Workforce Runtime.</strong><br>
-  <em>Research, outreach, code, computer use — any task, autonomously.</em>
-</p>
+  <strong>Universal Autonomous AI Workforce & SOTA Coding Harness.</strong><br>
+  <em>Research, outreach, code intelligence, line-anchored patching, computer use — full autonomy in pure Rust.</em>
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/Rust-2021-DEA584?style=flat&colorA=222222&logo=rust&logoColor=white" alt="Rust"></a>

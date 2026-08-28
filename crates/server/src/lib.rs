@@ -38,6 +38,9 @@ mod replay_api;
 mod supervisor_api;
 mod schedules_api;
 mod credentials_api;
+pub mod webhooks;
+pub mod ws;
+pub mod openapi;
 
 use auth::{auth_middleware, rate_limit_middleware, ApiKeyAuth, RateLimiter};
 use axum::{
@@ -351,6 +354,9 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/notifications/test", post(notifications_api::test))
         .route("/credentials", get(credentials_api::list).post(credentials_api::store))
         .route("/credentials/:id", axum::routing::delete(credentials_api::delete))
+        .route("/webhooks/inbound", post(webhooks::handle_inbound_webhook))
+        .route("/ws", get(ws::ws_handler))
+        .route("/openapi.json", get(openapi::openapi_spec))
         .route("/ag-ui/events", get(agui::events))
         .route("/ag-ui/health", get(agui::health))
         .route("/agents", get(list_agents))

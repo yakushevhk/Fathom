@@ -1,28 +1,25 @@
 # Tool Reference
 
-**51 always-registered tools (+ up to 5 CDP + up to 6 computer)** available to agents (+6 computer-use tools when the Playwright computer service is running). Each implements the `Tool` trait and is automatically registered in `ToolRegistry`.
+**60 always-registered tools (+ up to 5 CDP + up to 6 computer)** available to agents (+6 computer-use tools when the Playwright computer service is running). Each implements the `Tool` trait and is automatically registered in `ToolRegistry`.
 
 **Tool categories:**
 
 | Category | Tools |
 |---|---|
-| **Web search** | `web_search`, `web_fetch`, `web_crawl`, `web_feed` |
+| **Coding & Patching** | `edit` (line-anchored #TAG patcher), `file_read` (with range selectors :50-200, :raw), `file_write`, `file_edit`, `glob`, `grep` |
+| **AST & Repo Intelligence** | `code_ast` (outline, repomap with PageRank, references), `code_symbols`, `repo_map` |
+| **Git & Worktrees** | `git_worktree` (create, list, merge, remove), `git_status`, `git_diff`, `git_log`, `git_add`, `git_commit`, `git_push` |
+| **Swarm & Multi-Agent** | `task` (batch subagent dispatch with archetypes: scout, coder, reviewer, verifier), `spawn_agent` |
+| **Interactive PTY & Coordination** | `hub` (send, wait, inbox, list, jobs, start, logs, pty_send, stop), `daemon` |
+| **Self-Evolution & Learning** | `learn` (capture lessons to MEMORY.md), `manage_skill` (mint/edit/delete SKILL.md) |
+| **Web search & Crawling** | `web_search`, `web_fetch`, `web_crawl`, `web_feed` |
 | **Browser (CDP)** | `browser_navigate`, `browser_click`, `browser_type`, `browser_extract`, `browser_screenshot` |
-| **Computer use** | `computer_snapshot`, `computer_navigate`, `computer_click`, `computer_type`, `computer_key`, `computer_screenshot` |
-| **File system** | `file_read`, `file_write`, `file_edit`, `glob`, `grep` |
-| **Shell** | `shell` (sandboxed) |
-| **Code analysis** | `code_symbols`, `repo_map` |
-| **OSINT** | `verify_email`, `suggest_emails`, `verify_phone`, `verify_social_profile`, `search_social`, `search_business_directory`, `find_leads`, `enrich_company`, `enrich_person`, `extract_contacts`, `parse_corporate_site`, `search_news` |
-| **Memory** | `memory_absorb`, `memory_search`, `memory_digest`, `memory_boost`, `memory_link`, `memory_graph`, `memory` (basic) |
-| **Data** | `parse_html`, `extract_json` |
-| **Vision** | `analyze_image` |
-| **Git** | `git_status`, `git_diff`, `git_log`, `git_add`, `git_commit`, `git_push` |
-| **PDF** | `pdf_extract` |
-| **REPL** | `python_exec`, `node_exec` |
-| **Contacts** | `save_contacts` |
-| **Agent control** | `spawn_agent`, `question`, `skill`, `scratchpad`, `undo` |
-| **Coordination** | `hub`, `daemon` |
-
+| **Computer use (Playwright)** | `computer_snapshot`, `computer_navigate`, `computer_click`, `computer_type`, `computer_key`, `computer_screenshot` |
+| **Shell** | `shell` (sandboxed host-level & container execution) |
+| **OSINT & Leadgen** | `verify_email`, `suggest_emails`, `verify_phone`, `verify_social_profile`, `search_social`, `search_business_directory`, `find_leads`, `enrich_company`, `enrich_person`, `extract_contacts`, `parse_corporate_site`, `search_news` |
+| **Hierarchical Memory** | `memory_absorb`, `memory_search`, `memory_digest`, `memory_boost`, `memory_link`, `memory_graph`, `memory` (basic) |
+| **Data & Vision** | `parse_html`, `extract_json`, `analyze_image`, `pdf_extract` |
+| **REPL & Contacts** | `python_exec`, `node_exec`, `save_contacts`, `question`, `skill`, `scratchpad`, `undo` |
 ---
 
 ## Tool Registration
@@ -822,3 +819,45 @@ Tools are classified for smart parallelism:
 | **Sequential** (write/state) | file_write, file_edit, shell, python_exec, node_exec, browser_*, git_*, spawn_agent, memory, memory_absorb, memory_boost, memory_link, memory_graph, question, save_contacts, skill, scratchpad, undo | Execute sequentially (exclusive access) |
 
 Path-overlap detection: two file tools on the same path are serialized.
+
+---
+
+## High-Precision Coding & Swarm Tools
+
+### `edit`
+Line-anchored snapshot-verified patch tool. Replaces fragile string matching with strict `#TAG` verification.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `input` | string | Patch script with `[path#TAG]` headers and `PUT`, `CUT`, `MV`, `REM` operations |
+
+### `code_ast`
+Syntax-aware AST tool with call hierarchy, structural outline, and PageRank repository mapping.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `path` | string? | Target file or directory |
+| `mode` | string | `outline` \| `repomap` \| `references` |
+| `max_results` | usize? | Maximum returned items (default 30) |
+
+### `git_worktree`
+Isolated git worktrees for conflict-free multi-agent execution.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `action` | string | `create` \| `list` \| `merge` \| `remove` |
+| `name` | string? | Worktree / branch identifier |
+| `base` | string? | Base commit / branch (default HEAD) |
+| `into` | string? | Target branch for merge |
+| `squash` | bool? | Squash commits into single change (default true) |
+
+### `task`
+Swarm batch subagent dispatch with specialized archetypes (`scout`, `coder`, `reviewer`, `verifier`).
+
+| Parameter | Type | Description |
+|---|---|---|
+| `context` | string | Shared background constraints and contracts |
+| `tasks` | array | Array of `[{ task, name?, agent, output_schema?, schema_mode? }]` |
+
+### `learn` & `manage_skill`
+Continuous self-evolution: capture workflow insights into `MEMORY.md` or mint/edit/delete `SKILL.md` instruction files in `~/.fathom/skills/`.

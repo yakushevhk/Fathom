@@ -71,6 +71,76 @@ export interface JobListResponse {
   count: number
 }
 
+export interface HashlinePatchInput {
+  input: string
+}
+
+export interface AstQueryInput {
+  path?: string
+  mode?: "outline" | "repomap" | "references"
+  max_results?: number
+}
+
+export interface WorktreeActionInput {
+  action: "create" | "list" | "merge" | "remove"
+  name?: string
+  base?: string
+  into?: string
+  message?: string
+  squash?: boolean
+  force?: boolean
+}
+
+export interface CompilerCheckInput {
+  compiler?: "cargo" | "tsc" | "python" | "go" | "auto"
+  path?: string
+  args?: string[]
+}
+
+export interface ReproTestInput {
+  action: "create" | "run" | "cleanup"
+  file?: string
+  content?: string
+  test_name?: string
+  runner?: string
+}
+
+export interface DapActionInput {
+  action: "launch" | "set_breakpoint" | "continue" | "step_over" | "step_in" | "step_out" | "stack_trace" | "variables" | "evaluate" | "terminate"
+  adapter?: string
+  program?: string
+  args?: string[]
+  file?: string
+  line?: number
+  condition?: string
+  scope?: number
+  expression?: string
+}
+
+export interface CookieVaultInput {
+  action: "save" | "load" | "list" | "delete"
+  domain?: string
+  payload?: unknown
+}
+
+export interface OsInputInput {
+  action: "mouse_move" | "mouse_click" | "key_type" | "hotkey" | "focus_window"
+  x?: number
+  y?: number
+  button?: string
+  text?: string
+  keys?: string[]
+  title?: string
+}
+
+export interface InboundWebhookInput {
+  source: string
+  event: string
+  task: string
+  coworker_id?: string
+  metadata?: Record<string, unknown>
+}
+
 export interface Memory {
   id: string
   content: string

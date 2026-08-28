@@ -65,6 +65,63 @@ enum HubCommand {
         /// New activity description.
         activity: String,
     },
+    /// Start an interactive persistent PTY process (dev server, REPL, watcher).
+    #[serde(rename = "start")]
+    Start {
+        /// Unique process name
+        name: String,
+        /// Application or binary to execute
+        application: String,
+        /// Arguments list
+        #[serde(default)]
+        args: Vec<String>,
+        /// Working directory (optional)
+        #[serde(default)]
+        cwd: Option<String>,
+        /// Wait for log regex pattern before returning
+        #[serde(default)]
+        ready_log: Option<String>,
+        /// Timeout for readiness check in seconds (default 30)
+        #[serde(default = "default_wait_timeout")]
+        timeout_secs: u64,
+    },
+    /// Read output logs from a PTY process.
+    #[serde(rename = "logs")]
+    Logs {
+        /// Process name
+        name: String,
+        /// Starting cursor sequence number (optional)
+        #[serde(default)]
+        cursor: Option<usize>,
+        /// Number of lines to return (default 100)
+        #[serde(default)]
+        limit: Option<usize>,
+    },
+    /// Send stdin text, keys, or signals to a PTY process.
+    #[serde(rename = "pty_send")]
+    PtySend {
+        /// Process name
+        name: String,
+        /// Text to write to stdin
+        #[serde(default)]
+        text: Option<String>,
+        /// Press enter after text (default true)
+        #[serde(default = "default_true")]
+        enter: bool,
+        /// Special terminal keys to send (e.g. ["CTRL_C", "ENTER", "TAB", "ESCAPE"])
+        #[serde(default)]
+        keys: Vec<String>,
+    },
+    /// Stop/kill a PTY process.
+    #[serde(rename = "stop")]
+    Stop {
+        /// Process name
+        name: String,
+    },
+}
+
+fn default_true() -> bool {
+    true
 }
 
 fn default_wait_timeout() -> u64 {
@@ -356,9 +413,85 @@ impl Tool for HubTool {
                 registry.update_activity(&agent_id, activity);
                 Ok(ToolOutput::ok("Activity updated."))
             }
+
+            HubCommand::Start {
+                name,
+                application,
+                args,
+                cwd,
+                ready_log,
+                timeout_secs,
+            } => {
+                let broker = crate::pty::PtyBroker::global();
+                let work_dir = cwd
+                    .map(std::path::PathBuf::from)
+                    .unwrap_or_else(|| ctx.working_dir.clone());
+
+                let session = match broker.spawn_process(&name, &application, &args, &work_dir) {
+                    Ok(s) => s,
+                    Err(e) => return Ok(ToolOutput::err(format!("Failed to start PTY process '{}': {}", name, e))),
+                };
+
+                if let Some(pattern) = ready_log {
+                    let matched = session.wait_for_pattern(&pattern, timeout_secs).await.unwrap_or(false);
+                    if !matched {
+                        return Ok(ToolOutput::ok(format!(
+                            "Process '{}' started (PID {}), but timed out waiting for ready_log '{}'",
+                            name, session.pid, pattern
+                        )));
+                    }
+                }
+
+                Ok(ToolOutput::ok(format!(
+                    "Started PTY process '{}' (PID {}) in {}",
+                    name, session.pid, work_dir.display()
+                )))
+            }
+
+            HubCommand::Logs { name, cursor, limit } => {
+                let broker = crate::pty::PtyBroker::global();
+                let session = match broker.get(&name) {
+                    Some(s) => s,
+                    None => return Ok(ToolOutput::err(format!("No PTY session named '{}' found", name))),
+                };
+
+                let (chunks, latest_seq) = session.read_logs(cursor, limit.unwrap_or(100));
+                let lines: Vec<String> = chunks.iter().map(|c| format!("[#{}] {}", c.seq, c.text)).collect();
+                Ok(ToolOutput::ok(format!(
+                    "--- PTY '{}' logs (cursor: {}) ---\n{}",
+                    name,
+                    latest_seq,
+                    lines.join("\n")
+                )))
+            }
+
+            HubCommand::PtySend { name, text, enter, keys } => {
+                let broker = crate::pty::PtyBroker::global();
+                let session = match broker.get(&name) {
+                    Some(s) => s,
+                    None => return Ok(ToolOutput::err(format!("No PTY session named '{}' found", name))),
+                };
+
+                if let Some(t) = text {
+                    session.write_stdin(&t, enter)?;
+                }
+                for key in keys {
+                    session.send_key(&key)?;
+                }
+                Ok(ToolOutput::ok(format!("Sent input to PTY '{}'", name)))
+            }
+
+            HubCommand::Stop { name } => {
+                let broker = crate::pty::PtyBroker::global();
+                match broker.stop(&name) {
+                    Ok(_) => Ok(ToolOutput::ok(format!("Stopped PTY process '{}'", name))),
+                    Err(e) => Ok(ToolOutput::err(format!("Failed to stop PTY '{}': {}", name, e))),
+                }
+            }
         }
     }
 }
+
 
 #[cfg(test)]
 mod tests {

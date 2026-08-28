@@ -22,6 +22,8 @@ const VOLUME_ROOT: &str = "/data/browser";
 const PROFILE_ROOT: &str = "/data/profile";
 const LABEL_MANAGED: &str = "io.fathom.supervisor";
 const LABEL_AGENT: &str = "io.fathom.agent-id";
+pub mod host;
+pub use host::*;
 
 /// Configuration for the supervisor. Values can be supplied explicitly or
 /// loaded from `COMPUTER_*` environment variables with [`Self::from_env`].

@@ -21,6 +21,9 @@ pub mod gc;
 pub mod graph;
 pub mod search;
 pub mod secrets;
+pub mod hnsw;
+pub mod triples;
+pub mod vault_sync;
 
 pub use absorb::*;
 pub use db::*;
@@ -30,6 +33,9 @@ pub use gc::*;
 pub use graph::*;
 pub use search::*;
 pub use secrets::detect_secrets;
+pub use hnsw::*;
+pub use triples::*;
+pub use vault_sync::*;
 
 use pr_core::config::{LlmConfig, MemoryConfig};
 use pr_llm::LlmProvider;

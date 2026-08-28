@@ -49,6 +49,7 @@ Fundamental types and domain logic. **Does not depend on other crates.** Every o
 
 | Module | Purpose |
 |--------|---------|
+| `uri` | `VirtualUri` — Unified Virtual URI Scheme Resolver (`skill://`, `rule://`, `memory://`, `agent://`, `history://`, `artifact://`, `local://`, `xd://`) |
 | `ids` | `SessionId`, `AgentId`, `FindingId` (UUID v7, time-ordered for efficient B-tree indexing) |
 | `message` | OpenAI-compatible `Message`, `ToolCall` — the canonical message format used throughout the system |
 | `agent` | `AgentRole`, `AgentState`, `AgentStatus`, `AgentRecord` — role definitions (researcher, analyst, verifier, writer, coordinator) and state machine |
@@ -62,7 +63,7 @@ Fundamental types and domain logic. **Does not depend on other crates.** Every o
 | `contact` | `Contact`, `Company`, `SocialProfile` — contact data types with normalization, dedup, and validation (email, phone, social profile) |
 | `event` | `AgentEvent` — all events for the broadcast bus (session lifecycle, agent lifecycle, tool calls, LLM streaming, control-plane requests) |
 | `finding` | `Finding`, `Source` — structured research results with source attribution, confidence levels, and category tags |
-| `config` | `AppConfig` and all 10 config sections (agent, llm, tools, memory, persistence, server, tui, export, notify, crm) |
+| `config` | `AppConfig` and all config sections (agent, llm, tools, memory, persistence, server, tui, export, notify, crm) |
 | `memory` | `MemoryStore` (MEMORY.md/USER.md), typed memories with scopes |
 | `skill` | `Skill`, `SkillRegistry` (SKILL.md) — loadable skill definitions from the filesystem |
 | `export` | `Exporter` — PDF/HTML/JSON/DOCX export with templating |
@@ -72,7 +73,6 @@ Fundamental types and domain logic. **Does not depend on other crates.** Every o
 | `token` | Accurate token counting (tiktoken cl100k_base) + CJK-aware heuristic fallback for models without BPE data |
 | `tool` | `ToolSchema`, `ToolOutput` — generic tool interface types used by the tool execution pipeline |
 | `error` | `PrError`, `PrResult` — unified error type with context (source location, chain of causes) |
-
 The `config` module loads from `~/.fathom/config.toml`, or from the path supplied through `PR_CONFIG`. Each config section maps to a subsystem and is loaded at process startup; runtime reload/SIGHUP is not part of the current configuration contract.
 
 ---

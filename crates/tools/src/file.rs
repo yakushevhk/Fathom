@@ -67,29 +67,68 @@ Reads a file at the given path (absolute or relative to the working directory) a
 
     async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
         let params: FileReadParams = serde_json::from_value(args)?;
-        let path = resolve_path(&ctx.working_dir, &params.path);
+        
+        // Check for inline selector like "path/file.rs:50-200" or "file.rs:raw"
+        let mut raw_path = params.path.as_str();
+        let mut is_raw = false;
+        let mut inline_start: Option<usize> = None;
+        let mut inline_count: Option<usize> = None;
+
+        if let Some((p, sel)) = raw_path.split_once(':') {
+            raw_path = p;
+            let sel = sel.trim();
+            if sel == "raw" {
+                is_raw = true;
+            } else if let Some((s_str, e_str)) = sel.split_once('-') {
+                if let (Ok(s), Ok(e)) = (s_str.parse::<usize>(), e_str.parse::<usize>()) {
+                    inline_start = Some(s);
+                    inline_count = Some(e.saturating_sub(s) + 1);
+                }
+            } else if let Ok(s) = sel.parse::<usize>() {
+                inline_start = Some(s);
+            }
+        }
+
+        let path = resolve_path(&ctx.working_dir, raw_path);
 
         if !path.exists() {
             return Ok(ToolOutput::err(format!("File not found: {}", path.display())));
         }
 
         let content = tokio::fs::read_to_string(&path).await?;
+        let tag = crate::hashline::compute_tag(&content);
         let lines: Vec<&str> = content.lines().collect();
         let total_lines = lines.len();
 
-        let start = params.start_line.unwrap_or(1).saturating_sub(1) as usize;
-        let count = params.line_count.unwrap_or(u32::MAX) as usize;
+        let start = inline_start
+            .or_else(|| params.start_line.map(|v| v as usize))
+            .unwrap_or(1)
+            .saturating_sub(1);
+        let count = inline_count
+            .or_else(|| params.line_count.map(|v| v as usize))
+            .unwrap_or(usize::MAX);
         let end = (start + count).min(total_lines);
 
+        let display_path = path.strip_prefix(&ctx.working_dir).unwrap_or(&path).display().to_string();
         let mut output = String::new();
-        for (i, line) in lines[start..end].iter().enumerate() {
-            output.push_str(&format!("{:4} | {}\n", start + i + 1, line));
-        }
-
-        if output.is_empty() {
+        if content.is_empty() {
             output = "(empty file)".to_string();
+        } else {
+            let mut body = String::new();
+            for (i, line) in lines[start..end].iter().enumerate() {
+                if is_raw {
+                    body.push_str(line);
+                    body.push('\n');
+                } else {
+                    body.push_str(&format!("{}:{}\n", start + i + 1, line));
+                }
+            }
+            output = if is_raw {
+                body
+            } else {
+                format!("[{}#{}]\n{}", display_path, tag, body)
+            };
         }
-
         // Record this file read for the validation gate.
         if let Ok(mut tracker) = ctx.read_tracker.try_lock() {
             let _ = tracker.record_read(&path);
@@ -382,6 +421,105 @@ Reads the file at `path`, finds the first (or all) occurrences of `old_string`, 
     }
 }
 
+// ─── Hashline Patch Tool (Line-Anchored Patching) ───
+
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+struct HashlinePatchParams {
+    /// Hashline patch script text with [path#TAG] section headers and PUT/CUT/MV operations
+    input: String,
+}
+
+pub struct HashlinePatchTool;
+
+#[async_trait]
+impl Tool for HashlinePatchTool {
+    fn name(&self) -> &str { "edit" }
+    fn description(&self) -> &str {
+        "Line-anchored snapshot-verified patch tool: apply high-precision edits to files using #TAG verification.
+
+## Format
+Section header: `[path#TAG]` (TAG is the 4-hex snapshot from file_read / read header).
+Ops:
+- `PUT N.=M:` : replace lines N through M with following `+` lines.
+- `PUT <N:` : insert `+` lines before line N (<1 for head).
+- `PUT >N:` : insert `+` lines after line N (>$ for tail).
+- `CUT N.=M` : delete lines N through M.
+- `MV DEST` : rename file to DEST.
+- `REM` : delete file.
+
+Body lines MUST start with `+`. Keeps unchanged lines excluded from ranges. Fails safely on stale #TAG."
+    }
+    fn schema(&self) -> ToolSchema {
+        ToolSchema {
+            name: self.name().to_string(),
+            description: self.description().to_string(),
+            parameters: serde_json::to_value(&schemars::schema_for!(HashlinePatchParams).schema).unwrap_or_default(),
+        }
+    }
+
+    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+        let params: HashlinePatchParams = serde_json::from_value(args)?;
+        let sections = match crate::hashline::parse_hashline_patch(&params.input) {
+            Ok(s) => s,
+            Err(e) => return Ok(ToolOutput::err(format!("Hashline parse error: {}", e))),
+        };
+
+        if sections.is_empty() {
+            return Ok(ToolOutput::err("No valid [path#TAG] sections found in patch input"));
+        }
+
+        let mut summary = Vec::new();
+
+        for sec in &sections {
+            let path = resolve_path(&ctx.working_dir, &sec.path.to_string_lossy());
+
+            // Handle file removal op
+            if sec.ops.iter().any(|op| matches!(op, crate::hashline::HashlineOp::RemoveFile)) {
+                if path.exists() {
+                    tokio::fs::remove_file(&path).await?;
+                    summary.push(format!("Removed {}", path.display()));
+                }
+                continue;
+            }
+
+            if !path.exists() {
+                return Ok(ToolOutput::err(format!("File not found for patching: {}", path.display())));
+            }
+
+            let content = tokio::fs::read_to_string(&path).await?;
+            let (new_content, new_tag) = match crate::hashline::apply_hashline_to_content(&content, &sec.expected_tag, &sec.ops) {
+                Ok(res) => res,
+                Err(e) => return Ok(ToolOutput::err(format!("Patch application failed on {}: {}", path.display(), e))),
+            };
+
+            // Handle file move op if specified
+            let target_path = if let Some(crate::hashline::HashlineOp::MoveFile { dest }) = sec.ops.iter().find(|op| matches!(op, crate::hashline::HashlineOp::MoveFile { .. })) {
+                let d = resolve_path(&ctx.working_dir, &dest.to_string_lossy());
+                if let Some(p) = d.parent() {
+                    tokio::fs::create_dir_all(p).await?;
+                }
+                if d != path && path.exists() {
+                    let _ = tokio::fs::remove_file(&path).await;
+                }
+                d
+            } else {
+                path.clone()
+            };
+
+            tokio::fs::write(&target_path, &new_content).await?;
+
+            // Update read tracker
+            if let Ok(mut tracker) = ctx.read_tracker.try_lock() {
+                let _ = tracker.record_read(&target_path);
+            }
+
+            summary.push(format!("[{}#{}] ({} lines)", target_path.display(), new_tag, new_content.lines().count()));
+        }
+
+        Ok(ToolOutput::ok(summary.join("\n")))
+    }
+}
+
 // ─── Glob ───
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
@@ -601,12 +739,17 @@ async fn search_files_manual(
     }
 }
 
-pub(crate) fn resolve_path(working_dir: &std::path::Path, path: &str) -> std::path::PathBuf {
-    let p = std::path::Path::new(path);
-    if p.is_absolute() {
-        p.to_path_buf()
+pub(crate) fn resolve_path(working_dir: &std::path::Path, path_str: &str) -> std::path::PathBuf {
+    let uri = pr_core::VirtualUri::parse(path_str);
+    if let Some(resolved) = uri.resolve_to_path(working_dir) {
+        resolved
     } else {
-        working_dir.join(p)
+        let p = std::path::Path::new(path_str);
+        if p.is_absolute() {
+            p.to_path_buf()
+        } else {
+            working_dir.join(p)
+        }
     }
 }
 
@@ -665,9 +808,9 @@ mod tests {
         assert!(out.content.contains("line two"));
         assert!(out.content.contains("line three"));
         // Lines should be numbered starting at 1.
-        assert!(out.content.contains("   1 |"));
-        assert!(out.content.contains("   2 |"));
-        assert!(out.content.contains("   3 |"));
+        assert!(out.content.contains("1:line one"));
+        assert!(out.content.contains("2:line two"));
+        assert!(out.content.contains("3:line three"));
     }
 
     #[tokio::test]

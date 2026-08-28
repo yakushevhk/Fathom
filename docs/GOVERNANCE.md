@@ -198,5 +198,29 @@ fathom serve --port 8080
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) — crate diagram and governance crate description
 - [CONFIGURATION.md](CONFIGURATION.md) — full env var reference
+
+---
+
+## Budget & Financial Guardrails
+
+Fathom enforces hard monetary (`max_usd`) and token (`max_total_tokens`) limits via `BudgetPolicy`:
+
+```json
+{
+  "max_usd": 5.0,
+  "max_total_tokens": 500000,
+  "on_exceeded": "pause"
+}
+```
+
+When budget limits are met, execution is paused with operator escalation, defending against unbounded API spending.
+
+---
+
+## Host Micro-Sandboxing
+
+Processes executed on host machines use sub-millisecond sandboxing:
+- **Linux**: `bwrap` (Bubblewrap) isolates `/tmp`, mounts `/usr` and `/bin` read-only, and enforces `--unshare-net`.
+- **macOS**: `sandbox-exec` compiles custom Seatbelt profiles restricting filesystem mutations strictly to the agent's workspace.
 - [HTTP-API.md](HTTP-API.md) — governance API endpoints
 - [crates/governance.md](crates/governance.md) — detailed governance crate documentation

@@ -274,8 +274,19 @@ impl ToolRegistry {
         registry.register(Arc::new(crate::file::FileReadTool));
         registry.register(Arc::new(crate::file::FileWriteTool));
         registry.register(Arc::new(crate::file::FileEditTool));
+        registry.register(Arc::new(crate::file::HashlinePatchTool));
         registry.register(Arc::new(crate::file::GlobTool));
+        registry.register(Arc::new(crate::task::TaskBatchTool));
         registry.register(Arc::new(crate::file::GrepTool));
+        registry.register(Arc::new(crate::learn::LearnTool));
+        registry.register(Arc::new(crate::learn::ManageSkillTool));
+        registry.register(Arc::new(crate::worktree::GitWorktreeTool));
+        registry.register(Arc::new(crate::ast::AstIntelligenceTool));
+        registry.register(Arc::new(crate::compiler::CompilerCheckTool));
+        registry.register(Arc::new(crate::repro::ReproTestTool));
+        registry.register(Arc::new(crate::dap::DapDebugTool::new()));
+        registry.register(Arc::new(crate::cookie_vault::CookieVaultTool));
+        registry.register(Arc::new(crate::os_input::OsInputTool));
         registry.register(Arc::new(crate::shell::ShellTool));
         registry.register(Arc::new(crate::memory_tool::MemoryTool));
 

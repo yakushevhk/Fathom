@@ -5,6 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+pr-core.workspace = true
 bollard.workspace = true
 tokio.workspace = true
 serde.workspace = true

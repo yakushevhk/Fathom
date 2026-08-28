@@ -1,6 +1,6 @@
 [package]
 name = "fathom"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 license = "Elastic-2.0"
 rust-version.workspace = true
@@ -27,7 +27,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 # Project MSRV: source compatibility and supported builds are guaranteed from
 # Rust 1.97 onward. This is intentionally independent of the lower

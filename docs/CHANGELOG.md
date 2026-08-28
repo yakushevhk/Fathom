@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## [0.4.0] — 2026-08-28
+
+### Added
+- **High-Precision Coding Harness & Virtual Filesystem**:
+  - **Hashline Snapshot-Anchored Patching** (`edit` tool with `#TAG` verification and `PUT`/`CUT`/`MV`/`REM` operations).
+  - **Unified Virtual URI Resolver** (`crates/core/src/uri.rs` supporting `skill://`, `rule://`, `memory://`, `agent://`, `history://`, `artifact://`, `local://`, `xd://`).
+  - **Persistent Interactive PTY Process Broker** (`crates/tools/src/pty.rs` and `hub` start/logs/pty_send/stop with RingBuffer).
+  - **File Range Selectors & Structural Outlining** (`file_read` supporting `:50-200`, `:raw`, and signature extracts).
+- **Autonomous Swarm & Code Intelligence**:
+  - **Swarm Batch Delegation** (`task` tool with `scout`, `coder`, `reviewer`, `verifier` archetypes and JSON schema enforcement).
+  - **AST Intelligence & PageRank Repo Map** (`code_ast` tool for architectural component ranking and references).
+  - **Git Worktree Isolation** (`git_worktree` tool for concurrent subagent branch creation and conflict-free squash merging).
+  - **Compiler Diagnostic Loop** (`compiler_check` with structured line/span error extraction for Cargo, TypeScript, and Python).
+  - **Test-Driven Auto-Repair Harness** (`repro_test` for reproduction test generation and verification).
+  - **Debug Adapter Protocol Client** (`debug` tool supporting DAP adapters lldb-dap, dlv, debugpy).
+- **Enterprise Security, Sandboxing & Memory**:
+  - **Native Anthropic Provider with Prompt Caching & Thinking Budget** (`crates/llm/src/anthropic.rs`).
+  - **Failover Provider Cascades** (`crates/llm/src/cascade.rs` with seamless fallbacks on 429/5xx).
+  - **Host-Level Micro-Sandboxing** (`crates/supervisor/src/host.rs` with Linux bubblewrap `bwrap` and macOS `sandbox-exec`).
+  - **Financial & Hard Token Guardrails** (`crates/governance/src/budget.rs` with `$USD` and token caps).
+  - **Inbound Webhook Event Reactor** (`POST /api/v1/webhooks/inbound` for GitHub, Sentry, Email, and CRM triggers).
+  - **Encrypted Browser Cookie & Session Vault** (`cookie_vault` tool for persistent logins).
+  - **Token-Efficient AOM Distillation & Browser Stealth** (`crates/tools/src/aom.rs`, `stealth.rs`).
+  - **SIMD Vector Indexing & RDF GraphRAG Triples** (`crates/memory/src/hnsw.rs`, `triples.rs`).
+  - **Obsidian / Markdown Vault 2-Way Sync** (`crates/memory/src/vault_sync.rs` with `[[Wikilinks]]`).
+  - **Multiplexed WebSocket RPC & OpenAPI 3.1 Specification** (`GET /api/v1/ws`, `GET /api/v1/openapi.json`).
+
+---
+
 
 ## [0.3.0] — 2026-08-19
 

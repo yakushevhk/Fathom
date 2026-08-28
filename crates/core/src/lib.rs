@@ -21,6 +21,7 @@ pub mod contact;
 pub mod crm;
 pub mod capability;
 pub mod protected;
+pub mod uri;
 
 pub use irc::*;
 pub use steer::*;
@@ -45,6 +46,7 @@ pub use contact::*;
 pub use crm::*;
 pub use capability::*;
 pub use protected::*;
+pub use uri::*;
 
 /// Shared outbound HTTP client with bounded timeouts, so a slow or hanging
 /// endpoint can never stall an agent indefinitely. Use everywhere instead of
