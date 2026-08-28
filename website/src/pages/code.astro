@@ -10,7 +10,7 @@ const workspaces = [
       { name: 'pr-core', key: 'core', desc: 'Shared agent types, coordination, steering and in-process async jobs' },
       { name: 'pr-llm', key: 'llm', desc: 'Streaming LLM provider abstraction' },
       { name: 'pr-agent', key: 'agent', desc: 'Hierarchical agents, batch spawn, output schemas and handoff' },
-      { name: 'pr-tools', key: 'tools', desc: '51 always-registered tools, plus up to 5 CDP browser tools and up to 6 computer tools when configured' },
+      { name: 'pr-tools', key: 'tools', desc: '60 always-registered tools including high-precision hashline patching, AST repo-mapping, and git worktrees' },
       { name: 'pr-mcp', key: 'mcp', desc: 'MCP client and server integration' },
       { name: 'pr-persistence', key: 'persistence', desc: 'SQLite/PostgreSQL sessions, contacts and durable jobs' },
       { name: 'pr-memory', key: 'memory', desc: 'Semantic memory with vector search, BM25 and entity graph' },
@@ -58,8 +58,8 @@ const techStack = [
           <span class="stat-label" data-i18n="code.stats.crates">Workspace crates</span>
         </div>
         <div class="stat-card">
-          <span class="stat-value">51 + 5</span>
-          <span class="stat-label" data-i18n="code.stats.tools">Built-ins + conditional browser tools</span>
+          <span class="stat-value">60 + 5</span>
+          <span class="stat-label" data-i18n="code.stats.tools">Built-in tools + browser suite</span>
         </div>
         <div class="stat-card">
           <span class="stat-value">fathom</span>
