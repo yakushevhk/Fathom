@@ -123,6 +123,15 @@ const STATUS = {
   const fibDots = [];
   for (let i = 0; i < DOT_N; i++) fibDots.push(fibDir(i, DOT_N));
 
+  // Pre-allocated object pool for dot rendering to eliminate GC pressure
+  const dotPool = Array.from({ length: DOT_N + 32 }, () => ({
+    px: 0, py: 0, z: 0, depth: 0, i: 0,
+    core: 0, trail: 0, wave: 0, active: false, rnd: 0,
+    boost: 0, dimBase: 0, pulse: 0,
+    type: '', tf: 0, x3: 0, y3: 0, z3: 0,
+    r: 0, hue: 0, lit: 0, a: 0, glow: false
+  }));
+
   const MODES = {
     // ---------- researcher: breathing sphere + orbiting particles ----------
     researcher(ctx, cfg, t) {
@@ -137,8 +146,11 @@ const STATUS = {
         const d = fibDots[i];
         const r3 = R * breath;
         const [px, py, z] = pt(d[0] * r3, d[1] * r3, d[2] * r3);
-        const depth = (z / R + 1) / 2;
-        dots.push({ px, py, z, depth, i });
+        const obj = dotPool[i];
+        obj.px = px; obj.py = py; obj.z = z;
+        obj.depth = (z / R + 1) / 2;
+        obj.i = i;
+        dots.push(obj);
       }
       dots.sort((a, b) => a.z - b.z);
       for (const d of dots) {
@@ -174,12 +186,13 @@ const STATUS = {
         const d = fibDots[i];
         const [px, py, z] = pt(d[0] * R, d[1] * R, d[2] * R);
         const depth = (z / R + 1) / 2;
-        // spherical distance-based pulse
         const lat = Math.asin(d[1]);
         const lon = Math.atan2(d[2], d[0]);
         const ring = Math.abs(lat) + Math.abs(lon);
         const pulse = Math.pow(Math.max(0, Math.sin(ring * 2.5 - phase)), 2);
-        dots.push({ px, py, z, depth, pulse, i });
+        const obj = dotPool[i];
+        obj.px = px; obj.py = py; obj.z = z; obj.depth = depth; obj.pulse = pulse; obj.i = i;
+        dots.push(obj);
       }
       dots.sort((a, b) => a.z - b.z);
       for (const d of dots) {
@@ -206,7 +219,9 @@ const STATUS = {
         const active = rnd < 0.6;
         const [px, py, z] = pt(d[0] * R, d[1] * R, d[2] * R);
         const depth = (z / R + 1) / 2;
-        dots.push({ px, py, z, depth, active, rnd, i });
+        const obj = dotPool[i];
+        obj.px = px; obj.py = py; obj.z = z; obj.depth = depth; obj.active = active; obj.rnd = rnd; obj.i = i;
+        dots.push(obj);
       }
       dots.sort((a, b) => a.z - b.z);
       for (const d of dots) {
@@ -238,7 +253,9 @@ const STATUS = {
         const dlon = Math.atan2(Math.sin(lon + yaw - scan), Math.cos(lon + yaw - scan));
         const boost = Math.exp(-(dlon * dlon) / 0.18) * Math.max(0, z / R);
         const dimBase = 0.35;
-        dots.push({ px, py, z, depth, boost, dimBase, i });
+        const obj = dotPool[i];
+        obj.px = px; obj.py = py; obj.z = z; obj.depth = depth; obj.boost = boost; obj.dimBase = dimBase; obj.i = i;
+        dots.push(obj);
       }
       dots.sort((a, b) => a.z - b.z);
       for (const d of dots) {
@@ -269,7 +286,9 @@ const STATUS = {
         dist = Math.atan2(Math.sin(dist), Math.cos(dist));
         const core = Math.exp(-(dist * dist) / 0.15);
         const trail = dist > 0 && dist < 1.5 ? Math.exp(-dist * 2.5) * 0.4 : 0;
-        dots.push({ px, py, z, depth, core, trail, i });
+        const obj = dotPool[i];
+        obj.px = px; obj.py = py; obj.z = z; obj.depth = depth; obj.core = core; obj.trail = trail; obj.i = i;
+        dots.push(obj);
       }
       dots.sort((a, b) => a.z - b.z);
       for (const d of dots) {
@@ -296,7 +315,9 @@ const STATUS = {
         const depth = (z / R + 1) / 2;
         const lat = Math.asin(d[1]);
         const wave = Math.pow(0.5 + 0.5 * Math.sin(lat * 4 - t * 1.8 + d[0] * 1.2), 3);
-        dots.push({ px, py, z, depth, wave, i });
+        const obj = dotPool[i];
+        obj.px = px; obj.py = py; obj.z = z; obj.depth = depth; obj.wave = wave; obj.i = i;
+        dots.push(obj);
       }
       dots.sort((a, b) => a.z - b.z);
       for (const d of dots) {
@@ -332,13 +353,24 @@ const STATUS = {
       const ang = Math.atan2(Math.cos(ph * 0.3) * 0.3, -Math.sin(ph * 0.3) * 0.3);
 
       // nose
-      dots.push({ x3: planeX, y3: planeY, z3: planeZ, type: 'nose' });
+      const noseObj = dotPool[DOT_N];
+      noseObj.x3 = planeX; noseObj.y3 = planeY; noseObj.z3 = planeZ; noseObj.type = 'nose';
+      dots.push(noseObj);
+
       // wings
       const wx = Math.cos(ang + Math.PI / 2), wz = Math.sin(ang + Math.PI / 2);
-      dots.push({ x3: planeX - wx * R * 0.3, y3: planeY, z3: planeZ - wz * R * 0.3, type: 'wing' });
-      dots.push({ x3: planeX + wx * R * 0.3, y3: planeY, z3: planeZ + wz * R * 0.3, type: 'wing' });
+      const w1 = dotPool[DOT_N + 1];
+      w1.x3 = planeX - wx * R * 0.3; w1.y3 = planeY; w1.z3 = planeZ - wz * R * 0.3; w1.type = 'wing';
+      dots.push(w1);
+
+      const w2 = dotPool[DOT_N + 2];
+      w2.x3 = planeX + wx * R * 0.3; w2.y3 = planeY; w2.z3 = planeZ + wz * R * 0.3; w2.type = 'wing';
+      dots.push(w2);
+
       // tail
-      dots.push({ x3: planeX - Math.cos(ang) * R * 0.4, y3: planeY, z3: planeZ - Math.sin(ang) * R * 0.4, type: 'tail' });
+      const tail = dotPool[DOT_N + 3];
+      tail.x3 = planeX - Math.cos(ang) * R * 0.4; tail.y3 = planeY; tail.z3 = planeZ - Math.sin(ang) * R * 0.4; tail.type = 'tail';
+      dots.push(tail);
 
       // trail particles
       for (let m = 0; m < 6; m++) {
@@ -346,25 +378,38 @@ const STATUS = {
         const tx = planeX - Math.cos(ang) * R * (0.5 + tf * 0.8);
         const ty = planeY + Math.sin(t * 3 + m) * R * 0.08;
         const tz = planeZ - Math.sin(ang) * R * (0.5 + tf * 0.8);
-        dots.push({ x3: tx, y3: ty, z3: tz, type: 'trail', tf });
+        const tp = dotPool[DOT_N + 4 + m];
+        tp.x3 = tx; tp.y3 = ty; tp.z3 = tz; tp.type = 'trail'; tp.tf = tf;
+        dots.push(tp);
       }
 
       // project and render
       const rendered = [];
-      for (const d of dots) {
+      for (let idx = 0; idx < dots.length; idx++) {
+        const d = dots[idx];
+        const rObj = dotPool[idx];
         if (d.type === 'ghost') {
           const [px, py, z] = pt(fibDots[d.i][0] * R, fibDots[d.i][1] * R, fibDots[d.i][2] * R);
           const depth = (z / R + 1) / 2;
-          rendered.push({ px, py, z, r: (1.0 + 1.5 * depth) * (SIZE / 128), hue, lit: cfg.lit, a: 0.1 + 0.2 * depth, glow: false });
+          rObj.px = px; rObj.py = py; rObj.z = z;
+          rObj.r = (1.0 + 1.5 * depth) * (SIZE / 128);
+          rObj.hue = hue;
+          rObj.lit = cfg.lit;
+          rObj.a = 0.1 + 0.2 * depth;
+          rObj.glow = false;
+          rendered.push(rObj);
         } else {
           const [px, py, z] = pt(d.x3, d.y3, d.z3);
           const depth = (z / R + 1) / 2;
           const isNose = d.type === 'nose';
           const isTrail = d.type === 'trail';
-          const r = (isNose ? 4 : isTrail ? 1.8 + (1 - d.tf) * 2 : 2.5) * (SIZE / 128);
-          const a = isTrail ? 0.3 * (1 - d.tf) : 0.9;
-          const lit = isNose ? cfg.lit + 25 : cfg.lit + (isTrail ? 10 : 15);
-          rendered.push({ px, py, z, r, hue: hue + (isNose ? 15 : 0), lit, a, glow: isNose || (!isTrail) });
+          rObj.px = px; rObj.py = py; rObj.z = z;
+          rObj.r = (isNose ? 4 : isTrail ? 1.8 + (1 - d.tf) * 2 : 2.5) * (SIZE / 128);
+          rObj.a = isTrail ? 0.3 * (1 - d.tf) : 0.9;
+          rObj.lit = isNose ? cfg.lit + 25 : cfg.lit + (isTrail ? 10 : 15);
+          rObj.hue = hue + (isNose ? 15 : 0);
+          rObj.glow = isNose || (!isTrail);
+          rendered.push(rObj);
         }
       }
       rendered.sort((a, b) => a.z - b.z);

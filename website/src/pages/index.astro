@@ -393,11 +393,36 @@ const metrics = [
       <p class="copy-lg mx-auto" data-i18n="landing.cta_sub">Self-hosted and reviewable. No vendor lock-in. Give your workers access to the tools, memory, and schedules your team controls.</p>
       
       <div class="lead-form-wrap">
-        <form class="lead-form" id="leadForm">
+        <form class="lead-form" id="leadForm" novalidate>
           <div class="lead-form__grid">
-            <input type="email" name="email" required placeholder="work@company.com" class="lead-input" data-i18n-placeholder="landing.form.email_ph" aria-label="Work Email" />
-            <input type="text" name="name" placeholder="Name or @telegram" class="lead-input" data-i18n-placeholder="landing.form.name_ph" aria-label="Your Name or Telegram" />
-            <select name="scenario" class="lead-input lead-select" aria-label="Primary Scenario">
+            <label for="lead-email" class="sr-only">Work Email</label>
+            <input 
+              type="email" 
+              id="lead-email"
+              name="email" 
+              required 
+              autocomplete="email"
+              placeholder="work@company.com" 
+              class="lead-input" 
+              data-i18n-placeholder="landing.form.email_ph" 
+              aria-label="Work Email"
+              aria-describedby="leadStatus" 
+            />
+
+            <label for="lead-name" class="sr-only">Your Name or Telegram</label>
+            <input 
+              type="text" 
+              id="lead-name"
+              name="name" 
+              autocomplete="name"
+              placeholder="Name or @telegram" 
+              class="lead-input" 
+              data-i18n-placeholder="landing.form.name_ph" 
+              aria-label="Your Name or Telegram" 
+            />
+
+            <label for="lead-scenario" class="sr-only">Primary Scenario</label>
+            <select id="lead-scenario" name="scenario" class="lead-input lead-select" aria-label="Primary Scenario">
               <option value="outreach" data-i18n="landing.form.opt_outreach">B2B Outbound SDR</option>
               <option value="research" data-i18n="landing.form.opt_research">Deep Market Intelligence</option>
               <option value="code" data-i18n="landing.form.opt_code">Code & Computer Work</option>
@@ -408,7 +433,7 @@ const metrics = [
               Request Deployment Access →
             </button>
           </div>
-          <div class="lead-status" id="leadStatus" aria-live="polite"></div>
+          <div class="lead-status" id="leadStatus" role="status" aria-live="polite"></div>
         </form>
       </div>
 
@@ -491,21 +516,41 @@ const metrics = [
       const form = document.getElementById('leadForm');
       const status = document.getElementById('leadStatus');
       const btn = document.getElementById('leadSubmitBtn');
-      if (!form || !status || !btn) return;
+      const emailInput = document.getElementById('lead-email');
+      if (!form || !status || !btn || !emailInput) return;
 
       const isRu = document.documentElement.lang === 'ru' || window.location.pathname.startsWith('/ru');
       const tSending = isRu ? 'Отправка заявки...' : 'Sending request...';
       const tSuccess = isRu ? 'Спасибо! Заявка принята. Мы свяжемся с вами в течение 24 часов.' : 'Thank you! We received your request and will contact you within 24 hours.';
       const tError = isRu ? 'Не удалось отправить форму. Напишите нам напрямую на hello@fathom.uz' : 'Failed to send request. Please email us directly at hello@fathom.uz';
+      const tInvalidEmail = isRu ? 'Пожалуйста, укажите корректный рабочий email.' : 'Please enter a valid work email address.';
+
+      emailInput.addEventListener('input', () => {
+        if (emailInput.getAttribute('aria-invalid') === 'true') {
+          emailInput.removeAttribute('aria-invalid');
+          status.textContent = '';
+        }
+      });
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const fd = new FormData(form);
-        const payload = {
-          email: fd.get('email'),
-          name: fd.get('name'),
-          scenario: fd.get('scenario'),
-        };
+        const email = String(fd.get('email') || '').trim();
+        const name = String(fd.get('name') || '').trim();
+        const scenario = String(fd.get('scenario') || '').trim();
+
+        // Client-side email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email || !emailRegex.test(email)) {
+          emailInput.setAttribute('aria-invalid', 'true');
+          status.className = 'lead-status error';
+          status.textContent = tInvalidEmail;
+          emailInput.focus();
+          return;
+        }
+
+        emailInput.removeAttribute('aria-invalid');
+        const payload = { email, name, scenario };
 
         btn.disabled = true;
         btn.textContent = tSending;
@@ -600,23 +645,27 @@ const metrics = [
     color: var(--grey-500); text-transform: uppercase; letter-spacing: 0.6px;
   }
 
-  .hero__mono-row { margin-top: 18px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .hero__mono-row { margin-top: 18px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
   .hero__gh, .hero__mail {
     display: inline-flex; align-items: center; gap: 7px;
     font-family: var(--font-mono); font-size: 12.5px; font-weight: 500;
     color: var(--grey-700); transition: color .18s;
+    min-height: 44px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
   }
   .hero__gh:hover { color: var(--grey-900); }
   .hero__mail { color: var(--grey-500); }
   .hero__mail:hover { color: var(--grey-900); }
 
-  /* hero entrance stagger */
+  /* hero entrance stagger: keep h1 instant for optimal LCP */
   .hero__main > * { opacity: 0; animation: heroRise 0.7s var(--ease-out) forwards; }
-  .hero__main > *:nth-child(2) { animation-delay: 80ms; }
-  .hero__main > *:nth-child(3) { animation-delay: 160ms; }
-  .hero__main > *:nth-child(4) { animation-delay: 240ms; }
-  .hero__main > *:nth-child(5) { animation-delay: 320ms; }
-  .hero__visual { opacity: 0; animation: heroRise 0.8s var(--ease-out) 260ms forwards; }
+  .hero__main > .hero__title { opacity: 1; animation: none; }
+  .hero__main > *:nth-child(1) { animation-delay: 40ms; }
+  .hero__main > *:nth-child(3) { animation-delay: 100ms; }
+  .hero__main > *:nth-child(4) { animation-delay: 160ms; }
+  .hero__main > *:nth-child(5) { animation-delay: 220ms; }
+  .hero__visual { opacity: 0; animation: heroRise 0.8s var(--ease-out) 200ms forwards; }
   @keyframes heroRise {
     from { opacity: 0; transform: translateY(22px); }
     to   { opacity: 1; transform: none; }
@@ -856,11 +905,15 @@ const metrics = [
     color: #fff;
     font-family: inherit;
     font-size: 14.5px;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
   .lead-input:focus {
     outline: none;
     border-color: #60a5fa;
+  }
+  .lead-input[aria-invalid="true"] {
+    border-color: #f87171 !important;
+    box-shadow: 0 0 0 1px #f87171;
   }
   .lead-select {
     appearance: none;

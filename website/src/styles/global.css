@@ -387,10 +387,12 @@ button {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 5px;
-  padding: 4px 8px;
-  min-height: 26px;
+  padding: 8px 12px;
+  min-height: 44px;
+  min-width: 44px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
   cursor: pointer;
   opacity: 0;
@@ -545,7 +547,8 @@ pre:hover .copy-btn,
 }
 .reveal.in-view,
 .reveal[data-in="true"],
-[data-reveal].in-view {
+[data-reveal].in-view,
+[data-reveal][data-in="true"] {
   opacity: 1;
   transform: none;
 }
@@ -633,6 +636,7 @@ a.chip:hover,
   transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
 }
 
+.reveal.in-view,
 .reveal[data-in="true"] {
   opacity: 1;
   transform: none;

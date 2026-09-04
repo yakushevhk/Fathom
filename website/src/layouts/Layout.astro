@@ -27,7 +27,8 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <link rel="manifest" href="/site.webmanifest" />
-    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fcfbfa" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0a" />
     <link rel="canonical" href={canonical} />
     <link rel="alternate" hreflang="en" href={canonicalEn} />
     <link rel="alternate" hreflang="ru" href={canonicalRu} />
@@ -54,37 +55,49 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
     <title>{title}</title>
     <JsonLd data={{
       '@context': 'https://schema.org',
-      '@type': 'Organization',
-      name: 'Fathom — Autonomous AI Workers',
-      url: SITE,
-      logo: `${SITE}/favicon.svg`,
-      description,
-      sameAs: [
-        'https://github.com/yakushevhk/Fathom',
-      ],
+      '@graph': [
+        {
+          '@type': 'Organization',
+          '@id': `${SITE}/#organization`,
+          name: 'Fathom — Autonomous AI Workers',
+          url: SITE,
+          logo: `${SITE}/favicon.svg`,
+          description,
+          sameAs: [
+            'https://github.com/yakushevhk/Fathom',
+          ],
+        },
+        {
+          '@type': 'WebSite',
+          '@id': `${SITE}/#website`,
+          name: 'Fathom — Autonomous AI Workers',
+          url: SITE,
+          publisher: { '@id': `${SITE}/#organization` },
+          inLanguage: ['en', 'ru'],
+          description,
+        },
+        {
+          '@type': 'WebPage',
+          '@id': `${canonical}#webpage`,
+          url: canonical,
+          name: title,
+          description,
+          isPartOf: { '@id': `${SITE}/#website` },
+          about: { '@id': `${SITE}/#organization` },
+          inLanguage: isRu ? 'ru' : 'en',
+          ...(isHome ? {} : {
+            breadcrumb: {
+              '@type': 'BreadcrumbList',
+              '@id': `${canonical}#breadcrumb`,
+              itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Home', item: SITE },
+                { '@type': 'ListItem', position: 2, name: crumbName, item: canonical },
+              ],
+            }
+          })
+        }
+      ]
     }} />
-    <JsonLd data={{
-      '@context': 'https://schema.org',
-      '@type': 'WebSite',
-      name: 'Fathom — Autonomous AI Workers',
-      url: SITE,
-      inLanguage: ['en', 'ru'],
-      description,
-    }} />
-    {
-      !isHome && (
-        <JsonLd
-          data={{
-            '@context': 'https://schema.org',
-            '@type': 'BreadcrumbList',
-            itemListElement: [
-              { '@type': 'ListItem', position: 1, name: 'Home', item: SITE },
-              { '@type': 'ListItem', position: 2, name: crumbName, item: canonical },
-            ],
-          }}
-        />
-      )
-    }
     <script is:inline>(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window, document, "clarity", "script", "y3qoy4b9ng");</script>
     <script is:inline>
       (function () {
@@ -92,9 +105,12 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
         var t = localStorage.getItem('fathom-theme') || localStorage.getItem('Fathom-theme');
         if (t && !localStorage.getItem('fathom-theme')) localStorage.setItem('fathom-theme', t);
         if (!t && window.matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
-        if (t) document.documentElement.dataset.theme = t;
-        var meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute('content', t === 'dark' ? '#0a0a0a' : '#fcfbfa');
+        if (!t) t = 'light';
+        document.documentElement.dataset.theme = t;
+        document.documentElement.style.colorScheme = t;
+        var metaTags = document.querySelectorAll('meta[name="theme-color"]');
+        var color = t === 'dark' ? '#0a0a0a' : '#fcfbfa';
+        metaTags.forEach(function (m) { m.setAttribute('content', color); });
       })();
     </script>
   </head>
@@ -102,7 +118,7 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
     <a class="skip-link" href="#main" data-i18n="nav.skipToContent">Skip to content</a>
     <nav class="topnav" aria-label="Main navigation">
       <div class="container nav-inner">
-        <a href="/" class="brand">
+        <a href={isRu ? '/ru' : '/'} class="brand">
           <svg class="mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <rect width="24" height="24" rx="5" style="fill:var(--grey-900)"/>
             <rect x="6" y="6" width="12" height="12" rx="2" style="fill:var(--grey-50)"/>
@@ -234,11 +250,12 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
       </div>
     </nav>
 
-    <div class="mobile-menu" id="mobile-menu">
+    <div class="mobile-menu" id="mobile-menu" role="dialog" aria-modal="true" aria-label="Mobile navigation">
       <div class="mobile-menu-links">
         <a href="/#features" class="mobile-link" data-i18n="nav.features">Workers</a>
         <a href="/solutions" class="mobile-link" data-i18n="nav.solutions">Solutions</a>
         <a href="/features" class="mobile-link" data-i18n="nav.usecases">Capabilities</a>
+        <a href="/tui" class="mobile-link" data-i18n="nav.tui">Terminal TUI</a>
         <a href="/architecture" class="mobile-link" data-i18n="nav.architecture">Architecture</a>
         <a href="/vs-python" class="mobile-link" data-i18n="nav.vsPython">Fathom vs. Python</a>
         <a href="/tools" class="mobile-link" data-i18n="nav.tools">Tools</a>
@@ -374,8 +391,8 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-width: 40px;
-        min-height: 40px;
+        min-width: 44px;
+        min-height: 44px;
         border-radius: var(--radius-sm);
         border: 1px solid var(--grey-200);
         background: var(--bg-primary);
@@ -410,8 +427,9 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
         display: flex;
         align-items: center;
         gap: 6px;
-        min-height: 40px;
-        padding: 7px 11px;
+        min-width: 44px;
+        min-height: 44px;
+        padding: 7px 12px;
         border-radius: var(--radius-sm);
         border: 1px solid var(--grey-200);
         background: var(--bg-primary);
@@ -508,7 +526,6 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
 
       body.mobile-nav-open {
         overflow: hidden;
-        touch-action: none;
       }
 
       body.mobile-nav-open .menu-btn span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
@@ -522,9 +539,10 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
         left: 0;
         right: 0;
         bottom: 0;
+        height: calc(100dvh - 60px);
         background: var(--bg-primary);
         z-index: 99;
-        padding: 32px var(--container-padding);
+        padding: 32px var(--container-padding) max(32px, env(safe-area-inset-bottom));
         flex-direction: column;
         gap: 32px;
         overflow-y: auto;
@@ -718,9 +736,7 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
         pre.appendChild(btn);
       });
 
-      // ---- A1: auto scroll-reveal ----
-      // Existing explicit `.reveal` plus auto-upgrade of `.sec-head` (below
-      // the hero) and card grids so every page gets a consistent entrance.
+      // Auto scroll-reveal: reveal elements when in view or when page is rendered/tested
       const revealEls = Array.from(document.querySelectorAll('.reveal, [data-reveal]'));
       document.querySelectorAll('.sec-head:not(.in-hero)').forEach((el) => {
         if (el.dataset.in !== 'true' && !el.dataset.reveal) { el.dataset.reveal = ''; revealEls.push(el); }
@@ -730,19 +746,24 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
         if (g.dataset.reveal) return;
         g.dataset.reveal = ''; revealEls.push(g);
       });
+
+      const markInView = (el) => {
+        el.classList.add('in-view');
+        el.dataset.in = 'true';
+      };
+
       if (revealEls.length && 'IntersectionObserver' in window) {
         const ro = new IntersectionObserver((es) => {
           es.forEach((e) => {
             if (e.isIntersecting) {
-              if (e.target.hasAttribute('data-reveal')) e.target.classList.add('in-view');
-              else e.target.dataset.in = 'true';
+              markInView(e.target);
               ro.unobserve(e.target);
             }
           });
-        }, { rootMargin: '80px 0px -40px 0px' });
+        }, { rootMargin: '120px 0px -20px 0px' });
         revealEls.forEach((el) => ro.observe(el));
       } else {
-        revealEls.forEach((el) => { if (el.hasAttribute('data-reveal')) el.classList.add('in-view'); else el.dataset.in = 'true'; });
+        revealEls.forEach(markInView);
       }
 
       // ---- D3: animated underlines on nav + footer links ----
@@ -768,6 +789,7 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
       }
 
       const toggle = document.getElementById('menu-toggle');
+      const mobileMenu = document.getElementById('mobile-menu');
       toggle?.addEventListener('click', () => {
         const isOpen = document.body.classList.toggle('mobile-nav-open');
         toggle.setAttribute('aria-expanded', String(isOpen));
@@ -782,49 +804,36 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
         if (e.key === 'Escape' && document.body.classList.contains('mobile-nav-open')) {
           document.body.classList.remove('mobile-nav-open');
           toggle?.setAttribute('aria-expanded', 'false');
+          toggle?.focus();
         }
       });
-    </script>
-    <script is:inline>
-      (function () {
-        // Toggle mobile menu
-        var menuBtn = document.getElementById('menu-toggle');
-        var mobileMenu = document.getElementById('mobile-menu');
-        if (menuBtn && mobileMenu) {
-          menuBtn.addEventListener('click', function () {
-            var open = mobileMenu.classList.toggle('open');
-            menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-          });
-        }
 
-        // Desktop nav dropdown touch / click handling
-        var dropdowns = document.querySelectorAll('.nav-dropdown');
-        dropdowns.forEach(function (dd) {
-          var btn = dd.querySelector('.nav-dropdown-toggle');
-          if (!btn) return;
-          btn.addEventListener('click', function (e) {
-            var isOpen = dd.classList.toggle('open');
-            btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-            // Close other dropdowns
-            dropdowns.forEach(function (other) {
-              if (other !== dd) {
-                other.classList.remove('open');
-                var otherBtn = other.querySelector('.nav-dropdown-toggle');
-                if (otherBtn) otherBtn.setAttribute('aria-expanded', 'false');
-              }
-            });
-            e.stopPropagation();
+      // Desktop nav dropdown touch / click handling
+      const dropdowns = document.querySelectorAll('.nav-dropdown');
+      dropdowns.forEach((dd) => {
+        const btn = dd.querySelector('.nav-dropdown-toggle');
+        if (!btn) return;
+        btn.addEventListener('click', (e) => {
+          const isOpen = dd.classList.toggle('open');
+          btn.setAttribute('aria-expanded', String(isOpen));
+          dropdowns.forEach((other) => {
+            if (other !== dd) {
+              other.classList.remove('open');
+              const otherBtn = other.querySelector('.nav-dropdown-toggle');
+              if (otherBtn) otherBtn.setAttribute('aria-expanded', 'false');
+            }
           });
+          e.stopPropagation();
         });
+      });
 
-        document.addEventListener('click', function () {
-          dropdowns.forEach(function (dd) {
-            dd.classList.remove('open');
-            var btn = dd.querySelector('.nav-dropdown-toggle');
-            if (btn) btn.setAttribute('aria-expanded', 'false');
-          });
+      document.addEventListener('click', () => {
+        dropdowns.forEach((dd) => {
+          dd.classList.remove('open');
+          const btn = dd.querySelector('.nav-dropdown-toggle');
+          if (btn) btn.setAttribute('aria-expanded', 'false');
         });
-      })();
+      });
     </script>
   </body>
 </html>
