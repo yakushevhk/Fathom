@@ -12,6 +12,16 @@ export const LANGS = {
 export const DEFAULT_LANG = "en";
 
 export const translations = {
+  "site": {
+    "home_title": {
+      "en": "Fathom — One Universal AI Worker for Every Job",
+      "ru": "Fathom — Автономные цифровые сотрудники в вашем контуре"
+    },
+    "home_desc": {
+      "en": "Fathom is the universal autonomous AI worker: outreach and lead generation, deep research, code, computer use, and scheduled operations — with memory, governance, and human review in one self-hosted runtime.",
+      "ru": "Fathom — автономная платформа цифровых сотрудников в вашем контуре: аутрич, исследования, код, управление компьютером и процессы по расписанию с памятью и безопасностью."
+    }
+  },
   "video": {
     "eyebrow": { "en": "Interactive Showreel", "ru": "Интерактивный шоурил" },
     "title": { "en": "8 minutes. 15 scenarios.<br /><em class=\"it\">Autonomous AI workers in action.</em>", "ru": "8 минут. 15 сценариев.<br /><em class=\"it\">Автономные ИИ-воркеры в действии.</em>" },
@@ -178,8 +188,8 @@ export const translations = {
       "ru": "Конфиденциальность"
     },
     "rights": {
-      "en": "© 2026 Fathom == IP Yakushev German Konstantinovich. Tashkent, Uzbekistan.",
-      "ru": "© 2026 Fathom == ИП Якушев Герман Константинович. Ташкент, Узбекистан."
+      "en": "© 2026 Fathom — IP Yakushev German Konstantinovich. Tashkent, Uzbekistan.",
+      "ru": "© 2026 Fathom — ИП Якушев Герман Константинович. Ташкент, Узбекистан."
     },
     "cli": {
       "en": "CLI Reference",
@@ -660,22 +670,22 @@ export const translations = {
       "ru": "Смотреть бенчмарки"
     }
   },
-"landing": {
+  "landing": {
       "badge": {
         "en": "Universal autonomous AI worker",
         "ru": "Универсальный автономный ИИ-воркер"
       },
       "title": {
         "en": "One worker.<br /><em class=\"it\">Every</em> job done.",
-        "ru": "Один воркер.<br /><em class=\"it\">Все</em> задачи закрыты."
+        "ru": "Один воркер.<br /><em class=\"it\">Любая</em> задача решена."
       },
       "subtitle": {
-        "en": "Fathom is your autonomous remote AI workforce: it runs outreach, does deep research, writes code, operates a computer, and works on a schedule — with durable memory, governance, and human review built into one runtime.",
-        "ru": "Fathom — это ваш автономный штат удалённых ИИ-сотрудников: аутрич, глубокий ресёрч, код, работа за компьютером и задачи по расписанию — с постоянной памятью, контролем и проверкой человеком в одном рантайме."
+        "en": "Fathom is a universal AI worker you self-host: it runs outreach, does deep research, writes code, operates a computer, and works on a schedule — with durable memory, governance, and human review built into one runtime.",
+        "ru": "Fathom — автономная платформа цифровых сотрудников в вашем контуре: аутрич, глубокие исследования, код, управление компьютером и процессы по расписанию. С постоянной памятью, политиками безопасности и контролем человека в едином рантайме."
       },
       "cta1": {
         "en": "Start building",
-        "ru": "Начать"
+        "ru": "Начать работу"
       },
       "cta2": {
         "en": "See what it can do",
@@ -683,11 +693,11 @@ export const translations = {
       },
       "hero_mono": {
         "en": "Rust · one binary · memory · governance · schedules",
-        "ru": "Rust · один бинарник · память · контроль · расписания"
+        "ru": "Rust · один бинарник · память · безопасность · расписания"
       },
       "hero_gh": {
         "en": "GitHub demo",
-        "ru": "Демо на GitHub"
+        "ru": "Репозиторий на GitHub"
       },
       "term": {
         "tag_plan": {
@@ -749,11 +759,11 @@ export const translations = {
       },
       "uc_title": {
         "en": "Delegate the <em class=\"it\">whole pipeline</em>",
-        "ru": "Делегируйте <em class=\"it\">весь пайплайн</em>"
+        "ru": "Делегируйте <em class=\"it\">цепочку задач целиком</em>"
       },
       "uc_sub": {
         "en": "One goal in — finished work out. The same worker runs outreach, research, code and operations, switching roles as the task demands.",
-        "ru": "Одна задача на входе — готовый результат на выходе. Один и тот же воркер ведёт аутрич, ресёрч, код и операции, переключая роли по ходу задачи."
+        "ru": "Одна цель на входе — готовый результат на выходе. Один и тот же воркер ведёт аутрич, исследования, пишет код и управляет процессами, гибко переключая роли."
       },
       "uc": {
         "outreach": {
@@ -763,7 +773,7 @@ export const translations = {
           },
           "d": {
             "en": "Find prospects across the web, verify every email through a five-gate pipeline, draft personalized sequences, and sync approved contacts to your CRM.",
-            "ru": "Находит потенциальных клиентов по всему вебу, проверяет каждый email через пайплайн из пяти шлюзов, готовит персональные письма и синхронизирует подтверждённые контакты с CRM."
+            "ru": "Находит потенциальных клиентов в сети, проверяет каждый email через цепочку из пяти шлюзов, готовит персональные цепочки писем и синхронизирует подтверждённые контакты с CRM."
           },
           "c1": {
             "en": "find prospects",
@@ -775,7 +785,7 @@ export const translations = {
           },
           "c3": {
             "en": "draft sequences",
-            "ru": "персональные письма"
+            "ru": "персональные цепочки"
           },
           "c4": {
             "en": "sync CRM",
@@ -785,23 +795,23 @@ export const translations = {
         "research": {
           "t": {
             "en": "Deep research",
-            "ru": "Глубокий ресёрч"
+            "ru": "Глубокие исследования"
           },
           "d": {
             "en": "Seven search backends fused into one query, then fetch, parse, cross-reference and synthesize findings into a sourced brief.",
-            "ru": "Семь поисковых бэкендов в одном запросе: сбор, парсинг, сверка источников и синтез результатов в отчёт со ссылками."
+            "ru": "Семь поисковых бэкендов в едином запросе: извлечение, парсинг, перекрестная сверка источников и синтез ключевых выводов в отчёт со ссылками."
           },
           "c1": {
             "en": "7 search backends",
-            "ru": "7 поисковых бэкендов"
+            "ru": "7 поисковых систем"
           },
           "c2": {
             "en": "cross-check sources",
-            "ru": "сверка источников"
+            "ru": "перекрёстная сверка"
           },
           "c3": {
             "en": "synthesized brief",
-            "ru": "готовый бриф"
+            "ru": "структурированный отчёт"
           }
         },
         "code": {
@@ -1027,11 +1037,11 @@ export const translations = {
         "4": {
           "t": {
             "en": "Governance and approvals",
-            "ru": "Управление и одобрения"
+            "ru": "Безопасность и контроль"
           },
           "d": {
             "en": "Approval gates, policy hooks, protected surfaces, and secret scanning keep side effects reviewable.",
-            "ru": "Шлюзы одобрения, политические хуки, защищённые поверхности и сканирование секретов делают действия проверяемыми."
+            "ru": "Шлюзы подтверждения, хуки политик доступа, защита системных файлов и поиск секретов гарантируют полный контроль над побочными эффектами."
           }
         },
         "5": {
@@ -1201,25 +1211,50 @@ export const translations = {
         "s5": { "en": "Approve", "ru": "Одобрение" },
         "s6": { "en": "Remember", "ru": "Память" },
         "s7": { "en": "Deliver", "ru": "Доставка" },
+        "unit": {
+          "goal": { "en": "goal", "ru": "цель" },
+          "tasks": { "en": "tasks", "ru": "задачи" },
+          "urls": { "en": "urls", "ru": "источники" },
+          "ok": { "en": "ok", "ru": "проверено" },
+          "gate": { "en": "gate", "ru": "шлюз" },
+          "facts": { "en": "facts", "ru": "факты" },
+          "channels": { "en": "channels", "ru": "канала" }
+        },
+        "logTitle": { "en": "fathom · session log", "ru": "fathom · журнал сессии" },
+        "statusRunning": { "en": "running", "ru": "выполняется" },
+        "statusDone": { "en": "complete", "ru": "завершено" },
         "log1": { "en": "goal accepted — decomposed into 4 subtasks", "ru": "цель принята — разбита на 4 подзадачи" },
-        "log2": { "en": "fan-out: 4 researchers spawned (budget 32k tokens each)", "ru": "fan-out: порождены 4 ресёрчера (бюджет 32k токенов каждый)" },
-        "log3": { "en": "48 sources fetched · injection scan clean", "ru": "загружено 48 источников · скан инъекций чист" },
-        "log4": { "en": "31 findings verified · confidence ≥ 0.8", "ru": "верифицировано 31 находка · уверенность ≥ 0.8" },
-        "log5": { "en": "approval gate: save_contacts approved by operator", "ru": "шлюз одобрения: save_contacts одобрен оператором" },
-        "log6": { "en": "31 facts absorbed into memory (scope: agent)", "ru": "31 факт поглощён в память (scope: agent)" },
+        "log2": { "en": "fan-out: 4 researchers spawned (budget 32k tokens each)", "ru": "fan-out: запущено 4 агента-исследователя (бюджет по 32k токенов)" },
+        "log3": { "en": "48 sources fetched · injection scan clean", "ru": "загружено 48 источников · проверка на инъекции пройдена" },
+        "log4": { "en": "31 findings verified · confidence ≥ 0.8", "ru": "верифицирована 31 находка · достоверность ≥ 0,8" },
+        "log5": { "en": "approval gate: save_contacts approved by operator", "ru": "шлюз контроля: действие save_contacts одобрено оператором" },
+        "log6": { "en": "31 facts absorbed into memory (scope: agent)", "ru": "31 факт сохранён в долгосрочную память (область: agent)" },
         "log7": { "en": "delivered via email + CRM · session closed", "ru": "доставлено через email + CRM · сессия закрыта" }
+      },
+      "form": {
+        "email_ph": { "en": "work@company.com", "ru": "work@company.com" },
+        "name_ph": { "en": "Your name or @telegram", "ru": "Ваше имя или @telegram" },
+        "opt_outreach": { "en": "B2B Outbound SDR", "ru": "B2B Outbound SDR (лидогенерация)" },
+        "opt_research": { "en": "Deep Market Intelligence", "ru": "Глубокий анализ рынка и OSINT" },
+        "opt_code": { "en": "Code & Computer Work", "ru": "Код и автоматизация за компьютером" },
+        "opt_ops": { "en": "Scheduled Operations", "ru": "Фоновые процессы по расписанию" },
+        "opt_other": { "en": "Enterprise Custom Pod", "ru": "Индивидуальный Enterprise-контур" },
+        "submit": { "en": "Request Deployment Access →", "ru": "Запросить доступ к развёртыванию →" },
+        "sending": { "en": "Sending request...", "ru": "Отправка заявки..." },
+        "success": { "en": "Thank you! We received your request and will contact you within 24 hours.", "ru": "Спасибо! Заявка принята. Мы свяжемся с вами в течение 24 часов." },
+        "error": { "en": "Failed to send request. Please email us directly at hello@fathom.uz", "ru": "Не удалось отправить форму. Напишите нам напрямую на hello@fathom.uz" }
       },
       "cta_title": {
         "en": "Put a worker on it <em class=\"it\">today</em>",
-        "ru": "Посадите воркера на задачу <em class=\"it\">уже сегодня</em>"
+        "ru": "Поручите задачу воркеру <em class=\"it\">уже сегодня</em>"
       },
       "cta_sub": {
         "en": "Deployed on infrastructure provisioned for your team. Give your workers access to the tools, memory, and schedules your team controls.",
-        "ru": "Развёрнуто на инфраструктуре для вашей команды. Дайте воркерам доступ к инструментам, памяти и расписаниям, которые контролирует ваша команда."
+        "ru": "Развёртывание на изолированной инфраструктуре под ключ. Предоставьте воркерам доступ к инструментам, памяти и расписаниям под вашим полным контролем."
       },
       "cta_gh": {
         "en": "See the demo on GitHub",
-        "ru": "Демо на GitHub"
+        "ru": "Репозиторий на GitHub"
       },
       "cta_mail": {
         "en": "Request access →",
@@ -1227,7 +1262,7 @@ export const translations = {
       },
       "cta_mono": {
         "en": "fathom run \"your task here\" · docs · request access",
-        "ru": "fathom run \"ваша задача\" · docs · запрос доступа"
+        "ru": "fathom run \"ваша задача\" · документация · запрос доступа"
       },
     "hero_run_url": {
       "en": "fathom run",
@@ -1298,20 +1333,21 @@ export const translations = {
     "whitepaper": {
       "badge": { "en": "Strategic Systems Whitepaper", "ru": "Стратегический технический документ" },
       "title": { "en": "42-Page Systems Architecture & Workforce Blueprint", "ru": "42-страничная архитектура системы и план внедрения" },
-      "desc": { "en": "Explore the definitive architectural and economic breakdown of autonomous AI employees: ~0.75 ms tool dispatch, 94 µs memory assimilation, 15.4 MB RAM footprint, and unlimited neural compute economics.", "ru": "Подробный архитектурный и экономический разбор автономных ИИ-сотрудников: ~0.75 мс вызов инструментов, 94 мкс ассимиляция памяти, 15.4 МБ потребление RAM и безлимитные вычислительные ресурсы." },
-      "download": { "en": "⬇ Download Whitepaper (PDF, 7.6 MB)", "ru": "⬇ Скачать документ (PDF, 7.6 МБ)" },
+      "desc": { "en": "Explore the definitive architectural and economic breakdown of autonomous AI employees: ~0.75 ms tool dispatch, 94 µs memory assimilation, 15.4 MB RAM footprint, and unlimited neural compute economics.", "ru": "Подробный архитектурный и экономический разбор автономных ИИ-сотрудников: ~0,75 мс вызов инструментов, 94 мкс запись в память, 15,4 МБ потребление RAM и безлимитные вычислительные ресурсы." },
+      "download": { "en": "⬇ Download Whitepaper (PDF, 7.6 MB)", "ru": "⬇ Скачать документ (PDF, 7,6 МБ)" },
       "deck": { "en": "View 42-Slide Deck", "ru": "Смотреть презентацию (42 слайда)" }
     },
     "metrics": {
       "cpu": { "en": "CPU-bound parallel speedup", "ru": "Параллельное ускорение (CPU)" },
-      "html": { "en": "rows/s HTML parsing", "ru": "строк/сек разбор HTML" },
-      "feed": { "en": "items/s feed parsing", "ru": "элементов/сек разбор фидов" },
-      "mem": { "en": "hybrid memory search", "ru": "гибридный поиск в памяти" }
+      "html": { "en": "rows/s HTML parsing", "ru": "парсинг HTML: 531 тыс. строк/с" },
+      "feed": { "en": "items/s feed parsing", "ru": "парсинг RSS: 1,1 млн записей/с" },
+      "mem": { "en": "hybrid memory search", "ru": "гибридный поиск в памяти: ~2 мс" }
     },
     "showcase": {
-      "workspaceLabel": { "en": "Autonomous Workspace", "ru": "Автономное рабочее пространство" },
-      "workspaceTitle": { "en": "Live GPUI Workspace in Action", "ru": "Рабочее пространство GPUI в действии" },
-      "workspaceDesc": { "en": "A live TUI session showing the agent tree, task decomposition, parallel workers, memory writes, and approval gates — all in the terminal.", "ru": "Живая TUI-сессия: дерево агентов, декомпозиция задач, параллельные воркеры, записи в память и шлюзы одобрения — всё в терминале." }
+      "workspaceLabel": { "en": "Autonomous Workspace", "ru": "Автономный командный центр" },
+      "workspaceTitle": { "en": "Live GPUI Workspace in Action", "ru": "Рабочее пространство в действии" },
+      "workspaceDesc": { "en": "Complete multi-agent execution workspace: sub-agent swarm dispatch, live ARIA DOM browser control, and real-time CRM pipeline sync.", "ru": "Командный центр мультиагентного исполнения: координация роя воркеров, прямое управление браузером и синхронизация с CRM в реальном времени." },
+      "caption": { "en": "Fig 1.0 — Fathom Command Center: Swarm coordinator breaking objectives into parallel worker tasks, inspecting live Playwright browser viewport, and executing verified CRM writes.", "ru": "Рис. 1.0 — Командный центр Fathom: координатор роя распределяет задачи между параллельными воркерами, контролирует окно браузера и вносит проверенные данные в CRM." }
     },
     "runDemo": {
       "s1": { "en": "Goal", "ru": "Цель" },

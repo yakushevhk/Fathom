@@ -95,11 +95,11 @@ const metrics = [
           Fathom is a universal AI worker you self-host: it runs outreach, does deep research, writes code, operates a computer, and works on a schedule — with durable memory, governance, and human review built into one runtime.
         </p>
         <div class="hero__actions">
-          <a href="/#cta" class="btn btn-primary btn-lg" data-i18n="landing.cta1">Start building</a>
+          <a href="#cta" class="btn btn-primary btn-lg" data-i18n="landing.cta1">Start building</a>
           <a href="#features" class="btn btn-secondary btn-lg" data-i18n="landing.cta2">See what it can do</a>
         </div>
         <div class="hero__mono-row">
-          <a href="https://github.com/yakushevhk/Fathom" class="hero__gh" target="_blank" rel="noopener">
+          <a href="https://github.com/yakushevhk/Fathom" class="hero__gh" target="_blank" rel="noopener noreferrer">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
             <span data-i18n="landing.hero_gh">GitHub demo</span>
           </a>
@@ -152,7 +152,7 @@ const metrics = [
       <div class="product-screenshot-frame">
         <img src="/images/mockups/01_sales_outbound_sdr.png" alt="Fathom Autonomous Outbound SDR Command Center" loading="lazy" width="1220" height="780" />
       </div>
-      <p class="screenshot-caption">Fig 1.0 — Fathom Command Center: Swarm coordinator breaking objectives into parallel worker tasks, inspecting live Playwright browser viewport, and executing verified CRM writes.</p>
+      <p class="screenshot-caption" data-i18n="landing.showcase.caption">Fig 1.0 — Fathom Command Center: Swarm coordinator breaking objectives into parallel worker tasks, inspecting live Playwright browser viewport, and executing verified CRM writes.</p>
     </div>
   </section>
 
@@ -200,7 +200,7 @@ const metrics = [
           ))
         }
 
-        <div class="uc-card uc--strip">
+        <a href="/integrations" class="uc-card uc--strip">
           <div class="uc-strip-copy">
             <h3 class="uc-name" data-i18n="landing.uc.report.t">Reports &amp; notifications</h3>
             <p class="uc-desc" data-i18n="landing.uc.report.d">Every finished run lands where your team already looks — webhook, email or Telegram. One failing channel never blocks the rest.</p>
@@ -210,7 +210,7 @@ const metrics = [
             <span class="uc-chip" data-i18n="landing.uc.report.c2">Email SMTP</span>
             <span class="uc-chip" data-i18n="landing.uc.report.c3">Telegram</span>
           </div>
-        </div>
+        </a>
       </div>
     </div>
   </section>
@@ -375,8 +375,8 @@ const metrics = [
             Explore the definitive architectural and economic breakdown of autonomous AI employees: ~0.75 ms tool dispatch, 94 µs memory assimilation, 15.4 MB RAM footprint, and unlimited neural compute economics.
           </p>
           <div style="display:flex; gap: 16px; flex-wrap: wrap;">
-            <a href="/Fathom_Whitepaper.pdf" class="btn btn-primary" target="_blank" download data-i18n="landing.whitepaper.download">⬇ Download Whitepaper (PDF, 7.6 MB)</a>
-            <a href="https://github.com/yakushevhk/Fathom/tree/main/whitepaper" class="btn btn-secondary" target="_blank" data-i18n="landing.whitepaper.deck">View 42-Slide Deck</a>
+            <a href="/Fathom_Whitepaper.pdf" class="btn btn-primary" target="_blank" rel="noopener noreferrer" download data-i18n="landing.whitepaper.download">⬇ Download Whitepaper (PDF, 7.6 MB)</a>
+            <a href="https://github.com/yakushevhk/Fathom/tree/main/whitepaper" class="btn btn-secondary" target="_blank" rel="noopener noreferrer" data-i18n="landing.whitepaper.deck">View 42-Slide Deck</a>
           </div>
         </div>
         <div class="product-screenshot-frame" style="border-radius: var(--radius-md);">
@@ -386,14 +386,35 @@ const metrics = [
     </div>
   </section>
 
-  <!-- ============ CTA ============ -->
+  <!-- ============ CTA & LEAD CAPTURE ============ -->
   <section class="cta" id="cta">
     <div class="container">
       <h2 class="h2-sec" data-i18n-html data-i18n="landing.cta_title">Put a worker on it <em class="it">today</em></h2>
       <p class="copy-lg mx-auto" data-i18n="landing.cta_sub">Self-hosted and reviewable. No vendor lock-in. Give your workers access to the tools, memory, and schedules your team controls.</p>
+      
+      <div class="lead-form-wrap">
+        <form class="lead-form" id="leadForm">
+          <div class="lead-form__grid">
+            <input type="email" name="email" required placeholder="work@company.com" class="lead-input" data-i18n-placeholder="landing.form.email_ph" aria-label="Work Email" />
+            <input type="text" name="name" placeholder="Name or @telegram" class="lead-input" data-i18n-placeholder="landing.form.name_ph" aria-label="Your Name or Telegram" />
+            <select name="scenario" class="lead-input lead-select" aria-label="Primary Scenario">
+              <option value="outreach" data-i18n="landing.form.opt_outreach">B2B Outbound SDR</option>
+              <option value="research" data-i18n="landing.form.opt_research">Deep Market Intelligence</option>
+              <option value="code" data-i18n="landing.form.opt_code">Code & Computer Work</option>
+              <option value="ops" data-i18n="landing.form.opt_ops">Scheduled Operations</option>
+              <option value="other" data-i18n="landing.form.opt_other">Enterprise Custom Pod</option>
+            </select>
+            <button type="submit" class="btn btn-primary lead-btn" id="leadSubmitBtn" data-i18n="landing.form.submit">
+              Request Deployment Access →
+            </button>
+          </div>
+          <div class="lead-status" id="leadStatus" aria-live="polite"></div>
+        </form>
+      </div>
+
       <div class="cta__actions">
-        <a href="https://github.com/yakushevhk/Fathom" class="btn btn-primary" target="_blank" rel="noopener" data-i18n="landing.cta_gh">See the demo on GitHub</a>
-        <a href="mailto:hello@fathom.uz" class="btn btn-cta-ghost" data-i18n="landing.cta_mail">Request access →</a>
+        <a href="https://github.com/yakushevhk/Fathom" class="btn btn-secondary" target="_blank" rel="noopener noreferrer" data-i18n="landing.cta_gh">See repository on GitHub</a>
+        <a href="mailto:hello@fathom.uz" class="btn btn-cta-ghost" data-i18n="landing.cta_mail">hello@fathom.uz</a>
       </div>
       <p class="sub" data-i18n="landing.cta_mono">fathom run "your task here" · docs · request access</p>
     </div>
@@ -464,6 +485,56 @@ const metrics = [
       },
     ],
   }} />
+
+  <script is:inline>
+    (function () {
+      const form = document.getElementById('leadForm');
+      const status = document.getElementById('leadStatus');
+      const btn = document.getElementById('leadSubmitBtn');
+      if (!form || !status || !btn) return;
+
+      const isRu = document.documentElement.lang === 'ru' || window.location.pathname.startsWith('/ru');
+      const tSending = isRu ? 'Отправка заявки...' : 'Sending request...';
+      const tSuccess = isRu ? 'Спасибо! Заявка принята. Мы свяжемся с вами в течение 24 часов.' : 'Thank you! We received your request and will contact you within 24 hours.';
+      const tError = isRu ? 'Не удалось отправить форму. Напишите нам напрямую на hello@fathom.uz' : 'Failed to send request. Please email us directly at hello@fathom.uz';
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(form);
+        const payload = {
+          email: fd.get('email'),
+          name: fd.get('name'),
+          scenario: fd.get('scenario'),
+        };
+
+        btn.disabled = true;
+        btn.textContent = tSending;
+        status.className = 'lead-status';
+        status.textContent = '';
+
+        try {
+          const res = await fetch('/api/lead', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          if (res.ok) {
+            status.className = 'lead-status success';
+            status.textContent = tSuccess;
+            form.reset();
+          } else {
+            throw new Error('Request failed');
+          }
+        } catch (err) {
+          status.className = 'lead-status error';
+          status.textContent = tError;
+        } finally {
+          btn.disabled = false;
+          btn.textContent = isRu ? 'Запросить доступ к развёртыванию →' : 'Request Deployment Access →';
+        }
+      });
+    })();
+  </script>
 
 </Layout>
 
@@ -750,7 +821,7 @@ const metrics = [
     letter-spacing: 0.14em; text-transform: uppercase; color: #5a5a63;
   }
 
-  /* ================= CTA ================= */
+  /* ================= CTA & LEAD FORM ================= */
   .cta { text-align: center; padding: 110px 24px; background: var(--bg-dark); color: #fff; position: relative; overflow: hidden; }
   .cta::before {
     content: ""; position: absolute; inset: auto -20% -60% -20%; height: 120%;
@@ -761,6 +832,63 @@ const metrics = [
   .cta .h2-sec { color: #fff; }
   .cta .h2-sec .it { color: rgba(255,255,255,.92); }
   .cta .copy-lg { color: rgba(255,255,255,.7); margin-top: 18px; }
+  
+  .lead-form-wrap {
+    max-width: 640px;
+    margin: 36px auto 0;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    backdrop-filter: blur(10px);
+  }
+  .lead-form__grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .lead-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: var(--radius-md);
+    padding: 13px 16px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 14.5px;
+    transition: border-color 0.2s;
+  }
+  .lead-input:focus {
+    outline: none;
+    border-color: #60a5fa;
+  }
+  .lead-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    cursor: pointer;
+  }
+  .lead-select option {
+    background: #18181b;
+    color: #fff;
+  }
+  .lead-btn {
+    width: 100%;
+    padding: 15px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .lead-status {
+    margin-top: 12px;
+    font-size: 14px;
+    min-height: 20px;
+    font-family: var(--font-mono);
+  }
+  .lead-status.success { color: #4ade80; }
+  .lead-status.error { color: #f87171; }
+
   .cta__actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 34px; }
   .cta .btn-primary { background: #fff; color: #101010; }
   .cta .btn-primary:hover { background: var(--grey-200); }

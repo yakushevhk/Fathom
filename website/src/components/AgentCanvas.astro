@@ -35,7 +35,7 @@ const STATUS = {
       a.href ? (
         <a href={a.href} class="agent-card agent-card--link">
           <div class="agent-canvas">
-            <canvas data-mode={a.mode} data-hue={a.hue} data-lit={a.lit ?? 55} role="img" aria-label={`${a.name} agent animation`}></canvas>
+            <canvas data-mode={a.mode} data-hue={a.hue} data-lit={a.lit ?? 55} aria-hidden="true"></canvas>
           </div>
           <span class="agent-name" data-i18n={`landing.agent.${a.mode}.name`}>{a.name}</span>
           <span class="agent-status" data-i18n={`landing.agent.${a.mode}.status`}>{STATUS[a.mode] ?? 'active'}</span>
@@ -43,7 +43,7 @@ const STATUS = {
       ) : (
         <div class="agent-card">
           <div class="agent-canvas">
-            <canvas data-mode={a.mode} data-hue={a.hue} data-lit={a.lit ?? 55} role="img" aria-label={`${a.name} agent animation`}></canvas>
+            <canvas data-mode={a.mode} data-hue={a.hue} data-lit={a.lit ?? 55} aria-hidden="true"></canvas>
           </div>
           <span class="agent-name" data-i18n={`landing.agent.${a.mode}.name`}>{a.name}</span>
           <span class="agent-status" data-i18n={`landing.agent.${a.mode}.status`}>{STATUS[a.mode] ?? 'active'}</span>

@@ -22,7 +22,8 @@ export function langUrl(pathName, toLang) {
     }
     return pathName;
   }
-  return '/' + toLang + (pathName === '/' ? '' : pathName.startsWith('/') ? pathName : '/' + pathName);
+  const cleanPath = pathName.replace(/^\/(ru)(\/|$)/, '$2');
+  return '/' + toLang + (cleanPath === '' || cleanPath === '/' ? '' : cleanPath.startsWith('/') ? cleanPath : '/' + cleanPath);
 }
 
 export function getLang() {

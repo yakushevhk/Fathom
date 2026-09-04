@@ -50,7 +50,7 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
     <meta name="twitter:image" content={`${SITE}/og-image.png`} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Cormorant+Garamond:ital,wght@1,400;1,500;1,600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Cormorant+Garamond:ital,wght@1,400;1,500;1,600&subset=latin,cyrillic,cyrillic-ext&display=swap" rel="stylesheet" />
     <title>{title}</title>
     <JsonLd data={{
       '@context': 'https://schema.org',
@@ -112,7 +112,7 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
         <div class="nav-links" id="navbarLinks">
           <!-- Product Dropdown -->
           <div class="nav-dropdown">
-            <button class="nav-dropdown-toggle">
+            <button class="nav-dropdown-toggle" aria-expanded="false" aria-haspopup="true">
               <span data-i18n="nav.product">Product</span>
               <svg class="nav-dropdown-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
@@ -142,7 +142,7 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
 
           <!-- Solutions Dropdown -->
           <div class="nav-dropdown">
-            <button class="nav-dropdown-toggle">
+            <button class="nav-dropdown-toggle" aria-expanded="false" aria-haspopup="true">
               <span data-i18n="nav.solutions">Solutions</span>
               <svg class="nav-dropdown-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
@@ -176,7 +176,7 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
 
           <!-- Architecture Dropdown -->
           <div class="nav-dropdown">
-            <button class="nav-dropdown-toggle">
+            <button class="nav-dropdown-toggle" aria-expanded="false" aria-haspopup="true">
               <span data-i18n="nav.architecture">Architecture</span>
               <svg class="nav-dropdown-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
@@ -212,7 +212,7 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
         <div class="nav-actions">
           <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme">◐</button>
           <div class="lang-switcher">
-            <button class="lang-toggle" data-lang-toggle data-i18n-aria="lang_aria" aria-label="Change language">
+            <button class="lang-toggle" data-lang-toggle data-i18n-aria="lang_aria" aria-label="Change language" aria-expanded="false" aria-haspopup="true">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
               <span data-lang-current>EN</span>
               <svg class="lang-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -304,7 +304,7 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
           </div>
         </div>
         <div class="footer-bottom">
-          <p data-i18n="footer.rights">© 2026 Fathom. IP Yakushev German Konstantinovich. Tashkent, Uzbekistan.</p>
+          <p data-i18n="footer.rights">© 2026 Fathom — IP Yakushev German Konstantinovich. Tashkent, Uzbekistan.</p>
         </div>
       </div>
     </footer>
@@ -598,7 +598,7 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
         margin-top: auto;
       }
 
-      @media (max-width: 960px) {
+      @media (max-width: 1040px) {
         .nav-links, .nav-cta { display: none; }
         .menu-btn { display: flex; }
         .nav-inner { gap: 12px; }
@@ -606,7 +606,7 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
       }
 
       @media (max-width: 480px) {
-        .nav-actions .lang-switcher { display: none; }
+        .nav-actions .lang-toggle span[data-lang-current] { font-size: 11px; }
       }
 
       .footer {
@@ -784,6 +784,47 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
           toggle?.setAttribute('aria-expanded', 'false');
         }
       });
+    </script>
+    <script is:inline>
+      (function () {
+        // Toggle mobile menu
+        var menuBtn = document.getElementById('menu-toggle');
+        var mobileMenu = document.getElementById('mobile-menu');
+        if (menuBtn && mobileMenu) {
+          menuBtn.addEventListener('click', function () {
+            var open = mobileMenu.classList.toggle('open');
+            menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+          });
+        }
+
+        // Desktop nav dropdown touch / click handling
+        var dropdowns = document.querySelectorAll('.nav-dropdown');
+        dropdowns.forEach(function (dd) {
+          var btn = dd.querySelector('.nav-dropdown-toggle');
+          if (!btn) return;
+          btn.addEventListener('click', function (e) {
+            var isOpen = dd.classList.toggle('open');
+            btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            // Close other dropdowns
+            dropdowns.forEach(function (other) {
+              if (other !== dd) {
+                other.classList.remove('open');
+                var otherBtn = other.querySelector('.nav-dropdown-toggle');
+                if (otherBtn) otherBtn.setAttribute('aria-expanded', 'false');
+              }
+            });
+            e.stopPropagation();
+          });
+        });
+
+        document.addEventListener('click', function () {
+          dropdowns.forEach(function (dd) {
+            dd.classList.remove('open');
+            var btn = dd.querySelector('.nav-dropdown-toggle');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+          });
+        });
+      })();
     </script>
   </body>
 </html>

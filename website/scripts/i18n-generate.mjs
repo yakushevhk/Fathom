@@ -15,6 +15,9 @@ const LANGUAGES = ['ru'];
 const DEFAULT_LANG = 'en';
 const SITE = 'https://fathom.uz';
 
+// Resolve real base directory for dist (Vercel builds client files into dist/client)
+const CLIENT_DIST = existsSync(join(DIST, 'client')) ? join(DIST, 'client') : DIST;
+
 // ---------- load dictionary ----------
 import { translations as baseT } from '../src/i18n/translations.js';
 import { readdirSync as _r } from 'fs';
@@ -73,7 +76,7 @@ function collectHtmls(dir, base) {
 
 // relative url path without leading index.html
 function urlPath(absPath) {
-  let rel = relative(DIST, absPath).replace(/\\/g, '/');
+  let rel = relative(CLIENT_DIST, absPath).replace(/\\/g, '/');
   if (rel.endsWith('index.html')) rel = rel.slice(0, -'index.html'.length);
   return '/' + rel;
 }
@@ -109,6 +112,47 @@ function translateHtml(html, lang, langRoot, pageUrl) {
       return;
     }
   });
+
+  // Localize document title and description if available in dictionary
+  const titleNode = findTag(doc, 'title');
+  if (titleNode && lang === 'ru') {
+    let cleanPage = pageUrl.replace(/^\/+/g, '').replace(/\/+$/g, '');
+    let titleKey = cleanPage === '' ? 'site.home_title' : `meta.${cleanPage}.title`;
+    let descKey = cleanPage === '' ? 'site.home_desc' : `meta.${cleanPage}.desc`;
+    let localizedTitle = resolveKey(titleKey, lang);
+    let localizedDesc = resolveKey(descKey, lang);
+
+    if (localizedTitle) {
+      titleNode.childNodes = [{ nodeName: '#text', value: localizedTitle }];
+    }
+    const headNode = findTag(doc, 'head');
+    if (headNode) {
+      walkNodes(headNode, (meta) => {
+        if (meta.tagName === 'meta') {
+          const name = getAttr(meta, 'name')?.value;
+          const prop = getAttr(meta, 'property')?.value;
+          if (name === 'description' && localizedDesc) {
+            setAttrVal(meta, 'content', localizedDesc);
+          }
+          if (prop === 'og:title' && localizedTitle) {
+            setAttrVal(meta, 'content', localizedTitle);
+          }
+          if (prop === 'og:description' && localizedDesc) {
+            setAttrVal(meta, 'content', localizedDesc);
+          }
+          if (prop === 'og:locale') {
+            setAttrVal(meta, 'content', 'ru_RU');
+          }
+          if (prop === 'og:locale:alternate') {
+            setAttrVal(meta, 'content', 'en_US');
+          }
+          if (prop === 'og:url') {
+            setAttrVal(meta, 'content', SITE + langRoot + (pageUrl === '/' ? '' : pageUrl));
+          }
+        }
+      });
+    }
+  }
 
   // validate data-i18n elements & replace text
   function processElement(node) {
@@ -198,13 +242,16 @@ function rewriteInternal(href, langRoot) {
       href.startsWith('tel:') || href.startsWith('#') || href.startsWith('data:') ||
       href.includes('google') || href.includes('fonts') || href.includes('github')) return href;
   if (href.startsWith('/assets/') || href.startsWith('/favicon') || href.startsWith('/_astro/')) return href;
+  // static assets and downloads must never be prefixed with /ru/
+  if (/\.(pdf|webmanifest|png|jpe?g|svg|webp|gif|mp4|vtt|xml|txt|ico|json)$/i.test(href)) return href;
   // avoid double prefix, including the locale root without a trailing slash
   if (href === '/ru' || href.startsWith('/ru/')) return href;
   return langRoot + (href.startsWith('/') ? href : '/' + href);
 }
 
 // ---------- main ----------
-const enHtmls = collectHtmls(DIST, DIST);
+const searchDir = existsSync(join(DIST, 'client')) ? join(DIST, 'client') : DIST;
+const enHtmls = collectHtmls(searchDir, searchDir);
 console.log('EN pages found:', enHtmls.length);
 
 for (const file of enHtmls) {
@@ -212,12 +259,27 @@ for (const file of enHtmls) {
   const path = urlPath(file); // e.g. "/docs/outreach/"
   for (const lang of LANGUAGES) {
     const langRoot = '/' + lang;
-    // target file: dist/ru/<rel>
-    const rel = relative(DIST, file).replace(/\\/g, '/');
-    const outAbs = join(DIST, lang, rel);
+    // target file: dist/ru/<rel> (and if client/ exists, also dist/client/ru/<rel>)
+    const rel = relative(CLIENT_DIST, file).replace(/\\/g, '/');
+    const outAbs = join(CLIENT_DIST, lang, rel);
     const translated = translateHtml(html, lang, langRoot, path);
     mkdirSync(dirname(outAbs), { recursive: true });
     writeFileSync(outAbs, translated);
+
+    // Also mirror to dist/ru/<rel> if CLIENT_DIST is dist/client
+    if (CLIENT_DIST !== DIST) {
+      const mirrorAbs = join(DIST, lang, rel);
+      mkdirSync(dirname(mirrorAbs), { recursive: true });
+      writeFileSync(mirrorAbs, translated);
+    }
+
+    // Also mirror to .vercel/output/static/<lang>/<rel> if .vercel/output/static exists
+    const vercelStatic = join('.vercel', 'output', 'static');
+    if (existsSync(vercelStatic)) {
+      const vercelOut = join(vercelStatic, lang, rel);
+      mkdirSync(dirname(vercelOut), { recursive: true });
+      writeFileSync(vercelOut, translated);
+    }
     console.log('  ->', lang, path);
   }
 }

@@ -79,7 +79,7 @@ export default {
   blog: {
     hero: {
       badge: { en: 'Engineering Blog', ru: 'Инженерный блог' },
-      title: { en: 'Notes from the build.', ru: 'Заметки со стройки.' },
+      title: { en: 'Notes from the build.', ru: 'Хроники разработки.' },
       sub: {
         en: 'How Fathom actually works — benchmarks, memory design, agent orchestration. Written by the people who compile it.',
         ru: 'Как на самом деле работает Fathom — бенчмарки, дизайн памяти, оркестрация агентов. Написано теми, кто его собирает.',

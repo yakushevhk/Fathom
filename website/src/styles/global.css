@@ -537,11 +537,14 @@ pre:hover .copy-btn,
 
 /* ---- A1: scroll reveal fired from Layout.astro ----
    Auto-applied to `.sec-head` and card grids below the fold. */
+.reveal,
 [data-reveal] {
   opacity: 0;
   transform: translateY(22px);
   transition: opacity var(--rise-dur) var(--rise-ease), transform var(--rise-dur) var(--rise-ease);
 }
+.reveal.in-view,
+.reveal[data-in="true"],
 [data-reveal].in-view {
   opacity: 1;
   transform: none;
@@ -806,7 +809,8 @@ a.chip:hover,
 }
 
 .nav-dropdown:hover .nav-dropdown-menu,
-.nav-dropdown:focus-within .nav-dropdown-menu {
+.nav-dropdown:focus-within .nav-dropdown-menu,
+.nav-dropdown.open .nav-dropdown-menu {
   display: flex;
 }
 

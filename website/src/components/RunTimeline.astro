@@ -34,7 +34,7 @@ const logs = [
           <span class="rt-label" data-i18n={s.k}>{['Goal', 'Plan', 'Gather', 'Verify', 'Approve', 'Remember', 'Deliver'][i]}</span>
           <span class="rt-met">
             <b data-rt-met={i}>{s.met}</b>
-            <i>{s.unit}</i>
+            <i data-i18n={`landing.run.unit.${s.unit}`}>{s.unit}</i>
           </span>
         </div>
       ))
@@ -44,8 +44,8 @@ const logs = [
   <div class="rt-log">
     <div class="rt-log-bar">
       <span class="rt-log-dot"></span>
-      <span class="rt-log-title">fathom · session log</span>
-      <span class="rt-log-status" data-rt-status>running</span>
+      <span class="rt-log-title" data-i18n="landing.run.logTitle">fathom · session log</span>
+      <span class="rt-log-status" data-rt-status data-i18n="landing.run.statusRunning">running</span>
     </div>
     <div class="rt-log-body" data-rt-log>
       {
@@ -179,7 +179,7 @@ const logs = [
     transition: opacity 0.4s var(--ease-out), transform 0.4s var(--ease-out);
   }
   .rt-log-line.on { opacity: 1; transform: none; }
-  .rt-log-t { color: #55555e; flex: none; }
+  .rt-log-t { color: #8e8e98; flex: none; }
   .rt-log-txt { color: #b8b8bf; }
   .rt-log-line.on .rt-log-txt { color: #d9d9de; }
 
