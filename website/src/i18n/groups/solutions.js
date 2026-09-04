@@ -43,6 +43,7 @@ export default {
       },
     },
     cta: {
+      eyebrow: { en: 'Custom Enterprise Solutions', ru: 'Кастомные корпоративные решения' },
       title: { en: 'Ready to automate high-leverage workflows?', ru: 'Готовы автоматизировать ключевые процессы?' },
       sub: { en: 'Deploy dedicated autonomous workers on your own private infrastructure.', ru: 'Разверните выделенных автономных воркеров на вашей собственной инфраструктуре.' },
       start: { en: 'Request Deployment Access →', ru: 'Запросить доступ к развёртыванию →' },

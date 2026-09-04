@@ -601,6 +601,12 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
       @media (max-width: 960px) {
         .nav-links, .nav-cta { display: none; }
         .menu-btn { display: flex; }
+        .nav-inner { gap: 12px; }
+        .nav-actions { gap: 8px; }
+      }
+
+      @media (max-width: 480px) {
+        .nav-actions .lang-switcher { display: none; }
       }
 
       .footer {

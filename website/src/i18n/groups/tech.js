@@ -43,6 +43,17 @@ export default {
       dashboard: { name: { en: 'Web dashboard', ru: 'Веб-дашборд' }, d: { en: 'GET /dashboard serves a single-file HTML dashboard: sessions, agent tree, memory, jobs, live event feed.', ru: 'GET /dashboard отдаёт одностраничный HTML-дашборд: сессии, дерево агентов, память, джобы, живая лента событий.' } },
       cors: { name: { en: 'CORS', ru: 'CORS' }, d: { en: 'Cross-origin access configurable via [server] config — restrict origins in production.', ru: 'Доступ между origin настраивается через [server]-конфиг — ограничьте origin в продакшене.' } },
     },
+    observability: {
+      badge: { en: 'Observability', ru: 'Наблюдаемость' },
+      title: { en: 'Prometheus metrics', ru: 'Метрики Prometheus' },
+      sub: {
+        en: 'Scrape <code class="ic">/metrics</code> from your self-hosted runtime for request, session and tool telemetry. The authenticated API also exposes <code class="ic">/api/v1/observability/summary</code> for bounded live counters and governance-audit totals.',
+        ru: 'Собирайте <code class="ic">/metrics</code> с вашего селф-хостед рантайма для телеметрии запросов, сессий и инструментов. Аутентифицированный API также предоставляет <code class="ic">/api/v1/observability/summary</code> для живых счетчиков и аудита безопасности.'
+      },
+      thMetric: { en: 'Metric', ru: 'Метрика' },
+      thType: { en: 'Type', ru: 'Тип' },
+      thCount: { en: 'What it counts', ru: 'Что считает' },
+    },
   },
   memoryPage: {
     hero: {

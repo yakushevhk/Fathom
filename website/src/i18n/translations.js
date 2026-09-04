@@ -6,11 +6,17 @@ export const LANGS = {
   "ru": {
     "label": "RU",
     "name": "Русский"
-  }};
+  }
+};
 
 export const DEFAULT_LANG = "en";
 
 export const translations = {
+  "video": {
+    "eyebrow": { "en": "Interactive Showreel", "ru": "Интерактивный шоурил" },
+    "title": { "en": "8 minutes. 15 scenarios.<br /><em class=\"it\">Autonomous AI workers in action.</em>", "ru": "8 минут. 15 сценариев.<br /><em class=\"it\">Автономные ИИ-воркеры в действии.</em>" },
+    "desc": { "en": "Every Fathom autonomous AI worker in action — from SDR outbound and market intelligence to computer use and 2FA takeover. 60fps, 4K-ready, white backdrop. Full interactive demo at <a href=\"/demo\" class=\"link-underline\" style=\"color:var(--accent);\">/demo</a>.", "ru": "Каждый автономный ИИ-воркер Fathom в действии — от исходящих продаж и анализа рынка до работы с компьютером и обхода 2FA. 60fps, 4K, чистый фон. Полное интерактивное демо на <a href=\"/demo\" class=\"link-underline\" style=\"color:var(--accent);\">/demo</a>." }
+  },
   "nav": {
     "product": {
       "en": "Product",

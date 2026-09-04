@@ -794,6 +794,9 @@ const metrics = [
     .feat { grid-template-columns: 1fr; gap: 36px; }
   }
   @media (max-width: 720px) {
+    .hero__actions { flex-direction: column; width: 100%; }
+    .hero__actions .btn { width: 100%; justify-content: center; text-align: center; }
+    .bench-strip { grid-template-columns: 1fr; }
     .uc-grid { grid-template-columns: 1fr; }
     .uc--wide { grid-column: span 1; }
     .steps-grid { grid-template-columns: 1fr; gap: 32px; }
