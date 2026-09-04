@@ -4,16 +4,21 @@
   "version": "0.3.0",
   "scripts": {
     "dev": "astro dev",
+    "dev:json": "astro dev --json",
     "build": "astro build && node scripts/i18n-generate.mjs",
     "build:base": "astro build",
     "i18n": "node scripts/i18n-generate.mjs",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "preview:test": "astro preview --ignore-lock"
   },
   "dependencies": {
-    "@astrojs/mdx": "^7.0.5",
-    "@astrojs/sitemap": "^3.7.3",
-    "@astrojs/vercel": "^11.0.7",
-    "astro": "^7.2.0",
+    "@astrojs/mdx": "^8.0.0",
+    "@astrojs/sitemap": "^3.7.4",
+    "@astrojs/vercel": "^11.0.10",
+    "astro": "^7.3.1",
     "three": "^0.185.1"
+  },
+  "devDependencies": {
+    "parse5": "^8.0.1"
   }
 }
