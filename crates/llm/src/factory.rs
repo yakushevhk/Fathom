@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 use pr_core::LlmConfig;
 
+use crate::anthropic::AnthropicProvider;
 use crate::deepseek::DeepSeekProvider;
 use crate::provider::LlmProvider;
 
@@ -40,7 +41,20 @@ pub fn build_provider(cfg: &LlmConfig) -> anyhow::Result<Arc<dyn LlmProvider>> {
         anyhow::bail!("No LLM base_url configured");
     }
 
-    if !OPENAI_COMPATIBLE.contains(&cfg.provider.to_lowercase().as_str()) {
+    let provider_lower = cfg.provider.to_lowercase();
+    if provider_lower == "anthropic" || provider_lower == "claude" {
+        return Ok(Arc::new(
+            AnthropicProvider::new(
+                &cfg.api_key,
+                &cfg.model,
+                Some(cfg.base_url.clone()),
+                true,
+                None,
+            )
+        ));
+    }
+
+    if !OPENAI_COMPATIBLE.contains(&provider_lower.as_str()) {
         tracing::warn!(
             provider = %cfg.provider,
             "unknown LLM provider name; assuming OpenAI-compatible protocol"

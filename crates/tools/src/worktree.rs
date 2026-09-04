@@ -1,6 +1,6 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use async_trait::async_trait;
-use pr_core::{PrError, PrResult, ToolOutput, ToolSchema};
+use pr_core::{ToolOutput, ToolSchema};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use crate::registry::{Tool, ToolContext};

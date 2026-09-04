@@ -1693,11 +1693,7 @@ mod tests {
         fn assistant(text: &str) -> CompletionResponse {
             CompletionResponse {
                 message: Message::assistant(text),
-                usage: Some(Usage {
-                    prompt_tokens: 10,
-                    completion_tokens: 20,
-                    total_tokens: 30,
-                }),
+                usage: Some(Usage::simple(10, 20, 30)),
                 finish_reason: Some("stop".to_string()),
             }
         }
@@ -1706,11 +1702,7 @@ mod tests {
         fn empty_truncated() -> CompletionResponse {
             CompletionResponse {
                 message: Message::assistant(""),
-                usage: Some(Usage {
-                    prompt_tokens: 10,
-                    completion_tokens: 8192,
-                    total_tokens: 8202,
-                }),
+                usage: Some(Usage::simple(10, 8192, 8202)),
                 finish_reason: Some("length".to_string()),
             }
         }

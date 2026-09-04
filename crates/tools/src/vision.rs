@@ -18,9 +18,9 @@ use serde_json::{json, Value};
 use crate::registry::{Tool, ToolContext};
 
 /// Default OpenAI-compatible API base for vision models.
-pub const DEFAULT_VISION_API_BASE: &str = "https://router.y7.hk/v1";
-/// Default API key (router.y7.hk house key).
-pub const DEFAULT_VISION_API_KEY: &str = "sk-haus";
+pub const DEFAULT_VISION_API_BASE: &str = "";
+/// Default API key (empty by default to require explicit configuration).
+pub const DEFAULT_VISION_API_KEY: &str = "";
 /// Default vision model.
 pub const DEFAULT_VISION_MODEL: &str = "qwen-vl-max";
 
@@ -416,14 +416,13 @@ mod tests {
         assert!(tool.api_key.is_empty());
         assert!(!tool.model.is_empty());
         let ctx = test_ctx();
-        // Context defaults come from env or the built-in constants.
-        assert!(!ctx.vision_api_base.is_empty());
-        assert!(!ctx.vision_api_key.is_empty());
+        let _ = ctx.vision_api_base;
+        let _ = ctx.vision_api_key;
     }
 
     #[tokio::test]
     async fn test_analyze_image_missing_file_returns_err_output() {
-        let tool = VisionTool::new();
+        let tool = VisionTool::with_config("https://api.test.com", "test-key", "qwen-vl-max");
         let ctx = test_ctx();
         let out = tool
             .execute(

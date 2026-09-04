@@ -161,7 +161,7 @@ impl Exporter {
         session: &SessionOutput,
         format: ExportFormat,
     ) -> anyhow::Result<PathBuf> {
-        std::fs::create_dir_all(&self.output_dir)?;
+        tokio::fs::create_dir_all(&self.output_dir).await?;
         match format {
             ExportFormat::Pdf => self.export_pdf(session).await,
             ExportFormat::Html => self.export_html(session).await,

@@ -43,6 +43,8 @@ mod tests {
                         prompt_tokens: 1,
                         completion_tokens: 1,
                         total_tokens: 2,
+                        cache_creation_input_tokens: None,
+                        cache_read_input_tokens: None,
                     }),
                     finish_reason: Some("stop".to_string()),
                 }),
@@ -107,6 +109,7 @@ mod tests {
                 .iter()
                 .map(|c| match c {
                     Ok(StreamChunk::Text { delta }) => Ok(StreamChunk::Text { delta: delta.clone() }),
+                    Ok(StreamChunk::Reasoning { delta }) => Ok(StreamChunk::Reasoning { delta: delta.clone() }),
                     Ok(StreamChunk::ToolCallDelta { index, id, name, arguments_delta }) => {
                         Ok(StreamChunk::ToolCallDelta {
                             index: *index,

@@ -39,6 +39,7 @@ struct LspArgs {
     /// Destination path for rename_file
     new_path: Option<String>,
     /// Auto-apply code action or rename edits
+    #[allow(dead_code)]
     #[serde(default = "default_apply")]
     apply: bool,
 }

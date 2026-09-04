@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use pr_core::{PrError, PrResult, ToolOutput, ToolSchema};
+use pr_core::{ToolOutput, ToolSchema};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use crate::registry::{Tool, ToolContext};
@@ -112,13 +112,15 @@ impl Tool for OsInputTool {
             OsInputAction::FocusWindow { title } => {
                 #[cfg(target_os = "macos")]
                 {
+                    let sanitized = title.chars().filter(|c| c.is_alphanumeric() || *c == ' ' || *c == '-' || *c == '_').collect::<String>();
                     let script = format!(
                         "tell application \"{}\" to activate",
-                        title.replace('"', "\\\"")
+                        sanitized
                     );
                     let _ = tokio::process::Command::new("osascript")
                         .arg("-e")
                         .arg(&script)
+                        .kill_on_drop(true)
                         .output()
                         .await;
                 }

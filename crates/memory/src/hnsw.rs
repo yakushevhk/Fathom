@@ -1,33 +1,4 @@
-use std::collections::BinaryHeap;
 use std::cmp::Ordering;
-use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Clone)]
-struct Neighbor {
-    id: usize,
-    distance: f32,
-}
-
-impl PartialEq for Neighbor {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
-    }
-}
-
-impl Eq for Neighbor {}
-
-impl Ord for Neighbor {
-    fn cmp(&self, other: &Self) -> Ordering {
-        // Reverse for min-heap
-        other.distance.partial_cmp(&self.distance).unwrap_or(Ordering::Equal)
-    }
-}
-
-impl PartialOrd for Neighbor {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
 
 /// SIMD-accelerated In-Memory Vector Index for sub-millisecond semantic search.
 pub struct SimdVectorIndex {

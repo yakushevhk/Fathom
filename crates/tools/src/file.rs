@@ -111,7 +111,7 @@ Reads a file at the given path (absolute or relative to the working directory) a
         let total_lines = lines.len();
 
         let display_path = path.strip_prefix(&ctx.working_dir).unwrap_or(&path).display().to_string();
-        let mut output = String::new();
+        let output;
 
         if is_conflicts {
             let mut conflict_blocks = Vec::new();
@@ -138,6 +138,8 @@ Reads a file at the given path (absolute or relative to the working directory) a
         } else if line_ranges.is_empty() && params.start_line.is_none() && params.line_count.is_none() {
             if is_raw {
                 output = content;
+            } else if content.is_empty() {
+                output = format!("[{}#{}]\n(empty file)", display_path, tag);
             } else {
                 let mut body = String::new();
                 for (i, line) in lines.iter().enumerate() {
@@ -818,15 +820,34 @@ async fn search_files_manual(
 
 pub(crate) fn resolve_path(working_dir: &std::path::Path, path_str: &str) -> std::path::PathBuf {
     let uri = pr_core::VirtualUri::parse(path_str);
-    if let Some(resolved) = uri.resolve_to_path(working_dir) {
-        resolved
-    } else {
-        let p = std::path::Path::new(path_str);
-        if p.is_absolute() {
-            p.to_path_buf()
-        } else {
-            working_dir.join(p)
+    if uri.is_virtual() {
+        if let Some(resolved) = uri.resolve_to_path(working_dir) {
+            return resolved;
         }
+    }
+
+    let p = std::path::Path::new(path_str);
+    if p.is_absolute() && p.starts_with(working_dir) {
+        return p.to_path_buf();
+    }
+
+    let mut normalized = working_dir.to_path_buf();
+    for component in p.components() {
+        match component {
+            std::path::Component::Prefix(_) | std::path::Component::RootDir | std::path::Component::CurDir => {},
+            std::path::Component::ParentDir => {
+                if normalized != working_dir && normalized.starts_with(working_dir) {
+                    normalized.pop();
+                }
+            },
+            std::path::Component::Normal(c) => normalized.push(c),
+        }
+    }
+
+    if !normalized.starts_with(working_dir) {
+        working_dir.to_path_buf()
+    } else {
+        normalized
     }
 }
 
@@ -845,7 +866,7 @@ mod tests {
     fn resolve_path_absolute() {
         let wd = std::path::PathBuf::from("/tmp/workdir");
         let result = resolve_path(&wd, "/etc/hosts");
-        assert_eq!(result, std::path::PathBuf::from("/etc/hosts"));
+        assert_eq!(result, std::path::PathBuf::from("/tmp/workdir/etc/hosts"));
     }
 
     #[test]
@@ -853,6 +874,13 @@ mod tests {
         let wd = std::path::PathBuf::from("/tmp/workdir");
         let result = resolve_path(&wd, "src/main.rs");
         assert_eq!(result, std::path::PathBuf::from("/tmp/workdir/src/main.rs"));
+    }
+
+    #[test]
+    fn resolve_path_traversal_blocked() {
+        let wd = std::path::PathBuf::from("/tmp/workdir");
+        let result = resolve_path(&wd, "../../etc/passwd");
+        assert_eq!(result, std::path::PathBuf::from("/tmp/workdir/etc/passwd"));
     }
 
     #[test]

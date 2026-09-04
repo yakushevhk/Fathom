@@ -106,9 +106,7 @@ fn next_occurrence(cron: &str, timezone: &str, after: DateTime<Utc>) -> Result<S
     }
     bail!("cron expression has no occurrence within one year")
 }
-fn ensure_schema(db: &Persistence) -> Result<()> {
-    let conn = db.conn.lock();
-    conn.execute_batch("CREATE TABLE IF NOT EXISTS schedules (id TEXT PRIMARY KEY, coworker_id TEXT NOT NULL, cron_expression TEXT NOT NULL, timezone TEXT NOT NULL, query TEXT NOT NULL, enabled INTEGER NOT NULL DEFAULT 1, next_run TEXT NOT NULL, last_run TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); CREATE INDEX IF NOT EXISTS idx_schedules_due ON schedules(enabled,next_run); CREATE INDEX IF NOT EXISTS idx_schedules_coworker ON schedules(coworker_id);")?;
+fn ensure_schema(_db: &Persistence) -> Result<()> {
     Ok(())
 }
 fn from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<ScheduleRow> { Ok(ScheduleRow { id: row.get(0)?, coworker_id: row.get(1)?, cron_expression: row.get(2)?, timezone: row.get(3)?, query: row.get(4)?, enabled: row.get::<_,i64>(5)? != 0, next_run: row.get(6)?, last_run: row.get(7)?, created_at: row.get(8)?, updated_at: row.get(9)? }) }

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use crate::{PrError, PrResult, VirtualUri};
+use crate::VirtualUri;
 
 /// High-performance thread-safe in-memory & on-disk Virtual Artifact Store.
 /// Backs `artifact://<id>` zero-copy output dereferencing and large tool truncation spillovers.

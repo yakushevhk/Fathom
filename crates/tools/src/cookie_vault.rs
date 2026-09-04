@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 use async_trait::async_trait;
-use pr_core::{PrError, PrResult, ToolOutput, ToolSchema};
+use pr_core::{ToolOutput, ToolSchema};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use crate::registry::{Tool, ToolContext};
@@ -65,7 +65,7 @@ impl Tool for CookieVaultTool {
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(&self, args: serde_json::Value, _ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
         let params: CookieVaultParams = serde_json::from_value(args)?;
         let fathom_home = dirs::home_dir()
             .map(|h| h.join(".fathom"))

@@ -561,7 +561,7 @@ mod tests {
 
         let resp = DeepSeekProvider::parse_response(json).unwrap();
         match &resp.message {
-            Message::Assistant { content, tool_calls } => {
+            Message::Assistant { content, tool_calls, .. } => {
                 assert_eq!(content.as_deref(), Some("Hello world"));
                 assert!(tool_calls.is_empty());
             }
@@ -604,7 +604,7 @@ mod tests {
 
         let resp = DeepSeekProvider::parse_response(json).unwrap();
         match &resp.message {
-            Message::Assistant { content, tool_calls } => {
+            Message::Assistant { content, tool_calls, .. } => {
                 assert!(content.is_none());
                 assert_eq!(tool_calls.len(), 1);
                 assert_eq!(tool_calls[0].name(), "search");
@@ -633,7 +633,7 @@ mod tests {
 
         let resp = DeepSeekProvider::parse_response(json).unwrap();
         match &resp.message {
-            Message::Assistant { content, tool_calls } => {
+            Message::Assistant { content, tool_calls, .. } => {
                 assert_eq!(content.as_deref(), Some("The answer is 4."));
                 assert!(tool_calls.is_empty());
             }

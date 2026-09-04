@@ -27,6 +27,7 @@ tracing.workspace = true
 uuid.workspace = true
 chrono.workspace = true
 anyhow.workspace = true
+ring.workspace = true
 
 [dev-dependencies]
 async-trait.workspace = true

@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::io::{Read, Write};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -272,10 +272,19 @@ impl PtyBroker {
         if let Some(s) = session {
             #[cfg(unix)]
             {
-                let _ = std::process::Command::new("kill")
-                    .arg("-15")
-                    .arg(s.pid.to_string())
-                    .status();
+                unsafe {
+                    libc::kill(s.pid as libc::pid_t, libc::SIGTERM);
+                }
+                // Check if still alive after brief grace period, then SIGKILL
+                let pid = s.pid;
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(500));
+                    unsafe {
+                        if libc::kill(pid as libc::pid_t, 0) == 0 {
+                            libc::kill(pid as libc::pid_t, libc::SIGKILL);
+                        }
+                    }
+                });
             }
             Ok(())
         } else {

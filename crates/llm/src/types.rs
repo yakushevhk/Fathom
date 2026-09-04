@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use futures::Stream;
 use pr_core::{Message, ToolSchema};
 use serde::{Deserialize, Serialize};
@@ -13,6 +12,18 @@ pub struct Usage {
     pub cache_creation_input_tokens: Option<u32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cache_read_input_tokens: Option<u32>,
+}
+
+impl Usage {
+    pub fn simple(prompt: u32, completion: u32, total: u32) -> Self {
+        Self {
+            prompt_tokens: prompt,
+            completion_tokens: completion,
+            total_tokens: total,
+            cache_creation_input_tokens: None,
+            cache_read_input_tokens: None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

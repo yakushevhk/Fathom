@@ -25,7 +25,7 @@ async-trait.workspace = true
 tokio-postgres = { workspace = true, optional = true }
 deadpool-postgres = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
-libc = "0.2"
+libc.workspace = true
 
 [dev-dependencies]
 tempfile = "3"

@@ -244,7 +244,9 @@ impl MemoryDb {
     fn init_schema(&self) -> anyhow::Result<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute_batch(
-            "CREATE TABLE IF NOT EXISTS memories (
+            "PRAGMA foreign_keys = ON;
+
+            CREATE TABLE IF NOT EXISTS memories (
                 id            TEXT PRIMARY KEY,
                 content       TEXT NOT NULL,
                 metadata      TEXT NOT NULL DEFAULT '{}',
@@ -267,15 +269,15 @@ impl MemoryDb {
             CREATE INDEX IF NOT EXISTS idx_memories_hash ON memories (content_hash);
 
             CREATE TABLE IF NOT EXISTS memories_embeddings (
-                memory_id TEXT PRIMARY KEY,
+                memory_id TEXT PRIMARY KEY REFERENCES memories(id) ON DELETE CASCADE,
                 model     TEXT NOT NULL,
                 dim       INTEGER NOT NULL,
                 vector    BLOB NOT NULL
             );
 
             CREATE TABLE IF NOT EXISTS memory_edges (
-                from_id    TEXT NOT NULL,
-                to_id      TEXT NOT NULL,
+                from_id    TEXT NOT NULL REFERENCES memories(id) ON DELETE CASCADE,
+                to_id      TEXT NOT NULL REFERENCES memories(id) ON DELETE CASCADE,
                 edge_type  TEXT NOT NULL,
                 reason     TEXT,
                 created_at TEXT NOT NULL,
@@ -284,7 +286,7 @@ impl MemoryDb {
 
             CREATE TABLE IF NOT EXISTS memory_history (
                 seq        INTEGER PRIMARY KEY AUTOINCREMENT,
-                memory_id  TEXT NOT NULL,
+                memory_id  TEXT NOT NULL REFERENCES memories(id) ON DELETE CASCADE,
                 event      TEXT NOT NULL,
                 old_value  TEXT,
                 new_value  TEXT,

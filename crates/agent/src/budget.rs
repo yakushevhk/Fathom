@@ -96,7 +96,6 @@ impl ResultBudget {
         ));
 
         let summary = if let Err(e) = std::fs::create_dir_all(&self.spill_dir) {
-            // If we can't create the dir, just truncate without spilling.
             format!(
                 "{}\n\n[Result capped at {}/{} chars. Spill failed: {}]",
                 truncated, cap, original_len, e

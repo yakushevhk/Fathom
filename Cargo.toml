@@ -75,6 +75,7 @@ parking_lot = "0.12"
 pulldown-cmark = "0.10"
 which = "7"
 rust_xlsxwriter = "0.79"
+libc = "0.2"
 tokio-postgres = "0.7"
 deadpool-postgres = { version = "0.14", features = ["rt_tokio_1"] }
 pr-core = { path = "crates/core" }

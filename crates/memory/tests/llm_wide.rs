@@ -282,6 +282,7 @@ async fn e_llm_provider_streaming() {
     while let Some(chunk) = stream.next().await {
         match chunk.expect("stream chunk error") {
             pr_llm::StreamChunk::Text { delta } => text.push_str(&delta),
+            pr_llm::StreamChunk::Reasoning { .. } => {}
             pr_llm::StreamChunk::Done { usage, .. } => {
                 usage_seen = usage.is_some();
             }

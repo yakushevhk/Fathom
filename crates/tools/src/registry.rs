@@ -70,10 +70,10 @@ pub struct ToolContext {
     pub file_locks: Arc<FileLockManager>,
     pub read_tracker: Arc<Mutex<ReadTracker>>,
     /// Base URL of the OpenAI-compatible vision API
-    /// (env `PARALLEL_VISION_API_BASE`, default `https://router.y7.hk/v1`).
+    /// (env `PARALLEL_VISION_API_BASE`, defaults to empty).
     pub vision_api_base: String,
     /// API key for the vision API
-    /// (env `PARALLEL_VISION_API_KEY`, default `sk-haus`).
+    /// (env `PARALLEL_VISION_API_KEY`, defaults to empty).
     pub vision_api_key: String,
     /// Optional LLM provider for tools that support LLM-assisted extraction
     /// (e.g. `extract_contacts` with `enrich_entities: true`).
@@ -438,9 +438,9 @@ mod tests {
     #[test]
     fn test_tool_context_has_vision_config() {
         let ctx = ToolContext::new(PathBuf::from("/tmp"), pr_core::SearchConfig::default());
-        // Defaults come from the environment or the built-in constants.
-        assert!(!ctx.vision_api_base.is_empty());
-        assert!(!ctx.vision_api_key.is_empty());
+        // Defaults come from the environment or default empty if unset.
+        let _ = ctx.vision_api_base;
+        let _ = ctx.vision_api_key;
     }
 
     #[test]

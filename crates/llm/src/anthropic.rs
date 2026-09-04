@@ -1,6 +1,5 @@
 use async_trait::async_trait;
 use pr_core::{PrError, PrResult, ThinkingBlock, ToolCall, ToolCallFunction};
-use serde::{Deserialize, Serialize};
 
 use crate::types::{CompletionRequest, CompletionResponse, StreamChunk, Usage};
 use crate::provider::LlmProvider;
@@ -201,8 +200,17 @@ impl LlmProvider for AnthropicProvider {
 
         let status = resp.status();
         if !status.is_success() {
+            let retry_after = resp
+                .headers()
+                .get("retry-after")
+                .and_then(|v| v.to_str().ok())
+                .and_then(|v| v.parse::<u64>().ok());
             let err_text = resp.text().await.unwrap_or_default();
-            return Err(PrError::Llm(format!("Anthropic API error (HTTP {status}): {err_text}")));
+            return Err(PrError::Http {
+                status: status.as_u16(),
+                message: format!("Anthropic API error (HTTP {status}): {err_text}"),
+                retry_after,
+            });
         }
 
         let json_val: serde_json::Value = resp.json().await

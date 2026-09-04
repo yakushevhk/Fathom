@@ -101,7 +101,8 @@ impl HostSandbox {
             .current_dir(&self.workspace_root)
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
+            .stderr(Stdio::piped())
+            .kill_on_drop(true);
 
         let future = cmd.output();
         let output = tokio::time::timeout(std::time::Duration::from_secs(timeout_secs), future)

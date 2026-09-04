@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use serde::{Deserialize, Serialize};
-use crate::{PrError, PrResult};
 
 /// In-process and persistent subprocess evaluation kernel context.
 #[derive(Debug, Clone, Serialize, Deserialize)]

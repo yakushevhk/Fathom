@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use pr_core::{PrError, PrResult};
 
 /// Synchronizes Fathom long-term memory facts and entity graphs with a local Obsidian / Markdown vault.

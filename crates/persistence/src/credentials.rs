@@ -14,8 +14,8 @@ const KEY_ENV: &str = "FATHOM_CREDENTIAL_KEY";
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct CredentialRow { pub id: String, pub name: String, pub kind: String, pub created_at: String, pub updated_at: String }
 
-fn ensure_schema(conn: &Connection) -> rusqlite::Result<()> {
-    conn.execute_batch("CREATE TABLE IF NOT EXISTS credentials (id TEXT PRIMARY KEY,name TEXT NOT NULL UNIQUE,kind TEXT NOT NULL,ciphertext BLOB NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL); CREATE INDEX IF NOT EXISTS idx_credentials_updated_at ON credentials(updated_at);")
+fn ensure_schema(_conn: &Connection) -> rusqlite::Result<()> {
+    Ok(())
 }
 fn bounded<'a>(value: &'a str, max: usize, field: &str) -> Result<&'a str> {
     if value.trim().is_empty() { bail!("credential {field} must not be empty") }
@@ -60,20 +60,14 @@ fn decrypt(mut data: Vec<u8>, key: &LessSafeKey) -> Result<String> {
 
 /// Standalone encryption helper using AES-256-GCM.
 pub fn encrypt_secret(secret: &str) -> Result<String> {
-    let k = key().unwrap_or_else(|_| {
-        let unbound = UnboundKey::new(&aead::AES_256_GCM, &[0x42; 32]).unwrap();
-        LessSafeKey::new(unbound)
-    });
+    let k = key()?;
     let bytes = encrypt(secret, &k)?;
     Ok(base64::engine::general_purpose::STANDARD.encode(bytes))
 }
 
 /// Standalone decryption helper using AES-256-GCM.
 pub fn decrypt_secret(encoded: &str) -> Result<String> {
-    let k = key().unwrap_or_else(|_| {
-        let unbound = UnboundKey::new(&aead::AES_256_GCM, &[0x42; 32]).unwrap();
-        LessSafeKey::new(unbound)
-    });
+    let k = key()?;
     let bytes = base64::engine::general_purpose::STANDARD.decode(encoded.trim().as_bytes())?;
     decrypt(bytes, &k)
 }

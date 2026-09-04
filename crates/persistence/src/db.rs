@@ -29,8 +29,20 @@ impl ConnPool {
     }
 
     pub(crate) fn lock(&self) -> std::sync::MutexGuard<'_, Connection> {
-        let idx = self.next.fetch_add(1, Ordering::Relaxed) % self.slots.len();
-        self.slots[idx].lock().unwrap()
+        let len = self.slots.len();
+        if len <= 1 {
+            return self.slots[0].lock().unwrap();
+        }
+        let start = self.next.fetch_add(1, Ordering::Relaxed) % len;
+        // Try non-blocking acquisition across available slots to avoid Head-of-Line blocking
+        for i in 0..len {
+            let idx = (start + i) % len;
+            if let Ok(guard) = self.slots[idx].try_lock() {
+                return guard;
+            }
+        }
+        // If all slots are currently busy, block on the round-robin target slot
+        self.slots[start].lock().unwrap()
     }
 
     fn size(&self) -> usize {
@@ -246,6 +258,31 @@ impl Persistence {
             CREATE INDEX IF NOT EXISTS idx_replay_actions_started ON replay_actions(started_at);
             CREATE INDEX IF NOT EXISTS idx_replay_actions_session ON replay_actions(session);
             CREATE INDEX IF NOT EXISTS idx_replay_actions_agent ON replay_actions(agent);
+
+            CREATE TABLE IF NOT EXISTS credentials (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL UNIQUE,
+                kind TEXT NOT NULL,
+                ciphertext BLOB NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_credentials_updated_at ON credentials(updated_at);
+
+            CREATE TABLE IF NOT EXISTS schedules (
+                id TEXT PRIMARY KEY,
+                coworker_id TEXT NOT NULL,
+                cron_expression TEXT NOT NULL,
+                timezone TEXT NOT NULL,
+                query TEXT NOT NULL,
+                enabled INTEGER NOT NULL DEFAULT 1,
+                next_run TEXT NOT NULL,
+                last_run TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_schedules_due ON schedules(enabled,next_run);
+            CREATE INDEX IF NOT EXISTS idx_schedules_coworker ON schedules(coworker_id);
         "#)?;
 
         // Migrate databases created before these columns existed.

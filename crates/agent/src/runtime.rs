@@ -1116,16 +1116,27 @@ impl AgentRuntime {
                 stream: true,
             };
 
-            // Call LLM (true token streaming)
-            let response = match self.complete_streaming(&req).await {
-                Ok(r) => r,
-                Err(e) => {
-                    tracing::error!("LLM error for agent {}: {e}", self.id);
+            // Call LLM (true token streaming with cancellation select)
+            let streaming_future = self.complete_streaming(&req);
+            let response = tokio::select! {
+                res = streaming_future => match res {
+                    Ok(r) => r,
+                    Err(e) => {
+                        tracing::error!("LLM error for agent {}: {e}", self.id);
+                        self.emit(AgentEvent::AgentFailed {
+                            id: self.id.clone(),
+                            error: e.to_string(),
+                        });
+                        return Err(anyhow::anyhow!("LLM error: {e}"));
+                    }
+                },
+                _ = self.cancel.cancelled() => {
+                    tracing::warn!("Agent {} cancelled during LLM streaming call", self.id);
                     self.emit(AgentEvent::AgentFailed {
                         id: self.id.clone(),
-                        error: e.to_string(),
+                        error: "cancelled".to_string(),
                     });
-                    return Err(anyhow::anyhow!("LLM error: {e}"));
+                    anyhow::bail!("agent {} cancelled", self.id);
                 }
             };
 
@@ -2329,11 +2340,7 @@ mod tests {
         fn text(s: &str) -> CompletionResponse {
             CompletionResponse {
                 message: Message::assistant(s),
-                usage: Some(Usage {
-                    prompt_tokens: 5,
-                    completion_tokens: 5,
-                    total_tokens: 10,
-                }),
+                usage: Some(Usage::simple(5, 5, 10)),
                 finish_reason: Some("stop".to_string()),
             }
         }
@@ -2343,11 +2350,7 @@ mod tests {
         fn truncated() -> CompletionResponse {
             CompletionResponse {
                 message: Message::assistant(""),
-                usage: Some(Usage {
-                    prompt_tokens: 5,
-                    completion_tokens: 100,
-                    total_tokens: 105,
-                }),
+                usage: Some(Usage::simple(5, 100, 105)),
                 finish_reason: Some("length".to_string()),
             }
         }
@@ -2366,11 +2369,7 @@ mod tests {
                         }),
                     )],
                 ),
-                usage: Some(Usage {
-                    prompt_tokens: 5,
-                    completion_tokens: 5,
-                    total_tokens: 10,
-                }),
+                usage: Some(Usage::simple(5, 5, 10)),
                 finish_reason: Some("tool_calls".to_string()),
             }
         }
@@ -2546,11 +2545,7 @@ mod tests {
                         ),
                     ],
                 ),
-                usage: Some(Usage {
-                    prompt_tokens: 5,
-                    completion_tokens: 5,
-                    total_tokens: 10,
-                }),
+                usage: Some(Usage::simple(5, 5, 10)),
                 finish_reason: Some("tool_calls".to_string()),
             },
             MockProvider::text("batch done"),
@@ -2610,11 +2605,7 @@ mod tests {
                         ),
                     ],
                 ),
-                usage: Some(Usage {
-                    prompt_tokens: 5,
-                    completion_tokens: 5,
-                    total_tokens: 10,
-                }),
+                usage: Some(Usage::simple(5, 5, 10)),
                 finish_reason: Some("tool_calls".to_string()),
             },
             MockProvider::text("cascade handled"),
@@ -2665,11 +2656,7 @@ mod tests {
                         serde_json::json!({"command": "echo hi"}),
                     )],
                 ),
-                usage: Some(Usage {
-                    prompt_tokens: 5,
-                    completion_tokens: 5,
-                    total_tokens: 10,
-                }),
+                usage: Some(Usage::simple(5, 5, 10)),
                 finish_reason: Some("tool_calls".to_string()),
             },
             MockProvider::text("done"),
@@ -2725,7 +2712,7 @@ mod tests {
                         serde_json::json!({"command": format!("touch {marker_path}")}),
                     )],
                 ),
-                usage: Some(Usage { prompt_tokens: 5, completion_tokens: 5, total_tokens: 10 }),
+                usage: Some(Usage::simple(5, 5, 10)),
                 finish_reason: Some("tool_calls".to_string()),
             },
             MockProvider::text("done"),
@@ -3057,11 +3044,7 @@ mod tests {
             .collect();
         v.push(StreamChunk::Done {
             message: Message::assistant(""),
-            usage: Some(Usage {
-                prompt_tokens: 1,
-                completion_tokens: 2,
-                total_tokens: 3,
-            }),
+            usage: Some(Usage::simple(1, 2, 3)),
             finish_reason: Some("stop".into()),
         });
         v
@@ -3087,7 +3070,7 @@ mod tests {
 
         // Final message is the assembled text.
         match &resp.message {
-            Message::Assistant { content, tool_calls } => {
+            Message::Assistant { content, tool_calls, .. } => {
                 assert_eq!(content.as_deref(), Some("Hello streaming world"));
                 assert!(tool_calls.is_empty());
             }
@@ -3128,11 +3111,7 @@ mod tests {
             },
             StreamChunk::Done {
                 message: Message::assistant(""),
-                usage: Some(Usage {
-                    prompt_tokens: 1,
-                    completion_tokens: 1,
-                    total_tokens: 2,
-                }),
+                usage: Some(Usage::simple(1, 1, 2)),
                 finish_reason: Some("tool_calls".into()),
             },
         ];
@@ -3149,7 +3128,7 @@ mod tests {
         };
         let resp = agent.complete_streaming(&req).await.unwrap();
         match &resp.message {
-            Message::Assistant { content, tool_calls } => {
+            Message::Assistant { content, tool_calls, .. } => {
                 assert!(content.is_none());
                 assert_eq!(tool_calls.len(), 1);
                 assert_eq!(tool_calls[0].name(), "web_search");
@@ -3176,11 +3155,7 @@ mod tests {
         async fn complete(&self, _req: &CompletionRequest) -> PrResult<CompletionResponse> {
             Ok(CompletionResponse {
                 message: Message::assistant("fallback answer"),
-                usage: Some(Usage {
-                    prompt_tokens: 1,
-                    completion_tokens: 1,
-                    total_tokens: 2,
-                }),
+                usage: Some(Usage::simple(1, 1, 2)),
                 finish_reason: Some("stop".into()),
             })
         }
