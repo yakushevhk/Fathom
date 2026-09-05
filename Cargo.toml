@@ -23,6 +23,7 @@ members = [
     "crates/lsp",
     "crates/governance",
     "crates/supervisor",
+    "crates/desktop",
 ]
 
 [workspace.package]
@@ -90,6 +91,7 @@ pr-tui = { path = "crates/tui" }
 pr-lsp = { path = "crates/lsp" }
 pr-governance = { path = "crates/governance" }
 pr-supervisor = { path = "crates/supervisor" }
+pr-desktop = { path = "crates/desktop" }
 
 [dependencies]
 pr-core.workspace = true

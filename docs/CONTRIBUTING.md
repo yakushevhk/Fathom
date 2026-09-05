@@ -69,18 +69,15 @@ Fathom/
 │   ├── persistence/         # SQLite/Postgres session storage
 │   ├── memory/              # Long-term semantic memory (mem0-style)
 │   ├── server/              # HTTP API server (fathom serve)
-│   ├── tui/                 # Terminal UI (ratatui)
-│   ├── lsp/                 # Language Server Protocol tool
-│   ├── governance/          # Policy engine, approval gates
-│   └── supervisor/          # Process supervision, restart policies
+│   ├── governance/          # Policy engine & action evaluation
+│   ├── supervisor/          # Process / container supervision
+│   └── desktop/             # Native GPUI desktop application (Rust)
 ├── apps/
 │   ├── web/                 # Next.js dashboard
-│   ├── desktop/             # Tauri v2 desktop app
 │   └── computer/            # Playwright browser automation service
 └── tests/
     ├── e2e/                 # End-to-end (mock LLM)
     ├── integration/         # Cross-crate integration tests
-    └── support/             # Test utilities (MockLlm, etc.)
 ```
 
 **Crate dependency direction** (no cycles):

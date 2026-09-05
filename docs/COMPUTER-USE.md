@@ -178,9 +178,8 @@ The `/screen` WebSocket endpoint streams the browser's viewport as a real-time v
 - **Secure** — only accessible to authenticated operators
 
 The screen stream is used by:
-- **Tauri v2 desktop app** (`apps/desktop`) — native window showing the live browser
+- **Native GPUI desktop app** (`crates/desktop`) — GPU-accelerated Metal/Vulkan window showing the live browser, take-the-wheel control, and activity log
 - **Next.js 16 web dashboard** (`apps/web`) — embedded in the dashboard panel
-
 ---
 
 ## Confined File Workspace

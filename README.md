@@ -230,7 +230,7 @@ cargo build --release
 ```
 Fathom/
 ├── src/                       # CLI entry point (clap) — run | tui | serve | mcp-serve | memory | jobs
-├── crates/                    # 12-crate Cargo workspace (strict DAG, zero circular dependencies)
+├── crates/                    # 13-crate Cargo workspace (strict DAG, zero circular dependencies)
 │   ├── core/                  # Shared domain primitives: IDs, events, config, notifications, CRM
 │   ├── llm/                   # LlmProvider trait, native Anthropic Claude (thinking & caching), DeepSeek/OpenAI streaming
 │   ├── agent/                 # Autonomous multi-turn reasoning loops, JoinSet sub-agent swarms
@@ -242,10 +242,10 @@ Fathom/
 │   ├── tui/                   # ratatui interactive terminal dashboard & session replay
 │   ├── lsp/                   # Language Server Protocol integration
 │   ├── governance/            # Fail-closed policy engine: allow/deny rules, AES-256-GCM vault
-│   └── supervisor/            # Docker container sandboxing & resource confinement
+│   ├── supervisor/            # Docker container sandboxing & resource confinement
+│   └── desktop/               # Native GPU-accelerated desktop client (Rust + GPUI, 1:1 OpenBot parity)
 ├── apps/
 │   ├── computer/              # Playwright loopback computer service (ARIA DOM + screen stream)
-│   ├── desktop/               # Tauri v2 desktop application
 │   └── web/                   # Next.js web dashboard
 ├── whitepaper/                # 42-page enterprise architecture whitepaper & presentation deck
 ├── docs/                      # Full technical documentation suite

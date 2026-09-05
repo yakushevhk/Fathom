@@ -106,13 +106,11 @@ fathom/
 │   ├── governance/         # Policy engine (allow/deny decisions)
 │   │   └── src/
 │   │       ├── lib.rs          # ActionContext, PolicyEngine, AuditEvent
-│   │       └── …
-│   └── supervisor/         # Per-agent Docker computer provisioning
-│       └── src/
-│           └── lib.rs          # SupervisorConfig, ComputerSupervisor
+│   ├── governance/         # Fail-closed action policy & credentials vault
+│   ├── supervisor/         # Container confinement & resource limits
+│   └── desktop/            # Native GPUI desktop app (Rust + Metal/GPUI)
 ├── apps/
 │   ├── computer/           # Playwright loopback computer service (Node/TS)
-│   ├── desktop/            # Tauri v2 desktop app (Rust + TypeScript)
 │   └── web/                # Next.js web dashboard (SSE, chat, agents, jobs)
 ├── tests/
 │   ├── e2e/                # End-to-end tests

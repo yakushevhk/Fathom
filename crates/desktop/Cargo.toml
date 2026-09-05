@@ -1,0 +1,31 @@
+[package]
+name = "pr-desktop"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "fathom-desktop"
+path = "src/main.rs"
+
+[dependencies]
+gpui = "0.2.2"
+tokio = { workspace = true, features = ["full"] }
+tokio-util = { workspace = true }
+futures = { workspace = true }
+async-trait = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+reqwest = { workspace = true }
+reqwest-eventsource = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+base64 = { workspace = true }
+which = { workspace = true }
+parking_lot = { workspace = true }
+pr-core = { workspace = true }

@@ -301,17 +301,15 @@ fathom serve --port 8080
 ```
 
 ### Human takeover
-
-The TUI, Tauri desktop app, and web dashboard all support **human takeover**: the operator can view the live screen, inspect the accessibility tree, type, click, navigate, and enter secrets — all without the agent losing context. Useful for multi-step auth flows, CAPTCHAs, or sensitive credential entry.
+The TUI, native GPUI desktop app (`crates/desktop`), and web dashboard all support **human takeover**: the operator can view the live screen, inspect the accessibility tree, type, click, navigate, and enter secrets — all without the agent losing context. Useful for multi-step auth flows, CAPTCHAs, or sensitive credential entry.
 
 ### Computer relay
 
-The HTTP API exposes `/api/v1/computers/*` endpoints that proxy snapshot, click, type, key, screen, files, and control actions to the active computer service (or per-agent Docker container). This enables:
+The computer relay bridges frontends to the headless browser service:
 
-- **Live screen streaming** in the web dashboard and desktop app
+- **Live screen streaming** in the native GPUI desktop app and web dashboard
 - **Human-in-the-loop approval** for sensitive actions
 - **Secret injection** without exposing the value in logs or to the agent
-
 For full details — see [COMPUTER-USE.md](COMPUTER-USE.md).
 
 ---

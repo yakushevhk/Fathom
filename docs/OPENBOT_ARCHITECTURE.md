@@ -49,6 +49,5 @@ For Docker per-agent computers, set `COMPUTER_IMAGE`, `COMPUTER_NETWORK`, `COMPU
 ## Local startup
 
 1. Start the Fathom server with `FATHOM_GOVERNANCE_ENABLED=true` and a policy JSON.
-2. Start the computer service: `cd apps/computer && npm install && npm run start`.
 3. Set `COMPUTER_URL=http://127.0.0.1:8765` for agent HTTP computer tools, or let the server relay use its default loopback URL.
-4. Open the desktop app or Next.js web panel. Computer service and Docker are optional; surfaces show explicit offline states when unavailable.
+4. Open the native GPUI desktop app (`cargo run -p pr-desktop`) or Next.js web panel (`apps/web`). Computer service and Docker are optional; surfaces show explicit offline states when unavailable.
