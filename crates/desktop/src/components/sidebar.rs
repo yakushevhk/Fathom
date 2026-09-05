@@ -1,19 +1,230 @@
-//! Sidebar component with Coworker fleet, channels, search, and navigation tabs.
+//! Sidebar component with Coworker fleet, channels, search, navigation tabs,
+//! interactive Agent Profile inspection/editing dialog, and Multi-Agent Handoff Matrix (1:1 OpenBot parity).
 
 use crate::state::{AppState, NavigationTab};
 use crate::theme::Theme;
 use gpui::{
-    div, prelude::*, px, ClickEvent, Context, IntoElement, Render, SharedString, Window,
+    div, prelude::*, px, ClickEvent, Context, Div, IntoElement, Render, SharedString, Window,
 };
 use std::sync::Arc;
 
 pub struct Sidebar {
     state: Arc<AppState>,
+    selected_agent_for_dialog: Option<String>,
+    show_handoff_matrix: bool,
 }
 
 impl Sidebar {
     pub fn new(state: Arc<AppState>) -> Self {
-        Self { state }
+        Self {
+            state,
+            selected_agent_for_dialog: None,
+            show_handoff_matrix: false,
+        }
+    }
+
+    fn render_agent_profile_dialog(&self, agent_id: &str, cx: &mut Context<Self>) -> Div {
+        let (name, title, prompt) = match agent_id {
+            "risk_analyst" => ("Risk Analyst", "🛡️ Compliance & Audit Officer", "Evaluate actions against CEL boundaries and ensure zero secret leaks."),
+            "devops_engineer" => ("DevOps Engineer", "🐳 Infrastructure & Automation", "Manage containers, deployments, health probes and process trees."),
+            _ => ("General Assistant", "🤖 General Autonomous Worker", "Full computer use, research, web automation, data synthesis and lead finding."),
+        };
+
+        div()
+            .flex()
+            .flex_col()
+            .p_4()
+            .rounded_lg()
+            .bg(Theme::bg_elevated())
+            .border_1()
+            .border_color(Theme::accent_purple())
+            .gap_3()
+            .child(
+                div()
+                    .flex()
+                    .justify_between()
+                    .items_center()
+                    .child(
+                        div()
+                            .text_sm()
+                            .font_weight(gpui::FontWeight::BOLD)
+                            .text_color(Theme::text_primary())
+                            .child(format!("Agent Profile: {}", name)),
+                    )
+                    .child(
+                        div()
+                            .id("close-agent-dialog-btn")
+                            .px_2()
+                            .py_0p5()
+                            .rounded_sm()
+                            .bg(Theme::bg_card())
+                            .text_xs()
+                            .text_color(Theme::text_secondary())
+                            .cursor_pointer()
+                            .child("✕ Close")
+                            .on_click(cx.listener(|this, _event: &ClickEvent, _window, cx| {
+                                this.selected_agent_for_dialog = None;
+                                cx.notify();
+                            })),
+                    ),
+            )
+            .child(
+                div()
+                    .text_xs()
+                    .font_weight(gpui::FontWeight::SEMIBOLD)
+                    .text_color(Theme::accent_blue())
+                    .child(title),
+            )
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap_1()
+                    .child(
+                        div()
+                            .text_xs()
+                            .font_weight(gpui::FontWeight::BOLD)
+                            .text_color(Theme::text_muted())
+                            .child("STANDING INSTRUCTIONS / SYSTEM PROMPT:"),
+                    )
+                    .child(
+                        div()
+                            .p_2()
+                            .rounded_md()
+                            .bg(Theme::bg_window())
+                            .border_1()
+                            .border_color(Theme::border_subtle())
+                            .text_xs()
+                            .font_family("JetBrains Mono")
+                            .text_color(Theme::text_secondary())
+                            .child(prompt),
+                    ),
+            )
+            .child(
+                div()
+                    .flex()
+                    .items_center()
+                    .justify_between()
+                    .pt_2()
+                    .border_t_1()
+                    .border_color(Theme::border_subtle())
+                    .child(
+                        div()
+                            .text_xs()
+                            .text_color(Theme::text_muted())
+                            .child("Autonomous Loop: Enabled"),
+                    )
+                    .child(
+                        div()
+                            .id("open-handoff-btn")
+                            .px_2p5()
+                            .py_1()
+                            .rounded_sm()
+                            .bg(Theme::accent_purple())
+                            .text_xs()
+                            .font_weight(gpui::FontWeight::BOLD)
+                            .text_color(Theme::text_primary())
+                            .cursor_pointer()
+                            .child("Configure Handoff Matrix ➔")
+                            .on_click(cx.listener(|this, _event: &ClickEvent, _window, cx| {
+                                this.show_handoff_matrix = !this.show_handoff_matrix;
+                                cx.notify();
+                            })),
+                    ),
+            )
+    }
+
+    fn render_handoff_matrix(&self, cx: &mut Context<Self>) -> Div {
+        div()
+            .flex()
+            .flex_col()
+            .p_4()
+            .rounded_lg()
+            .bg(Theme::bg_card())
+            .border_1()
+            .border_color(Theme::border_focus())
+            .gap_2()
+            .child(
+                div()
+                    .flex()
+                    .justify_between()
+                    .items_center()
+                    .child(
+                        div()
+                            .text_xs()
+                            .font_weight(gpui::FontWeight::BOLD)
+                            .text_color(Theme::accent_purple())
+                            .child("Multi-Agent Handoff Matrix (OpenBot handoff-panel parity)"),
+                    )
+                    .child(
+                        div()
+                            .id("close-handoff-matrix-btn")
+                            .px_2()
+                            .py_0p5()
+                            .rounded_sm()
+                            .bg(Theme::bg_elevated())
+                            .text_xs()
+                            .text_color(Theme::text_secondary())
+                            .cursor_pointer()
+                            .child("✕")
+                            .on_click(cx.listener(|this, _event: &ClickEvent, _window, cx| {
+                                this.show_handoff_matrix = false;
+                                cx.notify();
+                            })),
+                    ),
+            )
+            .child(
+                div()
+                    .text_xs()
+                    .text_color(Theme::text_muted())
+                    .child("Directional delegation permissions. Controls which peer agents a coworker is permitted to address via `message_bot` or escalate via `ask_person`."),
+            )
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap_1p5()
+                    .pt_1()
+                    .child(self.render_handoff_row("General Assistant ➔ Risk Analyst", true, cx))
+                    .child(self.render_handoff_row("Risk Analyst ➔ General Assistant", true, cx))
+                    .child(self.render_handoff_row("General Assistant ➔ DevOps Engineer", true, cx))
+                    .child(self.render_handoff_row("DevOps Engineer ➔ Human Operator (ask_person)", true, cx)),
+            )
+    }
+
+    fn render_handoff_row(&self, title: &str, granted: bool, cx: &mut Context<Self>) -> Div {
+        div()
+            .flex()
+            .items_center()
+            .justify_between()
+            .p_2()
+            .rounded_md()
+            .bg(Theme::bg_elevated())
+            .border_1()
+            .border_color(Theme::border_subtle())
+            .child(
+                div()
+                    .text_xs()
+                    .font_weight(gpui::FontWeight::MEDIUM)
+                    .text_color(Theme::text_primary())
+                    .child(title.to_string()),
+            )
+            .child(
+                div()
+                    .id(SharedString::from(format!("grant-btn-{}", title)))
+                    .px_2()
+                    .py_0p5()
+                    .rounded_sm()
+                    .bg(if granted { Theme::success_green() } else { Theme::danger_red() })
+                    .text_xs()
+                    .font_weight(gpui::FontWeight::BOLD)
+                    .text_color(Theme::bg_window())
+                    .cursor_pointer()
+                    .child(if granted { "GRANTED ✓" } else { "DENIED ✗" })
+                    .on_click(cx.listener(|_this, _event: &ClickEvent, _window, cx| {
+                        cx.notify();
+                    })),
+            )
     }
 }
 
@@ -55,7 +266,7 @@ impl Render for Sidebar {
                     .flex()
                     .flex_col()
                     .flex_1()
-                    .overflow_scroll()
+                    .overflow_hidden()
                     .p_3()
                     .child(
                         div()
@@ -129,20 +340,20 @@ impl Render for Sidebar {
                                         .hover(|s| s.bg(Theme::bg_elevated_hover()))
                                         .child(
                                             div()
-                                                .size(px(8.0))
-                                                .rounded_full()
-                                                .bg(if is_active { Theme::accent_purple() } else { Theme::text_muted() }),
+                                                .text_xs()
+                                                .text_color(Theme::accent_purple())
+                                                .child("#"),
                                         )
                                         .child(
                                             div()
-                                                .flex_1()
                                                 .flex()
                                                 .flex_col()
+                                                .overflow_hidden()
                                                 .child(
                                                     div()
                                                         .text_xs()
-                                                        .font_weight(if is_active { gpui::FontWeight::SEMIBOLD } else { gpui::FontWeight::NORMAL })
-                                                        .text_color(if is_active { Theme::text_primary() } else { Theme::text_secondary() })
+                                                        .font_weight(gpui::FontWeight::SEMIBOLD)
+                                                        .text_color(Theme::text_primary())
                                                         .child(title),
                                                 )
                                                 .child(
@@ -181,20 +392,30 @@ impl Render for Sidebar {
                     .child(
                         if coworkers.is_empty() {
                             div().flex().flex_col().gap_1()
-                                .child(self.render_static_coworker("General Assistant", "SDR & Web Research", "🟢 Online"))
-                                .child(self.render_static_coworker("Risk Analyst", "Compliance & Audit", "🟢 Online"))
-                                .child(self.render_static_coworker("DevOps Engineer", "Docker & Kubernetes", "🟢 Idle"))
+                                .child(self.render_clickable_coworker("general_assistant", "General Assistant", "SDR & Web Research", "🟢 Online", cx))
+                                .child(self.render_clickable_coworker("risk_analyst", "Risk Analyst", "Compliance & Audit", "🟢 Online", cx))
+                                .child(self.render_clickable_coworker("devops_engineer", "DevOps Engineer", "Docker & Kubernetes", "🟢 Idle", cx))
                         } else {
                             let mut cow_elements = div().flex().flex_col().gap_1();
                             for cw in coworkers {
                                 cow_elements = cow_elements.child(
-                                    self.render_static_coworker(&cw.name, &cw.title, "🟢 Online"),
+                                    self.render_clickable_coworker(&cw.id, &cw.name, &cw.title, "🟢 Online", cx),
                                 );
                             }
                             cow_elements
                         },
                     ),
             )
+            // Optional Agent Profile Dialog modal
+            .children(self.selected_agent_for_dialog.as_ref().map(|agent_id| {
+                div().p_3().child(self.render_agent_profile_dialog(agent_id, cx))
+            }))
+            // Optional Handoff Matrix modal
+            .children(if self.show_handoff_matrix {
+                Some(div().p_3().child(self.render_handoff_matrix(cx)))
+            } else {
+                None
+            })
     }
 }
 
@@ -234,8 +455,18 @@ impl Sidebar {
             }))
     }
 
-    fn render_static_coworker(&self, name: &str, role: &str, status: &str) -> impl IntoElement {
+    fn render_clickable_coworker(
+        &self,
+        id: &str,
+        name: &str,
+        role: &str,
+        status: &str,
+        cx: &mut Context<Self>,
+    ) -> impl IntoElement {
+        let agent_id = id.to_string();
+
         div()
+            .id(SharedString::from(format!("coworker-item-{}", id)))
             .flex()
             .items_center()
             .gap_2()
@@ -245,6 +476,8 @@ impl Sidebar {
             .bg(Theme::bg_card())
             .border_1()
             .border_color(Theme::border_subtle())
+            .cursor_pointer()
+            .hover(|s| s.bg(Theme::bg_elevated_hover()))
             .child(
                 div()
                     .size(px(24.0))
@@ -258,9 +491,10 @@ impl Sidebar {
             )
             .child(
                 div()
-                    .flex_1()
                     .flex()
                     .flex_col()
+                    .flex_1()
+                    .overflow_hidden()
                     .child(
                         div()
                             .text_xs()
@@ -281,5 +515,9 @@ impl Sidebar {
                     .text_color(Theme::success_green())
                     .child(status.to_string()),
             )
+            .on_click(cx.listener(move |this, _event: &ClickEvent, _window, cx| {
+                this.selected_agent_for_dialog = Some(agent_id.clone());
+                cx.notify();
+            }))
     }
 }

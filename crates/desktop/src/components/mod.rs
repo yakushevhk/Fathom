@@ -1,4 +1,5 @@
 pub mod chat;
+pub mod gallery;
 pub mod composer;
 pub mod computer;
 pub mod governance;

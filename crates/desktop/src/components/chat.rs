@@ -60,6 +60,31 @@ impl ChatView {
 
         if is_tool {
             self.render_tool_chip(msg, cx)
+        } else if let Ok(refused) = serde_json::from_str::<crate::components::gallery::RefusedCardData>(&msg.content) {
+            crate::components::gallery::render_refused_card(&refused)
+        } else if let Ok(record) = serde_json::from_str::<crate::components::gallery::RecordCardData>(&msg.content) {
+            crate::components::gallery::render_record_card(&record)
+        } else if let Ok(metrics) = serde_json::from_str::<crate::components::gallery::MetricsCardData>(&msg.content) {
+            crate::components::gallery::render_metrics_card(&metrics)
+        } else if let Ok(checklist) = serde_json::from_str::<crate::components::gallery::ChecklistCardData>(&msg.content) {
+            crate::components::gallery::render_checklist_card(&checklist)
+        } else if let Ok(notice) = serde_json::from_str::<crate::components::gallery::NoticeCardData>(&msg.content) {
+            crate::components::gallery::render_notice_card(&notice)
+        } else if let Ok(barchart) = serde_json::from_str::<crate::components::gallery::BarChartData>(&msg.content) {
+            crate::components::gallery::render_barchart_card(&barchart)
+        } else if let Ok(progress) = serde_json::from_str::<crate::components::gallery::ProgressChartData>(&msg.content) {
+            crate::components::gallery::render_progress_card(&progress)
+        } else if let Ok(choice) = serde_json::from_str::<crate::components::gallery::ChoiceCardData>(&msg.content) {
+            crate::components::gallery::render_choice_card(&choice, cx, |req_id, opt_id, this, cx| {
+                let api = this.state.api.clone();
+                let session_id = this.state.active_session_id.read().clone().unwrap_or_else(|| "default".to_string());
+                let r = req_id.to_string();
+                let opt = opt_id.to_string();
+                cx.spawn(async move |_this, _cx| {
+                    let _ = api.answer_question(&session_id, &r, &opt).await;
+                }).detach();
+                cx.notify();
+            })
         } else {
             let req_id = msg.request_id.clone();
             let session_id = self.state.active_session_id.read().clone();

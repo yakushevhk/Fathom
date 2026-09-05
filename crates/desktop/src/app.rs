@@ -42,7 +42,7 @@ impl DesktopApp {
         let topbar = cx.new(|_| Topbar::new(state.clone()));
         let sidebar = cx.new(|_| Sidebar::new(state.clone()));
         let chat = cx.new(|_| ChatView::new(state.clone()));
-        let composer = cx.new(|_| Composer::new(state.clone()));
+        let composer = cx.new(|cx| Composer::new(state.clone(), cx));
         let computer = cx.new(|_| ComputerView::new(state.clone()));
         let governance = cx.new(|_| GovernanceView::new(state.clone()));
         let routines = cx.new(|_| RoutinesView::new(state.clone()));

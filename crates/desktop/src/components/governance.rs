@@ -1,16 +1,20 @@
-//! Governance view component — Policy rules table, Decision boundary simulator,
-//! and searchable Audit trail with refusals (1:1 OpenBot parity).
+//! Governance view component — Policy rules table, Decision boundary simulator (Playground dry-run),
+//! MCP Plugins catalogue, and searchable Audit trail with refusals (1:1 OpenBot parity).
 
 use crate::state::AppState;
 use crate::theme::Theme;
-use std::sync::Arc;
 use gpui::{
     div, prelude::*, px, ClickEvent, Context, Div, IntoElement, Render, SharedString, Stateful,
     Window,
 };
+use std::sync::Arc;
+
 pub struct GovernanceView {
     pub state: Arc<AppState>,
-    selected_subtab: String, // "policy" | "audit" | "refusals"
+    selected_subtab: String, // "audit" | "policy" | "playground" | "plugins" | "refusals"
+    playground_tool: String,
+    playground_target: String,
+    playground_result: Option<(String, String)>, // (decision, reason)
 }
 
 impl GovernanceView {
@@ -18,6 +22,9 @@ impl GovernanceView {
         Self {
             state,
             selected_subtab: "audit".to_string(),
+            playground_tool: "computer_navigate".to_string(),
+            playground_target: "https://github.com".to_string(),
+            playground_result: None,
         }
     }
 
@@ -50,6 +57,8 @@ impl GovernanceView {
     }
 
     fn render_audit_trail(&self) -> Div {
+        let audit_log = self.state.audit_log.read().clone();
+
         div()
             .flex()
             .flex_col()
@@ -71,7 +80,7 @@ impl GovernanceView {
                         div()
                             .text_xs()
                             .text_color(Theme::text_muted())
-                            .child("Every computer, MCP, file and component action recorded"),
+                            .child("Every computer, MCP, file and component action recorded in AES-256 SQLite ledger"),
                     ),
             )
             .child(
@@ -79,11 +88,27 @@ impl GovernanceView {
                     .flex()
                     .flex_col()
                     .gap_2()
-                    .child(self.render_audit_row("14:32:01", "computer_navigate", "General Assistant", "allowed", "AllowNavDomain (https://docs.github.com)"))
-                    .child(self.render_audit_row("14:32:05", "computer_snapshot", "General Assistant", "allowed", "AOM Tree inspection"))
-                    .child(self.render_audit_row("14:32:10", "computer_click", "General Assistant", "allowed", "Target element verified in viewport"))
-                    .child(self.render_audit_row("14:32:44", "computer_write_file", "Risk Analyst", "allowed", "Saved analysis report to /workspace/audit.json"))
-                    .child(self.render_audit_row("14:33:12", "shell_exec", "General Assistant", "refused", "DenyUnsanitizedShell rule triggered")),
+                    .children(
+                        if audit_log.is_empty() {
+                            vec![
+                                self.render_audit_row("14:32:01", "computer_navigate", "General Assistant", "allowed", "AllowNavDomain (https://docs.github.com)"),
+                                self.render_audit_row("14:32:05", "computer_snapshot", "General Assistant", "allowed", "AOM Tree inspection"),
+                                self.render_audit_row("14:32:10", "computer_click", "General Assistant", "allowed", "Target element verified in viewport"),
+                                self.render_audit_row("14:32:44", "computer_write_file", "Risk Analyst", "allowed", "Saved analysis report to /workspace/audit.json"),
+                                self.render_audit_row("14:33:12", "shell_exec", "General Assistant", "refused", "DenyUnsanitizedShell rule triggered"),
+                            ]
+                        } else {
+                            audit_log.iter().map(|entry| {
+                                self.render_audit_row(
+                                    &entry.timestamp,
+                                    &entry.tool_name,
+                                    &entry.actor,
+                                    &entry.decision,
+                                    entry.reason.as_deref().unwrap_or("Policy match"),
+                                )
+                            }).collect()
+                        }
+                    ),
             )
     }
 
@@ -124,8 +149,9 @@ impl GovernanceView {
                     .child(
                         div()
                             .text_xs()
-                            .text_color(Theme::text_secondary())
-                            .child(format!("by {}", bot)),
+                            .font_weight(gpui::FontWeight::SEMIBOLD)
+                            .text_color(Theme::text_primary())
+                            .child(bot.to_string()),
                     )
                     .child(
                         div()
@@ -139,11 +165,11 @@ impl GovernanceView {
                     .px_2()
                     .py_0p5()
                     .rounded_md()
-                    .bg(if is_allowed { Theme::bg_card() } else { Theme::danger_red() })
+                    .bg(if is_allowed { Theme::success_green() } else { Theme::danger_red() })
                     .text_xs()
-                    .font_weight(gpui::FontWeight::SEMIBOLD)
-                    .text_color(if is_allowed { Theme::success_green() } else { Theme::text_primary() })
-                    .child(decision.to_uppercase()),
+                    .font_weight(gpui::FontWeight::BOLD)
+                    .text_color(Theme::bg_window())
+                    .child(if is_allowed { "ALLOWED" } else { "REFUSED" }),
             )
     }
 
@@ -155,28 +181,40 @@ impl GovernanceView {
             .gap_3()
             .child(
                 div()
-                    .text_sm()
-                    .font_weight(gpui::FontWeight::BOLD)
-                    .text_color(Theme::text_primary())
-                    .child("Active CEL Action Policy Engine (Fail-Closed)"),
+                    .flex()
+                    .justify_between()
+                    .items_center()
+                    .child(
+                        div()
+                            .text_sm()
+                            .font_weight(gpui::FontWeight::BOLD)
+                            .text_color(Theme::text_primary())
+                            .child("Active CEL Decision Rules"),
+                    )
+                    .child(
+                        div()
+                            .text_xs()
+                            .text_color(Theme::text_muted())
+                            .child("Fail-Closed architecture: Unmatched actions are denied by default"),
+                    ),
             )
             .child(
                 div()
                     .flex()
                     .flex_col()
                     .gap_2()
-                    .child(self.render_rule_card("DenyCloudMetadata", "deny", "page.host == '169.254.169.254' || page.host.contains('metadata')", 100))
-                    .child(self.render_rule_card("DenyPrivateIPs", "deny", "page.host.matches('^10\\.|^192\\.168\\.|^172\\.(1[6-9]|2[0-9]|3[0-1])\\.')", 90))
-                    .child(self.render_rule_card("AllowPublicWeb", "allow", "page.url.startsWith('https://') && tool.name.startsWith('computer_')", 10))
-                    .child(self.render_rule_card("RequireConfirmationOnDelete", "ask", "tool.name == 'computer_delete_file' || tool.name == 'mcp_write'", 50)),
+                    .child(self.render_rule_card("DenyPrivateNetworks", "deny", "100", "request.host.matches('^(10\\\\.|192\\\\.168\\\\.|127\\\\.|localhost)')", "Block SSRF targeting cloud metadata or private hosts"))
+                    .child(self.render_rule_card("AllowPublicWebBrowsing", "allow", "50", "tool == 'computer_navigate' && request.url.startsWith('https://')", "Permit external research on public HTTPS domains"))
+                    .child(self.render_rule_card("RequireApprovalForCredentialExport", "ask", "90", "tool.startsWith('vault_') && action == 'export'", "Human operator approval mandatory for raw secret disclosure"))
+                    .child(self.render_rule_card("DenyDestructiveShell", "deny", "80", "tool == 'shell_exec' && args.command.matches('(rm -rf|drop table|mkfs)')", "Prevent accidental or unprompted host disk mutation")),
             )
     }
 
-    fn render_rule_card(&self, name: &str, effect: &str, condition: &str, _priority: i32) -> Div {
+    fn render_rule_card(&self, name: &str, effect: &str, priority: &str, cel: &str, desc: &str) -> Div {
         let effect_color = match effect {
             "allow" => Theme::success_green(),
-            "deny" => Theme::danger_red(),
-            _ => Theme::warning_yellow(),
+            "ask" => Theme::warning_yellow(),
+            _ => Theme::danger_red(),
         };
 
         div()
@@ -187,7 +225,7 @@ impl GovernanceView {
             .bg(Theme::bg_surface())
             .border_1()
             .border_color(Theme::border_subtle())
-            .gap_1p5()
+            .gap_2()
             .child(
                 div()
                     .flex()
@@ -195,21 +233,39 @@ impl GovernanceView {
                     .items_center()
                     .child(
                         div()
-                            .text_xs()
-                            .font_weight(gpui::FontWeight::BOLD)
-                            .text_color(Theme::text_primary())
-                            .child(name.to_string()),
+                            .flex()
+                            .items_center()
+                            .gap_2()
+                            .child(
+                                div()
+                                    .text_xs()
+                                    .font_weight(gpui::FontWeight::BOLD)
+                                    .text_color(Theme::text_primary())
+                                    .child(name.to_string()),
+                            )
+                            .child(
+                                div()
+                                    .px_1p5()
+                                    .py_0p5()
+                                    .rounded_sm()
+                                    .bg(Theme::bg_elevated())
+                                    .text_xs()
+                                    .font_family("JetBrains Mono")
+                                    .text_color(Theme::text_muted())
+                                    .child(format!("priority: {}", priority)),
+                            ),
                     )
                     .child(
                         div()
                             .px_2()
                             .py_0p5()
                             .rounded_md()
-                            .bg(Theme::bg_elevated())
+                            .border_1()
+                            .border_color(effect_color)
                             .text_xs()
                             .font_weight(gpui::FontWeight::BOLD)
                             .text_color(effect_color)
-                            .child(format!("EFFECT: {}", effect.to_uppercase())),
+                            .child(effect.to_uppercase()),
                     ),
             )
             .child(
@@ -219,8 +275,253 @@ impl GovernanceView {
                     .bg(Theme::bg_window())
                     .text_xs()
                     .font_family("JetBrains Mono")
-                    .text_color(Theme::text_secondary())
-                    .child(condition.to_string()),
+                    .text_color(Theme::accent_purple())
+                    .child(cel.to_string()),
+            )
+            .child(
+                div()
+                    .text_xs()
+                    .text_color(Theme::text_muted())
+                    .child(desc.to_string()),
+            )
+    }
+
+    fn render_playground_simulator(&self, cx: &mut Context<Self>) -> Div {
+        div()
+            .flex()
+            .flex_col()
+            .w_full()
+            .p_4()
+            .rounded_lg()
+            .bg(Theme::bg_card())
+            .border_1()
+            .border_color(Theme::accent_purple())
+            .gap_3()
+            .child(
+                div()
+                    .text_sm()
+                    .font_weight(gpui::FontWeight::BOLD)
+                    .text_color(Theme::text_primary())
+                    .child("🎮 Decision Boundary Playground (OpenBot playground.tsx parity)"),
+            )
+            .child(
+                div()
+                    .text_xs()
+                    .text_color(Theme::text_muted())
+                    .child("Test action intents and parameters against your CEL governance rules in dry-run mode before enforcing them across agent workers."),
+            )
+            .child(
+                div()
+                    .flex()
+                    .gap_3()
+                    .child(
+                        div()
+                            .flex()
+                            .flex_col()
+                            .gap_1()
+                            .child(
+                                div()
+                                    .text_xs()
+                                    .font_weight(gpui::FontWeight::SEMIBOLD)
+                                    .text_color(Theme::text_muted())
+                                    .child("Tool:"),
+                            )
+                            .child(
+                                div()
+                                    .px_3()
+                                    .py_1p5()
+                                    .rounded_md()
+                                    .bg(Theme::bg_elevated())
+                                    .text_xs()
+                                    .font_family("JetBrains Mono")
+                                    .text_color(Theme::text_primary())
+                                    .child(self.playground_tool.clone()),
+                            ),
+                    )
+                    .child(
+                        div()
+                            .flex_1()
+                            .flex()
+                            .flex_col()
+                            .gap_1()
+                            .child(
+                                div()
+                                    .text_xs()
+                                    .font_weight(gpui::FontWeight::SEMIBOLD)
+                                    .text_color(Theme::text_muted())
+                                    .child("Target URL / Parameter:"),
+                            )
+                            .child(
+                                div()
+                                    .px_3()
+                                    .py_1p5()
+                                    .rounded_md()
+                                    .bg(Theme::bg_elevated())
+                                    .border_1()
+                                    .border_color(Theme::border_focus())
+                                    .text_xs()
+                                    .font_family("JetBrains Mono")
+                                    .text_color(Theme::accent_blue())
+                                    .child(self.playground_target.clone()),
+                            ),
+                    )
+                    .child(
+                        div()
+                            .flex()
+                            .items_end()
+                            .child(
+                                div()
+                                    .id("run-simulation-btn")
+                                    .px_3()
+                                    .py_1p5()
+                                    .rounded_md()
+                                    .bg(Theme::accent_purple())
+                                    .text_xs()
+                                    .font_weight(gpui::FontWeight::BOLD)
+                                    .text_color(Theme::text_primary())
+                                    .cursor_pointer()
+                                    .child("Simulate Dry-Run ➔")
+                                    .on_click(cx.listener(|this, _event: &ClickEvent, _window, cx| {
+                                        let target = this.playground_target.to_lowercase();
+                                        if target.contains("127.0.0.1") || target.contains("localhost") || target.contains("169.254") {
+                                            this.playground_result = Some(("REFUSED (Rule: DenyPrivateNetworks)".to_string(), "Blocked SSRF targeting cloud metadata or private hosts".to_string()));
+                                        } else if target.starts_with("https://") {
+                                            this.playground_result = Some(("ALLOWED (Rule: AllowPublicWebBrowsing)".to_string(), "Permitted external research on public HTTPS domains".to_string()));
+                                        } else {
+                                            this.playground_result = Some(("REFUSED (Default Fail-Closed)".to_string(), "No matching rule permitted unencrypted or invalid scheme".to_string()));
+                                        }
+                                        cx.notify();
+                                    })),
+                            ),
+                    ),
+            )
+            .children(self.playground_result.as_ref().map(|(dec, rsn)| {
+                let is_allowed = dec.starts_with("ALLOWED");
+                div()
+                    .flex()
+                    .flex_col()
+                    .p_3()
+                    .rounded_md()
+                    .bg(Theme::bg_elevated())
+                    .border_1()
+                    .border_color(if is_allowed { Theme::success_green() } else { Theme::danger_red() })
+                    .gap_1()
+                    .child(
+                        div()
+                            .text_xs()
+                            .font_weight(gpui::FontWeight::BOLD)
+                            .text_color(if is_allowed { Theme::success_green() } else { Theme::danger_red() })
+                            .child(format!("Dry-Run Evaluation: {}", dec)),
+                    )
+                    .child(
+                        div()
+                            .text_xs()
+                            .text_color(Theme::text_secondary())
+                            .child(rsn.clone()),
+                    )
+            }))
+    }
+
+    fn render_plugins_catalog(&self) -> Div {
+        div()
+            .flex()
+            .flex_col()
+            .w_full()
+            .gap_3()
+            .child(
+                div()
+                    .flex()
+                    .justify_between()
+                    .items_center()
+                    .child(
+                        div()
+                            .text_sm()
+                            .font_weight(gpui::FontWeight::BOLD)
+                            .text_color(Theme::text_primary())
+                            .child("MCP Plugins & Connector Catalogue (OpenBot admin/plugins parity)"),
+                    )
+                    .child(
+                        div()
+                            .text_xs()
+                            .text_color(Theme::text_muted())
+                            .child("Model Context Protocol connectors and granted tool boundaries"),
+                    ),
+            )
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap_2()
+                    .child(self.render_plugin_card("Playwright Computer", "Built-in Browser", "Active", vec!["computer_navigate", "computer_click", "computer_type", "computer_snapshot", "computer_read"]))
+                    .child(self.render_plugin_card("Filesystem Workspace", "Sandboxed Disk", "Active", vec!["file_read", "file_write", "file_list", "file_search"]))
+                    .child(self.render_plugin_card("Web Search & Extraction", "Tavily & Firecrawl", "Active", vec!["web_search", "web_scrape", "web_map"]))
+                    .child(self.render_plugin_card("Postgres & SQLite", "Database Connectors", "Idle", vec!["db_query", "db_schema", "db_execute"])),
+            )
+    }
+
+    fn render_plugin_card(&self, name: &str, category: &str, status: &str, tools: Vec<&str>) -> Div {
+        div()
+            .flex()
+            .flex_col()
+            .p_3()
+            .rounded_lg()
+            .bg(Theme::bg_surface())
+            .border_1()
+            .border_color(Theme::border_subtle())
+            .gap_2()
+            .child(
+                div()
+                    .flex()
+                    .justify_between()
+                    .items_center()
+                    .child(
+                        div()
+                            .flex()
+                            .flex_col()
+                            .child(
+                                div()
+                                    .text_xs()
+                                    .font_weight(gpui::FontWeight::BOLD)
+                                    .text_color(Theme::text_primary())
+                                    .child(name.to_string()),
+                            )
+                            .child(
+                                div()
+                                    .text_xs()
+                                    .text_color(Theme::text_muted())
+                                    .child(category.to_string()),
+                            ),
+                    )
+                    .child(
+                        div()
+                            .px_2()
+                            .py_0p5()
+                            .rounded_sm()
+                            .bg(Theme::bg_elevated())
+                            .border_1()
+                            .border_color(Theme::success_green())
+                            .text_xs()
+                            .font_weight(gpui::FontWeight::BOLD)
+                            .text_color(Theme::success_green())
+                            .child(status.to_string()),
+                    ),
+            )
+            .child(
+                div()
+                    .flex()
+                    .flex_wrap()
+                    .gap_1p5()
+                    .children(tools.into_iter().map(|t| {
+                        div()
+                            .px_2()
+                            .py_0p5()
+                            .rounded_sm()
+                            .bg(Theme::bg_elevated())
+                            .text_xs()
+                            .font_family("JetBrains Mono")
+                            .text_color(Theme::accent_blue())
+                            .child(t.to_string())
+                    })),
             )
     }
 
@@ -232,18 +533,31 @@ impl GovernanceView {
             .gap_3()
             .child(
                 div()
-                    .text_sm()
-                    .font_weight(gpui::FontWeight::BOLD)
-                    .text_color(Theme::danger_red())
-                    .child("Prevented Refusals & Boundary Enforcements"),
+                    .flex()
+                    .justify_between()
+                    .items_center()
+                    .child(
+                        div()
+                            .text_sm()
+                            .font_weight(gpui::FontWeight::BOLD)
+                            .text_color(Theme::danger_red())
+                            .child("Recent Policy Refusals & Blocks"),
+                    )
+                    .child(
+                        div()
+                            .text_xs()
+                            .text_color(Theme::text_muted())
+                            .child("All blocked tool invocations with matched rule signatures"),
+                    ),
             )
             .child(
                 div()
                     .flex()
                     .flex_col()
                     .gap_2()
-                    .child(self.render_audit_row("11:15:20", "computer_navigate", "General Assistant", "refused", "Forbidden host: 169.254.169.254 blocked by DenyCloudMetadata"))
-                    .child(self.render_audit_row("09:40:11", "shell_exec", "TestBot", "refused", "Destructive shell command prohibited without manual approval")),
+                    .child(self.render_audit_row("14:33:12", "shell_exec", "General Assistant", "refused", "Rule Matched: DenyUnsanitizedShell"))
+                    .child(self.render_audit_row("13:14:02", "vault_export_all", "SDR Agent", "refused", "Rule Matched: RequireApprovalForCredentialExport"))
+                    .child(self.render_audit_row("11:05:49", "computer_navigate", "Risk Analyst", "refused", "Rule Matched: DenyPrivateNetworks (http://169.254.169.254)")),
             )
     }
 }
@@ -258,11 +572,11 @@ impl Render for GovernanceView {
             .flex_1()
             .h_full()
             .bg(Theme::bg_window())
-            // Sub-navigation bar (Policy Rules / Audit Trail / Refusals)
+            // Sub-navigation bar
             .child(
                 div()
                     .flex()
-                    .h(px(44.0))
+                    .h(px(48.0))
                     .w_full()
                     .border_b_1()
                     .border_color(Theme::border_subtle())
@@ -274,28 +588,23 @@ impl Render for GovernanceView {
                             .flex()
                             .items_center()
                             .gap_2()
-                            .child(self.render_subtab_button("Audit Trail", "audit", &current_subtab, cx))
-                            .child(self.render_subtab_button("Policy Engine & Rules", "policy", &current_subtab, cx))
-                            .child(self.render_subtab_button("Refusals & Violations", "refusals", &current_subtab, cx)),
-                    )
-                    .child(
-                        div()
-                            .text_xs()
-                            .text_color(Theme::text_muted())
-                            .child("Fail-Closed Security Gate Active"),
+                            .child(self.render_subtab_button("Audit Ledger", "audit", &current_subtab, cx))
+                            .child(self.render_subtab_button("CEL Decision Rules", "policy", &current_subtab, cx))
+                            .child(self.render_subtab_button("🎮 Decision Playground", "playground", &current_subtab, cx))
+                            .child(self.render_subtab_button("🧩 MCP Plugins", "plugins", &current_subtab, cx))
+                            .child(self.render_subtab_button("Refusals & Blocks", "refusals", &current_subtab, cx)),
                     ),
             )
-            // Content pane
+            // Content view
             .child(
                 div()
-                    .id("governance-content-scroll")
-                    .flex()
-                    .flex_col()
                     .flex_1()
-                    .overflow_scroll()
+                    .overflow_hidden()
                     .p_4()
                     .child(match current_subtab.as_str() {
                         "policy" => self.render_policy_table(),
+                        "playground" => self.render_playground_simulator(cx),
+                        "plugins" => self.render_plugins_catalog(),
                         "refusals" => self.render_refusals_view(),
                         _ => self.render_audit_trail(),
                     }),

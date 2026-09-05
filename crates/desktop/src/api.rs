@@ -294,6 +294,14 @@ impl ApiClient {
         Ok(())
     }
 
+    pub async fn computer_mouse_click(&self, x: i32, y: i32) -> Result<()> {
+        let endpoint = format!("{}/api/v1/computers/click", self.base_url);
+        self.http.post(&endpoint)
+            .json(&serde_json::json!({ "x": x, "y": y }))
+            .send().await?;
+        Ok(())
+    }
+
     // Governance & Audit
     pub async fn get_policy(&self) -> Result<PolicyDocument> {
         let url = format!("{}/api/v1/governance/policy", self.base_url);

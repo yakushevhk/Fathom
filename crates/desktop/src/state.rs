@@ -57,6 +57,8 @@ pub struct AppState {
     pub channels: RwLock<Vec<Channel>>,
     pub active_channel_id: RwLock<Option<String>>,
     pub messages: RwLock<Vec<ChatMessage>>,
+    pub channel_messages: RwLock<std::collections::HashMap<String, Vec<ChatMessage>>>,
+    pub agent_handoff_grants: RwLock<std::collections::HashMap<String, Vec<String>>>,
     pub thinking_drawer_open: RwLock<bool>,
     // Computer Use
     pub computer_url: RwLock<String>,
@@ -91,6 +93,8 @@ impl AppState {
             channels: RwLock::new(Vec::new()),
             active_channel_id: RwLock::new(None),
             messages: RwLock::new(Vec::new()),
+            channel_messages: RwLock::new(std::collections::HashMap::new()),
+            agent_handoff_grants: RwLock::new(std::collections::HashMap::new()),
             thinking_drawer_open: RwLock::new(false),
             computer_url: RwLock::new("https://github.com".to_string()),
             computer_screenshot: RwLock::new(None),
@@ -115,7 +119,18 @@ impl AppState {
     }
 
     pub fn set_active_channel(&self, channel_id: Option<String>) {
-        *self.active_channel_id.write() = channel_id;
+        let old_id = self.active_channel_id.read().clone();
+        if let Some(old) = old_id {
+            let current = self.messages.read().clone();
+            self.channel_messages.write().insert(old, current);
+        }
+        *self.active_channel_id.write() = channel_id.clone();
+        if let Some(new_id) = channel_id {
+            let loaded = self.channel_messages.read().get(&new_id).cloned().unwrap_or_default();
+            *self.messages.write() = loaded;
+        } else {
+            self.messages.write().clear();
+        }
     }
 
     pub fn toggle_thinking_drawer(&self) {
@@ -124,9 +139,11 @@ impl AppState {
     }
 
     pub fn add_message(&self, msg: ChatMessage) {
-        self.messages.write().push(msg);
+        self.messages.write().push(msg.clone());
+        if let Some(active_ch) = self.active_channel_id.read().clone() {
+            self.channel_messages.write().entry(active_ch).or_default().push(msg);
+        }
     }
-
     /// Apply an incoming AgentEvent from the server SSE stream to reactive local UI state.
     pub fn apply_agent_event(&self, event: &pr_core::AgentEvent) {
         let now = chrono::Utc::now().format("%H:%M:%S").to_string();
