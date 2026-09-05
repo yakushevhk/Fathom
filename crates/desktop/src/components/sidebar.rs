@@ -258,6 +258,7 @@ impl Render for Sidebar {
                     .child(self.render_nav_item("Routines & Cron", NavigationTab::Routines, active_tab, "⚡", cx))
                     .child(self.render_nav_item("Skills & Tools", NavigationTab::Skills, active_tab, "🧩", cx))
                     .child(self.render_nav_item("Credentials Vault", NavigationTab::Vault, active_tab, "🔑", cx))
+                    .child(self.render_nav_item("Settings & Engine", NavigationTab::Settings, active_tab, "⚙️", cx))
             )
             // Channels / Coworker List section
             .child(

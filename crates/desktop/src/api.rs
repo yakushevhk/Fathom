@@ -331,18 +331,84 @@ impl ApiClient {
         let url = format!("{}/api/v1/credentials", self.base_url);
         let resp = self.http.get(&url).send().await?;
         if resp.status().is_success() {
-            let res = resp.json::<Vec<Credential>>().await.unwrap_or_default();
-            Ok(res)
+            let list: Vec<Credential> = resp.json().await?;
+            Ok(list)
         } else {
             Ok(Vec::new())
         }
     }
 
-    pub async fn store_credential(&self, name: &str, service: &str, secret: &str) -> Result<()> {
+    pub async fn store_credential(&self, name: &str, kind: &str, secret: &str) -> Result<()> {
         let url = format!("{}/api/v1/credentials", self.base_url);
         self.http.post(&url)
-            .json(&serde_json::json!({ "name": name, "service": service, "secret": secret }))
+            .json(&serde_json::json!({ "name": name, "kind": kind, "secret": secret }))
             .send().await?;
+        Ok(())
+    }
+
+    pub async fn delete_credential(&self, id: &str) -> Result<()> {
+        let url = format!("{}/api/v1/credentials/{}", self.base_url, id);
+        self.http.delete(&url).send().await?;
+        Ok(())
+    }
+
+    // Schedules & Routines
+    pub async fn list_schedules(&self) -> Result<Vec<Routine>> {
+        let url = format!("{}/api/v1/schedules", self.base_url);
+        let resp = self.http.get(&url).send().await?;
+        if resp.status().is_success() {
+            let body: serde_json::Value = resp.json().await?;
+            let mut routines = Vec::new();
+            if let Some(arr) = body.get("schedules").and_then(|v| v.as_array()) {
+                for item in arr {
+                    routines.push(Routine {
+                        id: item.get("id").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
+                        name: item.get("coworker_id").and_then(|v| v.as_str()).unwrap_or("Scheduled Task").to_string(),
+                        cron: item.get("cron_expression").and_then(|v| v.as_str()).unwrap_or("* * * * *").to_string(),
+                        prompt: item.get("query").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
+                        channel_id: "general".to_string(),
+                        enabled: item.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true),
+                        last_run: item.get("last_run").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                    });
+                }
+            }
+            Ok(routines)
+        } else {
+            Ok(Vec::new())
+        }
+    }
+
+    pub async fn create_schedule(&self, coworker_id: &str, cron: &str, query: &str) -> Result<()> {
+        let url = format!("{}/api/v1/schedules", self.base_url);
+        self.http.post(&url)
+            .json(&serde_json::json!({
+                "coworker_id": coworker_id,
+                "cron_expression": cron,
+                "query": query,
+                "enabled": true,
+                "timezone": "UTC"
+            }))
+            .send().await?;
+        Ok(())
+    }
+
+    pub async fn toggle_schedule(&self, id: &str, coworker_id: &str, cron: &str, query: &str, enabled: bool) -> Result<()> {
+        let url = format!("{}/api/v1/schedules/{}", self.base_url, id);
+        self.http.put(&url)
+            .json(&serde_json::json!({
+                "coworker_id": coworker_id,
+                "cron_expression": cron,
+                "query": query,
+                "enabled": enabled,
+                "timezone": "UTC"
+            }))
+            .send().await?;
+        Ok(())
+    }
+
+    pub async fn delete_schedule(&self, id: &str) -> Result<()> {
+        let url = format!("{}/api/v1/schedules/{}", self.base_url, id);
+        self.http.delete(&url).send().await?;
         Ok(())
     }
 

@@ -28,7 +28,8 @@ pub struct DesktopApp {
     routines: Entity<RoutinesView>,
     skills: Entity<SkillsView>,
     vault: Entity<VaultView>,
-    focus_handle: FocusHandle,
+    settings: Entity<crate::components::settings::SettingsView>,
+    focus_handle: gpui::FocusHandle,
 }
 
 impl Focusable for DesktopApp {
@@ -48,6 +49,7 @@ impl DesktopApp {
         let routines = cx.new(|_| RoutinesView::new(state.clone()));
         let skills = cx.new(|_| SkillsView::new(state.clone()));
         let vault = cx.new(|_| VaultView::new(state.clone()));
+        let settings = cx.new(|_| crate::components::settings::SettingsView::new(state.clone()));
         let focus_handle = cx.focus_handle();
 
         // Observe child views so navigation & state changes re-render the app shell
@@ -72,27 +74,30 @@ impl DesktopApp {
                 cx.notify();
             });
 
-            // Real-time SSE event subscription stream
+            // Real-time SSE event subscription stream with durable outer reconnect loop
             use futures::StreamExt;
-            let mut event_source = state_clone.api.subscribe_events(None);
-            while let Some(event_result) = event_source.next().await {
-                match event_result {
-                    Ok(reqwest_eventsource::Event::Message(msg)) => {
-                        if let Ok(agent_event) = serde_json::from_str::<pr_core::AgentEvent>(&msg.data) {
-                            state_clone.apply_agent_event(&agent_event);
-                            let _ = this.update(&mut *cx, |_this, cx| {
-                                cx.notify();
-                            });
+            loop {
+                let mut event_source = state_clone.api.subscribe_events(None);
+                while let Some(event_result) = event_source.next().await {
+                    match event_result {
+                        Ok(reqwest_eventsource::Event::Message(msg)) => {
+                            if let Ok(agent_event) = serde_json::from_str::<pr_core::AgentEvent>(&msg.data) {
+                                state_clone.apply_agent_event(&agent_event);
+                                let _ = this.update(&mut *cx, |_this, cx| {
+                                    cx.notify();
+                                });
+                            }
+                        }
+                        Ok(reqwest_eventsource::Event::Open) => {
+                            tracing::info!("SSE stream connected to Fathom daemon");
+                        }
+                        Err(err) => {
+                            tracing::debug!("SSE connection event: {:?}", err);
+                            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
                         }
                     }
-                    Ok(reqwest_eventsource::Event::Open) => {
-                        tracing::info!("SSE stream connected to Fathom daemon");
-                    }
-                    Err(err) => {
-                        tracing::debug!("SSE connection event: {:?}", err);
-                        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-                    }
                 }
+                tokio::time::sleep(std::time::Duration::from_secs(3)).await;
             }
         }).detach();
         Self {
@@ -106,6 +111,7 @@ impl DesktopApp {
             routines,
             skills,
             vault,
+            settings,
             focus_handle,
         }
     }
@@ -203,8 +209,8 @@ impl Render for DesktopApp {
                                             .flex_col()
                                             .flex_1()
                                             .h_full()
-                                            .p_6()
-                                            .child("Engine & Local Settings")
+                                            .overflow_hidden()
+                                            .child(self.settings.clone())
                                     }
                                 }
                             ),

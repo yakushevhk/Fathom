@@ -422,11 +422,6 @@ impl Render for Composer {
                                     .py_1p5()
                                     .rounded_md()
                                     .bg(if is_running { Theme::warning_yellow() } else { Theme::accent_purple() })
-                                    .text_xs()
-                                    .font_weight(gpui::FontWeight::SEMIBOLD)
-                                    .text_color(if is_running { Theme::bg_window() } else { Theme::text_primary() })
-                                    .cursor_pointer()
-                                    .hover(|s| s.bg(Theme::accent_blue()).text_color(Theme::text_primary()))
                                     .child(if is_running { "Queue Turn ↵" } else { "Send Turn ↵" })
                                     .on_click(cx.listener(|this, _event: &ClickEvent, _window, cx| {
                                         let text = if this.input_text.is_empty() {
@@ -437,6 +432,47 @@ impl Render for Composer {
                                         this.submit_turn(text, cx);
                                     })),
                             )
+                            .children(if is_running {
+                                Some(
+                                    div()
+                                        .id("composer-stop-btn")
+                                        .px_3()
+                                        .py_1p5()
+                                        .rounded_md()
+                                        .bg(Theme::danger_red())
+                                        .text_xs()
+                                        .font_weight(gpui::FontWeight::BOLD)
+                                        .text_color(Theme::text_primary())
+                                        .cursor_pointer()
+                                        .child("🛑 Stop Turn")
+                                        .on_click(cx.listener(|this, _event: &ClickEvent, _window, cx| {
+                                            let session_id = this.state.active_session_id.read().clone();
+                                            let api = this.state.api.clone();
+                                            if let Some(id) = session_id {
+                                                cx.spawn(async move |_this, _cx| {
+                                                    let _ = api.cancel_session(&id).await;
+                                                }).detach();
+                                            }
+                                            this.state.add_message(ChatMessage {
+                                                id: uuid::Uuid::new_v4().to_string(),
+                                                role: "system".to_string(),
+                                                content: "🛑 Turn stopped by human operator.".to_string(),
+                                                thinking: None,
+                                                tool_name: None,
+                                                tool_status: None,
+                                                tool_input: None,
+                                                tool_output: None,
+                                                question: None,
+                                                request_id: None,
+                                                timestamp: chrono::Utc::now().format("%H:%M:%S").to_string(),
+                                                expanded: false,
+                                            });
+                                            cx.notify();
+                                        })),
+                                )
+                            } else {
+                                None
+                            })
                             .child(
                                 div()
                                     .id("composer-steer-btn")
