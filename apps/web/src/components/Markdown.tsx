@@ -73,11 +73,12 @@ const components: Components = {
     )
   },
   a({ children, href, ...props }) {
+    const safeHref = href && (/^(https?:\/\/|\/|mailto:)/i.test(href)) ? href : '#'
     return (
       <a
-        href={href}
-        target="_blank"
-        rel="noreferrer"
+        href={safeHref}
+        target={safeHref.startsWith('http') ? '_blank' : undefined}
+        rel={safeHref.startsWith('http') ? 'noreferrer noopener' : undefined}
         className="text-blue-400 hover:text-blue-300 underline underline-offset-2"
         {...props}
       >

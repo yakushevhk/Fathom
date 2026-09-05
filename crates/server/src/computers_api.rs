@@ -392,26 +392,74 @@ pub async fn release_control_for_agent(State(state): State<Arc<AppState>>, Path(
     }
 }
 
-pub async fn navigate(Json(body): Json<Value>) -> Response {
+pub async fn navigate(State(state): State<Arc<AppState>>, Json(body): Json<Value>) -> Response {
+    let mut ctx = pr_governance::ActionContext::new(
+        "api-caller".to_string(),
+        "direct-control".to_string(),
+        "computer_navigate".to_string(),
+        body.clone(),
+    );
+    if let Some(url) = body.get("url").and_then(|v| v.as_str()) {
+        ctx.url = Some(url.to_string());
+    }
+    if let Ok(decision) = state.governance_decide(&ctx).await {
+        if !decision.is_allowed() {
+            return (StatusCode::FORBIDDEN, "Action denied by governance policy").into_response();
+        }
+    }
     upstream_json_post("/navigate", body).await
 }
 
 pub async fn navigate_for_agent(State(state): State<Arc<AppState>>, Path(agent_id): Path<String>, Json(body): Json<Value>) -> Response {
+    let mut ctx = pr_governance::ActionContext::new(
+        agent_id.clone(),
+        "direct-control".to_string(),
+        "computer_navigate".to_string(),
+        body.clone(),
+    );
+    if let Some(url) = body.get("url").and_then(|v| v.as_str()) {
+        ctx.url = Some(url.to_string());
+    }
+    if let Ok(decision) = state.governance_decide(&ctx).await {
+        if !decision.is_allowed() {
+            return (StatusCode::FORBIDDEN, "Action denied by governance policy").into_response();
+        }
+    }
     match agent_service_root(&state, &agent_id).await {
         Ok(root) => upstream_json_post_at(&root, "/navigate", body).await,
         Err(error) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
     }
 }
 
-pub async fn click(Json(body): Json<Value>) -> Response {
+pub async fn click(State(state): State<Arc<AppState>>, Json(body): Json<Value>) -> Response {
+    let ctx = pr_governance::ActionContext::new(
+        "api-caller".to_string(),
+        "direct-control".to_string(),
+        "computer_click".to_string(),
+        body.clone(),
+    );
+    if let Ok(decision) = state.governance_decide(&ctx).await {
+        if !decision.is_allowed() {
+            return (StatusCode::FORBIDDEN, "Action denied by governance policy").into_response();
+        }
+    }
     upstream_json_post("/click", body).await
 }
 
-pub async fn type_text(Json(body): Json<Value>) -> Response {
+pub async fn type_text(State(state): State<Arc<AppState>>, Json(body): Json<Value>) -> Response {
+    let ctx = pr_governance::ActionContext::new(
+        "api-caller".to_string(),
+        "direct-control".to_string(),
+        "computer_type".to_string(),
+        body.clone(),
+    );
+    if let Ok(decision) = state.governance_decide(&ctx).await {
+        if !decision.is_allowed() {
+            return (StatusCode::FORBIDDEN, "Action denied by governance policy").into_response();
+        }
+    }
     upstream_json_post("/type", body).await
 }
-
-/// Enter a secret directly into the computer without returning or logging the value.
 /// The upstream service returns only the refreshed page metadata/snapshot.
 pub async fn secret(Extension(principal): Extension<AuthPrincipal>, Json(body): Json<Value>) -> Response {
     if principal.0 == "anonymous" {

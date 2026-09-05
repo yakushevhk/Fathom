@@ -349,12 +349,24 @@ impl AgentRuntime {
     }
 
     fn governance_context(&self, tool: &str, args: &serde_json::Value) -> pr_governance::ActionContext {
-        pr_governance::ActionContext::new(
+        let mut ctx = pr_governance::ActionContext::new(
             self.id.0.clone(),
             self.session_id.0.clone(),
             tool.to_string(),
             args.clone(),
-        )
+        );
+        if let Some(obj) = args.as_object() {
+            if let Some(url) = obj.get("url").or_else(|| obj.get("uri")).and_then(|v| v.as_str()) {
+                ctx.url = Some(url.to_string());
+            }
+            if let Some(file) = obj.get("path").or_else(|| obj.get("file")).and_then(|v| v.as_str()) {
+                ctx.file = Some(file.to_string());
+            }
+            if let Some(intent) = obj.get("intent").or_else(|| obj.get("reason")).and_then(|v| v.as_str()) {
+                ctx.intent = Some(intent.to_string());
+            }
+        }
+        ctx
     }
 
     fn governance_decision(
@@ -1460,6 +1472,28 @@ impl AgentRuntime {
                     // (fleet D4). The tool message is emitted once the child
                     // completes. A `spawn_batch` marker expands into one
                     // pending spawn per task so each runs as its own agent.
+                    // Batch spawn from TaskBatchTool (`task`)
+                    if tool_name == "task" {
+                        if let Some(meta) = result.metadata.as_ref() {
+                            if let Some(batch) = meta.get("swarm_batch_spawn").and_then(|v| v.as_array()) {
+                                if !batch.is_empty() {
+                                    for (i, item) in batch.iter().enumerate() {
+                                        let mut item_meta = serde_json::Map::new();
+                                        item_meta.insert("spawn_request".to_string(), serde_json::Value::Bool(true));
+                                        if let Some(obj) = item.as_object() {
+                                            for (k, v) in obj {
+                                                item_meta.insert(k.clone(), v.clone());
+                                            }
+                                        }
+                                        let batch_call_id = format!("{}_{}", tool_call.id, i);
+                                        pending_spawns.push((batch_call_id, serde_json::Value::Object(item_meta)));
+                                    }
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+
                     if tool_name == "spawn_agent"
                         && result
                             .metadata
@@ -1469,9 +1503,6 @@ impl AgentRuntime {
                             == Some(true)
                     {
                         let meta = result.metadata.clone().unwrap_or_default();
-
-                        // Handoff: serialize current state and send to target
-                        // agent via IrcBus, then stop this agent.
                         if meta.get("handoff").and_then(|v| v.as_bool()) == Some(true) {
                             if let Some(target) = meta.get("handoff_to").and_then(|v| v.as_str()) {
                                 let target_id = pr_core::AgentId(target.to_string());

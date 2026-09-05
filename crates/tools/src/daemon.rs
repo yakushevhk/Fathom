@@ -257,16 +257,20 @@ impl Tool for DaemonTool {
                     if let Some(pid) = info.pid {
                         #[cfg(unix)]
                         {
-                            unsafe {
-                                // Send SIGTERM to the entire process group to terminate child worker sub-trees
-                                libc::kill(-(pid as i32), libc::SIGTERM);
+                            if pid > 1 {
+                                unsafe {
+                                    // Send SIGTERM to the entire process group to terminate child worker sub-trees
+                                    libc::kill(-(pid as i32), libc::SIGTERM);
+                                }
                             }
                         }
                         #[cfg(not(unix))]
                         {
-                            let _ = std::process::Command::new("taskkill")
-                                .args(["/PID", &pid.to_string(), "/T", "/F"])
-                                .spawn();
+                            if pid > 0 {
+                                let _ = std::process::Command::new("taskkill")
+                                    .args(["/PID", &pid.to_string(), "/T", "/F"])
+                                    .spawn();
+                            }
                         }
                         reg.update_status(&name, DaemonStatus::Stopped);
                         Ok(ToolOutput::ok(format!(

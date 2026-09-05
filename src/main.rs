@@ -121,7 +121,7 @@ enum Commands {
     },
     /// Benchmark the tool-execution layer (no LLM, no network)
     Bench {
-        /// Scenario: all | dispatch | parallel-io | parallel-cpu | mixed | parse-scale | extract-json | feed-parse | code-map
+        /// Scenario: all | dispatch | parallel-io | parallel-cpu | mixed | parse-scale | extract-json | feed-parse | code-map | memory
         #[arg(short, long, default_value = "all")]
         scenario: String,
         /// Number of parallel-safe calls / data files in the batch scenarios

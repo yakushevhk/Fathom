@@ -141,7 +141,13 @@ impl FileHistory {
 
         // Ring buffer eviction: drop oldest if at capacity.
         if self.checkpoints.len() >= MAX_HISTORY_SIZE {
-            self.checkpoints.pop_front();
+            if let Some(evicted) = self.checkpoints.pop_front() {
+                for snap in evicted.snapshots {
+                    if !snap.backup_path.as_os_str().is_empty() && snap.backup_path.exists() {
+                        let _ = std::fs::remove_file(&snap.backup_path);
+                    }
+                }
+            }
         }
         self.checkpoints.push_back(checkpoint);
 

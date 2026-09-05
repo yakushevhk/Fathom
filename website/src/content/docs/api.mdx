@@ -152,7 +152,7 @@ X-Api-Key: &lt;your-api-key&gt;`} /></pre>
             </div>
             <pre><code set:html={`{
   "query": "Find SaaS companies in Berlin with 10-50 employees",
-  "output_dir": "./results/session-001"
+  "output_dir": "session-001"
 }`} /></pre>
           </div>
 
@@ -354,6 +354,51 @@ X-Api-Key: &lt;your-api-key&gt;`} /></pre>
   ]
 }`} /></pre>
           </div>
+        </article>
+        {/* GET /api/v1/ws */}
+        <article id="get-ws" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-get">GET</span>
+            <code class="endpoint-path">/api/v1/ws</code>
+          </div>
+          <p class="endpoint-desc">Multiplexed bidirectional WebSocket connection for live agent streaming, control frame dispatch, and session telemetry. Supports token authentication via <code>?api_key=</code> query parameter.</p>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">JavaScript</span>
+              <span class="code-label">Client</span>
+            </div>
+            <pre><code set:html={`const ws = new WebSocket('ws://localhost:8080/api/v1/ws?api_key=sk-fathom-...');
+ws.onmessage = (event) => console.log(JSON.parse(event.data));`} /></pre>
+          </div>
+        </article>
+
+        {/* POST /api/v1/webhooks/inbound */}
+        <article id="post-webhooks" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-post">POST</span>
+            <code class="endpoint-path">/api/v1/webhooks/inbound</code>
+          </div>
+          <p class="endpoint-desc">Inbound webhook reactor for GitHub, Sentry, Stripe, and CRM triggers. Verified using HMAC-SHA256 via <code>X-Fathom-Signature</code> or <code>X-Hub-Signature-256</code>.</p>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">JSON</span>
+              <span class="code-label">Request</span>
+            </div>
+            <pre><code set:html={`{
+  "source": "github",
+  "event_type": "issues.opened",
+  "payload": { "issue": { "number": 42, "title": "Memory leak in agent" } }
+}`} /></pre>
+          </div>
+        </article>
+
+        {/* GET /api/v1/openapi.json */}
+        <article id="get-openapi" class="endpoint">
+          <div class="endpoint-header">
+            <span class="method-badge method-get">GET</span>
+            <code class="endpoint-path">/api/v1/openapi.json</code>
+          </div>
+          <p class="endpoint-desc">Download the complete OpenAPI 3.1 schema defining all available endpoints, request bodies, and response structures.</p>
         </article>
 
         {/* GET /api/v1/sessions/:id/events */}

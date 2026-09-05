@@ -60,7 +60,6 @@ export class BrowserSession {
     const existing = this.context.pages();
     this.page = existing[0] || await this.context.newPage();
     await this.context.route("**/*", async route => {
-      if (!route.request().isNavigationRequest()) return route.continue();
       try {
         validateEgressUrl(route.request().url(), currentEgressOptions());
         return route.continue();

@@ -864,12 +864,16 @@ fn spawn_session(
                 coordinator = coordinator.with_memory(mem);
             }
             if let Err(e) = coordinator.execute().await {
-                tracing::error!("session {session_id} failed: {e}");
-                let _ = db.fail_session(&session_id, &e.to_string());
-                let _ = event_tx.send(AgentEvent::SessionFailed {
-                    id: session_id.clone(),
-                    error: e.to_string(),
-                });
+                if cancel.is_cancelled() {
+                    tracing::info!("session {session_id} was cancelled");
+                } else {
+                    tracing::error!("session {session_id} failed: {e}");
+                    let _ = db.fail_session(&session_id, &e.to_string());
+                    let _ = event_tx.send(AgentEvent::SessionFailed {
+                        id: session_id.clone(),
+                        error: e.to_string(),
+                    });
+                }
             }
             // Stop registering controls once the session is over.
             control_loop.abort();

@@ -1,0 +1,15 @@
+.git
+.github
+target
+node_modules
+.next
+out
+dist
+*.db
+*.db-wal
+*.db-shm
+.env
+.env.*
+research-output
+.computer-workspace
+*.tsbuildinfo

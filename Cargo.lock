@@ -2501,6 +2501,7 @@ dependencies = [
  "base64 0.22.1",
  "chrono",
  "futures",
+ "hex",
  "http-body-util",
  "parking_lot",
  "pr-agent",

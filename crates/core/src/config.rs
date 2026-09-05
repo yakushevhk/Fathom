@@ -577,13 +577,42 @@ fn default_hook_timeout_ms() -> u64 {
 impl AppConfig {
     pub fn load() -> anyhow::Result<Self> {
         let config_path = Self::config_path()?;
-        if config_path.exists() {
+        let mut config = if config_path.exists() {
             let content = std::fs::read_to_string(&config_path)?;
-            let config: AppConfig = toml::from_str(&content)?;
-            Ok(config)
+            let cfg: AppConfig = toml::from_str(&content)?;
+            cfg
         } else {
-            Ok(Self::default())
+            Self::default()
+        };
+
+        // Support standard environment overrides for containerized/headless deployments
+        if let Ok(key) = std::env::var("LLM_API_KEY") {
+            if !key.trim().is_empty() {
+                config.llm.api_key = key.trim().to_string();
+            }
         }
+        if let Ok(provider) = std::env::var("LLM_PROVIDER") {
+            if !provider.trim().is_empty() {
+                config.llm.provider = provider.trim().to_string();
+            }
+        }
+        if let Ok(model) = std::env::var("LLM_MODEL") {
+            if !model.trim().is_empty() {
+                config.llm.model = model.trim().to_string();
+            }
+        }
+        if let Ok(base_url) = std::env::var("LLM_BASE_URL") {
+            if !base_url.trim().is_empty() {
+                config.llm.base_url = base_url.trim().to_string();
+            }
+        }
+        if let Ok(backend) = std::env::var("SEARCH_BACKEND") {
+            if !backend.trim().is_empty() {
+                config.search.backend = backend.trim().to_string();
+            }
+        }
+
+        Ok(config)
     }
 
     pub fn config_path() -> anyhow::Result<std::path::PathBuf> {

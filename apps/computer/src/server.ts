@@ -191,18 +191,18 @@ export class ComputerServer {
   private async handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer): Promise<void> {
     const url = new URL(request.url || "/", `http://${this.host}`);
     if (url.pathname !== "/control/ws" || request.headers.upgrade?.toLowerCase() !== "websocket" || !this.authorizedWebSocket(request, url)) {
-      socket.write("HTTP/1.1 401 Unauthorized\\r\\nConnection: close\\r\\n\\r\\n");
+      socket.write("HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n");
       socket.destroy();
       return;
     }
     const key = request.headers["sec-websocket-key"];
     if (typeof key !== "string") {
-      socket.write("HTTP/1.1 400 Bad Request\\r\\nConnection: close\\r\\n\\r\\n");
+      socket.write("HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
       socket.destroy();
       return;
     }
     const accept = createHash("sha1").update(key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").digest("base64");
-    socket.write(`HTTP/1.1 101 Switching Protocols\\r\\nUpgrade: websocket\\r\\nConnection: Upgrade\\r\\nSec-WebSocket-Accept: ${accept}\\r\\n\\r\\n`);
+    socket.write(`HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ${accept}\r\n\r\n`);
     let connection!: WsConnection;
     connection = new WsConnection(socket, (value) => this.handleWsMessage(connection, value));
     this.sockets.add(connection);
@@ -310,13 +310,15 @@ class WsConnection {
     this.buffer = this.buffer.subarray(total);
     if (opcode === 0x8) { this.close(); return true; }
     if (opcode === 0x9) { this.socket.write(frame(0xA, payload)); return true; }
-    if (opcode !== 0x1 || (first & 0x40) !== 0) throw new Error("unsupported websocket frame");
+    if (opcode === 0xA) { return true; }
+    if (opcode !== 0x1) {
+      return true;
+    }
     let value: unknown;
     try { value = JSON.parse(payload.toString("utf8")); } catch { this.send({ type: "error", message: "Invalid JSON message" }); return true; }
     this.pending = this.pending.then(() => this.onMessage(value)).catch(() => undefined);
     return true;
   }
-
   private finish(): void {
     if (this.closed) return;
     this.closed = true;

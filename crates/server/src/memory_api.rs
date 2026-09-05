@@ -185,7 +185,14 @@ pub async fn absorb_memories(
         .unwrap_or_else(|| state.llm.clone());
     let pipeline = mem.pipeline_with_llm(aux);
     match pipeline.absorb(req).await {
-        Ok(report) => (StatusCode::OK, Json(serde_json::to_value(report).unwrap())).into_response(),
+        Ok(report) => match serde_json::to_value(report) {
+            Ok(v) => (StatusCode::OK, Json(v)).into_response(),
+            Err(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({"error": e.to_string()})),
+            )
+                .into_response(),
+        },
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(serde_json::json!({"error": e.to_string()})),
@@ -211,7 +218,14 @@ pub async fn distill_memories(
         return memory_disabled().into_response();
     };
     match mem.distill(params.session.as_deref(), params.dry_run).await {
-        Ok(report) => Json(serde_json::to_value(report).unwrap()).into_response(),
+        Ok(report) => match serde_json::to_value(report) {
+            Ok(v) => Json(v).into_response(),
+            Err(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({"error": e.to_string()})),
+            )
+                .into_response(),
+        },
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(serde_json::json!({"error": e.to_string()})),
@@ -244,7 +258,14 @@ pub async fn gc_memories(
         ..Default::default()
     };
     match mem.gc(&opts).await {
-        Ok(report) => Json(serde_json::to_value(report).unwrap()).into_response(),
+        Ok(report) => match serde_json::to_value(report) {
+            Ok(v) => Json(v).into_response(),
+            Err(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({"error": e.to_string()})),
+            )
+                .into_response(),
+        },
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(serde_json::json!({"error": e.to_string()})),

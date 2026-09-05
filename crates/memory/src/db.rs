@@ -372,35 +372,34 @@ impl MemoryDb {
     pub fn list(&self, filter: &ScopeFilter, status: Option<&str>, limit: usize) -> anyhow::Result<Vec<MemoryRow>> {
         let conn = self.conn.lock().unwrap();
         let mut sql = format!("{} WHERE 1=1", Self::SELECT_COLS);
-        let mut args: Vec<String> = Vec::new();
+        let mut params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+
         if !filter.pairs.is_empty() {
-            let clauses: Vec<String> = filter
-                .pairs
-                .iter()
-                .map(|(scope, key)| {
-                    if key.is_empty() {
-                        format!("scope = '{}'", scope.replace('\'', "''"))
-                    } else {
-                        format!(
-                            "(scope = '{}' AND scope_key = '{}')",
-                            scope.replace('\'', "''"),
-                            key.replace('\'', "''")
-                        )
-                    }
-                })
-                .collect();
-            sql.push_str(&format!(" AND ({})", clauses.join(" OR ")));
+            let mut or_clauses = Vec::new();
+            for (scope, key) in &filter.pairs {
+                if key.is_empty() {
+                    or_clauses.push("scope = ?");
+                    params.push(Box::new(scope.clone()));
+                } else {
+                    or_clauses.push("(scope = ? AND scope_key = ?)");
+                    params.push(Box::new(scope.clone()));
+                    params.push(Box::new(key.clone()));
+                }
+            }
+            sql.push_str(&format!(" AND ({})", or_clauses.join(" OR ")));
         }
+
         if let Some(s) = status {
             sql.push_str(" AND status = ?");
-            args.push(s.to_string());
+            params.push(Box::new(s.to_string()));
         }
         // usize::MAX would overflow SQLite's signed 64-bit LIMIT.
         let limit = (limit as u64).min(i64::MAX as u64);
         sql.push_str(&format!(" ORDER BY created_at DESC LIMIT {limit}"));
         let mut stmt = conn.prepare(&sql)?;
+        let rusqlite_params: Vec<&dyn rusqlite::ToSql> = params.iter().map(|p| p.as_ref()).collect();
         let rows = stmt
-            .query_map(rusqlite::params_from_iter(args.iter()), map_row)?
+            .query_map(rusqlite::params_from_iter(rusqlite_params), map_row)?
             .collect::<rusqlite::Result<Vec<_>>>()?;
         Ok(rows)
     }
@@ -576,17 +575,24 @@ impl MemoryDb {
             if match_expr.is_empty() {
                 return Ok(Vec::new());
             }
-            let scope_clause = scope_clause_sql(filter);
+            let (scope_clause, scope_params) = build_scope_filter(filter, "m.");
             let sql = format!(
                 "SELECT f.memory_id, bm25(memories_fts) AS rank
                  FROM memories_fts f
                  JOIN memories m ON m.id = f.memory_id
-                 WHERE memories_fts MATCH ?1 {scope_clause} AND m.status = 'active'
-                 ORDER BY rank LIMIT ?2"
+                 WHERE memories_fts MATCH ? {scope_clause} AND m.status = 'active'
+                 ORDER BY rank LIMIT ?"
             );
             let mut stmt = conn.prepare(&sql)?;
+            let mut all_params: Vec<&dyn rusqlite::ToSql> = Vec::new();
+            all_params.push(&match_expr);
+            for p in &scope_params {
+                all_params.push(p.as_ref());
+            }
+            let limit_i64 = limit as i64;
+            all_params.push(&limit_i64);
             let rows = stmt
-                .query_map(params![match_expr, limit as i64], |r| {
+                .query_map(rusqlite::params_from_iter(all_params), |r| {
                     Ok((r.get::<_, String>(0)?, -r.get::<_, f64>(1)?))
                 })?
                 .collect::<rusqlite::Result<Vec<_>>>()?;
@@ -602,13 +608,14 @@ impl MemoryDb {
         if terms.is_empty() {
             return Ok(Vec::new());
         }
-        let scope_clause = scope_clause_sql(filter);
+        let (scope_clause, scope_params) = build_scope_filter(filter, "");
         let sql = format!(
             "SELECT id, content, tags FROM memories WHERE status = 'active' {scope_clause}"
         );
         let mut stmt = conn.prepare(&sql)?;
+        let rusqlite_params: Vec<&dyn rusqlite::ToSql> = scope_params.iter().map(|p| p.as_ref()).collect();
         let mut scored: Vec<(String, f64)> = Vec::new();
-        let mut rows = stmt.query([])?;
+        let mut rows = stmt.query(rusqlite::params_from_iter(rusqlite_params))?;
         while let Some(r) = rows.next()? {
             let id: String = r.get(0)?;
             let content: String = r.get::<_, String>(1)?.to_lowercase();
@@ -644,16 +651,21 @@ impl MemoryDb {
     /// comparable). Expired/superseded rows are excluded.
     pub fn load_embeddings(&self, filter: &ScopeFilter, model: &str) -> anyhow::Result<Vec<(String, Vec<f32>)>> {
         let conn = self.conn.lock().unwrap();
-        let scope_clause = scope_clause_sql(filter);
+        let (scope_clause, scope_params) = build_scope_filter(filter, "m.");
         let sql = format!(
             "SELECT e.memory_id, e.vector FROM memories_embeddings e
              JOIN memories m ON m.id = e.memory_id
-             WHERE e.model = ?1 {scope_clause} AND m.status = 'active'
+             WHERE e.model = ? {scope_clause} AND m.status = 'active'
              AND (m.expires_at IS NULL OR m.expires_at > datetime('now'))"
         );
         let mut stmt = conn.prepare(&sql)?;
+        let mut all_params: Vec<&dyn rusqlite::ToSql> = Vec::new();
+        all_params.push(&model);
+        for p in &scope_params {
+            all_params.push(p.as_ref());
+        }
         let rows = stmt
-            .query_map(params![model], |r| {
+            .query_map(rusqlite::params_from_iter(all_params), |r| {
                 let id: String = r.get(0)?;
                 let blob: Vec<u8> = r.get(1)?;
                 Ok((id, blob))
@@ -791,28 +803,24 @@ fn fts_match_expr(query: &str) -> String {
         .join(" OR ")
 }
 
-/// SQL fragment restricting `m.scope`/`m.scope_key` to the filter pairs.
-/// Safe: values are escaped by doubling single quotes (no user SQL).
-fn scope_clause_sql(filter: &ScopeFilter) -> String {
+/// Build parameterized SQL fragment and dynamic parameter vector restricting `scope`/`scope_key` to filter pairs.
+fn build_scope_filter(filter: &ScopeFilter, prefix: &str) -> (String, Vec<Box<dyn rusqlite::ToSql>>) {
     if filter.pairs.is_empty() {
-        return String::new();
+        return (String::new(), Vec::new());
     }
-    let clauses: Vec<String> = filter
-        .pairs
-        .iter()
-        .map(|(scope, key)| {
-            if key.is_empty() {
-                format!("m.scope = '{}'", scope.replace('\'', "''"))
-            } else {
-                format!(
-                    "(m.scope = '{}' AND m.scope_key = '{}')",
-                    scope.replace('\'', "''"),
-                    key.replace('\'', "''")
-                )
-            }
-        })
-        .collect();
-    format!(" AND ({})", clauses.join(" OR "))
+    let mut or_clauses = Vec::new();
+    let mut params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+    for (scope, key) in &filter.pairs {
+        if key.is_empty() {
+            or_clauses.push(format!("{prefix}scope = ?"));
+            params.push(Box::new(scope.clone()));
+        } else {
+            or_clauses.push(format!("({prefix}scope = ? AND {prefix}scope_key = ?)"));
+            params.push(Box::new(scope.clone()));
+            params.push(Box::new(key.clone()));
+        }
+    }
+    (format!(" AND ({})", or_clauses.join(" OR ")), params)
 }
 
 fn f32_vec_to_bytes(v: &[f32]) -> Vec<u8> {

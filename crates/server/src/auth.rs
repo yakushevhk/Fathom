@@ -85,10 +85,10 @@ impl ApiKeyAuth {
     }
 }
 
-/// Extract an API key from request headers.
+/// Extract an API key from request headers or query parameters (for WebSocket / EventSource).
 ///
-/// Supports `Authorization: Bearer <key>` and `X-Api-Key: <key>`.
-pub fn extract_api_key(headers: &HeaderMap) -> Option<String> {
+/// Supports `Authorization: Bearer <key>`, `X-Api-Key: <key>`, and query parameter `?api_key=<key>` or `?token=<key>`.
+pub fn extract_api_key(headers: &HeaderMap, query: Option<&str>) -> Option<String> {
     if let Some(value) = headers.get(header::AUTHORIZATION).and_then(|v| v.to_str().ok()) {
         let value = value.trim();
         if let Some(key) = value
@@ -101,13 +101,26 @@ pub fn extract_api_key(headers: &HeaderMap) -> Option<String> {
             }
         }
     }
-    headers
+    if let Some(key) = headers
         .get("x-api-key")
         .and_then(|v| v.to_str().ok())
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
+    {
+        return Some(key);
+    }
+    if let Some(q) = query {
+        for pair in q.split('&') {
+            let mut parts = pair.splitn(2, '=');
+            if let (Some(k), Some(v)) = (parts.next(), parts.next()) {
+                if (k == "api_key" || k == "token") && !v.trim().is_empty() {
+                    return Some(v.trim().to_string());
+                }
+            }
+        }
+    }
+    None
 }
-
 /// Identity attached to a request after it passes authentication.
 ///
 /// Holds the API key name (or `anonymous` when auth is disabled). Used as
@@ -126,8 +139,9 @@ pub async fn auth_middleware(
     mut request: Request,
     next: Next,
 ) -> Result<Response, StatusCode> {
+    let query = request.uri().query();
     let principal = if state.auth.is_enabled() {
-        match extract_api_key(&headers)
+        match extract_api_key(&headers, query)
             .as_deref()
             .and_then(|key| state.auth.validate(key))
         {

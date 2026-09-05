@@ -1375,9 +1375,18 @@ Rules: at most 3 new_subtasks; each must be independently executable by a resear
         // concurrently; we wait on them one at a time, but that does not
         // serialize their actual work.
         for agent_id in worker_ids {
-            let result = pm
-                .wait_for_completion_with_events(&agent_id, Some(&self.event_tx))
-                .await;
+            if self.session_cancel.is_cancelled() {
+                tracing::info!("multiprocess fanout cancelled, shutting down workers");
+                break;
+            }
+
+            let result = tokio::select! {
+                res = pm.wait_for_completion_with_events(&agent_id, Some(&self.event_tx)) => res,
+                _ = self.session_cancel.cancelled() => {
+                    tracing::info!("cancelled while waiting for worker {agent_id}");
+                    break;
+                }
+            };
 
             match result {
                 Ok(WorkerResult::Completed { summary, tokens_used }) => {

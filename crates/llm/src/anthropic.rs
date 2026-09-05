@@ -145,6 +145,16 @@ impl LlmProvider for AnthropicProvider {
                     if self.prompt_caching && is_rolling_checkpoint {
                         tool_res["cache_control"] = serde_json::json!({ "type": "ephemeral" });
                     }
+                    // Anthropic requires all consecutive tool results to be combined
+                    // in a single user message block to prevent consecutive "user" roles.
+                    if let Some(last) = messages.last_mut() {
+                        if last.get("role").and_then(|r| r.as_str()) == Some("user") {
+                            if let Some(arr) = last.get_mut("content").and_then(|c| c.as_array_mut()) {
+                                arr.push(tool_res);
+                                continue;
+                            }
+                        }
+                    }
                     messages.push(serde_json::json!({
                         "role": "user",
                         "content": [tool_res]
@@ -162,12 +172,13 @@ impl LlmProvider for AnthropicProvider {
         if !system_blocks.is_empty() {
             body["system"] = serde_json::Value::Array(system_blocks);
         }
-
         if let Some(budget) = self.thinking_budget {
             body["thinking"] = serde_json::json!({
                 "type": "enabled",
                 "budget_tokens": budget
             });
+            // Anthropic API requires temperature to be omitted or set to 1.0 when thinking is enabled
+            body["temperature"] = serde_json::json!(1.0);
         }
 
         if !req.tools.is_empty() {

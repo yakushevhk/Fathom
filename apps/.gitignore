@@ -10,7 +10,6 @@ dist/
 # Tauri
 apps/desktop/src-tauri/target/
 apps/desktop/src-tauri/gen/
-apps/desktop/src-tauri/Cargo.lock
 
 # OS
 .DS_Store

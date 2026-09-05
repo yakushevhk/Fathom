@@ -788,9 +788,10 @@ pub fn classify_social_url(url: &str) -> Option<SocialProfile> {
         if let Some(m) = pattern.re.find(url) {
             if m.start() > 0 {
                 // The URL must not start mid-word.
-                let prev = url[..m.start()].chars().next_back().unwrap();
-                if prev.is_alphanumeric() {
-                    continue;
+                if let Some(prev) = url[..m.start()].chars().next_back() {
+                    if prev.is_alphanumeric() {
+                        continue;
+                    }
                 }
             }
             if let Some(sp) = build_profile(pattern, m.as_str(), &url[m.start()..m.end()]) {

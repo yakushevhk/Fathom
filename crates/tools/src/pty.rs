@@ -296,8 +296,10 @@ impl PtyBroker {
 
             #[cfg(unix)]
             {
-                unsafe {
-                    libc::kill(s.pid as libc::pid_t, libc::SIGTERM);
+                if s.pid > 1 {
+                    unsafe {
+                        libc::kill(s.pid as libc::pid_t, libc::SIGTERM);
+                    }
                 }
             }
             Ok(())

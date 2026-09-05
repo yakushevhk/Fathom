@@ -28,6 +28,7 @@ uuid.workspace = true
 chrono.workspace = true
 anyhow.workspace = true
 ring.workspace = true
+hex = "0.4"
 
 [dev-dependencies]
 async-trait.workspace = true

@@ -23,16 +23,31 @@ impl Default for WatcherConfig {
 /// Continuous background file watcher and self-healing supervisor.
 pub struct FilesystemWatcher {
     config: WatcherConfig,
+    tx: mpsc::Sender<PathBuf>,
+    rx: tokio::sync::Mutex<Option<mpsc::Receiver<PathBuf>>>,
 }
 
 impl FilesystemWatcher {
     pub fn new(config: WatcherConfig) -> Self {
-        Self { config }
+        let (tx, rx) = mpsc::channel::<PathBuf>(100);
+        Self {
+            config,
+            tx,
+            rx: tokio::sync::Mutex::new(Some(rx)),
+        }
+    }
+
+    /// Access the file change notification sender to trigger watcher evaluation.
+    pub fn sender(&self) -> mpsc::Sender<PathBuf> {
+        self.tx.clone()
     }
 
     /// Start watching filesystem events in background task.
     pub async fn start(&self) -> anyhow::Result<()> {
-        let (_tx, mut rx) = mpsc::channel::<PathBuf>(100);
+        let mut rx_guard = self.rx.lock().await;
+        let Some(mut rx) = rx_guard.take() else {
+            return Ok(());
+        };
         let debounce = Duration::from_millis(self.config.debounce_ms);
         let root = self.config.root_dir.clone();
         let auto_heal = self.config.auto_heal_on_compiler_error;
