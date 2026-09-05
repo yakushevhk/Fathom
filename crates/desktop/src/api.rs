@@ -337,4 +337,14 @@ impl ApiClient {
             .send().await?;
         Ok(())
     }
+
+    /// Subscribe to real-time agent event stream (SSE) from the server.
+    /// Can subscribe globally (`/api/v1/events`) or for a specific session (`/api/v1/sessions/:id/events`).
+    pub fn subscribe_events(&self, session_id: Option<&str>) -> reqwest_eventsource::EventSource {
+        let url = match session_id {
+            Some(id) => format!("{}/api/v1/sessions/{}/events", self.base_url, id),
+            None => format!("{}/api/v1/events", self.base_url),
+        };
+        reqwest_eventsource::EventSource::get(url)
+    }
 }

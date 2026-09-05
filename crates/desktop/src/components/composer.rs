@@ -101,7 +101,7 @@ impl Render for Composer {
                                             this.input_text.clone()
                                         };
 
-                                        // Dispatch user turn
+                                        // Add user message to transcript immediately
                                         this.state.add_message(ChatMessage {
                                             id: uuid::Uuid::new_v4().to_string(),
                                             role: "user".to_string(),
@@ -117,37 +117,20 @@ impl Render for Composer {
                                             expanded: false,
                                         });
 
-                                        // Mock assistant reasoning & computer tool execution
-                                        this.state.add_message(ChatMessage {
-                                            id: uuid::Uuid::new_v4().to_string(),
-                                            role: "assistant".to_string(),
-                                            content: "Executing task. Navigating browser to target domain and inspecting DOM accessibility tree.".to_string(),
-                                            thinking: Some("1. Initialize Playwright sandbox.\n2. Verify policy gate against rule: AllowNavDomain\n3. Execute computer_navigate(\"https://news.ycombinator.com\")".to_string()),
-                                            tool_name: Some("computer_navigate".to_string()),
-                                            tool_status: Some("completed".to_string()),
-                                            tool_input: Some(serde_json::json!({
-                                                "url": "https://news.ycombinator.com",
-                                                "intent": "Browse target research page"
-                                            })),
-                                            tool_output: Some(serde_json::json!({
-                                                "status": 200,
-                                                "title": "Hacker News",
-                                                "elements_observed": 30
-                                            })),
-                                            question: None,
-                                            request_id: None,
-                                            timestamp: chrono::Utc::now().format("%H:%M:%S").to_string(),
-                                            expanded: false,
-                                        });
-
-                                        this.input_text.clear();
+                                        let api = this.state.api.clone();
+                                        let state_clone = this.state.clone();
+                                        cx.spawn(async move |_this, _cx| {
+                                            if let Ok(res) = api.create_session(&text).await {
+                                                *state_clone.active_session_id.write() = Some(res.id);
+                                            }
+                                        }).detach();
                                         cx.notify();
                                     })),
                             )
                             .child(
                                 div()
                                     .id("composer-steer-btn")
-                                    .px_2p5()
+                                    .px_3()
                                     .py_1p5()
                                     .rounded_md()
                                     .bg(Theme::bg_card())
@@ -156,26 +139,24 @@ impl Render for Composer {
                                     .text_xs()
                                     .text_color(Theme::text_secondary())
                                     .cursor_pointer()
-                                    .hover(|s| s.bg(Theme::bg_elevated_hover()).text_color(Theme::text_primary()))
+                                    .hover(|s| s.bg(Theme::bg_elevated()).text_color(Theme::text_primary()))
                                     .child("Steer [s]")
                                     .on_click(cx.listener(|this, _event: &ClickEvent, _window, cx| {
-                                        this.state.add_message(ChatMessage {
-                                            id: uuid::Uuid::new_v4().to_string(),
-                                            role: "system".to_string(),
-                                            content: "Mid-run steer instruction injected: Prioritize open-source repositories over proprietary vendors.".to_string(),
-                                            thinking: Some("Updating DAG priority queues based on operator steer.".to_string()),
-                                            tool_name: None,
-                                            tool_status: None,
-                                            tool_input: None,
-                                            tool_output: None,
-                                            question: None,
-                                            request_id: None,
-                                            timestamp: chrono::Utc::now().format("%H:%M:%S").to_string(),
-                                            expanded: false,
-                                        });
+                                        let text = if this.input_text.is_empty() {
+                                            "Focus only on public pricing tables".to_string()
+                                        } else {
+                                            this.input_text.clone()
+                                        };
+                                        let session_id = this.state.active_session_id.read().clone();
+                                        let api = this.state.api.clone();
+                                        if let Some(id) = session_id {
+                                            cx.spawn(async move |_this, _cx| {
+                                                let _ = api.steer_session(&id, &text).await;
+                                            }).detach();
+                                        }
                                         cx.notify();
                                     })),
-                            ),
+                            )
                     ),
             )
     }

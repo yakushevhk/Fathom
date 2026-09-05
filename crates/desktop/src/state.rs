@@ -126,4 +126,171 @@ impl AppState {
     pub fn add_message(&self, msg: ChatMessage) {
         self.messages.write().push(msg);
     }
+
+    /// Apply an incoming AgentEvent from the server SSE stream to reactive local UI state.
+    pub fn apply_agent_event(&self, event: &pr_core::AgentEvent) {
+        let now = chrono::Utc::now().format("%H:%M:%S").to_string();
+        match event {
+            pr_core::AgentEvent::SessionStarted { id, query } => {
+                *self.active_session_id.write() = Some(id.0.clone());
+                self.add_message(ChatMessage {
+                    id: uuid::Uuid::new_v4().to_string(),
+                    role: "system".to_string(),
+                    content: format!("Session started: {}", query),
+                    thinking: None,
+                    tool_name: None,
+                    tool_status: None,
+                    tool_input: None,
+                    tool_output: None,
+                    question: None,
+                    request_id: None,
+                    timestamp: now,
+                    expanded: false,
+                });
+            }
+            pr_core::AgentEvent::ThinkingChunk { chunk, .. } => {
+                let mut msgs = self.messages.write();
+                if let Some(last) = msgs.iter_mut().rev().find(|m| m.role == "assistant") {
+                    let t = last.thinking.get_or_insert_with(String::new);
+                    t.push_str(chunk);
+                } else {
+                    msgs.push(ChatMessage {
+                        id: uuid::Uuid::new_v4().to_string(),
+                        role: "assistant".to_string(),
+                        content: String::new(),
+                        thinking: Some(chunk.clone()),
+                        tool_name: None,
+                        tool_status: None,
+                        tool_input: None,
+                        tool_output: None,
+                        question: None,
+                        request_id: None,
+                        timestamp: now,
+                        expanded: false,
+                    });
+                }
+            }
+            pr_core::AgentEvent::LlmStreamChunk { chunk, .. } => {
+                let mut msgs = self.messages.write();
+                if let Some(last) = msgs.iter_mut().rev().find(|m| m.role == "assistant" && m.tool_name.is_none()) {
+                    last.content.push_str(chunk);
+                } else {
+                    msgs.push(ChatMessage {
+                        id: uuid::Uuid::new_v4().to_string(),
+                        role: "assistant".to_string(),
+                        content: chunk.clone(),
+                        thinking: None,
+                        tool_name: None,
+                        tool_status: None,
+                        tool_input: None,
+                        tool_output: None,
+                        question: None,
+                        request_id: None,
+                        timestamp: now,
+                        expanded: false,
+                    });
+                }
+            }
+            pr_core::AgentEvent::ToolCallStarted { tool, args, .. } => {
+                self.add_message(ChatMessage {
+                    id: uuid::Uuid::new_v4().to_string(),
+                    role: "tool".to_string(),
+                    content: format!("Running tool {}", tool),
+                    thinking: None,
+                    tool_name: Some(tool.clone()),
+                    tool_status: Some("running".to_string()),
+                    tool_input: Some(args.clone()),
+                    tool_output: None,
+                    question: None,
+                    request_id: None,
+                    timestamp: now.clone(),
+                    expanded: false,
+                });
+
+                // If computer tool, record computer activity
+                if tool.starts_with("computer_") {
+                    self.computer_activities.write().push(ComputerActivity {
+                        id: uuid::Uuid::new_v4().to_string(),
+                        tool_name: tool.clone(),
+                        intent: format!("Executing {}", tool),
+                        target: args.get("url").or_else(|| args.get("ref")).and_then(|v| v.as_str()).unwrap_or("viewport").to_string(),
+                        status: "running".to_string(),
+                        timestamp: now,
+                    });
+                }
+            }
+            pr_core::AgentEvent::ToolCallCompleted { tool, result_preview, .. } => {
+                let mut msgs = self.messages.write();
+                if let Some(last_tool) = msgs.iter_mut().rev().find(|m| m.tool_name.as_deref() == Some(tool)) {
+                    last_tool.tool_status = Some("completed".to_string());
+                    last_tool.tool_output = Some(serde_json::Value::String(result_preview.clone()));
+                }
+            }
+            pr_core::AgentEvent::QuestionAsked { request_id, question, .. } => {
+                self.add_message(ChatMessage {
+                    id: uuid::Uuid::new_v4().to_string(),
+                    role: "assistant".to_string(),
+                    content: question.clone(),
+                    thinking: None,
+                    tool_name: None,
+                    tool_status: None,
+                    tool_input: None,
+                    tool_output: None,
+                    question: Some(question.clone()),
+                    request_id: Some(request_id.clone()),
+                    timestamp: now,
+                    expanded: false,
+                });
+            }
+            pr_core::AgentEvent::ApprovalRequested { request_id, tool, args_preview, .. } => {
+                self.add_message(ChatMessage {
+                    id: uuid::Uuid::new_v4().to_string(),
+                    role: "assistant".to_string(),
+                    content: format!("Permission required to execute `{}`: {}", tool, args_preview),
+                    thinking: None,
+                    tool_name: Some(tool.clone()),
+                    tool_status: Some("running".to_string()),
+                    tool_input: Some(serde_json::Value::String(args_preview.clone())),
+                    tool_output: None,
+                    question: None,
+                    request_id: Some(request_id.clone()),
+                    timestamp: now,
+                    expanded: true,
+                });
+            }
+            pr_core::AgentEvent::SessionCompleted { output_dir, total_tokens, total_agents, .. } => {
+                self.add_message(ChatMessage {
+                    id: uuid::Uuid::new_v4().to_string(),
+                    role: "system".to_string(),
+                    content: format!("✓ Session completed. Tokens: {}, Agents: {}, Artifacts: {}", total_tokens, total_agents, output_dir),
+                    thinking: None,
+                    tool_name: None,
+                    tool_status: None,
+                    tool_input: None,
+                    tool_output: None,
+                    question: None,
+                    request_id: None,
+                    timestamp: now,
+                    expanded: false,
+                });
+            }
+            pr_core::AgentEvent::SessionFailed { error, .. } => {
+                self.add_message(ChatMessage {
+                    id: uuid::Uuid::new_v4().to_string(),
+                    role: "system".to_string(),
+                    content: format!("✗ Session failed: {}", error),
+                    thinking: None,
+                    tool_name: None,
+                    tool_status: None,
+                    tool_input: None,
+                    tool_output: None,
+                    question: None,
+                    request_id: None,
+                    timestamp: now,
+                    expanded: false,
+                });
+            }
+            _ => {}
+        }
+    }
 }

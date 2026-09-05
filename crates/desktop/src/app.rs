@@ -63,7 +63,7 @@ impl DesktopApp {
         cx.observe(&computer, |_this, _comp, cx| {
             cx.notify();
         }).detach();
-        // Check daemon on boot
+        // Check daemon and start real-time SSE event consumption loop
         let state_clone = state.clone();
         cx.spawn(async move |this, cx| {
             let running = state_clone.daemon.is_running() || state_clone.api.health().await.unwrap_or(false);
@@ -71,8 +71,30 @@ impl DesktopApp {
             let _ = this.update(&mut *cx, |_this, cx| {
                 cx.notify();
             });
-        }).detach();
 
+            // Real-time SSE event subscription stream
+            use futures::StreamExt;
+            let mut event_source = state_clone.api.subscribe_events(None);
+            while let Some(event_result) = event_source.next().await {
+                match event_result {
+                    Ok(reqwest_eventsource::Event::Message(msg)) => {
+                        if let Ok(agent_event) = serde_json::from_str::<pr_core::AgentEvent>(&msg.data) {
+                            state_clone.apply_agent_event(&agent_event);
+                            let _ = this.update(&mut *cx, |_this, cx| {
+                                cx.notify();
+                            });
+                        }
+                    }
+                    Ok(reqwest_eventsource::Event::Open) => {
+                        tracing::info!("SSE stream connected to Fathom daemon");
+                    }
+                    Err(err) => {
+                        tracing::debug!("SSE connection event: {:?}", err);
+                        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                    }
+                }
+            }
+        }).detach();
         Self {
             state,
             topbar,
