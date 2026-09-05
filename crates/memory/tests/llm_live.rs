@@ -46,10 +46,11 @@ fn make_llm() -> Arc<DeepSeekProvider> {
 }
 
 fn mem_with_llm() -> Memory {
-    let mut cfg = pr_core::MemoryConfig::default();
-    cfg.llm_classify = true;
-    let mem = Memory::in_memory(cfg).unwrap();
-    mem
+    let cfg = pr_core::MemoryConfig {
+        llm_classify: true,
+        ..Default::default()
+    };
+    Memory::in_memory(cfg).unwrap()
 }
 
 async fn absorb(llm: &Arc<DeepSeekProvider>, mem: &Memory, content: &str, tags: &[&str]) -> String {

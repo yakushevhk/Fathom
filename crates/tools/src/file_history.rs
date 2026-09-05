@@ -241,9 +241,7 @@ fn blake3_hash(data: &[u8]) -> String {
 /// Sanitize a path for use as a filename component.
 fn sanitize_filename(path: &Path) -> String {
     let s = path.to_string_lossy();
-    s.replace('/', "_")
-        .replace('\\', "_")
-        .replace(':', "_")
+    s.replace(['/', '\\', ':'], "_")
         .replace("..", "__")
 }
 

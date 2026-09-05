@@ -220,8 +220,7 @@ pub fn parse_hashline_patch(input: &str) -> PrResult<Vec<HashlineSection>> {
         }
 
         // If line is a body row (starts with '+')
-        if line.starts_with('+') {
-            let body_text = &line[1..];
+        if let Some(body_text) = line.strip_prefix('+') {
             match current_op.as_mut() {
                 Some(HashlineOp::PutRange { body, .. })
                 | Some(HashlineOp::PutBlock { body, .. })
@@ -291,7 +290,7 @@ pub fn parse_hashline_patch(input: &str) -> PrResult<Vec<HashlineSection>> {
         } else if let Some(put_spec) = trimmed.strip_prefix("PUT ") {
             let is_header = put_spec.ends_with(':');
             let spec = if is_header {
-                &put_spec[..put_spec.len() - 1].trim()
+                put_spec[..put_spec.len() - 1].trim()
             } else {
                 put_spec.trim()
             };
@@ -461,7 +460,7 @@ pub fn apply_hashline_to_content(
 
     // Sort operations bottom-up (by descending start_line) to ensure zero line-shift corruption
     let mut sorted_ops = ops.to_vec();
-    sorted_ops.sort_by(|a, b| b.start_line().cmp(&a.start_line()));
+    sorted_ops.sort_by_key(|b| std::cmp::Reverse(b.start_line()));
 
     for op in &sorted_ops {
         match op {

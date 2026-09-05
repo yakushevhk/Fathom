@@ -739,13 +739,13 @@ impl App {
             crossterm::event::MouseEventKind::ScrollDown => {
                 self.scroll_offset = self.scroll_offset.saturating_sub(3);
             }
-            crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Left) => {
+            crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Left)
+                if self.input_mode == InputMode::Normal =>
+            {
                 // Click on input area (bottom) -> enter insert mode
                 // This is approximate - actual hit testing depends on layout
-                if self.input_mode == InputMode::Normal {
-                    self.input_mode = InputMode::Insert;
-                    self.selected_panel = Panel::Input;
-                }
+                self.input_mode = InputMode::Insert;
+                self.selected_panel = Panel::Input;
             }
             _ => {}
         }

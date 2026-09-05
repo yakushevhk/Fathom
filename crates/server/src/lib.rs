@@ -1394,6 +1394,7 @@ mod tests {
         build_router(state)
     }
 
+    #[allow(clippy::type_complexity)]
     fn test_job_state() -> (
         Arc<AppState>,
         tempfile::TempDir,

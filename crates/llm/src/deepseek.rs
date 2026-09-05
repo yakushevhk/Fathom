@@ -459,7 +459,7 @@ impl LlmProvider for DeepSeekProvider {
                         None => {
                             // Stream ended: flush a trailing partial line.
                             if !remainder.is_empty() {
-                                let tail: Vec<u8> = remainder.drain(..).collect();
+                                let tail = std::mem::take(&mut remainder);
                                 let line = String::from_utf8_lossy(&tail).trim().to_string();
                                 if let Some(chunk) = parse_sse_line(&line) {
                                     return Ok(Some((chunk, (byte_stream, remainder))));
@@ -537,8 +537,8 @@ mod tests {
 
     #[test]
     fn constants_are_sensible() {
-        assert!(MAX_RESPONSE_BYTES >= 10 * 1024 * 1024);
-        assert!(MAX_RETRIES >= 1);
+        const { assert!(MAX_RESPONSE_BYTES >= 10 * 1024 * 1024) };
+        const { assert!(MAX_RETRIES >= 1) };
         assert!(STREAMING_THRESHOLD_BYTES <= MAX_RESPONSE_BYTES as u64);
     }
 

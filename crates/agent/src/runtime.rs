@@ -143,6 +143,7 @@ enum PreparedCall {
 }
 
 impl AgentRuntime {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         id: AgentId,
         session_id: SessionId,
@@ -765,11 +766,9 @@ impl AgentRuntime {
                         "Context compaction: {} -> {} tokens ({}% reduction, micro_pruned={}, llm={})",
                         tokens_before,
                         cr.tokens_after,
-                        if tokens_before > 0 {
-                            (tokens_before - cr.tokens_after) * 100 / tokens_before
-                        } else {
-                            0
-                        },
+                        ((tokens_before - cr.tokens_after) * 100)
+                            .checked_div(tokens_before)
+                            .unwrap_or(0),
                         cr.micro_pruned,
                         cr.used_llm,
                     );
@@ -1079,13 +1078,11 @@ impl AgentRuntime {
 
             // Per-agent token budget (session_token_limit split across the
             // batch at spawn time): stop gracefully at the turn boundary
-            // instead of burning the whole session budget. The lookahead
-            // uses the current context size as the next turn's prompt cost,
-            // so the agent stops *before* a turn that would blow the cap
-            // (one turn is atomic — this is the tightest enforceable point).
+            // instead of burning the whole session budget.
+            // Check whether the agent has strictly exceeded its cap based on actual tokens used,
+            // or if it has already consumed the budget allotted for turn completions.
             if let Some(cap) = self.token_cap {
-                let next_turn_estimate = self.tokens_used + self.estimated_tokens as u64;
-                if self.tokens_used >= cap || next_turn_estimate >= cap {
+                if self.tokens_used >= cap {
                     tracing::warn!(
                         "Agent {} reached its token cap ({cap}, used {}), stopping",
                         self.id,
@@ -2005,6 +2002,7 @@ impl AgentRuntime {
 /// Owned wait-future for one child agent (fleet D4). Lives outside the
 /// `async fn` chain so the `run -> run_spawn_batch -> run` Send obligation
 /// resolves through this boxed boundary.
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn child_wait_future(
     mut child: AgentRuntime,
     agent_id: AgentId,

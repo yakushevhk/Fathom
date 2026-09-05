@@ -255,13 +255,11 @@ impl Tool for HubTool {
                                         })
                                         .await
                                     {
-                                        if let pr_core::Message::Assistant { content, .. } = &resp.message {
-                                            if let Some(text) = content {
-                                                return Ok(ToolOutput::ok(format!(
-                                                    "[auto-reply from {}] {}",
-                                                    target_id, text
-                                                )));
-                                            }
+                                        if let pr_core::Message::Assistant { content: Some(text), .. } = &resp.message {
+                                            return Ok(ToolOutput::ok(format!(
+                                                "[auto-reply from {}] {}",
+                                                target_id, text
+                                            )));
                                         }
                                     }
                                 }

@@ -120,6 +120,7 @@ impl FetchCache {
 /// [`MX_CACHE_CAP`] entries with the same [`CACHE_TTL`] expiry.
 #[derive(Clone, Debug, Default)]
 pub struct MxCache {
+    #[allow(clippy::type_complexity)]
     inner: Arc<Mutex<HashMap<String, (Arc<Vec<String>>, Instant)>>>,
     cap: usize,
     ttl: Duration,

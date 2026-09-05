@@ -243,7 +243,7 @@ pub fn extract_headquarters(text: &str) -> Option<String> {
         if let Some(cap) = re.captures(text) {
             let place = cap[1]
                 .trim()
-                .trim_end_matches(|c: char| matches!(c, ',' | '.' | ';' | ')' | ' '))
+                .trim_end_matches([',', '.', ';', ')', ' '])
                 .trim();
             if !place.is_empty() {
                 return Some(place.to_string());

@@ -90,7 +90,7 @@ impl ProtectedSurfaces {
         let lower = normalize(path);
         for rule in rules() {
             let file_name = lower.file_name().and_then(|f| f.to_str()).unwrap_or("");
-            let name_hit = rule.names.iter().any(|n| *n == file_name);
+            let name_hit = rule.names.contains(&file_name);
             let subpath_hit = rule.names.iter().any(|n| lower.to_string_lossy().ends_with(n));
             if name_hit || subpath_hit {
                 return SurfaceVerdict::Denied(rule.kind);

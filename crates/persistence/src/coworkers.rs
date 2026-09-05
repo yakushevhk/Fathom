@@ -106,6 +106,7 @@ impl Persistence {
         Ok(rows)
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn update_coworker(&self, coworker_id: &str, name: &str, title: &str, role: &str, prompt: &str, visibility: &str, active: bool) -> anyhow::Result<Option<CoworkerRow>> {
         let coworker_id = id(coworker_id)?;
         let name = required(name, MAX_NAME, "name")?;

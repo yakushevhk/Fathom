@@ -232,7 +232,7 @@ Do NOT include any explanation, just the JSON array."#
 #[tokio::test]
 #[ignore = "live API"]
 async fn d_llm_goal_judge_complete_and_gap() {
-    log_sep("D. Goal-judge — complete=true и complete=false сценар­ии");
+    log_sep("D. Goal-judge — complete=true и complete=false сценарии");
     let llm = make_llm();
 
     let judge_prompt = |goal: &str, results: &str| {

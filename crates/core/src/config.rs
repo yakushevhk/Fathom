@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct AppConfig {
     #[serde(default = "default_llm")]
     pub llm: LlmConfig,
@@ -337,7 +337,7 @@ impl Default for ContactsConfig {
 }
 
 /// CRM synchronisation settings (`[crm]` section).
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CrmConfig {
     /// CRM provider name: `amocrm`, `bitrix24`, `hubspot` or empty (disabled).
     #[serde(default)]
@@ -348,16 +348,6 @@ pub struct CrmConfig {
     /// API key / token for the provider.
     #[serde(default)]
     pub api_key: String,
-}
-
-impl Default for CrmConfig {
-    fn default() -> Self {
-        Self {
-            provider: String::new(),
-            domain: String::new(),
-            api_key: String::new(),
-        }
-    }
 }
 
 impl CrmConfig {
@@ -560,25 +550,6 @@ pub struct McpServerConfig {
     pub args: Vec<String>,
     #[serde(default)]
     pub url: Option<String>,
-}
-
-impl Default for AppConfig {
-    fn default() -> Self {
-        Self {
-            llm: LlmConfig::default(),
-            agent: AgentConfig::default(),
-            search: SearchConfig::default(),
-            output: OutputConfig::default(),
-            mcp: McpConfig::default(),
-            context: ContextConfig::default(),
-            export: ExportConfig::default(),
-            notifications: NotificationsConfig::default(),
-            contacts: ContactsConfig::default(),
-            crm: CrmConfig::default(),
-            memory: MemoryConfig::default(),
-            hooks: Vec::new(),
-        }
-    }
 }
 
 /// One lifecycle hook definition (`[[hooks]]` in config).

@@ -285,6 +285,7 @@ mod tests {
     /// Build an AppState backed by in-memory persistence and an in-memory
     /// jobs registry, with a temp jobs_root and a recording job_spawner so
     /// no real subprocesses are ever launched.
+    #[allow(clippy::type_complexity)]
     fn test_state() -> (
         Arc<AppState>,
         tempfile::TempDir,
@@ -586,10 +587,7 @@ mod tests {
             let s = Arc::get_mut(&mut state).unwrap();
             s.jobs_root = tempfile::tempdir().unwrap().path().to_path_buf();
             s.job_spawner = Arc::new(|_, _| {
-                Err(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    "no runner available",
-                ))
+                Err(std::io::Error::other("no runner available"))
             });
         }
         let (status, body) = send(

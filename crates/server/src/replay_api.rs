@@ -15,6 +15,7 @@ pub struct ReplayQuery {
     pub limit: Option<usize>,
 }
 
+#[allow(clippy::result_large_err)]
 fn filter(value: Option<String>, name: &str) -> Result<Option<String>, Response> {
     let Some(value) = value else { return Ok(None); };
     if value.is_empty() || value.len() > MAX_FILTER_BYTES {

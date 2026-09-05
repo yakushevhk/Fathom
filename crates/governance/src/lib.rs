@@ -114,10 +114,10 @@ impl PolicyEngine {
 }
 
 fn rule_matches(rule: &PolicyRule, action: &ActionContext) -> bool {
-    rule.tool.as_deref().map_or(true, |v| glob_match(v, &action.tool))
-        && rule.host.as_deref().map_or(true, |v| action.url.as_deref().map_or(false, |u| host_matches(v, u)))
-        && rule.path.as_deref().map_or(true, |v| path_matches(v, action))
-        && rule.intent.as_deref().map_or(true, |v| action.intent.as_deref().map_or(false, |i| glob_match(v, i)))
+    rule.tool.as_deref().is_none_or(|v| glob_match(v, &action.tool))
+        && rule.host.as_deref().is_none_or(|v| action.url.as_deref().is_some_and(|u| host_matches(v, u)))
+        && rule.path.as_deref().is_none_or(|v| path_matches(v, action))
+        && rule.intent.as_deref().is_none_or(|v| action.intent.as_deref().is_some_and(|i| glob_match(v, i)))
 }
 
 fn path_matches(expected: &str, action: &ActionContext) -> bool {
@@ -126,12 +126,12 @@ fn path_matches(expected: &str, action: &ActionContext) -> bool {
     }
     let Some(url) = action.url.as_deref() else { return false; };
     if glob_match(expected, url) { return true; }
-    url::Url::parse(url).ok().map_or(false, |parsed| glob_match(expected, parsed.path()))
+    url::Url::parse(url).ok().is_some_and(|parsed| glob_match(expected, parsed.path()))
 }
 
 fn host_matches(expected: &str, url: &str) -> bool {
     let host = url::Url::parse(url).ok().and_then(|u| u.host_str().map(str::to_owned));
-    host.map_or(false, |h| glob_match(expected, &h))
+    host.is_some_and(|h| glob_match(expected, &h))
 }
 
 /// Small wildcard matcher (`*` means any sequence).  This avoids regex or

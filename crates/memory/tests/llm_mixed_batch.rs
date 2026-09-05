@@ -67,8 +67,10 @@ fn p_fact(content: &str) -> AbsorbFact {
 async fn mixed_batch_verdicts_with_llm() {
     log_sep("Смешанный batch: duplicate + supersede + new");
     let llm = make_llm();
-    let mut cfg = pr_core::MemoryConfig::default();
-    cfg.llm_classify = true;
+    let cfg = pr_core::MemoryConfig {
+        llm_classify: true,
+        ..Default::default()
+    };
     let mem = Memory::in_memory(cfg).unwrap();
 
     // Seed: факт, который потом будет дублем и факт, который заменят.
@@ -182,7 +184,7 @@ Respond with ONLY JSON: {"candidate":"c0","verdict":"...","reason":"short"}"#;
             max_tokens: Some(2048), // запас для reasoning-моделей (v4-pro)
             stream: false,
         };
-        let resp = llm.complete(&req).await.expect(&format!("{model} failed"));
+        let resp = llm.complete(&req).await.unwrap_or_else(|_| panic!("{model} failed"));
         let text = msg_text(&resp.message);
         let verdict: serde_json::Value = serde_json::from_str(text.trim()).unwrap_or(serde_json::json!({}));
         let v = verdict.get("verdict").and_then(|v| v.as_str()).unwrap_or("?");

@@ -31,6 +31,12 @@ pub struct EvalKernelManager {
     states: Arc<Mutex<HashMap<String, KernelState>>>,
 }
 
+impl Default for EvalKernelManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl EvalKernelManager {
     pub fn new() -> Self {
         Self {

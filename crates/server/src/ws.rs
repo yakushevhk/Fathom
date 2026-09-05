@@ -43,16 +43,25 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
 
     // Spawn task forwarding internal broadcast events to WebSocket client with recursive secret redaction
     let mut send_task = tokio::spawn(async move {
-        while let Ok(event) = event_rx.recv().await {
-            if let Ok(mut json_val) = serde_json::to_value(&event) {
-                // Apply universal recursive secret redaction to all outbound WebSocket frames
-                pr_governance::redact_secrets(&mut json_val);
-                let msg = WsServerMessage::Event { payload: json_val };
-                if let Ok(serialized) = serde_json::to_string(&msg) {
-                    if sender.send(Message::Text(serialized)).await.is_err() {
-                        break;
+        loop {
+            match event_rx.recv().await {
+                Ok(event) => {
+                    if let Ok(json_val) = serde_json::to_value(&event) {
+                        // Apply universal recursive secret redaction to all outbound WebSocket frames
+                        let json_val = pr_governance::redact_secrets(&json_val);
+                        let msg = WsServerMessage::Event { payload: json_val };
+                        if let Ok(serialized) = serde_json::to_string(&msg) {
+                            if sender.send(Message::Text(serialized)).await.is_err() {
+                                break;
+                            }
+                        }
                     }
                 }
+                Err(tokio::sync::broadcast::error::RecvError::Lagged(count)) => {
+                    tracing::warn!("WebSocket subscriber lagged by {count} events, continuing stream");
+                    continue;
+                }
+                Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
             }
         }
     });

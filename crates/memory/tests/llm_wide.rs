@@ -75,8 +75,10 @@ fn p_fact(content: &str) -> AbsorbFact {
 async fn a_llm_rerank_orders_by_relevance() {
     log_sep("A. llm_rerank — переупорядочивание результатов поиска");
     let llm = make_llm();
-    let mut cfg = pr_core::MemoryConfig::default();
-    cfg.rerank = true;
+    let cfg = pr_core::MemoryConfig {
+        rerank: true,
+        ..Default::default()
+    };
     let mem = Memory::in_memory(cfg).unwrap();
 
     let pipeline = mem.pipeline_with_llm(llm.clone());
@@ -140,8 +142,10 @@ async fn a_llm_rerank_orders_by_relevance() {
 async fn b_llm_absorb_coexist_context() {
     log_sep("B. Absorb — cross-call: контекстные предпочтения оба активны");
     let llm = make_llm();
-    let mut cfg = pr_core::MemoryConfig::default();
-    cfg.llm_classify = true;
+    let cfg = pr_core::MemoryConfig {
+        llm_classify: true,
+        ..Default::default()
+    };
     let mem = Memory::in_memory(cfg).unwrap();
 
     let req1 = AbsorbRequest {
@@ -185,8 +189,10 @@ async fn b_llm_absorb_coexist_context() {
 async fn c_llm_absorb_supersede_chain() {
     log_sep("C. Absorb — supersede-цепочка версий факта");
     let llm = make_llm();
-    let mut cfg = pr_core::MemoryConfig::default();
-    cfg.llm_classify = true;
+    let cfg = pr_core::MemoryConfig {
+        llm_classify: true,
+        ..Default::default()
+    };
     let mem = Memory::in_memory(cfg).unwrap();
 
     let r1 = mem.pipeline_with_llm(llm.clone()).absorb(AbsorbRequest {

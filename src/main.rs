@@ -568,7 +568,7 @@ async fn cmd_memory(action: MemoryAction) -> anyhow::Result<()> {
             for h in &hits {
                 println!(
                     "[{}] score={:.2} ({}, scope={}, source={}, conf {:.2}) {}",
-                    &h.memory.id,
+                    h.memory.id,
                     h.score,
                     &h.memory.created_at[..h.memory.created_at.len().min(10)],
                     h.memory.scope,
@@ -592,7 +592,7 @@ async fn cmd_memory(action: MemoryAction) -> anyhow::Result<()> {
             for r in &rows {
                 println!(
                     "[{}] ({}, {}, scope={}{}) {}",
-                    &r.id,
+                    r.id,
                     r.status,
                     &r.created_at[..r.created_at.len().min(10)],
                     r.scope,
@@ -750,7 +750,7 @@ fn cmd_sessions(output: Option<String>, action: SessionsAction) -> anyhow::Resul
             for r in rows.iter().take(limit.max(1)) {
                 println!(
                     "[{}] {:9} agents={:<3} tokens={:<7} {} — {}",
-                    &r.id.0,
+                    r.id.0,
                     r.status,
                     r.total_agents,
                     r.total_tokens,
@@ -791,7 +791,7 @@ fn cmd_sessions(output: Option<String>, action: SessionsAction) -> anyhow::Resul
                 for a in &details.agents {
                     println!(
                         "    [{}] {:10} depth={} tokens={} — {}",
-                        &a.id,
+                        a.id,
                         a.role,
                         a.depth,
                         a.tokens_used,
@@ -1018,9 +1018,8 @@ async fn run_tui_loop(
         // Handle events
         if let Some(event) = event_handler.next().await {
             match event {
-                pr_tui::event::AppEvent::Terminal(term_event) => {
-                    if let crossterm::event::Event::Key(key) = term_event {
-                        app.handle_key(key);
+                pr_tui::event::AppEvent::Terminal(crossterm::event::Event::Key(key)) => {
+                    app.handle_key(key);
                         
                         // Check if the user submitted input.
                         // No active session -> start one; active session ->
@@ -1069,7 +1068,6 @@ async fn run_tui_loop(
                                 }
                             }
                         }
-                    }
                 }
                 pr_tui::event::AppEvent::Agent(agent_event) => {
                     app.handle_agent_event(agent_event);
@@ -1892,7 +1890,7 @@ async fn cmd_contacts(action: ContactsAction) -> anyhow::Result<()> {
                         .count()
                     };
                     let mut sorted: Vec<&&pr_core::Contact> = members.iter().collect();
-                    sorted.sort_by(|a, b| filled(b).cmp(&filled(a)));
+                    sorted.sort_by_key(|b| std::cmp::Reverse(filled(b)));
                     let primary = sorted[0];
                     for dup in &sorted[1..] {
                         if let (Some(pid), Some(did)) = (primary.id, dup.id) {
@@ -2140,7 +2138,7 @@ fn cmd_profiles(action: ProfilesAction) -> anyhow::Result<()> {
                 println!("No profiles available.");
                 return Ok(());
             }
-            println!("{:<12} {}", "NAME", "DESCRIPTION");
+            println!("{:<12} DESCRIPTION", "NAME");
             for p in &profiles {
                 let builtin = pr_core::profile::built_in(&p.name).is_some()
                     && !pr_core::profile::profiles_dir()
@@ -2624,10 +2622,11 @@ mod tests {
     // ─── Watch diff ───
 
     fn contact(email: &str, name: &str) -> pr_core::Contact {
-        let mut c = pr_core::Contact::default();
-        c.email = Some(email.to_string());
-        c.name = Some(name.to_string());
-        c
+        pr_core::Contact {
+            email: Some(email.to_string()),
+            name: Some(name.to_string()),
+            ..Default::default()
+        }
     }
 
     #[test]
@@ -2663,8 +2662,10 @@ mod tests {
 
     #[test]
     fn contact_keys_falls_back_to_person() {
-        let mut c = pr_core::Contact::default();
-        c.name = Some("No Email".to_string());
+        let c = pr_core::Contact {
+            name: Some("No Email".to_string()),
+            ..Default::default()
+        };
         let keys = contact_keys(&c);
         assert_eq!(keys.len(), 1);
         assert!(keys[0].starts_with("person:"));

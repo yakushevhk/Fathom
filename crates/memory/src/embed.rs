@@ -355,8 +355,10 @@ mod tests {
 
     #[test]
     fn build_embedder_auto_falls_back_to_tfidf() {
-        let mut mem = pr_core::MemoryConfig::default();
-        mem.embeddings = "auto".into();
+        let mem = pr_core::MemoryConfig {
+            embeddings: "auto".into(),
+            ..Default::default()
+        };
         let llm = pr_core::LlmConfig::default(); // empty api_key
         let emb = build_embedder(&mem, &llm);
         assert_eq!(emb.model_name(), TFIDF_MODEL_NAME);
@@ -364,21 +366,27 @@ mod tests {
 
     #[test]
     fn build_embedder_explicit_tfidf() {
-        let mut mem = pr_core::MemoryConfig::default();
-        mem.embeddings = "tfidf".into();
-        let mut llm = pr_core::LlmConfig::default();
-        llm.api_key = "sk-test".into();
+        let mem = pr_core::MemoryConfig {
+            embeddings: "tfidf".into(),
+            ..Default::default()
+        };
+        let llm = pr_core::LlmConfig {
+            api_key: "sk-test".into(),
+            ..Default::default()
+        };
         let emb = build_embedder(&mem, &llm);
         assert_eq!(emb.model_name(), TFIDF_MODEL_NAME);
     }
 
     #[test]
     fn build_embedder_openai_uses_config_overrides() {
-        let mut mem = pr_core::MemoryConfig::default();
-        mem.embeddings = "openai".into();
-        mem.embedding_base_url = "https://emb.example/v1".into();
-        mem.embedding_api_key = "sk-emb".into();
-        mem.embedding_model = "nomic-embed-text".into();
+        let mem = pr_core::MemoryConfig {
+            embeddings: "openai".into(),
+            embedding_base_url: "https://emb.example/v1".into(),
+            embedding_api_key: "sk-emb".into(),
+            embedding_model: "nomic-embed-text".into(),
+            ..Default::default()
+        };
         let llm = pr_core::LlmConfig::default();
         let emb = build_embedder(&mem, &llm);
         assert_eq!(emb.model_name(), "nomic-embed-text");

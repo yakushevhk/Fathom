@@ -223,13 +223,14 @@ pub trait Tool: Send + Sync {
     async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput>;
 }
 
+#[derive(Default)]
 pub struct ToolRegistry {
     tools: HashMap<String, Arc<dyn Tool>>,
 }
 
 impl ToolRegistry {
     pub fn new() -> Self {
-        Self { tools: HashMap::new() }
+        Self::default()
     }
 
     pub fn register(&mut self, tool: Arc<dyn Tool>) {

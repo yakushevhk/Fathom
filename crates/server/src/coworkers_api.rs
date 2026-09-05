@@ -85,6 +85,7 @@ fn valid_id(value: &str) -> bool {
             .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.'))
 }
 
+#[allow(clippy::result_large_err)]
 fn bounded(value: &str, max: usize, field: &str, required: bool) -> Result<String, Response> {
     let value = value.trim();
     if required && value.is_empty() {
@@ -99,6 +100,7 @@ fn bounded(value: &str, max: usize, field: &str, required: bool) -> Result<Strin
     Ok(value.to_string())
 }
 
+#[allow(clippy::result_large_err)]
 fn coworker_fields(
     name: &str,
     title: &str,
@@ -115,6 +117,7 @@ fn coworker_fields(
     ))
 }
 
+#[allow(clippy::result_large_err)]
 fn channel_fields(
     coworker_id: &str,
     title: &str,

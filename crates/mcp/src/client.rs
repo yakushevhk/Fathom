@@ -646,10 +646,8 @@ impl McpClient {
 
     /// Drop a single connection (kills the child process for stdio).
     pub async fn disconnect(&mut self, server_name: &str) {
-        if let Some(conn) = self.connections.remove(server_name) {
-            if let McpConnection::Stdio(mut c) = conn {
-                let _ = c.child.kill().await;
-            }
+        if let Some(McpConnection::Stdio(mut c)) = self.connections.remove(server_name) {
+            let _ = c.child.kill().await;
         }
     }
 

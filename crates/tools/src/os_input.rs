@@ -72,13 +72,15 @@ impl Tool for OsInputTool {
                 #[cfg(target_os = "macos")]
                 {
                     // macOS native cursor position simulation via AppleScript/System Events
+                    // Use clean integer formatting without shell escape risks
                     let script = format!(
-                        "tell application \"System Events\" to do shell script \"echo mouse move to {},{}\"",
-                        x, y
+                        "tell application \"System Events\" to set position of mouse to {{{}, {}}}",
+                        x.clamp(0, 10000), y.clamp(0, 10000)
                     );
                     let _ = tokio::process::Command::new("osascript")
                         .arg("-e")
                         .arg(&script)
+                        .kill_on_drop(true)
                         .output()
                         .await;
                 }
@@ -92,13 +94,20 @@ impl Tool for OsInputTool {
             OsInputAction::KeyType { text } => {
                 #[cfg(target_os = "macos")]
                 {
+                    // Escape all AppleScript string literal delimiters including control characters
+                    let sanitized = text
+                        .replace('\\', "\\\\")
+                        .replace('"', "\\\"")
+                        .replace('\r', "\\r")
+                        .replace('\n', "\\n");
                     let script = format!(
                         "tell application \"System Events\" to keystroke \"{}\"",
-                        text.replace('\\', "\\\\").replace('"', "\\\"")
+                        sanitized
                     );
                     let _ = tokio::process::Command::new("osascript")
                         .arg("-e")
                         .arg(&script)
+                        .kill_on_drop(true)
                         .output()
                         .await;
                 }

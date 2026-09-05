@@ -243,6 +243,11 @@ impl TaskTreeLedger {
         self.state.lock().await.rows.len()
     }
 
+    /// Whether the tree has no rows.
+    pub async fn is_empty(&self) -> bool {
+        self.state.lock().await.rows.is_empty()
+    }
+
     /// Group row counts by kind (for tests / diagnostics).
     pub async fn counts_by_kind(&self) -> HashMap<String, usize> {
         let state = self.state.lock().await;

@@ -653,8 +653,8 @@ mod tests {
     fn test_email_matches_name() {
         assert!(email_matches_name("john.doe@acme.com", "John Doe"));
         assert!(email_matches_name("jdoe@acme.com", "John Doe")); // last name hits
-        assert!(email_matches_name("info@acme.com", "John Doe") == false);
-        assert!(email_matches_name("ceo@acme.com", "John Doe") == false);
+        assert!(!email_matches_name("info@acme.com", "John Doe"));
+        assert!(!email_matches_name("ceo@acme.com", "John Doe"));
     }
 
     #[test]

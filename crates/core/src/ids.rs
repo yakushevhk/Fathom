@@ -40,6 +40,24 @@ impl FindingId {
     }
 }
 
+impl Default for SessionId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Default for AgentId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Default for FindingId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl std::fmt::Display for FindingId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)

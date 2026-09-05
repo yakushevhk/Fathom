@@ -45,15 +45,19 @@ impl FilesystemWatcher {
                 }
                 last_trigger = std::time::Instant::now();
 
-                // If auto-heal enabled, run compiler checks
+                // If auto-heal enabled, run compiler checks with bounded timeout
                 if auto_heal {
                     if let Some(ext) = changed_path.extension().and_then(|e| e.to_str()) {
                         if ext == "rs" {
-                            let _ = tokio::process::Command::new("cargo")
-                                .arg("check")
-                                .current_dir(&root)
-                                .output()
-                                .await;
+                            let _ = tokio::time::timeout(
+                                Duration::from_secs(60),
+                                tokio::process::Command::new("cargo")
+                                    .arg("check")
+                                    .current_dir(&root)
+                                    .kill_on_drop(true)
+                                    .output(),
+                            )
+                            .await;
                         }
                     }
                 }

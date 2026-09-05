@@ -420,7 +420,7 @@ mod tests {
 
     #[test]
     fn test_default_true_is_true() {
-        assert_eq!(default_true(), true);
+        assert!(default_true());
     }
 
     // ─── tool schema names ───

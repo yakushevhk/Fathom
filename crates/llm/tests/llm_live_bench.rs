@@ -144,15 +144,12 @@ Write a comprehensive, well-structured markdown report that answers the query, n
     let mut chunks = 0u32;
     let mut total_chars = 0usize;
     while let Some(c) = stream.next().await {
-        match c.unwrap() {
-            pr_llm::StreamChunk::Text { delta } => {
-                if ttft.is_none() {
-                    ttft = Some(start.elapsed());
-                }
-                chunks += 1;
-                total_chars += delta.chars().count();
+        if let pr_llm::StreamChunk::Text { delta } = c.unwrap() {
+            if ttft.is_none() {
+                ttft = Some(start.elapsed());
             }
-            _ => {}
+            chunks += 1;
+            total_chars += delta.chars().count();
         }
     }
     println!("\n## streaming (30 столиц)");

@@ -79,6 +79,7 @@ fn default_ledger_dir() -> anyhow::Result<std::path::PathBuf> {
 }
 
 impl Coordinator {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         session_id: SessionId,
         query: String,
@@ -804,7 +805,6 @@ impl Coordinator {
         // If the query stated a target and the harvest came up short while
         // agent budget remains, run ONE gap-filling round aimed at the
         // shortfall.
-        let mut findings = findings;
         if self.task_type == TaskType::LeadGen {
             if let Some(target) = self.target_count {
                 let saved = self.contacts_saved_so_far().await.unwrap_or(0);
@@ -1077,19 +1077,17 @@ Do NOT include any explanation, just the JSON array."#,
         // coordinator` when configured.
         let response = self.llm_for_role(AgentRole::Coordinator).complete(&req).await?;
 
-        if let Message::Assistant { content, .. } = &response.message {
-            if let Some(text) = content {
-                // Try to parse JSON array from the response
-                if let Ok(tasks) = serde_json::from_str::<Vec<String>>(text) {
-                    return Ok(tasks);
-                }
-                // Try to extract JSON array from markdown code block
-                if let Some(start) = text.find('[') {
-                    if let Some(end) = text.rfind(']') {
-                        let json_str = &text[start..=end];
-                        if let Ok(tasks) = serde_json::from_str::<Vec<String>>(json_str) {
-                            return Ok(tasks);
-                        }
+        if let Message::Assistant { content: Some(text), .. } = &response.message {
+            // Try to parse JSON array from the response
+            if let Ok(tasks) = serde_json::from_str::<Vec<String>>(text) {
+                return Ok(tasks);
+            }
+            // Try to extract JSON array from markdown code block
+            if let Some(start) = text.find('[') {
+                if let Some(end) = text.rfind(']') {
+                    let json_str = &text[start..=end];
+                    if let Ok(tasks) = serde_json::from_str::<Vec<String>>(json_str) {
+                        return Ok(tasks);
                     }
                 }
             }

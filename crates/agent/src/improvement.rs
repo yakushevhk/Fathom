@@ -121,11 +121,17 @@ impl ImprovementBacklog {
         self.inner.lock().await.by_fp.len()
     }
 
+    /// Whether the backlog is empty.
+    pub async fn is_empty(&self) -> bool {
+        self.inner.lock().await.by_fp.is_empty()
+    }
+
     /// Add (or bump) a backlog entry. Uses exact fingerprint as a fast path;
     /// if `semantic_llm` is supplied, an unmatched entry is first asked whether
     /// it semantically duplicates an existing row of the same category+source.
     /// `semantic_llm` is called *after* releasing the lock (fail-open: on any
     /// LLM error we fall back to creating a fresh row).
+    #[allow(clippy::too_many_arguments, clippy::type_complexity)]
     pub async fn add(
         &self,
         summary: &str,
@@ -318,7 +324,7 @@ impl ImprovementBacklog {
 }
 
 fn sanitize_line(s: &str) -> String {
-    s.replace('\n', " ").replace('\r', " ").chars().take(300).collect()
+    s.replace(['\n', '\r'], " ").chars().take(300).collect()
 }
 
 fn now_rfc3339() -> String {

@@ -121,7 +121,7 @@ impl CompactionEngine {
     /// one-line summary.
     ///
     /// Returns the number of messages pruned.
-    pub fn micro_compact(&self, messages: &mut Vec<Message>) -> u32 {
+    pub fn micro_compact(&self, messages: &mut [Message]) -> u32 {
         let mut pruned = 0u32;
         let mut running_tokens: u32 = 0;
         let mut seen_content_hashes: HashSet<u64> = HashSet::new();
@@ -161,6 +161,7 @@ impl CompactionEngine {
     ///
     /// `summarize_fn` is an async closure that takes a list of messages and returns
     /// a summary string. This allows the caller to use whichever LLM provider is available.
+    #[allow(clippy::ptr_arg)]
     pub async fn compact<F, Fut>(
         &mut self,
         messages: &mut Vec<Message>,

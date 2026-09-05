@@ -139,15 +139,20 @@ impl Tool for DaemonTool {
                     .map(std::path::PathBuf::from)
                     .unwrap_or_else(|| ctx.working_dir.clone());
 
-                let mut child = match tokio::process::Command::new("sh")
-                    .arg("-c")
+                let mut cmd = tokio::process::Command::new("sh");
+                cmd.arg("-c")
                     .arg(&shell)
                     .current_dir(&working_dir)
                     .stdout(std::process::Stdio::piped())
                     .stderr(std::process::Stdio::piped())
-                    .kill_on_drop(true)
-                    .spawn()
+                    .kill_on_drop(true);
+
+                #[cfg(unix)]
                 {
+                    cmd.process_group(0);
+                }
+
+                let mut child = match cmd.spawn() {
                     Ok(c) => c,
                     Err(e) => {
                         reg.update_status(&name, DaemonStatus::Failed);
@@ -251,13 +256,18 @@ impl Tool for DaemonTool {
                 if let Some(info) = info {
                     if let Some(pid) = info.pid {
                         #[cfg(unix)]
-                        let _ = std::process::Command::new("kill")
-                            .arg(pid.to_string())
-                            .spawn();
+                        {
+                            unsafe {
+                                // Send SIGTERM to the entire process group to terminate child worker sub-trees
+                                libc::kill(-(pid as i32), libc::SIGTERM);
+                            }
+                        }
                         #[cfg(not(unix))]
-                        let _ = std::process::Command::new("taskkill")
-                            .args(["/PID", &pid.to_string(), "/F"])
-                            .spawn();
+                        {
+                            let _ = std::process::Command::new("taskkill")
+                                .args(["/PID", &pid.to_string(), "/T", "/F"])
+                                .spawn();
+                        }
                         reg.update_status(&name, DaemonStatus::Stopped);
                         Ok(ToolOutput::ok(format!(
                             "Daemon '{name}' (pid={pid}) stopped."
@@ -279,27 +289,36 @@ impl Tool for DaemonTool {
 
                 if let Some(pid) = info.pid {
                     #[cfg(unix)]
-                    let _ = std::process::Command::new("kill")
-                        .arg(pid.to_string())
-                        .spawn();
+                    {
+                        unsafe {
+                            libc::kill(-(pid as i32), libc::SIGTERM);
+                        }
+                    }
                     #[cfg(not(unix))]
-                    let _ = std::process::Command::new("taskkill")
-                        .args(["/PID", &pid.to_string(), "/F"])
-                        .spawn();
+                    {
+                        let _ = std::process::Command::new("taskkill")
+                            .args(["/PID", &pid.to_string(), "/T", "/F"])
+                            .spawn();
+                    }
                 }
                 tokio::time::sleep(std::time::Duration::from_millis(500)).await;
                 reg.unregister(&name);
 
                 let shell = info.shell.clone();
-                let mut child = match tokio::process::Command::new("sh")
-                    .arg("-c")
+                let mut cmd = tokio::process::Command::new("sh");
+                cmd.arg("-c")
                     .arg(&shell)
                     .current_dir(&ctx.working_dir)
                     .stdout(std::process::Stdio::piped())
                     .stderr(std::process::Stdio::piped())
-                    .kill_on_drop(true)
-                    .spawn()
+                    .kill_on_drop(true);
+
+                #[cfg(unix)]
                 {
+                    cmd.process_group(0);
+                }
+
+                let mut child = match cmd.spawn() {
                     Ok(c) => c,
                     Err(e) => {
                         return Ok(ToolOutput::err(format!("Failed to restart: {e}")));

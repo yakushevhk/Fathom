@@ -6,7 +6,7 @@ The configuration file is the single source of truth for the entire system. It i
 
 The config is broadly divided into: LLM provider routing, agent orchestration parameters, search backends, context-management budgets, output & export, multi-channel notifications, contact database, CRM sync, governance policy engine, credentials vault, long-term semantic memory, MCP tool servers, lifecycle hooks, computer use (browser/Playwright), personality profiles, and HTTP server settings. This reflects Fathom's positioning as a **universal autonomous AI worker** — a virtual AI employee capable of research, outreach, code, and computer use.
 
----
+***
 
 ## Full Example
 
@@ -147,23 +147,29 @@ transport = "http"
 url = "https://mcp.example.com"
 ```
 
----
+***
 
 ## Sections
 
 ### `[llm]`
 
-The LLM section controls which provider and model drive the agent fleet. All agents in a session share the same LLM endpoint unless `role_models` (see `[agent]`) overrides per role. The provider is resolved by name at startup; supported providers include DeepSeek, OpenAI-compatible endpoints, and any provider that exposes a standard chat-completions API.
+The LLM section controls which provider and model drive the agent fleet. All agents in a session share the same LLM endpoint unless `role_models` (see `[agent]`) overrides per role. The provider is resolved by name at startup; supported providers include:
 
-| Field | Type | Default | Description |
-|------|-----|---------|----------|
-| `provider` | string | `"deepseek"` | Provider name |
-| `base_url` | string | `"https://api.deepseek.com"` | API endpoint |
-| `api_key` | string | `""` | **Required** for operation |
-| `model` | string | `"deepseek-chat"` | Model |
-| `fast_model` | string | `""` | Cheap model for auxiliary calls (extract, memory classification, rerank). Empty = uses `model` |
-| `max_tokens` | u32 | `8192` | Max response tokens |
-| `temperature` | f32 | `0.7` | Generation temperature |
+- **Anthropic / Claude** (`"anthropic"`, `"claude"`): native Messages API protocol with extended thinking budgets, prompt caching, and typed retry handling.
+
+- **DeepSeek** (`"deepseek"`): OpenAI-compatible protocol with streaming reasoning tokens.
+
+- **OpenAI-compatible endpoints** (`"openai"`, `"openrouter"`, `"ollama"`, `"vllm"`, `"lmstudio"`): any endpoint implementing standard chat completions.
+
+| Field         | Type   | Default                      | Description                                                                                    |
+| ------------- | ------ | ---------------------------- | ---------------------------------------------------------------------------------------------- |
+| `provider`    | string | `"deepseek"`                 | Provider name (`deepseek`, `anthropic`, `claude`, `openai`, `openrouter`, etc.)                |
+| `base_url`    | string | `"https://api.deepseek.com"` | API endpoint (e.g. `https://api.anthropic.com` for Claude)                                     |
+| `api_key`     | string | `""`                         | **Required** for operation                                                                     |
+| `model`       | string | `"deepseek-chat"`            | Model identifier (e.g. `claude-3-7-sonnet-20250219`)                                           |
+| `fast_model`  | string | `""`                         | Cheap model for auxiliary calls (extract, memory classification, rerank). Empty = uses `model` |
+| `max_tokens`  | u32    | `8192`                       | Max response tokens                                                                            |
+| `temperature` | f32    | `0.7`                        | Generation temperature                                                                         |
 
 **Multi-model routing.** The `fast_model` field enables a two-tier architecture. The main `model` (e.g. a strong reasoning model) is used for planning, report writing, and complex multi-step tasks. The `fast_model` (e.g. a cheap flash model) handles high-volume auxiliary calls: entity extraction from search results, memory fact classification during `absorb`, LLM-based reranking of search results, and other side-tasks that don't require deep reasoning. This separation dramatically reduces costs and latency without sacrificing quality on the critical path. When `fast_model` is empty, the main `model` is used for everything.
 
@@ -173,23 +179,23 @@ The LLM section controls which provider and model drive the agent fleet. All age
 
 The agent section governs the orchestration topology: how many agents can be spawned, how deeply they nest, how long they run, and what safety gates are in place.
 
-| Field | Type | Default | Description |
-|------|-----|---------|----------|
-| `max_depth` | u32 | `2` | Max agent nesting depth |
-| `max_agents` | u32 | `20` | Max agents per session |
-| `max_iterations` | u32 | `50` | Max LLM iterations per agent |
-| `timeout_seconds` | u64 | `600` | Session timeout |
-| `use_multiprocess` | bool | `false` | Isolate agents in separate processes |
-| `max_concurrent_children` | u32 | `4` | Concurrent children of one parent |
-| `stall_warn_seconds` | u64 | `450` | Stall warning when no progress (0 = off) |
-| `stall_kill_seconds` | u64 | `1200` | Cancel agent when no progress (0 = off) |
-| `session_token_limit` | u64 | `0` | Session token budget (0 = unlimited) |
-| `replan_rounds` | u32 | `1` | Goal Mode: max gap-filling rounds after LLM judge (0 = off) |
-| `approval_tools` | string[] | `["save_contacts", "git_push"]` | Tools requiring operator approval |
-| `approval_fallback` | string | `"allow"` | Verdict without operator: `allow` \| `deny` |
-| `approval_timeout_seconds` | u64 | `300` | Wait for operator decision before fallback (0 = immediate fallback) |
-| `deny_tools` | map | `{}` | Tool deny-lists by role: `researcher = ["shell"]` |
-| `role_models` | map | `{}` | Model per role: `analyst = "deepseek-reasoner"` |
+| Field                      | Type      | Default                         | Description                                                         |
+| -------------------------- | --------- | ------------------------------- | ------------------------------------------------------------------- |
+| `max_depth`                | u32       | `2`                             | Max agent nesting depth                                             |
+| `max_agents`               | u32       | `20`                            | Max agents per session                                              |
+| `max_iterations`           | u32       | `50`                            | Max LLM iterations per agent                                        |
+| `timeout_seconds`          | u64       | `600`                           | Session timeout                                                     |
+| `use_multiprocess`         | bool      | `false`                         | Isolate agents in separate processes                                |
+| `max_concurrent_children`  | u32       | `4`                             | Concurrent children of one parent                                   |
+| `stall_warn_seconds`       | u64       | `450`                           | Stall warning when no progress (0 = off)                            |
+| `stall_kill_seconds`       | u64       | `1200`                          | Cancel agent when no progress (0 = off)                             |
+| `session_token_limit`      | u64       | `0`                             | Session token budget (0 = unlimited)                                |
+| `replan_rounds`            | u32       | `1`                             | Goal Mode: max gap-filling rounds after LLM judge (0 = off)         |
+| `approval_tools`           | string\[] | `["save_contacts", "git_push"]` | Tools requiring operator approval                                   |
+| `approval_fallback`        | string    | `"allow"`                       | Verdict without operator: `allow` \| `deny`                         |
+| `approval_timeout_seconds` | u64       | `300`                           | Wait for operator decision before fallback (0 = immediate fallback) |
+| `deny_tools`               | map       | `{}`                            | Tool deny-lists by role: `researcher = ["shell"]`                   |
+| `role_models`              | map       | `{}`                            | Model per role: `analyst = "deepseek-reasoner"`                     |
 
 **Nesting and concurrency.** `max_depth` controls how many levels of sub-agent spawning are allowed (root = 0, child = 1, grandchild = 2, …). `max_concurrent_children` limits how many children a single parent can spawn simultaneously — this prevents runaway parallelism from overwhelming the LLM backend or the search providers. `use_multiprocess` runs each agent in a separate OS process (via `std::process::Command`), providing stronger isolation and separate memory-space garbage collection at the cost of higher startup latency and IPC overhead.
 
@@ -201,7 +207,7 @@ The agent section governs the orchestration topology: how many agents can be spa
 
 **Role-based model overrides.** `role_models` maps role names to model identifiers. When set, agents assigned to that role use the specified model instead of the main `[llm] model`. This allows routing e.g. the `analyst` role to a powerful reasoning model while the `researcher` role uses a cheaper flash model, all from the same LLM provider endpoint.
 
-**How `session_token_limit` works.** The budget is split equally among
+**How** **`session_token_limit`** **works.** The budget is split equally among
 tasks in each fan-out round (`per-agent cap`), and each agent
 stops at a turn boundary when its cap is exhausted **or** the next
 turn (estimated from current context) would exceed the cap. Children inherit
@@ -211,7 +217,7 @@ may overshoot the cap by its own size — with realistic budgets the overshoot
 converges to zero. New tasks and replanning do not start when the total
 budget is exhausted. With no limit (`0`) behavior is unchanged.
 
-**The `PR_CONFIG` variable.** The config path can be overridden:
+**The** **`PR_CONFIG`** **variable.** The config path can be overridden:
 `PR_CONFIG=/path/to/config.toml fathom run ...` — convenient for
 budget/one-off runs and tests without touching the main
 `~/.fathom/config.toml`. Similarly, `PR_MEMORY_DB` specifies
@@ -221,18 +227,21 @@ the memory database file.
 
 The search section configures which web-search backends are available and how they are combined. The system supports multiple backends to provide redundancy, breadth, and cost flexibility.
 
-| Field | Type | Default | Description |
-|------|-----|---------|----------|
+| Field     | Type   | Default    | Description    |
+| --------- | ------ | ---------- | -------------- |
 | `backend` | string | `"hybrid"` | Search backend |
 
-**`backend` values:**
+**`backend`** **values:**
+
 - `linkup`, `exa`, `tavily`, `serper`, `brave`, `parallel`, `duckduckgo` — a single specific backend
+
 - `hybrid` — first configured backend with results (order: linkup → exa → tavily → serper → brave → parallel → duckduckgo)
+
 - `smart` — all configured backends in parallel, deduplication by URL, ranking (reciprocal rank fusion)
 
 Sub-sections `[search.*]` contain `api_key` for each provider. DuckDuckGo does not require a key.
 
-**Backend selection strategy.** A single-backend mode (`linkup`, `exa`, etc.) pins all searches to one provider. Use this when you have a preferred provider with a strong track record for your domain, or when you want to strictly control costs. 
+**Backend selection strategy.** A single-backend mode (`linkup`, `exa`, etc.) pins all searches to one provider. Use this when you have a preferred provider with a strong track record for your domain, or when you want to strictly control costs.
 
 **Hybrid mode** iterates through the configured backends in the defined order and returns results from the first one that returns non-empty results. This provides a simple fallback chain — if your primary provider (e.g. LinkUp) is rate-limited or down, the system automatically falls through to the next configured provider (e.g. Exa, then Tavily, etc.).
 
@@ -242,14 +251,14 @@ Sub-sections `[search.*]` contain `api_key` for each provider. DuckDuckGo does n
 
 Context management controls how the system budgets tokens, truncates tool output, and triggers compaction to stay within the LLM's context window.
 
-| Field | Type | Default | Description |
-|------|-----|---------|----------|
-| `context_window` | u32 | `128000` | Context window size |
-| `context_window_profile` | string | `"low"` | Window profile: `low` (conservative) \| `max` (optimistic) |
-| `compact_threshold` | f32 | `0.50` | Window fraction for compression trigger |
-| `tool_output_max_bytes` | u32 | `50000` | Tool output limit (bytes) |
-| `tool_output_max_lines` | u32 | `2000` | Tool output limit (lines) |
-| `turn_budget_bytes` | u32 | `200000` | Aggregate per-turn budget |
+| Field                    | Type   | Default  | Description                                                |
+| ------------------------ | ------ | -------- | ---------------------------------------------------------- |
+| `context_window`         | u32    | `128000` | Context window size                                        |
+| `context_window_profile` | string | `"low"`  | Window profile: `low` (conservative) \| `max` (optimistic) |
+| `compact_threshold`      | f32    | `0.50`   | Window fraction for compression trigger                    |
+| `tool_output_max_bytes`  | u32    | `50000`  | Tool output limit (bytes)                                  |
+| `tool_output_max_lines`  | u32    | `2000`   | Tool output limit (lines)                                  |
+| `turn_budget_bytes`      | u32    | `200000` | Aggregate per-turn budget                                  |
 
 **Window profiling.** The `context_window_profile` field acts as a safe fallback when the actual LLM window size is unknown or the explicit `context_window` is `0`. A `low` profile asserts a conservative floor (e.g. 64K tokens), while `max` asserts a more optimistic floor (e.g. 128K). This is resolved by `resolve_window()` in `capability.rs`: if `context_window` is explicitly set to a positive value, that value is used directly; otherwise the profile's floor is applied.
 
@@ -261,8 +270,8 @@ Context management controls how the system budgets tokens, truncates tool output
 
 ### `[output]`
 
-| Field | Type | Default | Description |
-|------|-----|---------|----------|
+| Field | Type   | Default               | Description      |
+| ----- | ------ | --------------------- | ---------------- |
 | `dir` | string | `"./research-output"` | Output directory |
 
 The output directory holds per-session result files: the final report, intermediate artifacts, exported contact files, and logs. The directory is created automatically if it does not exist. Each session creates a timestamped subdirectory within this path.
@@ -271,8 +280,8 @@ The output directory holds per-session result files: the final report, intermedi
 
 Controls how the final research deliverables are exported. The export format applies to the final report that is generated at the end of a session.
 
-| Field | Type | Default | Description |
-|------|-----|---------|----------|
+| Field    | Type   | Default  | Description                                                                          |
+| -------- | ------ | -------- | ------------------------------------------------------------------------------------ |
 | `format` | string | `"html"` | `pdf` \| `html` \| `json` \| `docx`. Unknown format → html. PDF/DOCX require pandoc. |
 
 **Export formats.** `html` produces a self-contained HTML report with embedded CSS and inline images. `json` exports the structured research data (contacts, findings, sources) as a JSON document suitable for downstream processing or ingestion. `pdf` and `docx` require `pandoc` to be installed on the system path — the report is first rendered as HTML, then converted via pandoc with a LaTeX/PDF or DOCX template. When pandoc is not available and `pdf` or `docx` is requested, the system falls back to `html` and emits a warning.
@@ -281,17 +290,17 @@ Controls how the final research deliverables are exported. The export format app
 
 Multi-channel notification system for session completion events. Notifications are sent only when the corresponding field is non-empty, so you can enable any subset of channels independently.
 
-| Field | Type | Default | Description |
-|------|-----|---------|----------|
-| `webhook_url` | string | `""` | URL for JSON POST on completion |
-| `email_to` | string | `""` | Email recipient |
-| `email_from` | string | `""` | Sender (default: fathom@localhost) |
-| `smtp_host` | string | `""` | SMTP server (default: localhost) |
-| `smtp_port` | u16 | `587` | SMTP port |
-| `smtp_username` | string | `""` | SMTP username |
-| `smtp_password` | string | `""` | SMTP password |
-| `telegram_bot_token` | string | `""` | Telegram bot token |
-| `telegram_chat_id` | string | `""` | Chat ID for notifications |
+| Field                | Type   | Default | Description                         |
+| -------------------- | ------ | ------- | ----------------------------------- |
+| `webhook_url`        | string | `""`    | URL for JSON POST on completion     |
+| `email_to`           | string | `""`    | Email recipient                     |
+| `email_from`         | string | `""`    | Sender (default: fathom\@localhost) |
+| `smtp_host`          | string | `""`    | SMTP server (default: localhost)    |
+| `smtp_port`          | u16    | `587`   | SMTP port                           |
+| `smtp_username`      | string | `""`    | SMTP username                       |
+| `smtp_password`      | string | `""`    | SMTP password                       |
+| `telegram_bot_token` | string | `""`    | Telegram bot token                  |
+| `telegram_chat_id`   | string | `""`    | Chat ID for notifications           |
 
 Notifications are sent only if the corresponding field is non-empty.
 
@@ -305,10 +314,10 @@ Notifications are sent only if the corresponding field is non-empty.
 
 The contacts database stores all harvested or imported contact records. It supports two backends: SQLite (default) and PostgreSQL.
 
-| Field | Type | Default | Description |
-|------|-----|---------|----------|
-| `db_path` | string | `"./contacts.db"` | Path to SQLite contacts database |
-| `pg_url` | string | `""` | PostgreSQL URL (non-empty → uses PG) |
+| Field     | Type   | Default           | Description                          |
+| --------- | ------ | ----------------- | ------------------------------------ |
+| `db_path` | string | `"./contacts.db"` | Path to SQLite contacts database     |
+| `pg_url`  | string | `""`              | PostgreSQL URL (non-empty → uses PG) |
 
 **Backend selection.** When `pg_url` is non-empty, the system uses PostgreSQL. Otherwise it uses SQLite at `db_path`. The SQLite database is created automatically on first use. The PostgreSQL connection string follows the standard `postgresql://user:password@host:port/database` format.
 
@@ -318,11 +327,11 @@ The contacts database stores all harvested or imported contact records. It suppo
 
 CRM integration pushes collected contacts to external CRM platforms. This is optional and disabled by default.
 
-| Field | Type | Default | Description |
-|------|-----|---------|----------|
-| `provider` | string | `""` | `amocrm` \| `bitrix24` \| `hubspot` \| empty |
-| `domain` | string | `""` | Domain/subdomain (amoCRM, Bitrix24) |
-| `api_key` | string | `""` | API key/token |
+| Field      | Type   | Default | Description                                  |
+| ---------- | ------ | ------- | -------------------------------------------- |
+| `provider` | string | `""`    | `amocrm` \| `bitrix24` \| `hubspot` \| empty |
+| `domain`   | string | `""`    | Domain/subdomain (amoCRM, Bitrix24)          |
+| `api_key`  | string | `""`    | API key/token                                |
 
 **Provider notes.** For **amoCRM** the `domain` is your subdomain (e.g. `mycompany` in `mycompany.amocrm.ru`). The `api_key` is the integration token from Settings → API Access. For **Bitrix24** the `domain` is your portal URL (e.g. `mycompany.bitrix24.com`). The `api_key` is a webhook secret or OAuth token. For **HubSpot** the `domain` field is unused; the `api_key` is a private app access token. Contacts are pushed asynchronously — the CRM sync runs in the background after the session completes, and failures are logged but do not block the session.
 
@@ -330,10 +339,10 @@ CRM integration pushes collected contacts to external CRM platforms. This is opt
 
 Governance is not an `AppConfig` TOML section. The server reads these environment variables at startup:
 
-| Variable | Type | Default | Description |
-|----------|------|---------|-------------|
-| `FATHOM_GOVERNANCE_ENABLED` | bool | `false` | Enable policy enforcement. |
-| `FATHOM_GOVERNANCE_POLICY` | JSON string | *(empty)* | Inline allow/deny policy document. When enabled, an empty or unmatched policy fails closed. |
+| Variable                    | Type        | Default   | Description                                                                                 |
+| --------------------------- | ----------- | --------- | ------------------------------------------------------------------------------------------- |
+| `FATHOM_GOVERNANCE_ENABLED` | bool        | `false`   | Enable policy enforcement.                                                                  |
+| `FATHOM_GOVERNANCE_POLICY`  | JSON string | *(empty)* | Inline allow/deny policy document. When enabled, an empty or unmatched policy fails closed. |
 
 Example:
 
@@ -347,35 +356,45 @@ See [GOVERNANCE.md](GOVERNANCE.md) for the full rule schema, audit format, and A
 
 ### Credentials vault (environment-only)
 
-The credentials vault is not an `AppConfig` TOML section. It stores API keys, passwords, and tokens encrypted at rest with AES-256-GCM. Set `FATHOM_CREDENTIAL_KEY` to a 32-byte key (64 hex characters or base64) before using credential storage. The vault is exposed through the HTTP API at `/api/v1/credentials`; list responses never include plaintext values. Never commit the key; changing it requires a server restart and re-encryption of stored credentials.
+The credentials vault is not an `AppConfig` TOML section. It stores API keys, passwords, and tokens encrypted at rest with AES-256-GCM. Set `FATHOM_CREDENTIAL_KEY` to a 32-byte key (64 hex characters or base64) before using credential storage. **This key is strictly required**: for security reasons, Fathom has no insecure default fallback key; if `FATHOM_CREDENTIAL_KEY` is missing or invalid, credential store operations will return an explicit error. The vault is exposed through the HTTP API at `/api/v1/credentials`; list responses never include plaintext values. Never commit the key; changing it requires a server restart and re-encryption of stored credentials.
+
+```bash
+# Generate a secure 32-byte key
+openssl rand -hex 32
+# Provide via environment
+export FATHOM_CREDENTIAL_KEY="your-64-character-hex-key"
+```
 
 ### `[memory]`
 
 Long-term semantic memory (see [MEMORY-KB.md](MEMORY-KB.md) for the full design). The memory subsystem stores self-contained facts in a SQLite database with hybrid (vector + BM25) search, append-only supersession chains, and an `absorb` pipeline that deduplicates and links new facts against existing ones. This is inspired by the mem0/Memora approach to persistent agent memory.
 
-| Field | Type | Default | Description |
-|------|-----|---------|----------|
-| `enabled` | bool | `true` | Master switch for the subsystem |
-| `db_path` | string | `""` | Path to SQLite; empty = `~/.fathom/memory.db` |
-| `embeddings` | string | `"auto"` | `auto` \| `openai` \| `tfidf` |
-| `embedding_base_url` | string | `""` | Embedding endpoint; empty = `llm.base_url` |
-| `embedding_api_key` | string | `""` | Embedding key; empty = `llm.api_key` |
-| `embedding_model` | string | `"text-embedding-3-small"` | Embedding model (OpenAI backend) |
-| `semantic_weight` | f32 | `0.7` | Vector weight in hybrid score (0–1) |
-| `top_k` | u32 | `5` | Number of search/digest results |
-| `min_score` | f32 | `0.25` | Minimum score for result inclusion |
-| `temporal_decay` | f32 | `0.01` | Linear freshness decay per day (0 = off) |
-| `auto_digest` | bool | `true` | Inject digest into top-agent prompts |
-| `llm_classify` | bool | `true` | LLM classification of facts in absorb |
-| `rerank` | bool | `false` | LLM-reranking of search results as second pass |
-| `gc_auto` | bool | `true` | Run background GC automatically |
-| `gc_ttl_days` | u32 | `30` | GC: age (days) after which untouched run facts are archived |
-| `gc_compact_above` | u32 | `200` | GC: active-row threshold in scope group for N→1 compaction |
-| `gc_confidence_decay_rate` | f64 | `0.02` | GC: daily confidence decay for unused facts |
-| `gc_confidence_threshold` | f64 | `0.15` | GC: minimum confidence; below this, facts are archived |
-**Embedding backend selection.** The `embeddings` field selects the embedding strategy:
+| Field                                                                                   | Type   | Default                    | Description                                                 |
+| --------------------------------------------------------------------------------------- | ------ | -------------------------- | ----------------------------------------------------------- |
+| `enabled`                                                                               | bool   | `true`                     | Master switch for the subsystem                             |
+| `db_path`                                                                               | string | `""`                       | Path to SQLite; empty = `~/.fathom/memory.db`               |
+| `embeddings`                                                                            | string | `"auto"`                   | `auto` \| `openai` \| `tfidf`                               |
+| `embedding_base_url`                                                                    | string | `""`                       | Embedding endpoint; empty = `llm.base_url`                  |
+| `embedding_api_key`                                                                     | string | `""`                       | Embedding key; empty = `llm.api_key`                        |
+| `embedding_model`                                                                       | string | `"text-embedding-3-small"` | Embedding model (OpenAI backend)                            |
+| `semantic_weight`                                                                       | f32    | `0.7`                      | Vector weight in hybrid score (0–1)                         |
+| `top_k`                                                                                 | u32    | `5`                        | Number of search/digest results                             |
+| `min_score`                                                                             | f32    | `0.25`                     | Minimum score for result inclusion                          |
+| `temporal_decay`                                                                        | f32    | `0.01`                     | Linear freshness decay per day (0 = off)                    |
+| `auto_digest`                                                                           | bool   | `true`                     | Inject digest into top-agent prompts                        |
+| `llm_classify`                                                                          | bool   | `true`                     | LLM classification of facts in absorb                       |
+| `rerank`                                                                                | bool   | `false`                    | LLM-reranking of search results as second pass              |
+| `gc_auto`                                                                               | bool   | `true`                     | Run background GC automatically                             |
+| `gc_ttl_days`                                                                           | u32    | `30`                       | GC: age (days) after which untouched run facts are archived |
+| `gc_compact_above`                                                                      | u32    | `200`                      | GC: active-row threshold in scope group for N→1 compaction  |
+| `gc_confidence_decay_rate`                                                              | f64    | `0.02`                     | GC: daily confidence decay for unused facts                 |
+| `gc_confidence_threshold`                                                               | f64    | `0.15`                     | GC: minimum confidence; below this, facts are archived      |
+| **Embedding backend selection.** The `embeddings` field selects the embedding strategy: | <br /> | <br />                     | <br />                                                      |
+
 - `auto` — attempts to use the LLM provider's embedding endpoint (OpenAI-compatible); falls back to TF-IDF if unavailable.
+
 - `openai` — explicitly uses the OpenAI-compatible embedding API at `embedding_base_url` with `embedding_model`.
+
 - `tfidf` — pure TF-IDF vectorization (no external API call, works offline, suitable for small-to-medium memory stores).
 
 **Hybrid search formula.** Memory search combines BM25 keyword scoring with dense vector cosine similarity: `score = w * vector_sim + (1 - w) * bm25_score`, where `w = semantic_weight`. A weight of `0.7` means 70% of the score comes from semantic similarity and 30% from keyword matching. Set `semantic_weight = 1.0` for pure vector search, or `0.0` for pure BM25.
@@ -392,29 +411,29 @@ Long-term semantic memory (see [MEMORY-KB.md](MEMORY-KB.md) for the full design)
 
 Array of MCP (Model Context Protocol) servers. Each server extends the agent's toolset with external capabilities — databases, APIs, file systems, or custom logic. The servers are connected at startup and their tools are registered into the global tool registry alongside the built-in tools.
 
-| Field | Type | Description |
-|------|-----|----------|
-| `name` | string | Server name |
-| `transport` | string | `stdio` \| `http` |
-| `command` | string? | Command (for stdio) |
-| `args` | string[] | Arguments (for stdio) |
-| `url` | string? | URL (for http) |
+| Field       | Type      | Description           |
+| ----------- | --------- | --------------------- |
+| `name`      | string    | Server name           |
+| `transport` | string    | `stdio` \| `http`     |
+| `command`   | string?   | Command (for stdio)   |
+| `args`      | string\[] | Arguments (for stdio) |
+| `url`       | string?   | URL (for http)        |
 
 **Transport types.** `stdio` servers are spawned as subprocesses — the system runs `command args` and communicates with the server over its stdin/stdout using JSON-RPC. This is ideal for local tools (e.g. `npx @modelcontextprotocol/server-web-search`). `http` servers are reached over the network at the specified `url` using JSON-RPC over HTTP POST. This is suitable for remote or shared tool servers. Both transport types are connected concurrently at startup; a failed connection logs a warning but does not prevent the session from starting.
 
----
+***
 
 ### `[[hooks]]`
 
 Lifecycle hooks extend the system with custom subprocess callbacks at specific points in the agent execution lifecycle. This follows the fleet/E3 pattern: a hook is a short-lived command that receives a JSON payload on stdin and returns a JSON verdict on stdout.
 
-| Field | Type | Default | Description |
-|------|-----|---------|----------|
-| `event` | string | — | `PreToolUse` \| `PostToolUse` \| `Stop` |
-| `command` | string | — | Command to run |
-| `args` | string[] | `[]` | Command arguments |
-| `tool` | string | `""` | Optional: only fire for this tool name (Pre/PostToolUse) |
-| `timeout_ms` | u64 | `5000` | Hook timeout in milliseconds |
+| Field        | Type      | Default | Description                                              |
+| ------------ | --------- | ------- | -------------------------------------------------------- |
+| `event`      | string    | —       | `PreToolUse` \| `PostToolUse` \| `Stop`                  |
+| `command`    | string    | —       | Command to run                                           |
+| `args`       | string\[] | `[]`    | Command arguments                                        |
+| `tool`       | string    | `""`    | Optional: only fire for this tool name (Pre/PostToolUse) |
+| `timeout_ms` | u64       | `5000`  | Hook timeout in milliseconds                             |
 
 **Events.** `PreToolUse` fires before a tool is invoked — the hook can inspect the tool name and arguments and return `allow` or `deny` to gate the call. `PostToolUse` fires after a tool completes — the hook receives the tool output and can log, transform, or alert on it. `Stop` fires when an agent is being stopped (completion, cancellation, or error) — useful for cleanup, metrics emission, or logging final state.
 
@@ -425,6 +444,7 @@ Lifecycle hooks extend the system with custom subprocess callbacks at specific p
 **JSON payload format.** The hook receives a JSON object on stdin with: `event` (string), `session_id` (string), `agent_id` (string), `role` (string), `tool` (string, only for tool events), `args` (object, only for tool events), `output` (string, only for PostToolUse/Stop). The hook replies on stdout with a JSON object: for `PreToolUse` the reply must include `verdict` (`"allow"` or `"deny"`); for other events any JSON is accepted but ignored.
 
 **Example:**
+
 ```toml
 [[hooks]]
 event = "PreToolUse"
@@ -438,21 +458,21 @@ command = "/usr/local/bin/log-metrics"
 args = ["--session-end"]
 ```
 
----
+***
 
 ### `[computer]`
 
 Computer use gives agents a browser (via Playwright) they can drive — navigate, click, type, screenshot, inspect accessibility trees. The computer service is an optional loopback Playwright service; with Docker, Fathom can provision one isolated computer per agent. Browser egress rejects localhost, private, link-local, multicast, and cloud-metadata targets by default.
 
-| Environment variable | Default | Description |
-|----------------------|---------|-------------|
-| `FATHOM_COMPUTER_SERVICE_URL` | `http://127.0.0.1:8765` | URL of the Playwright computer service, used by the server relay |
-| `COMPUTER_SERVICE_URL` | `http://127.0.0.1:8765` | Legacy alias for the same computer service URL |
-| `COMPUTER_TOKEN` | *(required)* | Shared authentication token; supervisor is unavailable when unset |
-| `COMPUTER_IMAGE` | `fathom/computer:latest` | Docker image for per-agent computer containers |
-| `COMPUTER_NETWORK` | `fathom-computer` | Docker network for computer containers |
-| `COMPUTER_BASE_PORT` | `19000` | Base port for per-agent loopback ports; agent gets `base_port + (hash % 1000)` (deterministic from agent ID) |
-| `COMPUTER_ALLOW_PRIVATE_HOSTS` | `false` | Allow localhost/private targets (development only; never bypasses metadata/multicast denies) |
+| Environment variable           | Default                  | Description                                                                                                  |
+| ------------------------------ | ------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `FATHOM_COMPUTER_SERVICE_URL`  | `http://127.0.0.1:8765`  | URL of the Playwright computer service, used by the server relay                                             |
+| `COMPUTER_SERVICE_URL`         | `http://127.0.0.1:8765`  | Legacy alias for the same computer service URL                                                               |
+| `COMPUTER_TOKEN`               | *(required)*             | Shared authentication token; supervisor is unavailable when unset                                            |
+| `COMPUTER_IMAGE`               | `fathom/computer:latest` | Docker image for per-agent computer containers                                                               |
+| `COMPUTER_NETWORK`             | `fathom-computer`        | Docker network for computer containers                                                                       |
+| `COMPUTER_BASE_PORT`           | `19000`                  | Base port for per-agent loopback ports; agent gets `base_port + (hash % 1000)` (deterministic from agent ID) |
+| `COMPUTER_ALLOW_PRIVATE_HOSTS` | `false`                  | Allow localhost/private targets (development only; never bypasses metadata/multicast denies)                 |
 
 **Service URL selection.** `FATHOM_COMPUTER_SERVICE_URL` is the canonical variable used by the server relay. `COMPUTER_SERVICE_URL` is a legacy alias — set both if you need compatibility with older tooling; the canonical one wins when both are set. When neither is set, the server defaults to `http://127.0.0.1:8765`.
 
@@ -468,25 +488,30 @@ See [COMPUTER-USE.md](COMPUTER-USE.md) for the full protocol and container lifec
 
 HTTP API server settings for `fathom serve`. When bound to a non-loopback address, API keys are **required**.
 
-| Environment variable | Default | Description |
-|----------------------|---------|-------------|
-| `FATHOM_API_KEYS` | *(unset = open access)* | Comma-separated API keys for non-loopback binds; all `/api/v1/*` requests require a key when set |
-| `FATHOM_RATE_LIMIT` | `120` | Per-client rate limit, requests per minute |
+| Environment variable    | Default                        | Description                                                                                      |
+| ----------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `FATHOM_API_KEYS`       | *(unset = open access)*        | Comma-separated API keys for non-loopback binds; all `/api/v1/*` requests require a key when set |
+| `FATHOM_RATE_LIMIT`     | `120`                          | Per-client rate limit, requests per minute                                                       |
+| `FATHOM_WEBHOOK_SECRET` | *(unset = no signature check)* | HMAC-SHA256 secret for verifying inbound webhooks (`POST /api/v1/webhooks/inbound`)              |
 
 **Authentication.** When `FATHOM_API_KEYS` (comma-separated) is set, every `/api/v1/*` request must present a valid key via `X-API-Key` header or Bearer token. Each configured key is registered with a human-readable name derived from a hash, which is used for rate-limiting and logging. Public endpoints (`/health`, `/metrics`, `/dashboard`) stay open, but the dashboard fetches data only through protected endpoints.
+
+**Inbound Webhook Verification.** When `FATHOM_WEBHOOK_SECRET` is set, inbound webhook triggers to `/api/v1/webhooks/inbound` require an HMAC-SHA256 signature in the `x-fathom-signature` or `x-hub-signature-256` header (with optional `sha256=` prefix). Requests with missing or invalid signatures receive `401 Unauthorized`.
 
 **Non-loopback binds.** `fathom serve --host 0.0.0.0` (or any non-loopback address) is **rejected at startup** unless `FATHOM_API_KEYS` is set. Loopback binds default to open access; set `FATHOM_API_KEYS` to enable auth locally too.
 
 **Rate limiting.** Sliding-window limit per client identity (the authenticated principal name, or the client IP when auth is disabled). Each client's window is tracked independently. Exceeding the limit returns `429 Too Many Requests`. See [HTTP-API.md](HTTP-API.md) for details.
 
----
+***
 
 ### Profiles
 
 Profiles (personas) are named TOML presets that tune the fleet for a class of tasks. A profile is a small declarative overlay applied on top of `~/.fathom/config.toml`:
 
 - an extra system-prompt block injected into every agent;
+
 - optional overrides for the main/fast model, temperature and depth;
+
 - extra tools denied for every role.
 
 Profiles live in `~/.fathom/profiles/<name>.toml`; three presets (`hunter`, `analyst`, `validator`) are built in and available without any files.
@@ -498,25 +523,27 @@ fathom run --profile hunter "find decision makers at Acme"
 
 **Profile fields:**
 
-| Field | Type | Description |
-|------|-----|----------|
-| `name` | string | Profile name |
-| `description` | string | Human-readable description |
-| `prompt` | string | Extra system-prompt block injected into every agent |
-| `model` | string? | Override `[llm] model` (strong model) |
-| `fast_model` | string? | Override `[llm] fast_model` (cheap model) |
-| `temperature` | f32? | Override `[llm] temperature` |
-| `max_depth` | u32? | Override `[agent] max_depth` |
-| `max_agents` | u32? | Override `[agent] max_agents` |
-| `max_iterations` | u32? | Override `[agent] max_iterations` |
-| `timeout_seconds` | u64? | Override `[agent] timeout_seconds` |
-| `replan_rounds` | u32? | Override `[agent] replan_rounds` (0 = disable replanning) |
-| `deny_tools` | string[] | Tools denied for every role (merged into `[agent] deny_tools`) |
+| Field             | Type      | Description                                                    |
+| ----------------- | --------- | -------------------------------------------------------------- |
+| `name`            | string    | Profile name                                                   |
+| `description`     | string    | Human-readable description                                     |
+| `prompt`          | string    | Extra system-prompt block injected into every agent            |
+| `model`           | string?   | Override `[llm] model` (strong model)                          |
+| `fast_model`      | string?   | Override `[llm] fast_model` (cheap model)                      |
+| `temperature`     | f32?      | Override `[llm] temperature`                                   |
+| `max_depth`       | u32?      | Override `[agent] max_depth`                                   |
+| `max_agents`      | u32?      | Override `[agent] max_agents`                                  |
+| `max_iterations`  | u32?      | Override `[agent] max_iterations`                              |
+| `timeout_seconds` | u64?      | Override `[agent] timeout_seconds`                             |
+| `replan_rounds`   | u32?      | Override `[agent] replan_rounds` (0 = disable replanning)      |
+| `deny_tools`      | string\[] | Tools denied for every role (merged into `[agent] deny_tools`) |
 
 **Built-in presets:**
 
 - **`hunter`** — Aggressive lead harvesting: maximises verified contacts. Sets `max_agents = 6`, prioritises sources with people pages, and always runs `extract_contacts` with `enrich_entities` and `save_contacts`.
+
 - **`analyst`** — Deep research & cross-checking, no side effects. Denies `save_contacts` and `git_push`. Every claim needs a source URL; conflicting sources get both cited. Focuses on companies, markets, numbers, and dates.
+
 - **`validator`** — Verify and enrich already-collected contacts. Denies `spawn_agent` (no sub-agent creation). Works through the contact list one by one, using `verify_email` / `verify_phone` / `verify_social` tools.
 
 **User-defined profiles** are stored as TOML files in `~/.fathom/profiles/`. User files override built-in presets with the same name. You can create a new profile template with:
@@ -527,7 +554,7 @@ fathom profiles new my-profile
 
 Profiles are applied via `Profile::apply()` which overlays the profile's fields onto the loaded `AppConfig` in-place. The system prompt from the profile is injected into every agent's context at the start of each turn.
 
----
+***
 
 ## CLI Config Management
 

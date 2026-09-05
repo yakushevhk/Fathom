@@ -31,17 +31,20 @@ pub struct ClaimRequest {
 
 fn default_timezone() -> String { "UTC".to_owned() }
 fn default_enabled() -> bool { true }
+#[allow(clippy::result_large_err)]
 fn bounded(value: &str, max: usize, field: &str) -> Result<String, Response> {
     let value = value.trim();
     if value.is_empty() { return Err(error(StatusCode::BAD_REQUEST, format!("{field} must not be empty"))); }
     if value.chars().count() > max { return Err(error(StatusCode::BAD_REQUEST, format!("{field} exceeds maximum length of {max}"))); }
     Ok(value.to_owned())
 }
+#[allow(clippy::result_large_err)]
 fn valid_id(value: &str, field: &str) -> Result<String, Response> {
     let value = bounded(value, MAX_ID, field)?;
     if !value.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.')) { return Err(error(StatusCode::BAD_REQUEST, format!("{field} is invalid"))); }
     Ok(value)
 }
+#[allow(clippy::result_large_err)]
 fn fields(body: &ScheduleRequest) -> Result<(String, String, String, String, Option<String>), Response> {
     let coworker_id = valid_id(&body.coworker_id, "coworker_id")?;
     let cron_expression = bounded(&body.cron_expression, MAX_CRON, "cron_expression")?;

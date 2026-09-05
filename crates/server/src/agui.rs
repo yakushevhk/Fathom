@@ -262,16 +262,14 @@ fn event_stream(
             if let Some(event) = replay.next() {
                 return Some((sse_event(event), (replay, rx)));
             }
-            loop {
-                match rx.recv().await {
-                    Ok(event) => return Some((sse_event(event), (replay, rx))),
-                    Err(broadcast::error::RecvError::Lagged(count)) => {
-                        let envelope = AgUiEvent::error("event_lagged", format!("{count} events were skipped"));
-                        let data = serde_json::to_string(&envelope).unwrap_or_else(|_| "{\"event_type\":\"ERROR\"}".to_string());
-                        return Some((Ok(Event::default().event("ERROR").data(data)), (replay, rx)));
-                    }
-                    Err(broadcast::error::RecvError::Closed) => return None,
+            match rx.recv().await {
+                Ok(event) => Some((sse_event(event), (replay, rx))),
+                Err(broadcast::error::RecvError::Lagged(count)) => {
+                    let envelope = AgUiEvent::error("event_lagged", format!("{count} events were skipped"));
+                    let data = serde_json::to_string(&envelope).unwrap_or_else(|_| "{\"event_type\":\"ERROR\"}".to_string());
+                    Some((Ok(Event::default().event("ERROR").data(data)), (replay, rx)))
                 }
+                Err(broadcast::error::RecvError::Closed) => None,
             }
         },
     ))

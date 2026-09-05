@@ -167,10 +167,11 @@ impl SkillRegistry {
             .with_context(|| format!("creating skill directory {}", skill_dir.display()))?;
 
         let skill_path = skill_dir.join("SKILL.md");
+        let task_trimmed = task.trim();
         let content = format!(
-            "# {}\n\n{}\n\n## Approach\n\n{}\n",
-            task.trim(),
-            format!("Skill learned from: {}", task.trim()),
+            "# {}\n\nSkill learned from: {}\n\n## Approach\n\n{}\n",
+            task_trimmed,
+            task_trimmed,
             approach.trim(),
         );
 
@@ -228,8 +229,6 @@ fn slugify(input: &str) -> String {
         .map(|c| {
             if c.is_alphanumeric() || c == '-' || c == '_' {
                 c.to_ascii_lowercase()
-            } else if c.is_whitespace() || c == '/' {
-                '-'
             } else {
                 '-'
             }

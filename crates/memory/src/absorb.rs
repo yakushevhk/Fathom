@@ -268,7 +268,7 @@ impl AbsorbPipeline {
         report.consolidated = consolidated;
 
         // ── Embed all surviving facts in one batch ────────────────────
-        let texts: Vec<String> = clean.iter().map(|f| embed_text(f)).collect();
+        let texts: Vec<String> = clean.iter().map(embed_text).collect();
         let vectors = self.embedder.embed(&texts).await?;
 
         // Existing embeddings for candidate lookup.
@@ -326,7 +326,7 @@ impl AbsorbPipeline {
                         format!("similarity {sim:.2} ≥ {HEURISTIC_DUPLICATE}"),
                     )
                 } else if *sim >= CONSOLIDATION_SIMILARITY
-                    && self.db.get(tid)?.map_or(false, |r| shares_subject(&fact.content, &r.content))
+                    && self.db.get(tid)?.is_some_and(|r| shares_subject(&fact.content, &r.content))
                 {
                     // Cross-call consolidation: merge into existing row.
                     if !dry_run {
@@ -833,9 +833,11 @@ mod tests {
 
     #[tokio::test]
     async fn report_summary_line_format() {
-        let mut r = AbsorbReport::default();
-        r.created = 2;
-        r.skipped = 1;
+        let r = AbsorbReport {
+            created: 2,
+            skipped: 1,
+            ..Default::default()
+        };
         let line = r.summary_line();
         assert!(line.contains("2 created"));
         assert!(line.contains("1 duplicates skipped"));

@@ -91,7 +91,7 @@ fn heuristic_tokens(text: &str) -> u32 {
     }
 
     // 4 ASCII chars ~ 1 token (round up)
-    let ascii_tokens = (ascii_count + 3) / 4;
+    let ascii_tokens = ascii_count.div_ceil(4);
     ascii_tokens + other_tokens
 }
 
@@ -143,7 +143,7 @@ fn estimate_tool_call_tokens(tc: &ToolCall) -> u32 {
 
 /// Estimate total tokens for a slice of messages.
 pub fn estimate_messages_tokens(messages: &[Message]) -> u32 {
-    messages.iter().map(|m| estimate_message_tokens(m)).sum()
+    messages.iter().map(estimate_message_tokens).sum()
 }
 
 /// Estimate the token cost of tool schemas (for the tools parameter in the API).

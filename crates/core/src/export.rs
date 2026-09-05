@@ -579,15 +579,15 @@ pub fn contacts_to_xlsx(contacts: &[Contact]) -> anyhow::Result<Vec<u8>> {
         worksheet.write_string(row, 3, contact.company.as_deref().unwrap_or_default())?;
         worksheet.write_string(row, 4, contact.email.as_deref().unwrap_or_default())?;
         worksheet.write_string(row, 5, contact.phone.as_deref().unwrap_or_default())?;
-        worksheet.write_string(row, 6, &contact.tags.join("; "))?;
+        worksheet.write_string(row, 6, contact.tags.join("; "))?;
         let socials: Vec<String> = contact
             .social_profiles
             .iter()
             .map(|sp| format!("{}:{}", sp.platform, if sp.url.is_empty() { &sp.username } else { &sp.url }))
             .collect();
-        worksheet.write_string(row, 7, &socials.join("; "))?;
+        worksheet.write_string(row, 7, socials.join("; "))?;
         worksheet.write_string(row, 8, &contact.source)?;
-        worksheet.write_string(row, 9, &contact.created_at.to_rfc3339())?;
+        worksheet.write_string(row, 9, contact.created_at.to_rfc3339())?;
     }
 
     Ok(workbook.save_to_buffer()?)

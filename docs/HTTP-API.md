@@ -937,35 +937,48 @@ The metrics are recorded by a middleware that wraps all API routes. The `session
 
 ---
 
-## CORS
-
----
-
 ### `POST /api/v1/webhooks/inbound`
 
-Ingest external webhooks (GitHub, Sentry, Email, CRM) and trigger proactive Coworker runs autonomously.
+Ingest external webhooks (GitHub, Sentry, Stripe, CRM) and trigger proactive worker sessions autonomously.
+
+**Headers:**
+- `Content-Type: application/json`
+- `x-fathom-signature` or `x-hub-signature-256`: *(optional, required when `FATHOM_WEBHOOK_SECRET` is set)* HMAC-SHA256 signature (hex string, optional `sha256=` prefix) calculated over the JSON-encoded `payload` field.
 
 **Request body:**
 ```json
 {
   "source": "github",
-  "event": "pull_request",
-  "coworker_id": "code_reviewer_1",
-  "task": "Review pull request #42 and check for security regressions",
-  "metadata": {
-    "pr_number": 42,
-    "author": "dev_user"
+  "event_type": "pull_request",
+  "payload": {
+    "action": "opened",
+    "number": 42,
+    "repository": "fathom-ai/fathom"
   }
 }
 ```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `source` | string | ✅ | Webhook origin (`github`, `sentry`, `stripe`, `crm`, etc.) |
+| `event_type` | string | ✅ | Event name/action (`pull_request`, `issue`, `alert`, etc.) |
+| `payload` | object/any | ✅ | Raw event payload |
 
 **Response 202 Accepted:**
 ```json
 {
   "status": "accepted",
-  "session_id": "01918a2e-48f1-7c9e-9988-112233445566",
-  "message": "Triggered autonomous session from webhook source 'github'"
+  "source": "github",
+  "event_type": "pull_request",
+  "dispatched": true
 }
 ```
+
+**Errors:**
+- `401 Unauthorized` — `FATHOM_WEBHOOK_SECRET` is configured on the server, but the signature header is missing or does not match the payload HMAC digest.
+
+---
+
+## CORS
 
 The API uses restrictive CORS when API-key authentication is disabled. When API keys are configured, the server enables permissive CORS for authenticated clients. Review the middleware in `crates/server/src/lib.rs` before exposing the API cross-origin.

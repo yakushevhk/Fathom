@@ -83,7 +83,7 @@ impl PatternRegister {
     pub async fn rows(&self) -> Vec<PatternRow> {
         let m = self.inner.lock().await;
         let mut v: Vec<PatternRow> = m.values().cloned().collect();
-        v.sort_by(|a, b| b.count.cmp(&a.count));
+        v.sort_by_key(|b| std::cmp::Reverse(b.count));
         v
     }
 
@@ -155,7 +155,7 @@ impl PatternRegister {
         let mut buf = String::from("| Error class | Count | Root cause | Structural fix | Status |\n");
         buf.push_str("|---|---|---|---|---|\n");
         let mut sorted = rows.to_vec();
-        sorted.sort_by(|a, b| b.count.cmp(&a.count));
+        sorted.sort_by_key(|b| std::cmp::Reverse(b.count));
         for r in sorted {
             if buf.len() > PATTERN_FILE_CAP {
                 break;

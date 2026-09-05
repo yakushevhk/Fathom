@@ -346,14 +346,11 @@ impl MemoryDb {
         // ...then a unique prefix...
         let mut stmt = conn.prepare(&format!("{} WHERE id LIKE ?1", Self::SELECT_COLS))?;
         let mut rows = stmt.query_map(params![format!("{id}%")], map_row)?;
-        match rows.next().transpose()? {
-            Some(row) => {
-                if rows.next().is_some() {
-                    anyhow::bail!("ambiguous memory id prefix: {id}");
-                }
-                return Ok(Some(row));
+        if let Some(row) = rows.next().transpose()? {
+            if rows.next().is_some() {
+                anyhow::bail!("ambiguous memory id prefix: {id}");
             }
-            None => {}
+            return Ok(Some(row));
         }
         // ...then a unique suffix. UUIDv7 ids lead with a timestamp, so the
         // random TAIL is the discriminating part — short ids shown to the
@@ -827,7 +824,7 @@ fn f32_vec_to_bytes(v: &[f32]) -> Vec<u8> {
 }
 
 fn bytes_to_f32_vec(b: &[u8]) -> Option<Vec<f32>> {
-    if b.len() % 4 != 0 {
+    if !b.len().is_multiple_of(4) {
         return None;
     }
     Some(

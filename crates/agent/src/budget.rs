@@ -61,7 +61,7 @@ impl ResultBudget {
     /// Calculate the effective cap for a single result.
     ///
     /// `cap = min(static_max, parent_headroom / batch_size)`
-    /// with a minimum floor of `MIN_CAP_CHARS`.
+    /// with a minimum floor of `MIN_CAP_CHARS` (unless static_max is explicitly lower).
     pub fn effective_cap(&self) -> usize {
         let headroom_share = (self.parent_headroom / self.batch_size).max(MIN_CAP_CHARS);
         self.max_summary_chars.min(headroom_share)
@@ -75,19 +75,19 @@ impl ResultBudget {
     /// UTF-8 char boundary and the full text is written to disk.
     pub fn cap_result(&self, result: &str) -> CappedResult {
         let cap = self.effective_cap();
-        let original_len = result.len();
+        let original_chars = result.chars().count();
 
-        if original_len <= cap {
+        if original_chars <= cap {
             return CappedResult {
                 summary: result.to_string(),
                 spill_path: None,
                 was_capped: false,
-                original_len,
+                original_len: original_chars,
             };
         }
 
-        // Truncate at a UTF-8 char boundary.
-        let truncated = truncate_to_char_boundary(result, cap);
+        // Truncate at a UTF-8 char boundary by character count.
+        let truncated = truncate_to_char_count(result, cap);
 
         // Write the full text to disk.
         let spill_path = self.spill_dir.join(format!(
@@ -98,19 +98,19 @@ impl ResultBudget {
         let summary = if let Err(e) = std::fs::create_dir_all(&self.spill_dir) {
             format!(
                 "{}\n\n[Result capped at {}/{} chars. Spill failed: {}]",
-                truncated, cap, original_len, e
+                truncated, cap, original_chars, e
             )
         } else if let Err(e) = std::fs::write(&spill_path, result) {
             format!(
                 "{}\n\n[Result capped at {}/{} chars. Spill write failed: {}]",
-                truncated, cap, original_len, e
+                truncated, cap, original_chars, e
             )
         } else {
             format!(
                 "{}\n\n[Result capped at {}/{} chars. Full text: {}]",
                 truncated,
                 cap,
-                original_len,
+                original_chars,
                 spill_path.display()
             )
         };
@@ -119,22 +119,17 @@ impl ResultBudget {
             summary,
             spill_path: Some(spill_path),
             was_capped: true,
-            original_len,
+            original_len: original_chars,
         }
     }
 }
 
-/// Truncate a string to at most `max_bytes` bytes, stopping at a UTF-8 char boundary.
-fn truncate_to_char_boundary(s: &str, max_chars: usize) -> &str {
-    if s.len() <= max_chars {
-        return s;
+/// Truncate a string to at most `max_chars` UTF-8 characters.
+fn truncate_to_char_count(s: &str, max_chars: usize) -> &str {
+    match s.char_indices().nth(max_chars) {
+        Some((byte_idx, _)) => &s[..byte_idx],
+        None => s,
     }
-    // Find the largest valid UTF-8 boundary <= max_chars.
-    let mut end = max_chars;
-    while end > 0 && !s.is_char_boundary(end) {
-        end -= 1;
-    }
-    &s[..end]
 }
 
 #[cfg(test)]
@@ -224,8 +219,8 @@ mod tests {
         let budget = ResultBudget::new(100_000, 1, tmp.path().to_path_buf())
             .with_max_chars(10);
         // Chinese chars are 3 bytes each.
-        let text = "你好世界你好世界"; // 8 chars, 24 bytes
-        let result = budget.cap_result(&text);
+        let text = "你好世界你好世界你好世界"; // 12 chars, 36 bytes > 10 chars
+        let result = budget.cap_result(text);
         assert!(result.was_capped);
         // Summary should be valid UTF-8.
         assert!(std::str::from_utf8(result.summary.as_bytes()).is_ok());
@@ -253,20 +248,16 @@ mod tests {
     #[test]
     fn test_truncate_to_char_boundary_ascii() {
         let s = "hello world";
-        assert_eq!(truncate_to_char_boundary(s, 5), "hello");
-        assert_eq!(truncate_to_char_boundary(s, 100), s);
+        assert_eq!(truncate_to_char_count(s, 5), "hello");
+        assert_eq!(truncate_to_char_count(s, 100), s);
     }
 
     #[test]
     fn test_truncate_to_char_boundary_multibyte() {
-        // Each Chinese char is 3 bytes.
+        // 4 unicode characters
         let s = "你好世界";
-        let truncated = truncate_to_char_boundary(s, 4);
-        // Should be "你好" (6 bytes) since "你好世" is 9 bytes > 4.
-        // Actually 4 bytes: boundary at 3 = "你好" (but 3 < 4 and 6 > 4).
-        // Wait: 4 bytes, valid boundaries at 0, 3, 6, 9, 12.
-        // Largest <= 4 is 3, so result is "你".
-        assert_eq!(truncated, "你");
+        let truncated = truncate_to_char_count(s, 2);
+        assert_eq!(truncated, "你好");
     }
 
     #[test]

@@ -232,7 +232,7 @@ Fathom/
 ├── src/                       # CLI entry point (clap) — run | tui | serve | mcp-serve | memory | jobs
 ├── crates/                    # 12-crate Cargo workspace (strict DAG, zero circular dependencies)
 │   ├── core/                  # Shared domain primitives: IDs, events, config, notifications, CRM
-│   ├── llm/                   # LlmProvider trait, OpenAI-compatible streaming, Hermes compaction
+│   ├── llm/                   # LlmProvider trait, native Anthropic Claude (thinking & caching), DeepSeek/OpenAI streaming
 │   ├── agent/                 # Autonomous multi-turn reasoning loops, JoinSet sub-agent swarms
 │   ├── tools/                 # 48 base tools + Playwright CDP + computer-use registry
 │   ├── memory/                # Long-term semantic memory: SQLite FTS5 (BM25) + vector graph

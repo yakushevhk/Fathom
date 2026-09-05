@@ -255,7 +255,7 @@ pub fn extract_company_fallback(name: &str, text: &str) -> Option<String> {
         if let Some(cap) = re.captures(text) {
             let company = cap[1]
                 .trim()
-                .trim_end_matches(|c: char| matches!(c, ',' | '.' | ';' | ')' | ' '))
+                .trim_end_matches([',', '.', ';', ')', ' '])
                 .to_string();
             if !company.is_empty() {
                 return Some(company);
@@ -328,7 +328,7 @@ pub fn extract_location(text: &str) -> Option<String> {
     )
     .ok()?;
     re.captures(text)
-        .map(|cap| cap[1].trim().trim_end_matches(|c: char| matches!(c, ',' | '.' | ';' | ')')).to_string())
+        .map(|cap| cap[1].trim().trim_end_matches([',', '.', ';', ')']).to_string())
         .filter(|l| !l.is_empty())
 }
 

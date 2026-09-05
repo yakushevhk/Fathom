@@ -48,8 +48,8 @@ impl ModelSemaphore {
     }
 
     /// Acquire a permit for `model`, running `f` while holding it, then release.
-    pub async fn acquire<'a, T>(
-        &'a self,
+    pub async fn acquire<T>(
+        &self,
         model: &str,
         f: impl std::future::Future<Output = T> + Send,
     ) -> T {

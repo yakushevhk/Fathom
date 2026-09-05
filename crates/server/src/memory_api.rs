@@ -482,7 +482,7 @@ mod tests {
 
     #[test]
     fn distill_query_defaults() {
-        assert_eq!(DistillQuery { session: None, dry_run: false }.dry_run, false);
+        assert!(!DistillQuery { session: None, dry_run: false }.dry_run);
     }
 
     #[test]

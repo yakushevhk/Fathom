@@ -127,7 +127,7 @@ async fn memory_engineering_full_pipeline() {
     let py1 = python_facts.iter().find(|r| r.content.contains("error messages")).unwrap();
     mem.db.boost(&py1.id, 0.5).unwrap();
     for _ in 0..5 {
-        mem.db.record_access(&[py1.id.clone()]);
+        mem.db.record_access(std::slice::from_ref(&py1.id));
     }
 
     println!("   Searching 'Python 3.12 features':");

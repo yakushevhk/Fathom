@@ -316,7 +316,7 @@ impl MemoryStore {
             .split(ENTRY_DELIMITER)
             .map(|s| s.trim())
             .filter(|s| !s.is_empty())
-            .map(|s| MemoryEntry::new(s))
+            .map(MemoryEntry::new)
             .collect()
     }
 
@@ -564,11 +564,7 @@ impl MemoryStore {
         }
 
         result_entries.reverse();
-        result_entries
-            .iter()
-            .map(|s| *s)
-            .collect::<Vec<_>>()
-            .join(&format!("{}\n", ENTRY_DELIMITER))
+        result_entries.join(&format!("{}\n", ENTRY_DELIMITER))
     }
 
     /// Write to a temp file and atomically rename (prevents partial writes).

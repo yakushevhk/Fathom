@@ -19,7 +19,7 @@ fn ensure_schema(_conn: &Connection) -> rusqlite::Result<()> {
 }
 fn bounded<'a>(value: &'a str, max: usize, field: &str) -> Result<&'a str> {
     if value.trim().is_empty() { bail!("credential {field} must not be empty") }
-    if value.as_bytes().len() > max { bail!("credential {field} exceeds maximum length") }
+    if value.len() > max { bail!("credential {field} exceeds maximum length") }
     Ok(value)
 }
 fn key_bytes() -> Result<[u8; 32]> {
@@ -34,8 +34,19 @@ fn key_bytes() -> Result<[u8; 32]> {
         }
         return Ok(out);
     }
-    for decoded in [base64::engine::general_purpose::STANDARD.decode(raw.as_bytes()), base64::engine::general_purpose::STANDARD_NO_PAD.decode(raw.as_bytes()), base64::engine::general_purpose::URL_SAFE.decode(raw.as_bytes()), base64::engine::general_purpose::URL_SAFE_NO_PAD.decode(raw.as_bytes())] {
-        if let Ok(decoded) = decoded { if decoded.len() == 32 { out.copy_from_slice(&decoded); return Ok(out); } }
+    for decoded in [
+        base64::engine::general_purpose::STANDARD.decode(raw.as_bytes()),
+        base64::engine::general_purpose::STANDARD_NO_PAD.decode(raw.as_bytes()),
+        base64::engine::general_purpose::URL_SAFE.decode(raw.as_bytes()),
+        base64::engine::general_purpose::URL_SAFE_NO_PAD.decode(raw.as_bytes()),
+    ]
+    .into_iter()
+    .flatten()
+    {
+        if decoded.len() == 32 {
+            out.copy_from_slice(&decoded);
+            return Ok(out);
+        }
     }
     bail!("credential encryption key is invalid")
 }
@@ -76,7 +87,11 @@ fn row(row: &rusqlite::Row<'_>) -> rusqlite::Result<CredentialRow> { Ok(Credenti
 impl crate::Persistence {
     pub fn store_credential(&self, name: &str, kind: &str, secret: &str) -> Result<CredentialRow> {
         let name = bounded(name, MAX_NAME, "name")?; let kind = bounded(kind, MAX_KIND, "kind")?;
-        if secret.is_empty() { bail!("credential secret must not be empty") } if secret.as_bytes().len() > MAX_SECRET { bail!("credential secret exceeds maximum length") }
+        if secret.is_empty() {
+            bail!("credential secret must not be empty");
+        } else if secret.len() > MAX_SECRET {
+            bail!("credential secret exceeds maximum length");
+        }
         let key = key()?; let ciphertext = encrypt(secret, &key)?; let id = Uuid::now_v7().to_string(); let now = chrono::Utc::now().to_rfc3339();
         let mut conn = self.conn.lock(); ensure_schema(&conn)?; let tx = conn.transaction()?;
         tx.execute("INSERT INTO credentials (id,name,kind,ciphertext,created_at,updated_at) VALUES (?1,?2,?3,?4,?5,?5) ON CONFLICT(name) DO UPDATE SET kind=excluded.kind,ciphertext=excluded.ciphertext,updated_at=excluded.updated_at", params![id,name,kind,ciphertext,now])?;

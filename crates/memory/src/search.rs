@@ -81,7 +81,7 @@ pub async fn hybrid_search(
 
     // ── Semantic leg ──────────────────────────────────────────────────
     let mut semantic_scores: Vec<(String, f32)> = Vec::new();
-    let qvec = embedder.embed(&[params.query.clone()]).await?;
+    let qvec = embedder.embed(std::slice::from_ref(&params.query)).await?;
     let stored = db.load_embeddings(&params.scope, embedder.model_name())?;
     if let Some(q) = qvec.first() {
         for (id, v) in &stored {
@@ -406,6 +406,7 @@ fn parse_rerank_order(text: &str, max: usize) -> Option<Vec<usize>> {
 }
 
 /// Build a digest for `topic` within `scope`.
+#[allow(clippy::too_many_arguments)]
 pub async fn build_digest(
     db: &MemoryDb,
     embedder: &Arc<dyn Embedder>,
@@ -508,7 +509,7 @@ mod tests {
     async fn store(db: &MemoryDb, emb: &Arc<dyn Embedder>, r: &MemoryRow) {
         db.insert(r).unwrap();
         db.fts_insert(&r.id, &r.content, &r.tags);
-        let v = emb.embed(&[r.content.clone()]).await.unwrap();
+        let v = emb.embed(std::slice::from_ref(&r.content)).await.unwrap();
         db.put_embedding(&r.id, emb.model_name(), &v[0]).unwrap();
     }
 

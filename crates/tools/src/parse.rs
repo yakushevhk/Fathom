@@ -106,7 +106,7 @@ fn extract_tables(scope: &scraper::ElementRef, limit: usize) -> Vec<serde_json::
     // descendant selection alone would miss it.
     let mut tables: Vec<scraper::ElementRef> = Vec::new();
     if scope.value().name() == "table" {
-        tables.push(scope.clone());
+        tables.push(*scope);
     }
     tables.extend(scope.select(&table_sel));
 

@@ -333,6 +333,17 @@ X-Api-Key: <key>
 
 The `auth_middleware` returns `401 Unauthorized` when keys are configured and the request carries no valid key. On success, it inserts an `AuthPrincipal(key_name)` into request extensions for downstream use.
 
+### Webhook Signature Verification (HMAC-SHA256)
+
+**Source:** `crates/server/src/webhooks.rs`
+
+When `FATHOM_WEBHOOK_SECRET` is set in the environment, inbound webhooks to `POST /api/v1/webhooks/inbound` are validated using HMAC-SHA256.
+
+1. The server reads the signature from either `x-fathom-signature` or `x-hub-signature-256` headers.
+2. If the header is missing, the request is rejected immediately with `401 Unauthorized`.
+3. The server computes the expected HMAC-SHA256 tag over the raw JSON bytes of `body.payload` using the configured secret key via `ring::hmac`.
+4. The hex-encoded signature is matched in constant time (stripping optional `sha256=` prefixes). Mismatched signatures are rejected with `401 Unauthorized`.
+
 ### Rate Limiting
 
 The `RateLimiter` implements a **sliding-window** algorithm per client identity:
@@ -394,6 +405,16 @@ Tools not in either set are conservatively classified as sequential.
 ### Path-Overlap Detection
 
 When multiple parallel-safe file tools target overlapping paths, they are serialized. Two `write_file` calls on `/tmp/data` and `/tmp/data/file.txt` conflict (one is a prefix of the other) and execute sequentially. Path normalization (trailing-slash removal, `./` prefix stripping) makes comparison robust.
+
+### Filesystem Sandbox & Path Traversal Confinement
+
+**Source:** `crates/tools/src/file.rs:resolve_path()`
+
+All agent file operations (`file_read`, `file_write`, `file_edit`, `glob`, `grep`) are sandboxed to the active `working_dir`:
+
+1. **Virtual URI Resolution:** URIs with virtual schemes (`artifact://`, `memory://`, `skill://`) are evaluated through virtual resolvers.
+2. **Normalized Traversal Protection:** Relative paths with `..` components are checked iteratively. Any attempt to traverse above `working_dir` via repeated `../` is safely clamped to `working_dir`.
+3. **Absolute Path Verification:** Absolute paths are only accepted if they strictly start with `working_dir`. Any attempt to access arbitrary host files (e.g. `/etc/passwd`) is rejected and clamped to the sandbox root.
 
 ### Execution Pipeline
 
@@ -501,11 +522,12 @@ Lifecycle guarantees:
 
 Each agent runs inside `tokio::time::timeout(agent_timeout)`. If an agent exceeds its timeout, the future returns `Err(Elapsed)`, which the coordinator treats as a failure — logs the error, updates the DB status, and continues collecting other results.
 
-### Hook Subprocesses
+### Hook Subprocesses & Child Process Management
 
 PreToolUse, PostToolUse, and Stop hooks run as **separate OS processes** (not in-process plugins):
 - JSON on stdin, JSON on stdout — any language works.
-- 30-second timeout with `kill_on_drop`. A hung hook is killed and treated as "no response."
+- 30-second timeout with `kill_on_drop(true)`. A hung hook is killed and treated as "no response."
+- All child tasks spawned across supervisor hosts and OS input controllers strictly configure `.kill_on_drop(true)` on `tokio::process::Command` instances to prevent orphan zombie processes upon cancellation or early termination. PTY shell sessions implement POSIX `SIGTERM`/`SIGKILL` cleanup routines.
 - A buggy hook that segfaults or panics does not take down the agent.
 
 ---

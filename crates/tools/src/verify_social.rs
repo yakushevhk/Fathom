@@ -66,7 +66,7 @@ impl SocialVerifier {
 
         let host = parsed.host_str().unwrap_or_default().to_lowercase();
         let platform = detect_platform(&host);
-        let username = extract_username(&platform, &parsed);
+        let username = extract_username(platform, &parsed);
 
         // GitHub has a reliable public API — prefer it.
         if platform == "github" {

@@ -277,11 +277,12 @@ impl ContactDb {
 
         let Some(old_id) = existing else {
             tx.commit()?;
-            return Ok((new_id as i64, false));
+            return Ok((new_id, false));
         };
 
         // 3. Merge the fresh row into the existing one (same semantics as
         // merge_contacts, but inside this transaction).
+        #[allow(clippy::type_complexity)]
         let (o_email, o_phone, o_name, o_title, o_company, o_crm): (
             Option<String>,
             Option<String>,

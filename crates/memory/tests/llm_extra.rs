@@ -84,8 +84,10 @@ fn p_req(f: AbsorbFact) -> AbsorbRequest {
 async fn a_llm_supersede_three_version_chain() {
     log_sep("A. LLM supersede-цепочка: 2023 → 2024 → 2025");
     let llm = make_llm();
-    let mut cfg = pr_core::MemoryConfig::default();
-    cfg.llm_classify = true;
+    let cfg = pr_core::MemoryConfig {
+        llm_classify: true,
+        ..Default::default()
+    };
     let mem = Memory::in_memory(cfg).unwrap();
 
     let r1 = mem.pipeline_with_llm(llm.clone()).absorb(p_req(p_fact(
@@ -122,8 +124,10 @@ async fn a_llm_supersede_three_version_chain() {
 async fn b_llm_context_hint_preferences_coexist() {
     log_sep("B. Context-hint: предпочтения с явным контекстом");
     let llm = make_llm();
-    let mut cfg = pr_core::MemoryConfig::default();
-    cfg.llm_classify = true;
+    let cfg = pr_core::MemoryConfig {
+        llm_classify: true,
+        ..Default::default()
+    };
     let mem = Memory::in_memory(cfg).unwrap();
 
     let mut f1 = p_fact("I prefer terse code reviews with no preamble");
@@ -149,8 +153,10 @@ async fn b_llm_context_hint_preferences_coexist() {
 async fn c_llm_contradict_then_boost_sways_ranking() {
     log_sep("C. Contradict + boost: ручной перевес в конфликте");
     let llm = make_llm();
-    let mut cfg = pr_core::MemoryConfig::default();
-    cfg.llm_classify = true;
+    let cfg = pr_core::MemoryConfig {
+        llm_classify: true,
+        ..Default::default()
+    };
     let mem = Memory::in_memory(cfg).unwrap();
 
     mem.pipeline_with_llm(llm.clone()).absorb(p_req(p_fact(
@@ -168,7 +174,7 @@ async fn c_llm_contradict_then_boost_sways_ranking() {
     let kazan = hq.iter().find(|r| r.content.contains("Kazan")).expect("Kazan-версия есть");
     mem.db.boost(&kazan.id, 2.0).unwrap();
     for _ in 0..3 {
-        mem.db.record_access(&[kazan.id.clone()]);
+        mem.db.record_access(std::slice::from_ref(&kazan.id));
     }
 
     let hits = mem.search("company headquarters location", &ScopeFilter::persistent(), None).await.unwrap();
@@ -397,8 +403,10 @@ async fn h_llm_rerank_ten_hits_no_drops() {
 async fn i_llm_batch_classify_mixed_verdicts() {
     log_sep("I. Batch-классификация: duplicate+supersede+new в одном вызове");
     let llm = make_llm();
-    let mut cfg = pr_core::MemoryConfig::default();
-    cfg.llm_classify = true;
+    let cfg = pr_core::MemoryConfig {
+        llm_classify: true,
+        ..Default::default()
+    };
     let mem = Memory::in_memory(cfg).unwrap();
 
     // Seed: две строки для дубля и замены.

@@ -484,7 +484,7 @@ async fn relay_screen(socket: WebSocket, root: String) {
                     Ok(Ok((_mime, bytes))) => bytes,
                     _ => continue,
                 };
-                if timeout(WEBSOCKET_SEND_TIMEOUT, sender.send(Message::Binary(bytes.into()))).await.is_err() {
+                if timeout(WEBSOCKET_SEND_TIMEOUT, sender.send(Message::Binary(bytes))).await.is_err() {
                     break;
                 }
             }

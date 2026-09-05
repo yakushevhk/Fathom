@@ -285,13 +285,13 @@ fn to_contact(input: &ContactInput) -> Contact {
         .as_deref()
         .map(str::trim)
         .filter(|e| !e.is_empty())
-        .map(|e| pr_core::normalize_email(e));
+        .map(pr_core::normalize_email);
     let phone = input
         .phone
         .as_deref()
         .map(str::trim)
         .filter(|p| !p.is_empty())
-        .map(|p| normalize_phone(p))
+        .map(normalize_phone)
         .filter(|p| !p.is_empty());
 
     Contact {

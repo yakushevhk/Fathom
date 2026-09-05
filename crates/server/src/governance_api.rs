@@ -60,9 +60,9 @@ pub async fn audit(
         Err(e) => return error(axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
     };
     rows.reverse();
-    rows.retain(|row| query.decision.as_deref().map_or(true, |v| row.decision.eq_ignore_ascii_case(v))
-        && query.agent.as_deref().map_or(true, |v| row.agent == v)
-        && query.session.as_deref().map_or(true, |v| row.session == v));
+    rows.retain(|row| query.decision.as_deref().is_none_or(|v| row.decision.eq_ignore_ascii_case(v))
+        && query.agent.as_deref().is_none_or(|v| row.agent == v)
+        && query.session.as_deref().is_none_or(|v| row.session == v));
     rows.truncate(limit);
     Json(rows).into_response()
 }

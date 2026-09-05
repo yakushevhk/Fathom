@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -24,12 +24,14 @@ pub struct PtySession {
     pub cwd: PathBuf,
     pub started_at: Instant,
     pub pid: u32,
-    pub ring_buffer: Arc<Mutex<Vec<PtyOutputChunk>>>,
+    pub ring_buffer: Arc<Mutex<VecDeque<PtyOutputChunk>>>,
     pub seq_counter: Arc<Mutex<usize>>,
     pub stdin_tx: Arc<Mutex<Option<Box<dyn Write + Send>>>>,
     pub exit_rx: Arc<Mutex<Option<tokio::sync::oneshot::Receiver<i32>>>>,
     pub exit_code: Arc<Mutex<Option<i32>>>,
     pub notifier: broadcast::Sender<PtyOutputChunk>,
+    #[allow(clippy::type_complexity)]
+    pub child_killer: Arc<Mutex<Option<Box<dyn FnOnce() + Send>>>>,
 }
 
 impl PtySession {
@@ -97,7 +99,7 @@ impl PtySession {
             .cloned()
             .collect();
 
-        let latest_seq = buffer.last().map(|c| c.seq).unwrap_or(from_seq);
+        let latest_seq = buffer.back().map(|c| c.seq).unwrap_or(from_seq);
         (matching, latest_seq)
     }
 
@@ -163,12 +165,21 @@ impl PtyBroker {
         let stdout = child.stdout.take().expect("stdout piped");
         let stderr = child.stderr.take().expect("stderr piped");
 
-        let ring_buffer = Arc::new(Mutex::new(Vec::with_capacity(10000)));
+        let ring_buffer = Arc::new(Mutex::new(VecDeque::with_capacity(10000)));
         let seq_counter = Arc::new(Mutex::new(0));
         let (notifier, _) = broadcast::channel(512);
 
         let (exit_tx, exit_rx) = tokio::sync::oneshot::channel();
         let exit_code = Arc::new(Mutex::new(None));
+
+        let child_arc = Arc::new(Mutex::new(Some(child)));
+        let child_killer_arc = child_arc.clone();
+        let child_killer: Box<dyn FnOnce() + Send> = Box::new(move || {
+            let mut guard = child_killer_arc.lock();
+            if let Some(mut c) = guard.take() {
+                let _ = c.kill();
+            }
+        });
 
         let session = Arc::new(PtySession {
             id: uuid::Uuid::now_v7().to_string(),
@@ -184,6 +195,7 @@ impl PtyBroker {
             exit_rx: Arc::new(Mutex::new(Some(exit_rx))),
             exit_code: exit_code.clone(),
             notifier: notifier.clone(),
+            child_killer: Arc::new(Mutex::new(Some(child_killer))),
         });
 
         // Spawn stdout reader thread
@@ -206,9 +218,9 @@ impl PtyBroker {
                 let _ = notif_out.send(chunk.clone());
                 let mut buf = rb_out.lock();
                 if buf.len() >= 10000 {
-                    buf.remove(0);
+                    buf.pop_front();
                 }
-                buf.push(chunk);
+                buf.push_back(chunk);
                 line.clear();
             }
         });
@@ -233,9 +245,9 @@ impl PtyBroker {
                 let _ = notif_err.send(chunk.clone());
                 let mut buf = rb_err.lock();
                 if buf.len() >= 10000 {
-                    buf.remove(0);
+                    buf.pop_front();
                 }
-                buf.push(chunk);
+                buf.push_back(chunk);
                 line.clear();
             }
         });
@@ -243,9 +255,16 @@ impl PtyBroker {
         // Spawn exit waiter thread
         let exit_code_clone = exit_code.clone();
         std::thread::spawn(move || {
-            let code = match child.wait() {
-                Ok(status) => status.code().unwrap_or(0),
-                Err(_) => -1,
+            let code = {
+                let mut guard = child_arc.lock();
+                if let Some(mut c) = guard.take() {
+                    match c.wait() {
+                        Ok(status) => status.code().unwrap_or(0),
+                        Err(_) => -1,
+                    }
+                } else {
+                    -1
+                }
             };
             *exit_code_clone.lock() = Some(code);
             let _ = exit_tx.send(code);
@@ -270,21 +289,16 @@ impl PtyBroker {
     pub fn stop(&self, name: &str) -> PrResult<()> {
         let session = self.sessions.lock().remove(name);
         if let Some(s) = session {
+            // First trigger the owned child kill handle if available
+            if let Some(killer) = s.child_killer.lock().take() {
+                killer();
+            }
+
             #[cfg(unix)]
             {
                 unsafe {
                     libc::kill(s.pid as libc::pid_t, libc::SIGTERM);
                 }
-                // Check if still alive after brief grace period, then SIGKILL
-                let pid = s.pid;
-                std::thread::spawn(move || {
-                    std::thread::sleep(std::time::Duration::from_millis(500));
-                    unsafe {
-                        if libc::kill(pid as libc::pid_t, 0) == 0 {
-                            libc::kill(pid as libc::pid_t, libc::SIGKILL);
-                        }
-                    }
-                });
             }
             Ok(())
         } else {
