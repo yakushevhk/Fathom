@@ -14,12 +14,29 @@
 use async_trait::async_trait;
 use std::sync::Arc;
 
-/// Vector similarity in [0, 1] for L2-normalized inputs.
+/// Vector similarity in [0, 1]. Safe against non-normalized inputs, zero vectors, and NaN.
 pub fn cosine(a: &[f32], b: &[f32]) -> f32 {
     if a.len() != b.len() || a.is_empty() {
         return 0.0;
     }
-    a.iter().zip(b).map(|(x, y)| x * y).sum::<f32>().max(0.0)
+    let mut dot = 0.0;
+    let mut norm_a = 0.0;
+    let mut norm_b = 0.0;
+    for (x, y) in a.iter().zip(b) {
+        dot += x * y;
+        norm_a += x * x;
+        norm_b += y * y;
+    }
+    let denom = (norm_a * norm_b).sqrt();
+    if denom < 1e-8 || denom.is_nan() {
+        return 0.0;
+    }
+    let score = dot / denom;
+    if score.is_nan() {
+        0.0
+    } else {
+        score.clamp(0.0, 1.0)
+    }
 }
 
 #[async_trait]

@@ -185,6 +185,15 @@ impl ComputerSupervisor {
             Err(error) => Err(error),
         }
     }
+    pub async fn cleanup_orphans(&self) -> Result<usize, SupervisorError> {
+        let list = self.list().await?;
+        let mut count = 0;
+        for item in list {
+            let _ = self.with_timeout(self.docker.remove_container(&item.container_name, Some(RemoveContainerOptions { force: true, ..Default::default() }))).await;
+            count += 1;
+        }
+        Ok(count)
+    }
 
     pub async fn list(&self) -> Result<Vec<AgentContainer>, SupervisorError> {
         let mut filters = HashMap::new();

@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 use async_trait::async_trait;
 use pr_core::{ToolOutput, ToolSchema};
 use schemars::JsonSchema;
@@ -88,12 +87,18 @@ impl Tool for GitWorktreeTool {
 
         match params.action {
             WorktreeAction::Create { name, base } => {
+                if name.starts_with('-') || !name.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-') {
+                    return Ok(ToolOutput::err("Invalid worktree name: must be alphanumeric, hyphens, or underscores, and not start with '-'"));
+                }
                 let worktrees_dir = repo_root.join(".fathom").join("worktrees");
                 tokio::fs::create_dir_all(&worktrees_dir).await?;
                 let target_path = worktrees_dir.join(&name);
 
                 let branch_name = format!("fathom/{}", name);
                 let base_ref = base.as_deref().unwrap_or("HEAD");
+                if base_ref.starts_with('-') {
+                    return Ok(ToolOutput::err("Invalid base ref"));
+                }
 
                 let mut cmd = tokio::process::Command::new("git");
                 cmd.current_dir(repo_root)
@@ -101,6 +106,7 @@ impl Tool for GitWorktreeTool {
                     .arg("add")
                     .arg("-b")
                     .arg(&branch_name)
+                    .arg("--")
                     .arg(&target_path)
                     .arg(base_ref);
 
@@ -174,12 +180,11 @@ impl Tool for GitWorktreeTool {
             }
 
             WorktreeAction::Remove { name, force } => {
+                if name.contains("..") || name.starts_with('/') || name.starts_with('\\') {
+                    return Ok(ToolOutput::err("Invalid worktree path traversal"));
+                }
                 let worktrees_dir = repo_root.join(".fathom").join("worktrees");
-                let target_path = if name.contains('/') || name.contains('\\') {
-                    PathBuf::from(&name)
-                } else {
-                    worktrees_dir.join(&name)
-                };
+                let target_path = worktrees_dir.join(&name);
 
                 let mut cmd = tokio::process::Command::new("git");
                 cmd.current_dir(repo_root)
@@ -188,8 +193,7 @@ impl Tool for GitWorktreeTool {
                 if force {
                     cmd.arg("--force");
                 }
-                cmd.arg(&target_path);
-
+                cmd.arg("--").arg(&target_path);
                 let output = cmd.output().await?;
                 if !output.status.success() {
                     let err = String::from_utf8_lossy(&output.stderr);
@@ -199,5 +203,46 @@ impl Tool for GitWorktreeTool {
                 Ok(ToolOutput::ok(format!("Removed worktree at {}", target_path.display())))
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::registry::ToolContext;
+
+    fn dummy_ctx() -> ToolContext {
+        ToolContext::new(std::path::PathBuf::from("."), pr_core::SearchConfig::default())
+    }
+    #[test]
+    fn schema_validity() {
+        let tool = GitWorktreeTool;
+        assert_eq!(tool.name(), "git_worktree");
+        let schema = tool.schema();
+        assert!(schema.parameters.is_object());
+    }
+
+    #[tokio::test]
+    async fn reject_invalid_worktree_name() {
+        let tool = GitWorktreeTool;
+        let ctx = dummy_ctx();
+        let res = tool.execute(serde_json::json!({
+            "action": "create",
+            "name": "--orphan"
+        }), &ctx).await.unwrap();
+        assert!(!res.success);
+        assert!(res.content.contains("Invalid worktree name"));
+    }
+
+    #[tokio::test]
+    async fn reject_path_traversal() {
+        let tool = GitWorktreeTool;
+        let ctx = dummy_ctx();
+        let res = tool.execute(serde_json::json!({
+            "action": "remove",
+            "name": "../../etc/passwd"
+        }), &ctx).await.unwrap();
+        assert!(!res.success);
+        assert!(res.content.contains("Invalid worktree path traversal"));
     }
 }

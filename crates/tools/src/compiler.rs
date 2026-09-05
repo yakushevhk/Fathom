@@ -81,13 +81,10 @@ Supported languages:
 
         match lang {
             "rust" => {
-                let output = tokio::process::Command::new("cargo")
-                    .arg("check")
-                    .arg("--message-format=json")
-                    .current_dir(working_dir)
-                    .output()
-                    .await?;
-
+                let mut cmd = tokio::process::Command::new("cargo");
+                cmd.arg("check").arg("--message-format=json").current_dir(working_dir).kill_on_drop(true);
+                let output = tokio::time::timeout(std::time::Duration::from_secs(120), cmd.output()).await
+                    .map_err(|_| anyhow::anyhow!("compiler check timed out after 120s"))??;
                 let stdout = String::from_utf8_lossy(&output.stdout);
                 for line in stdout.lines() {
                     if let Ok(val) = serde_json::from_str::<serde_json::Value>(line) {
@@ -123,35 +120,31 @@ Supported languages:
                 }
             }
             "typescript" => {
-                let output = tokio::process::Command::new("npx")
-                    .arg("tsc")
-                    .arg("--noEmit")
-                    .current_dir(working_dir)
-                    .output()
-                    .await;
+                let mut cmd = tokio::process::Command::new("npx");
+                cmd.arg("tsc").arg("--noEmit").current_dir(working_dir).kill_on_drop(true);
+                let output = tokio::time::timeout(std::time::Duration::from_secs(120), cmd.output()).await
+                    .map_err(|_| anyhow::anyhow!("tsc check timed out after 120s"))??;
 
-                if let Ok(out) = output {
-                    let text = String::from_utf8_lossy(&out.stdout);
-                    for line in text.lines() {
-                        if line.contains(": error TS") {
-                            let parts: Vec<&str> = line.splitn(2, ": error ").collect();
-                            if parts.len() == 2 {
-                                let loc = parts[0];
-                                let msg = parts[1];
-                                if let Some((f, rest)) = loc.split_once('(') {
-                                    if let Some((l_str, c_str)) = rest.trim_end_matches(')').split_once(',') {
-                                        let l = l_str.parse::<u32>().unwrap_or(1);
-                                        let c = c_str.parse::<u32>().unwrap_or(1);
-                                        diagnostics.push(DiagnosticItem {
-                                            file: f.to_string(),
-                                            line: l,
-                                            column: c,
-                                            severity: "error".to_string(),
-                                            message: msg.to_string(),
-                                            code: None,
-                                            suggested_replacement: None,
-                                        });
-                                    }
+                let text = String::from_utf8_lossy(&output.stdout);
+                for line in text.lines() {
+                    if line.contains(": error TS") {
+                        let parts: Vec<&str> = line.splitn(2, ": error ").collect();
+                        if parts.len() == 2 {
+                            let loc = parts[0];
+                            let msg = parts[1];
+                            if let Some((f, rest)) = loc.split_once('(') {
+                                if let Some((l_str, c_str)) = rest.trim_end_matches(')').split_once(',') {
+                                    let l = l_str.parse::<u32>().unwrap_or(1);
+                                    let c = c_str.parse::<u32>().unwrap_or(1);
+                                    diagnostics.push(DiagnosticItem {
+                                        file: f.to_string(),
+                                        line: l,
+                                        column: c,
+                                        severity: "error".to_string(),
+                                        message: msg.to_string(),
+                                        code: None,
+                                        suggested_replacement: None,
+                                    });
                                 }
                             }
                         }
@@ -159,63 +152,55 @@ Supported languages:
                 }
             }
             "python" => {
-                let output = tokio::process::Command::new("ruff")
-                    .arg("check")
-                    .arg("--output-format=json")
-                    .current_dir(working_dir)
-                    .output()
-                    .await;
+                let mut cmd = tokio::process::Command::new("ruff");
+                cmd.arg("check").arg("--output-format=json").current_dir(working_dir).kill_on_drop(true);
+                let output = tokio::time::timeout(std::time::Duration::from_secs(120), cmd.output()).await
+                    .map_err(|_| anyhow::anyhow!("ruff check timed out after 120s"))??;
 
-                if let Ok(out) = output {
-                    if let Ok(items) = serde_json::from_slice::<Vec<serde_json::Value>>(&out.stdout) {
-                        for item in items {
-                            let file = item.get("filename").and_then(|f| f.as_str()).unwrap_or("unknown");
-                            let msg = item.get("message").and_then(|m| m.as_str()).unwrap_or_default();
-                            let code = item.get("code").and_then(|c| c.as_str()).map(String::from);
-                            let location = item.get("location");
-                            let line = location.and_then(|l| l.get("row")).and_then(|r| r.as_u64()).unwrap_or(1) as u32;
-                            let col = location.and_then(|l| l.get("column")).and_then(|c| c.as_u64()).unwrap_or(1) as u32;
+                if let Ok(items) = serde_json::from_slice::<Vec<serde_json::Value>>(&output.stdout) {
+                    for item in items {
+                        let file = item.get("filename").and_then(|f| f.as_str()).unwrap_or("unknown");
+                        let msg = item.get("message").and_then(|m| m.as_str()).unwrap_or_default();
+                        let code = item.get("code").and_then(|c| c.as_str()).map(String::from);
+                        let location = item.get("location");
+                        let line = location.and_then(|l| l.get("row")).and_then(|r| r.as_u64()).unwrap_or(1) as u32;
+                        let col = location.and_then(|l| l.get("column")).and_then(|c| c.as_u64()).unwrap_or(1) as u32;
 
-                            diagnostics.push(DiagnosticItem {
-                                file: file.to_string(),
-                                line,
-                                column: col,
-                                severity: "error".to_string(),
-                                message: msg.to_string(),
-                                code,
-                                suggested_replacement: None,
-                            });
-                        }
+                        diagnostics.push(DiagnosticItem {
+                            file: file.to_string(),
+                            line,
+                            column: col,
+                            severity: "error".to_string(),
+                            message: msg.to_string(),
+                            code,
+                            suggested_replacement: None,
+                        });
                     }
                 }
             }
             "go" => {
-                let output = tokio::process::Command::new("go")
-                    .arg("build")
-                    .arg("./...")
-                    .current_dir(working_dir)
-                    .output()
-                    .await;
+                let mut cmd = tokio::process::Command::new("go");
+                cmd.arg("build").arg("./...").current_dir(working_dir).kill_on_drop(true);
+                let output = tokio::time::timeout(std::time::Duration::from_secs(120), cmd.output()).await
+                    .map_err(|_| anyhow::anyhow!("go build timed out after 120s"))??;
 
-                if let Ok(out) = output {
-                    let text = String::from_utf8_lossy(&out.stderr);
-                    for line in text.lines() {
-                        let parts: Vec<&str> = line.splitn(4, ':').collect();
-                        if parts.len() >= 4 {
-                            let f = parts[0];
-                            let l = parts[1].parse::<u32>().unwrap_or(1);
-                            let c = parts[2].parse::<u32>().unwrap_or(1);
-                            let msg = parts[3].trim();
-                            diagnostics.push(DiagnosticItem {
-                                file: f.to_string(),
-                                line: l,
-                                column: c,
-                                severity: "error".to_string(),
-                                message: msg.to_string(),
-                                code: None,
-                                suggested_replacement: None,
-                            });
-                        }
+                let text = String::from_utf8_lossy(&output.stderr);
+                for line in text.lines() {
+                    let parts: Vec<&str> = line.splitn(4, ':').collect();
+                    if parts.len() >= 4 {
+                        let f = parts[0];
+                        let l = parts[1].parse::<u32>().unwrap_or(1);
+                        let c = parts[2].parse::<u32>().unwrap_or(1);
+                        let msg = parts[3].trim();
+                        diagnostics.push(DiagnosticItem {
+                            file: f.to_string(),
+                            line: l,
+                            column: c,
+                            severity: "error".to_string(),
+                            message: msg.to_string(),
+                            code: None,
+                            suggested_replacement: None,
+                        });
                     }
                 }
             }
@@ -232,5 +217,32 @@ Supported languages:
 
             Ok(ToolOutput::ok(format!("Compiler diagnostics [{}]: {} issue(s) detected:\n\n{}", lang, count, formatted)))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::registry::ToolContext;
+
+    fn dummy_ctx() -> ToolContext {
+        ToolContext::new(std::path::PathBuf::from("."), pr_core::SearchConfig::default())
+    }
+
+    #[test]
+    fn schema_validity() {
+        let tool = CompilerCheckTool;
+        assert_eq!(tool.name(), "compiler_check");
+        let schema = tool.schema();
+        assert!(schema.parameters.is_object());
+    }
+
+    #[tokio::test]
+    async fn unsupported_language_returns_error() {
+        let tool = CompilerCheckTool;
+        let ctx = dummy_ctx();
+        let res = tool.execute(serde_json::json!({ "language": "brainfuck" }), &ctx).await.unwrap();
+        assert!(!res.success);
+        assert!(res.content.contains("Unsupported compiler language"));
     }
 }

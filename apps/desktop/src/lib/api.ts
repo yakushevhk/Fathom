@@ -279,8 +279,16 @@ export const api = {
     snapshot: (base = '/api/v1/computers') =>
       rawRequest<ComputerSnapshot>(`${base}/snapshot`),
     screenshot: async (base = '/api/v1/computers') => {
-      const payload = await invoke<{ bytes: number[]; content_type: string }>('engine_screenshot', { path: `${base}/screenshot` })
-      return new Blob([new Uint8Array(payload.bytes)], { type: payload.content_type })
+      const payload = await invoke<{ base64?: string; bytes?: number[]; content_type: string }>('engine_screenshot', { path: `${base}/screenshot` })
+      if (payload.base64) {
+        const byteChars = atob(payload.base64)
+        const byteNumbers = new Uint8Array(byteChars.length)
+        for (let i = 0; i < byteChars.length; i++) {
+          byteNumbers[i] = byteChars.charCodeAt(i)
+        }
+        return new Blob([byteNumbers], { type: payload.content_type })
+      }
+      return new Blob([new Uint8Array(payload.bytes || [])], { type: payload.content_type })
     },
     action: (name: 'navigate' | 'click' | 'type' | 'key' | 'secret', payload: Record<string, unknown>, base = '/api/v1/computers') =>
       rawRequest<Record<string, unknown>>(`${base}/${name}`, {

@@ -32,3 +32,4 @@ portpicker = "0.1"
 sysinfo = { version = "0.30", default-features = false }
 which = "7"
 tracing = "0.1"
+base64 = "0.22"

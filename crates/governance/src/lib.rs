@@ -301,4 +301,32 @@ mod tests {
         let mut r = TargetResolver::new(); r.register("e1", serde_json::json!({"role":"button"}));
         assert!(r.resolve("e1").is_some()); assert!(r.resolve("e2").is_none());
     }
+
+    #[test]
+    fn fail_closed_invariants() {
+        // Unmatched tool -> Deny
+        let p = PolicyConfig {
+            rules: vec![PolicyRule { effect: PolicyEffect::Allow, tool: Some("file_read".into()), host: None, path: None, intent: None }]
+        };
+        let engine = PolicyEngine::new(p);
+        let mut c = ctx();
+        c.tool = "file_write".into();
+        assert_eq!(engine.decide(&c), Decision::Deny);
+
+        // Host mismatch -> Deny
+        let p_host = PolicyConfig {
+            rules: vec![PolicyRule { effect: PolicyEffect::Allow, tool: None, host: Some("allowed.com".into()), path: None, intent: None }]
+        };
+        let engine_host = PolicyEngine::new(p_host);
+        c.url = Some("https://evil.com/".into());
+        assert_eq!(engine_host.decide(&c), Decision::Deny);
+
+        // Intent mismatch -> Deny
+        let p_intent = PolicyConfig {
+            rules: vec![PolicyRule { effect: PolicyEffect::Allow, tool: None, host: None, path: None, intent: Some("safe".into()) }]
+        };
+        let engine_intent = PolicyEngine::new(p_intent);
+        c.intent = Some("dangerous".into());
+        assert_eq!(engine_intent.decide(&c), Decision::Deny);
+    }
 }

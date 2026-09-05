@@ -85,7 +85,9 @@ pub async fn engine_screenshot(
         .and_then(|v| v.to_str().ok()).unwrap_or("image/png").to_string();
     let bytes = response.bytes().await.map_err(|e| format!("read failed: {e}"))?;
     if !status.is_success() { return Err(format!("HTTP {status}: screenshot request failed")); }
-    Ok(serde_json::json!({ "bytes": bytes.to_vec(), "content_type": content_type }))
+    use base64::Engine;
+    let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+    Ok(serde_json::json!({ "base64": b64, "content_type": content_type }))
 }
 
 #[tauri::command]

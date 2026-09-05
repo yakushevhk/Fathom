@@ -58,7 +58,16 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
                     }
                 }
                 Err(tokio::sync::broadcast::error::RecvError::Lagged(count)) => {
-                    tracing::warn!("WebSocket subscriber lagged by {count} events, continuing stream");
+                    tracing::warn!("WebSocket subscriber lagged by {count} events, sending sync_required frame");
+                    let sync_msg = serde_json::json!({
+                        "type": "sync_required",
+                        "skipped_events": count
+                    });
+                    if let Ok(serialized) = serde_json::to_string(&sync_msg) {
+                        if sender.send(Message::Text(serialized)).await.is_err() {
+                            break;
+                        }
+                    }
                     continue;
                 }
                 Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
