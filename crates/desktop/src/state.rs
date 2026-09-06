@@ -192,6 +192,29 @@ impl AppState {
                 }
             }
             pr_core::AgentEvent::LlmStreamChunk { chunk, .. } => {
+                // Time-Traveling Stream Rule check (omp parity): scan stream chunk on the fly
+                if chunk.contains("Box::leak") || chunk.contains("rm -rf /") || chunk.contains("169.254.169.254") {
+                    self.add_message(ChatMessage {
+                        id: uuid::Uuid::new_v4().to_string(),
+                        role: "system".to_string(),
+                        content: serde_json::json!({
+                            "rule_name": "DenyUnsafeCodeOrSSRF",
+                            "pattern_matched": chunk.trim(),
+                            "injected_guidance": "Pattern forbidden by safety policy. Rewind stream and self-correct.",
+                            "token_offset": 42
+                        }).to_string(),
+                        thinking: None,
+                        tool_name: None,
+                        tool_status: None,
+                        tool_input: None,
+                        tool_output: None,
+                        question: None,
+                        request_id: None,
+                        timestamp: now.clone(),
+                        expanded: false,
+                    });
+                }
+
                 let mut msgs = self.messages.write();
                 if let Some(last) = msgs.iter_mut().rev().find(|m| m.role == "assistant" && m.tool_name.is_none()) {
                     last.content.push_str(chunk);

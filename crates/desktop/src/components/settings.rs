@@ -254,6 +254,106 @@ impl SettingsView {
             )
     }
 
+    fn render_tenant_package(&self) -> Div {
+        div()
+            .flex()
+            .flex_col()
+            .w_full()
+            .gap_3()
+            .child(
+                div()
+                    .flex()
+                    .justify_between()
+                    .items_center()
+                    .child(
+                        div()
+                            .text_sm()
+                            .font_weight(gpui::FontWeight::BOLD)
+                            .text_color(Theme::text_primary())
+                            .child("Tenant Package Configuration (TENANT_PACKAGE_DIR)"),
+                    )
+                    .child(
+                        div()
+                            .text_xs()
+                            .text_color(Theme::text_muted())
+                            .child("Declarative brand, agents, channels, and knowledge definitions"),
+                    ),
+            )
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap_2()
+                    .child(self.render_tenant_file_card("brand.yaml", "Brand identity, logos, UI accents, company guidelines", "Loaded (FinTech Enterprise)"))
+                    .child(self.render_tenant_file_card("agents.yaml", "Built-in coworker declarations and role prompts", "3 coworkers active"))
+                    .child(self.render_tenant_file_card("channels.yaml", "Initial fleet channels, ACLs, and thread mappings", "5 channels bound"))
+                    .child(self.render_tenant_file_card("model.yaml", "Default LLM routing, fallback chains, thinking effort", "DeepSeek / Sonnet 3.7"))
+                    .child(self.render_tenant_file_card("knowledge.yaml", "RAG vector indices, Google Drive, and SharePoint sync", "2 connectors indexed")),
+            )
+    }
+
+    fn render_tenant_file_card(&self, file: &str, desc: &str, status: &str) -> Div {
+        div()
+            .flex()
+            .items_center()
+            .justify_between()
+            .p_3()
+            .rounded_lg()
+            .bg(Theme::bg_surface())
+            .border_1()
+            .border_color(Theme::border_subtle())
+            .child(
+                div()
+                    .flex()
+                    .items_center()
+                    .gap_2p5()
+                    .child(
+                        div()
+                            .size(px(28.0))
+                            .rounded_md()
+                            .bg(Theme::bg_elevated())
+                            .flex()
+                            .items_center()
+                            .justify_center()
+                            .text_xs()
+                            .child("📄"),
+                    )
+                    .child(
+                        div()
+                            .flex()
+                            .flex_col()
+                            .gap_0p5()
+                            .child(
+                                div()
+                                    .text_xs()
+                                    .font_weight(gpui::FontWeight::BOLD)
+                                    .font_family("JetBrains Mono")
+                                    .text_color(Theme::accent_purple())
+                                    .child(file.to_string()),
+                            )
+                            .child(
+                                div()
+                                    .text_xs()
+                                    .text_color(Theme::text_muted())
+                                    .child(desc.to_string()),
+                            ),
+                    ),
+            )
+            .child(
+                div()
+                    .px_2()
+                    .py_0p5()
+                    .rounded_md()
+                    .bg(Theme::bg_card())
+                    .border_1()
+                    .border_color(Theme::border_focus())
+                    .text_xs()
+                    .font_family("JetBrains Mono")
+                    .text_color(Theme::success_green())
+                    .child(status.to_string()),
+            )
+    }
+
     fn render_people_access(&self) -> Div {
         div()
             .flex()
@@ -620,6 +720,7 @@ impl Render for SettingsView {
                             .items_center()
                             .gap_2()
                             .child(self.render_subtab_button("Engine & Local", "engine", &current_subtab, cx))
+                            .child(self.render_subtab_button("Tenant Package", "tenant", &current_subtab, cx))
                             .child(self.render_subtab_button("Standing Instructions", "instructions", &current_subtab, cx))
                             .child(self.render_subtab_button("People & Access", "people", &current_subtab, cx))
                             .child(self.render_subtab_button("Connected Accounts", "accounts", &current_subtab, cx))
@@ -634,6 +735,7 @@ impl Render for SettingsView {
                     .overflow_hidden()
                     .p_6()
                     .child(match current_subtab.as_str() {
+                        "tenant" => self.render_tenant_package(),
                         "instructions" => self.render_instructions_settings(),
                         "people" => self.render_people_access(),
                         "accounts" => self.render_connected_accounts(),

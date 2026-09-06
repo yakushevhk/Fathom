@@ -151,5 +151,40 @@ mod tests {
         assert_eq!(card.depth, 1);
         assert_eq!(card.status, "delegated");
     }
+
+    #[test]
+    fn test_advisor_note_card_deserialization() {
+        let json_data = r#"{
+            "reviewer_model": "gpt-5.5-preview",
+            "severity": "concern",
+            "title": "Unbounded Memory Allocation",
+            "message": "Potential memory leak detected in hot loop",
+            "suggestion": "Use bounded LRU cache or ring buffer"
+        }"#;
+
+        let res: Result<components::gallery::AdvisorNoteCardData, _> = serde_json::from_str(json_data);
+        assert!(res.is_ok());
+        let card = res.unwrap();
+        assert_eq!(card.reviewer_model, "gpt-5.5-preview");
+        assert_eq!(card.severity, "concern");
+    }
+
+    #[test]
+    fn test_collab_session_card_deserialization() {
+        let json_data = r#"{
+            "session_id": "sess-404",
+            "relay_url": "https://relay.fathom.internal/join#fth1",
+            "role": "peer",
+            "peer_count": 3,
+            "is_active": true
+        }"#;
+
+        let res: Result<components::gallery::CollabSessionCardData, _> = serde_json::from_str(json_data);
+        assert!(res.is_ok());
+        let card = res.unwrap();
+        assert_eq!(card.session_id, "sess-404");
+        assert_eq!(card.peer_count, 3);
+        assert!(card.is_active);
+    }
 }
 

@@ -116,6 +116,12 @@ impl ChatView {
             })
         } else if let Ok(handoff) = serde_json::from_str::<crate::components::gallery::AgentHandoffCardData>(&msg.content) {
             crate::components::gallery::render_agent_handoff_card(&handoff)
+        } else if let Ok(advisor) = serde_json::from_str::<crate::components::gallery::AdvisorNoteCardData>(&msg.content) {
+            crate::components::gallery::render_advisor_note_card(&advisor)
+        } else if let Ok(collab) = serde_json::from_str::<crate::components::gallery::CollabSessionCardData>(&msg.content) {
+            crate::components::gallery::render_collab_session_card(&collab)
+        } else if let Ok(stream_rule) = serde_json::from_str::<crate::components::gallery::StreamRuleAlertCardData>(&msg.content) {
+            crate::components::gallery::render_stream_rule_alert_card(&stream_rule)
         } else if let Ok(choice) = serde_json::from_str::<crate::components::gallery::ChoiceCardData>(&msg.content) {
             crate::components::gallery::render_choice_card(&choice, cx, |req_id, opt_id, this, cx| {
                 let api = this.state.api.clone();

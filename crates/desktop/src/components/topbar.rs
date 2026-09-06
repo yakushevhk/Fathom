@@ -19,7 +19,7 @@ impl Topbar {
 }
 
 impl Render for Topbar {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let is_running = *self.state.is_engine_running.read();
         let active_tab = self.state.active_tab();
 
@@ -111,6 +111,48 @@ impl Render for Topbar {
                                     .text_color(if is_running { Theme::success_green() } else { Theme::text_muted() })
                                     .child(if is_running { "Daemon Online :8080" } else { "Engine Offline" }),
                             ),
+                    )
+                    .child(
+                        div()
+                            .id("topbar-collab-btn")
+                            .flex()
+                            .items_center()
+                            .gap_1()
+                            .px_2()
+                            .py_0p5()
+                            .rounded_md()
+                            .bg(Theme::bg_elevated())
+                            .border_1()
+                            .border_color(Theme::border_subtle())
+                            .text_xs()
+                            .text_color(Theme::accent_blue())
+                            .cursor_pointer()
+                            .hover(|s| s.bg(Theme::bg_card()))
+                            .child("🔗 /collab")
+                            .on_click(cx.listener(|this, _event: &gpui::ClickEvent, _window, cx| {
+                                let sess_id = this.state.active_session_id.read().clone().unwrap_or_else(|| "sess-default".to_string());
+                                this.state.add_message(crate::state::ChatMessage {
+                                    id: uuid::Uuid::new_v4().to_string(),
+                                    role: "system".to_string(),
+                                    content: serde_json::json!({
+                                        "session_id": sess_id,
+                                        "relay_url": "https://relay.fathom.internal/join#token=fth_live_99a",
+                                        "role": "peer",
+                                        "peer_count": 1,
+                                        "is_active": true
+                                    }).to_string(),
+                                    thinking: None,
+                                    tool_name: None,
+                                    tool_status: None,
+                                    tool_input: None,
+                                    tool_output: None,
+                                    question: None,
+                                    request_id: None,
+                                    timestamp: chrono::Utc::now().format("%H:%M:%S").to_string(),
+                                    expanded: false,
+                                });
+                                cx.notify();
+                            })),
                     )
                     .child(
                         div()

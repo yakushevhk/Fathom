@@ -125,6 +125,32 @@ pub struct AgentHandoffCardData {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AdvisorNoteCardData {
+    pub reviewer_model: String,
+    pub severity: String, // "info" | "concern" | "blocker"
+    pub title: String,
+    pub message: String,
+    pub suggestion: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CollabSessionCardData {
+    pub session_id: String,
+    pub relay_url: String,
+    pub role: String, // "peer" | "viewer"
+    pub peer_count: usize,
+    pub is_active: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StreamRuleAlertCardData {
+    pub rule_name: String,
+    pub pattern_matched: String,
+    pub injected_guidance: String,
+    pub token_offset: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FormParameterField {
     pub key: String,
     pub label: String,
@@ -509,6 +535,214 @@ pub fn render_agent_handoff_card(card: &AgentHandoffCardData) -> Div {
                 .text_color(Theme::text_secondary())
                 .child(format!("Constraints: {}", c))
         }))
+}
+
+/// Renders AdvisorNoteCard (second reviewer model watching every turn)
+pub fn render_advisor_note_card(card: &AdvisorNoteCardData) -> Div {
+    let (icon, border_color, badge_color) = match card.severity.as_str() {
+        "blocker" => ("🛑", Theme::danger_red(), Theme::danger_red()),
+        "concern" => ("⚠️", Theme::warning_yellow(), Theme::warning_yellow()),
+        _ => ("💡", Theme::accent_blue(), Theme::accent_blue()),
+    };
+
+    div()
+        .flex()
+        .flex_col()
+        .p_3()
+        .rounded_lg()
+        .bg(Theme::bg_card())
+        .border_1()
+        .border_color(border_color)
+        .gap_2()
+        .child(
+            div()
+                .flex()
+                .justify_between()
+                .items_center()
+                .child(
+                    div()
+                        .flex()
+                        .items_center()
+                        .gap_2()
+                        .child(div().text_sm().child(icon))
+                        .child(
+                            div()
+                                .text_xs()
+                                .font_weight(gpui::FontWeight::BOLD)
+                                .text_color(Theme::text_primary())
+                                .child(card.title.clone()),
+                        )
+                        .child(
+                            div()
+                                .px_1p5()
+                                .py_0p5()
+                                .rounded_sm()
+                                .bg(Theme::bg_elevated())
+                                .text_xs()
+                                .font_family("JetBrains Mono")
+                                .text_color(Theme::text_muted())
+                                .child(format!("reviewer: {}", card.reviewer_model)),
+                        ),
+                )
+                .child(
+                    div()
+                        .px_2()
+                        .py_0p5()
+                        .rounded_md()
+                        .bg(Theme::bg_elevated())
+                        .border_1()
+                        .border_color(badge_color)
+                        .text_xs()
+                        .font_weight(gpui::FontWeight::BOLD)
+                        .text_color(badge_color)
+                        .child(card.severity.to_uppercase()),
+                ),
+        )
+        .child(
+            div()
+                .text_xs()
+                .text_color(Theme::text_secondary())
+                .child(card.message.clone()),
+        )
+        .children(card.suggestion.as_ref().map(|sug| {
+            div()
+                .p_2()
+                .rounded_md()
+                .bg(Theme::bg_elevated())
+                .text_xs()
+                .font_family("JetBrains Mono")
+                .text_color(Theme::accent_purple())
+                .child(format!("Suggested Course-Correction: {}", sug))
+        }))
+}
+
+/// Renders CollabSessionCard (peer-to-peer / relay live session sharing)
+pub fn render_collab_session_card(card: &CollabSessionCardData) -> Div {
+    let status_color = if card.is_active { Theme::success_green() } else { Theme::text_muted() };
+
+    div()
+        .flex()
+        .flex_col()
+        .p_3()
+        .rounded_lg()
+        .bg(Theme::bg_card())
+        .border_1()
+        .border_color(Theme::border_focus())
+        .gap_2()
+        .child(
+            div()
+                .flex()
+                .justify_between()
+                .items_center()
+                .child(
+                    div()
+                        .flex()
+                        .items_center()
+                        .gap_2()
+                        .child(
+                            div()
+                                .size(px(8.0))
+                                .rounded_full()
+                                .bg(status_color),
+                        )
+                        .child(
+                            div()
+                                .text_xs()
+                                .font_weight(gpui::FontWeight::BOLD)
+                                .text_color(Theme::text_primary())
+                                .child("Live Collaboration Relay Active"),
+                        ),
+                )
+                .child(
+                    div()
+                        .px_2()
+                        .py_0p5()
+                        .rounded_sm()
+                        .bg(Theme::bg_elevated())
+                        .text_xs()
+                        .font_weight(gpui::FontWeight::SEMIBOLD)
+                        .text_color(Theme::accent_blue())
+                        .child(format!("{} PEER(S) CONNECTED", card.peer_count)),
+                ),
+        )
+        .child(
+            div()
+                .flex()
+                .items_center()
+                .gap_2()
+                .p_2()
+                .rounded_md()
+                .bg(Theme::bg_elevated())
+                .child(
+                    div()
+                        .text_xs()
+                        .text_color(Theme::text_muted())
+                        .child("Shareable Link:"),
+                )
+                .child(
+                    div()
+                        .text_xs()
+                        .font_family("JetBrains Mono")
+                        .text_color(Theme::accent_blue())
+                        .child(card.relay_url.clone()),
+                ),
+        )
+}
+
+/// Renders StreamRuleAlertCard (Time-Traveling Stream Rule abort & in-token recovery)
+pub fn render_stream_rule_alert_card(card: &StreamRuleAlertCardData) -> Div {
+    div()
+        .flex()
+        .flex_col()
+        .p_3()
+        .rounded_lg()
+        .bg(Theme::bg_elevated())
+        .border_1()
+        .border_color(Theme::warning_yellow())
+        .gap_1p5()
+        .child(
+            div()
+                .flex()
+                .items_center()
+                .justify_between()
+                .child(
+                    div()
+                        .flex()
+                        .items_center()
+                        .gap_2()
+                        .child(div().text_sm().child("⚡"))
+                        .child(
+                            div()
+                                .text_xs()
+                                .font_weight(gpui::FontWeight::BOLD)
+                                .text_color(Theme::warning_yellow())
+                                .child("Time-Traveling Stream Rule Interception"),
+                        ),
+                )
+                .child(
+                    div()
+                        .text_xs()
+                        .font_family("JetBrains Mono")
+                        .text_color(Theme::text_muted())
+                        .child(format!("token #{}", card.token_offset)),
+                ),
+        )
+        .child(
+            div()
+                .text_xs()
+                .font_family("JetBrains Mono")
+                .text_color(Theme::danger_red())
+                .child(format!("Rule Matched: {} (pattern: {})", card.rule_name, card.pattern_matched)),
+        )
+        .child(
+            div()
+                .p_2()
+                .rounded_md()
+                .bg(Theme::bg_window())
+                .text_xs()
+                .text_color(Theme::text_secondary())
+                .child(format!("Injected Reminder: {}", card.injected_guidance)),
+        )
 }
 
 /// Renders a structured RecordCard (key-value grid with status badge)
