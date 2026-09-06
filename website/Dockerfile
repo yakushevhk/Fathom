@@ -26,6 +26,10 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
+    # Coolify/aaPanel terminates TLS in front.
+    absolute_redirect off;
+    port_in_redirect off;
+
     # Gzip Compression
     gzip on;
     gzip_vary on;
@@ -33,8 +37,15 @@ server {
     gzip_proxied expired no-cache no-store private auth;
     gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml application/javascript application/json image/svg+xml;
 
+    # Canonical paths have no trailing slash (matches sitemap/hreflang).
+    location ~ ^(.+)/$ {
+        return 301 $1;
+    }
+
     location / {
-        try_files $uri $uri/ $uri.html /index.html =404;
+        # Do NOT use $uri/ — forces http://host/path/ on :80.
+        # No /index.html catch-all (soft-404).
+        try_files $uri $uri.html $uri/index.html =404;
     }
 
     # Cache static assets
