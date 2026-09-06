@@ -86,6 +86,36 @@ impl ChatView {
             })
         } else if let Ok(comp_status) = serde_json::from_str::<crate::components::gallery::ComputerStatusCardData>(&msg.content) {
             crate::components::gallery::render_computer_status_card(&comp_status)
+        } else if let Ok(skill_draft) = serde_json::from_str::<crate::components::gallery::SkillDraftCardData>(&msg.content) {
+            crate::components::gallery::render_skill_draft_card(&skill_draft, cx, |draft, this, cx| {
+                let state_clone = this.state.clone();
+                let draft_c = draft.clone();
+                // Add skill to local reactive state and skills registry
+                state_clone.skills.write().push(crate::api::Skill {
+                    id: draft_c.slug.clone(),
+                    name: draft_c.name.clone(),
+                    description: draft_c.description.clone(),
+                    tools: draft_c.tools.clone(),
+                    instructions: draft_c.instructions.clone(),
+                });
+                state_clone.add_message(ChatMessage {
+                    id: uuid::Uuid::new_v4().to_string(),
+                    role: "system".to_string(),
+                    content: format!("✓ Skill '{}' (/{}) saved to deployment registry.", draft_c.name, draft_c.slug),
+                    thinking: None,
+                    tool_name: None,
+                    tool_status: None,
+                    tool_input: None,
+                    tool_output: None,
+                    question: None,
+                    request_id: None,
+                    timestamp: chrono::Utc::now().format("%H:%M:%S").to_string(),
+                    expanded: false,
+                });
+                cx.notify();
+            })
+        } else if let Ok(handoff) = serde_json::from_str::<crate::components::gallery::AgentHandoffCardData>(&msg.content) {
+            crate::components::gallery::render_agent_handoff_card(&handoff)
         } else if let Ok(choice) = serde_json::from_str::<crate::components::gallery::ChoiceCardData>(&msg.content) {
             crate::components::gallery::render_choice_card(&choice, cx, |req_id, opt_id, this, cx| {
                 let api = this.state.api.clone();

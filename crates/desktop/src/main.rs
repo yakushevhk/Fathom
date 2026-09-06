@@ -113,5 +113,43 @@ mod tests {
         assert_eq!(card.request_id, "req-99");
         assert_eq!(card.risk_level, "medium");
     }
+
+    #[test]
+    fn test_skill_draft_card_deserialization() {
+        let json_data = r#"{
+            "slug": "review-pr",
+            "name": "PR Reviewer",
+            "description": "Examines pull requests for bugs and security defects",
+            "tools": ["github_pr", "shell_exec"],
+            "instructions": "Follow zero-trust review standards"
+        }"#;
+
+        let res: Result<components::gallery::SkillDraftCardData, _> = serde_json::from_str(json_data);
+        assert!(res.is_ok());
+        let card = res.unwrap();
+        assert_eq!(card.slug, "review-pr");
+        assert_eq!(card.tools.len(), 2);
+    }
+
+    #[test]
+    fn test_agent_handoff_card_deserialization() {
+        let json_data = r#"{
+            "from_agent": "general_assistant",
+            "to_agent": "risk_analyst",
+            "task": "Audit financial API key disclosure",
+            "depth": 1,
+            "max_depth": 3,
+            "constraints": "Strict CEL deny boundary enforced",
+            "status": "delegated"
+        }"#;
+
+        let res: Result<components::gallery::AgentHandoffCardData, _> = serde_json::from_str(json_data);
+        assert!(res.is_ok());
+        let card = res.unwrap();
+        assert_eq!(card.from_agent, "general_assistant");
+        assert_eq!(card.to_agent, "risk_analyst");
+        assert_eq!(card.depth, 1);
+        assert_eq!(card.status, "delegated");
+    }
 }
 

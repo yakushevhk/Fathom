@@ -335,9 +335,11 @@ impl ComputerView {
                     .children(
                         if activities.is_empty() {
                             vec![
+                                self.render_static_activity("shell_exec", "Run build in /workspace", "$ cargo build --release (exit: 0)", "completed"),
+                                self.render_static_activity("file_write", "Save generated output", "/workspace/output.json (4.2 KB)", "completed"),
+                                self.render_static_activity("file_read", "Inspect package manifest", "/workspace/Cargo.toml (1.1 KB)", "completed"),
                                 self.render_static_activity("computer_snapshot", "Inspect DOM & accessibility tree", "active_tab", "completed"),
                                 self.render_static_activity("computer_navigate", "Navigate to target portal", "https://github.com", "completed"),
-                                self.render_static_activity("computer_read", "Extract public pricing table text", "selector e12", "completed"),
                             ]
                         } else {
                             activities.iter().rev().map(|act| {

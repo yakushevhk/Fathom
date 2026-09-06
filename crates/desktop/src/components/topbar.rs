@@ -124,8 +124,24 @@ impl Render for Topbar {
                             .border_color(Theme::border_subtle())
                             .rounded_md()
                             .text_xs()
+                            .text_color(Theme::text_muted())
+                            .child("📦 package: fintech-production"),
+                    )
+                    .child(
+                        div()
+                            .flex()
+                            .items_center()
+                            .gap_1p5()
+                            .px_2()
+                            .py_0p5()
+                            .bg(Theme::bg_elevated())
+                            .border_1()
+                            .border_color(Theme::border_focus())
+                            .rounded_md()
+                            .text_xs()
+                            .font_weight(gpui::FontWeight::SEMIBOLD)
                             .text_color(Theme::accent_purple())
-                            .child("Claude 3.7 Sonnet (Hybrid)"),
+                            .child("⚡ DeepSeek V3 / Sonnet 3.7"),
                     ),
             )
     }

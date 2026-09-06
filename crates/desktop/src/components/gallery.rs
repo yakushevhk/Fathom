@@ -105,6 +105,26 @@ pub struct ConfirmActionCardData {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SkillDraftCardData {
+    pub slug: String,
+    pub name: String,
+    pub description: String,
+    pub tools: Vec<String>,
+    pub instructions: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AgentHandoffCardData {
+    pub from_agent: String,
+    pub to_agent: String,
+    pub task: String,
+    pub depth: u32,
+    pub max_depth: u32,
+    pub constraints: Option<String>,
+    pub status: String, // "delegated" | "completed" | "refused"
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FormParameterField {
     pub key: String,
     pub label: String,
@@ -308,6 +328,187 @@ pub fn render_computer_status_card(card: &ComputerStatusCardData) -> Div {
                         .child(div().text_color(Theme::text_secondary()).child(format!("{} MB", mem)))
                 })),
         )
+}
+
+/// Renders interactive SkillDraftCard from conversation authoring loop with Save Skill button
+pub fn render_skill_draft_card<V: 'static>(
+    card: &SkillDraftCardData,
+    cx: &mut Context<V>,
+    on_save: impl Fn(&SkillDraftCardData, &mut V, &mut Context<V>) + 'static + Clone,
+) -> Div {
+    let draft = card.clone();
+    let draft_clone = draft.clone();
+
+    div()
+        .flex()
+        .flex_col()
+        .p_3()
+        .rounded_lg()
+        .bg(Theme::bg_card())
+        .border_1()
+        .border_color(Theme::accent_purple())
+        .gap_2p5()
+        .child(
+            div()
+                .flex()
+                .justify_between()
+                .items_center()
+                .child(
+                    div()
+                        .flex()
+                        .items_center()
+                        .gap_2()
+                        .child(
+                            div()
+                                .text_xs()
+                                .font_weight(gpui::FontWeight::BOLD)
+                                .text_color(Theme::text_primary())
+                                .child(format!("Draft Skill: {}", card.name)),
+                        )
+                        .child(
+                            div()
+                                .px_1p5()
+                                .py_0p5()
+                                .rounded_sm()
+                                .bg(Theme::bg_elevated())
+                                .text_xs()
+                                .font_family("JetBrains Mono")
+                                .text_color(Theme::accent_blue())
+                                .child(format!("/{}", card.slug)),
+                        ),
+                )
+                .child(
+                    div()
+                        .id("save-skill-btn")
+                        .px_3()
+                        .py_1()
+                        .rounded_md()
+                        .bg(Theme::accent_purple())
+                        .hover(|s| s.bg(Theme::accent_blue()))
+                        .text_xs()
+                        .font_weight(gpui::FontWeight::BOLD)
+                        .text_color(Theme::text_primary())
+                        .cursor_pointer()
+                        .child("💾 Save Skill")
+                        .on_click(cx.listener(move |this, _event: &ClickEvent, _window, cx| {
+                            on_save(&draft_clone, this, cx);
+                        })),
+                ),
+        )
+        .child(
+            div()
+                .text_xs()
+                .text_color(Theme::text_secondary())
+                .child(card.description.clone()),
+        )
+        .child(
+            div()
+                .p_2()
+                .rounded_md()
+                .bg(Theme::bg_elevated())
+                .text_xs()
+                .font_family("JetBrains Mono")
+                .text_color(Theme::text_muted())
+                .child(format!("Instructions: {}", card.instructions)),
+        )
+        .child(
+            div()
+                .flex()
+                .items_center()
+                .gap_1p5()
+                .child(
+                    div()
+                        .text_xs()
+                        .font_weight(gpui::FontWeight::SEMIBOLD)
+                        .text_color(Theme::text_muted())
+                        .child("Tools:"),
+                )
+                .children(card.tools.iter().map(|t| {
+                    div()
+                        .px_1p5()
+                        .py_0p5()
+                        .rounded_sm()
+                        .bg(Theme::bg_window())
+                        .text_xs()
+                        .font_family("JetBrains Mono")
+                        .text_color(Theme::accent_purple())
+                        .child(t.clone())
+                })),
+        )
+}
+
+/// Renders an AgentHandoffCard showing multi-agent task delegation chain
+pub fn render_agent_handoff_card(card: &AgentHandoffCardData) -> Div {
+    let is_refused = card.status == "refused";
+    let status_color = if is_refused { Theme::danger_red() } else { Theme::accent_purple() };
+
+    div()
+        .flex()
+        .flex_col()
+        .p_3()
+        .rounded_lg()
+        .bg(Theme::bg_card())
+        .border_1()
+        .border_color(status_color)
+        .gap_2()
+        .child(
+            div()
+                .flex()
+                .justify_between()
+                .items_center()
+                .child(
+                    div()
+                        .flex()
+                        .items_center()
+                        .gap_2()
+                        .child(
+                            div()
+                                .text_xs()
+                                .font_weight(gpui::FontWeight::BOLD)
+                                .text_color(Theme::text_primary())
+                                .child(format!("Multi-Agent Handoff: @{} ➔ @{}", card.from_agent, card.to_agent)),
+                        )
+                        .child(
+                            div()
+                                .px_1p5()
+                                .py_0p5()
+                                .rounded_sm()
+                                .bg(Theme::bg_elevated())
+                                .text_xs()
+                                .text_color(Theme::text_muted())
+                                .child(format!("depth {}/{}", card.depth, card.max_depth)),
+                        ),
+                )
+                .child(
+                    div()
+                        .px_2()
+                        .py_0p5()
+                        .rounded_md()
+                        .bg(Theme::bg_elevated())
+                        .border_1()
+                        .border_color(status_color)
+                        .text_xs()
+                        .font_weight(gpui::FontWeight::BOLD)
+                        .text_color(status_color)
+                        .child(card.status.to_uppercase()),
+                ),
+        )
+        .child(
+            div()
+                .text_xs()
+                .font_weight(gpui::FontWeight::MEDIUM)
+                .text_color(Theme::text_primary())
+                .child(format!("Delegated Task: {}", card.task)),
+        )
+        .children(card.constraints.as_ref().map(|c| {
+            div()
+                .p_2()
+                .rounded_md()
+                .bg(Theme::bg_elevated())
+                .text_xs()
+                .text_color(Theme::text_secondary())
+                .child(format!("Constraints: {}", c))
+        }))
 }
 
 /// Renders a structured RecordCard (key-value grid with status badge)

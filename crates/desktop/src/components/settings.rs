@@ -254,6 +254,137 @@ impl SettingsView {
             )
     }
 
+    fn render_people_access(&self) -> Div {
+        div()
+            .flex()
+            .flex_col()
+            .w_full()
+            .gap_3()
+            .child(
+                div()
+                    .flex()
+                    .justify_between()
+                    .items_center()
+                    .child(
+                        div()
+                            .text_sm()
+                            .font_weight(gpui::FontWeight::BOLD)
+                            .text_color(Theme::text_primary())
+                            .child("People & Deployment Access (/admin/people)"),
+                    )
+                    .child(
+                        div()
+                            .text_xs()
+                            .text_color(Theme::text_muted())
+                            .child("Role-based identity enforcement with audit-tracked revocation"),
+                    ),
+            )
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap_2()
+                    .child(self.render_person_row("Admin Operator", "admin@fathom.internal", "Administrator", "Active Session", true))
+                    .child(self.render_person_row("Security Lead", "security@fathom.internal", "Auditor", "OAuth (Okta SSO)", false))
+                    .child(self.render_person_row("DevOps Staff", "devops@fathom.internal", "Operator", "Active Session", false))
+                    .child(self.render_person_row("External Guest", "guest@contractor.io", "Observer (Read-Only)", "Expired", false)),
+            )
+    }
+
+    fn render_person_row(&self, name: &str, email: &str, role: &str, status: &str, is_current: bool) -> Div {
+        div()
+            .flex()
+            .items_center()
+            .justify_between()
+            .p_3()
+            .rounded_lg()
+            .bg(Theme::bg_surface())
+            .border_1()
+            .border_color(Theme::border_subtle())
+            .child(
+                div()
+                    .flex()
+                    .items_center()
+                    .gap_2p5()
+                    .child(
+                        div()
+                            .size(px(32.0))
+                            .rounded_full()
+                            .bg(Theme::bg_elevated())
+                            .flex()
+                            .items_center()
+                            .justify_center()
+                            .text_xs()
+                            .font_weight(gpui::FontWeight::BOLD)
+                            .text_color(Theme::accent_purple())
+                            .child(name.chars().next().unwrap_or('U').to_string()),
+                    )
+                    .child(
+                        div()
+                            .flex()
+                            .flex_col()
+                            .gap_0p5()
+                            .child(
+                                div()
+                                    .flex()
+                                    .items_center()
+                                    .gap_2()
+                                    .child(
+                                        div()
+                                            .text_xs()
+                                            .font_weight(gpui::FontWeight::BOLD)
+                                            .text_color(Theme::text_primary())
+                                            .child(name.to_string()),
+                                    )
+                                    .children(if is_current {
+                                        Some(
+                                            div()
+                                                .px_1p5()
+                                                .py_0p5()
+                                                .rounded_sm()
+                                                .bg(Theme::accent_purple())
+                                                .text_xs()
+                                                .text_color(Theme::text_primary())
+                                                .child("YOU"),
+                                        )
+                                    } else {
+                                        None
+                                    }),
+                            )
+                            .child(
+                                div()
+                                    .text_xs()
+                                    .font_family("JetBrains Mono")
+                                    .text_color(Theme::text_muted())
+                                    .child(email.to_string()),
+                            ),
+                    ),
+            )
+            .child(
+                div()
+                    .flex()
+                    .items_center()
+                    .gap_3()
+                    .child(
+                        div()
+                            .px_2()
+                            .py_0p5()
+                            .rounded_md()
+                            .bg(Theme::bg_elevated())
+                            .text_xs()
+                            .font_weight(gpui::FontWeight::SEMIBOLD)
+                            .text_color(Theme::accent_blue())
+                            .child(role.to_string()),
+                    )
+                    .child(
+                        div()
+                            .text_xs()
+                            .text_color(if status.contains("Active") { Theme::success_green() } else { Theme::text_muted() })
+                            .child(status.to_string()),
+                    ),
+            )
+    }
+
     fn render_mcp_connectors(&self) -> Div {
         let plugins = self.state.plugins.read().clone();
 
@@ -490,6 +621,7 @@ impl Render for SettingsView {
                             .gap_2()
                             .child(self.render_subtab_button("Engine & Local", "engine", &current_subtab, cx))
                             .child(self.render_subtab_button("Standing Instructions", "instructions", &current_subtab, cx))
+                            .child(self.render_subtab_button("People & Access", "people", &current_subtab, cx))
                             .child(self.render_subtab_button("Connected Accounts", "accounts", &current_subtab, cx))
                             .child(self.render_subtab_button("MCP Connectors", "mcp", &current_subtab, cx))
                             .child(self.render_subtab_button("UI Components Preview", "components", &current_subtab, cx)),
@@ -503,6 +635,7 @@ impl Render for SettingsView {
                     .p_6()
                     .child(match current_subtab.as_str() {
                         "instructions" => self.render_instructions_settings(),
+                        "people" => self.render_people_access(),
                         "accounts" => self.render_connected_accounts(),
                         "mcp" => self.render_mcp_connectors(),
                         "components" => self.render_components_gallery(),
