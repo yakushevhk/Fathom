@@ -74,6 +74,18 @@ impl ChatView {
             crate::components::gallery::render_barchart_card(&barchart)
         } else if let Ok(progress) = serde_json::from_str::<crate::components::gallery::ProgressChartData>(&msg.content) {
             crate::components::gallery::render_progress_card(&progress)
+        } else if let Ok(confirm) = serde_json::from_str::<crate::components::gallery::ConfirmActionCardData>(&msg.content) {
+            crate::components::gallery::render_confirm_action_card(&confirm, cx, |req_id, approved, this, cx| {
+                let api = this.state.api.clone();
+                let session_id = this.state.active_session_id.read().clone().unwrap_or_else(|| "default".to_string());
+                let r = req_id.to_string();
+                cx.spawn(async move |_this, _cx| {
+                    let _ = api.approve_tool(&session_id, &r, approved).await;
+                }).detach();
+                cx.notify();
+            })
+        } else if let Ok(comp_status) = serde_json::from_str::<crate::components::gallery::ComputerStatusCardData>(&msg.content) {
+            crate::components::gallery::render_computer_status_card(&comp_status)
         } else if let Ok(choice) = serde_json::from_str::<crate::components::gallery::ChoiceCardData>(&msg.content) {
             crate::components::gallery::render_choice_card(&choice, cx, |req_id, opt_id, this, cx| {
                 let api = this.state.api.clone();

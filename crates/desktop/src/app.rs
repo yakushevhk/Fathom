@@ -74,6 +74,44 @@ impl DesktopApp {
                 cx.notify();
             });
 
+            // Bootstrap remote state from daemon API
+            if let Ok(coworkers) = state_clone.api.list_coworkers().await {
+                if !coworkers.is_empty() {
+                    *state_clone.coworkers.write() = coworkers;
+                }
+            }
+            if let Ok(channels) = state_clone.api.list_channels().await {
+                if !channels.is_empty() {
+                    *state_clone.channels.write() = channels;
+                }
+            }
+            if let Ok(routines) = state_clone.api.list_schedules().await {
+                if !routines.is_empty() {
+                    *state_clone.routines.write() = routines;
+                }
+            }
+            if let Ok(creds) = state_clone.api.list_credentials().await {
+                if !creds.is_empty() {
+                    *state_clone.credentials.write() = creds;
+                }
+            }
+            if let Ok(comps) = state_clone.api.list_computers().await {
+                if !comps.is_empty() {
+                    *state_clone.computer_sessions.write() = comps;
+                }
+            }
+            if let Ok(policy) = state_clone.api.get_policy().await {
+                *state_clone.policy.write() = Some(policy);
+            }
+            if let Ok(audit) = state_clone.api.get_audit_log().await {
+                if !audit.is_empty() {
+                    *state_clone.audit_log.write() = audit;
+                }
+            }
+            let _ = this.update(&mut *cx, |_this, cx| {
+                cx.notify();
+            });
+
             // Real-time SSE event subscription stream with durable outer reconnect loop
             use futures::StreamExt;
             loop {

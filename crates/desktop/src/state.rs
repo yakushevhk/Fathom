@@ -73,6 +73,8 @@ pub struct AppState {
     pub routines: RwLock<Vec<Routine>>,
     pub skills: RwLock<Vec<Skill>>,
     pub credentials: RwLock<Vec<Credential>>,
+    pub plugins: RwLock<Vec<crate::api::PluginInfo>>,
+    pub computer_sessions: RwLock<Vec<crate::api::ComputerSessionInfo>>,
     // Search / Filter
     pub search_query: RwLock<String>,
 }
@@ -106,6 +108,8 @@ impl AppState {
             routines: RwLock::new(Vec::new()),
             skills: RwLock::new(Vec::new()),
             credentials: RwLock::new(Vec::new()),
+            plugins: RwLock::new(Vec::new()),
+            computer_sessions: RwLock::new(Vec::new()),
             search_query: RwLock::new(String::new()),
         }
     }

@@ -113,6 +113,16 @@ pub struct Routine {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PluginInfo {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub enabled: bool,
+    pub vendor: String,
+    pub granted_agents: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Skill {
     pub id: String,
     pub name: String,
@@ -409,6 +419,42 @@ impl ApiClient {
     pub async fn delete_schedule(&self, id: &str) -> Result<()> {
         let url = format!("{}/api/v1/schedules/{}", self.base_url, id);
         self.http.delete(&url).send().await?;
+        Ok(())
+    }
+
+    // MCP Plugins & Connectors
+    pub async fn list_plugins(&self) -> Result<Vec<PluginInfo>> {
+        let url = format!("{}/api/v1/plugins", self.base_url);
+        let resp = self.http.get(&url).send().await?;
+        if resp.status().is_success() {
+            let res = resp.json::<Vec<PluginInfo>>().await.unwrap_or_default();
+            Ok(res)
+        } else {
+            Ok(Vec::new())
+        }
+    }
+
+    // Computers Supervisor
+    pub async fn list_computers(&self) -> Result<Vec<ComputerSessionInfo>> {
+        let url = format!("{}/api/v1/computers", self.base_url);
+        let resp = self.http.get(&url).send().await?;
+        if resp.status().is_success() {
+            let res = resp.json::<Vec<ComputerSessionInfo>>().await.unwrap_or_default();
+            Ok(res)
+        } else {
+            Ok(Vec::new())
+        }
+    }
+
+    pub async fn stop_computer(&self, agent_id: &str) -> Result<()> {
+        let url = format!("{}/api/v1/computers/{}/stop", self.base_url, agent_id);
+        self.http.post(&url).send().await?;
+        Ok(())
+    }
+
+    pub async fn reset_computer(&self, agent_id: &str) -> Result<()> {
+        let url = format!("{}/api/v1/computers/{}/reset", self.base_url, agent_id);
+        self.http.post(&url).send().await?;
         Ok(())
     }
 

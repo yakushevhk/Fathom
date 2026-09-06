@@ -170,19 +170,33 @@ impl Composer {
         let is_agent = self.show_agent_suggestions;
         let title = if is_agent { "Select Coworker to Hand Work to (@):" } else { "Select Skill or Command (/):" };
 
-        let items = if is_agent {
-            vec![
-                ("@GeneralAssistant", "🤖 General Autonomous Worker", "Full computer use, file management, search"),
-                ("@RiskAnalyst", "🛡️ Compliance & Risk Officer", "CEL rule checks, credential audits, DLP review"),
-                ("@SdrAgent", "💼 Sales Development Rep", "Outreach scraping, email synthesis, CRM logging"),
-            ]
+        let coworkers = self.state.coworkers.read().clone();
+        let skills = self.state.skills.read().clone();
+
+        let items: Vec<(String, String, String)> = if is_agent {
+            if !coworkers.is_empty() {
+                coworkers.into_iter().map(|c| {
+                    (format!("@{}", c.name.replace(' ', "")), c.name, c.role)
+                }).collect()
+            } else {
+                vec![
+                    ("@GeneralAssistant".to_string(), "🤖 General Autonomous Worker".to_string(), "Full computer use, file management, search".to_string()),
+                    ("@RiskAnalyst".to_string(), "🛡️ Compliance & Risk Officer".to_string(), "CEL rule checks, credential audits, DLP review".to_string()),
+                    ("@DevOpsEngineer".to_string(), "🐳 DevOps & Cloud Infrastructure".to_string(), "Container management, health checks, shell runner".to_string()),
+                ]
+            }
         } else {
-            vec![
-                ("/browser", "🌐 Launch Computer Session", "Open Chromium container and navigate"),
-                ("/routine", "⚡ Standing Routine", "Register scheduled cron automation"),
-                ("/vault", "🔑 Access Credential", "Inject encrypted AES-256 secret token"),
-                ("/audit", "📜 View Audit Ledger", "Inspect refusal reasons and action logs"),
-            ]
+            let mut cmds = vec![
+                ("/browser".to_string(), "🌐 Launch Computer Session".to_string(), "Open Chromium container and navigate".to_string()),
+                ("/routine".to_string(), "⚡ Standing Routine".to_string(), "Register scheduled cron automation".to_string()),
+                ("/vault".to_string(), "🔑 Access Credential".to_string(), "Inject encrypted AES-256 secret token".to_string()),
+                ("/audit".to_string(), "📜 View Audit Ledger".to_string(), "Inspect refusal reasons and action logs".to_string()),
+                ("/skill-creator".to_string(), "🛠️ Create New Skill".to_string(), "Author and register coworker skill".to_string()),
+            ];
+            for s in skills {
+                cmds.push((format!("/{}", s.id), s.name, s.description));
+            }
+            cmds
         };
 
         div()
@@ -202,7 +216,7 @@ impl Composer {
                     .child(title),
             )
             .children(items.into_iter().map(|(trigger, name, desc)| {
-                let trigger_str = trigger.to_string();
+                let trigger_str = trigger.clone();
                 div()
                     .id(SharedString::from(format!("suggestion-item-{}", trigger)))
                     .flex()

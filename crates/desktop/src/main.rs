@@ -42,3 +42,76 @@ fn main() {
         cx.activate(true);
     });
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_app_state_initialization() {
+        let state = state::AppState::new();
+        assert_eq!(state.active_tab(), state::NavigationTab::Channels);
+        assert!(!*state.is_engine_running.read());
+        assert_eq!(state.messages.read().len(), 0);
+    }
+
+    #[test]
+    fn test_add_and_clear_messages() {
+        let state = state::AppState::new();
+        state.add_message(state::ChatMessage {
+            id: "msg-1".to_string(),
+            role: "user".to_string(),
+            content: "Hello Fathom".to_string(),
+            thinking: None,
+            tool_name: None,
+            tool_status: None,
+            tool_input: None,
+            tool_output: None,
+            question: None,
+            request_id: None,
+            timestamp: "12:00:00".to_string(),
+            expanded: false,
+        });
+
+        assert_eq!(state.messages.read().len(), 1);
+        assert_eq!(state.messages.read()[0].content, "Hello Fathom");
+    }
+
+    #[test]
+    fn test_gallery_card_deserialization() {
+        let json_data = r#"{
+            "title": "Contract Signature",
+            "subtitle": "Review vendor NDA",
+            "status": "APPROVED",
+            "status_tone": "positive",
+            "fields": [
+                {"label": "Party", "value": "Acme Corp"},
+                {"label": "Risk", "value": "Low"}
+            ]
+        }"#;
+
+        let res: Result<components::gallery::RecordCardData, _> = serde_json::from_str(json_data);
+        assert!(res.is_ok());
+        let card = res.unwrap();
+        assert_eq!(card.title, "Contract Signature");
+        assert_eq!(card.fields.len(), 2);
+    }
+
+    #[test]
+    fn test_confirm_action_card_deserialization() {
+        let json_data = r#"{
+            "request_id": "req-99",
+            "title": "Execute Bash Command",
+            "description": "Install dependencies in /workspace",
+            "command_or_tool": "cargo build --release",
+            "risk_level": "medium"
+        }"#;
+
+        let res: Result<components::gallery::ConfirmActionCardData, _> = serde_json::from_str(json_data);
+        assert!(res.is_ok());
+        let card = res.unwrap();
+        assert_eq!(card.request_id, "req-99");
+        assert_eq!(card.risk_level, "medium");
+    }
+}
+

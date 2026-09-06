@@ -254,6 +254,136 @@ impl SettingsView {
             )
     }
 
+    fn render_mcp_connectors(&self) -> Div {
+        let plugins = self.state.plugins.read().clone();
+
+        div()
+            .flex()
+            .flex_col()
+            .w_full()
+            .gap_3()
+            .child(
+                div()
+                    .flex()
+                    .justify_between()
+                    .items_center()
+                    .child(
+                        div()
+                            .text_sm()
+                            .font_weight(gpui::FontWeight::BOLD)
+                            .text_color(Theme::text_primary())
+                            .child("MCP Plugins & Connectors Catalogue (/admin/plugins)"),
+                    )
+                    .child(
+                        div()
+                            .text_xs()
+                            .text_color(Theme::text_muted())
+                            .child("Governed Model Context Protocol bridges with per-agent authorization"),
+                    ),
+            )
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap_2()
+                    .children(if plugins.is_empty() {
+                        vec![
+                            self.render_mcp_item("google_drive", "Google Drive", "Read company docs, sheets, and presentations", true, "Google", vec!["General Assistant".to_string()]),
+                            self.render_mcp_item("notion", "Notion Workspace", "Read and write company wikis, projects, and roadmaps", true, "Notion", vec!["General Assistant".to_string(), "Risk Analyst".to_string()]),
+                            self.render_mcp_item("linear", "Linear Issue Tracker", "Query sprint issues, sync statuses, create tasks", false, "Linear", vec!["DevOps Engineer".to_string()]),
+                            self.render_mcp_item("github_mcp", "GitHub MCP Bridge", "Pull requests, code reviews, workflow dispatch", true, "GitHub", vec!["DevOps Engineer".to_string()]),
+                        ]
+                    } else {
+                        plugins.into_iter().map(|p| {
+                            self.render_mcp_item(&p.id, &p.name, &p.description, p.enabled, &p.vendor, p.granted_agents)
+                        }).collect()
+                    }),
+            )
+    }
+
+    fn render_mcp_item(&self, _id: &str, name: &str, desc: &str, enabled: bool, vendor: &str, agents: Vec<String>) -> Div {
+        div()
+            .flex()
+            .flex_col()
+            .p_3()
+            .rounded_lg()
+            .bg(Theme::bg_surface())
+            .border_1()
+            .border_color(Theme::border_subtle())
+            .gap_2()
+            .child(
+                div()
+                    .flex()
+                    .justify_between()
+                    .items_center()
+                    .child(
+                        div()
+                            .flex()
+                            .items_center()
+                            .gap_2()
+                            .child(
+                                div()
+                                    .text_xs()
+                                    .font_weight(gpui::FontWeight::BOLD)
+                                    .text_color(Theme::text_primary())
+                                    .child(name.to_string()),
+                            )
+                            .child(
+                                div()
+                                    .px_1p5()
+                                    .py_0p5()
+                                    .rounded_sm()
+                                    .bg(Theme::bg_elevated())
+                                    .text_xs()
+                                    .text_color(Theme::text_muted())
+                                    .child(format!("vendor: {}", vendor)),
+                            ),
+                    )
+                    .child(
+                        div()
+                            .px_2()
+                            .py_0p5()
+                            .rounded_md()
+                            .bg(Theme::bg_elevated())
+                            .border_1()
+                            .border_color(if enabled { Theme::success_green() } else { Theme::text_muted() })
+                            .text_xs()
+                            .font_weight(gpui::FontWeight::BOLD)
+                            .text_color(if enabled { Theme::success_green() } else { Theme::text_muted() })
+                            .child(if enabled { "CONNECTED" } else { "DISABLED" }),
+                    ),
+            )
+            .child(
+                div()
+                    .text_xs()
+                    .text_color(Theme::text_secondary())
+                    .child(desc.to_string()),
+            )
+            .child(
+                div()
+                    .flex()
+                    .items_center()
+                    .gap_2()
+                    .pt_1()
+                    .child(
+                        div()
+                            .text_xs()
+                            .text_color(Theme::text_muted())
+                            .child("Granted to:"),
+                    )
+                    .children(agents.into_iter().map(|ag| {
+                        div()
+                            .px_1p5()
+                            .py_0p5()
+                            .rounded_sm()
+                            .bg(Theme::bg_card())
+                            .text_xs()
+                            .text_color(Theme::accent_purple())
+                            .child(ag)
+                    })),
+            )
+    }
+
     fn render_components_gallery(&self) -> Div {
         div()
             .flex()
@@ -361,6 +491,7 @@ impl Render for SettingsView {
                             .child(self.render_subtab_button("Engine & Local", "engine", &current_subtab, cx))
                             .child(self.render_subtab_button("Standing Instructions", "instructions", &current_subtab, cx))
                             .child(self.render_subtab_button("Connected Accounts", "accounts", &current_subtab, cx))
+                            .child(self.render_subtab_button("MCP Connectors", "mcp", &current_subtab, cx))
                             .child(self.render_subtab_button("UI Components Preview", "components", &current_subtab, cx)),
                     ),
             )
@@ -373,6 +504,7 @@ impl Render for SettingsView {
                     .child(match current_subtab.as_str() {
                         "instructions" => self.render_instructions_settings(),
                         "accounts" => self.render_connected_accounts(),
+                        "mcp" => self.render_mcp_connectors(),
                         "components" => self.render_components_gallery(),
                         _ => self.render_engine_settings(),
                     }),

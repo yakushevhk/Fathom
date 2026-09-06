@@ -15,6 +15,7 @@ pub struct ComputerView {
     secret_value: String,
     needs_you_active: bool,
     needs_you_reason: Option<String>,
+    selected_agent_id: String,
 }
 
 impl ComputerView {
@@ -26,6 +27,7 @@ impl ComputerView {
             secret_value: String::new(),
             needs_you_active: false,
             needs_you_reason: None,
+            selected_agent_id: "general_assistant".to_string(),
         }
     }
 
@@ -591,6 +593,40 @@ impl Render for ComputerView {
                                     .text_color(Theme::text_primary())
                                     .child(target_url),
                             ),
+                    )
+                    // Sandbox Container Management controls
+                    .child(
+                        div()
+                            .id("reset-container-btn")
+                            .px_2p5()
+                            .py_1()
+                            .rounded_md()
+                            .bg(Theme::bg_card())
+                            .border_1()
+                            .border_color(Theme::border_subtle())
+                            .text_xs()
+                            .font_weight(gpui::FontWeight::MEDIUM)
+                            .text_color(Theme::warning_yellow())
+                            .cursor_pointer()
+                            .hover(|s| s.bg(Theme::bg_elevated()))
+                            .child("♻️ Reset Workspace")
+                            .on_click(cx.listener(|this, _event: &ClickEvent, _window, cx| {
+                                let api = this.state.api.clone();
+                                let agent = this.selected_agent_id.clone();
+                                let agent_target = agent.clone();
+                                cx.spawn(async move |_this, _cx| {
+                                    let _ = api.reset_computer(&agent).await;
+                                }).detach();
+                                this.state.computer_activities.write().push(ComputerActivity {
+                                    id: uuid::Uuid::new_v4().to_string(),
+                                    tool_name: "computer_reset".to_string(),
+                                    intent: "Container profile and workspace reset".to_string(),
+                                    target: agent_target,
+                                    status: "completed".to_string(),
+                                    timestamp: chrono::Utc::now().format("%H:%M:%S").to_string(),
+                                });
+                                cx.notify();
+                            })),
                     )
                     // Take the Wheel toggle button
                     .child(

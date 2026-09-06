@@ -95,6 +95,221 @@ pub struct RefusedCardData {
     pub reason: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConfirmActionCardData {
+    pub request_id: String,
+    pub title: String,
+    pub description: String,
+    pub command_or_tool: String,
+    pub risk_level: String, // "low" | "medium" | "high"
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FormParameterField {
+    pub key: String,
+    pub label: String,
+    pub default_value: Option<String>,
+    pub is_secret: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FormParameterCardData {
+    pub request_id: String,
+    pub title: String,
+    pub description: Option<String>,
+    pub fields: Vec<FormParameterField>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ComputerStatusCardData {
+    pub agent_id: String,
+    pub container_id: String,
+    pub status: String, // "running" | "stopped" | "idle"
+    pub current_url: Option<String>,
+    pub memory_mb: Option<u64>,
+}
+
+/// Renders a ConfirmActionCard (Human-in-the-loop critical action confirmation)
+pub fn render_confirm_action_card<V: 'static>(
+    card: &ConfirmActionCardData,
+    cx: &mut Context<V>,
+    on_action: impl Fn(&str, bool, &mut V, &mut Context<V>) + 'static + Clone,
+) -> Div {
+    let req_id = card.request_id.clone();
+    let req_id_clone = req_id.clone();
+    let on_approve = on_action.clone();
+    let on_deny = on_action;
+
+    let risk_color = match card.risk_level.as_str() {
+        "high" => Theme::danger_red(),
+        "medium" => Theme::warning_yellow(),
+        _ => Theme::accent_blue(),
+    };
+
+    div()
+        .flex()
+        .flex_col()
+        .p_3()
+        .rounded_lg()
+        .bg(Theme::bg_card())
+        .border_1()
+        .border_color(risk_color)
+        .gap_2p5()
+        .child(
+            div()
+                .flex()
+                .justify_between()
+                .items_center()
+                .child(
+                    div()
+                        .text_xs()
+                        .font_weight(gpui::FontWeight::BOLD)
+                        .text_color(Theme::text_primary())
+                        .child(card.title.clone()),
+                )
+                .child(
+                    div()
+                        .px_2()
+                        .py_0p5()
+                        .rounded_sm()
+                        .bg(Theme::bg_elevated())
+                        .border_1()
+                        .border_color(risk_color)
+                        .text_xs()
+                        .font_weight(gpui::FontWeight::BOLD)
+                        .text_color(risk_color)
+                        .child(format!("Risk: {}", card.risk_level.to_uppercase())),
+                ),
+        )
+        .child(
+            div()
+                .text_xs()
+                .text_color(Theme::text_secondary())
+                .child(card.description.clone()),
+        )
+        .child(
+            div()
+                .p_2()
+                .rounded_md()
+                .bg(Theme::bg_elevated())
+                .text_xs()
+                .font_family("JetBrains Mono")
+                .text_color(Theme::text_primary())
+                .child(card.command_or_tool.clone()),
+        )
+        .child(
+            div()
+                .flex()
+                .items_center()
+                .gap_2()
+                .pt_1()
+                .child(
+                    div()
+                        .id("confirm-approve-btn")
+                        .px_3()
+                        .py_1()
+                        .rounded_md()
+                        .bg(Theme::accent_purple())
+                        .hover(|s| s.bg(Theme::accent_blue()))
+                        .text_xs()
+                        .font_weight(gpui::FontWeight::SEMIBOLD)
+                        .text_color(Theme::text_primary())
+                        .cursor_pointer()
+                        .child("Approve & Execute")
+                        .on_click(cx.listener(move |this, _event: &ClickEvent, _window, cx| {
+                            on_approve(&req_id, true, this, cx);
+                        })),
+                )
+                .child(
+                    div()
+                        .id("confirm-deny-btn")
+                        .px_3()
+                        .py_1()
+                        .rounded_md()
+                        .bg(Theme::bg_elevated())
+                        .border_1()
+                        .border_color(Theme::border_subtle())
+                        .text_xs()
+                        .font_weight(gpui::FontWeight::SEMIBOLD)
+                        .text_color(Theme::danger_red())
+                        .cursor_pointer()
+                        .child("Deny Action")
+                        .on_click(cx.listener(move |this, _event: &ClickEvent, _window, cx| {
+                            on_deny(&req_id_clone, false, this, cx);
+                        })),
+                ),
+        )
+}
+
+/// Renders a ComputerStatusCard (Container / Sandbox runtime metrics)
+pub fn render_computer_status_card(card: &ComputerStatusCardData) -> Div {
+    let is_running = card.status == "running";
+    let status_color = if is_running { Theme::success_green() } else { Theme::danger_red() };
+
+    div()
+        .flex()
+        .flex_col()
+        .p_3()
+        .rounded_lg()
+        .bg(Theme::bg_card())
+        .border_1()
+        .border_color(Theme::border_subtle())
+        .gap_2()
+        .child(
+            div()
+                .flex()
+                .justify_between()
+                .items_center()
+                .child(
+                    div()
+                        .flex()
+                        .items_center()
+                        .gap_2()
+                        .child(
+                            div()
+                                .size(px(8.0))
+                                .rounded_full()
+                                .bg(status_color),
+                        )
+                        .child(
+                            div()
+                                .text_xs()
+                                .font_weight(gpui::FontWeight::BOLD)
+                                .text_color(Theme::text_primary())
+                                .child(format!("Computer Sandbox: {}", card.agent_id)),
+                        ),
+                )
+                .child(
+                    div()
+                        .text_xs()
+                        .font_family("JetBrains Mono")
+                        .text_color(Theme::text_muted())
+                        .child(format!("ID: {}", card.container_id)),
+                ),
+        )
+        .child(
+            div()
+                .flex()
+                .flex_col()
+                .gap_1()
+                .text_xs()
+                .children(card.current_url.as_ref().map(|url| {
+                    div()
+                        .flex()
+                        .gap_1()
+                        .child(div().text_color(Theme::text_muted()).child("URL:"))
+                        .child(div().text_color(Theme::accent_blue()).child(url.clone()))
+                }))
+                .children(card.memory_mb.as_ref().map(|mem| {
+                    div()
+                        .flex()
+                        .gap_1()
+                        .child(div().text_color(Theme::text_muted()).child("Memory:"))
+                        .child(div().text_color(Theme::text_secondary()).child(format!("{} MB", mem)))
+                })),
+        )
+}
+
 /// Renders a structured RecordCard (key-value grid with status badge)
 pub fn render_record_card(card: &RecordCardData) -> Div {
     let badge_color = match card.status_tone.as_deref() {
