@@ -186,5 +186,65 @@ mod tests {
         assert_eq!(card.peer_count, 3);
         assert!(card.is_active);
     }
+
+    #[test]
+    fn test_review_summary_card_deserialization() {
+        let json_data = r#"{
+            "verdict": "SHIP",
+            "target_branch": "main",
+            "total_files_reviewed": 8,
+            "issues": [
+                {
+                    "priority": "P1",
+                    "file": "crates/auth/session.rs",
+                    "line": 142,
+                    "title": "Unsynchronized token refresh",
+                    "confidence": 0.95
+                },
+                {
+                    "priority": "P3",
+                    "file": "crates/auth/session.rs",
+                    "line": 210,
+                    "title": "Unused import",
+                    "confidence": 0.88
+                }
+            ]
+        }"#;
+
+        let res: Result<components::gallery::ReviewSummaryCardData, _> = serde_json::from_str(json_data);
+        assert!(res.is_ok());
+        let card = res.unwrap();
+        assert_eq!(card.verdict, "SHIP");
+        assert_eq!(card.total_files_reviewed, 8);
+        assert_eq!(card.issues.len(), 2);
+        assert_eq!(card.issues[0].priority, "P1");
+    }
+
+    #[test]
+    fn test_browser_tab_and_subagent_state() {
+        let state = state::AppState::new();
+        assert_eq!(state.browser_tabs.read().len(), 2);
+
+        // Add a tab directly to browser_tabs
+        state.browser_tabs.write().push(state::BrowserTab {
+            id: "tab-3".to_string(),
+            title: "Security Dashboard".to_string(),
+            url: "https://security.corp.internal".to_string(),
+            active: false,
+        });
+        assert_eq!(state.browser_tabs.read().len(), 3);
+
+        // Verify subagent worker list
+        assert_eq!(state.subagents.read().len(), 2);
+        state.subagents.write().push(state::SubagentWorker {
+            id: "worker-99".to_string(),
+            name: "Database Auditor".to_string(),
+            role: "data_governance".to_string(),
+            status: "running".to_string(),
+            tokens_used: 1240,
+            duration_secs: 15,
+        });
+        assert_eq!(state.subagents.read().len(), 3);
+    }
 }
 

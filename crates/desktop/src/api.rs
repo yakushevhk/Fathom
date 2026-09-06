@@ -312,6 +312,38 @@ impl ApiClient {
         Ok(())
     }
 
+    // Computer Tabs Management
+    pub async fn list_tabs(&self) -> Result<Vec<crate::state::BrowserTab>> {
+        let endpoint = format!("{}/api/v1/computers/tabs", self.base_url);
+        let resp = self.http.get(&endpoint).send().await?;
+        if resp.status().is_success() {
+            let res = resp.json::<Vec<crate::state::BrowserTab>>().await.unwrap_or_default();
+            Ok(res)
+        } else {
+            Ok(Vec::new())
+        }
+    }
+
+    pub async fn open_tab(&self, url: &str) -> Result<()> {
+        let endpoint = format!("{}/api/v1/computers/tabs/open", self.base_url);
+        self.http.post(&endpoint)
+            .json(&serde_json::json!({ "url": url }))
+            .send().await?;
+        Ok(())
+    }
+
+    pub async fn activate_tab(&self, tab_id: &str) -> Result<()> {
+        let endpoint = format!("{}/api/v1/computers/tabs/{}/activate", self.base_url, tab_id);
+        self.http.post(&endpoint).send().await?;
+        Ok(())
+    }
+
+    pub async fn close_tab(&self, tab_id: &str) -> Result<()> {
+        let endpoint = format!("{}/api/v1/computers/tabs/{}/close", self.base_url, tab_id);
+        self.http.post(&endpoint).send().await?;
+        Ok(())
+    }
+
     // Governance & Audit
     pub async fn get_policy(&self) -> Result<PolicyDocument> {
         let url = format!("{}/api/v1/governance/policy", self.base_url);

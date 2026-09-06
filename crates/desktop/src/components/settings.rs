@@ -503,13 +503,13 @@ impl SettingsView {
                             .text_sm()
                             .font_weight(gpui::FontWeight::BOLD)
                             .text_color(Theme::text_primary())
-                            .child("MCP Plugins & Connectors Catalogue (/admin/plugins)"),
+                            .child("MCP Plugins & Knowledge Connectors (/admin/plugins)"),
                     )
                     .child(
                         div()
                             .text_xs()
                             .text_color(Theme::text_muted())
-                            .child("Governed Model Context Protocol bridges with per-agent authorization"),
+                            .child("Governed Model Context Protocol bridges with RAG indexing and IdP SSO"),
                     ),
             )
             .child(
@@ -519,10 +519,10 @@ impl SettingsView {
                     .gap_2()
                     .children(if plugins.is_empty() {
                         vec![
-                            self.render_mcp_item("google_drive", "Google Drive", "Read company docs, sheets, and presentations", true, "Google", vec!["General Assistant".to_string()]),
-                            self.render_mcp_item("notion", "Notion Workspace", "Read and write company wikis, projects, and roadmaps", true, "Notion", vec!["General Assistant".to_string(), "Risk Analyst".to_string()]),
-                            self.render_mcp_item("linear", "Linear Issue Tracker", "Query sprint issues, sync statuses, create tasks", false, "Linear", vec!["DevOps Engineer".to_string()]),
-                            self.render_mcp_item("github_mcp", "GitHub MCP Bridge", "Pull requests, code reviews, workflow dispatch", true, "GitHub", vec!["DevOps Engineer".to_string()]),
+                            self.render_mcp_item("google_drive", "Google Drive", "Read company docs, sheets, and presentations", true, "Google (OAuth)", vec!["General Assistant".to_string()]),
+                            self.render_mcp_item("notion", "Notion Workspace", "Read and write company wikis, projects, and roadmaps", true, "Notion (OAuth)", vec!["General Assistant".to_string(), "Risk Analyst".to_string()]),
+                            self.render_mcp_item("rag_knowledge", "Corporate RAG Explorer", "Vector embeddings (pgvector/HNSW) across internal repos", true, "Local Vector DB", vec!["General Assistant".to_string(), "DevOps Engineer".to_string()]),
+                            self.render_mcp_item("okta_saml", "Identity Provider (SAML/OIDC)", "Domain routed SSO for @company.com with automatic token rotation", true, "Okta / Azure AD", vec!["Security Lead".to_string()]),
                         ]
                     } else {
                         plugins.into_iter().map(|p| {

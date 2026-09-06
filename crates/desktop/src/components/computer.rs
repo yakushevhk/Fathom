@@ -557,6 +557,83 @@ impl Render for ComputerView {
             .bg(Theme::bg_window())
             // Needs You Banner (OpenBot parity)
             .child(self.render_needs_you_banner(cx))
+            // Browser Multi-Tab Bar (audited tabs management)
+            .child(
+                div()
+                    .flex()
+                    .h(px(34.0))
+                    .w_full()
+                    .bg(Theme::bg_surface())
+                    .border_b_1()
+                    .border_color(Theme::border_subtle())
+                    .items_center()
+                    .px_3()
+                    .gap_1p5()
+                    .children(self.state.browser_tabs.read().clone().into_iter().map(|tab| {
+                        let is_active = tab.active;
+                        let tab_id = tab.id.clone();
+                        let tab_url = tab.url.clone();
+                        div()
+                            .id(gpui::SharedString::from(format!("browser-tab-{}", tab.id)))
+                            .flex()
+                            .items_center()
+                            .gap_2()
+                            .px_3()
+                            .py_1()
+                            .rounded_t_md()
+                            .bg(if is_active { Theme::bg_elevated() } else { Theme::bg_surface() })
+                            .border_t_1()
+                            .border_l_1()
+                            .border_r_1()
+                            .border_color(if is_active { Theme::border_focus() } else { Theme::border_subtle() })
+                            .cursor_pointer()
+                            .child(
+                                div()
+                                    .text_xs()
+                                    .font_weight(if is_active { gpui::FontWeight::BOLD } else { gpui::FontWeight::NORMAL })
+                                    .text_color(if is_active { Theme::text_primary() } else { Theme::text_muted() })
+                                    .child(if tab.title.len() > 24 { format!("{}...", &tab.title[..24]) } else { tab.title.clone() }),
+                            )
+                            .child(
+                                div()
+                                    .text_xs()
+                                    .text_color(Theme::text_muted())
+                                    .hover(|s| s.text_color(Theme::danger_red()))
+                                    .child("✕")
+                            )
+                            .on_click(cx.listener(move |this, _event: &ClickEvent, _window, cx| {
+                                let mut tabs = this.state.browser_tabs.write();
+                                for t in tabs.iter_mut() {
+                                    t.active = t.id == tab_id;
+                                }
+                                *this.state.computer_url.write() = tab_url.clone();
+                                cx.notify();
+                            }))
+                    }))
+                    .child(
+                        div()
+                            .id("new-browser-tab-btn")
+                            .px_2()
+                            .py_0p5()
+                            .rounded_sm()
+                            .bg(Theme::bg_elevated())
+                            .text_xs()
+                            .text_color(Theme::accent_blue())
+                            .cursor_pointer()
+                            .hover(|s| s.bg(Theme::bg_card()))
+                            .child("+ New Tab")
+                            .on_click(cx.listener(|this, _event: &ClickEvent, _window, cx| {
+                                let new_id = format!("tab-{}", this.state.browser_tabs.read().len() + 1);
+                                this.state.browser_tabs.write().push(crate::state::BrowserTab {
+                                    id: new_id,
+                                    title: "New Blank Tab".to_string(),
+                                    url: "about:blank".to_string(),
+                                    active: false,
+                                });
+                                cx.notify();
+                            })),
+                    ),
+            )
             // Top URL navigation and takeover toolbar
             .child(
                 div()

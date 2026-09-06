@@ -48,7 +48,7 @@ impl RoutinesView {
                 div()
                     .text_xs()
                     .text_color(Theme::text_muted())
-                    .child("Routines run autonomously on the specified cron schedule without human prompting."),
+                    .child("Routines run autonomously on schedule. Enforces 15-min floor, max 20 active routines, and auto-cutoff after 10 consecutive failures."),
             )
             .child(
                 div()

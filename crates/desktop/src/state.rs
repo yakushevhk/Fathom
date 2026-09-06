@@ -46,6 +46,24 @@ pub struct ComputerActivity {
     pub timestamp: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BrowserTab {
+    pub id: String,
+    pub title: String,
+    pub url: String,
+    pub active: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubagentWorker {
+    pub id: String,
+    pub name: String,
+    pub role: String,
+    pub status: String, // "running" | "parked" | "completed" | "failed"
+    pub tokens_used: u64,
+    pub duration_secs: u64,
+}
+
 pub struct AppState {
     pub daemon: Arc<DaemonManager>,
     pub api: Arc<ApiClient>,
@@ -60,11 +78,14 @@ pub struct AppState {
     pub channel_messages: RwLock<std::collections::HashMap<String, Vec<ChatMessage>>>,
     pub agent_handoff_grants: RwLock<std::collections::HashMap<String, Vec<String>>>,
     pub thinking_drawer_open: RwLock<bool>,
-    // Computer Use
+    pub agent_hub_open: RwLock<bool>,
+    pub subagents: RwLock<Vec<SubagentWorker>>,
+    // Computer Use & Tabs
     pub computer_url: RwLock<String>,
     pub computer_screenshot: RwLock<Option<String>>,
     pub computer_human_control: RwLock<bool>,
     pub computer_activities: RwLock<Vec<ComputerActivity>>,
+    pub browser_tabs: RwLock<Vec<BrowserTab>>,
     // Governance
     pub policy: RwLock<Option<PolicyDocument>>,
     pub audit_log: RwLock<Vec<AuditEntry>>,
@@ -98,10 +119,43 @@ impl AppState {
             channel_messages: RwLock::new(std::collections::HashMap::new()),
             agent_handoff_grants: RwLock::new(std::collections::HashMap::new()),
             thinking_drawer_open: RwLock::new(false),
+            agent_hub_open: RwLock::new(false),
+            subagents: RwLock::new(vec![
+                SubagentWorker {
+                    id: "worker-1".to_string(),
+                    name: "ComponentsExports".to_string(),
+                    role: "Frontend Engineer".to_string(),
+                    status: "running".to_string(),
+                    tokens_used: 12400,
+                    duration_secs: 45,
+                },
+                SubagentWorker {
+                    id: "worker-2".to_string(),
+                    name: "RoutesExports".to_string(),
+                    role: "API Engineer".to_string(),
+                    status: "completed".to_string(),
+                    tokens_used: 8200,
+                    duration_secs: 28,
+                },
+            ]),
             computer_url: RwLock::new("https://github.com".to_string()),
             computer_screenshot: RwLock::new(None),
             computer_human_control: RwLock::new(false),
             computer_activities: RwLock::new(Vec::new()),
+            browser_tabs: RwLock::new(vec![
+                BrowserTab {
+                    id: "tab-1".to_string(),
+                    title: "GitHub: Where the world builds software".to_string(),
+                    url: "https://github.com".to_string(),
+                    active: true,
+                },
+                BrowserTab {
+                    id: "tab-2".to_string(),
+                    title: "Hacker News".to_string(),
+                    url: "https://news.ycombinator.com".to_string(),
+                    active: false,
+                },
+            ]),
             policy: RwLock::new(None),
             audit_log: RwLock::new(Vec::new()),
             audit_filter: RwLock::new("all".to_string()),
@@ -139,6 +193,11 @@ impl AppState {
 
     pub fn toggle_thinking_drawer(&self) {
         let mut val = self.thinking_drawer_open.write();
+        *val = !*val;
+    }
+
+    pub fn toggle_agent_hub(&self) {
+        let mut val = self.agent_hub_open.write();
         *val = !*val;
     }
 

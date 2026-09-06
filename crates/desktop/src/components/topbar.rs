@@ -114,6 +114,28 @@ impl Render for Topbar {
                     )
                     .child(
                         div()
+                            .id("topbar-agent-hub-btn")
+                            .flex()
+                            .items_center()
+                            .gap_1()
+                            .px_2()
+                            .py_0p5()
+                            .rounded_md()
+                            .bg(if *self.state.agent_hub_open.read() { Theme::accent_purple() } else { Theme::bg_elevated() })
+                            .border_1()
+                            .border_color(Theme::border_subtle())
+                            .text_xs()
+                            .text_color(Theme::text_primary())
+                            .cursor_pointer()
+                            .hover(|s| s.bg(Theme::bg_card()))
+                            .child("⚡ Agent Hub (Alt+A)")
+                            .on_click(cx.listener(|this, _event: &gpui::ClickEvent, _window, cx| {
+                                this.state.toggle_agent_hub();
+                                cx.notify();
+                            })),
+                    )
+                    .child(
+                        div()
                             .id("topbar-collab-btn")
                             .flex()
                             .items_center()

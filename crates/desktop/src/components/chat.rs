@@ -120,6 +120,8 @@ impl ChatView {
             crate::components::gallery::render_advisor_note_card(&advisor)
         } else if let Ok(collab) = serde_json::from_str::<crate::components::gallery::CollabSessionCardData>(&msg.content) {
             crate::components::gallery::render_collab_session_card(&collab)
+        } else if let Ok(review) = serde_json::from_str::<crate::components::gallery::ReviewSummaryCardData>(&msg.content) {
+            crate::components::gallery::render_review_summary_card(&review)
         } else if let Ok(stream_rule) = serde_json::from_str::<crate::components::gallery::StreamRuleAlertCardData>(&msg.content) {
             crate::components::gallery::render_stream_rule_alert_card(&stream_rule)
         } else if let Ok(choice) = serde_json::from_str::<crate::components::gallery::ChoiceCardData>(&msg.content) {

@@ -13,7 +13,7 @@ use crate::components::vault::VaultView;
 use crate::state::{AppState, NavigationTab};
 use crate::theme::Theme;
 use gpui::{
-    div, prelude::*, App, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window,
+    div, px, prelude::*, App, Context, Div, Entity, FocusHandle, Focusable, IntoElement, Render, Window,
 };
 use std::sync::Arc;
 
@@ -153,6 +153,106 @@ impl DesktopApp {
             focus_handle,
         }
     }
+
+    fn render_agent_hub_drawer(&self) -> Div {
+        let workers = self.state.subagents.read().clone();
+
+        div()
+            .flex()
+            .flex_col()
+            .w(px(320.0))
+            .h_full()
+            .bg(Theme::bg_surface())
+            .border_l_1()
+            .border_color(Theme::border_subtle())
+            .p_4()
+            .gap_3()
+            .child(
+                div()
+                    .flex()
+                    .justify_between()
+                    .items_center()
+                    .child(
+                        div()
+                            .text_xs()
+                            .font_weight(gpui::FontWeight::BOLD)
+                            .text_color(Theme::text_primary())
+                            .child("⚡ AGENT HUB (omp Alt+A Parity)"),
+                    )
+                    .child(
+                        div()
+                            .text_xs()
+                            .font_weight(gpui::FontWeight::SEMIBOLD)
+                            .text_color(Theme::accent_purple())
+                            .child(format!("{} active", workers.len())),
+                    ),
+            )
+            .child(
+                div()
+                    .text_xs()
+                    .text_color(Theme::text_muted())
+                    .child("Parallel subagents spawned in isolated worktrees with live steering and token budgets."),
+            )
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap_2()
+                    .children(workers.into_iter().map(|w| {
+                        let is_running = w.status == "running";
+                        div()
+                            .flex()
+                            .flex_col()
+                            .p_2p5()
+                            .rounded_md()
+                            .bg(Theme::bg_elevated())
+                            .border_1()
+                            .border_color(Theme::border_subtle())
+                            .gap_1p5()
+                            .child(
+                                div()
+                                    .flex()
+                                    .justify_between()
+                                    .items_center()
+                                    .child(
+                                        div()
+                                            .text_xs()
+                                            .font_weight(gpui::FontWeight::BOLD)
+                                            .text_color(Theme::text_primary())
+                                            .child(w.name),
+                                    )
+                                    .child(
+                                        div()
+                                            .px_1p5()
+                                            .py_0p5()
+                                            .rounded_sm()
+                                            .bg(Theme::bg_card())
+                                            .text_xs()
+                                            .font_weight(gpui::FontWeight::BOLD)
+                                            .text_color(if is_running { Theme::success_green() } else { Theme::text_muted() })
+                                            .child(w.status.to_uppercase()),
+                                    ),
+                            )
+                            .child(
+                                div()
+                                    .text_xs()
+                                    .text_color(Theme::accent_blue())
+                                    .child(w.role),
+                            )
+                            .child(
+                                div()
+                                    .flex()
+                                    .justify_between()
+                                    .items_center()
+                                    .text_xs()
+                                    .text_color(Theme::text_muted())
+                                    .font_family("JetBrains Mono")
+                                    .child(format!("{} tokens", w.tokens_used))
+                                    .child(format!("{}s elapsed", w.duration_secs)),
+                            )
+                    })),
+            )
+    }
 }
 
 impl Render for DesktopApp {
@@ -252,7 +352,13 @@ impl Render for DesktopApp {
                                     }
                                 }
                             ),
-                    ),
+                    )
+                    // Right slide-out: Agent Hub Roster Drawer (Alt+A)
+                    .children(if *self.state.agent_hub_open.read() {
+                        Some(self.render_agent_hub_drawer())
+                    } else {
+                        None
+                    }),
             )
     }
 }

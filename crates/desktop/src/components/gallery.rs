@@ -151,6 +151,23 @@ pub struct StreamRuleAlertCardData {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReviewIssue {
+    pub priority: String, // "P0" | "P1" | "P2" | "P3"
+    pub file: String,
+    pub line: Option<usize>,
+    pub title: String,
+    pub confidence: f32, // 0.0 .. 1.0
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReviewSummaryCardData {
+    pub verdict: String, // "SHIP" | "BLOCKED" | "NEEDS_WORK"
+    pub target_branch: String,
+    pub total_files_reviewed: usize,
+    pub issues: Vec<ReviewIssue>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FormParameterField {
     pub key: String,
     pub label: String,
@@ -686,6 +703,128 @@ pub fn render_collab_session_card(card: &CollabSessionCardData) -> Div {
                         .text_color(Theme::accent_blue())
                         .child(card.relay_url.clone()),
                 ),
+        )
+}
+
+/// Renders ReviewSummaryCard (Code review with P0-P3 priorities and release verdict)
+pub fn render_review_summary_card(card: &ReviewSummaryCardData) -> Div {
+    let (verdict_color, verdict_icon) = match card.verdict.as_str() {
+        "SHIP" => (Theme::success_green(), "🚀 SHIP READY"),
+        "BLOCKED" => (Theme::danger_red(), "🛑 BLOCKED (P0 FOUND)"),
+        _ => (Theme::warning_yellow(), "⚠️ NEEDS REVISION"),
+    };
+
+    div()
+        .flex()
+        .flex_col()
+        .p_3()
+        .rounded_lg()
+        .bg(Theme::bg_card())
+        .border_1()
+        .border_color(verdict_color)
+        .gap_2p5()
+        .child(
+            div()
+                .flex()
+                .justify_between()
+                .items_center()
+                .child(
+                    div()
+                        .flex()
+                        .items_center()
+                        .gap_2()
+                        .child(
+                            div()
+                                .text_xs()
+                                .font_weight(gpui::FontWeight::BOLD)
+                                .text_color(Theme::text_primary())
+                                .child(format!("Code Review: {}", card.target_branch)),
+                        )
+                        .child(
+                            div()
+                                .px_1p5()
+                                .py_0p5()
+                                .rounded_sm()
+                                .bg(Theme::bg_elevated())
+                                .text_xs()
+                                .font_family("JetBrains Mono")
+                                .text_color(Theme::text_muted())
+                                .child(format!("{} files inspected", card.total_files_reviewed)),
+                        ),
+                )
+                .child(
+                    div()
+                        .px_2()
+                        .py_0p5()
+                        .rounded_md()
+                        .bg(Theme::bg_elevated())
+                        .border_1()
+                        .border_color(verdict_color)
+                        .text_xs()
+                        .font_weight(gpui::FontWeight::BOLD)
+                        .text_color(verdict_color)
+                        .child(verdict_icon),
+                ),
+        )
+        .child(
+            div()
+                .flex()
+                .flex_col()
+                .gap_1p5()
+                .children(card.issues.iter().map(|issue| {
+                    let p_color = match issue.priority.as_str() {
+                        "P0" => Theme::danger_red(),
+                        "P1" => Theme::warning_yellow(),
+                        "P2" => Theme::accent_purple(),
+                        _ => Theme::accent_blue(),
+                    };
+                    div()
+                        .flex()
+                        .items_center()
+                        .justify_between()
+                        .p_2()
+                        .rounded_md()
+                        .bg(Theme::bg_elevated())
+                        .border_1()
+                        .border_color(Theme::border_subtle())
+                        .child(
+                            div()
+                                .flex()
+                                .items_center()
+                                .gap_2()
+                                .child(
+                                    div()
+                                        .px_1p5()
+                                        .py_0p5()
+                                        .rounded_sm()
+                                        .bg(p_color)
+                                        .text_xs()
+                                        .font_weight(gpui::FontWeight::BOLD)
+                                        .text_color(Theme::text_primary())
+                                        .child(issue.priority.clone()),
+                                )
+                                .child(
+                                    div()
+                                        .text_xs()
+                                        .text_color(Theme::text_primary())
+                                        .child(issue.title.clone()),
+                                )
+                                .child(
+                                    div()
+                                        .text_xs()
+                                        .font_family("JetBrains Mono")
+                                        .text_color(Theme::text_muted())
+                                        .child(format!("({}:{})", issue.file, issue.line.unwrap_or(1))),
+                                ),
+                        )
+                        .child(
+                            div()
+                                .text_xs()
+                                .font_family("JetBrains Mono")
+                                .text_color(Theme::text_muted())
+                                .child(format!("{:.0}% conf", issue.confidence * 100.0)),
+                        )
+                })),
         )
 }
 
