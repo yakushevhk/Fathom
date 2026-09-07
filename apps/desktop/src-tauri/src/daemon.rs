@@ -88,7 +88,7 @@ impl DaemonManager {
             .arg("--host")
             .arg("127.0.0.1")
             .stdout(Stdio::null())
-            .stderr(Stdio::null())
+            .stderr(Stdio::piped())
             .stdin(Stdio::null())
             .spawn()
             .map_err(|e| format!("failed to spawn fathom: {e}"))?;

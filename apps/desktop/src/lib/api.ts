@@ -339,6 +339,7 @@ export const api = {
 
 export function listenToDaemonStatus(cb: (status: DaemonStatus) => void): () => void {
   let unlisten: (() => void) | undefined
+  let cancelled = false
   const stopPolling = pollStatus(cb)
 
   // Tauri-native events take priority; the poller remains as a fallback so
@@ -346,10 +347,15 @@ export function listenToDaemonStatus(cb: (status: DaemonStatus) => void): () => 
   listen<DaemonStatus>('daemon:status', e => {
     cb(e.payload)
   }).then(fn => {
-    unlisten = fn
+    if (cancelled) {
+      fn()
+    } else {
+      unlisten = fn
+    }
   })
 
   return () => {
+    cancelled = true
     stopPolling()
     unlisten?.()
   }
