@@ -1,6 +1,6 @@
 # Architecture
 
-Fathom is a self-hosted Rust runtime for autonomous remote AI workers, organized as a modular **12-crate** Cargo workspace. The core combines a `tokio` agent loop, broadcast event bus, pluggable tool execution, persistence, and a coordinator that can delegate work to sub-agents. Research is one workflow, not the system boundary: the same runtime can plan tool-driven code, data, browser, or recurring tasks when the relevant tools and services are configured. HTTP/SSE/AG-UI, TUI, MCP, memory, governance, credentials, notifications, replay, observability, and optional computer supervision sit around that runtime.
+Fathom is a self-hosted Rust runtime for autonomous remote AI workers, organized as a modular **13-crate** Cargo workspace. The core combines a `tokio` agent loop, broadcast event bus, pluggable tool execution, persistence, and a coordinator that can delegate work to sub-agents. Research is one workflow, not the system boundary: the same runtime can plan tool-driven code, data, browser, or recurring tasks when the relevant tools and services are configured. HTTP/SSE/AG-UI, TUI, MCP, memory, governance, credentials, notifications, replay, observability, desktop GPUI, and optional computer supervision sit around that runtime.
 
 The diagrams and module notes below describe implemented boundaries rather than a hosted product. Integrations are optional and their behavior depends on configuration, credentials, and external service availability.
 
@@ -22,7 +22,8 @@ fathom/
 │   ├── tui/           # Terminal interface
 │   ├── lsp/           # Language server protocol (editor integration)
 │   ├── governance/    # Policy engine — allow/deny rules, audit decision records
-│   └── supervisor/    # Docker per-agent computer provisioning
+│   ├── supervisor/    # Docker per-agent computer provisioning
+│   └── desktop/       # GPUI native desktop client integration
 └── src/main.rs        # CLI entry point
 ```
 

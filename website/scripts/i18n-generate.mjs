@@ -172,7 +172,12 @@ function translateHtml(html, lang, langRoot, pageUrl) {
     } else if (i18n) {
       const val = resolveKey(i18n.value, lang);
       if (val != null && val !== false) {
-        replaceText(node, val);
+        const str = String(val);
+        if (str.includes('<') && str.includes('>')) {
+          node.childNodes = parse5.parseFragment(str).childNodes;
+        } else {
+          replaceText(node, str);
+        }
       }
       rmAttr(node, 'data-i18n');
     }
