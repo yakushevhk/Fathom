@@ -72,6 +72,11 @@ impl Tool for CookieVaultTool {
             .unwrap_or_else(|| PathBuf::from(".fathom"));
         let vault_dir = fathom_home.join("vault").join("sessions");
         tokio::fs::create_dir_all(&vault_dir).await?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let _ = std::fs::set_permissions(&vault_dir, std::fs::Permissions::from_mode(0o700));
+        }
 
         match params.action {
             CookieVaultAction::Save { domain, payload } => {
@@ -81,8 +86,12 @@ impl Tool for CookieVaultTool {
                 
                 // Encrypt payload using AES-256-GCM
                 let encrypted = pr_persistence::credentials::encrypt_secret(&serialized)?;
-                tokio::fs::write(&file_path, encrypted).await?;
-
+                tokio::fs::write(&file_path, &encrypted).await?;
+                #[cfg(unix)]
+                {
+                    use std::os::unix::fs::PermissionsExt;
+                    let _ = std::fs::set_permissions(&file_path, std::fs::Permissions::from_mode(0o600));
+                }
                 Ok(ToolOutput::ok(format!(
                     "Encrypted session for domain '{}' saved securely to vault ({}).",
                     domain,

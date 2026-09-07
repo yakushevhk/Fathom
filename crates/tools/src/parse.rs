@@ -33,15 +33,27 @@ async fn resolve_source(
             Err(f) => Err(ToolOutput::err_code(f.message, f.code)),
         }
     } else {
-        let path = if std::path::Path::new(trimmed).is_absolute() {
-            std::path::PathBuf::from(trimmed)
+        let raw_path = std::path::Path::new(trimmed);
+        let target = if raw_path.is_absolute() {
+            raw_path.to_path_buf()
         } else {
-            ctx.working_dir.join(trimmed)
+            ctx.working_dir.join(raw_path)
         };
-        match tokio::fs::read_to_string(&path).await {
+
+        // Enforce workspace boundary check
+        let canonical_ws = ctx.working_dir.canonicalize().unwrap_or_else(|_| ctx.working_dir.clone());
+        let canonical_target = target.canonicalize().unwrap_or_else(|_| target.clone());
+        if !canonical_target.starts_with(&canonical_ws) {
+            return Err(ToolOutput::err_code(
+                format!("Access denied: path {trimmed:?} escapes workspace directory"),
+                "permission_denied",
+            ));
+        }
+
+        match tokio::fs::read_to_string(&canonical_target).await {
             Ok(body) => Ok((body, false)),
             Err(e) => Err(ToolOutput::err_code(
-                format!("Failed to read {path:?}: {e}"),
+                format!("Failed to read {target:?}: {e}"),
                 "file_not_found",
             )),
         }
