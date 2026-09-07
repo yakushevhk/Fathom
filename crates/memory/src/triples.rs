@@ -32,15 +32,17 @@ impl TriplesGraph {
 
     /// Add an RDF triple to the graph.
     pub fn insert(&mut self, triple: RdfTriple) {
-        self.out_edges
-            .entry(triple.subject.clone())
-            .or_default()
-            .push((triple.predicate.clone(), triple.object.clone()));
+        let out_list = self.out_edges.entry(triple.subject.clone()).or_default();
+        let out_edge = (triple.predicate.clone(), triple.object.clone());
+        if !out_list.contains(&out_edge) {
+            out_list.push(out_edge);
+        }
 
-        self.in_edges
-            .entry(triple.object.clone())
-            .or_default()
-            .push((triple.predicate.clone(), triple.subject.clone()));
+        let in_list = self.in_edges.entry(triple.object.clone()).or_default();
+        let in_edge = (triple.predicate.clone(), triple.subject.clone());
+        if !in_list.contains(&in_edge) {
+            in_list.push(in_edge);
+        }
 
         self.triples.insert(triple);
     }
