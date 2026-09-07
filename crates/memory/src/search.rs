@@ -208,10 +208,11 @@ pub fn resolve_follow(db: &MemoryDb, id: &str, follow: Follow) -> anyhow::Result
             let mut chain = vec![row];
             // Extend backwards (older versions): follow edges from current to older.
             loop {
-                let edges = db.edges_of(&chain.last().unwrap().id)?;
+                let Some(last_row) = chain.last() else { break; };
+                let edges = db.edges_of(&last_row.id)?;
                 let older = edges
                     .iter()
-                    .find(|e| e.edge_type == "supersedes" && e.from_id == chain.last().unwrap().id)
+                    .find(|e| e.edge_type == "supersedes" && e.from_id == last_row.id)
                     .map(|e| e.to_id.clone());
                 match older.and_then(|oid| db.get(&oid).ok()).flatten() {
                     Some(r) => chain.push(r),
@@ -223,8 +224,9 @@ pub fn resolve_follow(db: &MemoryDb, id: &str, follow: Follow) -> anyhow::Result
             }
             // Extend forwards (newer versions) from the requested id.
             loop {
-                let newest = chain.first().unwrap();
-                match db.superseded_by(&newest.id)? {
+                let Some(newest) = chain.first() else { break; };
+                let newest_id = newest.id.clone();
+                match db.superseded_by(&newest_id)? {
                     Some(nid) => match db.get(&nid)? {
                         Some(r) => chain.insert(0, r),
                         None => break,

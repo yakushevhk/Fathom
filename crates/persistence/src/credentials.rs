@@ -28,8 +28,14 @@ fn key_bytes() -> Result<[u8; 32]> {
     let mut out = [0u8; 32];
     if raw.len() == 64 && raw.as_bytes().iter().all(|b| b.is_ascii_hexdigit()) {
         for (i, pair) in raw.as_bytes().chunks_exact(2).enumerate() {
-            let high = (pair[0] as char).to_digit(16).unwrap() as u8;
-            let low = (pair[1] as char).to_digit(16).unwrap() as u8;
+            let high = match (pair[0] as char).to_digit(16) {
+                Some(d) => d as u8,
+                None => bail!("credential encryption key contains invalid hex"),
+            };
+            let low = match (pair[1] as char).to_digit(16) {
+                Some(d) => d as u8,
+                None => bail!("credential encryption key contains invalid hex"),
+            };
             out[i] = (high << 4) | low;
         }
         return Ok(out);

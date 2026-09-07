@@ -656,7 +656,7 @@ impl MemoryDb {
             "SELECT e.memory_id, e.vector FROM memories_embeddings e
              JOIN memories m ON m.id = e.memory_id
              WHERE e.model = ? {scope_clause} AND m.status = 'active'
-             AND (m.expires_at IS NULL OR m.expires_at > datetime('now'))"
+             AND (m.expires_at IS NULL OR m.expires_at > strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))"
         );
         let mut stmt = conn.prepare(&sql)?;
         let mut all_params: Vec<&dyn rusqlite::ToSql> = Vec::new();
