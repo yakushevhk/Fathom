@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { connectSSE, api, type SessionSummary, type AgentEvent } from '../lib/api'
 import { ChatFindBar } from './ChatFindBar'
+import { SpeakButton } from './SpeakButton'
 
 interface ConversationProps {
   activeSession: SessionSummary | null
@@ -167,14 +168,10 @@ export function Conversation({ activeSession, engineUrl }: ConversationProps) {
       <div className="conversation-view" ref={scrollRef} onScroll={handleScroll}>
       <div className="message" style={{ opacity: 0.6 }}>
         <div className="message-header">
-          <span className="message-role system">Session</span>
-          <span className="text-muted" style={{ fontSize: 11 }}>
-            {activeSession.id.slice(0, 8)} · {activeSession.status}
-          </span>
+          <span className="message-role user">You</span>
+          <span className="message-time">Task Initiated</span>
         </div>
-        <div className="message-content">
-          <p>{activeSession.query}</p>
-        </div>
+        <p>{activeSession.query}</p>
       </div>
 
       {/* Messages */}
@@ -188,6 +185,8 @@ export function Conversation({ activeSession, engineUrl }: ConversationProps) {
               <span className="text-muted" style={{ fontSize: 10, fontFamily: 'var(--font-mono)' }}>
                 {msg.agentId.slice(0, 6)}
               </span>
+            {msg.type === 'assistant' && (
+              <SpeakButton text={msg.content} />
             )}
           </div>
           {msg.type === 'tool_call' ? (

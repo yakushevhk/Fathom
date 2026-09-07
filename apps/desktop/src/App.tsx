@@ -8,7 +8,7 @@ import { GovernancePanel } from './components/GovernancePanel'
 import { CoworkerRail } from './components/CoworkerRail'
 import { CommandPalette } from './components/CommandPalette'
 import { ApprovalModeSelector, type ApprovalMode } from './components/ApprovalModeSelector'
-import { useEngine } from './hooks/useEngine'
+import { ModelPicker, type EffortLevel, AVAILABLE_MODELS } from './components/ModelPicker'
 import { useSessions } from './hooks/useSessions'
 import { api, type SessionSummary } from './lib/api'
 export default function App() {
@@ -20,7 +20,8 @@ export default function App() {
   const [showRightPane, setShowRightPane] = useState(false)
   const [rightTab, setRightTab] = useState<'details' | 'computer' | 'governance'>('computer')
   const [approvalMode, setApprovalMode] = useState<ApprovalMode>('auto')
-
+  const [selectedModel, setSelectedModel] = useState<string>(AVAILABLE_MODELS[0].id)
+  const [effortLevel, setEffortLevel] = useState<EffortLevel>('none')
   // Global keyboard shortcuts (⌘K for palette, ⌘B for sidebar/right pane, ⌘N for new task)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -82,6 +83,13 @@ export default function App() {
           {status.phase === 'running' ? 'Engine Online' : status.phase === 'starting' ? 'Starting...' : 'Engine Offline'}
         </span>
         <div className="titlebar-mode-picker">
+          <ModelPicker
+            selectedModel={selectedModel}
+            onSelectModel={setSelectedModel}
+            effort={effortLevel}
+            onSelectEffort={setEffortLevel}
+            compact
+          />
           <ApprovalModeSelector currentMode={approvalMode} onChange={setApprovalMode} compact />
         </div>
       </div>
