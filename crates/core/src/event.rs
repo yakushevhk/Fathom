@@ -52,6 +52,7 @@ pub enum AgentEvent {
         agent_id: AgentId,
         chunk: String,
     },
+    #[serde(rename = "agent_completed")]
     AgentCompleted {
         id: AgentId,
         summary: String,
