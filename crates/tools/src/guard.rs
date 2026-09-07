@@ -37,25 +37,44 @@ fn is_blocked_host(host: &str) -> bool {
 pub fn is_internal_ip(ip: &IpAddr) -> bool {
     match ip {
         IpAddr::V4(v4) => {
-            let [a, b, _, _] = v4.octets();
+            let [a, b, c, _] = v4.octets();
             v4.is_loopback()              // 127/8
                 || v4.is_private()        // 10/8, 172.16/12, 192.168/16
                 || v4.is_link_local()     // 169.254/16 (metadata, APIPA)
                 || v4.is_broadcast()
                 || v4.is_unspecified()
+                || v4.is_multicast()      // 224.0.0.0/4 (multicast, SSDP)
+                || a >= 240               // 240.0.0.0/4 Class E / reserved
                 || a == 100 && (b & 0b1100_0000) == 64 // 100.64/10 CGNAT
                 || a == 0                                 // 0.0.0.0/8
-                || a == 192 && b == 0                     // 192.0.0/24 IETF
-                || a == 198 && (b == 18 || b == 19)       // benchmarking
+                || a == 192 && b == 0 && c == 0           // 192.0.0.0/24 IETF
+                || a == 192 && b == 0 && c == 2           // 192.0.2.0/24 TEST-NET-1
+                || a == 192 && b == 88 && c == 99         // 192.88.99.0/24 6to4 relay
+                || a == 198 && (b == 18 || b == 19)       // 198.18.0.0/15 benchmarking
+                || a == 198 && b == 51 && c == 100        // 198.51.100.0/24 TEST-NET-2
+                || a == 203 && b == 0 && c == 113         // 203.0.113.0/24 TEST-NET-3
         }
         IpAddr::V6(v6) => {
+            let segs = v6.segments();
             v6.is_loopback()
                 || v6.is_unspecified()
-                // unique-local fc00::/7
-                || (v6.segments()[0] & 0xfe00) == 0xfc00
-                // link-local fe80::/10
-                || (v6.segments()[0] & 0xffc0) == 0xfe80
-                // IPv4-mapped internal (::ffff:a.b.c.d)
+                || v6.is_multicast()                      // ff00::/8
+                || (segs[0] & 0xfe00) == 0xfc00           // unique-local fc00::/7
+                || (segs[0] & 0xffc0) == 0xfe80           // link-local fe80::/10
+                || (segs[0] == 0x2001 && segs[1] == 0xdb8) // 2001:db8::/32 documentation
+                || (segs[0] == 0x0100 && segs[1] == 0)    // 100::/64 discard
+                // 6to4 2002::/16 embedding private IPv4
+                || (segs[0] == 0x2002 && is_internal_ip(&IpAddr::V4(std::net::Ipv4Addr::new(
+                    (segs[1] >> 8) as u8, (segs[1] & 0xff) as u8,
+                    (segs[2] >> 8) as u8, (segs[2] & 0xff) as u8,
+                ))))
+                // NAT64 well-known prefix 64:ff9b::/96
+                || (segs[0] == 0x0064 && segs[1] == 0xff9b && segs[2] == 0 && segs[3] == 0 && segs[4] == 0 && segs[5] == 0
+                    && is_internal_ip(&IpAddr::V4(std::net::Ipv4Addr::new(
+                        (segs[6] >> 8) as u8, (segs[6] & 0xff) as u8,
+                        (segs[7] >> 8) as u8, (segs[7] & 0xff) as u8,
+                    ))))
+                // IPv4-compatible and IPv4-mapped
                 || matches!(v6.to_ipv4(), Some(v4) if is_internal_ip(&IpAddr::V4(v4)))
         }
     }
