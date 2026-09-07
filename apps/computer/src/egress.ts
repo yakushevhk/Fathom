@@ -32,11 +32,20 @@ function ipv4(host: string): number[] | null {
 }
 
 function mappedIpv4(host: string): string | null {
-  const match = host.toLowerCase().match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/)
-  if (!match) return null
-  const high = Number.parseInt(match[1], 16)
-  const low = Number.parseInt(match[2], 16)
-  return `${high >> 8}.${high & 255}.${low >> 8}.${low & 255}`
+  const lower = host.toLowerCase();
+  // Check standard hex notation: ::ffff:7f00:0001
+  const hexMatch = lower.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+  if (hexMatch) {
+    const high = Number.parseInt(hexMatch[1], 16);
+    const low = Number.parseInt(hexMatch[2], 16);
+    return `${high >> 8}.${high & 255}.${low >> 8}.${low & 255}`;
+  }
+  // Check dotted-quad notation: ::ffff:127.0.0.1 or ::ffff:169.254.169.254
+  const dotMatch = lower.match(/^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
+  if (dotMatch) {
+    return dotMatch[1];
+  }
+  return null;
 }
 
 function privateIp(host: string): boolean {

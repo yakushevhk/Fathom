@@ -1,6 +1,5 @@
 // ===== DEMO CLIENT (ENHANCED) ==============================================
-const API_BASE = '/api';  // proxied via Vercel Edge Function
-const API_KEY = 'sk-haus';
+const API_BASE = '/api';  // proxied via server endpoint
 const MODEL = 'kimi/k3';
 
 const BOTS = [

@@ -487,14 +487,47 @@ async fn scoped_post(state: &Arc<AppState>, agent_id: &str, path: &str, body: Va
 }
 
 pub async fn click_for_agent(State(state): State<Arc<AppState>>, Path(agent_id): Path<String>, Json(body): Json<Value>) -> Response {
+    let ctx = pr_governance::ActionContext::new(
+        agent_id.clone(),
+        "direct-control".to_string(),
+        "computer_click".to_string(),
+        body.clone(),
+    );
+    if let Ok(decision) = state.governance_decide(&ctx).await {
+        if !decision.is_allowed() {
+            return (StatusCode::FORBIDDEN, "Action denied by governance policy").into_response();
+        }
+    }
     scoped_post(&state, &agent_id, "/click", body).await
 }
 
 pub async fn type_for_agent(State(state): State<Arc<AppState>>, Path(agent_id): Path<String>, Json(body): Json<Value>) -> Response {
+    let ctx = pr_governance::ActionContext::new(
+        agent_id.clone(),
+        "direct-control".to_string(),
+        "computer_type".to_string(),
+        body.clone(),
+    );
+    if let Ok(decision) = state.governance_decide(&ctx).await {
+        if !decision.is_allowed() {
+            return (StatusCode::FORBIDDEN, "Action denied by governance policy").into_response();
+        }
+    }
     scoped_post(&state, &agent_id, "/type", body).await
 }
 
 pub async fn key_for_agent(State(state): State<Arc<AppState>>, Path(agent_id): Path<String>, Json(body): Json<Value>) -> Response {
+    let ctx = pr_governance::ActionContext::new(
+        agent_id.clone(),
+        "direct-control".to_string(),
+        "computer_key".to_string(),
+        body.clone(),
+    );
+    if let Ok(decision) = state.governance_decide(&ctx).await {
+        if !decision.is_allowed() {
+            return (StatusCode::FORBIDDEN, "Action denied by governance policy").into_response();
+        }
+    }
     scoped_post(&state, &agent_id, "/key", body).await
 }
 
