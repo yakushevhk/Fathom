@@ -35,6 +35,7 @@ interface PendingApproval {
 export function ChatView({ sessionId }: ChatViewProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
+
   const [sending, setSending] = useState(false)
   const [answering, setAnswering] = useState(false)
   const [approving, setApproving] = useState(false)
@@ -49,7 +50,7 @@ export function ChatView({ sessionId }: ChatViewProps) {
   const seenEventsRef = useRef<Set<string>>(new Set())
   const clientEventSequenceRef = useRef(0)
   const [autoScroll, setAutoScroll] = useState(true)
-  const terminalSession = isTerminalSessionStatus(session?.status)
+  const terminalSession = session?.status === 'completed' || session?.status === 'failed' || session?.status === 'cancelled'
 
   // Bootstrap deep links with durable session metadata and completed results.
   useEffect(() => {

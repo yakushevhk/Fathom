@@ -21,15 +21,32 @@ export class FathomWebSocketClient {
   private sessionId: string | null = null;
 
   constructor(url?: string) {
-    const defaultHost = typeof window !== "undefined" ? window.location.host : "localhost:8080";
-    const protocol = typeof window !== "undefined" && window.location.protocol === "https:" ? "wss:" : "ws:";
-    this.url = url || `${protocol}//${defaultHost}/api/v1/ws`;
+    if (url) {
+      this.url = url;
+    } else {
+      const rawBase = typeof window !== "undefined"
+        ? localStorage.getItem("fathom_base_url") || "http://127.0.0.1:8080"
+        : "http://127.0.0.1:8080";
+      const apiKey = typeof window !== "undefined"
+        ? localStorage.getItem("fathom_api_key") || ""
+        : "";
+      const wsBase = rawBase.replace(/^http:/, "ws:").replace(/^https:/, "wss:");
+      const baseWithSlash = wsBase.endsWith("/") ? wsBase : `${wsBase}/`;
+      const fullUrl = new URL("api/v1/ws", baseWithSlash);
+      if (apiKey) {
+        fullUrl.searchParams.set("api_key", apiKey);
+      }
+      this.url = fullUrl.toString();
+    }
   }
 
   public connect(sessionId?: string) {
     this.sessionId = sessionId || null;
     if (this.ws) {
+      this.ws.onclose = null;
+      this.ws.onerror = null;
       this.ws.close();
+      this.ws = null;
     }
 
     try {

@@ -352,6 +352,7 @@ export function Sidebar() {
             ['/coworkers', 'Coworkers'],
             ['/settings', 'Settings'],
           ].map(([href, label]) => {
+            const active = pathname === href
             return (
               <Link key={href} href={href} aria-current={active ? 'page' : undefined} className={active ? 'text-gray-200' : 'hover:text-gray-300'} onClick={() => closeSidebar('navigation')}>
                 {label}
