@@ -284,13 +284,34 @@ pub trait AuditSink: Send + Sync {
 
 /// Facade combining policy decisions with an optional audit sink.
 #[derive(Clone, Default)]
-pub struct Governance { policy: PolicyEngine, sink: Option<Arc<dyn AuditSink>> }
+pub struct Governance {
+    policy: PolicyEngine,
+    sink: Option<Arc<dyn AuditSink>>,
+    kill_switch: Arc<std::sync::atomic::AtomicBool>,
+}
 
 impl Governance {
-    pub fn new(policy: PolicyEngine) -> Self { Self { policy, sink: None } }
+    pub fn new(policy: PolicyEngine) -> Self {
+        Self {
+            policy,
+            sink: None,
+            kill_switch: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+        }
+    }
     pub fn with_audit_sink(mut self, sink: Arc<dyn AuditSink>) -> Self { self.sink = Some(sink); self }
     pub fn policy(&self) -> &PolicyEngine { &self.policy }
-    pub fn authorize(&self, context: &ActionContext) -> Decision { self.policy.decide(context) }
+    pub fn trigger_kill_switch(&self) {
+        self.kill_switch.store(true, std::sync::atomic::Ordering::SeqCst);
+    }
+    pub fn is_kill_switch_active(&self) -> bool {
+        self.kill_switch.load(std::sync::atomic::Ordering::SeqCst)
+    }
+    pub fn authorize(&self, context: &ActionContext) -> Decision {
+        if self.is_kill_switch_active() {
+            return Decision::Deny;
+        }
+        self.policy.decide(context)
+    }
     pub fn record(&self, event: &AuditEvent) -> Result<(), GovernanceError> {
         if let Some(sink) = &self.sink { sink.record(event).map_err(GovernanceError::Sink)?; }
         Ok(())
