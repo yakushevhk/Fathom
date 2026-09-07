@@ -2,10 +2,12 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { connectSSE, api, type SessionSummary, type AgentEvent } from '../lib/api'
 import { ChatFindBar } from './ChatFindBar'
 import { SpeakButton } from './SpeakButton'
+import { PendingApprovalBanner, type PendingDecision } from './PendingApprovalBanner'
 
 interface ConversationProps {
   activeSession: SessionSummary | null
   engineUrl: string | null
+  onPendingDecisionChange?: (decision: PendingDecision | null) => void
 }
 
 interface Message {
@@ -27,10 +29,24 @@ export function Conversation({ activeSession, engineUrl }: ConversationProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [autoScroll, setAutoScroll] = useState(true)
   const [showFindBar, setShowFindBar] = useState(false)
-  const [findQuery, setFindQuery] = useState('')
   const [findMatchIndex, setFindMatchIndex] = useState(0)
+  const [pendingDecision, setPendingDecision] = useState<PendingDecision | null>(null)
 
-  // ⌘F shortcut handler
+  useEffect(() => {
+    const pendingMsg = messages.find(m => m.controlKind && m.requestId)
+    if (pendingMsg) {
+      const decision: PendingDecision = {
+        requestId: pendingMsg.requestId!,
+        sessionId: activeSession?.id || '',
+        toolName: pendingMsg.toolName,
+        argsPreview: pendingMsg.content,
+        kind: pendingMsg.controlKind as 'approval' | 'question',
+      }
+      setPendingDecision(decision)
+    } else {
+      setPendingDecision(null)
+    }
+  }, [messages, activeSession?.id])
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') {
@@ -137,9 +153,23 @@ export function Conversation({ activeSession, engineUrl }: ConversationProps) {
       </div>
     )
   }
-
   return (
     <div className="conversation-wrapper">
+      <PendingApprovalBanner
+        decision={pendingDecision}
+        onApprove={async (reqId) => {
+          if (activeSession) {
+            await api.sessions.approve(activeSession.id, reqId, true)
+            setPendingDecision(null)
+          }
+        }}
+        onDeny={async (reqId) => {
+          if (activeSession) {
+            await api.sessions.approve(activeSession.id, reqId, false)
+            setPendingDecision(null)
+          }
+        }}
+      />
       {showFindBar && (
         <ChatFindBar
           query={findQuery}

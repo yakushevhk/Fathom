@@ -9,6 +9,9 @@ import { CoworkerRail } from './components/CoworkerRail'
 import { CommandPalette } from './components/CommandPalette'
 import { ApprovalModeSelector, type ApprovalMode } from './components/ApprovalModeSelector'
 import { ModelPicker, type EffortLevel, AVAILABLE_MODELS } from './components/ModelPicker'
+import { RoutinesPanel } from './components/RoutinesPanel'
+import { ArtifactsDrawer } from './components/ArtifactsDrawer'
+import { useEngine } from './hooks/useEngine'
 import { useSessions } from './hooks/useSessions'
 import { api, type SessionSummary } from './lib/api'
 export default function App() {
@@ -18,7 +21,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
   const [showRightPane, setShowRightPane] = useState(false)
-  const [rightTab, setRightTab] = useState<'details' | 'computer' | 'governance'>('computer')
+  const [rightTab, setRightTab] = useState<'details' | 'computer' | 'governance' | 'routines' | 'artifacts'>('computer')
   const [approvalMode, setApprovalMode] = useState<ApprovalMode>('auto')
   const [selectedModel, setSelectedModel] = useState<string>(AVAILABLE_MODELS[0].id)
   const [effortLevel, setEffortLevel] = useState<EffortLevel>('none')
@@ -156,6 +159,8 @@ export default function App() {
               <div className="right-pane-tabs" role="tablist" aria-label="Control room">
                 <button className={rightTab === 'computer' ? 'selected' : ''} onClick={() => setRightTab('computer')} role="tab" aria-selected={rightTab === 'computer'}>Computer</button>
                 <button className={rightTab === 'governance' ? 'selected' : ''} onClick={() => setRightTab('governance')} role="tab" aria-selected={rightTab === 'governance'}>Guardrails</button>
+                <button className={rightTab === 'routines' ? 'selected' : ''} onClick={() => setRightTab('routines')} role="tab" aria-selected={rightTab === 'routines'}>Routines</button>
+                <button className={rightTab === 'artifacts' ? 'selected' : ''} onClick={() => setRightTab('artifacts')} role="tab" aria-selected={rightTab === 'artifacts'}>Artifacts</button>
                 <button className={rightTab === 'details' ? 'selected' : ''} onClick={() => setRightTab('details')} role="tab" aria-selected={rightTab === 'details'}>Session</button>
               </div>
               <button className="titlebar-btn" onClick={() => setShowRightPane(false)} aria-label="Close control room">&times;</button>
@@ -163,9 +168,10 @@ export default function App() {
             <div className="right-pane-body control-room-body">
               {rightTab === 'computer' && <LiveScreen />}
               {rightTab === 'governance' && <GovernancePanel />}
+              {rightTab === 'routines' && <RoutinesPanel onTriggerRoutine={handleNewSession} />}
+              {rightTab === 'artifacts' && <ArtifactsDrawer session={activeSession} />}
               {rightTab === 'details' && (activeSession ? <SessionDetails session={activeSession} /> : <p className="text-muted">Select a session to view details</p>)}
             </div>
-          </div>
         )}
       </div>
 

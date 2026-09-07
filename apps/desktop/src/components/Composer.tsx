@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import type { SessionSummary } from '../lib/api'
 import { QueuedComposerMessages, type QueuedMessage } from './QueuedComposerMessages'
 import { ComposerAttachments, type ComposerAttachment } from './ComposerAttachments'
-import { Paperclip } from 'lucide-react'
+import { Paperclip, Mic, MicOff } from 'lucide-react'
 interface ComposerProps {
   onSend: (query: string) => void
   activeSession: SessionSummary | null
@@ -16,8 +16,10 @@ export function Composer({ onSend, activeSession, onSteer, onCancel }: ComposerP
   const [queuedMessages, setQueuedMessages] = useState<QueuedMessage[]>([])
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([])
   const [isDragging, setIsDragging] = useState(false)
+  const [isListening, setIsListening] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const recognitionRef = useRef<unknown>(null)
   const isRunning = activeSession?.status === 'running'
   const wasRunningRef = useRef(isRunning)
   useEffect(() => {
@@ -37,6 +39,78 @@ export function Composer({ onSend, activeSession, onSteer, onCancel }: ComposerP
     }
     wasRunningRef.current = isRunning
   }, [isRunning, queuedMessages, onSend])
+
+  // Initialize Web Speech Recognition for hands-free dictation
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      interface SpeechWindow extends Window {
+        SpeechRecognition?: new () => {
+          continuous: boolean
+          interimResults: boolean
+          lang: string
+          start: () => void
+          stop: () => void
+          onresult: (e: { resultIndex: number; results: Array<Array<{ transcript: string }> & { isFinal?: boolean }> }) => void
+          onerror: () => void
+          onend: () => void
+        }
+        webkitSpeechRecognition?: new () => {
+          continuous: boolean
+          interimResults: boolean
+          lang: string
+          start: () => void
+          stop: () => void
+          onresult: (e: { resultIndex: number; results: Array<Array<{ transcript: string }> & { isFinal?: boolean }> }) => void
+          onerror: () => void
+          onend: () => void
+        }
+      }
+      const win = window as unknown as SpeechWindow
+      const SpeechConstructor = win.SpeechRecognition || win.webkitSpeechRecognition
+      if (SpeechConstructor) {
+        const recognition = new SpeechConstructor()
+        recognition.continuous = true
+        recognition.interimResults = true
+        recognition.lang = 'en-US'
+
+        recognition.onresult = (e) => {
+          let final = ''
+          for (let i = e.resultIndex; i < e.results.length; ++i) {
+            if (e.results[i]?.isFinal) {
+              final += e.results[i]?.[0]?.transcript || ''
+            }
+          }
+          if (final) {
+            setInput(prev => (prev ? `${prev} ${final.trim()}` : final.trim()))
+          }
+        }
+
+        recognition.onerror = () => setIsListening(false)
+        recognition.onend = () => setIsListening(false)
+        recognitionRef.current = recognition
+      }
+    }
+    return () => {
+      const rec = recognitionRef.current as { stop: () => void } | null
+      rec?.stop()
+    }
+  }, [])
+
+  const toggleListening = () => {
+    const rec = recognitionRef.current as { start: () => void; stop: () => void } | null
+    if (!rec) return
+    if (isListening) {
+      rec.stop()
+      setIsListening(false)
+    } else {
+      try {
+        rec.start()
+        setIsListening(true)
+      } catch {
+        setIsListening(false)
+      }
+    }
+  }
 
   const handleFiles = (files: FileList | File[]) => {
     Array.from(files).forEach(file => {
@@ -166,6 +240,14 @@ export function Composer({ onSend, activeSession, onSteer, onCancel }: ComposerP
         >
           <Paperclip size={16} />
         </button>
+        <button
+          type="button"
+          className={`composer-mic-btn ${isListening ? 'listening' : ''}`}
+          onClick={toggleListening}
+          title={isListening ? 'Stop voice dictation' : 'Start voice dictation (mic)'}
+        >
+          {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+        </button>
         <div className="composer-input-wrapper">
           <textarea
             ref={textareaRef}
@@ -174,11 +256,10 @@ export function Composer({ onSend, activeSession, onSteer, onCancel }: ComposerP
             onFocus={handleFocus}
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
-            placeholder={isRunning ? "Steer running agent with new instruction..." : "What would you like Fathom to accomplish? (Enter to send, Shift+Enter for newlines)"}
+            placeholder={isListening ? "Listening... speak your prompt..." : isRunning ? "Steer running agent with new instruction..." : "What would you like Fathom to accomplish? (Enter to send, Shift+Enter for newlines)"}
             rows={expanded ? 4 : 1}
           />
-
-        <div className="composer-actions">
+        </div>
           {isRunning ? (
             <>
               <button className="composer-btn primary" onClick={handleSubmit} disabled={!input.trim()}>
