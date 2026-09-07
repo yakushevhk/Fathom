@@ -97,14 +97,18 @@ pub async fn engine_request(
     path: String,
     body: Option<Value>,
 ) -> Result<Value, String> {
+    if !path.starts_with('/') || path.contains("..") || path.contains('\\') {
+        return Err("invalid proxy path: must start with / and cannot contain ..".to_string());
+    }
     let app = state.lock().await;
     let url = app.daemon.base_url().await.ok_or_else(|| "engine not running".to_string())?;
     let client = Client::new();
+    let target_url = format!("{url}{path}");
     let request = match method.to_uppercase().as_str() {
-        "GET" => client.get(format!("{url}{path}")),
-        "POST" => client.post(format!("{url}{path}")),
-        "PUT" => client.put(format!("{url}{path}")),
-        "DELETE" => client.delete(format!("{url}{path}")),
+        "GET" => client.get(&target_url),
+        "POST" => client.post(&target_url),
+        "PUT" => client.put(&target_url),
+        "DELETE" => client.delete(&target_url),
         other => return Err(format!("unsupported HTTP method: {other}")),
     };
     let request = if let Some(body) = body { request.json(&body) } else { request };
