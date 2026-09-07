@@ -15,7 +15,9 @@ pub struct SessionSummary {
     pub total_tokens: u64,
     #[serde(default)]
     pub total_agents: usize,
+    #[serde(default)]
     pub created_at: String,
+    #[serde(default)]
     pub updated_at: String,
     #[serde(default)]
     pub active: bool,
@@ -233,22 +235,33 @@ impl ApiClient {
         let url = format!("{}/api/v1/coworkers", self.base_url);
         let resp = self.http.get(&url).send().await?;
         if resp.status().is_success() {
-            let res = resp.json::<Vec<Coworker>>().await.unwrap_or_default();
-            Ok(res)
-        } else {
-            Ok(Vec::new())
+            #[derive(Deserialize)]
+            struct CoworkersResp {
+                coworkers: Vec<Coworker>,
+            }
+            if let Ok(res) = resp.json::<CoworkersResp>().await {
+                return Ok(res.coworkers);
+            }
         }
+        Ok(Vec::new())
     }
 
-    pub async fn list_channels(&self) -> Result<Vec<Channel>> {
-        let url = format!("{}/api/v1/channels", self.base_url);
+    pub async fn list_channels(&self, coworker_id: Option<&str>) -> Result<Vec<Channel>> {
+        let url = match coworker_id {
+            Some(cid) => format!("{}/api/v1/channels?coworker_id={}", self.base_url, cid),
+            None => format!("{}/api/v1/channels", self.base_url),
+        };
         let resp = self.http.get(&url).send().await?;
         if resp.status().is_success() {
-            let res = resp.json::<Vec<Channel>>().await.unwrap_or_default();
-            Ok(res)
-        } else {
-            Ok(Vec::new())
+            #[derive(Deserialize)]
+            struct ChannelsResp {
+                channels: Vec<Channel>,
+            }
+            if let Ok(res) = resp.json::<ChannelsResp>().await {
+                return Ok(res.channels);
+            }
         }
+        Ok(Vec::new())
     }
 
     pub async fn create_channel(&self, coworker_id: &str, title: &str) -> Result<Channel> {
@@ -266,8 +279,13 @@ impl ApiClient {
             Some(id) => format!("{}/api/v1/computers/{}/screenshot", self.base_url, id),
             None => format!("{}/api/v1/computers/screenshot", self.base_url),
         };
-        let resp = self.http.get(&url).send().await?.json::<ComputerScreenshotResponse>().await?;
-        Ok(resp)
+        let resp = self.http.get(&url).send().await?;
+        let bytes = resp.bytes().await?;
+        let b64 = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes);
+        Ok(ComputerScreenshotResponse {
+            image_base64: format!("data:image/png;base64,{b64}"),
+            url: String::new(),
+        })
     }
 
     pub async fn take_control(&self, agent_id: Option<&str>) -> Result<()> {
