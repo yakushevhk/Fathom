@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { SessionSummary } from '../lib/api'
+import { SidebarContextMenu } from './SidebarContextMenu'
 
 interface SidebarProps {
   sessions: SessionSummary[]
@@ -26,11 +27,19 @@ export function Sidebar({
   engineLoading,
   engineError,
 }: SidebarProps) {
-  const [search, setSearch] = useState('')
-  const normalizedSearch = search.trim().toLowerCase()
-  const visibleSessions = normalizedSearch
-    ? sessions.filter(session => `${session.query} ${session.id} ${session.status}`.toLowerCase().includes(normalizedSearch))
-    : sessions
+  const [pinnedIds, setPinnedIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem('fathom_pinned_sessions')
+    return saved ? JSON.parse(saved) : []
+  })
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; session: SessionSummary } | null>(null)
+
+  useEffect(() => {
+    localStorage.setItem('fathom_pinned_sessions', JSON.stringify(pinnedIds))
+  }, [pinnedIds])
+
+  const togglePin = (id: string) => {
+    setPinnedIds(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [id, ...prev]))
+  }
 
   return (
     <aside className="sidebar">
@@ -89,40 +98,87 @@ export function Sidebar({
           </div>
         )}
 
-        {visibleSessions.map(s => (
-          <div
-            key={s.id}
-            className={`session-item ${activeSession?.id === s.id ? 'active' : ''}`}
-          >
-            <button
-              type="button"
-              className="session-row-select"
-              onClick={() => onSelect(s)}
-              aria-current={activeSession?.id === s.id ? 'true' : undefined}
-            >
-              <span className={`session-status ${s.status}`} />
-              <span className="session-info">
-                <span className="session-title">{s.query || 'Untitled'}</span>
-                <span className="session-meta">{s.id.slice(0, 8)}</span>
-              </span>
-            </button>
-            <button
-              className="titlebar-btn"
-              onClick={() => onCancel(s.id)}
-              title="Cancel worker session"
-              aria-label={`Cancel ${s.query || 'worker session'}`}
-              style={{ opacity: 0.5, fontSize: 12 }}
-            >
-              &times;
-            </button>
-          </div>
-        ))}
+        {/* Pinned / Sorted sessions */}
+        {(() => {
+          const pinned = visibleSessions.filter(s => pinnedIds.includes(s.id))
+          const unpinned = visibleSessions.filter(s => !pinnedIds.includes(s.id))
+          const sorted = [...pinned, ...unpinned]
+
+          return sorted.map(s => {
+            const isPinned = pinnedIds.includes(s.id)
+            return (
+              <div
+                key={s.id}
+                className={`session-item ${activeSession?.id === s.id ? 'active' : ''} ${isPinned ? 'pinned' : ''}`}
+                onContextMenu={e => {
+                  e.preventDefault()
+                  setContextMenu({ x: e.clientX, y: e.clientY, session: s })
+                }}
+              >
+                <button
+                  type="button"
+                  className="session-row-select"
+                  onClick={() => onSelect(s)}
+                  aria-current={activeSession?.id === s.id ? 'true' : undefined}
+                >
+                  <span className={`session-status ${s.status}`} />
+                  <span className="session-info">
+                    <span className="session-title">
+                      {isPinned && <span className="pin-indicator" title="Pinned session">📌 </span>}
+                      {s.query || 'Untitled'}
+                    </span>
+                    <span className="session-meta">{s.id.slice(0, 8)}</span>
+                  </span>
+                </button>
+                <button
+                  className="titlebar-btn"
+                  onClick={() => onCancel(s.id)}
+                  title="Cancel worker session"
+                  aria-label={`Cancel ${s.query || 'worker session'}`}
+                  style={{ opacity: 0.5, fontSize: 12 }}
+                >
+                  &times;
+                </button>
+              </div>
+            )
+          })
+        })()}
         {visibleSessions.length === 0 && sessions.length > 0 && (
           <div className="flex-center" style={{ padding: 24, color: 'var(--fg-tertiary)', fontSize: 12 }}>
             No matching worker sessions
           </div>
         )}
       </div>
+      {contextMenu && (
+        <SidebarContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          session={contextMenu.session}
+          isPinned={pinnedIds.includes(contextMenu.session.id)}
+          onPin={togglePin}
+          onRename={(id) => {
+            const newName = prompt('Enter new session title:', contextMenu.session.query)
+            if (newName) {
+              contextMenu.session.query = newName
+            }
+          }}
+          onCopyId={(id) => {
+            navigator.clipboard.writeText(id)
+          }}
+          onExport={(id) => {
+            const text = `# Fathom Session ${id}\n\nTask: ${contextMenu.session.query}\nStatus: ${contextMenu.session.status}\n`
+            const blob = new Blob([text], { type: 'text/markdown' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `fathom-session-${id.slice(0, 8)}.md`
+            a.click()
+            URL.revokeObjectURL(url)
+          }}
+          onDelete={onCancel}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </aside>
   )
 }

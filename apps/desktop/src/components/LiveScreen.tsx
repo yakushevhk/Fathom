@@ -125,7 +125,21 @@ export function LiveScreen({ baseUrl = '/api/v1/computers' }: LiveScreenProps) {
         </span>
       </div>
 
-      <div className="screen-frame">
+      <div
+        className={`screen-frame ${humanControl ? 'interactive' : ''}`}
+        onClick={(e) => {
+          if (!displayImage) return
+          const rect = e.currentTarget.getBoundingClientRect()
+          const relX = e.clientX - rect.left
+          const relY = e.clientY - rect.top
+          const normX = Math.round((relX / rect.width) * 1280)
+          const normY = Math.round((relY / rect.height) * 800)
+          void api.computer.action('click', { x: normX, y: normY }, baseUrl)
+            .then(() => refresh())
+            .catch(cause => setError(cause instanceof Error ? cause.message : 'Click action failed'))
+        }}
+        title={humanControl ? "Click directly on the screen to interact with the browser" : "Take control to interact directly with the screen"}
+      >
         {displayImage ? (
           <img src={displayImage} alt={snapshot?.title ? `Live screen: ${snapshot.title}` : 'Live computer screen'} />
         ) : (
@@ -133,6 +147,11 @@ export function LiveScreen({ baseUrl = '/api/v1/computers' }: LiveScreenProps) {
             <span className="screen-grid" aria-hidden="true" />
             <strong>{surfaceState === 'offline' ? 'No signal' : 'Waiting for a frame'}</strong>
             <span>{surfaceState === 'offline' ? 'The computer service will reconnect automatically.' : 'The first screenshot is arriving.'}</span>
+          </div>
+        )}
+        {humanControl && (
+          <div className="interactive-overlay-badge">
+            Direct Click & Canvas Forwarding Active
           </div>
         )}
         <div className="screen-corner screen-corner-tl" aria-hidden="true" />

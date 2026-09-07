@@ -11,7 +11,9 @@ import { ApprovalModeSelector, type ApprovalMode } from './components/ApprovalMo
 import { ModelPicker, type EffortLevel, AVAILABLE_MODELS } from './components/ModelPicker'
 import { RoutinesPanel } from './components/RoutinesPanel'
 import { ArtifactsDrawer } from './components/ArtifactsDrawer'
-import { useEngine } from './hooks/useEngine'
+import { McpServersPanel } from './components/McpServersPanel'
+import { CallView } from './components/CallView'
+import { Phone } from 'lucide-react'
 import { useSessions } from './hooks/useSessions'
 import { api, type SessionSummary } from './lib/api'
 export default function App() {
@@ -21,9 +23,9 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
   const [showRightPane, setShowRightPane] = useState(false)
-  const [rightTab, setRightTab] = useState<'details' | 'computer' | 'governance' | 'routines' | 'artifacts'>('computer')
+  const [showCallView, setShowCallView] = useState(false)
+  const [rightTab, setRightTab] = useState<'details' | 'computer' | 'governance' | 'routines' | 'artifacts' | 'mcp'>('computer')
   const [approvalMode, setApprovalMode] = useState<ApprovalMode>('auto')
-  const [selectedModel, setSelectedModel] = useState<string>(AVAILABLE_MODELS[0].id)
   const [effortLevel, setEffortLevel] = useState<EffortLevel>('none')
   // Global keyboard shortcuts (⌘K for palette, ⌘B for sidebar/right pane, ⌘N for new task)
   useEffect(() => {
@@ -67,10 +69,16 @@ export default function App() {
     }
   }
 
-  return (
     <div className="app-shell">
       <div className="titlebar">
         <div className="titlebar-actions">
+          <button
+            className={`titlebar-btn ${showCallView ? 'active-call' : ''}`}
+            onClick={() => setShowCallView(!showCallView)}
+            title="Start Fullscreen Voice Call Mode"
+          >
+            <Phone size={14} />
+          </button>
           <button className="titlebar-btn" onClick={() => setShowPalette(true)} title="Quick Search & Switcher (⌘K)">
             <span style={{ fontSize: 13, fontWeight: 'bold' }}>⌘K</span>
           </button>
@@ -82,6 +90,7 @@ export default function App() {
           </button>
         </div>
         <div className="titlebar-drag" />
+        <span className="engine-badge" data-phase={status.phase}>
           <span className={`status-dot ${status.phase === 'running' ? 'running' : status.phase === 'error' ? 'error' : 'stopped'}`} />
           {status.phase === 'running' ? 'Engine Online' : status.phase === 'starting' ? 'Starting...' : 'Engine Offline'}
         </span>
@@ -160,6 +169,7 @@ export default function App() {
                 <button className={rightTab === 'computer' ? 'selected' : ''} onClick={() => setRightTab('computer')} role="tab" aria-selected={rightTab === 'computer'}>Computer</button>
                 <button className={rightTab === 'governance' ? 'selected' : ''} onClick={() => setRightTab('governance')} role="tab" aria-selected={rightTab === 'governance'}>Guardrails</button>
                 <button className={rightTab === 'routines' ? 'selected' : ''} onClick={() => setRightTab('routines')} role="tab" aria-selected={rightTab === 'routines'}>Routines</button>
+                <button className={rightTab === 'mcp' ? 'selected' : ''} onClick={() => setRightTab('mcp')} role="tab" aria-selected={rightTab === 'mcp'}>MCP</button>
                 <button className={rightTab === 'artifacts' ? 'selected' : ''} onClick={() => setRightTab('artifacts')} role="tab" aria-selected={rightTab === 'artifacts'}>Artifacts</button>
                 <button className={rightTab === 'details' ? 'selected' : ''} onClick={() => setRightTab('details')} role="tab" aria-selected={rightTab === 'details'}>Session</button>
               </div>
@@ -169,9 +179,11 @@ export default function App() {
               {rightTab === 'computer' && <LiveScreen />}
               {rightTab === 'governance' && <GovernancePanel />}
               {rightTab === 'routines' && <RoutinesPanel onTriggerRoutine={handleNewSession} />}
+              {rightTab === 'mcp' && <McpServersPanel />}
               {rightTab === 'artifacts' && <ArtifactsDrawer session={activeSession} />}
               {rightTab === 'details' && (activeSession ? <SessionDetails session={activeSession} /> : <p className="text-muted">Select a session to view details</p>)}
             </div>
+          </div>
         )}
       </div>
 
@@ -179,6 +191,21 @@ export default function App() {
         status={status}
         activeSession={activeSession}
       />
+      {showCallView && (
+        <CallView
+          agentName={activeSession?.query?.slice(0, 30) || 'Fathom Assistant'}
+          lastAssistantMessage={activeSession?.query}
+          onEndCall={() => setShowCallView(false)}
+          onSendUtterance={text => {
+            if (activeSession) {
+              void api.sessions.steer(activeSession.id, text).catch(() => undefined)
+            } else {
+              handleNewSession(text)
+            }
+          }}
+        />
+      )}
+
       <CommandPalette
         open={showPalette}
         onClose={() => setShowPalette(false)}
