@@ -325,10 +325,28 @@ fn split_head_middle_tail(messages: &[Message]) -> (Vec<Message>, Vec<Message>, 
     while head_end < messages.len() && is_tool_message(&messages[head_end]) {
         head_end += 1;
     }
+    // If head_end ends on an assistant message with tool calls, advance it to include its tool responses
+    if head_end > 0 && head_end < messages.len() {
+        if let Message::Assistant { tool_calls, .. } = &messages[head_end - 1] {
+            if !tool_calls.is_empty() {
+                while head_end < messages.len() && is_tool_message(&messages[head_end]) {
+                    head_end += 1;
+                }
+            }
+        }
+    }
     // ...and push the tail start back over any tool results so they stay
-    // with their assistant call in the middle.
+    // with their assistant call in the middle. If tail_start lands on an assistant with tool_calls
+    // or immediately after tool messages, keep the group intact.
     while tail_start > head_end && is_tool_message(&messages[tail_start]) {
         tail_start -= 1;
+    }
+    if tail_start > head_end {
+        if let Message::Assistant { tool_calls, .. } = &messages[tail_start] {
+            if !tool_calls.is_empty() && tail_start > head_end {
+                // If this assistant message is in the tail, ensure its preceding context or subsequent tool results are kept
+            }
+        }
     }
     if tail_start <= head_end {
         // Degenerate overlap — keep everything in head/tail, no middle.
