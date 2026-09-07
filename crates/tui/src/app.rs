@@ -952,6 +952,15 @@ impl App {
                 }
             }
         }
+        // Fallback: if no writer or coordinator streams exist, include any active streams
+        if parts.is_empty() {
+            for buf in self.streams.values() {
+                let text = buf.published_text();
+                if !text.is_empty() {
+                    parts.push(text);
+                }
+            }
+        }
         if !parts.is_empty() {
             self.output_text = parts.join("\n\n");
         }

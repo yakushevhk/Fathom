@@ -303,7 +303,10 @@ impl Render for Composer {
                     this.show_agent_suggestions = false;
                     this.show_command_suggestions = false;
                     cx.notify();
-                } else if keystroke.len() == 1 {
+                } else if keystroke == "space" {
+                    this.input_text.push(' ');
+                    cx.notify();
+                } else if keystroke.chars().count() == 1 {
                     if let Some(ch) = keystroke.chars().next() {
                         this.input_text.push(ch);
                         cx.notify();
