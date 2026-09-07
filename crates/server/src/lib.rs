@@ -896,6 +896,12 @@ fn spawn_session(
                 if let Ok(mut map) = self.state.active_sessions.lock() {
                     map.remove(&self.session_id.0);
                 }
+                if let Ok(mut controls) = self.state.pending_controls.lock() {
+                    let sid = self.session_id.0.clone();
+                    controls.retain(|_, v| match v {
+                        PendingControl::Question { session_id, .. } | PendingControl::Approval { session_id, .. } => session_id != &sid,
+                    });
+                }
             }
         }
         let _cleanup = SessionCleanup {
