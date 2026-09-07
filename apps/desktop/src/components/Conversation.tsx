@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { connectSSE, api, type SessionSummary, type AgentEvent } from '../lib/api'
+import { ChatFindBar } from './ChatFindBar'
 
 interface ConversationProps {
   activeSession: SessionSummary | null
@@ -24,7 +25,34 @@ export function Conversation({ activeSession, engineUrl }: ConversationProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
   const [autoScroll, setAutoScroll] = useState(true)
+  const [showFindBar, setShowFindBar] = useState(false)
+  const [findQuery, setFindQuery] = useState('')
+  const [findMatchIndex, setFindMatchIndex] = useState(0)
 
+  // ⌘F shortcut handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') {
+        e.preventDefault()
+        setShowFindBar(true)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  // Find matching message IDs
+  const matchingIndices = useMemo(() => {
+    const q = findQuery.trim().toLowerCase()
+    if (!q) return []
+    const indices: number[] = []
+    messages.forEach((m, idx) => {
+      if (m.content.toLowerCase().includes(q)) {
+        indices.push(idx)
+      }
+    })
+    return indices
+  }, [messages, findQuery])
   // SSE connection for live events
   useEffect(() => {
     if (!activeSession || !engineUrl) {
@@ -110,8 +138,33 @@ export function Conversation({ activeSession, engineUrl }: ConversationProps) {
   }
 
   return (
-    <div className="conversation-view" ref={scrollRef} onScroll={handleScroll}>
-      {/* Session header */}
+    <div className="conversation-wrapper">
+      {showFindBar && (
+        <ChatFindBar
+          query={findQuery}
+          onQueryChange={q => {
+            setFindQuery(q)
+            setFindMatchIndex(0)
+          }}
+          onClose={() => {
+            setShowFindBar(false)
+            setFindQuery('')
+          }}
+          totalMatches={matchingIndices.length}
+          currentIndex={findMatchIndex}
+          onNext={() => {
+            if (matchingIndices.length) {
+              setFindMatchIndex(i => (i + 1) % matchingIndices.length)
+            }
+          }}
+          onPrev={() => {
+            if (matchingIndices.length) {
+              setFindMatchIndex(i => (i - 1 + matchingIndices.length) % matchingIndices.length)
+            }
+          }}
+        />
+      )}
+      <div className="conversation-view" ref={scrollRef} onScroll={handleScroll}>
       <div className="message" style={{ opacity: 0.6 }}>
         <div className="message-header">
           <span className="message-role system">Session</span>
@@ -178,6 +231,7 @@ export function Conversation({ activeSession, engineUrl }: ConversationProps) {
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }

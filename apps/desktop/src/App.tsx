@@ -6,18 +6,38 @@ import { StatusStrip } from './components/StatusStrip'
 import { LiveScreen } from './components/LiveScreen'
 import { GovernancePanel } from './components/GovernancePanel'
 import { CoworkerRail } from './components/CoworkerRail'
+import { CommandPalette } from './components/CommandPalette'
+import { ApprovalModeSelector, type ApprovalMode } from './components/ApprovalModeSelector'
 import { useEngine } from './hooks/useEngine'
 import { useSessions } from './hooks/useSessions'
 import { api, type SessionSummary } from './lib/api'
-
 export default function App() {
   const { status, loading: engineLoading, error: engineError, start, stop } = useEngine()
   const { sessions, loading: sessionsLoading, create, cancel } = useSessions(status.running)
   const [activeSession, setActiveSession] = useState<SessionSummary | null>(null)
   const [showSettings, setShowSettings] = useState(false)
+  const [showPalette, setShowPalette] = useState(false)
   const [showRightPane, setShowRightPane] = useState(false)
   const [rightTab, setRightTab] = useState<'details' | 'computer' | 'governance'>('computer')
+  const [approvalMode, setApprovalMode] = useState<ApprovalMode>('auto')
 
+  // Global keyboard shortcuts (⌘K for palette, ⌘B for sidebar/right pane, ⌘N for new task)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setShowPalette(p => !p)
+      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault()
+        setShowRightPane(r => !r)
+      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === ',') {
+        e.preventDefault()
+        setShowSettings(s => !s)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
   useEffect(() => {
     setActiveSession(current => current ? sessions.find(session => session.id === current.id) ?? null : current)
   }, [sessions])
@@ -47,20 +67,24 @@ export default function App() {
     <div className="app-shell">
       <div className="titlebar">
         <div className="titlebar-actions">
-          <button className="titlebar-btn" onClick={() => setShowSettings(!showSettings)} title="Settings">
+          <button className="titlebar-btn" onClick={() => setShowPalette(true)} title="Quick Search & Switcher (⌘K)">
+            <span style={{ fontSize: 13, fontWeight: 'bold' }}>⌘K</span>
+          </button>
+          <button className="titlebar-btn" onClick={() => setShowSettings(!showSettings)} title="Settings (⌘,)">
             &#9881;
           </button>
-          <button className="titlebar-btn" onClick={() => setShowRightPane(!showRightPane)} title="Toggle right pane">
+          <button className="titlebar-btn" onClick={() => setShowRightPane(!showRightPane)} title="Toggle right pane (⌘B)">
             &#9776;
           </button>
         </div>
         <div className="titlebar-drag" />
-        <span className="engine-badge" data-phase={status.phase}>
           <span className={`status-dot ${status.phase === 'running' ? 'running' : status.phase === 'error' ? 'error' : 'stopped'}`} />
           {status.phase === 'running' ? 'Engine Online' : status.phase === 'starting' ? 'Starting...' : 'Engine Offline'}
         </span>
+        <div className="titlebar-mode-picker">
+          <ApprovalModeSelector currentMode={approvalMode} onChange={setApprovalMode} compact />
+        </div>
       </div>
-
       <div className="app-body">
         <CoworkerRail
           sessions={sessions}
@@ -140,6 +164,25 @@ export default function App() {
       <StatusStrip
         status={status}
         activeSession={activeSession}
+      />
+      <CommandPalette
+        open={showPalette}
+        onClose={() => setShowPalette(false)}
+        sessions={sessions}
+        activeSession={activeSession}
+        onSelectSession={setActiveSession}
+        onNewSession={() => {
+          const input = prompt('Enter query for new worker session:')
+          if (input) handleNewSession(input)
+        }}
+        onToggleSettings={() => setShowSettings(s => !s)}
+        onToggleRightPane={() => setShowRightPane(r => !r)}
+        onOpenChannel={channel => {
+          if (channel === 'computer') { setShowRightPane(true); setRightTab('computer') }
+          if (channel === 'governance') { setShowRightPane(true); setRightTab('governance') }
+          if (channel === 'overview') { setShowRightPane(true); setRightTab('details') }
+          if (channel === 'workers') { setShowRightPane(false) }
+        }}
       />
     </div>
   )
