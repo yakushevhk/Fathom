@@ -57,17 +57,16 @@ impl HostSandbox {
 
         #[cfg(target_os = "macos")]
         {
+            let esc = |s: &str| s.replace('\\', "\\\\").replace('"', "\\\"");
+            let esc_prog = esc(program);
+            let esc_ws = esc(&self.workspace_root.display().to_string());
+            let write_rule = if self.read_only_root {
+                "(allow file-write* (subpath \"/tmp\"))".to_string()
+            } else {
+                format!("(allow file-write* (subpath \"/tmp\") (subpath \"{esc_ws}\"))")
+            };
             let profile = format!(
-                "(version 1)
-(deny default)
-(allow process-exec (literal \"/bin/sh\") (literal \"/bin/bash\") (literal \"/usr/bin/git\") (literal \"/usr/bin/cargo\") (literal \"{}\"))
-(allow file-read* (subpath \"/usr\") (subpath \"/bin\") (subpath \"/Library\") (subpath \"/System\") (subpath \"{}\"))
-(allow file-write* (subpath \"/tmp\") (subpath \"{}\"))
-{}
-",
-                program,
-                self.workspace_root.display(),
-                self.workspace_root.display(),
+                "(version 1)\n(deny default)\n(allow process-exec (literal \"/bin/sh\") (literal \"/bin/bash\") (literal \"/usr/bin/git\") (literal \"/usr/bin/cargo\") (literal \"{esc_prog}\"))\n(allow file-read* (subpath \"/usr\") (subpath \"/bin\") (subpath \"/Library\") (subpath \"/System\") (subpath \"{esc_ws}\"))\n{write_rule}\n{}\n",
                 if self.allow_network { "(allow network*)" } else { "(deny network*)" }
             );
 

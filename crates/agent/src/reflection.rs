@@ -187,19 +187,32 @@ fn parse_patterns(raw: &str) -> Vec<PatternRow> {
         if !t.starts_with('|') || t.starts_with("| Error") || t.starts_with("|---") {
             continue;
         }
-        let cells: Vec<&str> = t
-            .trim_start_matches('|')
-            .trim_end_matches('|')
-            .split('|')
-            .map(|c| c.trim())
-            .collect();
+        // Split row by '|' while respecting backslash escapes '\|'
+        let mut cells = Vec::new();
+        let mut cur = String::new();
+        let mut escaped = false;
+        for ch in t.trim_matches('|').chars() {
+            if escaped {
+                cur.push(ch);
+                escaped = false;
+            } else if ch == '\\' {
+                escaped = true;
+            } else if ch == '|' {
+                cells.push(cur.trim().to_string());
+                cur.clear();
+            } else {
+                cur.push(ch);
+            }
+        }
+        cells.push(cur.trim().to_string());
+
         if cells.len() >= 5 {
             out.push(PatternRow {
-                class: cells[0].replace("\\|", "|"),
+                class: cells[0].clone(),
                 count: cells[1].parse().unwrap_or(1),
-                root_cause: cells[2].to_string(),
-                structural_fix: cells[3].to_string(),
-                status: cells[4].to_string(),
+                root_cause: cells[2].clone(),
+                structural_fix: cells[3].clone(),
+                status: cells[4].clone(),
             });
         }
     }
