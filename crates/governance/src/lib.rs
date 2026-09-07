@@ -120,13 +120,44 @@ fn rule_matches(rule: &PolicyRule, action: &ActionContext) -> bool {
         && rule.intent.as_deref().is_none_or(|v| action.intent.as_deref().is_some_and(|i| glob_match(v, i)))
 }
 
+fn normalize_path(raw: &str) -> String {
+    let path = std::path::Path::new(raw);
+    let mut components = Vec::new();
+    for c in path.components() {
+        match c {
+            std::path::Component::Prefix(p) => components.push(p.as_os_str().to_string_lossy().into_owned()),
+            std::path::Component::RootDir => components.push("".to_string()),
+            std::path::Component::CurDir => {}
+            std::path::Component::ParentDir => {
+                if !components.is_empty() && components.last().map(|s| s.as_str()) != Some("") {
+                    components.pop();
+                }
+            }
+            std::path::Component::Normal(s) => components.push(s.to_string_lossy().into_owned()),
+        }
+    }
+    if components.is_empty() {
+        return ".".to_string();
+    }
+    if components.len() == 1 && components[0].is_empty() {
+        return "/".to_string();
+    }
+    components.join("/")
+}
+
 fn path_matches(expected: &str, action: &ActionContext) -> bool {
+    let norm_expected = normalize_path(expected);
     if let Some(file) = action.file.as_deref() {
-        if glob_match(expected, file) { return true; }
+        if glob_match(expected, file) || glob_match(&norm_expected, &normalize_path(file)) {
+            return true;
+        }
     }
     let Some(url) = action.url.as_deref() else { return false; };
     if glob_match(expected, url) { return true; }
-    url::Url::parse(url).ok().is_some_and(|parsed| glob_match(expected, parsed.path()))
+    url::Url::parse(url).ok().is_some_and(|parsed| {
+        let p = parsed.path();
+        glob_match(expected, p) || glob_match(&norm_expected, &normalize_path(p))
+    })
 }
 
 fn host_matches(expected: &str, url: &str) -> bool {

@@ -40,37 +40,48 @@ pub async fn ws_handler(
 async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
     let (mut sender, mut receiver) = socket.split();
     let mut event_rx = state.event_tx.subscribe();
+    let (pong_tx, mut pong_rx) = tokio::sync::mpsc::channel::<WsServerMessage>(16);
 
-    // Spawn task forwarding internal broadcast events to WebSocket client with recursive secret redaction
+    // Spawn task forwarding internal broadcast events and pongs to WebSocket client
     let mut send_task = tokio::spawn(async move {
         loop {
-            match event_rx.recv().await {
-                Ok(event) => {
-                    if let Ok(json_val) = serde_json::to_value(&event) {
-                        // Apply universal recursive secret redaction to all outbound WebSocket frames
-                        let json_val = pr_governance::redact_secrets(&json_val);
-                        let msg = WsServerMessage::Event { payload: json_val };
-                        if let Ok(serialized) = serde_json::to_string(&msg) {
-                            if sender.send(Message::Text(serialized)).await.is_err() {
-                                break;
-                            }
-                        }
-                    }
-                }
-                Err(tokio::sync::broadcast::error::RecvError::Lagged(count)) => {
-                    tracing::warn!("WebSocket subscriber lagged by {count} events, sending sync_required frame");
-                    let sync_msg = serde_json::json!({
-                        "type": "sync_required",
-                        "skipped_events": count
-                    });
-                    if let Ok(serialized) = serde_json::to_string(&sync_msg) {
+            tokio::select! {
+                Some(server_msg) = pong_rx.recv() => {
+                    if let Ok(serialized) = serde_json::to_string(&server_msg) {
                         if sender.send(Message::Text(serialized)).await.is_err() {
                             break;
                         }
                     }
-                    continue;
                 }
-                Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
+                recv_res = event_rx.recv() => {
+                    match recv_res {
+                        Ok(event) => {
+                            if let Ok(json_val) = serde_json::to_value(&event) {
+                                let json_val = pr_governance::redact_secrets(&json_val);
+                                let msg = WsServerMessage::Event { payload: json_val };
+                                if let Ok(serialized) = serde_json::to_string(&msg) {
+                                    if sender.send(Message::Text(serialized)).await.is_err() {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        Err(tokio::sync::broadcast::error::RecvError::Lagged(count)) => {
+                            tracing::warn!("WebSocket subscriber lagged by {count} events, sending sync_required frame");
+                            let sync_msg = serde_json::json!({
+                                "type": "sync_required",
+                                "skipped_events": count
+                            });
+                            if let Ok(serialized) = serde_json::to_string(&sync_msg) {
+                                if sender.send(Message::Text(serialized)).await.is_err() {
+                                    break;
+                                }
+                            }
+                            continue;
+                        }
+                        Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
+                    }
+                }
             }
         }
     });
@@ -83,20 +94,22 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
                     if let Ok(client_msg) = serde_json::from_str::<WsClientMessage>(&text) {
                         match client_msg {
                             WsClientMessage::Ping => {
-                                // handle heartbeat
+                                let _ = pong_tx.send(WsServerMessage::Pong).await;
                             }
                             WsClientMessage::Subscribe { .. } => {
-                                // handle session-filtered subscription
+                                // Subscription tracking can be filtered per session
                             }
                         }
                     }
+                }
+                Message::Ping(_) => {
+                    let _ = pong_tx.send(WsServerMessage::Pong).await;
                 }
                 Message::Close(_) => break,
                 _ => {}
             }
         }
     });
-
     // Terminate when either direction closes
     tokio::select! {
         _ = (&mut send_task) => recv_task.abort(),

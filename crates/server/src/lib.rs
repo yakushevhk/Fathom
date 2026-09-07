@@ -355,7 +355,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/notifications/test", post(notifications_api::test))
         .route("/credentials", get(credentials_api::list).post(credentials_api::store))
         .route("/credentials/:id", axum::routing::delete(credentials_api::delete))
-        .route("/webhooks/inbound", post(webhooks::handle_inbound_webhook))
+
         .route("/ws", get(ws::ws_handler))
         .route("/openapi.json", get(openapi::openapi_spec))
         .route("/ag-ui/events", get(agui::events))
@@ -462,7 +462,9 @@ pub fn build_router(state: Arc<AppState>) -> Router {
             state.clone(),
             rate_limit_middleware,
         ))
-        .layer(middleware::from_fn_with_state(state.clone(), auth_middleware));
+        .layer(middleware::from_fn_with_state(state.clone(), auth_middleware))
+        // Inbound webhooks are HMAC signed by providers (GitHub, Stripe) rather than API-key bearing
+        .route("/webhooks/inbound", post(webhooks::handle_inbound_webhook));
 
     Router::new()
         .nest("/api/v1", api)
