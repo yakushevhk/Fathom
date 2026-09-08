@@ -134,7 +134,7 @@ fn default_replan_rounds() -> u32 { 1 }
 fn default_approval_tools() -> Vec<String> {
     vec!["save_contacts".to_string(), "git_push".to_string()]
 }
-fn default_approval_fallback() -> String { "allow".to_string() }
+fn default_approval_fallback() -> String { "deny".to_string() }
 fn default_approval_timeout() -> u64 { 300 }
 
 impl Default for AgentConfig {

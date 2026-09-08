@@ -22,39 +22,44 @@ pub async fn handle_inbound_webhook(
     State(state): State<Arc<AppState>>,
     raw_body: axum::body::Bytes,
 ) -> impl IntoResponse {
-    // Verify source-specific signatures if secret is configured
-    if let Ok(secret) = std::env::var("FATHOM_WEBHOOK_SECRET") {
-        if !secret.is_empty() {
-            let sig = headers.get("x-fathom-signature")
-                .or_else(|| headers.get("x-hub-signature-256"))
-                .and_then(|v| v.to_str().ok());
-            
-            let Some(sig_str) = sig else {
-                return (StatusCode::UNAUTHORIZED, Json(serde_json::json!({
-                    "error": "Missing webhook signature header"
-                }))).into_response();
-            };
-
-            // Clean sha256= prefix if present
-            let hex_sig = sig_str.strip_prefix("sha256=").unwrap_or(sig_str);
-
-            use ring::hmac;
-            let s_key = hmac::Key::new(hmac::HMAC_SHA256, secret.as_bytes());
-            let Ok(provided_bytes) = hex::decode(hex_sig.trim()) else {
-                return (StatusCode::UNAUTHORIZED, Json(serde_json::json!({
-                    "error": "Invalid webhook signature format"
-                }))).into_response();
-            };
-
-            // Verify against raw canonical payload bytes to avoid JSON re-serialization differences
-            if hmac::verify(&s_key, &raw_body, &provided_bytes).is_err() {
-                return (StatusCode::UNAUTHORIZED, Json(serde_json::json!({
-                    "error": "Invalid webhook signature"
-                }))).into_response();
-            }
+    // Webhooks must be authenticated via HMAC signature with FATHOM_WEBHOOK_SECRET.
+    let secret = match std::env::var("FATHOM_WEBHOOK_SECRET") {
+        Ok(s) if !s.trim().is_empty() => s,
+        _ => {
+            tracing::error!("Inbound webhook rejected: FATHOM_WEBHOOK_SECRET is not configured");
+            return (StatusCode::SERVICE_UNAVAILABLE, Json(serde_json::json!({
+                "error": "Inbound webhooks are disabled: FATHOM_WEBHOOK_SECRET is not configured"
+            }))).into_response();
         }
-    }
+    };
 
+    let sig = headers.get("x-fathom-signature")
+        .or_else(|| headers.get("x-hub-signature-256"))
+        .and_then(|v| v.to_str().ok());
+    
+    let Some(sig_str) = sig else {
+        return (StatusCode::UNAUTHORIZED, Json(serde_json::json!({
+            "error": "Missing webhook signature header"
+        }))).into_response();
+    };
+
+    // Clean sha256= prefix if present
+    let hex_sig = sig_str.strip_prefix("sha256=").unwrap_or(sig_str);
+
+    use ring::hmac;
+    let s_key = hmac::Key::new(hmac::HMAC_SHA256, secret.as_bytes());
+    let Ok(provided_bytes) = hex::decode(hex_sig.trim()) else {
+        return (StatusCode::UNAUTHORIZED, Json(serde_json::json!({
+            "error": "Invalid webhook signature format"
+        }))).into_response();
+    };
+
+    // Verify against raw canonical payload bytes to avoid JSON re-serialization differences
+    if hmac::verify(&s_key, &raw_body, &provided_bytes).is_err() {
+        return (StatusCode::UNAUTHORIZED, Json(serde_json::json!({
+            "error": "Invalid webhook signature"
+        }))).into_response();
+    }
     let body: InboundWebhookPayload = match serde_json::from_slice(&raw_body) {
         Ok(p) => p,
         Err(e) => {
