@@ -155,10 +155,21 @@ impl ComputerSupervisor {
             labels: Some(labels),
             exposed_ports: Some(exposed),
             healthcheck: Some(HealthConfig { test: Some(vec!["CMD-SHELL".into(), format!("node -e \"fetch('http://127.0.0.1:{}/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\"", self.config.container_port)]), interval: Some(5_000_000_000), timeout: Some(2_000_000_000), retries: Some(3), start_period: Some(10_000_000_000), start_interval: None }),
-            host_config: Some(HostConfig { network_mode: Some(self.config.network.clone()), port_bindings: Some(bindings), mounts: Some(vec![
-                Mount { target: Some(VOLUME_ROOT.into()), source: Some(names.workspace_volume.clone()), typ: Some(MountTypeEnum::VOLUME), read_only: Some(false), ..Default::default() },
-                Mount { target: Some(PROFILE_ROOT.into()), source: Some(names.profile_volume.clone()), typ: Some(MountTypeEnum::VOLUME), read_only: Some(false), ..Default::default() },
-            ]), cap_drop: Some(vec!["ALL".into()]), security_opt: Some(vec!["no-new-privileges:true".into()]), ..Default::default() }),
+            host_config: Some(HostConfig {
+                network_mode: Some(self.config.network.clone()),
+                port_bindings: Some(bindings),
+                mounts: Some(vec![
+                    Mount { target: Some(VOLUME_ROOT.into()), source: Some(names.workspace_volume.clone()), typ: Some(MountTypeEnum::VOLUME), read_only: Some(false), ..Default::default() },
+                    Mount { target: Some(PROFILE_ROOT.into()), source: Some(names.profile_volume.clone()), typ: Some(MountTypeEnum::VOLUME), read_only: Some(false), ..Default::default() },
+                ]),
+                cap_drop: Some(vec!["ALL".into()]),
+                security_opt: Some(vec!["no-new-privileges:true".into()]),
+                memory: Some(2 * 1024 * 1024 * 1024), // 2 GB hard limit
+                memory_swap: Some(2 * 1024 * 1024 * 1024), // Disable swap extension
+                nano_cpus: Some(2_000_000_000), // 2 CPUs
+                pids_limit: Some(512), // Prevent fork-bombs
+                ..Default::default()
+            }),
             ..Default::default()
         };
         self.with_timeout(self.docker.create_container(Some(CreateContainerOptions { name: &names.container, platform: None }), config)).await?;

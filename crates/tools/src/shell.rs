@@ -119,12 +119,14 @@ Runs the given command in `bash` within the working directory. Returns combined 
             )));
         }
 
+        let mut cmd = tokio::process::Command::new("bash");
+        cmd.args(["-c", &params.command])
+            .current_dir(&ctx.working_dir)
+            .kill_on_drop(true);
+
         let output = tokio::time::timeout(
             std::time::Duration::from_secs(params.timeout),
-            tokio::process::Command::new("bash")
-                .args(["-c", &params.command])
-                .current_dir(&ctx.working_dir)
-                .output(),
+            cmd.output(),
         ).await;
 
         match output {
