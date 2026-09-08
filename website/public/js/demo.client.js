@@ -400,9 +400,9 @@ function removeEmptyState() {
 
 // === API call ===
 async function callAPI(messages, onChunk) {
-  const resp = await fetch(API_BASE + '/chat/completions', {
+  const resp = await fetch('/api/chat', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + API_KEY },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: MODEL,
       messages: messages,
