@@ -78,7 +78,8 @@ function collectHtmls(dir, base) {
 function urlPath(absPath) {
   let rel = relative(CLIENT_DIST, absPath).replace(/\\/g, '/');
   if (rel.endsWith('index.html')) rel = rel.slice(0, -'index.html'.length);
-  return '/' + rel;
+  rel = rel.replace(/\/+$/, '');
+  return rel ? '/' + rel : '/';
 }
 
 // ---------- parse5 walk ----------
@@ -121,6 +122,20 @@ function translateHtml(html, lang, langRoot, pageUrl) {
     let descKey = cleanPage === '' ? 'site.home_desc' : `meta.${cleanPage}.desc`;
     let localizedTitle = resolveKey(titleKey, lang);
     let localizedDesc = resolveKey(descKey, lang);
+
+    // Fallback: if page-specific meta title missing, check first h1 with data-i18n
+    if (!localizedTitle && cleanPage !== '') {
+      let foundH1 = null;
+      walkNodes(doc, (n) => {
+        if (!foundH1 && n.tagName === 'h1') {
+          const key = getAttr(n, 'data-i18n')?.value;
+          if (key) foundH1 = resolveKey(key, lang);
+        }
+      });
+      if (foundH1) {
+        localizedTitle = `${foundH1} — Fathom`;
+      }
+    }
 
     if (localizedTitle) {
       titleNode.childNodes = [{ nodeName: '#text', value: localizedTitle }];

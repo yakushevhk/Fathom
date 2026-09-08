@@ -77,7 +77,9 @@ export function initI18n() {
         closeDropdown();
         return;
       }
-      location.assign(langUrl(location.pathname, toLang));
+      try { localStorage.setItem('fathom_lang', toLang); } catch (_) {}
+      const targetPath = langUrl(location.pathname, toLang);
+      location.assign(targetPath + location.search + location.hash);
     });
   });
 

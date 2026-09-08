@@ -145,15 +145,15 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
     <meta name="twitter:image" content={`${SITE}/og-image.png`} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Cormorant+Garamond:ital,wght@1,400;1,500;1,600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Cormorant+Garamond:ital,wght@1,400;1,500;1,600&subset=latin,cyrillic,cyrillic-ext&display=swap" rel="stylesheet" />
     <title>{title}</title>
     <JsonLd data={{
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: Astro.currentLocale === 'ru' ? 'Главная' : 'Home', item: `${SITE}/` },
-        { '@type': 'ListItem', position: 2, name: Astro.currentLocale === 'ru' ? 'Документация' : 'Documentation', item: `${SITE}/docs/` },
-        ...(Astro.url.pathname !== '/docs/'
+        { '@type': 'ListItem', position: 1, name: isRu ? 'Главная' : 'Home', item: `${SITE}/` },
+        { '@type': 'ListItem', position: 2, name: isRu ? 'Документация' : 'Documentation', item: `${SITE}/docs` },
+        ...(Astro.url.pathname.replace(/\/+$/, '') !== '/docs' && Astro.url.pathname.replace(/\/+$/, '') !== '/ru/docs'
           ? [{ '@type': 'ListItem', position: 3, name: crumbLabel, item: canonical }]
           : []),
       ],
@@ -164,9 +164,11 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
         var t = localStorage.getItem('fathom-theme') || localStorage.getItem('Fathom-theme');
         if (t && !localStorage.getItem('fathom-theme')) localStorage.setItem('fathom-theme', t);
         if (!t && window.matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
-        if (t) document.documentElement.dataset.theme = t;
-        var meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute('content', t === 'dark' ? '#0a0a0a' : '#fcfbfa');
+        if (!t) t = 'light';
+        document.documentElement.dataset.theme = t;
+        document.documentElement.style.colorScheme = t;
+        var metas = document.querySelectorAll('meta[name="theme-color"]');
+        metas.forEach(function(m) { m.setAttribute('content', t === 'dark' ? '#0a0a0a' : '#fcfbfa'); });
       })();
     </script>
   </head>
@@ -174,7 +176,7 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
     <a class="skip-link" href="#main">Skip to content</a>
     <nav class="docstop-nav" aria-label="Documentation">
       <div class="docstop-nav-inner">
-        <a href="/" class="docs-logo">
+        <a href={isRu ? '/ru' : '/'} class="docs-logo">
           <svg class="docs-logo-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <rect width="24" height="24" rx="5" style="fill:var(--grey-900)"/>
             <rect x="6" y="6" width="12" height="12" rx="2" style="fill:var(--grey-50)"/>
@@ -194,7 +196,7 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
           <div class="lang-switcher">
             <button class="lang-toggle" data-lang-toggle data-i18n-aria="lang_aria" aria-label="Change language">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-              <span data-lang-current>EN</span>
+              <span data-lang-current>{isRu ? 'RU' : 'EN'}</span>
               <svg class="lang-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
             <div class="lang-dropdown" data-lang-dropdown>
