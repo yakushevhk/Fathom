@@ -305,16 +305,27 @@ const { hue = 206, mode = 'researcher', height = 340, label = '' } = Astro.props
         startLoop();
       }
 
+      let resizeTimer;
       new ResizeObserver(() => {
-        W = Math.max(200, wrap.clientWidth);
-        H = Math.max(200, wrap.clientHeight);
-        camera.aspect = W / H;
-        camera.updateProjectionMatrix();
-        renderer.setSize(W, H, false);
-        if (reduced) frame(1.7);
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          W = Math.max(200, wrap.clientWidth);
+          H = Math.max(200, wrap.clientHeight);
+          camera.aspect = W / H;
+          camera.updateProjectionMatrix();
+          renderer.setSize(W, H, false);
+          if (reduced) frame(1.7);
+        }, 100);
       }).observe(wrap);
-    }
 
+      canvas.addEventListener('webglcontextlost', (e) => {
+        e.preventDefault();
+        stopLoop();
+      });
+      canvas.addEventListener('webglcontextrestored', () => {
+        if (visible && !reduced) startLoop();
+      });
+    }
     canvases.forEach(initOrb);
   });
 </script>
