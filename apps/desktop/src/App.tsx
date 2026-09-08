@@ -259,17 +259,28 @@ function SettingsPanel({
           <div className="settings-section-title">Settings</div>
           <div className="settings-row">
             <label>Auto-start engine</label>
-            <input type="checkbox" defaultChecked />
+            <input
+              type="checkbox"
+              defaultChecked={localStorage.getItem('fathom_autostart') !== 'false'}
+              onChange={e => localStorage.setItem('fathom_autostart', String(e.target.checked))}
+            />
           </div>
           <div className="settings-row">
             <label>Notifications</label>
-            <input type="checkbox" defaultChecked />
+            <input
+              type="checkbox"
+              defaultChecked={localStorage.getItem('fathom_notifications') !== 'false'}
+              onChange={e => localStorage.setItem('fathom_notifications', String(e.target.checked))}
+            />
           </div>
           <div className="settings-row">
             <label>Auto-approve tool calls</label>
-            <input type="checkbox" />
+            <input
+              type="checkbox"
+              defaultChecked={localStorage.getItem('fathom_autoapprove') === 'true'}
+              onChange={e => localStorage.setItem('fathom_autoapprove', String(e.target.checked))}
+            />
           </div>
-        </div>
 
         <div style={{ marginTop: 16 }}>
           <button className="composer-btn" onClick={onClose}>Close Settings</button>

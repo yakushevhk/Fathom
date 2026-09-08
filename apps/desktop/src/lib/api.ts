@@ -381,19 +381,49 @@ export function connectSSE(
   onError?: (err: string) => void,
 ): AbortController {
   const controller = new AbortController()
-  const streamId = `sse-${Date.now()}-${Math.random().toString(36).slice(2)}`
-  let unlisten: (() => void) | undefined
+  let reconnectTimer: number | undefined
+  function startStream() {
+    if (controller.signal.aborted) return
 
-  void listen<unknown>(`engine:sse:${streamId}`, event => onEvent(event.payload))
-    .then(stop => { unlisten = stop; if (controller.signal.aborted) stop() })
-    .catch(error => onError?.(String(error)))
+    const streamId = `sse-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    let unlistenEvent: (() => void) | undefined
+    let unlistenEnd: (() => void) | undefined
 
-  void invoke('engine_sse_start', { streamId, path: endpoint })
-    .catch(error => { if (!controller.signal.aborted) onError?.(String(error)) })
+    void listen<unknown>(`engine:sse:${streamId}`, event => onEvent(event.payload))
+      .then(stop => {
+        unlistenEvent = stop
+        if (controller.signal.aborted) stop()
+      })
+      .catch(error => onError?.(String(error)))
 
-  controller.signal.addEventListener('abort', () => {
-    unlisten?.()
-    void invoke('engine_sse_stop', { streamId })
-  }, { once: true })
+    void listen<unknown>(`engine:sse-end:${streamId}`, () => {
+      unlistenEvent?.()
+      unlistenEnd?.()
+      if (!controller.signal.aborted) {
+        reconnectTimer = setTimeout(startStream, 3000)
+      }
+    }).then(stop => {
+      unlistenEnd = stop
+      if (controller.signal.aborted) stop()
+    })
+
+    void invoke('engine_sse_start', { streamId, path: endpoint })
+      .catch(error => {
+        if (!controller.signal.aborted) {
+          onError?.(String(error))
+          reconnectTimer = setTimeout(startStream, 4000)
+        }
+      })
+
+    const onAbort = () => {
+      clearTimeout(reconnectTimer)
+      unlistenEvent?.()
+      unlistenEnd?.()
+      void invoke('engine_sse_stop', { streamId })
+    }
+    controller.signal.addEventListener('abort', onAbort, { once: true })
+  }
+
+  startStream()
   return controller
 }
