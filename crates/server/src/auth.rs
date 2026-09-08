@@ -205,10 +205,9 @@ impl RateLimiter {
                 !v.is_empty()
             });
         }
-
         allowed
     }
-
+}
 /// Rate-limiting middleware.
 ///
 /// Should run after [`auth_middleware`] so an [`AuthPrincipal`] is present.

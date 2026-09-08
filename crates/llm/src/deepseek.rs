@@ -266,17 +266,13 @@ impl DeepSeekProvider {
 
         let tool_calls: Vec<pr_core::ToolCall> = tool_calls_map
             .into_values()
-            .map(|(id, name, args)| pr_core::ToolCall {
-                id,
-                name,
-                arguments: serde_json::from_str(&args).unwrap_or(serde_json::Value::String(args)),
-            })
+            .map(|(id, name, args)| pr_core::ToolCall::new(id, name, args))
             .collect();
 
         let message = if tool_calls.is_empty() {
             Message::assistant(content)
         } else {
-            Message::assistant_with_tools(content, tool_calls)
+            Message::assistant_with_tools(Some(content), tool_calls)
         };
 
         Ok(CompletionResponse {

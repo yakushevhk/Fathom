@@ -80,7 +80,7 @@ impl DesktopApp {
                     *state_clone.coworkers.write() = coworkers;
                 }
             }
-            if let Ok(channels) = state_clone.api.list_channels().await {
+            if let Ok(channels) = state_clone.api.list_channels(None).await {
                 if !channels.is_empty() {
                     *state_clone.channels.write() = channels;
                 }
