@@ -187,16 +187,27 @@ impl RateLimiter {
     /// requests remain, the new one is accepted.
     pub fn check(&mut self, key: &str, now: Instant) -> bool {
         let window = self.window;
-        let entry = self.requests.entry(key.to_string()).or_default();
-        entry.retain(|t| now.duration_since(*t) < window);
-        if entry.len() < self.limit {
-            entry.push(now);
-            true
-        } else {
-            false
+        let allowed = {
+            let entry = self.requests.entry(key.to_string()).or_default();
+            entry.retain(|t| now.duration_since(*t) < window);
+            if entry.len() < self.limit {
+                entry.push(now);
+                true
+            } else {
+                false
+            }
+        };
+
+        // Periodically purge stale empty client keys to bound memory growth
+        if self.requests.len() > 1000 {
+            self.requests.retain(|_, v| {
+                v.retain(|t| now.duration_since(*t) < window);
+                !v.is_empty()
+            });
         }
+
+        allowed
     }
-}
 
 /// Rate-limiting middleware.
 ///

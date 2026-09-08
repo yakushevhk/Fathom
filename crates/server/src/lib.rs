@@ -1228,7 +1228,7 @@ fn serialize_sse_event(event: &AgentEvent) -> String {
     let mut data = serde_json::to_value(event).unwrap_or_default();
     data = pr_governance::redact_secrets(&data);
     if let serde_json::Value::Object(object) = &mut data {
-        for key in ["text", "value", "secret", "result_preview", "content"] {
+        for key in ["text", "value", "secret", "result_preview", "content", "command", "query", "input"] {
             if object.contains_key(key)
                 && matches!(
                     event,
@@ -1238,6 +1238,14 @@ fn serialize_sse_event(event: &AgentEvent) -> String {
                 )
             {
                 object.insert(key.to_owned(), serde_json::Value::String("[REDACTED]".into()));
+            }
+        }
+        // Deep redact within nested args object for ToolCallStarted
+        if let Some(serde_json::Value::Object(args_obj)) = object.get_mut("args") {
+            for key in ["secret", "password", "token", "key", "api_key", "credentials"] {
+                if args_obj.contains_key(key) {
+                    args_obj.insert(key.to_owned(), serde_json::Value::String("[REDACTED]".into()));
+                }
             }
         }
     }

@@ -51,9 +51,19 @@ impl FileLockManager {
     {
         let lock = self.get_lock(path).await;
         let _guard = lock.lock().await;
-        f().await
-    }
+        let res = f().await;
+        drop(_guard);
 
+        // Prune lock if no other references exist
+        let canonical = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
+        let mut map = self.locks.lock().await;
+        if let Some(entry) = map.get(&canonical) {
+            if Arc::strong_count(entry) <= 2 {
+                map.remove(&canonical);
+            }
+        }
+        res
+    }
     /// Number of file locks currently registered.
     pub async fn lock_count(&self) -> usize {
         self.locks.lock().await.len()

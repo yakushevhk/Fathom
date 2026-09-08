@@ -56,8 +56,17 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
                 recv_res = event_rx.recv() => {
                     match recv_res {
                         Ok(event) => {
-                            if let Ok(json_val) = serde_json::to_value(&event) {
-                                let json_val = pr_governance::redact_secrets(&json_val);
+                            if let Ok(mut json_val) = serde_json::to_value(&event) {
+                                json_val = pr_governance::redact_secrets(&json_val);
+                                if let serde_json::Value::Object(object) = &mut json_val {
+                                    if let Some(serde_json::Value::Object(args_obj)) = object.get_mut("args") {
+                                        for key in ["secret", "password", "token", "key", "api_key", "credentials"] {
+                                            if args_obj.contains_key(key) {
+                                                args_obj.insert(key.to_owned(), serde_json::Value::String("[REDACTED]".into()));
+                                            }
+                                        }
+                                    }
+                                }
                                 let msg = WsServerMessage::Event { payload: json_val };
                                 if let Ok(serialized) = serde_json::to_string(&msg) {
                                     if sender.send(Message::Text(serialized)).await.is_err() {

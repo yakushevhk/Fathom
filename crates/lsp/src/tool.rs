@@ -161,8 +161,10 @@ impl LspTool {
         }
 
         let guard = self.client.lock().await;
-        let client = guard.as_ref().unwrap();
-
+        let client = match guard.as_ref() {
+            Some(c) => c,
+            None => return Ok(ToolOutput::err("LSP client is not available".to_string())),
+        };
         match args.action.as_str() {
             "document_symbols" => {
                 let file = args.file.ok_or_else(|| anyhow::anyhow!("'file' required for document_symbols"))?;
