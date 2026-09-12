@@ -6,11 +6,11 @@
 # model); deploy/docker-compose.yml puts Caddy in the same network namespace
 # to terminate TLS and authentication at the edge.
 #
-#   docker build -t openmausbot .
-#   docker build --build-arg ENGINES="@anthropic-ai/claude-code @openai/codex" -t openmausbot .
+#   docker build -t parallel .
+#   docker build --build-arg ENGINES="@anthropic-ai/claude-code @openai/codex" -t parallel .
 #
 # HOME is the /data volume, so engine CLI logins (~/.claude, ~/.codex, ...) and
-# Parallel's own state (~/.openmausbot) persist across container restarts.
+# Parallel's own state (~/.parallel) persist across container restarts.
 
 FROM node:24-bookworm-slim AS build
 WORKDIR /src
@@ -41,10 +41,10 @@ RUN apt-get update \
     libxshmfence1 libgbm1 fonts-noto-color-emoji fonts-noto-cjk fonts-freefont-ttf \
     chromium \
   && rm -rf /var/lib/apt/lists/* \
-  && useradd --create-home --home-dir /data --shell /bin/bash maus
+  && useradd --create-home --home-dir /data --shell /bin/bash parallel
 WORKDIR /app
-COPY --from=build --chown=maus:maus /src/dist-server ./dist-server
-COPY --from=build --chown=maus:maus /src/dist ./dist
+COPY --from=build --chown=parallel:parallel /src/dist-server ./dist-server
+COPY --from=build --chown=parallel:parallel /src/dist ./dist
 # Install coding agent CLIs out of the box:
 # Claude Code, Codex, OpenCode, Qwen Code, Pi
 ARG ENGINES="@anthropic-ai/claude-code @openai/codex opencode-ai @qwen-code/qwen-code @earendil-works/pi-coding-agent"
@@ -58,7 +58,7 @@ RUN HOME=/opt/grok GROK_BIN_DIR=/opt/grok/bin bash <(curl -fsSL https://x.ai/cli
 RUN curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --skip-setup --no-skills \
   && chmod -R a+rx /usr/local/lib/hermes-agent /usr/local/share/uv
 
-COPY --chown=maus:maus scripts/setup-router-agents.mjs /app/scripts/setup-router-agents.mjs
+COPY --chown=parallel:parallel scripts/setup-router-agents.mjs /app/scripts/setup-router-agents.mjs
 COPY deploy/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 # The bots' browser (docs/plans/browser-engine.md): the pinned agent-browser
@@ -66,13 +66,13 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 # Pin here and in server/browser-engine-release.ts together.
 ARG AGENT_BROWSER_VERSION=0.37.0
 RUN npm install -g agent-browser@${AGENT_BROWSER_VERSION} \
-  && (HOME=/opt/openmausbot-browser agent-browser install && ln -s /opt/openmausbot-browser/.agent-browser/browsers/chrome-*/chrome /opt/openmausbot-browser/chrome || (mkdir -p /opt/openmausbot-browser && ln -s /usr/bin/chromium /opt/openmausbot-browser/chrome)) \
+  && (HOME=/opt/parallel-browser agent-browser install && ln -s /opt/parallel-browser/.agent-browser/browsers/chrome-*/chrome /opt/parallel-browser/chrome || (mkdir -p /opt/parallel-browser && ln -s /usr/bin/chromium /opt/parallel-browser/chrome)) \
   && agent-browser --version
 # Keep the baked-in browser outside both root's private home and /data,
 # which may be an existing mounted volume. Session state still lives in HOME.
 ENV HOME=/data \
-    AGENT_BROWSER_EXECUTABLE_PATH=/opt/openmausbot-browser/chrome \
-    OMB_DATA_DIR=/data/.openmausbot \
+    AGENT_BROWSER_EXECUTABLE_PATH=/opt/parallel-browser/chrome \
+    OMB_DATA_DIR=/data/.parallel \
     OMB_STATIC_DIR=/app/dist \
     OMB_PORT=8799 \
     OMB_WEBHOOK_PORT=8800 \
@@ -80,5 +80,5 @@ ENV HOME=/data \
 VOLUME ["/data"]
 ENTRYPOINT ["docker-entrypoint.sh"]
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD curl -sf http://127.0.0.1:8799/api/health | grep -q openmausbot || exit 1
+  CMD curl -sf http://127.0.0.1:8799/api/health | grep -qE "openmausbot|parallel" || exit 1
 CMD ["node", "dist-server/index.js"]

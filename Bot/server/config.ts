@@ -559,7 +559,11 @@ export function providerReloadKeys(patch: object): string[] {
 }
 
 // OMB_DATA_DIR isolates test/soak rigs from the user's real fleet.
-export const DATA_DIR = process.env.OMB_DATA_DIR ?? join(homedir(), ".openmausbot");
+// Default to ~/.parallel, falling back to existing ~/.openmausbot if present
+const DEFAULT_DATA_DIR = !existsSync(join(homedir(), ".parallel")) && existsSync(join(homedir(), ".openmausbot"))
+  ? join(homedir(), ".openmausbot")
+  : join(homedir(), ".parallel");
+export const DATA_DIR = process.env.OMB_DATA_DIR ?? DEFAULT_DATA_DIR;
 const LEGACY_DATA_DIR = join(homedir(), ".opengrokbot");
 export const EVENTS_DIR = join(DATA_DIR, "events");
 export const NATIVE_DIR = join(DATA_DIR, "native");

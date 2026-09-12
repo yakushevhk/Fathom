@@ -23,12 +23,12 @@
                 │                         │                        │
                 ▼                         ▼                        ▼
     ┌───────────────────────────────────────────┐    ┌───────────────────────────┐
-    │       Docker: openmausbot (Harness)       │    │  Docker: openmausbot-     │
+    │       Docker: parallel (Harness)          │    │  Docker: parallel-        │
     │  network_mode: "host"                     │    │          computer (VM)    │
     │  Volumes:                                 │    │  XFCE4 + Cua Driver       │
-    │   - /opt/openmausbot-data:/data           │    │  noVNC Web Viewer (:6901) │
+    │   - /opt/parallel-data:/data              │    │  noVNC Web Viewer (:6901) │
     │   - /var/run/docker.sock                  │    │  Workspace:               │
-    │   - /data/.openmausbot                    │    │   /data/.openmausbot/     │
+    │   - /data/.parallel                       │    │   /data/.parallel/        │
     │                                           │    │    vm-home                │
     │  AI Engines:                              │    └───────────────────────────┘
     │   - opencode (Helium API router)          │
@@ -69,15 +69,15 @@
 | Путь | Назначение |
 | :--- | :--- |
 | `/opt/Parallel/deploy/` | Репозиторий деплоя, `docker-compose.yml`, `.env` |
-| `/opt/openmausbot-data/` | Постоянный том данных контейнера (`/data` в контейнере) |
-| `/opt/openmausbot-data/.openmausbot/` | База данных `messages.db`, `config.json`, сессии, ключи |
-| `/opt/openmausbot-data/.openmausbot/vm-home/` | Рабочая папка виртуального компьютера ботов |
-| `/opt/openmausbot-data/.local/bin/` | Установленные бинарники движков (`pi`, `hermes`, `claude`, `grok`, `qwen`, `antigravity`, `docker`, `uv`) |
-| `/opt/openmausbot-data/.opencode/bin/` | Бинарник `opencode` |
-| `/opt/openmausbot-data/.pi/agent/` | Конфигурация Pi (`models.json`, `auth.json`, `settings.json`) |
-| `/opt/openmausbot-data/.hermes/` | Конфигурация Hermes (`config.yaml`, `.env`) |
-| `/opt/openmausbot-data/.qwen/` | Конфигурация Qwen Code (`settings.json`) |
-| `/opt/openmausbot-data/.grok/` | Конфигурация Grok (`config.toml`, `auth.json`) |
+| `/opt/parallel-data/` | Постоянный том данных контейнера (`/data` в контейнере) |
+| `/opt/parallel-data/.parallel/` | База данных `messages.db`, `config.json`, сессии, ключи |
+| `/opt/parallel-data/.parallel/vm-home/` | Рабочая папка виртуального компьютера ботов |
+| `/opt/parallel-data/.local/bin/` | Установленные бинарники движков (`pi`, `hermes`, `claude`, `grok`, `qwen`, `antigravity`, `docker`, `uv`) |
+| `/opt/parallel-data/.opencode/bin/` | Бинарник `opencode` |
+| `/opt/parallel-data/.pi/agent/` | Конфигурация Pi (`models.json`, `auth.json`, `settings.json`) |
+| `/opt/parallel-data/.hermes/` | Конфигурация Hermes (`config.yaml`, `.env`) |
+| `/opt/parallel-data/.qwen/` | Конфигурация Qwen Code (`settings.json`) |
+| `/opt/parallel-data/.grok/` | Конфигурация Grok (`config.toml`, `auth.json`) |
 | `/www/server/panel/vhost/nginx/code.y7.hk.conf` | Конфигурация Nginx виртуального хоста и проксирования |
 | `/www/server/panel/vhost/cert/code.y7.hk/` | SSL-сертификаты Let's Encrypt |
 
@@ -104,8 +104,8 @@
 Файл `/opt/Parallel/deploy/docker-compose.yml`:
 * `network_mode: "host"` — Parallel слушает `127.0.0.1:8799` прямо на сетевом стеке хоста.
 * Монтирование томов:
-  * `/opt/openmausbot-data:/data` (данные, конфиги, домашняя папка пользователя `maus`)
-  * `/opt/openmausbot-data/dist-server:/app/dist-server` (патч для подстановки публичного URL VNC)
+  * `/opt/parallel-data:/data` (данные, конфиги, домашняя папка пользователя `parallel`)
+  * `/opt/parallel-data/dist-server:/app/dist-server` (патч для подстановки публичного URL VNC)
   * `/var/run/docker.sock:/var/run/docker.sock` (доступ к Docker хоста для управления VM)
 * `group_add: ["986"]` — доступ к Docker сокету.
 * Переменные окружения для провайдера Helium:
@@ -169,7 +169,7 @@ providers:
 
 ### 6.6. Google Antigravity
 * Официальный исполняемый файл: `/data/.local/bin/agy_acp_server.par`, `localharness_external`
-* Установлен в `/data/.openmausbot/tools/antigravity-acp/linux-x64/versions/38f62d01b32deb0907b3d39a71ec301fd36369f6ffd1cf262d4af385177f79df/`
+* Установлен в `/data/.parallel/tools/antigravity-acp/linux-x64/versions/38f62d01b32deb0907b3d39a71ec301fd36369f6ffd1cf262d4af385177f79df/`
 
 ### 6.7. Claude Code
 * Бинарник: `/data/.local/bin/claude` (v2.1.269, `@anthropic-ai/claude-code`)
@@ -180,22 +180,22 @@ providers:
 
 ### 7.1. Как устроен компьютер бота
 1. **Базовый образ:** `docker.io/trycua/xfce-cua@sha256:274eb636f5cf3fc58f705916ee72b7a701270b3877369d08533a385c5325be9b`
-2. **Финальный образ:** `localhost/openmausbot/cua-local-vm:driver-0.20.0-v5`
+2. **Финальный образ:** `localhost/parallel/cua-local-vm:driver-0.20.0-v5`
    * Содержит XFCE4 Desktop, Chromium, `cua-driver 0.20.0` и японские шрифты Noto CJK.
-   * Драйвер `cua-driver` запускается supervisor-ом и слушает сокет `/run/user/1000/openmausbot-cua.sock`.
+   * Драйвер `cua-driver` запускается supervisor-ом и слушает сокет `/run/user/1000/parallel-cua.sock`.
    * noVNC сервер слушает внутри порт `6901` и проброшен на хост `127.0.0.1:6080`.
 3. **Безопасность контейнера:**
    * `--cap-drop ALL --cap-add SETUID --cap-add SETGID`
    * Память: 4 GB, CPUs: 2, PIDs limit: 512, shm-size: 512m.
-   * Рабочая папка: `/home/cua/workspace` смонтирована в `/data/.openmausbot/vm-home`.
+   * Рабочая папка: `/home/cua/workspace` смонтирована в `/data/.parallel/vm-home`.
 
 ### 7.2. Команды управления контейнером VM
 ```bash
 # Перезапустить контейнер компьютера
-docker restart openmausbot-computer
+docker restart parallel-computer
 
 # Посмотреть логи виртуального компьютера
-docker logs --tail 50 openmausbot-computer
+docker logs --tail 50 parallel-computer
 
 # Проверить статус доступности через API
 curl -s http://127.0.0.1:8799/api/local-computer | jq .

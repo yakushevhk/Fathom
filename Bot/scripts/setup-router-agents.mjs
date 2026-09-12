@@ -236,21 +236,25 @@ export async function setupRouterAgents() {
     return prev;
   });
 
-  // 7. OpenMausBot (~/.openmausbot/config.json)
-  const ombConfigPath = join(DATA_DIR, ".openmausbot", "config.json");
-  ensureJson(ombConfigPath, (prev) => {
-    prev.openaiCompat = prev.openaiCompat || {};
-    prev.openaiCompat.url = ROUTER_URL;
-    prev.openaiCompat.key = ROUTER_KEY;
-    prev.openaiCompat.model = defaultModel;
-    prev.defaultModelSelection = prev.defaultModelSelection || {
-      instanceId: "openaiCompat",
-      model: defaultModel,
-    };
-    return prev;
-  });
+  // 7. Parallel / OpenMausBot config
+  const parallelConfigDir = process.env.OMB_DATA_DIR || join(DATA_DIR, ".parallel");
+  const targetDirs = [parallelConfigDir, join(DATA_DIR, ".openmausbot")];
+  for (const cfgDir of targetDirs) {
+    const cfgPath = join(cfgDir, "config.json");
+    ensureJson(cfgPath, (prev) => {
+      prev.openaiCompat = prev.openaiCompat || {};
+      prev.openaiCompat.url = ROUTER_URL;
+      prev.openaiCompat.key = ROUTER_KEY;
+      prev.openaiCompat.model = defaultModel;
+      prev.defaultModelSelection = prev.defaultModelSelection || {
+        instanceId: "openaiCompat",
+        model: defaultModel,
+      };
+      return prev;
+    });
+  }
 
-  console.log("[setup-router-agents] Successfully configured all 6 agents + OpenMausBot.");
+  console.log("[setup-router-agents] Successfully configured all 6 agents + Parallel.");
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

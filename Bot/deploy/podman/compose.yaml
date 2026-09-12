@@ -1,4 +1,4 @@
-name: ${COMPOSE_PROJECT_NAME:-openmausbot-podman}
+name: ${COMPOSE_PROJECT_NAME:-parallel-podman}
 services:
   omb:
     build:
@@ -6,7 +6,7 @@ services:
       dockerfile: deploy/podman/Containerfile
       args:
         ENGINES: ${ENGINES:-}
-    image: localhost/openmausbot-podman:${OMB_IMAGE_TAG:-local}
+    image: localhost/parallel-podman:${OMB_IMAGE_TAG:-local}
     init: true
     userns_mode: keep-id:uid=1001,gid=1001
     user: "1001:1001"
@@ -19,7 +19,7 @@ services:
       - ${PODMAN_SOCKET:?Run setup.sh first}:/run/omb-podman.sock
     environment:
       HOME: ${OMB_DATA_ROOT}
-      OMB_DATA_DIR: ${OMB_DATA_ROOT}/.openmausbot
+      OMB_DATA_DIR: ${OMB_DATA_ROOT}/.parallel
       OMB_STATIC_DIR: /app/dist
       CONTAINER_HOST: unix:///run/omb-podman.sock
       OMB_PORT: ${OMB_PORT:-8799}

@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=openmausbot:local
+ARG BASE_IMAGE=parallel:local
 FROM ${BASE_IMAGE}
 USER root
 ARG ENGINES="@anthropic-ai/claude-code @openai/codex opencode-ai @qwen-code/qwen-code @earendil-works/pi-coding-agent"

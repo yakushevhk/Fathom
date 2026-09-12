@@ -1,4 +1,4 @@
-name: ${COMPOSE_PROJECT_NAME:-openmausbot}
+name: ${COMPOSE_PROJECT_NAME:-parallel}
 services:
   omb:
     init: true
@@ -6,9 +6,9 @@ services:
     build:
       context: ./deploy/local
       args:
-        BASE_IMAGE: ${OMB_BASE_IMAGE:-openmausbot:local}
+        BASE_IMAGE: ${OMB_BASE_IMAGE:-parallel:local}
         ENGINES: ${ENGINES-@anthropic-ai/claude-code @openai/codex opencode-ai @qwen-code/qwen-code @earendil-works/pi-coding-agent}
-    image: ${OMB_LOCAL_IMAGE:-openmausbot-local:latest}
+    image: ${OMB_LOCAL_IMAGE:-parallel-local:latest}
     restart: unless-stopped
     volumes:
       - data:/data
@@ -39,7 +39,7 @@ services:
         - CMD
         - node
         - -e
-        - "fetch('http://127.0.0.1:8799/api/health', { signal: AbortSignal.timeout(4000) }).then(async r => { if (!r.ok || !(await r.text()).includes('openmausbot')) process.exit(1); }).catch(() => process.exit(1))"
+        - "fetch('http://127.0.0.1:8799/api/health', { signal: AbortSignal.timeout(4000) }).then(async r => { if (!r.ok || !(/(openmausbot|parallel)/).test(await r.text())) process.exit(1); }).catch(() => process.exit(1))"
       interval: 15s
       timeout: 5s
       start_period: 30s
@@ -74,6 +74,6 @@ services:
 volumes:
   data:
     external: ${OMB_DATA_EXTERNAL:-false}
-    name: ${OMB_DATA_VOLUME:-${COMPOSE_PROJECT_NAME:-openmausbot}_data}
+    name: ${OMB_DATA_VOLUME:-${COMPOSE_PROJECT_NAME:-parallel}_data}
   caddy_data:
   caddy_config:
