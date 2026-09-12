@@ -6,7 +6,7 @@ import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
 import { nextRename } from "@/lib/rename";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { useSidebarDrawer } from "./Sidebar";
+import { useSidebarDrawer } from "./SidebarDrawerContext";
 
 type ThreadRowTask = Pick<Task, "threadId" | "title" | "projectId" | "busy" | "activity" | "unread" | "openedBy"> & { queued?: boolean };
 
@@ -28,16 +28,17 @@ export function visibleSidebarThreads<T extends ThreadRowTask>(tasks: T[], activ
 /** One quiet row for bot and group histories. Surface denotes selection;
  * working/waiting/unread remain independent signals, never different cards. */
 export function SidebarThreadRow({ task, current, compact, folders, onSelect, onRename, onDelete, onMove }: {
-  task: Task;
+  task: ThreadRowTask;
   current: boolean;
   compact?: boolean;
   folders?: BotProject[];
   onSelect: () => void;
   onRename: (title: string) => void;
   onDelete: () => void;
-  onMove?: (projectId: string | null) => void;
+  onMove?: (folderId: string | null) => void;
 }) {
   const closeDrawer = useSidebarDrawer();
+  const [menu, setMenu] = useState<{ left: number; top: number } | null>(null);
   const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState(task.title);
   const [deleting, setDeleting] = useState(false);

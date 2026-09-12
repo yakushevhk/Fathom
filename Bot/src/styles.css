@@ -83,6 +83,8 @@
   --animate-msg-in: msg-in 0.24s cubic-bezier(0.16, 1, 0.3, 1);
   --animate-shimmer: shimmer 2s linear infinite;
   --animate-status-pulse: status-pulse 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-slide-up: slide-up 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-fade-in: fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   /* onboarding: a block of copy or a row arriving in a beat; `.stagger`
      spaces siblings out. Rare, first-time motion, so it may run past the
      300ms UI ceiling. */
@@ -654,6 +656,14 @@ body {
   from { transform: scale(0.95) translateY(6px); opacity: 0; }
   to { transform: scale(1) translateY(0); opacity: 1; }
 }
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 /* streaming caret: a true typing blink (step, not fade) */
 @keyframes caret-blink {
   0%, 100% { opacity: 1; }
@@ -780,6 +790,7 @@ body {
 }
 @media (prefers-reduced-motion: reduce) {
   .animate-caret, .animate-msg-in, .animate-shimmer { animation: none; }
+  .animate-slide-up, .animate-fade-in { animation: none; }
   .animate-status-pulse { animation: none; opacity: 0.6; }
   .thinking-shimmer { background: none; color: var(--color-ink-secondary); }
   .turn-mascot-in, .turn-mascot-out, .turn-answer { animation: none; }
@@ -795,6 +806,8 @@ body {
    its view transitions. Mirrors the media block above for its own classes. */
 :root[data-reduced-motion="true"] .animate-rise,
 :root[data-reduced-motion="true"] .animate-spot-in,
+:root[data-reduced-motion="true"] .animate-slide-up,
+:root[data-reduced-motion="true"] .animate-fade-in,
 :root[data-reduced-motion="true"] .welcome-card * {
   animation: none !important;
   transition: none !important;
@@ -1430,3 +1443,13 @@ button:active:not(:disabled),
 .glow-accent {
   box-shadow: 0 0 16px -4px color-mix(in srgb, var(--color-accent) 40%, transparent);
 }
+
+/* Zen mode distraction-free layout styling */
+.zen-mode-active {
+  width: 100%;
+}
+
+.zen-mode-active main {
+  max-width: 100%;
+}
+

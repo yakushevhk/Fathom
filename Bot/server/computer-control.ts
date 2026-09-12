@@ -86,6 +86,7 @@ export class ComputerControl {
   /** The person takes the wheel. Idempotent — a second click must not
    * reset `heldSinceMs` and make the hold look newer than it is. */
   take(botId: string): ControlSnapshot {
+    this.snapshot(botId);
     const entry = this.entries.get(botId);
     if (entry?.heldSinceMs != null) return this.snapshot(botId);
     this.entries.set(botId, {
@@ -100,6 +101,7 @@ export class ComputerControl {
   /** Atomically take or re-check a workspace-owned hold. The opaque lease is
    * never returned in a snapshot, broadcast, or API response. */
   acquireLease(botId: string, controlLeaseId: string): ControlLeaseResult {
+    this.snapshot(botId);
     const entry = this.entries.get(botId);
     if (entry?.heldSinceMs != null) {
       return {

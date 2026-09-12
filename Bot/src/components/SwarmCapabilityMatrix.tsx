@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Check, Shield, Terminal, Globe, Users, Wrench, X } from "lucide-react";
+import { Check, Shield, X } from "lucide-react";
 import { useStore, type Bot } from "@/state/store";
 import { BotAvatar } from "@/components/Avatar";
 import { triggerHaptic } from "@/lib/haptics";
@@ -155,7 +154,7 @@ export function SwarmCapabilityMatrix({ onClose }: { onClose: () => void }) {
 
                   <td className="py-3 px-3 text-center">
                     <span className="rounded-full bg-raised px-2 py-0.5 text-[11px] text-ink-secondary font-mono">
-                      {bot.mcpServers === null
+                      {!bot.mcpServers
                         ? "All Servers"
                         : `${bot.mcpServers.length} Mounted`}
                     </span>

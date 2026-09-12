@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Network, CheckCircle2, AlertCircle, Clock, Play, Pause, ChevronRight, X } from "lucide-react";
 import { useStore } from "@/state/store";
 import { triggerHaptic } from "@/lib/haptics";
@@ -17,25 +17,79 @@ interface DagVisualizerProps {
 }
 
 export function DagWorkflowVisualizer({ onClose }: DagVisualizerProps) {
-  const { state } = useStore();
+  const { state, dispatch } = useStore();
   const [debugPaused, setDebugPaused] = useState(false);
   const [selectedNode, setSelectedNode] = useState<DagNode | null>(null);
+  const [debateNotification, setDebateNotification] = useState<string | null>(null);
 
-  // Generate dynamic DAG representation from active bots and their delegation links
-  const nodes: DagNode[] = state.bots.slice(0, 6).map((bot, idx) => {
+  // Keyboard accessibility: close on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  // Filter visible bots
+  const visibleBots = state.bots.filter((b) => !b.hidden);
+
+  // Generate dynamic DAG representation from active bots and their execution state
+  const nodes: DagNode[] = visibleBots.slice(0, 8).map((bot, idx) => {
     let status: DagNode["status"] = "pending";
-    if (bot.busy) status = "running";
-    else if (idx === 0) status = "completed";
+    if (bot.busy) {
+      status = "running";
+    } else if (bot.activity === "dead") {
+      status = "failed";
+    } else if (bot.messages && bot.messages.length > 0) {
+      const lastMsg = bot.messages[bot.messages.length - 1];
+      if (lastMsg?.kind === "activity" && lastMsg.tool?.ok === false) {
+        status = "failed";
+      } else {
+        status = "completed";
+      }
+    } else if (idx === 0) {
+      status = "completed";
+    }
+
+    const lastBotMsg = bot.messages?.filter((m) => m.role === "bot" && (m.text || m.tool?.name)).slice(-1)[0];
+    const lastOutput = lastBotMsg?.text || (lastBotMsg?.tool?.name ? `Tool: ${lastBotMsg.tool.name}` : "Ready for task execution");
 
     return {
       id: bot.id,
       name: bot.name,
       role: bot.chiefOfStaff ? "Chief of Staff / Coordinator" : bot.title || "Specialist Agent",
       status,
-      dependsOn: idx > 0 ? [state.bots[idx - 1].id] : [],
-      output: bot.messages.filter((m) => m.role === "bot").slice(-1)[0]?.text || "Ready for task execution",
+      dependsOn: idx > 0 ? [visibleBots[idx - 1].id] : [],
+      output: lastOutput,
     };
   });
+
+  const handleInitiateDebate = () => {
+    triggerHaptic("success");
+    const debateBots = visibleBots.slice(0, 4);
+    if (debateBots.length < 2) {
+      setDebateNotification("Need at least 2 active bots to trigger multi-agent consensus debate.");
+      setTimeout(() => setDebateNotification(null), 4000);
+      return;
+    }
+
+    const debateName = `Consensus Debate: Architecture Review (${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})`;
+    dispatch({
+      type: "createGroup",
+      name: debateName,
+      memberIds: debateBots.map((b) => b.id),
+    });
+
+    setDebateNotification(`Consensus debate room created with ${debateBots.length} agents: ${debateBots.map((b) => b.name).join(", ")}`);
+    setTimeout(() => {
+      setDebateNotification(null);
+      onClose();
+    }, 1500);
+  };
 
   return (
     <div
@@ -167,13 +221,16 @@ export function DagWorkflowVisualizer({ onClose }: DagVisualizerProps) {
               </div>
             )}
 
+            {debateNotification && (
+              <div className="mb-3 rounded-lg border border-accent/30 bg-accent/10 p-2.5 text-[12px] text-accent animate-fade-in">
+                {debateNotification}
+              </div>
+            )}
+
             <div className="border-t border-hairline/40 pt-3">
               <button
                 type="button"
-                onClick={() => {
-                  triggerHaptic("success");
-                  alert("Consensus Debate round initiated across visible specialist agents.");
-                }}
+                onClick={handleInitiateDebate}
                 className="w-full rounded-lg bg-accent px-3 py-2 text-center text-[12.5px] font-medium text-white shadow hover:bg-accent/90 transition-colors"
               >
                 Trigger Agent Debate & Voting

@@ -172,4 +172,79 @@ describe("computer control", () => {
     control.forget("ghost");
     expect(changes).toEqual([]);
   });
+
+  describe("human control timeout watchdog", () => {
+    it("expires hold in snapshot after HUMAN_CONTROL_TIMEOUT_MS", () => {
+      let clock = 1000;
+      const changes: Array<{ botId: string; snapshot: ControlSnapshot }> = [];
+      const control = new ComputerControl((botId, snapshot) => changes.push({ botId, snapshot }), () => clock);
+      
+      control.take("b1");
+      expect(control.snapshot("b1").held).toBe(true);
+
+      // Advance clock past 10 minutes
+      clock += 10 * 60 * 1000 + 1;
+      const snap = control.snapshot("b1");
+      expect(snap.held).toBe(false);
+      expect(snap.heldSinceMs).toBeNull();
+      expect(changes.at(-1)?.snapshot.held).toBe(false);
+    });
+
+    it("expires timed-out hold on take() so person can re-take cleanly", () => {
+      let clock = 1000;
+      const control = new ComputerControl(() => {}, () => clock);
+      control.take("b1");
+      expect(control.snapshot("b1").heldSinceMs).toBe(1000);
+
+      // Advance past timeout
+      clock += 15 * 60 * 1000;
+      // take() checks snapshot / cleans up and takes fresh control at new time
+      const fresh = control.take("b1");
+      expect(fresh.held).toBe(true);
+      expect(fresh.heldSinceMs).toBe(clock);
+    });
+
+    it("expires timed-out hold on acquireLease()", () => {
+      let clock = 1000;
+      const control = new ComputerControl(() => {}, () => clock);
+      control.take("b1");
+
+      clock += 15 * 60 * 1000;
+      const leaseResult = control.acquireLease("b1", "lease-123");
+      expect(leaseResult.acquired).toBe(true);
+      expect(leaseResult.owned).toBe(true);
+      expect(leaseResult.snapshot.held).toBe(true);
+      expect(leaseResult.snapshot.heldSinceMs).toBe(clock);
+    });
+
+    it("clears held state on dismissHelp if hold timed out", () => {
+      let clock = 1000;
+      const control = new ComputerControl(() => {}, () => clock);
+
+      control.take("b1");
+      control.requestHelp("b1", "help me");
+      expect(control.snapshot("b1").held).toBe(true);
+
+      clock += 15 * 60 * 1000;
+      // Hold timed out. When dismissHelp is called, entry.heldSinceMs should not prevent cleanup
+      const after = control.dismissHelp("b1");
+      expect(after.held).toBe(false);
+      expect(after.helpReason).toBeNull();
+    });
+
+    it("clears held state on expireHelp if hold timed out", () => {
+      let clock = 1000;
+      const { control } = (() => {
+        return { control: new ComputerControl(() => {}, () => clock) };
+      })();
+
+      control.take("b1");
+      const { requestId } = control.requestHelpLease("b1", "help me");
+
+      clock += 15 * 60 * 1000;
+      const after = control.expireHelp("b1", requestId);
+      expect(after.held).toBe(false);
+      expect(after.helpReason).toBeNull();
+    });
+  });
 });

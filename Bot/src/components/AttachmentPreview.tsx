@@ -745,7 +745,7 @@ function AttachedFileChip({ file, message }: { file: TranscriptFileAttachment; m
   const isAudio = ["mp3", "wav", "ogg", "m4a", "aac", "webm", "flac"].includes(ext);
 
   if (isAudio && file.path) {
-    const audioUrl = `/api/threads/${encodeURIComponent(message?.threadId ?? "")}/messages/${encodeURIComponent(message?.messageId ?? "")}/file?ref=0`;
+    const audioUrl = `/api/attachments/${encodeURIComponent(attachmentBasename(file.path))}`;
     return <WaveformAudioPlayer src={audioUrl} fileName={file.name} />;
   }
 

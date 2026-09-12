@@ -11,13 +11,46 @@ export async function compressImageForUpload(file: File, maxDimension = 1920, qu
     return file;
   }
 
+  // Ensure DOM/browser environment supports required APIs
+  if (
+    typeof window === "undefined" ||
+    typeof document === "undefined" ||
+    typeof URL === "undefined" ||
+    typeof URL.createObjectURL !== "function"
+  ) {
+    return file;
+  }
+
   return new Promise((resolve) => {
+    let settled = false;
+    const finish = (result: File) => {
+      if (settled) return;
+      settled = true;
+      resolve(result);
+    };
+
+    let url = "";
+    try {
+      url = URL.createObjectURL(file);
+    } catch {
+      finish(file);
+      return;
+    }
+
     const img = new Image();
-    const url = URL.createObjectURL(file);
 
     img.onload = () => {
-      URL.revokeObjectURL(url);
+      try {
+        URL.revokeObjectURL(url);
+      } catch {
+        // Ignore revoke errors
+      }
+
       let { width, height } = img;
+      if (!width || !height) {
+        finish(file);
+        return;
+      }
 
       if (width > maxDimension || height > maxDimension) {
         if (width > height) {
@@ -29,37 +62,61 @@ export async function compressImageForUpload(file: File, maxDimension = 1920, qu
         }
       }
 
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        resolve(file);
+      let canvas: HTMLCanvasElement;
+      let ctx: CanvasRenderingContext2D | null;
+      try {
+        canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        ctx = canvas.getContext("2d");
+      } catch {
+        finish(file);
         return;
       }
 
-      ctx.drawImage(img, 0, 0, width, height);
+      if (!ctx) {
+        finish(file);
+        return;
+      }
 
-      canvas.toBlob(
-        (blob) => {
-          if (!blob || blob.size >= file.size) {
-            resolve(file);
-            return;
-          }
-          const compressed = new File([blob], file.name.replace(/\.[^.]+$/, ".webp"), {
-            type: "image/webp",
-            lastModified: Date.now(),
-          });
-          resolve(compressed);
-        },
-        "image/webp",
-        quality,
-      );
+      try {
+        ctx.drawImage(img, 0, 0, width, height);
+      } catch {
+        finish(file);
+        return;
+      }
+
+      try {
+        canvas.toBlob(
+          (blob) => {
+            if (!blob || blob.size >= file.size) {
+              finish(file);
+              return;
+            }
+            const newName = file.name.includes(".")
+              ? file.name.replace(/\.[^.]+$/, ".webp")
+              : `${file.name}.webp`;
+            const compressed = new File([blob], newName, {
+              type: "image/webp",
+              lastModified: Date.now(),
+            });
+            finish(compressed);
+          },
+          "image/webp",
+          quality,
+        );
+      } catch {
+        finish(file);
+      }
     };
 
     img.onerror = () => {
-      URL.revokeObjectURL(url);
-      resolve(file);
+      try {
+        URL.revokeObjectURL(url);
+      } catch {
+        // Ignore revoke errors
+      }
+      finish(file);
     };
 
     img.src = url;

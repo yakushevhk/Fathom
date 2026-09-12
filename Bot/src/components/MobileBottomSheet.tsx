@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { triggerHaptic } from "@/lib/haptics";
 
@@ -11,12 +11,37 @@ interface BottomSheetProps {
 
 export function MobileBottomSheet({ open, onClose, title, children }: BottomSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef<number | null>(null);
+  const [translateY, setTranslateY] = useState(0);
 
   useEffect(() => {
-    if (open) triggerHaptic("medium");
+    if (open) {
+      setTranslateY(0);
+      triggerHaptic("medium");
+    }
   }, [open]);
 
   if (!open) return null;
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (touchStartY.current === null) return;
+    const deltaY = e.touches[0].clientY - touchStartY.current;
+    if (deltaY > 0) {
+      setTranslateY(deltaY);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (translateY > 100) {
+      onClose();
+    }
+    setTranslateY(0);
+    touchStartY.current = null;
+  };
 
   return (
     <div
@@ -28,11 +53,15 @@ export function MobileBottomSheet({ open, onClose, title, children }: BottomShee
       <div
         ref={sheetRef}
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[85vh] w-full flex-col overflow-hidden rounded-t-3xl border-t border-hairline/60 bg-panel shadow-2xl animate-slide-up"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={translateY > 0 ? { transform: `translateY(${translateY}px)`, transition: "none" } : undefined}
+        className="flex max-h-[85vh] w-full flex-col overflow-hidden rounded-t-3xl border-t border-hairline/60 bg-panel shadow-2xl animate-slide-up transition-transform duration-200"
       >
         {/* Grab Handle */}
-        <div className="flex w-full items-center justify-center pt-3 pb-1">
-          <div className="h-1.5 w-12 rounded-full bg-hairline-strong/80" />
+        <div className="flex w-full cursor-grab items-center justify-center pt-3 pb-1">
+          <div className="h-1.5 w-12 rounded-full bg-hairline/80" />
         </div>
 
         {/* Sheet Header */}

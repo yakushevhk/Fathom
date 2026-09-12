@@ -29,6 +29,7 @@ import { api, ApiError, useStore, type Bot } from "@/state/store";
 import type { CloudBackend } from "../../server/contracts.ts";
 import { ApiKeyRow } from "./ApiKeys";
 import { cn } from "@/lib/cn";
+import { triggerHaptic } from "@/lib/haptics";
 import { usePageVisible } from "@/lib/page-visible";
 import { CloudScreenPreview } from "./CloudScreenPreview";
 import { isRemoteScreenshotContention } from "@/lib/remote-desktop";
@@ -1135,13 +1136,15 @@ export function ComputerPanel({
         </div>
         <div
           onDragOver={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
+            if (e.dataTransfer.types.includes("Files")) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
           }}
           onDrop={async (e) => {
-            e.preventDefault();
-            e.stopPropagation();
             if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+              e.preventDefault();
+              e.stopPropagation();
               triggerHaptic("success");
               const names = Array.from(e.dataTransfer.files).map(f => f.name).join(", ");
               alert(`Files transferred to bot VM workspace: ${names}`);

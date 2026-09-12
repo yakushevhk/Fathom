@@ -37,8 +37,8 @@ export function ThinkingAccordion({ reasoning, isStreaming = false }: ThinkingAc
         <div className="border-t border-hairline/40 px-3.5 py-3 text-[12.5px] leading-relaxed text-ink/80 font-mono whitespace-pre-wrap max-h-72 overflow-y-auto select-text bg-inset/30">
           {reasoning || (
             <div className="flex items-center gap-2 italic text-ink-secondary">
-              <Sparkles size={13} className="animate-spin" />
-              Synthesizing internal thought path...
+              <Sparkles size={13} className="animate-spin text-accent" />
+              <span>Synthesizing internal thought path...</span>
             </div>
           )}
         </div>

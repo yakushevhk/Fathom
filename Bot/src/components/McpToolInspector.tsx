@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Play, Check, AlertCircle, Clock, Code, Wrench, X } from "lucide-react";
+import { Play, Check, AlertCircle, Clock, Wrench, X } from "lucide-react";
 import { api } from "@/state/store";
 import { triggerHaptic } from "@/lib/haptics";
 
@@ -9,13 +9,13 @@ interface McpTool {
   inputSchema?: Record<string, unknown>;
 }
 
-interface McpToolInspectorProps {
+export interface McpToolInspectorProps {
   serverName: string;
   tools?: McpTool[];
   onClose: () => void;
 }
 
-export function McpToolInspector({ serverName, tools = [], onClose }: { serverName: string; tools?: McpTool[]; onClose: () => void }) {
+export function McpToolInspector({ serverName, tools = [], onClose }: McpToolInspectorProps) {
   const [selectedTool, setSelectedTool] = useState<McpTool | null>(tools[0] ?? null);
   const [jsonInput, setJsonInput] = useState<string>("{}");
   const [executing, setExecuting] = useState(false);

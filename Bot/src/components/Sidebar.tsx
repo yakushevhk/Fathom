@@ -1,6 +1,6 @@
 import { track } from "@/lib/analytics";
 import { triggerHaptic } from "@/lib/haptics";
-import { createContext, useContext, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   Archive,
@@ -38,6 +38,8 @@ import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
 import type { LocaleKey } from "@/locales";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { SidebarDrawerContext, useSidebarDrawer } from "./SidebarDrawerContext";
+export { SidebarDrawerContext, useSidebarDrawer };
 import { WorkingDots } from "./WorkingIndicator";
 import { nextRename } from "@/lib/rename";
 import { useDesktopCapabilities } from "./DesktopCapabilities";
@@ -1363,12 +1365,6 @@ function ArchivedBotsPanel({
   );
 }
 
-export const SidebarDrawerContext = createContext<(() => void) | null>(null);
-
-export function useSidebarDrawer() {
-  return useContext(SidebarDrawerContext);
-}
-
 export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { state, dispatch } = useStore();
   const showThreads = useShowThreads();
@@ -1512,7 +1508,6 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
   };
 
   const macInset = capabilities.windowChrome === "mac-inset";
-  const browser = capabilities.host.label === "Browser";
   // SAFETY: Electron's documented -webkit-app-region CSS property is not in
   // React's CSSProperties type, but the renderer accepts it as an inline style.
   const windowDragStyle = macInset
