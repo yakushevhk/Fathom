@@ -57,7 +57,7 @@ export function MobileBottomSheet({ open, onClose, title, children }: BottomShee
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         style={translateY > 0 ? { transform: `translateY(${translateY}px)`, transition: "none" } : undefined}
-        className="flex max-h-[85vh] w-full flex-col overflow-hidden rounded-t-3xl border-t border-hairline/60 bg-panel shadow-2xl animate-slide-up transition-transform duration-200"
+        className="flex max-h-[85dvh] w-full flex-col overflow-hidden rounded-t-3xl border-t border-hairline/60 bg-panel shadow-2xl animate-slide-up transition-transform duration-200"
       >
         {/* Grab Handle */}
         <div className="flex w-full cursor-grab items-center justify-center pt-3 pb-1">
@@ -77,7 +77,7 @@ export function MobileBottomSheet({ open, onClose, title, children }: BottomShee
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-5 pb-8">
+        <div className="flex-1 overflow-y-auto p-5 pb-[max(2rem,calc(1.5rem+env(safe-area-inset-bottom,0px)))]">
           {children}
         </div>
       </div>

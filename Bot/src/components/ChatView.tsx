@@ -979,6 +979,13 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
   const lastMessage = messages.at(-1);
   const toolInFlight = lastMessage?.kind === "activity" && lastMessage.tool?.ok === undefined;
   const activityLabel = liveActivityLabel(lastMessage);
+  // Collect activity messages from the current in-flight turn (after the last user prompt)
+  const currentTurnSteps = useMemo(() => {
+    if (!bot.busy && !reasoning) return [];
+    const lastUserIdx = messages.findLastIndex((m) => m.role === "user");
+    const turnMessages = lastUserIdx >= 0 ? messages.slice(lastUserIdx + 1) : messages;
+    return turnMessages.filter((m) => m.kind === "activity" && m.tool);
+  }, [messages, bot.busy, reasoning]);
   const waiting = Boolean(
     bot.busy &&
       bot.activity !== "waiting-on-you" &&
@@ -1139,7 +1146,7 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
         className={cn(
           // @container so the chips on the right can fold to icon bubbles
           // when the column is narrow (side panel open, small window)
-          "@container/chathead flex items-center justify-between px-3 py-2 md:px-5 md:py-3 border-b border-hairline/30 md:border-b-0",
+          "@container/chathead flex items-center justify-between px-3 py-2 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] md:pt-3 md:px-5 md:py-3 border-b border-hairline/30 md:border-b-0",
           // Room for the drawer button, which overlays this corner below md.
           "pl-14 md:pl-5",
         )}
@@ -1358,9 +1365,13 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
             onRegenerate={regenerate}
             onReply={selectReply}
           />
-          {(reasoning || (bot.busy && streaming)) && (
+          {(reasoning || (bot.busy && streaming) || (bot.busy && currentTurnSteps.length > 0)) && (
             <div className="px-1">
-              <ThinkingAccordion reasoning={reasoning || ""} isStreaming={bot.busy && !streaming} />
+              <ThinkingAccordion
+                reasoning={reasoning || ""}
+                isStreaming={bot.busy && !streaming}
+                steps={currentTurnSteps}
+              />
             </div>
           )}
           {laterCount > 0 && (

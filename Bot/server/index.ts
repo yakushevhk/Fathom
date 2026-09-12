@@ -297,6 +297,7 @@ import {
   ROUTINE_PROMPT,
   ROUTINE_EXECUTION_PROMPT,
   WEBHOOK_PROMPT,
+  INTERACTIVE_CARDS_PROMPT,
   type ComputerPromptKind,
 } from "./system-prompt.ts";
 import { readCuaConnection, gatedLocalComputer } from "./local-computer.ts";
@@ -1479,6 +1480,7 @@ function previewSystemPrompt(bot: BotRecord) {
     { id: "profile", label: "Profile changes", text: agentsMounted ? PROFILE_PROMPT : "" },
     { id: "section-context", label: "Section context", text: sectionContextSystemPrompt(bot.section) },
     { id: "memory", label: "Memory", text: privateWorkspace ? memorySystemPrompt(bot.id) : "" },
+    { id: "cards", label: "Interactive cards", text: INTERACTIVE_CARDS_PROMPT },
     { id: "skills", label: "Skills index", text: privateWorkspace ? skillsSystemPrompt(bot.id) : "" },
   ]);
   const totalBytes = built.sections.reduce((n, s) => n + s.bytes, 0);
@@ -5122,6 +5124,7 @@ async function startTurn(
         { id: "skills", label: "Skills index", text: privateWorkspace ? skillsSystemPrompt(bot.id) : "" },
         { id: "skill-instructions", label: "Skill instructions", text: skillInstructions },
         { id: "playbooks", label: "Playbooks", text: packagePlaybooks },
+        { id: "cards", label: "Interactive cards", text: INTERACTIVE_CARDS_PROMPT },
         { id: "webhook", label: "Webhook provenance", text: opts?.automationSource === "webhook" ? WEBHOOK_PROMPT : "" },
         { id: "mentions", label: "Mentions", text: mentionPrompt(tagged) },
       ]);
@@ -6318,8 +6321,8 @@ async function runGroupMemberTurn(
     { id: "computer", label: "Computer", text: computerPrompt(roomVmTarget ? localVmMode(cfg) === "per-bot" ? "vm-private" : "vm-shared" : null) },
     { id: "browser", label: "Browser", text: integrations.browser ? BUILT_IN_BROWSER_SYSTEM_PROMPT : "" },
     { id: "recall", label: "Recall", text: integrations.agents ? SESSION_SEARCH_SYSTEM_PROMPT : "" },
+    { id: "cards", label: "Interactive cards", text: INTERACTIVE_CARDS_PROMPT },
     { id: "section-context", label: "Section context", text: sectionContextSystemPrompt(bot.section) },
-    // the room path has always put a newline before memory and trimmed
     // the block's leading space; keep that so existing prompts are
     // byte-identical. The write guidance follows the tools actually
     // mounted, exactly as the 1:1 path decides it: memory_update is on the

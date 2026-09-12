@@ -79,7 +79,7 @@ export function SidebarThreadRow({ task, current, compact, folders, onSelect, on
         }} onDoubleClick={startRename}
         onContextMenu={(event) => { event.preventDefault(); openMenu(event.clientX, event.clientY); }}
         onKeyDown={(event) => { if (event.key === "ContextMenu" || event.shiftKey && event.key === "F10") { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); openMenu(rect.left, rect.bottom); } }}
-        className={cn("flex min-w-0 flex-1 items-center gap-2 rounded-md pl-3 pr-1 text-left text-[13px] font-medium outline-none focus-visible:ring-1 focus-visible:ring-accent/60", compact ? "min-h-7 py-1" : "min-h-8 py-1.5", current ? "font-semibold text-ink" : "text-ink-secondary hover:text-ink")}>
+        className={cn("flex min-w-0 flex-1 items-center gap-2 rounded-md pl-3 pr-1 text-left text-[13px] font-medium outline-none focus-visible:ring-1 focus-visible:ring-accent/60 max-md:min-h-[40px] max-md:py-2", compact ? "min-h-7 py-1" : "min-h-8 py-1.5", current ? "font-semibold text-ink" : "text-ink-secondary hover:text-ink")}>
         <span className="flex min-w-0 flex-1 flex-col">
           <span className={cn("min-w-0 truncate", task.unread && "font-semibold text-ink")}>{task.title}</span>
           {opener && <span className="min-w-0 truncate text-[10.5px] leading-tight text-ink-secondary/80">{opener}</span>}
@@ -89,8 +89,8 @@ export function SidebarThreadRow({ task, current, compact, folders, onSelect, on
       </button>}
       <button ref={actionRef} type="button" aria-label={t("task.actions", { title: task.title })} aria-expanded={Boolean(menu)}
         onClick={(event) => { if (menu) { setMenu(null); return; } const rect = event.currentTarget.getBoundingClientRect(); openMenu(rect.left, rect.bottom); }}
-        className="mr-0.5 flex size-6 shrink-0 items-center justify-center rounded text-ink-secondary opacity-0 hover:bg-raised hover:text-ink focus-visible:opacity-100 group-hover/thread:opacity-100 max-md:opacity-70">
-        <MoreHorizontal size={13} />
+        className="mr-0.5 flex size-8 sm:size-6 shrink-0 items-center justify-center rounded text-ink-secondary opacity-0 hover:bg-raised hover:text-ink focus-visible:opacity-100 group-hover/thread:opacity-100 max-md:opacity-75">
+        <MoreHorizontal size={14} />
       </button>
     </div>
     {menu && createPortal(<div ref={menuRef} data-thread-overlay role="group" aria-label={t("task.actions", { title: task.title })} style={menu}

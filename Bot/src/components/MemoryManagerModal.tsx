@@ -98,16 +98,16 @@ export function MemoryManagerModal({ onClose, botId }: MemoryManagerModalProps) 
         ref={dialogRef}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="flex w-full max-w-4xl h-[80vh] flex-col overflow-hidden rounded-2xl border border-hairline/60 bg-panel shadow-2xl animate-pop-in"
+        className="flex w-full max-w-4xl h-[80dvh] flex-col overflow-hidden rounded-2xl border border-hairline/60 bg-panel shadow-2xl animate-pop-in"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-hairline/40 px-5 py-3.5">
-          <div className="flex items-center gap-2">
-            <Database className="text-accent" size={18} />
-            <div>
-              <h2 className="text-sm font-semibold text-ink">Memory Manager & Knowledge Graph</h2>
-              <p className="text-[12px] text-ink-secondary">
-                Agent: <span className="font-semibold text-ink">{bot?.name || "Agent"}</span> (Hybrid BM25 + Semantic Vector Retrieval)
+        <div className="flex items-center justify-between border-b border-hairline/40 px-4 py-3 sm:px-5 sm:py-3.5 gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Database className="text-accent shrink-0" size={18} />
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold text-ink truncate">Memory Manager</h2>
+              <p className="text-[11px] sm:text-[12px] text-ink-secondary truncate">
+                Agent: <span className="font-semibold text-ink">{bot?.name || "Agent"}</span>
               </p>
             </div>
           </div>
@@ -115,14 +115,14 @@ export function MemoryManagerModal({ onClose, botId }: MemoryManagerModalProps) 
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="flex size-7 items-center justify-center rounded-lg text-ink-secondary hover:bg-raised hover:text-ink transition-colors"
+            className="flex size-7 shrink-0 items-center justify-center rounded-lg text-ink-secondary hover:bg-raised hover:text-ink transition-colors"
           >
             <X size={16} />
           </button>
         </div>
 
         {/* Action bar */}
-        <div className="flex items-center justify-between border-b border-hairline/40 px-5 py-2.5 bg-inset/20" role="tablist">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-hairline/40 px-4 py-2.5 sm:px-5 bg-inset/20 overflow-x-auto" role="tablist">
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -173,11 +173,11 @@ export function MemoryManagerModal({ onClose, botId }: MemoryManagerModalProps) 
             onClick={handleConsolidate}
             disabled={consolidating}
             aria-busy={consolidating}
-            className="flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1 text-[12px] font-medium text-accent hover:bg-accent/20 transition-colors"
-          >
-            {consolidating ? <RefreshCw size={13} className="animate-spin" /> : <Sparkles size={13} />}
-            {consolidating ? "Consolidating Logs..." : consolidationDone ? "Memory Consolidated!" : "Consolidate & Prune Memory"}
-          </button>
+          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1 text-[12px] font-medium text-accent hover:bg-accent/20 transition-colors ml-auto sm:ml-0"
+        >
+          {consolidating ? <RefreshCw size={13} className="animate-spin" /> : <Sparkles size={13} />}
+          {consolidating ? "Consolidating..." : consolidationDone ? "Consolidated!" : "Consolidate Memory"}
+        </button>
         </div>
 
         {/* Content */}

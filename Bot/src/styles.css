@@ -1453,3 +1453,15 @@ button:active:not(:disabled),
   max-width: 100%;
 }
 
+
+/* Prevent unwanted automatic zoom in iOS Safari when focusing inputs with font-size < 16px */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="search"],
+  input[type="password"],
+  input[type="email"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}

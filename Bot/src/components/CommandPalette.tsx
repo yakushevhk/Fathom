@@ -16,6 +16,7 @@ import {
   Terminal,
   Users,
   Wrench,
+  X,
 } from "lucide-react";
 import { api, useStore, type Bot, type Group } from "@/state/store";
 import { rankByName } from "@/lib/palette-rank";
@@ -347,7 +348,7 @@ export function CommandPalette({ onOpenChange }: { onOpenChange?: (open: boolean
       aria-modal="true"
       aria-label="Command Palette"
       onClick={() => setOpen(false)}
-      className="modal-backdrop fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-6 sm:pt-20"
+      className="modal-backdrop fixed inset-0 z-50 flex items-start justify-center p-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] sm:p-6 sm:pt-20"
     >
       <div
         ref={dialogRef}
@@ -363,15 +364,23 @@ export function CommandPalette({ onOpenChange }: { onOpenChange?: (open: boolean
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Type a command, search bots & messages, or calculate (e.g. 1920/2)..."
+            placeholder="Type a command, search bots & messages..."
             className="w-full bg-transparent text-[14.5px] text-ink placeholder:text-ink-secondary focus:outline-none"
           />
           <kbd className="hidden sm:inline-block rounded border border-hairline/60 bg-raised px-1.5 py-0.5 text-[10px] font-mono text-ink-secondary">
             ESC
           </kbd>
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            aria-label="Close command palette"
+            className="flex sm:hidden size-7 items-center justify-center rounded-lg text-ink-secondary hover:bg-control hover:text-ink"
+          >
+            <X size={16} />
+          </button>
         </div>
 
-        <div className="max-h-[60vh] overflow-y-auto p-1.5">
+        <div className="max-h-[50dvh] sm:max-h-[60vh] overflow-y-auto p-1.5">
           {entries.length === 0 ? (
             <div className="px-3 py-8 text-center text-xs text-ink-secondary">
               No results matching "{query}"

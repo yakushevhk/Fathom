@@ -40,8 +40,6 @@ function ensureFile(path, content) {
 
 export async function setupRouterAgents() {
   console.log(`[setup-router-agents] Configuring agents exclusively for: ${ONLY_MODEL}`);
-  const models = [ONLY_MODEL];
-  const defaultModel = ONLY_MODEL;
 
   // 1. Claude (~/.claude/settings.json)
   const claudeSettingsPath = join(DATA_DIR, ".claude", "settings.json");

@@ -113,6 +113,14 @@ export const WEBHOOK_PROMPT =
 export const PROFILE_PROMPT =
   " If the user asks you to change who you are — your name, title, description, or standing instructions (SOUL.md) — or to set yourself up, use propose_profile. It only creates a confirmation card; nothing changes until the user confirms it, so never claim your profile changed before that confirmation.";
 
+export const INTERACTIVE_CARDS_PROMPT =
+  ' You can optionally format structured summaries, status reports, dashboards, server info, analytics, health metrics, schedules, and comparisons as a rich interactive card by outputting a ```card code block with JSON. Only use cards when structured presentation adds genuine visual clarity (never for simple greetings, plain conversation, or raw code explanations). Multiple layouts supported:\n' +
+  '- "stats": grid of key numbers, gauges, or metrics. {"type":"card","layout":"stats","title":"Server Status","badge":"Healthy","accent":"green","icon":"activity","stats":[{"label":"CPU Usage","value":"14%","trend":"neutral"},{"label":"Memory","value":"4.2","unit":"GB","description":"of 16 GB"},{"label":"Uptime","value":"99.98%","trend":"up"}]}\n' +
+  '- "key-value": clean property/spec lookup table. {"type":"card","layout":"key-value","title":"Database Config","accent":"blue","icon":"layers","keyValue":[{"key":"Host","value":"db.internal"},{"key":"Port","value":5432},{"key":"SSL","value":"Enabled"}]}\n' +
+  '- "progress": multi-bar resource or milestone tracker. {"type":"card","layout":"progress","title":"Disk & Quota","accent":"amber","icon":"flame","progress":[{"label":"Primary NVMe","current":320,"total":512,"unit":"GB","color":"amber"},{"label":"Backup Volume","current":80,"total":1000,"unit":"GB","color":"green"}]}\n' +
+  '- "timeline": chronological events, deployment stages, or milestones. {"type":"card","layout":"timeline","title":"Release Pipeline","accent":"purple","icon":"clock","timeline":[{"time":"14:00","title":"Build passed","status":"done"},{"time":"14:02","title":"Migration completed","status":"done"},{"time":"14:05","title":"Deploying containers","status":"current"}]}\n' +
+  '- "list": itemized list with badges, icons, and status indicators. {"type":"card","layout":"list","title":"Running Services","accent":"blue","icon":"globe","items":[{"title":"API Gateway","subtitle":"Port 8080","badge":"Active","value":"Healthy"},{"title":"Background Worker","subtitle":"Redis queue","badge":"Idle","value":"0 jobs"}]}\n' +
+  'Accents: "blue", "green", "emerald", "amber", "rose", "purple", "neutral". Icons: "activity", "zap", "flame", "chart", "calendar", "clock", "globe", "layers", "check", "alert", "heart". Feel free to add explanatory markdown before or after the card.';
 export function mentionPrompt(tagged: ReadonlyArray<{ id: string; name: string }>): string {
   if (!tagged.length) return "";
   return ` The user tagged ${tagged

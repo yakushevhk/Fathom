@@ -536,7 +536,7 @@ export function SettingsModal() {
 
   return (
     <div
-      className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
+      className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:p-6"
       onMouseDown={(e) => e.target === e.currentTarget && dispatch({ type: "toggleAppSettings", open: false })}
     >
       <div
@@ -545,7 +545,7 @@ export function SettingsModal() {
         aria-modal="true"
         aria-labelledby="app-settings-title"
         tabIndex={-1}
-        className={cn("animate-pop-in flex max-h-[calc(100dvh-24px)] w-full overflow-hidden rounded-2xl border border-hairline/50 bg-panel shadow-2xl outline-none", section === "engines" ? "h-[min(760px,85vh)] max-w-[1040px]" : "h-[min(620px,80vh)] max-w-[860px]")}
+        className={cn("animate-pop-in flex max-h-[calc(100dvh-24px)] w-full overflow-hidden rounded-2xl border border-hairline/50 bg-panel shadow-2xl outline-none", section === "engines" ? "h-[min(760px,85dvh)] max-w-[1040px]" : "h-[min(620px,80dvh)] max-w-[860px]")}
       >
         {/* section nav */}
         <span id="app-settings-title" className="sr-only">{t("settings.title")}</span>

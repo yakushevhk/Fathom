@@ -34,7 +34,7 @@ import { MarkdownImagePreview, useLocalFileSave, type MessageAttachmentContext }
 import { ThreadLink, threadLinkFromProps, useThreadRefs } from "./ThreadRefs";
 import { MermaidViewer } from "./MermaidViewer";
 import { KaTeXMath } from "./KaTeXMath";
-
+import { UniversalCard, parseUniversalCardJson } from "./UniversalCard";
 // tiny highlight cache so revisiting a thread doesn't re-tokenize settled
 // blocks; keys are content-hashed and capped. Streamed partials may land here
 // under their own hash — harmless (never collides with the final content's
@@ -255,6 +255,22 @@ export function CodeBlock({ code, lang, streaming }: CodeBlockProps) {
   // Intercept LaTeX Math block (math, latex, katex)
   if (["math", "latex", "katex"].includes(lang.toLowerCase())) {
     return <KaTeXMath math={code} block={true} />;
+  }
+
+  // Intercept Universal interactive card blocks (card, json:card, metrics)
+  if (["card", "json:card", "metrics"].includes(lang.toLowerCase())) {
+    const cardData = parseUniversalCardJson(code);
+    if (cardData) {
+      return <UniversalCard card={cardData} />;
+    }
+  }
+
+  // If language is json and root is {"type": "card", ...} or matches card shape, render card
+  if (lang.toLowerCase() === "json" && code.includes('"title"') && (code.includes('"stats"') || code.includes('"items"') || code.includes('"progress"') || code.includes('"keyValue"') || code.includes('"timeline"'))) {
+    const cardData = parseUniversalCardJson(code);
+    if (cardData) {
+      return <UniversalCard card={cardData} />;
+    }
   }
 
   const copy = () => {

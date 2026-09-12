@@ -1099,7 +1099,7 @@ export function GroupView({ group }: { group: Group }) {
       {/* Header: static member avatars; a ring + dot marks the working bot. */}
       <div
         className={cn(
-          "flex items-center justify-between px-3 py-2 md:px-5 md:py-3 border-b border-hairline/30 md:border-b-0",
+          "flex items-center justify-between px-3 py-2 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] md:pt-3 md:px-5 md:py-3 border-b border-hairline/30 md:border-b-0",
           // Room for the drawer button, which overlays this corner below md.
           "pl-14 md:pl-5",
         )}

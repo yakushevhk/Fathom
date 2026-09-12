@@ -5,16 +5,17 @@
 import { useEffect, useState } from "react";
 import { GitBranch, Wrench } from "lucide-react";
 import { api, useStore, formatTime } from "@/state/store";
+import { useSidebarDrawer } from "./SidebarDrawerContext";
 import { BotAvatar } from "./Avatar";
 import { cn } from "@/lib/cn";
 import type { SearchHit } from "@/lib/search-hit";
 import { landOnSearchHit } from "@/lib/focus-message";
-
 export const MIN_QUERY = 2;
 const DEBOUNCE_MS = 250;
 
 export function SearchResults({ query, onLanded }: { query: string; onLanded: () => void }) {
   const { state, dispatch } = useStore();
+  const closeDrawer = useSidebarDrawer();
   const [hits, setHits] = useState<SearchHit[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const q = query.trim();
@@ -47,6 +48,7 @@ export function SearchResults({ query, onLanded }: { query: string; onLanded: ()
     try {
       await landOnSearchHit(hit, state, dispatch);
       onLanded();
+      closeDrawer?.();
     } catch (e) {
       dispatch({ type: "error", message: e instanceof Error ? e.message : String(e) });
     }

@@ -1,5 +1,6 @@
 import { BellDot, CircleAlert, Clock3, Loader2 } from "lucide-react";
 import { useStore, type Bot, type Task } from "@/state/store";
+import { useSidebarDrawer } from "@/components/SidebarDrawerContext";
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
 import type { SidebarDensity } from "@/lib/sidebar-preferences";
@@ -19,6 +20,7 @@ export function sidebarBotActivityTasks(bot: Bot, queued: Record<string, unknown
  * These are selection-only buttons: no create, rename, move, or delete menu. */
 export function SidebarBotActivity({ bot, density }: { bot: Bot; density: SidebarDensity }) {
   const { state, dispatch } = useStore();
+  const closeDrawer = useSidebarDrawer();
   const tasks = sidebarBotActivityTasks(bot, state.pendingQueued).filter((task) => task.threadId !== bot.threadId);
   if (!tasks.length) return null;
   const iconOnly = density === "icons";
@@ -30,7 +32,10 @@ export function SidebarBotActivity({ bot, density }: { bot: Bot; density: Sideba
       const label = `${bot.name}: ${task.title} · ${status}${task.unread && (waiting || working || task.queued) ? ` · ${t("task.unread")}` : ""}`;
       const Icon = waiting ? CircleAlert : working ? Loader2 : task.queued ? Clock3 : BellDot;
       return <button key={task.threadId} type="button" data-sidebar-activity-row={task.threadId} aria-label={label} title={label}
-        onClick={() => dispatch({ type: "switchTask", botId: bot.id, threadId: task.threadId })}
+        onClick={() => {
+          dispatch({ type: "switchTask", botId: bot.id, threadId: task.threadId });
+          closeDrawer?.();
+        }}
         className={cn("flex min-h-7 w-full min-w-0 items-center gap-1.5 rounded-md px-2 py-1 text-left text-[11px] outline-none hover:bg-raised/50 focus-visible:ring-1 focus-visible:ring-accent/60", iconOnly && "justify-center", waiting ? "text-warning" : "text-ink-secondary")}>
         <Icon size={12} aria-hidden="true" className={cn("shrink-0", working && "animate-spin text-success", task.unread && !waiting && !working && "text-accent")} />
         {!iconOnly && <><span className="min-w-0 flex-1 truncate">{task.title}</span><span className="shrink-0 text-[10px]">{waiting ? t("task.waiting") : status}</span>
