@@ -635,6 +635,7 @@ type InternalCapability = {
   skillAuthoring: boolean;
   createdBots: number;
   createdRooms?: number;
+  roomPosts?: number;
   /** start_thread calls this turn has made — capped like createdBots, so a
    * turn cannot fan out into more real turns than a person could follow. */
   openedThreads: number;
@@ -9422,40 +9423,50 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
         const deadline = Date.now() + waitMs;
         // Bounded long-poll: the delegating bot parks ONE cheap HTTP request
         // here instead of burning a model inference per status check.
-        for (;;) {
-          const receipt = findDelegationReceipt(taskId);
-          if (receipt) {
-            if (receipt.sourceThreadId !== fromThreadId) {
-              return json(res, 403, { error: "that task belongs to a different conversation" });
+        let aborted = false;
+        const onAborted = () => { aborted = true; };
+        req.once("close", onAborted);
+        req.once("aborted", onAborted);
+        try {
+          for (;;) {
+            if (aborted || !internalCapabilityIsActive(internalCapability)) return;
+            const receipt = findDelegationReceipt(taskId);
+            if (receipt) {
+              if (receipt.sourceThreadId !== fromThreadId) {
+                return json(res, 403, { error: "that task belongs to a different conversation" });
+              }
+              return json(res, 200, { status: receipt.status, toBotName: receipt.toBotName, result: receipt.result ?? "" });
             }
-            return json(res, 200, { status: receipt.status, toBotName: receipt.toBotName, result: receipt.result ?? "" });
-          }
-          const stillQueued = pendingDelegationInfo(taskId);
-          const runningEntry = [...delegationWatch.entries()].find(([, watch]) => watch.taskId === taskId);
-          const running = runningEntry?.[1];
-          const owner = stillQueued?.sourceThreadId ?? running?.sourceThreadId;
-          if (!owner) return json(res, 404, { error: "unknown task id — delegation receipts are kept for about 48 hours" });
-          if (owner !== fromThreadId) return json(res, 403, { error: "that task belongs to a different conversation" });
-          if (Date.now() >= deadline) {
-            const toBotId = stillQueued?.toBotId ?? running?.toBotId ?? "";
-            if (running && runningEntry) {
-              const recent = summarizeDelegatedActivity(
-                store.messagesFor(runningEntry[0]),
-                running.startedAtMs ?? Date.now(),
-              );
+            const stillQueued = pendingDelegationInfo(taskId);
+            const runningEntry = [...delegationWatch.entries()].find(([, watch]) => watch.taskId === taskId);
+            const running = runningEntry?.[1];
+            const owner = stillQueued?.sourceThreadId ?? running?.sourceThreadId;
+            if (!owner) return json(res, 404, { error: "unknown task id — delegation receipts are kept for about 48 hours" });
+            if (owner !== fromThreadId) return json(res, 403, { error: "that task belongs to a different conversation" });
+            if (Date.now() >= deadline) {
+              const toBotId = stillQueued?.toBotId ?? running?.toBotId ?? "";
+              if (running && runningEntry) {
+                const recent = summarizeDelegatedActivity(
+                  store.messagesFor(runningEntry[0]),
+                  running.startedAtMs ?? Date.now(),
+                );
+                return json(res, 200, {
+                  status: "running",
+                  toBotName: store.bot(toBotId)?.name ?? toBotId,
+                  elapsedMs: Math.max(0, Date.now() - (running.startedAtMs ?? Date.now())),
+                  recentActivity: recent,
+                });
+              }
               return json(res, 200, {
-                status: "running",
+                status: "queued",
                 toBotName: store.bot(toBotId)?.name ?? toBotId,
-                elapsedMs: Math.max(0, Date.now() - (running.startedAtMs ?? Date.now())),
-                recentActivity: recent,
               });
             }
-            return json(res, 200, {
-              status: "queued",
-              toBotName: store.bot(toBotId)?.name ?? toBotId,
-            });
+            await new Promise((wake) => setTimeout(wake, 500));
           }
-          await new Promise((wake) => setTimeout(wake, 500));
+        } finally {
+          req.off("close", onAborted);
+          req.off("aborted", onAborted);
         }
       }
       if (method === "POST" && path === "/api/internal/delegate-bot") {
@@ -9496,7 +9507,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
           // nothing about what to do instead
           const said: Record<Exclude<QueueResult, "ok">, string> = {
             self: "a bot cannot delegate to itself",
-            too_deep: "delegation chains are limited to one hop — do this one yourself",
+            too_deep: `delegation chains are limited to ${MAX_COMMS_DEPTH} ${MAX_COMMS_DEPTH === 1 ? "hop" : "hops"} — do this one yourself`,
             no_target: "no such bot",
             too_many: "too many delegations queued on this turn — finish some first",
           };
@@ -9540,6 +9551,11 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
         if (message.length > ROOM_POST_MAX_CHARS) {
           return json(res, 400, {
             error: `a room post is at most ${ROOM_POST_MAX_CHARS} characters — post the short version and keep the detail in your own reply`,
+          });
+        }
+        if ((internalCapability.roomPosts ?? 0) >= 3) {
+          return json(res, 429, {
+            error: "you have reached the limit of room posts for this turn — say anything further to the user directly",
           });
         }
         let room = store.group(groupId);
@@ -9634,7 +9650,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
           peerPost: unattended ? { unattended: true } : {},
         });
         store.patchGroup(room.id, { unread: true });
-        // The same visibility contract the peer tools keep: whatever a bot
+        internalCapability.roomPosts = (internalCapability.roomPosts ?? 0) + 1;
         // does elsewhere shows up in the conversation it is actually in.
         // The chip is settled — the post has already landed — and carries
         // the same link a "Messaged @X" chip does, which is what makes it a
@@ -9747,7 +9763,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
           store.deleteTask(target.id, task.threadId);
           const said: Record<Exclude<QueueResult, "ok">, string> = {
             self: "a bot cannot hand a thread to itself this way — leave bot_id out",
-            too_deep: "thread chains are limited to one hop — open the thread on yourself, or do this one here",
+            too_deep: `thread chains are limited to ${MAX_COMMS_DEPTH} ${MAX_COMMS_DEPTH === 1 ? "hop" : "hops"} — open the thread on yourself, or do this one here`,
             no_target: "no such bot",
             too_many: "too many handoffs queued on this turn — finish your turn and open the rest next time",
           };

@@ -37,8 +37,34 @@ export function DagWorkflowVisualizer({ onClose }: DagVisualizerProps) {
   // Filter visible bots
   const visibleBots = state.bots.filter((b) => !b.hidden);
 
-  // Generate dynamic DAG representation from active bots and their execution state
-  const nodes: DagNode[] = visibleBots.slice(0, 8).map((bot, idx) => {
+  // Derive real task dependencies from delegation activity messages and thread refs
+  const delegationLinks = new Map<string, string[]>();
+  for (const bot of visibleBots) {
+    const delegatedTo = new Set<string>();
+    for (const msg of bot.messages ?? []) {
+      if (msg.kind === "activity" && msg.tool?.name) {
+        const match = /Delegated to @([^:,\s]+)/i.exec(msg.tool.name);
+        if (match) {
+          const targetName = match[1].toLowerCase();
+          const targetBot = visibleBots.find((b) => b.name.toLowerCase() === targetName);
+          if (targetBot && targetBot.id !== bot.id) {
+            delegatedTo.add(targetBot.id);
+          }
+        }
+      }
+      if (msg.threadRef?.botId && msg.threadRef.botId !== bot.id) {
+        delegatedTo.add(msg.threadRef.botId);
+      }
+    }
+    for (const targetId of delegatedTo) {
+      const existing = delegationLinks.get(targetId) ?? [];
+      existing.push(bot.id);
+      delegationLinks.set(targetId, existing);
+    }
+  }
+
+  // Generate dynamic DAG representation based on actual delegation topology
+  const nodes: DagNode[] = visibleBots.slice(0, 8).map((bot) => {
     let status: DagNode["status"] = "pending";
     if (bot.busy) {
       status = "running";
@@ -51,23 +77,23 @@ export function DagWorkflowVisualizer({ onClose }: DagVisualizerProps) {
       } else {
         status = "completed";
       }
-    } else if (idx === 0) {
+    } else if (bot.chiefOfStaff) {
       status = "completed";
     }
 
     const lastBotMsg = bot.messages?.filter((m) => m.role === "bot" && (m.text || m.tool?.name)).slice(-1)[0];
     const lastOutput = lastBotMsg?.text || (lastBotMsg?.tool?.name ? `Tool: ${lastBotMsg.tool.name}` : "Ready for task execution");
+    const realDependsOn = delegationLinks.get(bot.id);
 
     return {
       id: bot.id,
       name: bot.name,
       role: bot.chiefOfStaff ? "Chief of Staff / Coordinator" : bot.title || "Specialist Agent",
       status,
-      dependsOn: idx > 0 ? [visibleBots[idx - 1].id] : [],
+      dependsOn: realDependsOn && realDependsOn.length > 0 ? realDependsOn : undefined,
       output: lastOutput,
     };
   });
-
   const handleInitiateDebate = () => {
     triggerHaptic("success");
     const debateBots = visibleBots.slice(0, 4);

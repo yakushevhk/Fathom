@@ -7,8 +7,14 @@ export function SwarmCapabilityMatrix({ onClose }: { onClose: () => void }) {
   const { state, dispatch } = useStore();
   const visibleBots = state.bots.filter((b) => !b.hidden);
 
+  const getCanCoordinate = (bot: Bot) => {
+    const engine = state.instances.find((instance) => instance.instanceId === bot.modelSelection?.instanceId);
+    return engine?.capabilities?.agentsMcp === true;
+  };
+
   const toggleChief = (bot: Bot) => {
     triggerHaptic("tap");
+    if (!bot.chiefOfStaff && !getCanCoordinate(bot)) return;
     dispatch({
       type: "updateBot",
       botId: bot.id,
@@ -18,7 +24,7 @@ export function SwarmCapabilityMatrix({ onClose }: { onClose: () => void }) {
 
   const toggleApproval = (bot: Bot) => {
     triggerHaptic("tap");
-    const nextMode = bot.approvalMode === "auto" ? "ask" : bot.approvalMode === "ask" ? "auto" : "auto";
+    const nextMode = bot.approvalMode === "auto" ? "ask" : "auto";
     dispatch({
       type: "updateBot",
       botId: bot.id,
@@ -28,6 +34,7 @@ export function SwarmCapabilityMatrix({ onClose }: { onClose: () => void }) {
 
   const togglePeerComms = (bot: Bot) => {
     triggerHaptic("tap");
+    if (!bot.approvePeerComms && !getCanCoordinate(bot)) return;
     dispatch({
       type: "updateBot",
       botId: bot.id,
@@ -103,23 +110,33 @@ export function SwarmCapabilityMatrix({ onClose }: { onClose: () => void }) {
                   </td>
 
                   <td className="py-3 px-3 text-center">
-                    <button
-                      type="button"
-                      onClick={() => toggleChief(bot)}
-                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium border transition-colors ${
-                        bot.chiefOfStaff
-                          ? "border-accent/40 bg-accent/15 text-accent"
-                          : "border-hairline/30 bg-inset text-ink-secondary hover:text-ink"
-                      }`}
-                    >
-                      {bot.chiefOfStaff ? (
-                        <>
-                          <Check size={11} /> Chief
-                        </>
-                      ) : (
-                        "Member"
-                      )}
-                    </button>
+                    {(() => {
+                      const canCoord = getCanCoordinate(bot);
+                      const disabled = !bot.chiefOfStaff && !canCoord;
+                      return (
+                        <button
+                          type="button"
+                          disabled={disabled}
+                          title={disabled ? "This engine cannot contact teammates" : undefined}
+                          onClick={() => toggleChief(bot)}
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium border transition-colors ${
+                            disabled
+                              ? "opacity-50 cursor-not-allowed border-hairline/20 bg-inset text-ink-secondary"
+                              : bot.chiefOfStaff
+                              ? "border-accent/40 bg-accent/15 text-accent"
+                              : "border-hairline/30 bg-inset text-ink-secondary hover:text-ink"
+                          }`}
+                        >
+                          {bot.chiefOfStaff ? (
+                            <>
+                              <Check size={11} /> Chief
+                            </>
+                          ) : (
+                            "Member"
+                          )}
+                        </button>
+                      );
+                    })()}
                   </td>
 
                   <td className="py-3 px-3 text-center">
