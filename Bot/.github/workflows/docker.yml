@@ -1,0 +1,160 @@
+name: Docker image
+
+on:
+  # release.yml dispatches this on the tag it just published: a tag created
+  # with the workflow token never fires push events on its own.
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: ["v*"]
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - deploy/**
+      - server/**
+      - src/**
+      - package.json
+      - pnpm-lock.yaml
+      - .github/workflows/docker.yml
+  pull_request:
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - deploy/**
+      - .github/workflows/docker.yml
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-smoke:
+    name: build image + boot smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build image
+        run: docker build -t openmausbot:ci .
+      - name: Boot the container and prove the server + UI answer
+        run: |
+          set -euo pipefail
+          docker run -d --name omb openmausbot:ci
+          for i in $(seq 1 40); do
+            if docker exec omb curl -sf http://127.0.0.1:8799/api/health | grep -q openmausbot; then break; fi
+            sleep 2
+            if [ "$i" = "40" ]; then docker logs omb; echo "server never became healthy"; exit 1; fi
+          done
+          # the renderer is served by the server itself (OMB_STATIC_DIR)
+          docker exec omb curl -sf http://127.0.0.1:8799/ | grep -qi "<html" || { docker logs omb; echo "UI not served"; exit 1; }
+          docker logs omb | tail -5
+      - name: Prove the non-root user can browse with the baked-in Chrome
+        run: |
+          set -euo pipefail
+          test "$(docker exec omb id -un)" = maus
+          timeout 45 docker exec omb agent-browser --session ci-browser open 'data:text/html,<title>OMB browser smoke</title><h1>Browser ready</h1>'
+          timeout 15 docker exec omb agent-browser --session ci-browser get title | grep -Fx 'OMB browser smoke'
+          timeout 15 docker exec omb agent-browser --session ci-browser close
+      - name: Prove the server never binds a public interface
+        # The loopback-trust model is the auth model, so the image must keep
+        # the server unreachable from the container's own network. Probe from a
+        # sibling container on the same bridge; a positive control first proves
+        # the probe can see a socket that does bind 0.0.0.0.
+        run: |
+          set -euo pipefail
+          probe() { docker run --rm --network bridge curlimages/curl:8.14.1 -s --max-time 3 "http://$1:$2/" >/dev/null; }
+          docker run -d --name leaky --entrypoint node openmausbot:ci -e "require('http').createServer((q,s)=>s.end('leak')).listen(8799,'0.0.0.0')"
+          sleep 2
+          leaky_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' leaky)
+          test -n "$leaky_ip"
+          probe "$leaky_ip" 8799 || { echo "probe cannot see a 0.0.0.0 listener; the check would be vacuous"; exit 1; }
+          docker rm -f leaky >/dev/null
+          ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' omb)
+          test -n "$ip"
+          if probe "$ip" 8799 || probe "$ip" 8800; then
+            echo "server answered on $ip — it must only bind 127.0.0.1"; exit 1
+          fi
+          echo "unreachable on $ip: loopback-only holds"
+      - name: Run the tenant stack (server + Caddy) and pair like a browser would
+        # deploy/docker-compose.yml is the product here: through TLS, prove that
+        # nothing but the descriptor and the UI shell is served before pairing,
+        # that a code minted inside the container turns into a Secure cookie
+        # session, that the cookie is same-origin only, that the event stream is
+        # unbuffered, and that hooks stay reachable without a session.
+        run: |
+          set -euo pipefail
+          docker rm -f omb >/dev/null
+          docker tag openmausbot:ci ghcr.io/milind-soni/openmausbot:latest
+          printf 'DOMAIN=localhost\nENGINES=\n' > deploy/.env
+          docker compose -f deploy/docker-compose.yml up -d --no-build
+          for i in $(seq 1 45); do
+            curl -sk -o /dev/null --max-time 2 https://localhost/.well-known/openmausbot/environment && break
+            sleep 2
+            if [ "$i" = "45" ]; then docker compose -f deploy/docker-compose.yml logs; echo "caddy never answered"; exit 1; fi
+          done
+          code() { curl -sk -o /dev/null -w '%{http_code}' --max-time 5 "$@"; }
+          body() { curl -sk --max-time 10 "$@"; }
+          H=https://localhost
+          grep -q '"environmentId"' <<<"$(body $H/.well-known/openmausbot/environment)"   # descriptor is public
+          grep -q '^{"app":"openmausbot"}$' <<<"$(body $H/api/health)"             # the probe is public, and says only the app name
+          test "$(code $H/api/bots)" = 403                                        # nothing else before pairing
+          grep -q 'pair this device' <<<"$(body $H/api/bots)"
+          grep -qi '<html' <<<"$(body $H/pair)"                                    # the UI shell is served so /pair can load
+          test "$(code http://localhost/)" = 308                                   # HTTP redirects to HTTPS
+          pairing=$(docker compose -f deploy/docker-compose.yml exec -T omb node dist-server/pair-cli.js --label ci)
+          echo "$pairing"
+          pcode=$(grep -o 'code=[A-Z2-9-]*' <<<"$pairing" | head -1 | cut -d= -f2)
+          test -n "$pcode"
+          jar=$(mktemp)
+          paired=$(curl -sk --max-time 10 -c "$jar" -D - -X POST $H/api/auth/pair -H 'content-type: application/json' -d "{\"code\":\"$pcode\",\"cookie\":true}")
+          grep -qi 'set-cookie: omb_session_' <<<"$paired"                        # cookie session
+          grep -qi 'Secure' <<<"$paired"                                          # over TLS the cookie is Secure
+          grep -qi 'HttpOnly' <<<"$paired"
+          test "$(code -b "$jar" $H/api/health)" = 200                              # paired: the API answers
+          grep -q openmausbot <<<"$(body -b "$jar" $H/api/health)"
+          test "$(code -b "$jar" -H 'Origin: https://evil.example' -X POST -d '{}' $H/api/bots)" = 403   # cookie is same-origin only
+          test "$(code -b "$jar" -H 'Origin: https://localhost' $H/api/auth/session)" = 200
+          grep -q '"via":"cookie"' <<<"$(body -b "$jar" $H/api/auth/session)"
+          grep -q '"label":"ci"' <<<"$(body -b "$jar" $H/api/auth/sessions)"        # listed for revocation
+          grep -q error <<<"$(body -X POST $H/hooks/wh_nope)"                      # hook path reaches the receiver without a session
+          # The event stream never ends, so curl's own --max-time exit (28) is expected;
+          # the proof is that bytes arrived within the window (a buffering proxy sends none).
+          sse=$( (curl -sk -b "$jar" -N --max-time 4 $H/api/events || true) | head -c 64 )
+          test -n "$sse"                                                           # SSE streams, not buffered
+          grep -q '"baseUrl":"https://localhost"' <<<"$(body -b "$jar" $H/api/webhooks)"   # OMB_WEBHOOK_PUBLIC_URL is advertised
+          test "$(code $H/api/bots)" = 403                                        # and without the cookie it is still closed
+          docker compose -f deploy/docker-compose.yml down -v
+
+  publish:
+    name: publish to GHCR
+    needs: build-and-smoke
+    # Release dispatches on its published tag because GITHUB_TOKEN-created
+    # tags do not start another workflow. A manual branch run is smoke-only.
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=long
+            type=ref,event=tag
+      - uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

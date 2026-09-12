@@ -1,0 +1,1431 @@
+@import "tailwindcss";
+
+/* Inline mentions keep the surrounding font metrics, including in the
+   textarea mirror. No padding/border/font-weight changes that shift the caret. */
+.mention-highlight {
+  --mention-color: var(--color-ink-secondary);
+
+  color: color-mix(in srgb, var(--mention-color) 30%, var(--color-ink));
+  background: color-mix(in srgb, var(--mention-color) 24%, var(--color-inset));
+  border-radius: 3px;
+  text-decoration: underline;
+  text-decoration-color: var(--mention-color);
+  text-underline-offset: 3px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.mention-editor-mirror {
+  /* Match the native textarea's direction independently for each paragraph. */
+  unicode-bidi: plaintext;
+  padding: 4px;
+  margin: 0;
+  border: 0;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 24px;
+  letter-spacing: normal;
+  word-spacing: normal;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  color: var(--color-ink);
+}
+.mention-editor textarea {
+  position: relative;
+  color: transparent;
+  caret-color: var(--color-ink);
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 24px;
+  letter-spacing: normal;
+  word-spacing: normal;
+  padding: 4px;
+  margin: 0;
+  border: 0;
+  box-sizing: border-box;
+}
+.mention-editor textarea::selection {
+  color: transparent;
+  background: var(--color-raised-hover);
+}
+@media (forced-colors: active) {
+  .mention-editor-mirror { display: none; }
+  .mention-editor textarea { color: CanvasText; caret-color: CanvasText; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   SKINS
+
+   A skin is nothing but a block of custom properties. `@theme` declares the
+   tokens (and gives them the Midnight values, so the app renders correctly
+   even before any skin is applied); every block below re-declares the same
+   tokens under a `[data-skin]` selector.
+
+   Two consequences worth knowing:
+
+   1. The selector is `[data-skin=…]`, not `:root[data-skin=…]`. That means any
+      element can open a skin context for its subtree — which is how the skin
+      picker renders a live miniature of each skin instead of a painted mockup.
+   2. These blocks sit outside `@layer`, so they win against Tailwind's theme
+      layer regardless of specificity.
+
+   Contrast is a design constraint here, not an afterthought: every text/surface
+   pair in Atelier and Foundry clears WCAG AA (4.5:1), verified by measuring the
+   rendered values rather than reading the hex. `scripts/check-skin-contrast.mjs`
+   re-runs that check.
+   ───────────────────────────────────────────────────────────────────────── */
+@theme {
+  --animate-panel-in: panel-in 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-workspace-in: workspace-in 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-pop-in: pop-in 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-caret: caret-blink 1s step-end infinite;
+  --animate-msg-in: msg-in 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-shimmer: shimmer 2s linear infinite;
+  --animate-status-pulse: status-pulse 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  /* onboarding: a block of copy or a row arriving in a beat; `.stagger`
+     spaces siblings out. Rare, first-time motion, so it may run past the
+     300ms UI ceiling. */
+  --animate-rise: rise 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* onboarding: a spotlight card or a first-sight hint scaling in from its
+     anchor. Never from zero; nothing appears from nothing. */
+  --animate-spot-in: spot-in 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* onboarding: a badge circling a centre. --angle (deg), --radius (px)
+     and --duration are set per element. Linear, because it is constant
+     motion, and GPU-only. */
+  --animate-orbit: orbit var(--duration, 24s) linear infinite;
+  /* onboarding: a surface reacting once to an event (a routine firing) */
+  --animate-ripple: ripple 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* onboarding: a bolt travelling from a webhook address to the bot */
+  --animate-bolt: bolt 0.9s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+
+  /* Defaults = Midnight. Kept here so the app is never unstyled. */
+  --color-app: #070707;
+  --color-panel: #111111;
+  --color-raised: #2f2f2f;
+  --color-raised-hover: #3d3d3d;
+  /* the composer pill. Every skin but Daylight paints it in `raised`; there
+     it is the page colour with a hairline ring, so it needs a tone (and a
+     ring, transparent everywhere else) of its own. */
+  --color-composer: #2f2f2f;
+  --color-composer-ring: transparent;
+  /* popover and right-click menus. Same story as the composer: every skin
+     but Daylight paints them in `card`, which there is the bot's bubble and
+     a shade too grey for a menu. */
+  --color-menu: #262626;
+  --color-card: #262626;
+  --color-inset: #191919;
+  /* a control ON a card. The dark skins take their `raised` value, so this
+     is a no-op for them; the light skins need a tone of their own, because
+     there `raised` is pure white and a card is too. */
+  --color-control: #2f2f2f;
+  --color-hairline: #333333;
+  --color-ink: #fcfcfc;
+  --color-ink-secondary: #fcfcfc99;
+  --color-accent: #1084fe;
+  --color-accent-border: #459ffe;
+  /* the ring a keyboard user follows; sits on the accent so focus reads as
+     "the app is talking to you", not as a browser default */
+  --color-focus: #459ffe;
+  --color-accent-text: #7fc0ff;
+  --color-bubble-user: #5a5a5a;
+  --color-success: #38d591;
+  --color-danger: #ff5667;
+  --color-warning: #ff9800;
+
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", system-ui, sans-serif;
+}
+
+/* Tokens that no utility generates — declared outside `@theme` so Tailwind
+   can't tree-shake them away, and so a skin can redefine them freely. */
+:root {
+  --code-color-scheme: dark;
+  /* ink carried by a filled accent / danger surface (see the rule at the
+     bottom of this file, which is what makes them take effect) */
+  --color-accent-ink: #ffffff;
+  --color-danger-ink: #ffffff;
+  /* ink carried by the user's own bubble. A hex rather than the ink token so
+     the contrast check can measure it; every dark skin repeats its ink here. */
+  --color-bubble-user-ink: #fcfcfc;
+  --color-success-ink: #072114;
+  --color-scrollbar: #3d3d3d;
+  /* second speed line of the mascot — contrasts against the app ground */
+  --color-maus-line: #fcfcfc;
+}
+
+/* ── Midnight ──────────────────────────────────────────────────────────────
+   The upstream palette, pixel-sampled from the real Grok app. Repeated here
+   (rather than relying on the `@theme` defaults) so that a `[data-skin]`
+   subtree can switch *back* to it — the picker needs that.
+
+   Two upstream contrast gaps are preserved deliberately, because this skin's
+   job is to be the original: white on the accent fill measures 3.65:1 and
+   white on the danger fill 3.32:1, both short of AA for the 13–15px labels
+   they carry. Atelier and Foundry fix this via --color-accent-ink.
+   ───────────────────────────────────────────────────────────────────────── */
+[data-skin="midnight"] {
+  --code-color-scheme: dark;
+  --color-app: #070707;
+  --color-panel: #111111;
+  --color-raised: #2f2f2f;
+  --color-raised-hover: #3d3d3d;
+  --color-composer: #2f2f2f;    /* = raised: unchanged */
+  --color-composer-ring: transparent;
+  --color-card: #262626;
+  --color-menu: #262626;    /* = card: unchanged */
+  --color-inset: #191919;
+  --color-control: #2f2f2f;       /* = raised: Midnight is unchanged */
+  --color-hairline: #333333;
+  --color-ink: #fcfcfc;
+  --color-ink-secondary: #fcfcfc99;
+  --color-accent: #1084fe;
+  --color-accent-border: #459ffe;
+  --color-accent-text: #7fc0ff;
+  --color-accent-ink: #ffffff;
+  --color-bubble-user: #5a5a5a;
+  --color-bubble-user-ink: #fcfcfc;   /* = ink: unchanged */
+  --color-success: #38d591;
+  --color-danger: #ff5667;
+  --color-danger-ink: #ffffff;
+  --color-success-ink: #072114;
+  --color-warning: #ff9800;
+  --color-scrollbar: #3d3d3d;
+  --color-maus-line: #fcfcfc;
+
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", system-ui, sans-serif;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+}
+
+/* ── Atelier ───────────────────────────────────────────────────────────────
+   Daylight on paper, and the inverse of Midnight in every axis. Its one
+   structural idea: surfaces get BRIGHTER as they rise — rail, sidebar,
+   content — so the ground closest to the work is the lightest, the opposite
+   of a dark skin where raised means lighter-grey.
+
+   Four tones were darkened from the first draft to clear AA; the original
+   value is named next to each, so the drift stays auditable.
+   ───────────────────────────────────────────────────────────────────────── */
+[data-skin="atelier"] {
+  --code-color-scheme: light;
+  --color-app: #f5f1eb;           /* outermost ground */
+  --color-panel: #fbf8f2;         /* sidebar */
+  --color-raised: #ffffff;        /* content — raised means lighter here */
+  --color-raised-hover: #f2e9dc;  /* warm beige doubles as the hover fill */
+  --color-composer: #ffffff;    /* = raised: unchanged */
+  --color-composer-ring: transparent;
+  --color-card: #ffffff;
+  --color-menu: #ffffff;    /* = card: unchanged */
+  --color-inset: #f5f1eb;         /* inset surfaces pick the rail tone back up */
+  --color-control: #ece4d6;       /* raised is white here and so is a card, so
+                                     a control needs its own tone: 1.26:1 on a
+                                     card, and raised-hover still lifts off it */
+  --color-hairline: #c8bda8;      /* #ece7dd was 1.11:1 on the rail → 1.65:1 */
+
+  --color-ink: #1a1a18;           /* 17.4:1 on white */
+  --color-ink-secondary: #6b6559; /* #8b8578 was 3.67:1 → 5.78:1 */
+
+  /* Two accent tones: the fill carries white, the text stands on white. */
+  --color-accent: #a05f25;        /* #b06a2c darkened → 5.05:1 */
+  --color-accent-border: #b06a2c; /* the original tone lives on as the border */
+  --color-accent-text: #96551f;   /* for links on a light ground — 5.81:1 */
+  --color-focus: #96551f;         /* the ring rides the accent, not Grok blue */
+  --color-accent-ink: #ffffff;
+  --color-bubble-user: #f2e9dc;   /* your own messages in the badge beige */
+  --color-bubble-user-ink: #1a1a18;   /* = ink: unchanged */
+
+  --color-success: #3f6b47;
+  --color-danger: #a33a32;
+  --color-danger-ink: #ffffff;
+  --color-success-ink: #ffffff;
+  --color-warning: #7a5f31;       /* darkened → 4.98:1 */
+  --color-scrollbar: #c9c0ae;
+  --color-maus-line: #6b6559;
+
+  /* System faces rather than Inter: paper reads as the platform's own. */
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, sans-serif;
+  --radius-lg: 6px;
+  --radius-xl: 10px;
+}
+
+/* ── Foundry ───────────────────────────────────────────────────────────────
+   Night shift. The third corner of the grid: Midnight is dark and cool,
+   Atelier light and warm — this one is dark and warm, which is the register
+   most of this app's actual use falls into.
+
+   Its one structural idea, and the thing that makes it read as metal rather
+   than as "Atelier with the lights off": the accent is the brightest thing on
+   screen, not a darker patch of it. Brass at #d99a3e glows against the ground
+   at 7.9:1 and carries near-black lettering at 7.4:1 — so filled buttons read
+   as lit, not as painted. That inversion is only possible because
+   --color-accent-ink exists; with hardcoded white text the accent would have
+   to stay dark and the skin would lose its point.
+
+   Surfaces warm up as they rise (#100e0b → #262019), the way material does as
+   it comes closer to the lamp. Corners are tighter than Atelier's — 4px and
+   8px — because sheet metal doesn't round the way paper does.
+   ───────────────────────────────────────────────────────────────────────── */
+[data-skin="foundry"] {
+  --code-color-scheme: dark;
+  --color-app: #100e0b;           /* deepest ground, warm black */
+  --color-panel: #171410;         /* sidebar */
+  --color-raised: #262019;        /* raised means warmer, not just lighter */
+  --color-raised-hover: #322b21;
+  --color-composer: #262019;    /* = raised: unchanged */
+  --color-composer-ring: transparent;
+  --color-card: #1e1a14;
+  --color-menu: #1e1a14;    /* = card: unchanged */
+  --color-inset: #0b0a08;         /* inset sinks below the ground */
+  --color-control: #262019;       /* = raised: Foundry is unchanged */
+  --color-hairline: #3d3529;      /* visible on purpose — this UI has edges */
+
+  --color-ink: #f4efe4;           /* warm off-white, never pure #fff */
+  --color-ink-secondary: #b0a696; /* 6.7:1 on raised, 5.9:1 on hover */
+
+  /* Brass. Bright fill, dark lettering — the inversion described above. */
+  --color-accent: #d99a3e;
+  --color-accent-border: #e8b25e;
+  --color-accent-text: #e0a44c;   /* 8.6:1 on the ground, for links */
+  --color-focus: #e0a44c;         /* the ring rides the accent, not Grok blue */
+  --color-accent-ink: #1c150c;    /* 7.4:1 on the brass fill */
+  --color-bubble-user: #2a2318;   /* your own messages, one step out of the card */
+  --color-bubble-user-ink: #f4efe4;   /* = ink: unchanged */
+
+  --color-success: #57b078;
+  --color-danger: #e0685e;        /* a lamp, not a paint chip */
+  --color-danger-ink: #1c0d0b;
+  --color-success-ink: #1c150c;
+  --color-warning: #dfa441;
+  --color-scrollbar: #3d3529;
+  --color-maus-line: #b0a696;
+
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", system-ui, sans-serif;
+  --radius-lg: 4px;
+  --radius-xl: 8px;
+}
+
+/* ── Lagoon ────────────────────────────────────────────────────────────────
+   Cool daylight — the fourth corner, and the one the grid was missing:
+   Midnight is dark and cool, Atelier light and warm, Foundry dark and warm.
+
+   Where Atelier is paper, this is glazed ceramic. The neutrals carry a green-
+   blue cast rather than a cream one (#eef2f2, not #f5f1eb), so the whole
+   surface reads cool without a single saturated pixel, and the deep teal
+   accent belongs to the ground instead of sitting on top of it. Even the ink
+   is a very dark petrol rather than a neutral black — on a tinted ground a
+   truly neutral black reads as a foreign object.
+
+   Corners are the most generous of the four (8px / 14px): glass and ceramic
+   round more than paper does, and far more than sheet metal.
+   ───────────────────────────────────────────────────────────────────────── */
+[data-skin="lagoon"] {
+  --code-color-scheme: light;
+  /* The tint is the point, so it is carried by the surfaces, not by a button:
+     the ground sits 13 points of green-blue above its red channel, roughly
+     three times Atelier's cream cast, which is what makes the skin read as
+     teal at a glance. Raised surfaces stay pure white as the contrast anchor —
+     tinting those too turns the whole thing to soup. */
+  --color-app: #dfeceb;
+  --color-panel: #ecf4f3;
+  --color-raised: #ffffff;
+  --color-raised-hover: #cfe4e1;
+  --color-composer: #ffffff;    /* = raised: unchanged */
+  --color-composer-ring: transparent;
+  --color-card: #ffffff;
+  --color-menu: #ffffff;    /* = card: unchanged */
+  --color-inset: #d5e8e5;
+  --color-control: #c3dcd9;       /* Lagoon's surfaces climb white → panel →
+                                     app → inset → hover in small steps, so a
+                                     control has to sit below the lot to clear
+                                     every one it can land on: 1.44:1 on a
+                                     card, 1.29:1 on the panel, 1.13:1 on an
+                                     inset row, 1.09:1 under the hover tone. */
+  --color-hairline: #aebfbd;      /* 1.60:1 — level with the other three */
+
+  --color-ink: #14201f;           /* dark petrol; a neutral black would read
+                                     as a foreign object on a tinted ground */
+  --color-ink-secondary: #4d5c5b; /* 7.0:1 on white, 5.8:1 on the ground */
+
+  --color-accent: #11736d;        /* deep teal, carries white at 5.68:1 */
+  --color-accent-border: #14807a;
+  --color-accent-text: #0d5f5a;   /* 7.5:1 on a card */
+  --color-focus: #0d5f5a;         /* the ring rides the accent, not Grok blue */
+  --color-accent-ink: #ffffff;
+  --color-bubble-user: #cfe4e1;
+  --color-bubble-user-ink: #14201f;   /* = ink: unchanged */
+
+  --color-success: #2f6b4f;
+  --color-danger: #a8382f;
+  --color-danger-ink: #ffffff;
+  --color-success-ink: #ffffff;
+  --color-warning: #7a5a2a;
+  --color-scrollbar: #a6b8b6;
+  --color-maus-line: #4d5c5b;
+
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, sans-serif;
+  --radius-lg: 8px;
+  --radius-xl: 14px;
+}
+
+/* ── Graphite ─────────────────────────────────────────────────────────────
+   Neutral charcoal for people who want a dark workspace without Midnight's
+   near-black contrast or Foundry's warmth. Steel blue stays deliberately
+   desaturated: it marks actions and focus without making the chrome glow.
+   ───────────────────────────────────────────────────────────────────────── */
+[data-skin="graphite"] {
+  --code-color-scheme: dark;
+  --color-app: #111214;
+  --color-panel: #181a1d;
+  --color-raised: #2a2d32;
+  --color-raised-hover: #353941;
+  --color-composer: #2a2d32;    /* = raised: unchanged */
+  --color-composer-ring: transparent;
+  --color-card: #22252a;
+  --color-menu: #22252a;    /* = card: unchanged */
+  --color-inset: #0d0e10;
+  --color-control: #2a2d32;
+  --color-hairline: #3b4048;
+
+  --color-ink: #f2f4f7;
+  --color-ink-secondary: #b3b8c2;
+
+  --color-accent: #4f75a2;
+  --color-accent-border: #698fbb;
+  --color-accent-text: #8fb4df;
+  --color-focus: #8fb4df;
+  --color-accent-ink: #ffffff;
+  --color-bubble-user: #30343a;
+  --color-bubble-user-ink: #f2f4f7;   /* = ink: unchanged */
+
+  --color-success: #63b58a;
+  --color-danger: #dd6b73;
+  --color-danger-ink: #1e0b0e;
+  --color-success-ink: #101a14;
+  --color-warning: #d3a150;
+  --color-scrollbar: #464b54;
+  --color-maus-line: #b3b8c2;
+
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", system-ui, sans-serif;
+  --radius-lg: 6px;
+  --radius-xl: 10px;
+}
+
+/* ── Linen ────────────────────────────────────────────────────────────────
+   A neutral daylight skin: less cream than Atelier and less blue-green than
+   Lagoon. Navy is used as ink rather than decoration, keeping the workspace
+   crisp and familiar instead of colourful.
+   ───────────────────────────────────────────────────────────────────────── */
+[data-skin="linen"] {
+  --code-color-scheme: light;
+  --color-app: #eceff3;
+  --color-panel: #f5f6f8;
+  --color-raised: #ffffff;
+  --color-raised-hover: #e1e6ed;
+  --color-composer: #ffffff;    /* = raised: unchanged */
+  --color-composer-ring: transparent;
+  --color-card: #ffffff;
+  --color-menu: #ffffff;    /* = card: unchanged */
+  --color-inset: #e6e9ee;
+  --color-control: #d3d9e1;
+  --color-hairline: #b4bbc5;
+
+  --color-ink: #1d2229;
+  --color-ink-secondary: #59616c;
+
+  --color-accent: #355f8a;
+  --color-accent-border: #4978a6;
+  --color-accent-text: #2c5680;
+  --color-focus: #2c5680;
+  --color-accent-ink: #ffffff;
+  --color-bubble-user: #e1e6ed;
+  --color-bubble-user-ink: #1d2229;   /* = ink: unchanged */
+
+  --color-success: #2f704f;
+  --color-danger: #a83d48;
+  --color-danger-ink: #ffffff;
+  --color-success-ink: #ffffff;
+  --color-warning: #765b2b;
+  --color-scrollbar: #aeb6c0;
+  --color-maus-line: #59616c;
+
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, sans-serif;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+}
+
+/* ── Dusk ─────────────────────────────────────────────────────────────────
+   A restrained plum-dark alternative. The violet lives in the neutrals as
+   much as the accent, so the skin feels cohesive rather than neon or themed.
+   ───────────────────────────────────────────────────────────────────────── */
+[data-skin="dusk"] {
+  --code-color-scheme: dark;
+  --color-app: #121014;
+  --color-panel: #19161c;
+  --color-raised: #2b2630;
+  --color-raised-hover: #37303d;
+  --color-composer: #2b2630;    /* = raised: unchanged */
+  --color-composer-ring: transparent;
+  --color-card: #231f27;
+  --color-menu: #231f27;    /* = card: unchanged */
+  --color-inset: #0d0b0f;
+  --color-control: #2b2630;
+  --color-hairline: #403847;
+
+  --color-ink: #f4eff6;
+  --color-ink-secondary: #b9afbd;
+
+  --color-accent: #765683;
+  --color-accent-border: #9670a3;
+  --color-accent-text: #c49bd2;
+  --color-focus: #c49bd2;
+  --color-accent-ink: #ffffff;
+  --color-bubble-user: #332b38;
+  --color-bubble-user-ink: #f4eff6;   /* = ink: unchanged */
+
+  --color-success: #6fad83;
+  --color-danger: #db727a;
+  --color-danger-ink: #210c10;
+  --color-success-ink: #101812;
+  --color-warning: #d0a35d;
+  --color-scrollbar: #4a414f;
+  --color-maus-line: #b9afbd;
+
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", system-ui, sans-serif;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+}
+
+/* ── Daylight ─────────────────────────────────────────────────────────────
+   Midnight's twin. Midnight was pixel-sampled from the upstream app's dark
+   theme; this is the same sampling of its light one, so the two are the only
+   skins here that copy a palette rather than compose one.
+
+   Its structural quirk is the user's own bubble: near-black on a near-white
+   page, the one place a light skin carries inverted ink. That is what
+   --color-bubble-user-ink exists for — see the rule at the bottom of the
+   file. Everything else is a short ladder of greys: page #fcfcfc, sidebar
+   #f7f7f7, selected row #e1e1e1.
+   ───────────────────────────────────────────────────────────────────────── */
+[data-skin="daylight"] {
+  --code-color-scheme: light;
+  --color-app: #fcfcfc;           /* the thread */
+  --color-panel: #f7f7f7;         /* sidebar, one step down from the thread */
+  --color-raised: #e1e1e1;
+  --color-raised-hover: #d7d7d7;  /* the selected row */
+  --color-card: #eeeeee;          /* what a bot says */
+  --color-inset: #e6e6e6;         /* the search field */
+  --color-control: #dedede;       /* a chip on a card */
+  /* Sampled at #efefef, which is what the eye reads on the divider — but a
+     hairline that faint fails this repo's own gate (1.5:1 against the page)
+     and every border is drawn at /40 on top of that. #d0d0d0 is the lightest
+     grey that still passes; see scripts/check-skin-contrast.mjs. */
+  --color-hairline: #d0d0d0;
+
+  --color-ink: #0d0d0d;
+  --color-ink-secondary: #575757;
+
+  /* The upstream blue is #1084fe, which carries white at 3.1:1 — fine for the
+     unread dot it is mostly used for, not for a filled button's label. The
+     fill is darkened until white clears AA; the dot keeps reading as blue. */
+  --color-accent: #0b62c4;
+  --color-accent-border: #1084fe;
+  --color-accent-text: #0b5cb8;
+  --color-focus: #0b62c4;
+  --color-accent-ink: #ffffff;
+  /* The composer is the page with a ring around it, not a grey slab —
+     the one surface where this skin departs from `raised`. */
+  --color-composer: #fcfcfc;
+  --color-composer-ring: #e4e4e4;
+  --color-menu: #fcfcfc;          /* menus sit on the page tone, not the bubble */
+  --color-bubble-user: #070707;   /* your own messages, inverted */
+  --color-bubble-user-ink: #fcfcfc;
+
+  --color-success: #1f7a4d;
+  --color-danger: #c02b3a;
+  --color-danger-ink: #ffffff;
+  --color-success-ink: #ffffff;
+  --color-warning: #8a5a00;
+  --color-scrollbar: #c4c4c4;
+  --color-maus-line: #5f5f5f;
+
+  --font-sans: "Inter", -apple-system, blinkmacsystemfont, "SF Pro Text",
+    "Segoe UI", system-ui, sans-serif;
+  --radius-lg: 8px;
+  --radius-xl: 14px;
+}
+
+/* Shiki emits both palettes so cached blocks follow the nearest skin without
+   re-tokenizing. Scope the scheme to code; native controls keep their styling. */
+.chat-md .shiki {
+  color-scheme: var(--code-color-scheme);
+}
+
+/* Plain-text message bodies (user turns, webhook tasks, error fallbacks) are
+   written in whatever language the person used, which is independent of the
+   UI language. `plaintext` resolves direction per line from its own first
+   strong character, so a pasted block that mixes an Arabic sentence with an
+   English stack trace lays each line out correctly instead of letting the
+   first line decide for all of them — which is what a single dir="auto"
+   would do. `start` then follows that per-line direction. */
+.chat-text {
+  unicode-bidi: plaintext;
+  text-align: start;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: var(--color-app);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* Keep focus visible after components clear the browser outline. These
+   unlayered rules outrank Tailwind utilities without needing !important. */
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Text fields already sit in a bordered card (the composer pill especially).
+   Chromium treats a pointer click as :focus-visible on inputs, so the
+   global ring above becomes a sharp blue rectangle inside the rounded
+   chrome. Fields keep their own focus:border-*; buttons still use the
+   :focus-visible ring. */
+:is(input, textarea, select):focus,
+:is(input, textarea, select):focus-visible {
+  outline: none;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-accent) 45%, transparent);
+  color: var(--color-ink);
+}
+
+/* Cross-browser scrollbar support (Firefox & standards) */
+* {
+  scrollbar-color: color-mix(in srgb, var(--color-scrollbar) 60%, transparent) transparent;
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-scrollbar) 60%, transparent);
+  border-radius: 9999px;
+  transition: background 0.2s ease;
+}
+/* the thumb was inert — it never acknowledged the pointer */
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-raised-hover);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+@keyframes panel-in {
+  from { transform: translateX(28px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes workspace-in {
+  from { opacity: 0.92; }
+  to { opacity: 1; }
+}
+@keyframes pop-in {
+  from { transform: scale(0.95) translateY(6px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+/* streaming caret: a true typing blink (step, not fade) */
+@keyframes caret-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+/* new message settle-in: subtle, fast, GPU-only */
+@keyframes msg-in {
+  from {
+    transform: translateY(8px) scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+/* mascot arrives at the tail */
+@keyframes turn-mascot-in {
+  from { opacity: 0; transform: scale(0.82); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes turn-mascot-out {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.88); }
+}
+/* the reply grows up from the mascot, staying on the left edge */
+@keyframes turn-answer-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.84);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.turn-mascot-in {
+  transform-origin: 18px 18px;
+  animation: turn-mascot-in 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.turn-mascot-out {
+  transform-origin: 18px 18px;
+  animation: turn-mascot-out 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.turn-answer {
+  transform-origin: 18px 100%;
+  animation: turn-answer-in 0.48s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes rise {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes orbit {
+  from {
+    transform: translate(-50%, -50%) rotate(calc(var(--angle) * 1deg)) translateY(calc(var(--radius) * 1px)) rotate(calc(var(--angle) * -1deg));
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(calc(var(--angle) * 1deg + 360deg)) translateY(calc(var(--radius) * 1px)) rotate(calc(var(--angle) * -1deg - 360deg));
+  }
+}
+/* thinking dots in the onboarding chat scene */
+@keyframes ripple {
+  from { box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-accent) 55%, transparent); }
+  to { box-shadow: 0 0 0 14px color-mix(in oklab, var(--color-accent) 0%, transparent); }
+}
+@keyframes bolt {
+  0% { transform: translateX(-4px) scale(0.9); opacity: 0.2; }
+  40% { transform: translateX(6px) scale(1.05); opacity: 1; }
+  100% { transform: translateX(22px) scale(0.85); opacity: 0; }
+}
+@keyframes spot-in {
+  from { transform: scale(0.94); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+/* Siblings of a `.stagger` group arrive 40ms apart. Each child sets `--i`
+   (its index) inline; the delay is decorative and never blocks input. */
+.stagger > * {
+  animation-delay: calc(var(--stagger, 40ms) * var(--i, 0));
+}
+/* The welcome tour morphs one card between beats with the View Transitions
+   API: the card, the mascot and the title keep their names, so the browser
+   moves and resizes them instead of cross-fading two cards. Everything
+   else cross-fades under the new beat, which rises in on its own. */
+.welcome-card { view-transition-name: welcome-card; }
+.welcome-maus { view-transition-name: welcome-maus; }
+.welcome-title { view-transition-name: welcome-title; }
+::view-transition-group(welcome-card),
+::view-transition-group(welcome-maus),
+::view-transition-group(welcome-title) {
+  animation-duration: 0.42s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.28s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* "Thinking…" label sheen while the model reasons */
+@keyframes shimmer {
+  from { background-position: 200% 50%; }
+  to { background-position: -200% 50%; }
+}
+@keyframes reduced-loader-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+/* Activity & status pulse with gentle breathing scale */
+@keyframes status-pulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+.thinking-shimmer {
+  background: linear-gradient(90deg, var(--color-ink-secondary) 40%, var(--color-ink) 50%, var(--color-ink-secondary) 60%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-caret, .animate-msg-in, .animate-shimmer { animation: none; }
+  .animate-status-pulse { animation: none; opacity: 0.6; }
+  .thinking-shimmer { background: none; color: var(--color-ink-secondary); }
+  .turn-mascot-in, .turn-mascot-out, .turn-answer { animation: none; }
+  .animate-rise, .animate-spot-in { animation: none; }
+  /* orbiting badges hold at their starting angle; the scene places them */
+  .animate-orbit { animation: none; }
+  .animate-ripple, .animate-bolt { animation: none; }
+  /* The drawer still moves, it just arrives instantly. */
+  aside { transition: none; }
+}
+/* The onboarding preview page flips this to show the reduced variant
+   without touching system settings; the welcome flow also reads it to skip
+   its view transitions. Mirrors the media block above for its own classes. */
+:root[data-reduced-motion="true"] .animate-rise,
+:root[data-reduced-motion="true"] .animate-spot-in,
+:root[data-reduced-motion="true"] .welcome-card * {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* SupaMaus vector motion. The fast horizontal compression is the edge-on
+   moment of a turn; face parallax, surface lighting, and orbiting vector marks
+   sell the 3D rotation without duplicate silhouettes, raster frames, or WebGL. */
+.maus-character,
+.maus-orbit,
+.maus-face,
+.maus-solid,
+.maus-eyes,
+.maus-fx {
+  transform-box: view-box;
+  transform-origin: 100px 100px;
+}
+
+.maus-orbit,
+.maus-fx {
+  opacity: 0;
+}
+
+.maus-character {
+  transform-style: preserve-3d;
+}
+
+.maus-bevel,
+.maus-rim-light {
+  pointer-events: none;
+}
+
+.maus-specular {
+  opacity: 0.3;
+}
+
+.maus-eyes {
+  transform: translate(var(--maus-eye-x), var(--maus-eye-y));
+  transition: transform 150ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.maus-fx {
+  pointer-events: none;
+}
+
+.maus-ribbon,
+.maus-burst-ray {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.maus-ribbon {
+  stroke-width: 4;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+.maus-ribbon--two { stroke-width: 2.4; }
+.maus-ribbon--three { stroke-width: 3; }
+
+.maus-burst-dot,
+.maus-burst-ray,
+.maus-ellipsis-dot {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.maus-burst-ray {
+  stroke-width: 3;
+}
+
+.maus-speed-line {
+  fill: none;
+  stroke: var(--maus-color);
+  stroke-linecap: round;
+  stroke-width: 3.5px;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+.maus-speed-line--two {
+  /* the mascot's own --maus-color is set per motion; this line reads against
+     the app ground instead, so it follows the skin */
+  stroke: var(--color-maus-line);
+  stroke-width: 2.5px;
+}
+
+.maus-motion--arrive .maus-character {
+  animation: maus-arrive 940ms cubic-bezier(0.2, 0.82, 0.22, 1) both;
+}
+
+.maus-motion--switch .maus-character {
+  animation: maus-switch 760ms cubic-bezier(0.2, 0.74, 0.16, 1) both;
+}
+
+.maus-motion--customize .maus-character {
+  animation: maus-customize 720ms cubic-bezier(0.18, 0.78, 0.2, 1) both;
+}
+
+.maus-motion--switch .maus-face,
+.maus-motion--customize .maus-face {
+  animation: maus-face-parallax 760ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.maus-motion--arrive .maus-face {
+  animation-name: maus-face-arrive;
+  animation-duration: 940ms;
+}
+
+.maus-motion--arrive .maus-specular,
+.maus-motion--switch .maus-specular,
+.maus-motion--customize .maus-specular,
+.maus-motion--success .maus-specular,
+.maus-motion--celebrate .maus-specular {
+  animation: maus-specular-sweep 760ms ease-out both;
+}
+
+.maus-motion--arrive .maus-specular { animation-duration: 940ms; }
+
+.maus-motion--arrive .maus-orbit,
+.maus-motion--switch .maus-orbit,
+.maus-motion--customize .maus-orbit {
+  animation: maus-orbit-turn 760ms cubic-bezier(0.24, 0.76, 0.3, 1) both;
+}
+
+.maus-motion--arrive .maus-orbit {
+  animation-duration: 940ms;
+}
+
+.maus-motion--arrive .maus-speed-line,
+.maus-motion--switch .maus-speed-line,
+.maus-motion--customize .maus-speed-line {
+  animation: maus-line-draw 760ms ease-out both;
+}
+
+.maus-motion--arrive .maus-speed-line {
+  animation-duration: 940ms;
+}
+
+.maus-motion--arrive .maus-orbit-dot,
+.maus-motion--switch .maus-orbit-dot,
+.maus-motion--customize .maus-orbit-dot {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: maus-dot-pop 760ms ease-out both;
+}
+
+.maus-motion--arrive .maus-orbit-dot {
+  animation-duration: 940ms;
+}
+
+.maus-orbit-dot--two { animation-delay: 45ms !important; }
+.maus-orbit-dot--three { animation-delay: 85ms !important; }
+
+.maus-motion--alert .maus-character {
+  animation: maus-alert-body 1050ms cubic-bezier(0.18, 0.78, 0.18, 1) both;
+}
+
+.maus-motion--alert .maus-fx--alert {
+  animation: maus-alert-symbol 1050ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.maus-motion--thinking .maus-character {
+  animation: maus-thinking-body 1300ms cubic-bezier(0.2, 0.76, 0.18, 1) both;
+}
+
+.maus-motion--thinking .maus-fx--ellipsis {
+  animation: maus-ellipsis-stage 1300ms ease-in-out both;
+}
+
+.maus-motion--thinking .maus-ellipsis-dot {
+  animation: maus-ellipsis-dot 1300ms ease-in-out both;
+}
+
+.maus-motion--thinking .maus-ellipsis-dot--two { animation-delay: 70ms; }
+.maus-motion--thinking .maus-ellipsis-dot--three { animation-delay: 140ms; }
+
+.maus-motion--working .maus-character {
+  animation: maus-working-body 1150ms ease-in-out infinite;
+}
+
+.maus-motion--working .maus-orbit {
+  animation: maus-working-orbit 1150ms linear infinite;
+}
+
+.maus-motion--working .maus-orbit-dot {
+  animation: maus-working-dot 1150ms ease-in-out infinite;
+}
+
+.maus-motion--launch .maus-character {
+  animation: maus-launch-body 1180ms cubic-bezier(0.2, 0.8, 0.18, 1) both;
+}
+
+.maus-motion--launch .maus-fx--ribbons {
+  animation: maus-ribbon-stage 1180ms ease-out both;
+}
+
+.maus-motion--launch .maus-ribbon {
+  animation: maus-ribbon-draw 1180ms ease-out both;
+}
+
+.maus-motion--success .maus-character {
+  animation: maus-success-body 900ms cubic-bezier(0.18, 0.8, 0.2, 1) both;
+}
+
+.maus-motion--celebrate .maus-character {
+  animation: maus-celebrate-body 1250ms cubic-bezier(0.2, 0.82, 0.18, 1) both;
+}
+
+.maus-motion--celebrate .maus-fx--burst {
+  animation: maus-burst-stage 1250ms ease-out both;
+}
+
+.maus-motion--celebrate .maus-burst-dot,
+.maus-motion--celebrate .maus-burst-ray {
+  animation: maus-burst-piece 1250ms ease-out both;
+}
+
+.maus-motion--celebrate .maus-burst-dot--one { --maus-burst-x: -34px; --maus-burst-y: -27px; }
+.maus-motion--celebrate .maus-burst-dot--two { --maus-burst-x: 38px; --maus-burst-y: -19px; }
+.maus-motion--celebrate .maus-burst-dot--three { --maus-burst-x: 33px; --maus-burst-y: 31px; }
+.maus-motion--celebrate .maus-burst-dot--four { --maus-burst-x: -39px; --maus-burst-y: 22px; }
+
+.maus-motion--blink .maus-eyes {
+  animation: maus-blink-eyes 720ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.maus-motion--surprise .maus-character {
+  animation: maus-surprise-body 820ms cubic-bezier(0.2, 0.82, 0.2, 1) both;
+}
+
+.maus-motion--surprise .maus-eyes {
+  animation: maus-surprise-eyes 820ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.maus-motion--failure .maus-character {
+  animation: maus-failure-body 980ms cubic-bezier(0.22, 0.76, 0.2, 1) both;
+}
+
+.maus-motion--failure .maus-fx--alert {
+  animation: maus-failure-mark 980ms ease-out both;
+}
+
+@keyframes maus-arrive {
+  0% {
+    opacity: 0;
+    transform: perspective(180px) translate3d(34px, 5px, 0) rotateY(78deg) rotateZ(42deg) scale(0.28, 0.68);
+  }
+  18% {
+    opacity: 1;
+    transform: perspective(180px) translate3d(15px, -3px, 8px) rotateY(58deg) rotateZ(24deg) scale(0.58, 1.1);
+  }
+  46% {
+    transform: perspective(180px) translate3d(-4px, -3px, 13px) rotateY(-13deg) rotateZ(-8deg) scale(1.09, 0.91);
+  }
+  68% {
+    transform: perspective(180px) translate3d(2px, 1px, -3px) rotateY(7deg) rotateZ(3deg) scale(0.96, 1.04);
+  }
+  84% {
+    transform: perspective(180px) translate3d(-1px, 0, 1px) rotateY(-3deg) rotateZ(-1deg) scale(1.02, 0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(180px) translate3d(0, 0, 0) rotateY(0) rotateZ(0) scale(1);
+  }
+}
+
+@keyframes maus-switch {
+  0% { transform: perspective(180px) translate3d(0, 0, 0) rotateY(0) rotateZ(0) scale(1); }
+  13% { transform: perspective(180px) translate3d(-3px, 1px, 4px) rotateY(-12deg) rotateZ(-5deg) scale(1.08, 0.91); }
+  35% { transform: perspective(180px) translate3d(8px, -2px, 10px) rotateY(76deg) rotateZ(13deg) scale(0.42, 1.06); }
+  53% { transform: perspective(180px) translate3d(-4px, -2px, 7px) rotateY(-24deg) rotateZ(-7deg) scale(0.82, 0.96); }
+  70% { transform: perspective(180px) translate3d(2px, 1px, -3px) rotateY(10deg) rotateZ(3deg) scale(1.07, 0.93); }
+  86% { transform: perspective(180px) translate3d(-1px, 0, 1px) rotateY(-4deg) rotateZ(-1deg) scale(0.975, 1.025); }
+  100% { transform: perspective(180px) translate3d(0, 0, 0) rotateY(0) rotateZ(0) scale(1); }
+}
+
+@keyframes maus-customize {
+  0% { transform: perspective(180px) translate3d(0, 0, 0) rotateY(0) rotateZ(0) scale(1); }
+  18% { transform: perspective(180px) translate3d(-4px, 1px, 5px) rotateY(-16deg) rotateZ(-7deg) scale(1.12, 0.88); }
+  38% { transform: perspective(180px) translate3d(7px, -3px, 11px) rotateY(74deg) rotateZ(12deg) scale(0.44, 1.08); }
+  57% { transform: perspective(180px) translate3d(-3px, -1px, 7px) rotateY(-23deg) rotateZ(-5deg) scale(1.08, 0.92); }
+  77% { transform: perspective(180px) translate3d(1px, 1px, -2px) rotateY(8deg) rotateZ(2deg) scale(0.97, 1.03); }
+  100% { transform: perspective(180px) translate3d(0, 0, 0) rotateY(0) rotateZ(0) scale(1); }
+}
+
+@keyframes maus-face-parallax {
+  0%, 12% { opacity: 1; transform: translateX(0); }
+  31% { opacity: 0.35; transform: translateX(-11px) scaleX(0.45); }
+  41% { opacity: 0; transform: translateX(-16px) scaleX(0.1); }
+  50% { opacity: 0; transform: translateX(14px) scaleX(0.12); }
+  62% { opacity: 1; transform: translateX(5px) scaleX(0.82); }
+  100% { opacity: 1; transform: translateX(0) scaleX(1); }
+}
+
+@keyframes maus-face-arrive {
+  0%, 19% { opacity: 0; transform: translateX(12px) scaleX(0.2); }
+  38% { opacity: 0.72; transform: translateX(5px) scaleX(0.7); }
+  58%, 100% { opacity: 1; transform: translateX(0) scaleX(1); }
+}
+
+@keyframes maus-specular-sweep {
+  0%, 100% { opacity: 0.3; translate: 0 0; }
+  18% { opacity: 0.54; translate: -5px -2px; }
+  38% { opacity: 0.92; translate: 34px 12px; }
+  57% { opacity: 0.2; translate: -18px 7px; }
+  78% { opacity: 0.38; translate: 4px 0; }
+}
+
+@keyframes maus-orbit-turn {
+  0%, 8% { opacity: 0; transform: rotate(-46deg) scale(0.62); }
+  25% { opacity: 0.9; }
+  66% { opacity: 0.72; transform: rotate(34deg) scale(1.04); }
+  100% { opacity: 0; transform: rotate(74deg) scale(1.18); }
+}
+
+@keyframes maus-line-draw {
+  0%, 12% { stroke-dashoffset: 1; opacity: 0; }
+  36% { stroke-dashoffset: 0.38; opacity: 0.9; }
+  68% { stroke-dashoffset: 0; opacity: 0.48; }
+  100% { stroke-dashoffset: -1; opacity: 0; }
+}
+
+@keyframes maus-dot-pop {
+  0%, 10% { opacity: 0; transform: scale(0.15); }
+  35% { opacity: 1; transform: scale(1.15); }
+  65% { opacity: 0.75; transform: scale(0.82); }
+  100% { opacity: 0; transform: scale(0.1); }
+}
+
+@keyframes maus-alert-body {
+  0%, 100% { opacity: 1; transform: perspective(180px) scale(1) rotateZ(0); }
+  16% { transform: perspective(180px) scale(1.12, 0.86) rotateZ(-6deg); }
+  34%, 57% { opacity: 0.08; transform: perspective(180px) scale(0.09, 0.82) rotateZ(2deg); }
+  72% { opacity: 1; transform: perspective(180px) scale(1.1, 0.9) rotateZ(5deg); }
+  86% { transform: perspective(180px) scale(0.96, 1.04) rotateZ(-2deg); }
+}
+
+@keyframes maus-alert-symbol {
+  0%, 22%, 66%, 100% { opacity: 0; transform: translateY(8px) scale(0.3); }
+  37% { opacity: 1; transform: translateY(-3px) scale(1.08); }
+  51% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes maus-thinking-body {
+  0%, 100% { opacity: 1; transform: scale(1) rotateZ(0); }
+  16% { transform: scale(1.08, 0.9) rotateZ(-5deg); }
+  31%, 65% { opacity: 0.2; transform: translateY(2px) scale(0.13); }
+  78% { opacity: 1; transform: scale(1.08, 0.92) rotateZ(4deg); }
+  90% { transform: scale(0.97, 1.03) rotateZ(-1deg); }
+}
+
+@keyframes maus-ellipsis-stage {
+  0%, 19%, 73%, 100% { opacity: 0; }
+  32%, 63% { opacity: 1; }
+}
+
+@keyframes maus-ellipsis-dot {
+  0%, 18%, 74%, 100% { opacity: 0; transform: translateY(8px) scale(0.25); }
+  35% { opacity: 1; transform: translateY(-3px) scale(1.12); }
+  48%, 62% { opacity: 0.78; transform: translateY(0) scale(0.88); }
+}
+
+@keyframes maus-working-body {
+  0%, 100% { transform: perspective(180px) translateY(0) rotateY(-8deg) rotateZ(-2deg) scale(0.98); }
+  50% { transform: perspective(180px) translateY(-3px) rotateY(12deg) rotateZ(3deg) scale(1.03); }
+}
+
+@keyframes maus-working-orbit {
+  0% { opacity: 0.18; transform: rotate(0deg) scale(0.78); }
+  45% { opacity: 0.9; }
+  100% { opacity: 0.18; transform: rotate(360deg) scale(1.08); }
+}
+
+@keyframes maus-working-dot {
+  0%, 100% { opacity: 0.32; transform: scale(0.65); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+@keyframes maus-launch-body {
+  0%, 100% { opacity: 1; transform: translate(0, 0) rotateZ(0) scale(1); }
+  16% { transform: translate(-5px, 2px) rotateZ(-9deg) scale(1.13, 0.86); }
+  31% { opacity: 0.72; transform: translate(-7px, 5px) rotateZ(-16deg) scale(0.16); }
+  48% { opacity: 0.95; transform: translate(24px, -12px) rotateZ(18deg) scale(0.45); }
+  66% { transform: translate(-3px, -2px) rotateZ(-6deg) scale(1.13, 0.9); }
+  84% { transform: translate(1px, 1px) rotateZ(2deg) scale(0.97, 1.03); }
+}
+
+@keyframes maus-ribbon-stage {
+  0%, 16%, 72%, 100% { opacity: 0; transform: rotate(-15deg) scale(0.65); }
+  32%, 58% { opacity: 0.92; transform: rotate(3deg) scale(1); }
+}
+
+@keyframes maus-ribbon-draw {
+  0%, 14% { opacity: 0; stroke-dashoffset: 1; }
+  45% { opacity: 1; stroke-dashoffset: 0; }
+  70%, 100% { opacity: 0; stroke-dashoffset: -1; }
+}
+
+@keyframes maus-success-body {
+  0%, 100% { transform: translateY(0) rotateZ(0) scale(1); }
+  20% { transform: translateY(4px) rotateZ(-5deg) scale(1.12, 0.82); }
+  46% { transform: translateY(-8px) rotateZ(5deg) scale(0.91, 1.13); }
+  68% { transform: translateY(1px) rotateZ(-2deg) scale(1.05, 0.95); }
+  84% { transform: translateY(-1px) scale(0.98, 1.02); }
+}
+
+@keyframes maus-celebrate-body {
+  0%, 100% { transform: perspective(180px) translateY(0) rotateY(0) rotateZ(0) scale(1); }
+  17% { transform: perspective(180px) translateY(5px) rotateY(-13deg) rotateZ(-8deg) scale(1.14, 0.84); }
+  42% { transform: perspective(180px) translateY(-10px) rotateY(22deg) rotateZ(13deg) scale(0.88, 1.15); }
+  66% { transform: perspective(180px) translateY(0) rotateY(-8deg) rotateZ(-4deg) scale(1.08, 0.94); }
+  84% { transform: perspective(180px) translateY(-2px) rotateY(3deg) rotateZ(2deg) scale(0.98, 1.02); }
+}
+
+@keyframes maus-burst-stage {
+  0%, 16%, 82%, 100% { opacity: 0; transform: scale(0.4) rotate(-16deg); }
+  34% { opacity: 1; transform: scale(1.12) rotate(4deg); }
+  64% { opacity: 0.68; transform: scale(1.28) rotate(12deg); }
+}
+
+@keyframes maus-burst-piece {
+  0%, 18% { opacity: 0; transform: translate(0, 0) scale(0.25); }
+  42% { opacity: 1; transform: translate(var(--maus-burst-x, 0), var(--maus-burst-y, 0)) scale(1.12); }
+  72%, 100% { opacity: 0; transform: translate(var(--maus-burst-x, 0), var(--maus-burst-y, 0)) scale(0.4); }
+}
+
+@keyframes maus-blink-eyes {
+  0%, 20%, 48%, 72%, 100% { transform: translate(var(--maus-eye-x), var(--maus-eye-y)) scaleY(1); }
+  34%, 60% { transform: translate(var(--maus-eye-x), var(--maus-eye-y)) scaleY(0.08); }
+}
+
+@keyframes maus-surprise-body {
+  0%, 100% { transform: translateY(0) scale(1); }
+  24% { transform: translateY(3px) scale(1.12, 0.86); }
+  48% { transform: translateY(-5px) scale(0.92, 1.16); }
+  72% { transform: translateY(1px) scale(1.05, 0.96); }
+}
+
+@keyframes maus-surprise-eyes {
+  0%, 100% { transform: translate(var(--maus-eye-x), var(--maus-eye-y)) scale(1); }
+  32%, 60% { transform: translate(var(--maus-eye-x), calc(var(--maus-eye-y) - 4px)) scale(1.24, 1.62); }
+  78% { transform: translate(var(--maus-eye-x), var(--maus-eye-y)) scale(0.94, 0.88); }
+}
+
+@keyframes maus-failure-body {
+  0%, 100% { opacity: 1; transform: translate(0, 0) rotateZ(0) scale(1); }
+  18% { transform: translate(-4px, 2px) rotateZ(-8deg) scale(1.08, 0.88); }
+  38% { opacity: 0.82; transform: translate(5px, 3px) rotateZ(19deg) scale(0.42, 1.08); }
+  55% { transform: translate(-7px, 1px) rotateZ(-13deg) scale(0.78, 0.94); }
+  72% { transform: translate(4px, 0) rotateZ(7deg) scale(1.08, 0.92); }
+  86% { transform: translate(-1px, 0) rotateZ(-2deg) scale(0.98, 1.02); }
+}
+
+@keyframes maus-failure-mark {
+  0%, 26%, 72%, 100% { opacity: 0; transform: translate(18px, -15px) scale(0.2); }
+  43%, 58% { opacity: 1; transform: translate(18px, -15px) scale(0.42); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .maus-motion *,
+  .maus-motion {
+    animation: none !important;
+  }
+
+  .maus-orbit {
+    display: none;
+  }
+
+  .maus-eyes { transform: none; }
+
+  /* Stop spatial motion instead of accelerating infinite animations. Loading
+     icons keep a slow opacity pulse, so progress remains visible without
+     rotation, bounce, or flicker. */
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-spin {
+    animation: reduced-loader-pulse 1.6s ease-in-out infinite !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Filled accent / danger / success surfaces
+
+   Components hardcode `text-white` on these fills (~20 call sites). That works
+   only as long as every skin's accent is dark enough to carry white — which
+   rules out any skin whose accent is meant to glow. Rather than edit twenty
+   components, the ink is taken from a token here; `text-white` and this rule
+   have equal specificity, and this file is loaded after Tailwind's utilities.
+   Midnight sets the token to #ffffff, so its rendering is unchanged.
+   ───────────────────────────────────────────────────────────────────────── */
+.bg-accent {
+  color: var(--color-accent-ink);
+}
+.bg-danger {
+  color: var(--color-danger-ink);
+}
+.bg-success {
+  color: var(--color-success-ink);
+}
+/* Same mechanism, one skin deeper: Daylight paints the user's own bubble in
+   near-black on a near-white page, and the `text-ink` the composer and the
+   thread hardcode would be black on black. */
+.bg-bubble-user {
+  color: var(--color-bubble-user-ink);
+}
+
+/* Daylight's inverted bubble is a dark surface, including its editor,
+   quoted replies and attachment controls. Keep their normal semantic tokens
+   together; overriding only the parent's color leaves explicit child ink dark.
+   Stop at a nested skin so the picker previews retain their own palettes. */
+@scope ([data-skin="daylight"]) to ([data-skin]) {
+  .bg-bubble-user {
+    --color-ink: #fcfcfc;
+    --color-ink-secondary: #c4c4c4;
+    --color-panel: #111111;
+    --color-inset: #191919;
+    --color-raised: #2f2f2f;
+    --color-raised-hover: #3d3d3d;
+    --color-control: #2f2f2f;
+    --color-hairline: #666666;
+    --color-accent: #7fc0ff;
+    --color-accent-text: #7fc0ff;
+    --color-accent-ink: #070707;
+    --color-focus: #7fc0ff;
+    --color-danger: #ff7788;
+    --color-danger-ink: #070707;
+    --color-success: #63b58a;
+    --color-success-ink: #070707;
+  }
+}
+
+/* Disabled buttons.
+   Upstream fades them with `disabled:opacity-40`. On a dark ground that holds:
+   the button stays darker than the page and the white label survives. On a
+   light ground it inverts — Atelier's #a05f25 at 40% over white lands on
+   #d9bfa8, where white lettering measures 1.75:1 and effectively disappears.
+   So the disabled state gets its own colours instead of transparency. */
+button:disabled.bg-accent,
+button:disabled.bg-danger {
+  background-color: var(--color-raised-hover);
+  color: var(--color-ink-secondary);
+  opacity: 1;
+}
+
+/* Sidebar items are clickable and should say so on hover. Tailwind v4's
+   preflight stopped giving buttons a pointer cursor, so bot rows, section
+   headers, and menu entries hovered like static text. Scoped to the sidebar
+   (and its portalled context menu) rather than every button in the app;
+   disabled or busy controls keep the default cursor. */
+[data-sidebar] :is(button, [role="button"]):not(:disabled, [aria-busy="true"]) {
+  cursor: pointer;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Mobile & Responsive Polish
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Safe area support for iOS notches & home indicators */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+}
+
+/* Prevent double-tap zoom on touch targets while allowing pinch zoom if needed */
+button,
+[role="button"],
+a,
+select {
+  touch-action: manipulation;
+}
+
+/* Better mobile scrolling and tap highlights */
+html, body {
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+/* Interactive micro-animations for buttons and clickable cards */
+button,
+[role="button"] {
+  transition-property: color, background-color, border-color, transform, opacity, box-shadow;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  transition-duration: 150ms;
+}
+
+button:active:not(:disabled),
+[role="button"]:active:not([aria-busy="true"]) {
+  transform: scale(0.97);
+}
+
+/* Mobile drawer backdrop animation */
+@keyframes drawer-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-drawer-backdrop {
+  animation: drawer-fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Modal backdrop with gentle blur & entry fade */
+.modal-backdrop {
+  background-color: color-mix(in srgb, #000000 55%, transparent);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: drawer-fade-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Glassmorphism utilities */
+.glass-panel {
+  background: color-mix(in srgb, var(--color-panel) 85%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-card {
+  background: color-mix(in srgb, var(--color-card) 80%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Subtle glow accents for active elements */
+.glow-accent {
+  box-shadow: 0 0 16px -4px color-mix(in srgb, var(--color-accent) 40%, transparent);
+}

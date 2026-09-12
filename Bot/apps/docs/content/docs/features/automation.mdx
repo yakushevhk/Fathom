@@ -1,0 +1,41 @@
+---
+title: Routines and webhooks
+description: Run agents on a schedule, collect their reports in one thread, or trigger work from an external event.
+icon: CalendarClock
+---
+
+## Routines
+
+A routine runs once, at a repeating interval, or on selected weekdays. Each run starts a fresh execution using the selected bot's model, permissions, tools, and computer configuration.
+
+<ProductScreenshot name="docs-automations" alt="An empty Parallel automations calendar ready for its first schedule" caption="Review work across a day, three-day, or week view and filter by bot." />
+
+Run receipts distinguish queued, active, waiting, completed, missed, failed, and cancelled work. Parallel must be running when a local routine becomes due.
+
+### Keep reports in one thread
+
+In a routine's editor, use **Post results to** to choose an existing thread or **Create a dedicated results thread**. You can move that results thread into a folder, such as **OMB management**, just like any other thread.
+
+Each run gets its own execution context, while dated reports collect in the chosen thread. Background execution threads stay out of the normal sidebar and mobile thread pickers. Use **Open run** on a report for its conversation and any approvals, then **Back to results** to return. **Run logs** keeps the execution history, including failures and waiting runs.
+
+Routines created in chat keep reporting to that conversation unless you choose a different destination. Changing the destination affects future runs, not the report links for older runs. If you delete a results thread, its hidden execution threads become visible so you can still inspect their work and respond to approvals.
+
+### Clear a folder's unread dots
+
+Right-click a folder or open its **…** menu, then choose **Mark folder as read**. This clears unread dots without opening each thread. It does not answer approvals, dismiss questions, or stop any running work.
+
+## Webhook triggers
+
+Webhooks start the same queued task executor from an external HTTP request. They are independent from schedules and use a dedicated receiver on `127.0.0.1:8800` by default.
+
+The receiver exposes only health and secret hook routes. It does not expose the broader Parallel API.
+
+Bearer authentication is preferred because it keeps the secret out of URLs and most access logs. A capability URL is available for senders that cannot set headers.
+
+## Reaching a local webhook
+
+To accept events from the public internet, proxy only the webhook receiver through a narrowly configured relay or tunnel. Do not expose the main harness port.
+
+<Callout type="warn" title="Parallel must remain running">
+  Local routines and webhook deliveries are not hosted jobs. Closing the desktop app stops the local executor and receiver.
+</Callout>

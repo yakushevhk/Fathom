@@ -1,0 +1,48 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "openmausbot-control-plane",
+  "main": "src/index.ts",
+  "account_id": "0c92969a82eb9e173b013a7e7a02333d",
+  "compatibility_date": "2026-08-25",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "routes": [
+    {
+      "pattern": "accounts.openmausbot.com",
+      "custom_domain": true
+    }
+  ],
+  "vars": {
+    "BETTER_AUTH_URL": "https://accounts.openmausbot.com",
+    "EMAIL_FROM": "noreply@openmausbot.com",
+    "ALLOWED_ORIGINS": "",
+    "CLOUDFLARE_ACCOUNT_ID": "0c92969a82eb9e173b013a7e7a02333d",
+    "CLOUDFLARE_ZONE_ID": "bae08399bb6f96eb7266c65ac0057eee",
+    "COMPANION_HOST_SUFFIX": "openmausbot.com"
+  },
+  "secrets": {
+    "required": ["BETTER_AUTH_SECRET", "CLOUDFLARE_API_TOKEN"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "openmausbot-control-plane",
+      "database_id": "8a7c34ed-5428-4ae2-8722-fef2fe9bf160",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "send_email": [
+    {
+      "name": "EMAIL",
+      "allowed_sender_addresses": ["noreply@openmausbot.com"]
+    }
+  ],
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  },
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": true, "head_sampling_rate": 1 },
+    "traces": { "enabled": true, "head_sampling_rate": 0.05 }
+  }
+}

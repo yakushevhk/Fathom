@@ -1,0 +1,41 @@
+services:
+  omb:
+    image: ghcr.io/milind-soni/openmausbot:latest
+    container_name: openmausbot
+    restart: unless-stopped
+    network_mode: "host"
+    group_add:
+      - "986"
+    volumes:
+      - /opt/openmausbot-data:/data
+      - /opt/openmausbot-data/dist-server:/app/dist-server
+      - /opt/openmausbot-data/dist:/app/dist
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      DOMAIN: ${DOMAIN:-code.y7.hk}
+      OMB_PORT: "8799"
+      OMB_WEBHOOK_PORT: "8800"
+      OMB_WEBHOOK_PUBLIC_URL: https://${DOMAIN:-code.y7.hk}
+      OMB_PUBLIC_URL: https://${DOMAIN:-code.y7.hk}
+      OMB_SIGNIN_EMAILS: ${OMB_SIGNIN_EMAILS:-}
+      OMB_SIGNIN_MEMBER_EMAILS: ${OMB_SIGNIN_MEMBER_EMAILS:-}
+      PATH: "/data/.local/bin:/data/.opencode/bin:/usr/local/bin:/usr/bin:/bin"
+      HOME: "/data"
+      OMB_DATA_DIR: "/data/.openmausbot"
+      OPENAI_API_KEY: "sk-helium-18aba15209499c35"
+      OPENAI_BASE_URL: "https://router.y7.hk/v1"
+      OPENAI_COMPAT_API_KEY: "sk-helium-18aba15209499c35"
+      OPENAI_COMPAT_URL: "https://router.y7.hk/v1"
+      OPENAI_COMPAT_MODEL: "antigravity/gemini-3.8-flash-high"
+      OPENROUTER_API_KEY: "sk-helium-18aba15209499c35"
+      OPENROUTER_BASE_URL: "https://router.y7.hk/v1"
+      OPENCODE_API_KEY: "sk-helium-18aba15209499c35"
+      ANTHROPIC_API_KEY: "sk-helium-18aba15209499c35"
+      ANTHROPIC_BASE_URL: "https://router.y7.hk/v1"
+      QWEN_API_KEY: "sk-helium-18aba15209499c35"
+      XAI_API_KEY: "sk-helium-18aba15209499c35"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:8799/api/health | grep -q openmausbot"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
