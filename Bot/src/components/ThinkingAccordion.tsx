@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { ThinkingOrb } from "thinking-orbs";
 import { BorderBeam } from "border-beam";
+import { cn } from "@/lib/cn";
 import type { Message } from "@/state/store";
 interface ThinkingAccordionProps {
   reasoning: string;
@@ -75,12 +76,17 @@ export function ThinkingAccordion({
           )}
 
           {/* Active in-flight action indicator */}
-          {inFlightStep && inFlightStep.tool && (
-            <span className="flex items-center gap-1.5 rounded-full bg-control px-2.5 py-0.5 text-[11px] text-ink-secondary max-w-[200px] sm:max-w-xs truncate">
-              <Loader2 size={11} className="animate-spin text-accent shrink-0" />
-              <span className="truncate">{inFlightStep.tool.name}</span>
-            </span>
-          )}
+          {inFlightStep && inFlightStep.tool && (() => {
+            const isSubagent = inFlightStep.tool.name.toLowerCase().includes("task") || inFlightStep.tool.name.toLowerCase().includes("agent");
+            const label = inFlightStep.tool.summary || inFlightStep.tool.name;
+            return (
+              <span className="flex items-center gap-1.5 rounded-full bg-control border border-hairline/40 px-2.5 py-0.5 text-[11px] text-ink max-w-[240px] sm:max-w-sm truncate animate-pulse">
+                <Loader2 size={11} className="animate-spin text-accent shrink-0" />
+                <span className="font-semibold text-accent shrink-0">{isSubagent ? "Agent" : inFlightStep.tool.name}:</span>
+                <span className="truncate text-ink-secondary">{label}</span>
+              </span>
+            );
+          })()}
         </div>
 
         <div className="flex items-center gap-1 ml-2 shrink-0">
@@ -105,33 +111,61 @@ export function ThinkingAccordion({
                   const isFailed = tool.ok === false;
                   const isRunning = tool.ok === undefined;
 
+                  const isTask = tool.name.toLowerCase().includes("task") || tool.name.toLowerCase().includes("agent");
+                  const isBash = tool.name.toLowerCase().includes("bash") || tool.name.toLowerCase().includes("terminal");
+
                   return (
                     <div
                       key={step.id}
-                      className="flex items-center justify-between px-3 py-2 text-[12px] font-mono gap-2 hover:bg-raised/40 transition-colors"
+                      className={cn(
+                        "flex items-center justify-between px-3 py-2 text-[12px] font-mono gap-2 hover:bg-raised/40 transition-colors",
+                        isRunning && "bg-accent/[0.04]"
+                      )}
                     >
-                      <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex items-center gap-2.5 min-w-0">
                         {isRunning ? (
-                          <Loader2 size={13} className="animate-spin text-accent shrink-0" />
+                          <span className="relative flex size-3.5 items-center justify-center shrink-0">
+                            <span className="absolute size-full rounded-full bg-accent/30 animate-ping" />
+                            <Loader2 size={12} className="animate-spin text-accent" />
+                          </span>
                         ) : isFailed ? (
                           <XCircle size={13} className="text-danger shrink-0" />
                         ) : (
                           <CheckCircle2 size={13} className="text-success shrink-0" />
                         )}
-                        <span className="font-medium text-ink truncate">{tool.name}</span>
-                        {tool.summary && tool.summary !== tool.name && (
-                          <span className="text-ink-secondary truncate max-w-[280px]" title={tool.summary}>
+
+                        <span className={cn(
+                          "rounded px-1.5 py-0.2 text-[10px] font-bold uppercase tracking-wider shrink-0 border",
+                          isTask
+                            ? "border-accent/40 bg-accent/15 text-accent"
+                            : isBash
+                            ? "border-hairline/50 bg-control text-ink"
+                            : "border-hairline/30 bg-raised text-ink-secondary"
+                        )}>
+                          {isTask ? "🤖 " + tool.name : isBash ? "$ " + tool.name : tool.name}
+                        </span>
+
+                        {tool.summary && tool.summary !== tool.name ? (
+                          <span className="text-ink font-medium truncate max-w-[340px]" title={tool.summary}>
                             {tool.summary}
+                          </span>
+                        ) : (
+                          <span className="text-ink-secondary truncate max-w-[300px]">
+                            {isTask ? "Executing subagent workflow…" : "In progress…"}
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-1 text-[10px] text-ink-secondary shrink-0">
+
+                      <div className="flex items-center gap-1.5 text-[10px] font-mono shrink-0">
                         {isRunning ? (
-                          <span className="text-accent animate-pulse">Running</span>
+                          <span className="inline-flex items-center gap-1 rounded bg-accent/10 border border-accent/20 px-1.5 py-0.2 text-accent animate-pulse font-semibold">
+                            <span className="size-1.5 rounded-full bg-accent animate-ping" />
+                            active
+                          </span>
                         ) : isFailed ? (
-                          <span className="text-danger">Failed</span>
+                          <span className="rounded bg-danger/10 border border-danger/20 px-1.5 py-0.2 text-danger font-medium">Failed</span>
                         ) : (
-                          <span className="text-success">Done</span>
+                          <span className="rounded bg-success/10 border border-success/20 px-1.5 py-0.2 text-success font-medium">✓ Done</span>
                         )}
                       </div>
                     </div>

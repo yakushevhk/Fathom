@@ -559,6 +559,7 @@ function ActivityChip({ message }: { message: Message }) {
   }
   const failed = tool.ok === false;
   const isCommand = tool.name.toLowerCase().includes("bash") || tool.name.toLowerCase().includes("terminal") || nameIsCommand(tool.name);
+  const isTask = tool.name.toLowerCase().includes("task") || tool.name.toLowerCase().includes("agent");
   const commandText = tool.summary && tool.summary !== tool.name ? tool.summary : nameIsCommand(tool.name) ? tool.name : null;
 
   return (
@@ -584,11 +585,13 @@ function ActivityChip({ message }: { message: Message }) {
         {/* Tool name / category tag */}
         <span className={cn(
           "shrink-0 rounded px-1.5 py-0.2 text-[10px] font-bold uppercase tracking-wide border",
-          isCommand
+          isTask
+            ? "bg-accent/15 text-accent border-accent/40"
+            : isCommand
             ? "bg-control text-ink border-hairline/50"
             : "bg-raised text-ink-secondary border-hairline/30"
         )}>
-          {isCommand ? "$ bash" : tool.name}
+          {isTask ? "🤖 " + tool.name : isCommand ? "$ bash" : tool.name}
         </span>
 
         {/* Command string or call summary */}
@@ -598,10 +601,9 @@ function ActivityChip({ message }: { message: Message }) {
           </span>
         ) : (
           <span className="min-w-0 flex-1 truncate text-ink-secondary" title={tool.name}>
-            {tool.name}
+            {isTask ? "Subagent running…" : tool.name}
           </span>
         )}
-
         {/* Status / timing tag */}
         <span className="shrink-0 text-[10.5px] text-ink-secondary/70">
           {tool.ok === undefined ? "running…" : failed ? "exit 1" : "done"}

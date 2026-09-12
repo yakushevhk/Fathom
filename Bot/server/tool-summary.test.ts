@@ -34,6 +34,13 @@ describe("commandSummary", () => {
     expect(summary).toContain("«redacted 40 chars»".slice(0, 14));
     expect(summary!.length).toBeLessThanOrEqual(200);
   });
+
+  it("summarizes subagent batches and task delegation", () => {
+    expect(commandSummary({ tasks: [{ name: "SecAuditor", agent: "scout" }, { name: "HealthScout", agent: "scout" }] }))
+      .toBe("2 subagents: SecAuditor, HealthScout");
+    expect(commandSummary({ task: "Audit Docker network configuration", agent: "scout" }))
+      .toBe("Task (scout): Audit Docker network configuration");
+  });
 });
 
 describe("askInputSummary", () => {

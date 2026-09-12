@@ -18,11 +18,49 @@ const cut = (text: string, limit: number) => redactSecretsInText(text).trim().sl
  * Verify card reads as a step. Only a command: a Read's path or a fetch's
  * URL is not something the bot ran, so those calls carry no summary. */
 export function commandSummary(input: unknown): string | undefined {
-  const command = fieldsOf(input)?.command;
-  if (typeof command !== "string") return undefined;
-  return cut(command.replace(/\s*[\r\n]+\s*/g, " "), LIMIT);
-}
+  const fields = fieldsOf(input);
+  if (!fields) return undefined;
 
+  // 1. Direct shell command
+  if (typeof fields.command === "string") {
+    return cut(fields.command.replace(/\s*[\r\n]+\s*/g, " "), LIMIT);
+  }
+
+  // 2. Subagents / task delegation
+  if (Array.isArray(fields.tasks)) {
+    const count = fields.tasks.length;
+    const taskDetails = fields.tasks
+      .map((t) => {
+        if (!t || typeof t !== "object") return null;
+        const entry = t as Record<string, unknown>;
+        return (
+          (typeof entry.name === "string" ? entry.name : null) ||
+          (typeof entry.agent === "string" ? entry.agent : null) ||
+          (typeof entry.task === "string" ? entry.task.slice(0, 30) : null)
+        );
+      })
+      .filter(Boolean)
+      .join(", ");
+    return cut(`${count} subagent${count === 1 ? "" : "s"}${taskDetails ? `: ${taskDetails}` : ""}`, LIMIT);
+  }
+  if (typeof fields.task === "string") {
+    const agent = fields.agent ? ` (${fields.agent})` : "";
+    return cut(`Task${agent}: ${fields.task.replace(/\s*[\r\n]+\s*/g, " ")}`, LIMIT);
+  }
+
+  // 3. Delegation & Peer Messaging
+  if (typeof fields.message === "string" && (fields.bot_id || fields.toBotId)) {
+    const target = fields.bot_id || fields.toBotId;
+    return cut(`@${target}: ${fields.message.replace(/\s*[\r\n]+\s*/g, " ")}`, LIMIT);
+  }
+
+  // 4. Web search & Queries
+  if (typeof fields.query === "string") {
+    return cut(`"${fields.query.replace(/\s*[\r\n]+\s*/g, " ")}"`, LIMIT);
+  }
+
+  return undefined;
+}
 /** The permission card's subtitle: the question asked, else the command as
  * the bot wrote it (newlines kept — a multi-line command reads on the card
  * the way it will run), else the URL, else the arguments as JSON. Undefined
