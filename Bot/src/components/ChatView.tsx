@@ -17,6 +17,7 @@ import {
   Search,
   Square,
   Webhook,
+  Loader2,
   X,
 } from "lucide-react";
 import { WorkingDots } from "@/components/WorkingIndicator";
@@ -557,25 +558,55 @@ function ActivityChip({ message }: { message: Message }) {
     );
   }
   const failed = tool.ok === false;
+  const isCommand = tool.name.toLowerCase().includes("bash") || tool.name.toLowerCase().includes("terminal") || nameIsCommand(tool.name);
+  const commandText = tool.summary && tool.summary !== tool.name ? tool.summary : nameIsCommand(tool.name) ? tool.name : null;
+
   return (
-    <div className="flex justify-start">
+    <div className="flex justify-start my-1 max-w-full">
       <div
         className={cn(
-          "flex max-w-[min(480px,100%)] min-w-0 items-center gap-2 rounded-full border border-hairline/40 bg-panel px-3 py-1.5 text-[13px]",
-          failed ? "text-danger" : "text-ink-secondary",
+          "flex max-w-[min(640px,100%)] min-w-0 items-center gap-2 rounded-xl border px-3 py-1.5 text-[12px] font-mono shadow-xs transition-colors",
+          failed
+            ? "border-[#ef4444]/40 bg-[#160b0b] text-[#ef4444]"
+            : "border-[#222222] bg-[#0c0c0c] text-[#a3a3a3] hover:border-[#333333]",
         )}
       >
-        {tool.ok === undefined ? (
-          <WorkingDots size={3.5} />
-        ) : failed ? (
-          <X size={13} />
+        <div className="flex size-4 shrink-0 items-center justify-center">
+          {tool.ok === undefined ? (
+            <Loader2 size={12} className="animate-spin text-accent" />
+          ) : failed ? (
+            <X size={12} className="text-[#ef4444]" />
+          ) : (
+            <Check size={12} className="text-[#22c55e]" />
+          )}
+        </div>
+
+        {/* Tool name / category tag */}
+        <span className={cn(
+          "shrink-0 rounded px-1.5 py-0.2 text-[10px] font-bold uppercase tracking-wide",
+          isCommand
+            ? "bg-[#1f1f1f] text-[#ededed] border border-[#2a2a2a]"
+            : "bg-[#141414] text-[#888888] border border-[#1e1e1e]"
+        )}>
+          {isCommand ? "$ bash" : tool.name}
+        </span>
+
+        {/* Command string or call summary */}
+        {commandText ? (
+          <span className="min-w-0 flex-1 truncate text-[#ededed] font-medium selection:bg-[#262626]" title={commandText}>
+            {commandText}
+          </span>
         ) : (
-          <Check size={13} className="text-success" />
+          <span className="min-w-0 flex-1 truncate text-[#737373]" title={tool.name}>
+            {tool.name}
+          </span>
         )}
-        <span className="shrink-0 max-w-[480px] truncate font-mono">{tool.name}</span>
-        {tool.summary && tool.summary !== tool.name && !nameIsCommand(tool.name) && (
-          <span className="min-w-0 flex-1 truncate font-mono" title={tool.summary}>{tool.summary}</span>
-        )}
+
+        {/* Status / timing tag */}
+        <span className="shrink-0 text-[10.5px] text-[#555555]">
+          {tool.ok === undefined ? "running…" : failed ? "exit 1" : "done"}
+        </span>
+
         {tool.delegationId && !failed && (
           <button
             type="button"
@@ -592,9 +623,9 @@ function ActivityChip({ message }: { message: Message }) {
                 setCanceling(false);
               }
             }}
-            className="ml-1.5 inline-flex items-center gap-1 rounded bg-raised px-1.5 py-0.5 text-[11px] font-sans font-medium text-ink-secondary hover:bg-danger/20 hover:text-danger transition-colors disabled:opacity-50"
+            className="ml-1 inline-flex items-center gap-1 rounded bg-[#1a1a1a] px-1.5 py-0.5 text-[10px] font-mono text-[#a3a3a3] hover:bg-[#ef4444]/20 hover:text-[#ef4444] transition-colors disabled:opacity-50"
           >
-            {canceling ? "..." : "Cancel"}
+            {canceling ? "..." : "kill"}
           </button>
         )}
       </div>

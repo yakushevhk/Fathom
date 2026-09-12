@@ -24,6 +24,7 @@ import { showToolCallsEnabled } from "@/lib/feature-flags";
 import { roomActivityVisible } from "@/lib/room-activity";
 import { normalizeState } from "@/lib/mascot";
 import { effectiveDefaultResponder, groupResponseHint } from "@/lib/group-routing";
+import { nameIsCommand } from "@/lib/verify-steps";
 import { ChatMarkdown } from "./ChatMarkdown";
 import { Composer } from "./Composer";
 import { ChatFindBar } from "./ChatFindBar";
@@ -99,15 +100,46 @@ export function RoomToolChip({ message, roomId }: { message: Message; roomId?: s
       </div>
     );
   }
+  const failed = tool.ok === false;
+  const isCommand = tool.name.toLowerCase().includes("bash") || tool.name.toLowerCase().includes("terminal") || nameIsCommand(tool.name);
+  const commandText = tool.summary && tool.summary !== tool.name ? tool.summary : nameIsCommand(tool.name) ? tool.name : null;
+
   return (
-    <div className="flex justify-start">
+    <div className="flex justify-start my-1 max-w-full">
       <div
         className={cn(
-          "flex items-center gap-2 rounded-full border border-hairline/40 bg-panel px-3 py-1.5 text-[13px]",
-          tool.ok === false ? "text-danger" : "text-ink-secondary",
+          "flex max-w-[min(640px,100%)] min-w-0 items-center gap-2 rounded-xl border px-3 py-1.5 text-[12px] font-mono shadow-xs transition-colors",
+          failed
+            ? "border-[#ef4444]/40 bg-[#160b0b] text-[#ef4444]"
+            : "border-[#222222] bg-[#0c0c0c] text-[#a3a3a3] hover:border-[#333333]",
         )}
       >
-        <span className="max-w-[480px] truncate font-mono">{tool.name}</span>
+        <div className="flex size-4 shrink-0 items-center justify-center">
+          {tool.ok === undefined ? (
+            <Loader2 size={12} className="animate-spin text-accent" />
+          ) : failed ? (
+            <X size={12} className="text-[#ef4444]" />
+          ) : (
+            <Check size={12} className="text-[#22c55e]" />
+          )}
+        </div>
+        <span className={cn(
+          "shrink-0 rounded px-1.5 py-0.2 text-[10px] font-bold uppercase tracking-wide",
+          isCommand
+            ? "bg-[#1f1f1f] text-[#ededed] border border-[#2a2a2a]"
+            : "bg-[#141414] text-[#888888] border border-[#1e1e1e]"
+        )}>
+          {isCommand ? "$ bash" : tool.name}
+        </span>
+        {commandText ? (
+          <span className="min-w-0 flex-1 truncate text-[#ededed] font-medium selection:bg-[#262626]" title={commandText}>
+            {commandText}
+          </span>
+        ) : (
+          <span className="min-w-0 flex-1 truncate text-[#737373]" title={tool.name}>
+            {tool.name}
+          </span>
+        )}
       </div>
     </div>
   );
