@@ -1226,6 +1226,23 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
               <Crown size={11} /> {t("chat.chiefOfStaff")}
             </span>
           )}
+          <button
+            onClick={async () => {
+              try {
+                const res = (await api(`/api/bots/${bot.id}/sleep`, { method: "POST" })) as { ok?: boolean; report?: { summary?: string } };
+                if (res.report?.summary) {
+                  alert(`💤 ${res.report.summary}`);
+                }
+              } catch (e) {
+                dispatch({ type: "error", message: e instanceof Error ? e.message : "Сон не удался" });
+              }
+            }}
+            className="flex items-center gap-1 rounded-full border border-hairline/40 bg-control px-2 py-0.5 text-[11px] font-medium text-ink-secondary hover:text-ink hover:border-hairline transition-all active:scale-95"
+            title="Отправить бота в сон (консолидация памяти)"
+          >
+            <span className="text-[12px]">💤</span>
+            <span className="hidden sm:inline">Сон</span>
+          </button>
           {bot.busy && <WorkingDots className="text-ink-secondary" />}
         </div>
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">

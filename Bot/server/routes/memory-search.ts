@@ -89,6 +89,25 @@ export async function handleMemoryAndSearchRoutes(ctx: RouteContext): Promise<bo
     json(res, 200, { ok: true });
     return true;
   }
+  const sleepMatch = BOT_SLEEP_PATH.exec(path);
+  if (sleepMatch) {
+    const botId = sleepMatch[1];
+    if (!store.bot(botId)) {
+      json(res, 404, { error: "no such bot" });
+      return true;
+    }
+    if (method === "GET") {
+      const sleepState = getBotSleepState(botId);
+      json(res, 200, { ok: true, sleep: sleepState });
+      return true;
+    }
+    if (method === "POST") {
+      const report = await executeBotSleep(botId);
+      json(res, 200, { ok: true, report });
+      return true;
+    }
+  }
+
 
   if (method === "GET" && path === "/api/web-search") {
     const q = String(url.searchParams.get("q") ?? "").trim();
