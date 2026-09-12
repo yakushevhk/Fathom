@@ -1,7 +1,7 @@
 // Service Worker for Parallel PWA caching and offline resilience
 const CACHE_NAME = "parallel-cache-v1";
 
-self.addEventListener("install", (event) => {
+self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
