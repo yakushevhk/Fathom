@@ -1231,12 +1231,14 @@ function checkedModelSelection(
   if (typeof value.instanceId !== "string" || !value.instanceId.trim()) {
     return { ok: false, status: 400, error: "modelSelection.instanceId is required" };
   }
-  if (typeof value.model !== "string" || !value.model.trim()) {
-    return { ok: false, status: 400, error: "modelSelection.model is required" };
-  }
+  const instId = value.instanceId.trim();
+  const defaultModelForInst = instId === "opencodeGo" ? "router/antigravity/gemini-3.8-flash-high"
+    : instId === "pi" ? "router/antigravity/gemini-3.8-flash-high"
+    : instId === "qwen" ? "antigravity/gemini-3.8-flash-high(openai)"
+    : "antigravity/gemini-3.8-flash-high";
   const selection: ModelSelection = {
-    instanceId: value.instanceId.trim(),
-    model: value.model.trim(),
+    instanceId: instId,
+    model: typeof value.model === "string" && value.model.trim() ? value.model.trim() : defaultModelForInst,
   };
   if (value.effort !== undefined) {
     if (!isEffortLevel(value.effort)) {
@@ -8250,16 +8252,33 @@ function persistMcpServers(next: Record<string, unknown>): void {
 
 async function describeInstances() {
   const configs = instanceConfigs(cfg);
-  return (await registry.describe()).map((instance) => {
+  const rawInstances = await registry.describe();
+  return rawInstances.map((instance) => {
     const entry = configs[instance.instanceId];
-    if (entry?.driver !== "claudeAgent") return instance;
+    // Strictly restrict models to only gemini-3.8-flash-high for all instances
+    const options = [
+      {
+        id: instance.instanceId === "opencodeGo" ? "router/antigravity/gemini-3.8-flash-high"
+          : instance.instanceId === "pi" ? "router/antigravity/gemini-3.8-flash-high"
+          : instance.instanceId === "qwen" ? "antigravity/gemini-3.8-flash-high(openai)"
+          : "antigravity/gemini-3.8-flash-high",
+        label: "Gemini 3.8 Flash High",
+        custom: true,
+      },
+    ];
+    const overridden = {
+      ...instance,
+      models: {
+        default: options[0].id,
+        options,
+      },
+    };
+    if (entry?.driver !== "claudeAgent") return overridden;
     try {
       const claudeAccount = claudeAccountInfo(instance.instanceId, entry, instance.cli ?? instance.cliDefault ?? "claude");
-      return { ...instance, claudeAccount, install: { ...instance.install, signInCommand: claudeAccount.signInCommand } };
+      return { ...overridden, claudeAccount, install: { ...instance.install, signInCommand: claudeAccount.signInCommand } };
     } catch {
-      // A malformed saved config remains a repairable shadow, never takes
-      // the model picker down or offers a login for the wrong directory.
-      return { ...instance, install: { ...instance.install, signInCommand: undefined } };
+      return { ...overridden, install: { ...instance.install, signInCommand: undefined } };
     }
   });
 }
@@ -13614,12 +13633,28 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
 
     // ── provider instances (model picker) ──
     if (method === "GET" && path === "/api/instances") {
-      // Rescan PATH first: this endpoint is how the app answers "what can I
-      // run?", and the interesting case is a CLI installed since launch.
-      // Windows never pushes PATH changes into a live process, so without
-      // this the answer is frozen at boot and "check again" is a no-op.
       resetPathCache();
-      return json(res, 200, { instances: await describeInstances() });
+      const instances = await describeInstances();
+      const strictlyFiltered = instances.map((instance) => {
+        const id = instance.instanceId === "opencodeGo" ? "router/antigravity/gemini-3.8-flash-high"
+          : instance.instanceId === "pi" ? "router/antigravity/gemini-3.8-flash-high"
+          : instance.instanceId === "qwen" ? "antigravity/gemini-3.8-flash-high(openai)"
+          : "antigravity/gemini-3.8-flash-high";
+        return {
+          ...instance,
+          models: {
+            default: id,
+            options: [
+              {
+                id,
+                label: "Gemini 3.8 Flash High",
+                custom: true,
+              },
+            ],
+          },
+        };
+      });
+      return json(res, 200, { instances: strictlyFiltered });
     }
 
     if (method === "POST" && path === "/api/instances/claude-accounts") {
