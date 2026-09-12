@@ -127,6 +127,40 @@ fathom/
 └── Dockerfile
 ```
 
+### Fathom Bot (`Bot/`)
+
+`Bot/` is a self-contained TypeScript product — the Fathom Bot chat app — with its own toolchain,
+independent of the Rust workspace. Nothing under `crates/` or `src/` depends on it, and it does not depend
+on any Rust crate; it drives coding-agent CLIs installed on the host.
+
+```
+Bot/
+├── src/               # React 19 + Vite app — chat shell, store, components
+├── server/            # Node harness: drivers, event bus, HTTP + SSE API, TTS, routines
+│   └── drivers/       # One module per provider; registering a new one is a single line
+├── shared/            # Types and pure helpers shared by app and server
+├── electron/          # macOS / Windows / Ubuntu desktop shells
+├── companion/         # Phone pairing client
+├── cloudflare/        # Composio broker + control-plane workers
+├── deploy/            # Docker, Podman, bare-metal topologies
+├── enterprise/        # Source-available, separately licensed (delete → open-source edition)
+└── docs/              # Product docs: deployment, engines, companions, verification
+```
+
+```sh
+cd Bot
+pnpm install
+pnpm dev:server       # harness → 127.0.0.1:8799
+pnpm dev              # app → http://127.0.0.1:5199
+pnpm dev:desktop      # Electron shell
+pnpm typecheck        # app + server
+pnpm test             # unit, driver, API, and desktop capability tests
+```
+
+Before claiming a Bot server or conversation change works, follow `Bot/docs/verification/README.md`: use an
+isolated fixture, never the user's live app or data. `Bot/AGENTS.md` notes the same rule for agents working
+in that tree.
+
 ### Crate dependency graph
 
 The workspace uses a strict layering strategy to minimise compilation units and avoid circular dependencies:

@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/Rust-2021-DEA584?style=flat&colorA=222222&logo=rust&logoColor=white" alt="Rust"></a>
-  <a href="#"><img src="https://img.shields.io/badge/Crates-12%20Modular%20Workspace-3178C6?style=flat&colorA=222222" alt="Crates"></a>
+  <a href="#"><img src="https://img.shields.io/badge/Crates-13%20Modular%20Workspace-3178C6?style=flat&colorA=222222" alt="Crates"></a>
   <a href="#"><img src="https://img.shields.io/badge/Engine-Tokio%20Async%20Swarm-10B981?style=flat&colorA=222222" alt="Tokio"></a>
   <a href="#"><img src="https://img.shields.io/badge/Dispatch-0.75ms%20Microsecond-8B5CF6?style=flat&colorA=222222" alt="Dispatch"></a>
   <a href="#"><img src="https://img.shields.io/badge/License-Elastic%202.0-58A6FF?style=flat&colorA=222222" alt="License"></a>
@@ -165,7 +165,7 @@ Deploying autonomous agents in mission-critical environments requires mathematic
 
 ---
 
-## 🛠️ Extensible Tool Registry (48 Base Built-in + CDP Browser + Computer Use + LSP)
+## 🛠️ Extensible Tool Registry (51 Base Built-in + CDP Browser + Computer Use + LSP)
 | Category | Tools | Description |
 |---|---|---|
 | **Web Search** | `web_search`, `web_fetch`, `web_crawl`, `web_feed` | 7 search engines with hybrid fallback & RRF ranking |
@@ -234,7 +234,7 @@ Fathom/
 │   ├── core/                  # Shared domain primitives: IDs, events, config, notifications, CRM
 │   ├── llm/                   # LlmProvider trait, native Anthropic Claude (thinking & caching), DeepSeek/OpenAI streaming
 │   ├── agent/                 # Autonomous multi-turn reasoning loops, JoinSet sub-agent swarms
-│   ├── tools/                 # 48 base tools + Playwright CDP + computer-use registry
+│   ├── tools/                 # 51 base tools + Playwright CDP + computer-use registry
 │   ├── memory/                # Long-term semantic memory: SQLite FTS5 (BM25) + vector graph
 │   ├── mcp/                   # MCP client & server (stdio / HTTP / OAuth2 transports)
 │   ├── persistence/           # SQLite WAL persistence: jobs, sessions, contacts, credentials
@@ -247,10 +247,56 @@ Fathom/
 ├── apps/
 │   ├── computer/              # Playwright loopback computer service (ARIA DOM + screen stream)
 │   └── web/                   # Next.js web dashboard
+├── Bot/                       # Fathom Bot — chat app for a team of AI agents (React 19 + Electron + Node harness)
 ├── whitepaper/                # 42-page enterprise architecture whitepaper & presentation deck
 ├── docs/                      # Full technical documentation suite
 └── Cargo.toml                 # Workspace Cargo manifest
 ```
+
+
+---
+
+## 🤖 Fathom Bot — the chat-app surface
+
+`Bot/` is the second product surface: **Fathom Bot**, a local-first messaging app where every chat in the
+sidebar is a real agent. It is a TypeScript stack (React 19 + Vite app, an embedded Node harness server,
+Electron desktop shells, and a Cloudflare control plane), independent of the Rust workspace but shipped
+from the same repository.
+
+Each bot carries its own personality, model, cloud computer, and connected apps. Bots run on the coding
+CLIs already installed on the machine — `claude`, `codex`, `grok`, `qwen`, `pi`, `opencode`, `antigravity`
+— with existing logins, so no proxy sits in the middle. Transcripts, keys, and events stay in
+`~/.openmausbot`, not a cloud.
+
+| Piece | Where | What it does |
+|---|---|---|
+| Frontend | `Bot/src/` | React 19 + Tailwind chat shell, one reducer, zero client-side transports; responsive web/PWA and Electron renderer. |
+| Harness | `Bot/server/` | Owns every agent process and normalizes each provider's protocol into one canonical event stream; HTTP commands in, one SSE stream out. |
+| Drivers | `Bot/server/drivers/` | One per provider (Claude, Codex, Grok, Qwen, Pi, OpenCode, Antigravity, OpenAI-compatible), plus a cloud-computer agent. Adding a provider is one file plus a one-line registration. |
+| Desktop | `Bot/electron/` | macOS, Windows, and Ubuntu shells with an embedded harness, updater, and platform capabilities. |
+| Companion | `Bot/companion/` | Phone pairing over an approved HTTPS endpoint or Tailscale. |
+| Deploy | `Bot/deploy/`, `Bot/compose.yaml` | Docker, rootless Podman, and bare-metal topologies behind Caddy. |
+
+Notable capabilities: per-bot model picker · cloud and local-VM computers with live screen preview ·
+inline approval cards for shell, edits, and questions · Composio marketplace for 500+ apps · channels with
+their own transcript, instructions, folder, and roster · portable Markdown team packages · routines and
+webhook triggers · voice replies and calls via ElevenLabs · a bounded stdio MCP control plane for external
+clients.
+
+See [`Bot/README.md`](Bot/README.md) for the product overview,
+[`Bot/docs/`](Bot/docs/) for the deployment, self-hosting, engine, and companion guides, and
+[`Bot/DEPLOYMENT_GUIDE.md`](Bot/DEPLOYMENT_GUIDE.md) for a full server deployment reference.
+
+```sh
+cd Bot
+pnpm install
+pnpm dev:server    # harness → 127.0.0.1:8799
+pnpm dev           # app → http://127.0.0.1:5199
+pnpm dev:desktop   # Electron shell
+```
+
+Requirements: macOS, Windows, or Ubuntu 24.04 x64 · Node 24+ · pnpm · at least one agent CLI installed
+and logged in.
 
 ---
 
@@ -268,6 +314,7 @@ Fathom/
 | [docs/OSINT-LEADGEN.md](docs/OSINT-LEADGEN.md) | OSINT lead generation, SMTP probing & CRM integration |
 | [docs/COWORKERS.md](docs/COWORKERS.md) | Persistent coworkers, cron schedules & atomic task claims |
 | [docs/MCP-GUIDE.md](docs/MCP-GUIDE.md) | Model Context Protocol client & server integration |
+| [Bot/README.md](Bot/README.md) | Fathom Bot — chat app for a team of AI agents (product overview, quick start, desktop capabilities) |
 
 ---
 

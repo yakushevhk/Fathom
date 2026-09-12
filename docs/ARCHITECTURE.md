@@ -660,3 +660,32 @@ The system is wired together through three shared primitives:
 3. **`CancellationToken` (tokio_util)** — Every agent and job receives a cancellation token. When the user cancels a session (via HTTP, TUI, or CLI), the token is triggered, and all in-flight operations (LLM calls, tool executions, agent loops) are cancelled at their next await point.
 
 The `AppState` struct in the server crate holds Arc references to the persistence layer, the broadcast sender, the control-plane channels, the governance policy engine, and the supervisor provisioner. The TUI holds similar references, allowing both frontends to operate on the same running sessions interchangeably. The **native GPUI desktop app** (`crates/desktop`) and the **Next.js 16 web dashboard** (`apps/web`) are frontends that consume the HTTP/SSE surface: live screens and agent trees, human takeover, secret entry, policy governance, and session steering.
+
+## Fathom Bot — the chat-app frontend (`Bot/`)
+
+Alongside the Rust runtime's own frontends, the repository ships **Fathom Bot** (`Bot/`): a local-first
+chat application in which every sidebar contact is a real agent. It is a separate TypeScript stack — a
+React 19 + Vite single-page app, an embedded Node harness server, Electron desktop shells, and a
+Cloudflare control plane — that talks to coding-agent CLIs on the host machine rather than to the Rust
+server. It lives in the same repo but has no crate dependency on the workspace.
+
+The harness owns every agent process and normalizes each provider's native protocol (stream-JSON,
+JSON-RPC, or ACP) into one canonical runtime event stream; the app holds no transports of its own and
+dispatches typed commands over HTTP, folding a single SSE stream into its store.
+
+| Layer | Location | Responsibility |
+|---|---|---|
+| App | `Bot/src/` | React 19 chat shell: sidebar bot/channel tree, chat and group views, computer panel, settings, command palette. One reducer, zero client-side transports. |
+| Harness | `Bot/server/` | Driver registry → live instances; permission broker; bots, turns, approvals, model catalog, computer lifecycle, connectors, config over HTTP + SSE. |
+| Drivers | `Bot/server/drivers/` | One per provider — Claude, Codex, Grok, Qwen, Pi, OpenCode, Antigravity, OpenAI-compatible — plus a cloud-computer agent. Unknown drivers degrade to "unavailable", never crash the fleet. |
+| Voice | `Bot/server/tts/` | ElevenLabs, bring-your-own-key; runs on the harness so keys never reach the UI. |
+| Desktop | `Bot/electron/` | macOS, Windows, Ubuntu shells with an embedded harness and platform capabilities. |
+| Companion | `Bot/companion/` | Phone pairing via approved HTTPS endpoint or Tailscale. |
+| Broker | `Bot/cloudflare/` | Composio OAuth broker and control-plane workers. |
+
+Bot agents run on the coding CLIs already installed on the machine (`claude`, `codex`, `grok`, `qwen`,
+`pi`, `opencode`, `antigravity`) with the user's existing logins; transcripts, keys, and events persist
+under `~/.openmausbot`. Each bot can be given a cloud Linux desktop, an isolated local VM, or — where the
+platform safety boundary is certified — host control, plus 500+ apps through Composio. Side-effecting
+actions surface as inline approval cards through a permission broker. The repository's `docs/verification/`
+conventions apply to Bot changes as well; see `Bot/AGENTS.md` and `Bot/docs/`.

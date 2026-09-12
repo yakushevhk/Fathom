@@ -25,6 +25,7 @@ const ALL_CANONICAL_PATHS = [
   '/architecture',
   '/benchmarks',
   '/blog',
+  '/bot',
   '/blog/anatomy-of-fan-out',
   '/blog/benchmarks-repo-map',
   '/blog/memory-that-remembers',
@@ -35,6 +36,7 @@ const ALL_CANONICAL_PATHS = [
   '/demo',
   '/docs',
   '/docs/api',
+  '/docs/bot',
   '/docs/architecture',
   '/docs/cli',
   '/docs/configuration',
@@ -154,7 +156,8 @@ export default defineConfig({
           cleanUrl === `${SITE}/mcp` ||
           cleanUrl === `${SITE}/tui` ||
           cleanUrl === `${SITE}/api` ||
-          cleanUrl === `${SITE}/dashboard`
+          cleanUrl === `${SITE}/dashboard` ||
+          cleanUrl === `${SITE}/bot`
         ) {
           priority = 0.7;
           changefreq = cleanUrl.startsWith(`${SITE}/blog`) ? 'weekly' : 'monthly';

@@ -56,6 +56,10 @@ export default {
       r5f: { en: '100+ Concurrent Employees', ru: '100+ одновременных сотрудников' },
       r5p: { en: '4 – 8 Workers (OOM collapse)', ru: '4 – 8 воркеров (падение по OOM)' },
       r5a: { en: 'Tokio JoinSet async I/O multiplexing', ru: 'Асинхронный мультиплексинг ввода-вывода Tokio JoinSet' },
+      r6m: { en: 'Operator Interaction Surface', ru: 'Интерфейс оператора' },
+      r6f: { en: 'Fathom Bot (Local Chat App) + TUI / Web', ru: 'Fathom Bot (локальный чат) + TUI / Web' },
+      r6p: { en: 'Headless scripts / single-turn web chat', ru: 'Консольные скрипты / одиночные веб-чаты' },
+      r6a: { en: 'React 19 + Electron harness, per-bot models & permissions', ru: 'Стек React 19 + Electron, независимые модели и права ботов' },
     },
     banner: {
       eyebrow: { en: 'Immediate Access', ru: 'Мгновенный доступ' },
@@ -63,6 +67,7 @@ export default {
       sub: { en: 'Get the full 42-page technical document including all 15 GPUI Metal Retina screenshots, security architecture schemas, and mathematical unit economic models.', ru: 'Получите полный 42-страничный технический документ со всеми 15 скриншотами GPUI Metal Retina, схемами безопасности и моделями юнит-экономики.' },
       downloadBtn: { en: '⬇ Download Whitepaper (PDF, 7.6 MB)', ru: '⬇ Скачать Вайтпейпер (PDF, 7.6 МБ)' },
       serverBtn: { en: 'Request Dedicated Server Access →', ru: 'Запросить доступ к серверу →' },
+      botBtn: { en: 'Explore Fathom Bot →', ru: 'Открыть Fathom Bot →' },
     },
   },
 };

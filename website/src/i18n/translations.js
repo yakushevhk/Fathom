@@ -100,6 +100,10 @@ export const translations = {
       "en": "TUI",
       "ru": "TUI"
     },
+    "bot": {
+      "en": "Fathom Bot",
+      "ru": "Fathom Bot"
+    },
     "profiles": {
       "en": "Profiles",
       "ru": "Профили"
@@ -630,6 +634,7 @@ export const translations = {
     "integrations": { "en": "Integrations", "ru": "Интеграции" },
     "allIntegrations": { "en": "All Integrations", "ru": "Все интеграции" },
     "protocolGui": { "en": "RPC, GUI & IDE", "ru": "RPC, GUI и IDE" },
+    "bot": { "en": "Fathom Bot", "ru": "Fathom Bot" },
     "crumbHome": { "en": "Home", "ru": "Главная" },
     "crumbDocs": { "en": "Documentation", "ru": "Документация" },
     "prev": { "en": "Previous", "ru": "Назад" },
@@ -690,6 +695,10 @@ export const translations = {
       "cta2": {
         "en": "See what it can do",
         "ru": "Смотреть возможности"
+      },
+      "ctaBot": {
+        "en": "Try Fathom Bot →",
+        "ru": "Попробовать Fathom Bot →"
       },
       "hero_mono": {
         "en": "Rust · one binary · memory · governance · schedules",
@@ -878,6 +887,32 @@ export const translations = {
           "c3": {
             "en": "cross-session",
             "ru": "между сессиями"
+          }
+        },
+        "bot": {
+          "t": {
+            "en": "Fathom Bot: team chat app",
+            "ru": "Fathom Bot: мессенджер для команды агентов"
+          },
+          "d": {
+            "en": "Every bot in the sidebar is a real agent — Claude, Codex, or Grok. Chat like contacts, grant cloud computers, approve actions inline.",
+            "ru": "Каждый бот в сайдбаре — настоящий агент (Claude, Codex, Grok). Общайтесь как с контактами, давайте облачные компьютеры, одобряйте действия прямо в чате."
+          },
+          "c1": {
+            "en": "chat UI",
+            "ru": "чат-интерфейс"
+          },
+          "c2": {
+            "en": "cloud computer",
+            "ru": "облачный компьютер"
+          },
+          "c3": {
+            "en": "approval cards",
+            "ru": "карточки одобрения"
+          },
+          "c4": {
+            "en": "multi-bot team",
+            "ru": "мульти-бот команда"
           }
         },
         "report": {
@@ -1429,6 +1464,7 @@ export const translations = {
     "osintBrowserMemory": { "en": "OSINT, browser, memory & shell", "ru": "OSINT, браузер, память и shell" },
     "ratatuiReplay": { "en": "Ratatui agent tree & replay", "ru": "Дерево агентов Ratatui и replay" },
     "sdrScoutMaintainer": { "en": "SDR, scout, maintainer personas", "ru": "Персоны SDR, скаута, Maintainer" },
+    "chatAppBots": { "en": "A chat app where every contact is an agent", "ru": "Чат-приложение, где каждый контакт — агент" },
     "solutionsHub": { "en": "Solutions Hub", "ru": "Центр решений" },
     "allEnterprisePlaybooks": { "en": "All enterprise use-case playbooks", "ru": "Все playbook для бизнеса" },
     "b2bOutboundSdr": { "en": "B2B Outbound SDR", "ru": "B2B исходящий SDR" },

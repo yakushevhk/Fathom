@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## [0.5.0] — 2026-09-13
+
+### Added
+- **Fathom Bot (`Bot/`)**: merged the parallel chat-app product into the repository as a second surface —
+  a local-first messaging app where every sidebar contact is a real agent running on the host's coding
+  CLIs (React 19 + Vite app, Node harness server, Electron shells, Cloudflare control plane). Independent
+  of the Rust workspace; drivers, deployment, and product docs live under `Bot/`.
+- **Docs & website**: root `README.md` now documents Fathom Bot (structure, quick start, docs links),
+  `docs/ARCHITECTURE.md` and `docs/DEVELOPMENT.md` cover the Bot tree, and the marketing website gains a
+  `/bot` page plus navigation and landing mentions (EN/RU).
+
 ## [0.4.3] — 2026-08-28
 
 ### Added

@@ -49,6 +49,12 @@ const usecases = [
     d: 'Hybrid vector + BM25 search and an entity graph keep every finding across sessions — scanned for secrets before it lands.',
     chips: ['vector + BM25', 'entity graph', 'cross-session'],
   },
+  {
+    k: 'landing.uc.bot', n: '06', href: '/bot', cls: '',
+    t: 'Fathom Bot: team chat app',
+    d: 'Every bot in the sidebar is a real agent — Claude, Codex, or Grok. Chat like contacts, grant cloud computers, approve actions inline.',
+    chips: ['chat UI', 'cloud computer', 'approval cards', 'multi-bot team'],
+  },
 ];
 
 const capabilityRows = [
@@ -96,7 +102,7 @@ const metrics = [
         </p>
         <div class="hero__actions">
           <a href="#cta" class="btn btn-primary btn-lg" data-i18n="landing.cta1">Start building</a>
-          <a href="#features" class="btn btn-secondary btn-lg" data-i18n="landing.cta2">See what it can do</a>
+          <a href="/bot" class="btn btn-secondary btn-lg" data-i18n="landing.ctaBot">Try Fathom Bot →</a>
         </div>
         <div class="hero__mono-row">
           <a href="https://github.com/yakushevhk/Fathom" class="hero__gh" target="_blank" rel="noopener noreferrer">

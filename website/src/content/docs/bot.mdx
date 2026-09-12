@@ -1,0 +1,110 @@
+---
+title: "Fathom Bot — Chat App Architecture"
+description: "Architecture, drivers, and runtime mechanics of Fathom Bot: a local-first desktop and web messaging client for teams of autonomous AI agents."
+sidebarId: "bot"
+sidebarGroup: "API Reference"
+order: 5
+---
+
+<div class="doc-header">
+  <span class="doc-badge">Product Surface</span>
+  <h1>Fathom Bot — Team Chat App</h1>
+  <p class="doc-lead">
+    <code>Bot/</code> is a companion product surface in the repository: a local-first messaging application where every contact in the sidebar is an autonomous AI agent running locally on host CLIs.
+  </p>
+</div>
+
+## Architectural Overview
+
+Fathom Bot is architected as two decoupled layers: a single-page chat client (**React 19 + Tailwind + Vite 7**) packaged into cross-platform desktop binaries (**Electron 34** for macOS, Windows, and Ubuntu 24.04), and an embedded background **Node.js 24 harness daemon** listening on `127.0.0.1:8799`.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Desktop Shell (Electron) / Browser Client (PWA)            │
+│  React 19 · Zustand Store · Tailwind · Zero Direct Network  │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ HTTP Commands / SSE Stream
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Local Harness Server (127.0.0.1:8799)                      │
+│  - Driver Registry (Claude, Codex, Grok, Qwen, Pi, ACP)     │
+│  - Permission Broker (Inline Allow/Deny Approval Cards)     │
+│  - Local State: ~/.openmausbot (SQLite, NDJSON Transcripts) │
+│  - Webhook Receiver (127.0.0.1:8800)                        │
+└──────────────┬──────────────────────────────┬───────────────┘
+               │                              │
+               ▼                              ▼
+┌──────────────────────────────┐ ┌────────────────────────────┐
+│ Host Agent CLIs              │ │ Computer Environments      │
+│ - claude CLI (@anthropic-ai) │ │ - Local VM (Cua Driver)    │
+│ - codex CLI (@openai/codex)  │ │ - Cloud Box (box.ascii.dev)│
+│ - grok CLI (x.ai ACP)        │ │ - Host Mac/Linux Opt-In    │
+│ - qwen / pi / opencode (ACP) │ │ - Composio 500+ App OAuth  │
+└──────────────────────────────┘ └────────────────────────────┘
+```
+
+## Key Capabilities
+
+### 1. Bring Your Own Agent CLIs
+Fathom Bot operates on official CLI binaries installed directly on the operator's machine (`claude`, `codex`, `grok`, `qwen`, `pi`, `opencode`, `antigravity`). It uses existing logins and local subscriptions with zero intermediate SaaS proxies or token markups.
+
+### 2. Provider Rail & Model Picker
+Every bot in the sidebar can be assigned its own reasoning brain. Operators can switch engines mid-conversation, route specific tasks to high-reasoning models (Claude 3.7 Sonnet thinking mode, Gemini 3.8), or point engines to OpenAI-compatible custom endpoints via **Settings → Engines**.
+
+### 3. Governed Computer Use & Local VMs
+Bots are equipped with action capabilities:
+- **Cloud Linux Desktops:** Ephemeral, isolated desktop containers with live screen streaming and human browser takeover.
+- **Local VMs:** Rootless Podman/Docker containers running XFCE and Cua Driver 0.20.0 with noVNC WebSocket streaming.
+- **Host Control:** Optional, user-certified macOS and Ubuntu Xorg input automation with permission gating.
+
+### 4. Permission Broker & Risk Cards
+All side-effecting operations (shell execution, file writes, outbound network calls) are halted before execution. A permission broker stages an interactive card in the chat stream, allowing the operator to **Allow**, **Deny**, or guide the agent in natural language.
+
+### 5. Multi-Bot Team Channels
+Organize agents into context-scoped channels (Work, Finance, Legal, Engineering). Each channel maintains:
+- Independent conversation transcripts and shared instructions (`SOUL.md`).
+- Channel-specific working directory and file boundaries.
+- Configurable responder rules and bot rosters.
+
+### 6. Voice Mode & ElevenLabs Calling
+Full two-way audio conversations:
+- Text-to-speech reading of replies via ElevenLabs API keys (rewriting markdown into spoken phrasing).
+- Native Apple speech dictation on macOS desktops.
+- Interactive full-screen voice calls with real-time audio waveforms.
+
+---
+
+## Directory Structure (`Bot/`)
+
+| Directory | Role |
+| :--- | :--- |
+| `Bot/src/` | React 19 SPA: chat view, split dual-workspace, computer viewport, model picker, command palette. |
+| `Bot/server/` | Node harness daemon: engine driver adapters, SSE event bus, permission broker, webhooks. |
+| `Bot/server/drivers/` | Provider drivers normalizing ACP, JSON-RPC, and CLI stream-JSON into canonical runtime events. |
+| `Bot/electron/` | Native macOS (.dmg), Windows (.exe), and Ubuntu (.deb / AppImage) application wrappers. |
+| `Bot/companion/` | Pairable iOS and Android mobile companion services over Tailscale or authenticated tunnels. |
+| `Bot/deploy/` | Docker Compose, rootless Podman, and Caddy edge reverse-proxy deployment manifests. |
+| `Bot/docs/` | In-depth technical guides: custom engines, self-hosting, voice mode, and verification procedures. |
+
+---
+
+## Developer Quickstart
+
+```bash
+# Navigate to the Bot workspace
+cd Bot
+
+# Install dependencies
+pnpm install
+
+# Start the local harness server (127.0.0.1:8799)
+pnpm dev:server
+
+# Start the React Vite frontend (http://localhost:5199)
+pnpm dev
+
+# Or launch the Electron desktop shell
+pnpm dev:desktop
+```
+
+For full packaging, self-hosting, and production deployment instructions, refer to [`Bot/README.md`](https://github.com/yakushevhk/Fathom/blob/main/Bot/README.md) and [`Bot/DEPLOYMENT_GUIDE.md`](https://github.com/yakushevhk/Fathom/blob/main/Bot/DEPLOYMENT_GUIDE.md).
