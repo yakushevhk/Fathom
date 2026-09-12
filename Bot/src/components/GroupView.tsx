@@ -1164,8 +1164,16 @@ export function GroupView({ group }: { group: Group }) {
           <div className="hidden sm:block">
             <GroupCallButton group={group} members={members} />
           </div>
-          {!remoteClient && !setupPending && !group.dm && <RoomWorkingFolderChip group={group} onToggle={() => setFolderOpen((open) => !open)} />}
-          {!remoteClient && !setupPending && !group.dm && <DefaultResponderSelect group={group} members={members} />}
+          {!remoteClient && !setupPending && !group.dm && (
+            <div className="hidden md:block">
+              <RoomWorkingFolderChip group={group} onToggle={() => setFolderOpen((open) => !open)} />
+            </div>
+          )}
+          {!remoteClient && !setupPending && !group.dm && (
+            <div className="hidden sm:block">
+              <DefaultResponderSelect group={group} members={members} />
+            </div>
+          )}
           {group.dm || remoteClient ? (
             memberMauses
           ) : (

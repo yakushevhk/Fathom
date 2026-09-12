@@ -240,7 +240,7 @@ export function InspectorPanel({ bot }: { bot: Bot }) {
         }}
         className="hidden lg:block absolute inset-y-0 left-0 z-20 w-1.5 cursor-col-resize hover:bg-accent/50 focus-visible:bg-accent focus-visible:outline-none transition-colors before:absolute before:-inset-x-2 before:inset-y-0 before:content-['']"
       />
-      <div className="flex items-center justify-between px-4 py-3">
+      <div className="flex items-center justify-between px-4 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] pb-3 sm:pt-3 border-b border-hairline/30">
         <span className="flex items-center gap-2 text-[15px] font-semibold text-ink">
           <Bug size={16} className="text-ink-secondary" /> Inspector
         </span>
@@ -294,7 +294,7 @@ export function InspectorPanel({ bot }: { bot: Bot }) {
       </div>
 
       <div role="tabpanel" id={`inspector-panel-${lens}`} aria-labelledby={`inspector-tab-${lens}`} tabIndex={0} className="flex min-h-0 flex-1 flex-col outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/60">
-      {lens === "run" ? <RunLog key={threadId} events={activity} /> : <div ref={listRef} onScroll={onScroll} className="min-h-0 flex-1 overflow-y-auto font-mono text-[11.5px]">
+      {lens === "run" ? <RunLog key={threadId} events={activity} /> : <div ref={listRef} onScroll={onScroll} className="min-h-0 flex-1 overflow-y-auto font-mono text-[11.5px] pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
         {error && <div className="px-4 py-3 text-danger">couldn't load: {error}</div>}
         {page && rows.length === 0 && !error && (
           <div className="px-4 py-6 text-ink-secondary">

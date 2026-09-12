@@ -240,7 +240,7 @@ export function BotSettingsDialog({ bot }: { bot: Bot }) {
 
   return (
     <div
-      className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
+      className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:p-6"
       onMouseDown={(e) => e.target === e.currentTarget && dispatch({ type: "toggleSettings", open: false })}
     >
       <div

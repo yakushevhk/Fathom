@@ -52,7 +52,7 @@ export function ActivityRun({
         className="flex items-center gap-2 rounded-full border border-hairline/40 bg-panel px-3 py-1.5 text-[13px] text-ink-secondary hover:bg-control"
       >
         <Check size={13} className="text-success" />
-        <span className="max-w-[480px] truncate">{describeRun(messages)}</span>
+        <span className="max-w-[calc(100vw-5rem)] sm:max-w-[480px] truncate">{describeRun(messages)}</span>
         <ChevronRight size={13} />
       </button>
     </div>

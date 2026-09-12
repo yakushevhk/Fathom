@@ -1327,7 +1327,7 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
       </div>
 
       {sleepNotice && (
-        <div className="sticky top-[53px] z-20 mx-4 mt-2 flex items-center justify-between rounded-lg border border-hairline/50 bg-raised/90 px-3.5 py-2 text-[12px] text-ink shadow-md backdrop-blur animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-20 mx-4 mt-2 flex items-center justify-between rounded-lg border border-hairline/50 bg-raised/90 px-3.5 py-2 text-[12px] text-ink shadow-md backdrop-blur animate-in fade-in slide-in-from-top-2 duration-200">
           <span>{sleepNotice}</span>
           <button
             onClick={() => setSleepNotice(null)}

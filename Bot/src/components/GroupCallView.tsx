@@ -453,11 +453,11 @@ function GroupCall({ group, members }: { group: Group; members: Bot[] }) {
             : "Working";
 
   return (
-    <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-6 bg-app/95 px-8 backdrop-blur-sm">
+    <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 overflow-y-auto bg-app/95 px-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-[calc(1rem+env(safe-area-inset-top,0px))] backdrop-blur-sm sm:gap-6 sm:px-8">
       <button
         onClick={() => endCall(group.id)}
         aria-label="Hang up"
-        className="absolute right-5 top-5 rounded-md p-2 text-ink-secondary hover:bg-raised hover:text-ink"
+        className="absolute right-4 top-[calc(0.5rem+env(safe-area-inset-top,0px))] rounded-md p-2.5 text-ink-secondary hover:bg-raised hover:text-ink sm:right-5"
       >
         <X size={18} />
       </button>

@@ -1033,7 +1033,7 @@ export function ComputerPanel({
         className="hidden lg:block absolute inset-y-0 left-0 z-20 w-1.5 cursor-col-resize hover:bg-accent/50 focus-visible:bg-accent focus-visible:outline-none transition-colors before:absolute before:-inset-x-2 before:inset-y-0 before:content-['']"
       />
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2.5 sm:px-4 sm:py-3 border-b border-hairline/30">
+      <div className="flex items-center justify-between px-3 pt-[calc(0.625rem+env(safe-area-inset-top,0px))] pb-2.5 sm:px-4 sm:py-3 border-b border-hairline/30">
         <button
           onClick={() => {
             // Keep the panel/modal states exclusive at this entry point. That
@@ -1123,7 +1123,7 @@ export function ComputerPanel({
           <AndroidDevicePanel status={androidStatus} />
         </div>
       ) : (
-      <div className="flex-1 overflow-y-auto px-5 pb-5">
+      <div className="flex-1 overflow-y-auto px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))]">
           {/* Screen preview */}
           <div className="mb-1.5 mt-2 flex items-center justify-between text-[13px] text-ink-secondary">
             <span>{t("computer.screenOf", { name: bot.name })}</span>

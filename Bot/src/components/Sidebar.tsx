@@ -337,14 +337,14 @@ function RoomContextMenu({
     if (name) dispatch({ type: "patchGroup", groupId: group.id, patch: { name } });
     onClose();
   };
-  const top = Math.min(menu.y, window.innerHeight - 204);
-  const left = Math.min(menu.x, window.innerWidth - 240);
+  const top = Math.max(8, Math.min(menu.y, window.innerHeight - 220));
+  const left = Math.max(8, Math.min(menu.x, window.innerWidth - 244));
   return createPortal(
     <div
       data-room-menu
       data-sidebar
       style={{ top, left }}
-      className="fixed z-40 w-[228px] overflow-hidden rounded-xl border border-hairline/50 bg-menu py-1.5 shadow-2xl shadow-black/60"
+      className="fixed z-40 max-h-[calc(100dvh-16px)] w-[228px] max-w-[calc(100vw-16px)] overflow-y-auto overscroll-contain rounded-xl border border-hairline/50 bg-menu py-1.5 shadow-2xl shadow-black/60"
     >
       {!remoteClient && (renaming ? (
         <div className="flex items-center gap-1 px-2 py-1">
@@ -465,7 +465,7 @@ function NewRoomPanel({ onClose }: { onClose: () => void }) {
       className="fixed inset-0 z-40 flex items-center justify-center bg-black/40"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-[340px] rounded-2xl border border-hairline/50 bg-card p-4 shadow-2xl">
+      <div className="w-full max-w-[min(340px,calc(100vw-2rem))] rounded-2xl border border-hairline/50 bg-card p-4 shadow-2xl">
         <div className="mb-3 text-[15px] font-semibold text-ink">{t("sidebar.newChannel.title")}</div>
         <input
           autoFocus
@@ -564,13 +564,13 @@ function SectionPicker({
   };
 
   const top = Math.max(8, Math.min(anchor.y, window.innerHeight - 300));
-  const left = Math.min(anchor.x, window.innerWidth - 260);
+  const left = Math.max(8, Math.min(anchor.x, window.innerWidth - 260));
 
   return (
     <div
       data-section-picker
       style={{ top, left }}
-      className="fixed z-40 w-[236px] overflow-hidden rounded-xl border border-hairline/50 bg-menu py-2 shadow-2xl shadow-black/60"
+      className="fixed z-40 max-h-[calc(100dvh-24px)] w-[236px] max-w-[calc(100vw-16px)] overflow-y-auto rounded-xl border border-hairline/50 bg-menu py-2 shadow-2xl shadow-black/60"
     >
       <div className="px-3.5 pb-1 text-[10px] font-medium uppercase tracking-[0.08em] text-ink-secondary">
         {t("sidebar.section.moveToContext")}
@@ -1678,7 +1678,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
         // descendants. Cancelling it with an `md:` prefix still emits a value, which
         // silently reparents NewRoomPanel's overlay and the "+" menu backdrop on
         // desktop.
-        "max-md:absolute max-md:inset-y-0 max-md:left-0 max-md:z-40 max-md:w-[86vw] max-md:max-w-[340px] max-md:pl-[env(safe-area-inset-left,0px)] max-md:shadow-2xl max-md:border-r max-md:border-hairline/60",
+        "max-md:absolute max-md:inset-y-0 max-md:left-0 max-md:z-50 max-md:w-[86vw] max-md:max-w-[340px] max-md:pl-[env(safe-area-inset-left,0px)] max-md:shadow-2xl max-md:border-r max-md:border-hairline/60",
         "max-md:transition-transform max-md:duration-[250ms] max-md:ease-out",
         open ? "max-md:translate-x-0" : "max-md:-translate-x-full",
       )}
@@ -2194,7 +2194,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
           <div
             role="status"
             className={cn(
-              "fixed bottom-4 left-4 z-[60] max-w-[300px] rounded-xl border px-3.5 py-2.5 text-[13px] shadow-xl",
+              "fixed bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] left-[calc(1rem+env(safe-area-inset-left,0px))] z-[60] max-w-[calc(100vw-2rem)] sm:max-w-[300px] rounded-xl border px-3.5 py-2.5 text-[13px] shadow-xl",
               teamFeedback.error
                 ? "border-danger/30 bg-card text-danger"
                 : "border-hairline/50 bg-card text-ink",

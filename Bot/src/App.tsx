@@ -244,7 +244,7 @@ function Shell() {
           triggerHaptic("tap");
           setDrawerOpen(true);
         }}
-        className="absolute left-2 top-[calc(0.625rem+env(safe-area-inset-top,0px))] z-30 flex size-11 items-center justify-center rounded-xl bg-panel/85 text-ink-secondary backdrop-blur-sm border border-hairline/40 shadow-sm active:scale-95 hover:bg-raised hover:text-ink md:hidden"
+        className="absolute left-2 top-[calc(0.625rem+env(safe-area-inset-top,0px))] z-40 flex size-11 items-center justify-center rounded-xl bg-panel/85 text-ink-secondary backdrop-blur-sm border border-hairline/40 shadow-sm active:scale-95 hover:bg-raised hover:text-ink md:hidden"
       >
         <Menu size={20} />
       </button>}
@@ -253,7 +253,7 @@ function Shell() {
           aria-hidden
           onClick={() => setDrawerOpen(false)}
           onMouseDown={(e) => e.target === e.currentTarget && setDrawerOpen(false)}
-          className="animate-drawer-backdrop absolute inset-0 z-30 bg-black/60 backdrop-blur-[3px] md:hidden"
+          className="animate-drawer-backdrop absolute inset-0 z-40 bg-black/60 backdrop-blur-[3px] md:hidden"
         />
       )}
       {!calendarFocus && !zenMode && <Sidebar

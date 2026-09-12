@@ -164,11 +164,11 @@ export function ThinkingAccordion({
                         </span>
 
                         {tool.summary && tool.summary !== tool.name ? (
-                          <span className="text-ink font-medium truncate max-w-[340px]" title={tool.summary}>
+                          <span className="text-ink font-medium truncate min-w-0 flex-1" title={tool.summary}>
                             {tool.summary}
                           </span>
                         ) : (
-                          <span className="text-ink-secondary truncate max-w-[300px]">
+                          <span className="text-ink-secondary truncate min-w-0 flex-1">
                             {isTask ? `Subagent task #${idx + 1} execution…` : isBash ? "Shell command execution…" : "Tool execution in progress…"}
                           </span>
                         )}

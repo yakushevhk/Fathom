@@ -666,7 +666,7 @@ export function Composer({
   };
 
   return (
-    <div className="pointer-events-none relative px-3 pb-2 sm:px-5 sm:pb-3 [padding-bottom:max(0.5rem,env(safe-area-inset-bottom))]">
+    <div className="pointer-events-none relative px-3 pb-2 sm:px-5 sm:pb-3 [padding-bottom:max(0.5rem,env(safe-area-inset-bottom,0px))]">
       {/* No fill or hairline on this wrapper — those were the black frame
           in the pill's top corners. The dock overlays the transcript. */}
       {speechError && (
@@ -969,7 +969,7 @@ export function Composer({
                 onClick={() => fileInput.current?.click()}
                 aria-label={t("composer.attach")}
                 title={t("composer.attach")}
-                className="flex size-9 sm:size-8 shrink-0 items-center justify-center rounded-full text-ink-secondary hover:bg-control hover:text-ink active:scale-95"
+                className="flex size-11 sm:size-8 shrink-0 items-center justify-center rounded-full text-ink-secondary hover:bg-control hover:text-ink active:scale-95"
               >
                 <Paperclip size={18} />
               </button>
@@ -1124,7 +1124,7 @@ export function Composer({
           <button
             onClick={interruptTurn}
             aria-label={t("chat.stopTurn")}
-            className="flex size-9 sm:size-8 shrink-0 items-center justify-center rounded-full text-ink-secondary hover:bg-raised hover:text-ink active:scale-95"
+            className="flex size-11 sm:size-8 shrink-0 items-center justify-center rounded-full text-ink-secondary hover:bg-raised hover:text-ink active:scale-95"
             title={t("chat.stop")}
           >
             <Square size={14} className="fill-current" />
@@ -1135,7 +1135,7 @@ export function Composer({
             onClick={toggleMic}
             aria-label={recording ? t("composer.dictation.stop") : t("composer.dictation.start")}
             className={cn(
-              "flex size-9 sm:size-8 shrink-0 items-center justify-center rounded-full active:scale-95",
+              "flex size-11 sm:size-8 shrink-0 items-center justify-center rounded-full active:scale-95",
               recording
                 ? "animate-pulse bg-danger/20 text-danger"
                 : "text-ink-secondary hover:bg-raised hover:text-ink",
@@ -1167,7 +1167,7 @@ export function Composer({
                     : t("chat.send")
             }
             className={cn(
-              "flex size-9 sm:size-8 shrink-0 items-center justify-center rounded-full text-white active:scale-95",
+              "flex size-11 sm:size-8 shrink-0 items-center justify-center rounded-full text-white active:scale-95",
               busy && !canSteer
                   ? "bg-raised text-ink-secondary hover:bg-raised-hover"
                   : "bg-accent hover:brightness-110",

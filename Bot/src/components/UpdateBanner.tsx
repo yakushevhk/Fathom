@@ -96,7 +96,7 @@ export function UpdateBanner() {
                   : friendlyError(s.message);
 
   return (
-    <div className="animate-panel-in fixed bottom-4 left-4 z-50 w-[300px] rounded-xl border border-hairline/40 bg-panel p-3.5 shadow-2xl shadow-black/50">
+    <div className="animate-panel-in fixed bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] left-[calc(1rem+env(safe-area-inset-left,0px))] z-50 w-[300px] max-w-[calc(100vw-2rem)] rounded-xl border border-hairline/40 bg-panel p-3.5 shadow-2xl shadow-black/50">
       <div className="flex items-start gap-2.5">
         <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent">
           <Sparkles size={14} />

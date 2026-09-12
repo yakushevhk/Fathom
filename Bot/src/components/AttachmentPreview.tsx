@@ -73,9 +73,9 @@ export function previewKeyAction(key: string, count: number): PreviewKeyAction {
 }
 
 export function imageGalleryLayout(count: number): string {
-  if (count <= 1) return "w-[min(32rem,70vw)] grid-cols-1";
-  if (count === 2) return "w-[min(36rem,70vw)] grid-cols-2";
-  return "w-[min(38rem,70vw)] grid-cols-2 sm:grid-cols-3";
+  if (count <= 1) return "w-full max-w-[min(32rem,100%)] sm:w-[min(32rem,70vw)] grid-cols-1";
+  if (count === 2) return "w-full max-w-[min(36rem,100%)] sm:w-[min(36rem,70vw)] grid-cols-2";
+  return "w-full max-w-[min(38rem,100%)] sm:w-[min(38rem,70vw)] grid-cols-2 sm:grid-cols-3";
 }
 
 const IMAGE_EXTENSION_BY_MIME: Readonly<Record<string, string>> = {

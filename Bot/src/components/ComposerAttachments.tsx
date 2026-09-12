@@ -238,7 +238,7 @@ function Chip({
       <button
         onClick={onRemove}
         aria-label={`Remove ${label === "PASTED" ? "pasted text" : "file"}`}
-        className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full border border-hairline/60 bg-panel text-ink-secondary opacity-0 transition-opacity hover:text-ink focus-visible:opacity-100 group-hover:opacity-100"
+        className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full border border-hairline/60 bg-panel text-ink-secondary opacity-100 sm:opacity-0 transition-opacity hover:text-ink focus-visible:opacity-100 sm:group-hover:opacity-100"
       >
         <X size={11} />
       </button>
