@@ -103,13 +103,23 @@ export function DagWorkflowVisualizer({ onClose }: DagVisualizerProps) {
       return;
     }
 
-    const debateName = `Consensus Debate: Architecture Review (${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})`;
+    const debateName = `Consensus Debate: Architecture & Task Alignment (${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})`;
+    const initialDebatePrompt = [
+      `[Consensus Debate Initiated by Operator]`,
+      `Participants: ${debateBots.map((b) => `@${b.name}`).join(", ")}`,
+      `Objective: Evaluate current workspace status, identify bottlenecks or conflicting proposals, and reach consensus on immediate architectural priorities.`,
+      `Rules:`,
+      `1. Each specialist presents concise arguments based on their domain.`,
+      `2. Critique alternative proposals constructively.`,
+      `3. Conclude with a clear vote or recommendation. Chief of Staff synthesizes final verdict.`,
+    ].join("\n");
+
     dispatch({
       type: "createGroup",
       name: debateName,
       memberIds: debateBots.map((b) => b.id),
+      initialText: initialDebatePrompt,
     });
-
     setDebateNotification(`Consensus debate room created with ${debateBots.length} agents: ${debateBots.map((b) => b.name).join(", ")}`);
     setTimeout(() => {
       setDebateNotification(null);
@@ -191,7 +201,14 @@ export function DagWorkflowVisualizer({ onClose }: DagVisualizerProps) {
                         {node.status === "pending" && <Clock size={16} className="text-ink-secondary/60" />}
                         {node.status === "failed" && <AlertCircle size={16} className="text-red-500" />}
                         <div>
-                          <h4 className="text-sm font-semibold text-ink">{node.name}</h4>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-sm font-semibold text-ink">{node.name}</h4>
+                            {node.dependsOn && node.dependsOn.length > 0 && (
+                              <span className="rounded bg-raised/80 px-1.5 py-0.5 text-[10px] font-mono text-ink-secondary">
+                                ↖ from {node.dependsOn.map((depId) => visibleBots.find((b) => b.id === depId)?.name ?? depId).join(", ")}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-[11.5px] text-ink-secondary">{node.role}</p>
                         </div>
                       </div>

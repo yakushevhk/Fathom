@@ -16,6 +16,7 @@ import {
   DELEGATION_WAKE_MAX_PER_WINDOW,
   DELEGATION_WAKE_WINDOW_MS,
   DelegationWakeBudget,
+  cancelQueuedDelegation,
   discardDelegations,
   drainDelegations,
   findDelegationReceipt,
@@ -862,6 +863,28 @@ describe("busy retries and receipts", () => {
     expect(releaseDelegationsWaitingOn(target.id)).toEqual([from.threadId]);
     drainDelegations(commsBus, approvalBus, from.threadId, runTarget);
     await waitFor(() => runTarget.mock.calls.length === 1);
+  });
+
+  it("cancels a queued delegation and records a dropped receipt", () => {
+    const queued = queueDelegation(commsBus, from, { toBotId: target.id, message: "will be canceled", depth: 0 }, 1);
+    expect(queued.result).toBe("ok");
+    const taskId = queued.id!;
+    expect(_pendingCount(from.threadId)).toBe(1);
+
+    const canceled = cancelQueuedDelegation(commsBus, taskId);
+    expect(canceled).toBe(true);
+    expect(_pendingCount(from.threadId)).toBe(0);
+    expect(pendingDelegationInfo(taskId)).toBeNull();
+
+    const receipt = findDelegationReceipt(taskId);
+    expect(receipt).toMatchObject({
+      id: taskId,
+      sourceThreadId: from.threadId,
+      toBotId: target.id,
+      status: "dropped",
+      result: "canceled by caller",
+    });
+    expect(cancelQueuedDelegation(commsBus, taskId)).toBe(false);
   });
 
   it("persists receipts across a restart and prunes the drawer by count", () => {

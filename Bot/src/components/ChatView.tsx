@@ -531,6 +531,7 @@ function Bubble({
 /** A tool run: spinner while live, check/cross once settled. */
 function ActivityChip({ message }: { message: Message }) {
   const { state, dispatch } = useStore();
+  const [canceling, setCanceling] = useState(false);
   const tool = message.tool;
   if (!tool) return null;
   if (message.threadRef) return <ThreadChip message={message} />;
@@ -571,6 +572,27 @@ function ActivityChip({ message }: { message: Message }) {
         <span className="shrink-0 max-w-[480px] truncate font-mono">{tool.name}</span>
         {tool.summary && tool.summary !== tool.name && !nameIsCommand(tool.name) && (
           <span className="min-w-0 flex-1 truncate font-mono" title={tool.summary}>{tool.summary}</span>
+        )}
+        {tool.delegationId && !failed && (
+          <button
+            type="button"
+            disabled={canceling}
+            title="Cancel this delegation"
+            onClick={async (e) => {
+              e.stopPropagation();
+              setCanceling(true);
+              try {
+                await fetch(`/api/internal/delegations/${encodeURIComponent(tool.delegationId!)}`, { method: "DELETE" });
+              } catch (err) {
+                console.error("failed to cancel delegation", err);
+              } finally {
+                setCanceling(false);
+              }
+            }}
+            className="ml-1.5 inline-flex items-center gap-1 rounded bg-raised px-1.5 py-0.5 text-[11px] font-sans font-medium text-ink-secondary hover:bg-danger/20 hover:text-danger transition-colors disabled:opacity-50"
+          >
+            {canceling ? "..." : "Cancel"}
+          </button>
         )}
       </div>
     </div>

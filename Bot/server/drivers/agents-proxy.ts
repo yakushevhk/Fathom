@@ -421,6 +421,18 @@ const TOOLS = [
     },
   },
   {
+    name: "cancel_delegation",
+    description:
+      "Cancel a delegated task: if it is still queued, it is canceled before it runs; if it is currently running, its turn is interrupted. Use the task id from delegate_bot.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        task_id: { type: "string", description: "The task id delegate_bot returned." },
+      },
+      required: ["task_id"],
+    },
+  },
+  {
     name: "list_threads",
     description:
       "See your own threads and the threads you opened on teammates, newest first: each with its bot, title, state (running, waiting on the person, queued, or idle), whether the person has unread there, and the delegation id if it was a handoff. Use it to check how the threads you started are going before reporting to the person; write a thread's title as #Title when you mention it. A teammate's other threads are never listed — only the ones you opened. This is a read: it starts nothing and changes nothing.",
@@ -996,6 +1008,18 @@ async function callTool(name: string, args: Json): Promise<{ text: string; isErr
       };
     }
     return { text: `Task ${taskId} ended without a reply — ${String(r.status ?? "unknown")}${r.result ? `: ${String(r.result)}` : ""}.`, isError: true };
+  }
+  if (name === "cancel_delegation") {
+    const taskId = String(args.task_id ?? "").trim();
+    if (!/^[\w-]{4,64}$/.test(taskId)) {
+      return { text: 'cancel_delegation needs the "task_id" that delegate_bot returned.', isError: true };
+    }
+    const query = new URLSearchParams({ fromBotId: BOT_ID, fromThreadId: THREAD_ID });
+    const r = await api(`/api/internal/delegations/${encodeURIComponent(taskId)}?${query.toString()}`, {
+      method: "DELETE",
+    });
+    if (r.error) return { text: `Could not cancel task ${taskId}: ${String(r.error)}`, isError: true };
+    return { text: String(r.message ?? `Task ${taskId} was canceled.`) };
   }
   if (name === "list_threads") {
     const query = new URLSearchParams({ fromBotId: BOT_ID, fromThreadId: THREAD_ID });

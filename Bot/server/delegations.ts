@@ -330,6 +330,7 @@ export function queueDelegation(
         ? `Opened thread #${openedThread.title} on ${target.name}`
         : `Delegated to @${target.name}${item.reason ? `: ${item.reason}` : ""}`,
       ok: true,
+      delegationId: id,
     },
   };
   if (openedThread) chip.threadRef = { botId: target.id, threadId: openedThread.threadId, title: openedThread.title };
@@ -674,6 +675,36 @@ function holdWhileTargetBusy(
     tool: { name: `Delegation to @${target.name} canceled — still busy after ${MAX_BUSY_ATTEMPTS} retries`, ok: false },
   });
   return "settled";
+}
+
+/** Cancel a queued delegation by id, recording a canceled receipt. Returns
+ * true if the task was found and canceled before dispatch. */
+export function cancelQueuedDelegation(bus: CommsBus, id: string): boolean {
+  for (const [threadId, items] of pendingDelegations) {
+    const idx = items.findIndex((candidate) => candidate.id === id);
+    if (idx !== -1) {
+      const [item] = items.splice(idx, 1);
+      if (items.length) pendingDelegations.set(threadId, items);
+      else pendingDelegations.delete(threadId);
+      savePending();
+      const target = bus.store.bot(item.toBotId);
+      recordDelegationReceipt({
+        id: item.id,
+        sourceThreadId: threadId,
+        toBotId: item.toBotId,
+        toBotName: target?.name ?? item.toBotId,
+        status: "dropped",
+        result: "canceled by caller",
+      });
+      bus.store.appendMessage(threadId, {
+        role: "bot",
+        kind: "activity",
+        tool: { name: `Delegation to @${target?.name ?? item.toBotId} was canceled`, ok: false },
+      });
+      return true;
+    }
+  }
+  return false;
 }
 
 /** The thread a fresh-thread handoff was opened in may be deleted while the

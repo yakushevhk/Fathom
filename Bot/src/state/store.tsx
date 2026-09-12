@@ -132,7 +132,7 @@ export interface Message {
    * narration of the same chip ("reading a file"), used by call mode. */
   /** `setup` marks an error fixed by installing something, not by retrying.
    * `summary` is the call's input on one redacted line (the shell command). */
-  tool?: { name: string; ok?: boolean; spoken?: string; setup?: boolean; summary?: string };
+  tool?: { name: string; ok?: boolean; spoken?: string; setup?: boolean; summary?: string; delegationId?: string };
   /** user messages sent into a running turn — the model saw it mid-turn */
   steered?: boolean;
   /** a user message that arrived through the server's API, not typed here */
@@ -781,7 +781,7 @@ export type Action =
   | { type: "markRoutineRunSeen"; runId: string }
   | { type: "groupPatched"; group: Partial<Group> & { id: string } }
   | { type: "groupDeleted"; groupId: string }
-  | { type: "createGroup"; memberIds: string[]; name?: string; section?: string }
+  | { type: "createGroup"; memberIds: string[]; name?: string; section?: string; initialText?: string }
   | {
       type: "sendGroup";
       groupId: string;
@@ -2682,6 +2682,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             .then(({ group }) => {
               rawDispatch({ type: "groupPatched", group });
               rawDispatch({ type: "select", id: group.id });
+              if (action.initialText?.trim()) {
+                rawDispatch({
+                  type: "sendGroup",
+                  groupId: group.id,
+                  threadId: group.threadId,
+                  text: action.initialText.trim(),
+                });
+              }
             })
             .catch(showError);
           break;

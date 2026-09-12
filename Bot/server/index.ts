@@ -177,7 +177,7 @@ import { claimRecallCrossings, recallCrossingLabel } from "./recall-disclosure.t
  * window; a computer-use turn's output can run to hundreds of KB. */
 const SESSION_READ_MAX_CHARS = 8_000;
 import { promptWithReply, transcriptText } from "./replies.ts";
-import { _loadPending, buildDelegationFailurePrompt, buildDelegationRevivalPrompt, DelegationWakeBudget, discardDelegations, drainDelegations, findDelegationReceipt, pendingDelegationInfo, pendingDelegationSnapshot, pendingThreads, queueDelegation, recordDelegationReceipt, releaseDelegationsWaitingOn, summarizeDelegatedActivity, type DelegationReceipt, type QueueResult } from "./delegations.ts";
+import { _loadPending, buildDelegationFailurePrompt, buildDelegationRevivalPrompt, cancelQueuedDelegation, DelegationWakeBudget, discardDelegations, drainDelegations, findDelegationReceipt, pendingDelegationInfo, pendingDelegationSnapshot, pendingThreads, queueDelegation, recordDelegationReceipt, releaseDelegationsWaitingOn, summarizeDelegatedActivity, type DelegationReceipt, type QueueResult } from "./delegations.ts";
 import {
   cancelSteeredMessage,
   drainSteeredMessages,
@@ -9412,13 +9412,24 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       }
       // Async handoff: the source bot queues a task for a peer and goes
       // back to the user; the peer turn runs after the source's
-      // turn.completed. Returns immediately (the caller does not wait).
-      const delegationMatch = method === "GET" ? path.match(/^\/api\/internal\/delegations\/([\w-]{4,64})$/) : null;
+      const delegationMatch = (method === "GET" || method === "DELETE") ? path.match(/^\/api\/internal\/delegations\/([\w-]{4,64})$/) : null;
       if (delegationMatch) {
         const taskId = delegationMatch[1];
         const fromThreadId = internalCapability.threadId;
         const from = internalSender;
         if (!connectorThread(from.id, fromThreadId)) return json(res, 403, { error: "unknown sender" });
+        if (method === "DELETE") {
+          const canceled = cancelQueuedDelegation(commsBus, taskId);
+          if (canceled) return json(res, 200, { ok: true, message: `Task ${taskId} was canceled.` });
+          const runningEntry = [...delegationWatch.entries()].find(([, watch]) => watch.taskId === taskId);
+          if (runningEntry) {
+            const [targetThreadId, watch] = runningEntry;
+            finalizeDelegationWatch(targetThreadId, false, "", "Canceled by sender");
+            void interruptDirectThread(watch.toBotId, targetThreadId).catch(() => {});
+            return json(res, 200, { ok: true, message: `Running task ${taskId} was interrupted.` });
+          }
+          return json(res, 404, { error: "task not found or already finished" });
+        }
         const waitMs = Math.min(Math.max(Number(url.searchParams.get("wait_ms")) || 0, 0), 240_000);
         const deadline = Date.now() + waitMs;
         // Bounded long-poll: the delegating bot parks ONE cheap HTTP request
