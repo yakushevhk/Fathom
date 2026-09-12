@@ -104,6 +104,25 @@ function sectionLabel(id: string): string {
   return key ? t(key) : sidebarSectionLabel(id);
 }
 
+function sanitizePreviewText(text: string): string {
+  // If preview contains an interactive card code block, extract its title or clean representation
+  if (text.includes("```card") || text.includes("```json:card") || text.includes('"type":"card"') || text.includes('"type": "card"')) {
+    const titleMatch = text.match(/"title"\s*:\s*"([^"]+)"/);
+    if (titleMatch?.[1]) {
+      return `📊 ${titleMatch[1]}`;
+    }
+    return "📊 Интерактивная карточка";
+  }
+  // Strip code blocks and markdown headings/links from preview string
+  const clean = text
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/#+\s+/g, "")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .trim();
+  return clean || text.trim();
+}
+
 function preview(bot: Bot): string {
   if (bot.activity === "waiting-on-you") return t("sidebar.preview.waiting");
   if (bot.busy) return t("sidebar.preview.working");
@@ -111,10 +130,10 @@ function preview(bot: Bot): string {
   // entry can belong to a version the user switched away from
   const last = visibleMessages(bot).at(-1);
   if (!last) return "";
-  if (last.kind === "options" && last.card) return last.card.title;
-  if (last.kind === "activity" && last.tool) return last.tool.name;
+  if (last.kind === "options" && last.card) return `📊 ${last.card.title}`;
+  if (last.kind === "activity" && last.tool) return `⚡ ${last.tool.name}`;
   if (last.kind === "screen") return t("sidebar.preview.screenFrame");
-  return last.text ?? "";
+  return sanitizePreviewText(last.text ?? "");
 }
 
 interface MenuState {
@@ -1687,7 +1706,21 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
       >
         {macInset ? (
           <div className={density === "icons" ? "h-5 w-full" : "w-14"} />
-        ) : <div />}
+        ) : density === "icons" ? (
+          <div className="flex size-7 items-center justify-center rounded border border-[#262626] bg-[#111111] text-[#ededed]">
+            <span className="text-[11px] font-mono font-bold">F</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <div className="flex size-6 items-center justify-center rounded border border-[#262626] bg-[#141414]">
+              <span className="text-[11px] font-mono font-bold text-[#ededed]">F</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] font-mono font-semibold tracking-wide text-[#ededed]">FATHOM</span>
+              <span className="rounded border border-[#222222] bg-[#111111] px-1 py-0.2 text-[9px] font-mono text-[#737373]">SYS</span>
+            </div>
+          </div>
+        )}
         <div
           className={cn("relative flex items-center", density === "icons" ? "flex-col gap-1" : "gap-1")}
           style={windowNoDragStyle}
@@ -2050,13 +2083,16 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
             </button>
           </div>
         ) : (
-          // The Tools row and the profile row are two different kinds of
-          // thing — places to go, versus who you are and what the app is —
-          // so they get clear space between them. A hairline lived here
-          // briefly and made it worse: full-bleed, it ran within a few pixels
-          // of the profile row's rounded hover pill, and the two hover states
-          // read as one crowded block rather than two rows.
-          <div className="mt-3">
+          <div className="mt-2.5 space-y-2">
+            <div className="rounded-lg border border-[#1e1e1e] bg-[#0c0c0c] px-2.5 py-2">
+              <div className="flex items-center justify-between text-[11px] font-mono">
+                <span className="flex items-center gap-1.5 text-[#888888]">
+                  <span className="size-1.5 rounded-full bg-[#22c55e]" />
+                  SYS.ROUTER
+                </span>
+                <span className="text-[#555555]">18ms</span>
+              </div>
+            </div>
             <SidebarProfileMenu />
           </div>
         )}

@@ -48,6 +48,7 @@ import { RawMarkdownView, RawToggleAction } from "./RawMarkdownToggle";
 import { ThreadChip } from "./ThreadChip";
 import { VerifyCard } from "./VerifyCard";
 import { askText, nameIsCommand, runSteps, runSummary, showRun, skillPrompt, skillStaged } from "@/lib/verify-steps";
+import { UniversalCard, type UniversalCardData } from "./UniversalCard";
 import { ThreadRefText } from "./ThreadRefs";
 import { OptionCard, shouldHideOnboardingCard } from "./OptionCard";
 import { ApprovalCard } from "./ApprovalCard";
@@ -268,6 +269,7 @@ function Bubble({
   onRegenerate,
   replyTarget,
   onReply,
+  onPin,
 }: {
   bot: Bot;
   message: Message;
@@ -281,6 +283,7 @@ function Bubble({
   onRegenerate?: () => void;
   replyTarget?: Message;
   onReply: () => void;
+  onPin?: (card: UniversalCardData) => void;
 }) {
   const { state, dispatch } = useStore();
   const remoteClient = window.ogb?.remoteClient?.active === true;
@@ -360,13 +363,13 @@ function Bubble({
         )}
         <div
           className={cn(
-            "w-fit max-w-[min(42rem,88%)] sm:max-w-[min(42rem,78%)] rounded-2xl text-[15px] leading-relaxed",
+            "w-fit max-w-[min(42rem,88%)] sm:max-w-[min(42rem,78%)] rounded-xl text-[14.5px] leading-relaxed transition-all",
             emerging && "turn-answer",
             user && webhookView
-              ? "overflow-hidden border border-accent/25 bg-card text-ink shadow-[0_10px_30px_rgba(0,0,0,0.18)]"
+              ? "overflow-hidden border border-hairline/60 bg-card text-ink"
               : user
-                ? "bg-bubble-user px-4 py-2.5 whitespace-pre-wrap text-ink"
-                : "bg-card px-4 py-2.5 text-ink",
+                ? "bg-[#141414] text-[#ededed] border border-[#262626] px-4 py-2.5 whitespace-pre-wrap rounded-br-xs font-normal"
+                : "border border-[#1f1f1f] bg-[#0a0a0a] px-4 py-2.5 text-[#ededed] rounded-bl-xs",
           )}
           title={new Date(message.at).toLocaleString()}
         >
@@ -439,7 +442,7 @@ function Bubble({
               {viewRaw && text ? (
                 <RawMarkdownView text={text} />
               ) : text ? (
-                <ChatMarkdown text={text} mentionPeers={mentionPeers} message={{ threadId: bot.threadId, messageId: message.id }} />
+                <ChatMarkdown text={text} mentionPeers={mentionPeers} message={{ threadId: bot.threadId, messageId: message.id }} onPin={onPin} />
               ) : null}
             </MessageBoundary>
           )}
@@ -632,6 +635,7 @@ const MessagesList = memo(function MessagesList({
   onSubmitEdit,
   onRegenerate,
   onReply,
+  onPin,
 }: {
   bot: Bot;
   messages: Message[];
@@ -651,6 +655,7 @@ const MessagesList = memo(function MessagesList({
   onSubmitEdit: (id: string, text: string) => void;
   onRegenerate: () => void;
   onReply: (message: Message) => void;
+  onPin?: (card: UniversalCardData) => void;
 }) {
   const { state, dispatch } = useStore();
   const showToolCalls = showToolCallsEnabled(state.config);
@@ -800,9 +805,9 @@ const MessagesList = memo(function MessagesList({
                   onStartEdit={() => onStartEdit(m.id)}
                   onCancelEdit={onCancelEdit}
                   onSubmitEdit={(text) => onSubmitEdit(m.id, text)}
-                  onRegenerate={onRegenerate}
-                  replyTarget={m.replyToId ? bot.messages.find((candidate) => candidate.id === m.replyToId) : undefined}
+                  replyTarget={m.replyToId ? transcript.find((candidate) => candidate.id === m.replyToId) : undefined}
                   onReply={() => onReply(m)}
+                  onPin={onPin}
                 />
               );
           }
@@ -917,6 +922,8 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
   const [runDismissed, setRunDismissed] = useState<ReadonlyMap<string, string>>(() => new Map());
   const lastRunStep = recordedRun.at(-1);
 
+  // Pinned live widget card on top of chat transcript
+  const [pinnedWidget, setPinnedWidget] = useState<UniversalCardData | null>(null);
   // Windowed transcript: only a tail of the thread mounts (screenshots make
   // full threads DOM-heavy). The boundary is anchored per bot+task; a
   // render-phase reset re-tails it on switch so the old thread's boundary
@@ -1142,12 +1149,11 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
       {/* Call mode covers the thread while the bot is on the line */}
       <CallOverlay bot={bot} />
       {/* Header */}
+      {/* Strict Linear Header */}
       <div
         className={cn(
-          // @container so the chips on the right can fold to icon bubbles
-          // when the column is narrow (side panel open, small window)
-          "@container/chathead flex items-center justify-between px-3 py-2 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] md:pt-3 md:px-5 md:py-3 border-b border-hairline/30 md:border-b-0",
-          // Room for the drawer button, which overlays this corner below md.
+          "@container/chathead flex items-center justify-between px-3 py-2 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] md:px-5 md:py-2.5",
+          "border-b border-[#1a1a1a] bg-[#000000] sticky top-0 z-30",
           "pl-14 md:pl-5",
         )}
       >
@@ -1291,6 +1297,18 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
         }
       />
 
+      {/* Pinned top interactive widget */}
+      {pinnedWidget && (
+        <div className="mx-3 sm:mx-5 mb-2 relative animate-pop-in">
+          <UniversalCard
+            card={pinnedWidget}
+            botId={bot.id}
+            threadId={bot.threadId}
+            onPin={() => setPinnedWidget(null)}
+            isPinned={true}
+          />
+        </div>
+      )}
 
       {/* Messages + composer share one pane so bubbles scroll into the pill
           instead of dying on a rectangular clip above a black dock. */}
@@ -1364,6 +1382,7 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
             onSubmitEdit={submitEdit}
             onRegenerate={regenerate}
             onReply={selectReply}
+            onPin={(card) => setPinnedWidget(card)}
           />
           {(reasoning || (bot.busy && streaming) || (bot.busy && currentTurnSteps.length > 0)) && (
             <div className="px-1">

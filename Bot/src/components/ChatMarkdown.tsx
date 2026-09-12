@@ -34,7 +34,7 @@ import { MarkdownImagePreview, useLocalFileSave, type MessageAttachmentContext }
 import { ThreadLink, threadLinkFromProps, useThreadRefs } from "./ThreadRefs";
 import { MermaidViewer } from "./MermaidViewer";
 import { KaTeXMath } from "./KaTeXMath";
-import { UniversalCard, parseUniversalCardJson } from "./UniversalCard";
+import { UniversalCard, parseUniversalCardJson, type UniversalCardData } from "./UniversalCard";
 // tiny highlight cache so revisiting a thread doesn't re-tokenize settled
 // blocks; keys are content-hashed and capped. Streamed partials may land here
 // under their own hash — harmless (never collides with the final content's
@@ -176,6 +176,9 @@ export interface CodeBlockProps {
   lang: string;
   /** Whether the parent message is still actively receiving tokens. */
   streaming: boolean;
+  botId?: string;
+  threadId?: string;
+  onPin?: (card: UniversalCardData) => void;
 }
 
 /**
@@ -186,7 +189,7 @@ export interface CodeBlockProps {
  * @param props - Component props containing code string, language identifier, and streaming flag.
  * @returns Rendered code block element.
  */
-export function CodeBlock({ code, lang, streaming }: CodeBlockProps) {
+export function CodeBlock({ code, lang, streaming, botId, threadId, onPin }: CodeBlockProps) {
   const [html, setHtml] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [wrapLines, setWrapLines] = useState(false);
@@ -261,7 +264,7 @@ export function CodeBlock({ code, lang, streaming }: CodeBlockProps) {
   if (["card", "json:card", "metrics"].includes(lang.toLowerCase())) {
     const cardData = parseUniversalCardJson(code);
     if (cardData) {
-      return <UniversalCard card={cardData} />;
+      return <UniversalCard card={cardData} botId={botId} threadId={threadId} onPin={onPin} />;
     }
   }
 
@@ -269,7 +272,7 @@ export function CodeBlock({ code, lang, streaming }: CodeBlockProps) {
   if (lang.toLowerCase() === "json" && code.includes('"title"') && (code.includes('"stats"') || code.includes('"items"') || code.includes('"progress"') || code.includes('"keyValue"') || code.includes('"timeline"'))) {
     const cardData = parseUniversalCardJson(code);
     if (cardData) {
-      return <UniversalCard card={cardData} />;
+      return <UniversalCard card={cardData} botId={botId} threadId={threadId} onPin={onPin} />;
     }
   }
 
@@ -543,9 +546,10 @@ const NO_MENTION_PEERS: readonly MentionPeer[] = [];
 // holding one must reach the parser byte-for-byte as written.
 const MARKDOWN_IMAGE = "![";
 
-function ChatMarkdownComponent({ text, streaming = false, message, mentionPeers = NO_MENTION_PEERS, everyone = false }: {
+function ChatMarkdownComponent({ text, streaming = false, message, mentionPeers = NO_MENTION_PEERS, everyone = false, onPin }: {
   text: string; streaming?: boolean; message?: MessageAttachmentContext;
   mentionPeers?: readonly MentionPeer[]; everyone?: boolean;
+  onPin?: (card: UniversalCardData) => void;
 }) {
   // "#Title" mentions link to the threads the person can see (ThreadRefs);
   // @mentions were already decorated by remarkMentions, which runs first.
@@ -570,7 +574,7 @@ function ChatMarkdownComponent({ text, streaming = false, message, mentionPeers 
             const flat = (n: any): string =>
               typeof n === "string" ? n : Array.isArray(n) ? n.map(flat).join("") : (n?.props?.children ? flat(n.props.children) : "");
             const code = flat(child?.props?.children).replace(/\n$/, "");
-            return <CodeBlock code={code} lang={lang} streaming={streaming} />;
+            return <CodeBlock code={code} lang={lang} streaming={streaming} threadId={message?.threadId} onPin={onPin} />;
           },
           img(props) {
             const { src, alt } = props;
@@ -694,4 +698,5 @@ export const ChatMarkdown = memo(ChatMarkdownComponent, (previous, next) => (
   && Boolean(previous.streaming) === Boolean(next.streaming)
   && previous.message?.threadId === next.message?.threadId
   && previous.message?.messageId === next.message?.messageId
+  && previous.onPin === next.onPin
 ));

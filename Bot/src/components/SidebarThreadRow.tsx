@@ -81,7 +81,9 @@ export function SidebarThreadRow({ task, current, compact, folders, onSelect, on
         onKeyDown={(event) => { if (event.key === "ContextMenu" || event.shiftKey && event.key === "F10") { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); openMenu(rect.left, rect.bottom); } }}
         className={cn("flex min-w-0 flex-1 items-center gap-2 rounded-md pl-3 pr-1 text-left text-[13px] font-medium outline-none focus-visible:ring-1 focus-visible:ring-accent/60 max-md:min-h-[40px] max-md:py-2", compact ? "min-h-7 py-1" : "min-h-8 py-1.5", current ? "font-semibold text-ink" : "text-ink-secondary hover:text-ink")}>
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className={cn("min-w-0 truncate", task.unread && "font-semibold text-ink")}>{task.title}</span>
+          <span className={cn("min-w-0 truncate", task.unread && "font-semibold text-ink")}>
+            {task.title.startsWith("```") ? (task.title.match(/"title"\s*:\s*"([^"]+)"/)?.[1] ? `📊 ${task.title.match(/"title"\s*:\s*"([^"]+)"/)![1]}` : "📊 Интерактивная карточка") : task.title}
+          </span>
           {opener && <span className="min-w-0 truncate text-[10.5px] leading-tight text-ink-secondary/80">{opener}</span>}
         </span>
         {task.activity === "waiting-on-you" ? <span className="shrink-0 text-[10px] font-medium text-warning">{t("task.waiting")}</span> : task.busy ? <Loader2 size={11} className="shrink-0 animate-spin text-success" aria-label={t("chat.activity.working")} /> : task.queued ? <span className="shrink-0 text-[10px] text-ink-secondary">{t("task.queued")}</span> : null}

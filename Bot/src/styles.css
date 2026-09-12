@@ -54,6 +54,10 @@
   .mention-editor textarea { color: CanvasText; caret-color: CanvasText; }
 }
 
+/* Pure Total Black ground */
+body {
+  background-color: #000000;
+}
 /* ─────────────────────────────────────────────────────────────────────────
    SKINS
 
@@ -101,39 +105,28 @@
   /* onboarding: a bolt travelling from a webhook address to the bot */
   --animate-bolt: bolt 0.9s cubic-bezier(0.77, 0, 0.175, 1) infinite;
 
-  /* Defaults = Midnight. Kept here so the app is never unstyled. */
-  --color-app: #070707;
-  --color-panel: #111111;
-  --color-raised: #2f2f2f;
-  --color-raised-hover: #3d3d3d;
-  /* the composer pill. Every skin but Daylight paints it in `raised`; there
-     it is the page colour with a hairline ring, so it needs a tone (and a
-     ring, transparent everywhere else) of its own. */
-  --color-composer: #2f2f2f;
-  --color-composer-ring: transparent;
-  /* popover and right-click menus. Same story as the composer: every skin
-     but Daylight paints them in `card`, which there is the bot's bubble and
-     a shade too grey for a menu. */
-  --color-menu: #262626;
-  --color-card: #262626;
-  --color-inset: #191919;
-  /* a control ON a card. The dark skins take their `raised` value, so this
-     is a no-op for them; the light skins need a tone of their own, because
-     there `raised` is pure white and a card is too. */
-  --color-control: #2f2f2f;
-  --color-hairline: #333333;
-  --color-ink: #fcfcfc;
-  --color-ink-secondary: #fcfcfc99;
-  --color-accent: #1084fe;
-  --color-accent-border: #459ffe;
-  /* the ring a keyboard user follows; sits on the accent so focus reads as
-     "the app is talking to you", not as a browser default */
-  --color-focus: #459ffe;
-  --color-accent-text: #7fc0ff;
-  --color-bubble-user: #5a5a5a;
-  --color-success: #38d591;
-  --color-danger: #ff5667;
-  --color-warning: #ff9800;
+  /* Strict Linear Total Black design tokens */
+  --color-app: #000000;
+  --color-panel: #0a0a0a;
+  --color-raised: #141414;
+  --color-raised-hover: #1f1f1f;
+  --color-composer: #0d0d0d;
+  --color-composer-ring: #262626;
+  --color-menu: #121212;
+  --color-card: #0d0d0d;
+  --color-inset: #050505;
+  --color-control: #181818;
+  --color-hairline: #1e1e1e;
+  --color-ink: #ededed;
+  --color-ink-secondary: #888888;
+  --color-accent: #ffffff;
+  --color-accent-border: #ffffff;
+  --color-focus: #ffffff;
+  --color-accent-text: #ffffff;
+  --color-bubble-user: #171717;
+  --color-success: #22c55e;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
 
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
     "Segoe UI", system-ui, sans-serif;
@@ -168,47 +161,41 @@
    ───────────────────────────────────────────────────────────────────────── */
 [data-skin="midnight"] {
   --code-color-scheme: dark;
-  --color-app: #070707;
-  --color-panel: #111111;
-  --color-raised: #2f2f2f;
-  --color-raised-hover: #3d3d3d;
-  --color-composer: #2f2f2f;    /* = raised: unchanged */
-  --color-composer-ring: transparent;
-  --color-card: #262626;
-  --color-menu: #262626;    /* = card: unchanged */
-  --color-inset: #191919;
-  --color-control: #2f2f2f;       /* = raised: Midnight is unchanged */
-  --color-hairline: #333333;
-  --color-ink: #fcfcfc;
-  --color-ink-secondary: #fcfcfc99;
-  --color-accent: #1084fe;
-  --color-accent-border: #459ffe;
-  --color-accent-text: #7fc0ff;
-  --color-accent-ink: #ffffff;
-  --color-bubble-user: #5a5a5a;
-  --color-bubble-user-ink: #fcfcfc;   /* = ink: unchanged */
-  --color-success: #38d591;
-  --color-danger: #ff5667;
+  --color-app: #000000;
+  --color-panel: #0a0a0a;
+  --color-raised: #141414;
+  --color-raised-hover: #1f1f1f;
+  --color-composer: #0d0d0d;
+  --color-composer-ring: #262626;
+  --color-card: #0d0d0d;
+  --color-menu: #121212;
+  --color-inset: #050505;
+  --color-control: #181818;
+  --color-hairline: #1e1e1e;
+  --color-ink: #ededed;
+  --color-ink-secondary: #888888;
+  --color-accent: #ffffff;
+  --color-accent-border: #ffffff;
+  --color-accent-text: #ffffff;
+  --color-accent-ink: #000000;
+  --color-bubble-user: #171717;
+  --color-bubble-user-ink: #ededed;
+  --color-success: #22c55e;
+  --color-danger: #ef4444;
   --color-danger-ink: #ffffff;
-  --color-success-ink: #072114;
-  --color-warning: #ff9800;
-  --color-scrollbar: #3d3d3d;
-  --color-maus-line: #fcfcfc;
+  --color-success-ink: #000000;
+  --color-warning: #f59e0b;
+  --color-scrollbar: #1f1f1f;
+  --color-maus-line: #ffffff;
 
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
     "Segoe UI", system-ui, sans-serif;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
+  --radius-lg: 0.375rem;
+  --radius-xl: 0.5rem;
 }
 
 /* ── Atelier ───────────────────────────────────────────────────────────────
-   Daylight on paper, and the inverse of Midnight in every axis. Its one
-   structural idea: surfaces get BRIGHTER as they rise — rail, sidebar,
-   content — so the ground closest to the work is the lightest, the opposite
-   of a dark skin where raised means lighter-grey.
-
-   Four tones were darkened from the first draft to clear AA; the original
-   value is named next to each, so the drift stays auditable.
+   Daylight on paper, and the inverse of Midnight in every axis.
    ───────────────────────────────────────────────────────────────────────── */
 [data-skin="atelier"] {
   --code-color-scheme: light;

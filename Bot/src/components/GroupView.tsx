@@ -271,11 +271,11 @@ const Transcript = memo(function Transcript({
                 )}
                 <div
                   className={cn(
-                    "w-fit max-w-[min(42rem,78%)] rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed",
                     !user && m.id === emergingId && "turn-answer",
-                    user ? "chat-text whitespace-pre-wrap bg-bubble-user text-ink" : "bg-card text-ink",
+                    user
+                      ? "chat-text whitespace-pre-wrap bg-[#141414] text-[#ededed] border border-[#262626] rounded-xl rounded-br-xs font-normal px-4 py-2.5"
+                      : "border border-[#1f1f1f] bg-[#0a0a0a] text-[#ededed] rounded-xl rounded-bl-xs px-4 py-2.5",
                   )}
-                  title={new Date(m.at).toLocaleString()}
                 >
                   {m.replyToId && (() => {
                     const target = transcript.find((candidate) => candidate.id === m.replyToId);

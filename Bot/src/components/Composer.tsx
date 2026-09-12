@@ -833,12 +833,78 @@ export function Composer({
             else if (bot) dispatch({ type: "cancelQueued", botId: bot.id, threadId, queueId });
           }}
         />
+        {/* Floating Quick Action Strip */}
+        <div className="mb-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 px-1">
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic("tap");
+              if (bot) {
+                dispatch({
+                  type: "send",
+                  botId: bot.id,
+                  text: "Обнови статус всех сервисов и покажи интерактивную карточку со сводкой",
+                });
+              }
+            }}
+            className="flex shrink-0 items-center gap-1.5 rounded-md border border-[#222222] bg-[#0d0d0d] px-2.5 py-1 text-[11.5px] font-mono text-[#a3a3a3] transition-colors hover:border-[#383838] hover:bg-[#171717] hover:text-[#ededed] active:scale-95"
+          >
+            <span className="text-[10px] text-[#737373]">⌘1</span>
+            <span>Статус серверов</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic("tap");
+              if (bot) {
+                dispatch({
+                  type: "send",
+                  botId: bot.id,
+                  text: "Проверь безопасность и брутфорс SSH, выведи статистику Fail2ban",
+                });
+              }
+            }}
+            className="flex shrink-0 items-center gap-1.5 rounded-md border border-[#222222] bg-[#0d0d0d] px-2.5 py-1 text-[11.5px] font-mono text-[#a3a3a3] transition-colors hover:border-[#383838] hover:bg-[#171717] hover:text-[#ededed] active:scale-95"
+          >
+            <span className="text-[10px] text-[#737373]">⌘2</span>
+            <span>Безопасность</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic("tap");
+              if (bot) {
+                dispatch({
+                  type: "send",
+                  botId: bot.id,
+                  text: "Покажи использование ресурсов контейнерами Docker (топ по RAM и CPU)",
+                });
+              }
+            }}
+            className="flex shrink-0 items-center gap-1.5 rounded-md border border-[#222222] bg-[#0d0d0d] px-2.5 py-1 text-[11.5px] font-mono text-[#a3a3a3] transition-colors hover:border-[#383838] hover:bg-[#171717] hover:text-[#ededed] active:scale-95"
+          >
+            <span className="text-[10px] text-[#737373]">⌘3</span>
+            <span>Docker</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic("tap");
+              if (bot) {
+                dispatch({
+                  type: "send",
+                  botId: bot.id,
+                  text: "Сделай краткую сводку здоровья и активности за последние сутки",
+                });
+              }
+            }}
+            className="flex shrink-0 items-center gap-1.5 rounded-md border border-[#222222] bg-[#0d0d0d] px-2.5 py-1 text-[11.5px] font-mono text-[#a3a3a3] transition-colors hover:border-[#383838] hover:bg-[#171717] hover:text-[#ededed] active:scale-95"
+          >
+            <span className="text-[10px] text-[#737373]">⌘4</span>
+            <span>Аналитика</span>
+          </button>
+        </div>
         <div className="relative">
-          {/* App-ground from the pill midline down, full-bleed. Bubbles may
-              tuck into the top half of the radius; they must not show below
-              center. End at the dock's pb-3 padding: a viewport-height
-              backdrop extends the document and lets focus scroll the header
-              away. Only the decoration is bounded; upward menus stay free. */}
           <div
             aria-hidden
             data-composer-backdrop
@@ -851,8 +917,8 @@ export function Composer({
           onDragOver={handleComposerDragOver}
           onDrop={handleComposerDrop}
           className={cn(
-            "relative z-[1] rounded-3xl bg-composer/95 backdrop-blur-md px-2 py-1.5 ring-1 ring-composer-ring shadow-lg shadow-black/20 transition-all",
-            isDragOver && "ring-2 ring-accent border-accent/60 bg-accent/10 shadow-accent/20"
+            "relative z-[1] rounded-xl bg-[#0c0c0c] px-3 py-2 border border-[#222222] shadow-xl shadow-black/80 transition-all",
+            isDragOver && "border-white/60 bg-[#141414]"
           )}
         >
           {isDragOver && (
