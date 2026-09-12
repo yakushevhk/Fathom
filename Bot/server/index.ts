@@ -3352,8 +3352,9 @@ bus.subscribe((event: RuntimeEvent) => {
           // dropping it here would silently un-narrate every completed tool
           const existing = store.messagesFor(event.threadId).find((m) => m.id === messageId)?.tool;
           toolName = existing?.name ?? "tool";
+          const finalSummary = (event as { summary?: string }).summary || existing?.summary;
           store.patchMessage(event.threadId, messageId, {
-            tool: { name: toolName, ok: event.ok, spoken: existing?.spoken, summary: existing?.summary },
+            tool: { name: toolName, ok: event.ok, spoken: existing?.spoken, summary: finalSummary },
           });
           toolMessageByItem.delete(itemKey);
         }

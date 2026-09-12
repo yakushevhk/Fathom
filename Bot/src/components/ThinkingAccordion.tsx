@@ -151,7 +151,7 @@ export function ThinkingAccordion({
                           </span>
                         ) : (
                           <span className="text-ink-secondary truncate max-w-[300px]">
-                            {isTask ? "Executing subagent workflow…" : "In progress…"}
+                            {isTask ? `Subagent task #${steps.indexOf(step) + 1} execution…` : isBash ? "Shell command execution…" : "Tool execution in progress…"}
                           </span>
                         )}
                       </div>

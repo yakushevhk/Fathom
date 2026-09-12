@@ -1,5 +1,6 @@
 // Modular router for memory facts and search API endpoints.
 import type { RouteContext } from "./context.ts";
+import { executeBotSleep, getBotSleepState } from "../memory-sleep.ts";
 import { saveFact, listFacts, deleteFact, type MemoryFact } from "../structured-memory.ts";
 import { executeWebSearch } from "../web-search.ts";
 
@@ -12,6 +13,7 @@ const VALID_CATEGORIES: Record<MemoryFact["category"], true> = {
 };
 const FACTS_PATH = /^\/api\/bots\/([\w-]+)\/facts$/;
 const FACT_ITEM_PATH = /^\/api\/bots\/([\w-]+)\/facts\/([\w-]+)$/;
+const BOT_SLEEP_PATH = /^\/api\/bots\/([\w-]+)\/sleep$/;
 
 export async function handleMemoryAndSearchRoutes(ctx: RouteContext): Promise<boolean> {
   const { path, method, url, res, json, readBody, store } = ctx;

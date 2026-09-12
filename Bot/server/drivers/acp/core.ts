@@ -777,24 +777,38 @@ export function createAcpDriver(support: AcpSupport): ProviderDriver<AcpConfig> 
             }
             case "tool_call": {
               flushAssistantText();
+              const toolTitle = String(
+                u.title ??
+                u.name ??
+                u.tool ??
+                u.toolName ??
+                u.rawInput?.command ??
+                u.kind ??
+                "tool"
+              ).slice(0, 80);
+              const toolInput = u.rawInput ?? u.input ?? u.arguments ?? u.params;
+              const summary = commandSummary(toolInput) || (typeof toolInput === "string" ? toolInput.slice(0, 160) : undefined);
               emit({
                 ...base(threadId, turnId),
                 type: "item.started",
                 itemType: "tool",
                 itemId: u.toolCallId,
-                title: String(u.rawInput?.command ?? u.title ?? "tool").slice(0, 80),
-                summary: commandSummary(u.rawInput),
+                title: toolTitle,
+                summary,
               });
               break;
             }
             case "tool_call_update": {
               if (u.status === "completed" || u.status === "failed") {
+                const toolInput = u.rawInput ?? u.input ?? u.arguments ?? u.params;
+                const summary = commandSummary(toolInput);
                 emit({
                   ...base(threadId, turnId),
                   type: "item.completed",
                   itemType: "tool",
                   itemId: u.toolCallId,
                   ok: u.status !== "failed",
+                  ...(summary ? { summary } : {}),
                 });
               }
               break;
