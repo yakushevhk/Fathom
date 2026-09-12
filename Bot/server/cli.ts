@@ -202,23 +202,21 @@ export function parseArgs(argv: string[], env: NodeJS.ProcessEnv = process.env):
   }
   return options;
 }
+export const USAGE = `parallel — your team of AI bots, ready in a few steps
 
-export const USAGE = `openmausbot — your team of AI bots, ready in a few steps
-
-  openmausbot                         set up once, then open your workspace
-  openmausbot setup [--data-dir DIR]
-  openmausbot start [the same options as serve]
-  openmausbot serve [--port 8799] [--data-dir DIR] [--label NAME]
+  parallel                         set up once, then open your workspace
+  parallel setup [--data-dir DIR]
+  parallel start [the same options as serve]
+  parallel serve [--port 8799] [--data-dir DIR] [--label NAME]
                     [--public-url https://host] [--tailscale | --tunnel | --domain HOST] [--no-pair]
-  openmausbot pair  [--label NAME] [--client] [--public-url https://host]
-  openmausbot sessions [revoke ID]
-  openmausbot status
-  openmausbot login [--email you@example.com]
-  openmausbot logout
-  openmausbot access list | add EMAIL [--chat-only] | remove EMAIL
-  openmausbot service install [--domain HOST | --tunnel | --tailscale] [--port N] [--data-dir DIR] | uninstall
-  openmausbot browser install [--with-deps] | status
-  openmausbot fleet init --domain HOST [--operator USER] | create NAME --admin EMAIL [--member EMAIL] [--brand FILE]
+  parallel pair  [--label NAME] [--client] [--public-url https://host]
+  parallel sessions [revoke ID]
+  parallel status
+  parallel login [--email you@example.com]
+  parallel logout
+  parallel access list | add EMAIL [--chat-only] | remove EMAIL
+  parallel service install [--domain HOST | --tunnel | --tailscale] [--port N] [--data-dir DIR] | uninstall
+  parallel fleet init --domain HOST [--operator USER] | create NAME --admin EMAIL [--member EMAIL] [--brand FILE]
                     [--anthropic-key-file FILE] [--cap USD] [--license-key KEY] [--memory 1G]
                   | list | users NAME add|remove EMAIL [--chat-only] | suspend NAME | resume NAME
                   | delete NAME --yes [--keep-data] | upgrade   (all take --dry-run)

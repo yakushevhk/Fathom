@@ -12,10 +12,9 @@ import { decodeInjectId, hostApiKey, localHost, mergeLocalInject } from "../loca
 import { createAcpDriver, type AcpSupport } from "./core.ts";
 
 export const STATIC_GROK_MODELS: ModelCatalog = {
-  default: "grok-4.6",
+  default: "antigravity/gemini-3.8-flash-high",
   options: [
-    { id: "grok-4.6", label: "Grok 4.6" },
-    { id: "grok-4.5", label: "Grok 4.5" },
+    { id: "antigravity/gemini-3.8-flash-high", label: "Gemini 3.8 Flash High" },
   ],
 };
 
@@ -45,12 +44,11 @@ export function readGrokModelCatalog(env: Record<string, string | undefined> = p
     return STATIC_GROK_MODELS;
   }
 
-  const options = STATIC_GROK_MODELS.options.map((o) => ({ ...o }));
-  const seen = new Set(options.map((o) => o.id));
+  const options: ModelCatalog["options"] = [];
+  const seen = new Set<string>();
+  let inModels = false;
   let configuredDefault: string | null = null;
   let current: { slug: string; name?: string } | null = null;
-  let inModels = false;
-
   const flush = () => {
     if (!current || !SLUG.test(current.slug) || seen.has(current.slug)) {
       current = null;

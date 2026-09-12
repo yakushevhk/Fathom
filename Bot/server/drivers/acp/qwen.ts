@@ -91,10 +91,19 @@ function readQwenRoutes(env: Record<string, string | undefined>): QwenRoute[] {
 
 /** Public metadata only. Use Qwen's provider-qualified ACP selectors, not raw model IDs. */
 export function readQwenModelCatalog(env: Record<string, string | undefined> = process.env): ModelCatalog {
-  const options = readQwenRoutes(env).map(({ id, model, label, provider }) => ({
+  const all = readQwenRoutes(env).map(({ id, model, label, provider }) => ({
     id, label: qwenModelLabel(model, label), custom: true as const, provider,
   }));
-  return { default: options[0]?.id ?? "", options };
+  const filtered = all.filter((o) => o.id.includes("gemini-3.8-flash-high"));
+  const options = filtered.length > 0 ? filtered : [
+    {
+      id: "antigravity/gemini-3.8-flash-high(openai)",
+      label: "Gemini 3.8 Flash High (OpenAI)",
+      custom: true as const,
+      provider: "openai",
+    },
+  ];
+  return { default: options[0].id, options };
 }
 
 function envKeyFor(hostId: string): string {

@@ -19,76 +19,7 @@ const ROUTER_URL = (process.env.ROUTER_BASE_URL || process.env.OPENAI_BASE_URL |
 const ROUTER_KEY = process.env.ROUTER_API_KEY || process.env.OPENAI_API_KEY || "sk-haus";
 const DATA_DIR = process.env.HOME || "/data";
 
-const FALLBACK_MODELS = [
-  "x/grok-4.5",
-  "x/grok-4.6",
-  "alibaba/qwen3.8-max",
-  "alibaba/qwen3.7-plus",
-  "alibaba/qwen3.7-max",
-  "alibaba/qwen3.6-flash",
-  "alibaba/deepseek-v4-pro",
-  "alibaba/glm-5.2",
-  "ds/deepseek-v4-flash",
-  "ds/deepseek-v4-pro",
-  "xiaomi/mimo-v2.5-pro",
-  "xiaomi/mimo-v2.5",
-  "antigravity/gemini-3.8-flash-high",
-  "antigravity/gemini-3.8-flash-medium",
-  "antigravity/gemini-3.8-flash-low",
-  "antigravity/gemini-3.7-flash-high",
-  "antigravity/gemini-3.7-flash-medium",
-  "antigravity/gemini-3.7-flash-low",
-  "antigravity/gemini-3.1-pro-high",
-  "antigravity/gemini-pro-agent",
-  "antigravity/claude-sonnet-4-6",
-  "antigravity/claude-opus-4-6-thinking",
-  "antigravity/gpt-oss-120b-medium",
-  "kimi/k3",
-  "sfkey/kimi-k3",
-  "vectide/kimi-k3",
-  "vectide2/kimi-k3",
-  "vectide3/kimi-k3",
-  "vectide3/deepseek-v4-flash-0731",
-  "vectide3/deepseek-v4-pro-0813",
-  "vectide3/glm-5",
-  "vectide3/glm-5.1",
-  "vectide3/glm-5.2",
-  "vectide3/glm-5.3",
-  "vectide3/MiniMax-M2.1-highspeed",
-  "vectide3/MiniMax-M2.5",
-  "vectide3/MiniMax-M2.5-highspeed",
-  "vectide3/MiniMax-M2.7",
-  "vectide3/MiniMax-M2.7-highspeed",
-  "vectide3/MiniMax-M3",
-  "claude-opus-4-8",
-  "claude-opus-5",
-  "gpt-5.6-sol",
-  "or/ox",
-  "wave/ghost",
-  "wave/max",
-  "wave/medium",
-  "wave/fast",
-  "tencent/hy4"
-];
-
-async function fetchModels() {
-  try {
-    const res = await fetch(`${ROUTER_URL}/models`, {
-      headers: { Authorization: `Bearer ${ROUTER_KEY}` },
-      signal: AbortSignal.timeout(6000),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
-    const list = Array.isArray(json) ? json : json?.data;
-    if (Array.isArray(list) && list.length > 0) {
-      const ids = list.map((m) => m?.id).filter(Boolean);
-      if (ids.length > 0) return ids;
-    }
-  } catch (err) {
-    console.warn(`[setup-router-agents] Fetch models failed (${err.message}), using fallback model list.`);
-  }
-  return FALLBACK_MODELS;
-}
+const ONLY_MODEL = "antigravity/gemini-3.8-flash-high";
 
 function ensureJson(path, updater) {
   mkdirSync(join(path, ".."), { recursive: true });
@@ -108,13 +39,9 @@ function ensureFile(path, content) {
 }
 
 export async function setupRouterAgents() {
-  console.log(`[setup-router-agents] Configuring agents for router: ${ROUTER_URL}`);
-  const models = await fetchModels();
-  console.log(`[setup-router-agents] Available models count: ${models.length}`);
-
-  const defaultModel = models.includes("antigravity/gemini-3.8-flash-high")
-    ? "antigravity/gemini-3.8-flash-high"
-    : models[0];
+  console.log(`[setup-router-agents] Configuring agents exclusively for: ${ONLY_MODEL}`);
+  const models = [ONLY_MODEL];
+  const defaultModel = ONLY_MODEL;
 
   // 1. Claude (~/.claude/settings.json)
   const claudeSettingsPath = join(DATA_DIR, ".claude", "settings.json");
@@ -122,33 +49,28 @@ export async function setupRouterAgents() {
     prev.env = prev.env || {};
     prev.env.ANTHROPIC_API_KEY = ROUTER_KEY;
     prev.env.ANTHROPIC_BASE_URL = ROUTER_URL;
-    const currentCustom = new Set(prev.customModels || []);
-    for (const m of models) currentCustom.add(m);
-    prev.customModels = Array.from(currentCustom);
+    prev.customModels = [ONLY_MODEL];
     return prev;
   });
-
   // 2. OpenCode (~/.config/opencode/opencode.json & ~/.local/share/opencode/auth.json)
   const opencodeConfigPath = join(DATA_DIR, ".config", "opencode", "opencode.json");
   ensureJson(opencodeConfigPath, (prev) => {
     prev.$schema = "https://opencode.ai/config.json";
-    prev.provider = prev.provider || {};
-    const modelObj = {};
-    for (const m of models) {
-      modelObj[m] = { name: m };
-    }
-    prev.provider.router = {
-      npm: "@ai-sdk/openai-compatible",
-      name: "Helium Router",
-      options: {
-        baseURL: ROUTER_URL,
-        apiKey: ROUTER_KEY,
+    prev.provider = {
+      router: {
+        npm: "@ai-sdk/openai-compatible",
+        name: "Helium Router",
+        options: {
+          baseURL: ROUTER_URL,
+          apiKey: ROUTER_KEY,
+        },
+        models: {
+          [ONLY_MODEL]: { name: "Gemini 3.8 Flash High" },
+        },
       },
-      models: modelObj,
     };
     return prev;
   });
-
   const opencodeAuthPath = join(DATA_DIR, ".local", "share", "opencode", "auth.json");
   ensureJson(opencodeAuthPath, (prev) => {
     prev.router = { key: ROUTER_KEY };
@@ -158,21 +80,13 @@ export async function setupRouterAgents() {
   // 3. Grok (~/.grok/config.toml & ~/.grok/auth.json)
   const grokAuthPath = join(DATA_DIR, ".grok", "auth.json");
   ensureJson(grokAuthPath, (prev) => {
-    prev.access_token = prev.access_token || ROUTER_KEY;
+    prev.access_token = ROUTER_KEY;
     return prev;
   });
 
   const grokConfigPath = join(DATA_DIR, ".grok", "config.toml");
-  let grokToml = `[models]\ndefault = "${defaultModel}"\n\n`;
-  for (const m of models) {
-    const slug = m.replace(/[^a-zA-Z0-9._/-]/g, "_");
-    grokToml += `[model."${slug}"]\n`;
-    grokToml += `model = "${m}"\n`;
-    grokToml += `base_url = "${ROUTER_URL}"\n`;
-    grokToml += `name = "${m}"\n`;
-    grokToml += `api_backend = "chat_completions"\n`;
-    grokToml += `api_key = "${ROUTER_KEY}"\n\n`;
-  }
+  const grokSlug = ONLY_MODEL.replace(/[^a-zA-Z0-9._/-]/g, "_");
+  const grokToml = `[models]\ndefault = "${grokSlug}"\n\n[model."${grokSlug}"]\nmodel = "${ONLY_MODEL}"\nbase_url = "${ROUTER_URL}"\nname = "${ONLY_MODEL}"\napi_backend = "chat_completions"\napi_key = "${ROUTER_KEY}"\n`;
   ensureFile(grokConfigPath, grokToml);
 
   // 4. Qwen (~/.qwen/settings.json)
@@ -180,14 +94,16 @@ export async function setupRouterAgents() {
   ensureJson(qwenSettingsPath, (prev) => {
     prev.env = prev.env || {};
     prev.env.OPENMAUSBOT_ROUTER_KEY = ROUTER_KEY;
-    prev.modelProviders = prev.modelProviders || {};
-    const openaiModels = models.map((m) => ({
-      id: m,
-      name: m,
-      baseUrl: ROUTER_URL,
-      envKey: "OPENMAUSBOT_ROUTER_KEY",
-    }));
-    prev.modelProviders.openai = openaiModels;
+    prev.modelProviders = {
+      openai: [
+        {
+          id: ONLY_MODEL,
+          name: "Gemini 3.8 Flash High",
+          baseUrl: ROUTER_URL,
+          envKey: "OPENMAUSBOT_ROUTER_KEY",
+        },
+      ],
+    };
     return prev;
   });
 
@@ -197,34 +113,35 @@ export async function setupRouterAgents() {
   ensureFile(hermesEnvPath, hermesEnvContent);
 
   const hermesConfigPath = join(DATA_DIR, ".hermes", "config.yaml");
-  let hermesYaml = `model:\n  default: "router/${defaultModel}"\n\nproviders:\n  router:\n    base_url: "${ROUTER_URL}"\n    api_key: "${ROUTER_KEY}"\n`;
-  for (const m of models) {
-    hermesYaml += `  "router/${m}":\n    base_url: "${ROUTER_URL}"\n    api_key: "${ROUTER_KEY}"\n`;
-  }
+  const hermesYaml = `model:\n  default: "router/${ONLY_MODEL}"\n\nproviders:\n  router:\n    base_url: "${ROUTER_URL}"\n    api_key: "${ROUTER_KEY}"\n  "router/${ONLY_MODEL}":\n    base_url: "${ROUTER_URL}"\n    api_key: "${ROUTER_KEY}"\n`;
   ensureFile(hermesConfigPath, hermesYaml);
+
   // 6. Pi (~/.pi/agent/models.json & ~/.pi/agent/settings.json & ~/.pi/agent/auth.json)
   const piAuthPath = join(DATA_DIR, ".pi", "agent", "auth.json");
   ensureJson(piAuthPath, (prev) => prev);
 
   const piModelsPath = join(DATA_DIR, ".pi", "agent", "models.json");
   ensureJson(piModelsPath, (prev) => {
-    prev.providers = prev.providers || {};
-    prev.providers.router = {
-      baseUrl: ROUTER_URL,
-      api: "openai-completions",
-      apiKey: ROUTER_KEY,
-      compat: {
-        supportsDeveloperRole: false,
-        supportsReasoningEffort: true,
+    prev.providers = {
+      router: {
+        baseUrl: ROUTER_URL,
+        api: "openai-completions",
+        apiKey: ROUTER_KEY,
+        compat: {
+          supportsDeveloperRole: false,
+          supportsReasoningEffort: true,
+        },
+        models: [
+          {
+            id: ONLY_MODEL,
+            name: "Gemini 3.8 Flash High",
+            reasoning: true,
+            input: ["text"],
+            contextWindow: 131072,
+            maxTokens: 16384,
+          },
+        ],
       },
-      models: models.map((m) => ({
-        id: m,
-        name: m,
-        reasoning: true,
-        input: ["text"],
-        contextWindow: 131072,
-        maxTokens: 16384,
-      })),
     };
     return prev;
   });
@@ -232,7 +149,7 @@ export async function setupRouterAgents() {
   const piSettingsPath = join(DATA_DIR, ".pi", "agent", "settings.json");
   ensureJson(piSettingsPath, (prev) => {
     prev.defaultProvider = "router";
-    prev.defaultModel = defaultModel;
+    prev.defaultModel = ONLY_MODEL;
     return prev;
   });
 
@@ -245,16 +162,29 @@ export async function setupRouterAgents() {
       prev.openaiCompat = prev.openaiCompat || {};
       prev.openaiCompat.url = ROUTER_URL;
       prev.openaiCompat.key = ROUTER_KEY;
-      prev.openaiCompat.model = defaultModel;
-      prev.defaultModelSelection = prev.defaultModelSelection || {
+      prev.openaiCompat.model = ONLY_MODEL;
+      prev.defaultModelSelection = {
         instanceId: "openaiCompat",
-        model: defaultModel,
+        model: ONLY_MODEL,
       };
       return prev;
     });
+
+    // Update existing bots.json to set modelSelection to gemini-3.8-flash-high
+    const botsPath = join(cfgDir, "bots.json");
+    if (existsSync(botsPath)) {
+      ensureJson(botsPath, (prev) => {
+        if (Array.isArray(prev)) {
+          for (const bot of prev) {
+            bot.modelSelection = { instanceId: "openaiCompat", model: ONLY_MODEL };
+          }
+        }
+        return prev;
+      });
+    }
   }
 
-  console.log("[setup-router-agents] Successfully configured all 6 agents + Parallel.");
+  console.log(`[setup-router-agents] Successfully configured all 6 agents + Parallel with only ${ONLY_MODEL}.`);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

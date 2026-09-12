@@ -11,12 +11,13 @@ import type { ModelCatalog, ProviderErrorCode } from "../../contracts.ts";
 import { execCli } from "../../procs.ts";
 
 const STATIC_MODELS: ModelCatalog = {
-  default: "opencode/x-preview-f-free",
+  default: "router/antigravity/gemini-3.8-flash-high",
   options: [
     {
-      id: "opencode/x-preview-f-free",
-      label: "Zen · Ox Alpha Free",
-      contextWindow: 1_000_000,
+      id: "router/antigravity/gemini-3.8-flash-high",
+      label: "Helium Router · Gemini 3.8 Flash High",
+      custom: true,
+      loaded: true,
     },
   ],
 };
@@ -103,6 +104,9 @@ export function parseOpenCodeModelsOutput(stdout: string): ModelCatalog | null {
     const contextWindow = typeof limit.context === "number" && Number.isFinite(limit.context) && limit.context > 0
       ? Math.floor(limit.context)
       : undefined;
+    if (slug.startsWith("opencode/") || slug.startsWith("opencode-go/") || slug.startsWith("anthropic/") || slug.startsWith("openai/") || slug.startsWith("openrouter/")) {
+      return;
+    }
     seen.add(slug);
     options.push({
       id: slug,
@@ -111,7 +115,6 @@ export function parseOpenCodeModelsOutput(stdout: string): ModelCatalog | null {
       ...(contextWindow ? { contextWindow } : {}),
     });
   };
-
   for (const line of stdout.split(/\r?\n/u)) {
     const trimmed = line.trim();
     if (line === trimmed && validModelSlug(trimmed)) {
@@ -158,10 +161,17 @@ export async function discoverOpenCodeModels(
   cli = "opencode",
 ): Promise<ModelCatalog> {
   try {
-    const catalog = parseOpenCodeModelsOutput(await runOpenCodeModels(cli, environment, true));
+    const raw = await runOpenCodeModels(cli, environment, true);
+    const catalog = parseOpenCodeModelsOutput(raw);
     if (!catalog) throw new Error("OpenCode returned no usable models");
-    lastSuccessfulCatalog = catalog;
-    return catalog;
+    // Retain only router models that match gemini-3.8-flash-high
+    const filtered = catalog.options.filter((o) => o.id.includes("gemini-3.8-flash-high"));
+    if (filtered.length > 0) {
+      const result = { default: filtered[0].id, options: filtered };
+      lastSuccessfulCatalog = result;
+      return result;
+    }
+    return STATIC_MODELS;
   } catch {
     return lastSuccessfulCatalog ?? STATIC_MODELS;
   }

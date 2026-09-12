@@ -5,10 +5,9 @@ import { createOpenAIChatRuntime } from "./openai-chat.ts";
 
 const DRIVER_KIND = "openai-compat";
 const DEFAULT_MODELS: ModelCatalog = {
-  default: "meta-llama/llama-3.3-70b-instruct",
+  default: "antigravity/gemini-3.8-flash-high",
   options: [
-    { id: "meta-llama/llama-3.3-70b-instruct", label: "Llama 3.3 70B (OpenRouter)", custom: true },
-    { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B (Groq)", custom: true },
+    { id: "antigravity/gemini-3.8-flash-high", label: "Gemini 3.8 Flash High", custom: true },
   ],
 };
 
@@ -107,6 +106,7 @@ export const OpenAICompatDriver: ProviderDriver<OpenAICompatConfig> = {
         for (const row of rows) {
           const id = typeof row.id === "string" ? row.id : "";
           if (!id || seen.has(id)) continue;
+          if (!id.includes("gemini-3.8-flash-high")) continue;
           seen.add(id);
           options.push({
             id,
@@ -114,11 +114,14 @@ export const OpenAICompatDriver: ProviderDriver<OpenAICompatConfig> = {
             custom: true,
           });
         }
-        if (!options.length) return;
-        if (config.model && !options.some((model) => model.id === config.model)) {
-          options.unshift({ id: config.model, label: config.model, custom: true });
+        if (!options.length) {
+          options.push({
+            id: "antigravity/gemini-3.8-flash-high",
+            label: "Gemini 3.8 Flash High",
+            custom: true,
+          });
         }
-        catalog = { default: config.model ?? options[0].id, options };
+        catalog = { default: options[0].id, options };
       } catch {
         // Catalog refresh is opportunistic; keep the seeded options.
       }

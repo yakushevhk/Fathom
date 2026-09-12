@@ -351,13 +351,9 @@ export interface ClaudeConfig {
 
 // model catalog ported from upstream packages/contracts/src/model.ts
 export const STATIC_CLAUDE_MODELS: ModelCatalog = {
-  default: "claude-sonnet-5",
+  default: "antigravity/gemini-3.8-flash-high",
   options: [
-    { id: "claude-fable-5-1", label: "Claude Fable 5.1" },
-    { id: "claude-fable-5", label: "Claude Fable 5" },
-    { id: "claude-opus-5", label: "Claude Opus 5" },
-    { id: "claude-sonnet-5", label: "Claude Sonnet 5" },
-    { id: "claude-haiku-4-5", label: "Claude Haiku 4.5" },
+    { id: "antigravity/gemini-3.8-flash-high", label: "Gemini 3.8 Flash High" },
   ],
 };
 
@@ -413,19 +409,9 @@ export function readClaudeModelCatalog(env: Record<string, string | undefined> =
   const envModel = nestedEnv.ANTHROPIC_MODEL ?? env.ANTHROPIC_MODEL;
   if (typeof envModel === "string") extras.push(...extrasFromUnknown([envModel]));
 
-  const options = STATIC_CLAUDE_MODELS.options.map((option) => ({ ...option }));
-  const seen = new Set(options.map((option) => option.id));
-  for (const extra of extras) {
-    if (seen.has(extra.id)) continue;
-    seen.add(extra.id);
-    options.push({ id: extra.id, label: extra.label, custom: true });
-  }
-  return { default: STATIC_CLAUDE_MODELS.default, options };
+  const options = extras.length ? extras : STATIC_CLAUDE_MODELS.options.map((option) => ({ ...option }));
+  return { default: options[0]?.id ?? STATIC_CLAUDE_MODELS.default, options };
 }
-
-// Resolved from the server root, never relative to this file: bundling inlines
-// this module into an entry one directory up, so a `".."` here would climb too
-// far. See server/proxy-paths.ts.
 const PROXY_PATH = SPAWNED_PROXIES.computer;
 const PERM_PROXY_PATH = SPAWNED_PROXIES.permission;
 const DWEB_PROXY_PATH = SPAWNED_PROXIES.dweb;

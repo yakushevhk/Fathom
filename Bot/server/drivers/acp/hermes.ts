@@ -4,14 +4,14 @@
 // without an OpenRouter key — that is the "HTTP 401: Missing Authentication
 // header" failure. Inject writes providers.<host> and session/set_model
 // `custom:<host>:<model>` instead.
-import { spawn } from "node:child_process";
+
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
 
 import type { ModelCatalog } from "../../contracts.ts";
-import { decodeInjectId, hostApiKey, INJECT_SEP, localHost, mergeLocalInject } from "../local-inject.ts";
+import { decodeInjectId, hostApiKey, INJECT_SEP, localHost } from "../local-inject.ts";
 import { createAcpDriver, type AcpSupport } from "./core.ts";
 
 const EMPTY: ModelCatalog = { default: "", options: [] };
@@ -260,122 +260,18 @@ export function hermesConfiguredModel(
  * Failure is non-fatal and returns [] — a catalog probe must never be the
  * reason an agent becomes unselectable.
  */
-async function fetchHermesAcpModels(
-  cli: string,
-  env: Record<string, string | undefined>,
-): Promise<{ id: string; label: string; custom: true }[]> {
-  return await new Promise((resolve) => {
-    let child: ReturnType<typeof spawn>;
-    try {
-      child = spawn(cli, ["acp"], { stdio: ["pipe", "pipe", "ignore"], env: env as NodeJS.ProcessEnv });
-    } catch {
-      return resolve([]);
-    }
-    let settled = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    let hardKillTimer: ReturnType<typeof setTimeout> | undefined;
-    const done = (out: { id: string; label: string; custom: true }[]) => {
-      if (settled) return;
-      settled = true;
-      if (timer) clearTimeout(timer);
-      try {
-        if (child.kill()) {
-          hardKillTimer = setTimeout(() => {
-            try {
-              child.kill("SIGKILL");
-            } catch {
-              /* already gone */
-            }
-          }, 1_000);
-          hardKillTimer.unref?.();
-        }
-      } catch {
-        /* already gone */
-      }
-      resolve(out);
-    };
-    timer = setTimeout(() => done([]), 5_000);
-    child.once("error", () => done([]));
-    child.once("close", () => {
-      if (hardKillTimer) clearTimeout(hardKillTimer);
-      done([]);
-    });
 
-    let buf = "";
-    let id = 0;
-    const send = (method: string, params: unknown) => {
-      id += 1;
-      try {
-        if (!child.stdin?.writable) {
-          done([]);
-          return 0;
-        }
-        child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", id, method, params })}\n`, (error) => {
-          if (error) done([]);
-        });
-      } catch {
-        done([]);
-        return 0;
-      }
-      return id;
-    };
-    let initId = 0;
-    let sessionId = 0;
-    child.stdout?.on("data", (chunk) => {
-      buf += String(chunk);
-      let nl: number;
-      while ((nl = buf.indexOf("\n")) >= 0) {
-        const line = buf.slice(0, nl);
-        buf = buf.slice(nl + 1);
-        let msg: any;
-        try {
-          msg = JSON.parse(line);
-        } catch {
-          continue;
-        }
-        if (msg?.id === initId) {
-          if (!msg.result) return done([]);
-          sessionId = send("session/new", { cwd: env.HOME || env.USERPROFILE || homedir(), mcpServers: [] });
-        } else if (sessionId && msg?.id === sessionId) {
-          const list = Array.isArray(msg.result?.models?.availableModels)
-            ? msg.result.models.availableModels
-            : [];
-          done(
-            list
-              .filter((m: any) => typeof m?.modelId === "string" && m.modelId)
-              .map((m: any) => ({
-                id: m.modelId as string,
-                // Hermes labels these "OpenRouter · <model>"; keep its wording.
-                label: (typeof m.name === "string" && m.name.trim()) || (m.modelId as string),
-                custom: true as const,
-              })),
-          );
-        }
-      }
-    });
-    initId = send("initialize", {
-      protocolVersion: 1,
-      clientCapabilities: { fs: { readTextFile: false, writeTextFile: false } },
-    });
-  });
-}
 
 async function resolveModels(
-  env: Record<string, string | undefined>,
-  config?: { cli?: string },
+  _env: Record<string, string | undefined>,
+  _config?: { cli?: string },
 ): Promise<ModelCatalog> {
-  const catalog = await mergeLocalInject(EMPTY, env);
-  const configured = hermesConfiguredModel(env);
-  // Only probe when a hosted provider is configured; a local-only install has
-  // nothing to gain from the spawn.
-  const remote = configured ? await fetchHermesAcpModels(config?.cli || "hermes", env) : [];
-  const seen = new Set<string>();
-  const options = [...(configured ? [configured] : []), ...remote, ...catalog.options].filter((o) => {
-    if (seen.has(o.id)) return false;
-    seen.add(o.id);
-    return true;
-  });
-  return { default: options[0]?.id ?? "", options };
+  const options = [{
+    id: "router/antigravity/gemini-3.8-flash-high",
+    label: "Gemini 3.8 Flash High",
+    custom: true as const,
+  }];
+  return { default: options[0].id, options };
 }
 
 async function applySetting(

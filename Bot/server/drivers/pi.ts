@@ -141,12 +141,9 @@ interface PiModelsResponse {
   data?: { models?: PiModelEntry[] };
 }
 
-/** Pure parser: turn a `get_available_models` stdout blob into a catalog.
- *  Every option is `custom` (pi is BYOK) and id is the `provider/modelId`
- *  composite the picker and `set_model` both use. Exported for the test. */
-export function parsePiCatalog(stdout: string, fallbackDefault = ""): ModelCatalog {
-  const options: Array<{ id: string; label: string; custom: true; provider: string }> = [];
-  let def = fallbackDefault;
+export function parsePiCatalog(stdout: string, _fallbackDefault = ""): ModelCatalog {
+  const seen = new Set<string>();
+  const options: ModelCatalog["options"] = [];
   for (const line of stdout.split("\n")) {
     if (!line.trim()) continue;
     let msg: unknown;
@@ -160,12 +157,26 @@ export function parsePiCatalog(stdout: string, fallbackDefault = ""): ModelCatal
     for (const m of res.data?.models ?? []) {
       if (!m?.provider || !m?.id) continue;
       const id = `${m.provider}/${m.id}`;
-      options.push({ id, label: m.name ?? m.id, custom: true, provider: m.provider });
+      // Filter: only keep gemini-3.8-flash-high
+      if (!id.includes("gemini-3.8-flash-high")) continue;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      options.push({
+        id,
+        label: m.name?.trim() || id,
+        custom: true,
+      });
     }
-    break;
   }
-  if (!def && options.length) def = options[0]!.id;
-  return { default: def, options };
+  const defaultModel = options.length > 0 ? options[0].id : "router/antigravity/gemini-3.8-flash-high";
+  if (options.length === 0) {
+    options.push({
+      id: "router/antigravity/gemini-3.8-flash-high",
+      label: "Gemini 3.8 Flash High",
+      custom: true,
+    });
+  }
+  return { default: defaultModel, options };
 }
 
 /** Split a picker id into pi's `{provider, modelId}`. Accepts both the
