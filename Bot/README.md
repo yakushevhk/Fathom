@@ -306,7 +306,7 @@ pnpm package:linux # Ubuntu x64 .deb + AppImage → release/
 
 ### Routines and webhook triggers
 
-Routines can run once, on selected weekdays, or every 5–1,440 minutes, using either a MAUS's configured
+Routines can run once, on selected weekdays, or every 5–1,440 minutes, using either an agent's configured
 model/computer or the Cloud VM runner. Interval schedules stay aligned to their chosen start time and skip
 an occurrence when the previous run is still active, so slow work cannot build an unbounded queue. A
 separate optional Advanced run limit can safely stop stuck work; no timeout is imposed unless one is chosen.

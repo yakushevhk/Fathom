@@ -27,7 +27,7 @@ services:
       OMB_PUBLIC_URL: ${OMB_PUBLIC_URL:-http://localhost:8080}
       OMB_WEBHOOK_PUBLIC_URL: ${OMB_PUBLIC_URL:-http://localhost:8080}
     healthcheck:
-      test: [CMD-SHELL, 'curl -fsS http://127.0.0.1:$$OMB_PORT/api/health | grep -q openmausbot']
+      test: [CMD-SHELL, 'curl -fsS http://127.0.0.1:$$OMB_PORT/api/health | grep -qE "openmausbot|parallel"']
       interval: 15s
       timeout: 5s
       start_period: 30s

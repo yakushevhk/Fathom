@@ -58,11 +58,10 @@ Then open **http://localhost:8080** and enter the pairing code (or click the URL
 ## 3. How Authentication & Pairing Works
 
 ### The Security Model
-OpenMausBot utilizes a **loopback capability token** (`OMB_MUTATION_TOKEN` / `mutation-token`) and **time-limited pairing codes**:
+Parallel utilizes a **loopback capability token** (`OMB_MUTATION_TOKEN` / `mutation-token`) and **time-limited pairing codes**:
 1. **Mutation Protection**:
    - The server verifies requests modifying sensitive configuration or creating pairing codes.
-   - It requires the `x-openmausbot-desktop-owner` header matching `OMB_MUTATION_TOKEN` or reads the token from `/data/.openmausbot/mutation-token`.
-2. **Device Pairing**:
+   - It requires the mutation token matching `OMB_MUTATION_TOKEN` or reads the token from `/data/.parallel/mutation-token` (or `/data/.openmausbot/mutation-token`).
    - Pairing codes are 12-character alphanumeric tokens (e.g., `HS3V-TVZ6-6FU3`).
    - Valid for **5 minutes** and single-use only.
    - When entered on `http://localhost:8080/pair`, the server exchanges it for a permanent session token (`omb_sess_...`), stored as an HTTP cookie / local storage.
@@ -139,4 +138,4 @@ docker compose exec omb node dist-server/openmausbot.js sessions --revoke <SESSI
 
 ### 2. `server refused to mint a pairing code: forbidden`
 - **Cause**: The CLI inside the container did not provide the mutation token to authenticate against the running server.
-- **Solution**: Handled automatically in `server/cli.ts` and `compose.yaml` via `OMB_MUTATION_TOKEN` and persistence into `/data/.openmausbot/mutation-token`.
+- **Solution**: Handled automatically in `server/cli.ts` and `compose.yaml` via `OMB_MUTATION_TOKEN` and persistence into `/data/.parallel/mutation-token` (or legacy `/data/.openmausbot/mutation-token`).
