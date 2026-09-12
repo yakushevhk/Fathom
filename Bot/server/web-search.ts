@@ -7,18 +7,26 @@ export interface WebSearchResult {
   snippet: string;
 }
 
+const USER_AGENTS = [
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+];
+
 export async function executeWebSearch(query: string, limit = 5): Promise<WebSearchResult[]> {
   const trimmed = query.trim();
   if (!trimmed) return [];
   const maxResults = Math.min(10, Math.max(1, limit));
+  const randomUa = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
 
   // Primary: DuckDuckGo HTML endpoint
   try {
     const params = new URLSearchParams({ q: trimmed });
     const response = await fetch(`https://html.duckduckgo.com/html/?${params.toString()}`, {
       method: "POST",
+      redirect: "error", // Prevent following untrusted SSRF redirects
       headers: {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+        "User-Agent": randomUa,
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9,ru;q=0.8",
         "Content-Type": "application/x-www-form-urlencoded",
@@ -27,21 +35,23 @@ export async function executeWebSearch(query: string, limit = 5): Promise<WebSea
       signal: AbortSignal.timeout(10_000),
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} ${response.statusText}`);
+    // Status 202 or non-200 indicates bot challenge modal or rate-limiting
+    if (response.status !== 200) {
+      throw new Error(`HTTP ${response.status}`);
     }
 
     const html = await response.text();
-    const results: WebSearchResult[] = [];
+    // Check for bot challenge anomaly modal
+    if (html.includes("anomaly-modal") || html.includes("anomaly-content")) {
+      throw new Error("bot challenge modal detected");
+    }
 
-    // Extract search result blocks using robust regex pattern
-    // DuckDuckGo HTML structure: class="result__body" ... class="result__title" ... class="result__snippet"
+    const results: WebSearchResult[] = [];
     const resultBlocks = html.split(/class="result\s+results_links/gi).slice(1);
 
     for (const block of resultBlocks) {
       if (results.length >= maxResults) break;
 
-      // Extract URL & Title
       const urlMatch = block.match(/href="([^"]+)"[^>]*class="result__url"[^>]*>([\s\S]*?)<\/a>/i) ||
                        block.match(/<a[^>]*class="result__snippet"[^>]*href="([^"]+)"/i) ||
                        block.match(/<a[^>]*class="result__url"[^>]*href="([^"]+)"/i) ||
@@ -56,12 +66,16 @@ export async function executeWebSearch(query: string, limit = 5): Promise<WebSea
         if (rawHref.includes("uddg=")) {
           try {
             const parsed = new URL(rawHref, "https://html.duckduckgo.com");
-            targetUrl = decodeURIComponent(parsed.searchParams.get("uddg") || "");
+            const candidate = decodeURIComponent(parsed.searchParams.get("uddg") || "");
+            // Enforce only http/https URLs to prevent SSRF schemes
+            if (/^https?:\/\//i.test(candidate)) {
+              targetUrl = candidate;
+            }
           } catch {
-            targetUrl = rawHref;
+            targetUrl = "";
           }
-        } else {
-          targetUrl = rawHref.startsWith("//") ? `https:${rawHref}` : rawHref;
+        } else if (/^https?:\/\//i.test(rawHref)) {
+          targetUrl = rawHref;
         }
       }
 
@@ -81,14 +95,14 @@ export async function executeWebSearch(query: string, limit = 5): Promise<WebSea
       return results;
     }
   } catch {
-    // DuckDuckGo HTML blocked or timed out, attempt JSON instant answers fallback
+    // DuckDuckGo HTML blocked, challenged, or timed out; fall back to instant answers
   }
 
   // Fallback: DuckDuckGo Instant Answer API
   try {
     const params = new URLSearchParams({ q: trimmed, format: "json", no_html: "1", skip_disambig: "1" });
     const response = await fetch(`https://api.duckduckgo.com/?${params.toString()}`, {
-      headers: { "User-Agent": "Parallel/1.0" },
+      redirect: "error",
       signal: AbortSignal.timeout(8_000),
     });
 

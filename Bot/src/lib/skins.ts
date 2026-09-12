@@ -75,6 +75,15 @@ export function readSkin(): SkinId {
  */
 export function applySkin(id: SkinId): void {
   document.documentElement.dataset.skin = id;
+  const isLight = ["atelier", "lagoon", "linen", "daylight"].includes(id);
+  document.documentElement.dataset.theme = isLight ? "light" : "dark";
+  if (isLight) {
+    document.documentElement.classList.remove("dark");
+    document.documentElement.classList.add("light");
+  } else {
+    document.documentElement.classList.remove("light");
+    document.documentElement.classList.add("dark");
+  }
   try {
     getStore()?.setItem(KEY, id);
   } catch {

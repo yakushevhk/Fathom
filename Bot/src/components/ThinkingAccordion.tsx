@@ -48,7 +48,7 @@ export function ThinkingAccordion({
           <div className="flex items-center gap-2">
             {isStreaming ? (
               <div className="flex size-5 shrink-0 items-center justify-center">
-                <ThinkingOrb state="solving" size={20} theme="dark" />
+                <ThinkingOrb state="solving" size={20} theme="auto" />
               </div>
             ) : (
               <div className="flex size-5 shrink-0 items-center justify-center rounded bg-raised border border-hairline/40">

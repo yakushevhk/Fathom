@@ -53,14 +53,19 @@ export function TurnPresence({
           phase === "out" && "turn-mascot-out",
         )}
       >
-        {avatar}
+        <div className="relative flex items-center justify-center">
+          {avatar}
+          {showWorking && (
+            <span className="pointer-events-none absolute -inset-1 rounded-full bg-accent/15 animate-ping opacity-60" />
+          )}
+        </div>
         {showWorking ? (
           <span className="flex items-baseline gap-2 leading-none">
-            <span className="thinking-shimmer animate-shimmer text-[13px]" aria-live="polite">
+            <span className="thinking-shimmer animate-shimmer text-[13.5px] tracking-wide" aria-live="polite">
               {label}
             </span>
             {since !== null && (
-              <WorkingTimer since={since} className="text-[11.5px] text-ink-secondary/70" />
+              <WorkingTimer since={since} className="text-[11.5px] font-mono text-ink-secondary" />
             )}
           </span>
         ) : null}

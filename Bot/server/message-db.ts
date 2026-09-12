@@ -65,6 +65,7 @@ function open(): DatabaseSync {
   `);
   ensureRecallIndex(db);
   ensureMemoryIndex(db);
+  ensureStructuredMemoryIndex(db);
   return db;
 }
 
@@ -99,6 +100,23 @@ function ensureMemoryIndex(db: DatabaseSync): void {
     END;
   `);
 }
+function ensureStructuredMemoryIndex(db: DatabaseSync): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS bot_facts (
+      id TEXT PRIMARY KEY,
+      bot_id TEXT NOT NULL,
+      category TEXT NOT NULL,
+      entity TEXT NOT NULL,
+      fact TEXT NOT NULL,
+      confidence REAL DEFAULT 1.0,
+      updated_at INTEGER NOT NULL
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_bot_facts_natural ON bot_facts (bot_id, category, entity);
+    CREATE INDEX IF NOT EXISTS idx_bot_facts_lookup ON bot_facts (bot_id, entity);
+    CREATE INDEX IF NOT EXISTS idx_bot_facts_category ON bot_facts (bot_id, category);
+  `);
+}
+
 
 // Ranked recall over transcript text, for the bot's own session_search tool.
 // An external-content FTS5 table over messages.text: the index stores no
@@ -485,9 +503,12 @@ const STOP_WORDS = new Set(
  * In strict mode (default for session recall), tokens are ANDed so a hit contains all of them.
  * In broad/flexible mode (when optional flag or OR requested), terms are disjoined with BM25 ranking. */
 export function ftsQuery(query: string, mode: "and" | "or" = "and"): string | null {
-  const rawTokens = query
-    .split(/\s+/)
-    .map((token) => token.replace(/["'*^:{}()]/g, "").trim())
+  // Strip null bytes, control characters, and FTS5 syntax characters
+  // eslint-disable-next-line no-control-regex
+  const sanitized = query.replace(/[\x00-\x1F\x7F"'*^:{}()[\]]/g, " ");
+  const rawTokens = sanitized
+    .split(/[\s,;/\-_]+/)
+    .map((token) => token.trim())
     .filter(Boolean);
   if (!rawTokens.length) return null;
   const content = rawTokens.filter((token) => !STOP_WORDS.has(token.toLowerCase()));
@@ -567,7 +588,7 @@ export function recallMessages(query: string, threadIds: readonly string[], limi
     head: string;
     snippet: string;
   }>;
-  if (rows.length === 0 && match.includes(" ")) {
+  if (rows.length === 0) {
     const broadMatch = ftsQuery(query, "or");
     if (broadMatch && broadMatch !== match) {
       rows = stmt.all(broadMatch, ...threadIds, limit) as typeof rows;
@@ -640,7 +661,7 @@ export function recallMemory(query: string, botId: string, limit = 12): MemoryHi
       "ORDER BY bm25(memory_fts), f.mtime_ms DESC LIMIT ?",
   );
   let rows = stmt.all(match, botId, limit) as Array<{ path: string; mtime_ms: number; snippet: string }>;
-  if (rows.length === 0 && match.includes(" ")) {
+  if (rows.length === 0) {
     const broadMatch = ftsQuery(query, "or");
     if (broadMatch && broadMatch !== match) {
       rows = stmt.all(broadMatch, botId, limit) as typeof rows;

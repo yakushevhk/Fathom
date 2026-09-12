@@ -765,11 +765,12 @@ body {
   }
 }
 .thinking-shimmer {
-  background: linear-gradient(90deg, var(--color-ink-secondary) 40%, var(--color-ink) 50%, var(--color-ink-secondary) 60%);
+  background: linear-gradient(90deg, var(--color-ink-secondary) 25%, var(--color-accent) 50%, var(--color-ink-secondary) 75%);
   background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  font-weight: 500;
 }
 @media (prefers-reduced-motion: reduce) {
   .animate-caret, .animate-msg-in, .animate-shimmer { animation: none; }

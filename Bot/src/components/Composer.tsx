@@ -914,6 +914,7 @@ export function Composer({
         <BorderBeam
           size="md"
           colorVariant="colorful"
+          theme="auto"
           duration={6}
           className="w-full"
         >

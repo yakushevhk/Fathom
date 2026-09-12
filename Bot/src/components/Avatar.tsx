@@ -267,7 +267,7 @@ export function BotAvatar({ bot, size = 44, label, ...mascotProps }: BotAvatarPr
 
     return (
       <div
-        className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#0d0d0d] border border-[#222222]"
+        className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-control border border-hairline/50 shadow-xs"
         style={{ width: size, height: size }}
         title={label ?? bot.name}
       >
@@ -275,7 +275,7 @@ export function BotAvatar({ bot, size = 44, label, ...mascotProps }: BotAvatarPr
           <ThinkingOrb
             state={orbState}
             size={orbSizePreset}
-            theme="dark"
+            theme="auto"
             paused={mascotProps.animated === false}
           />
         </div>

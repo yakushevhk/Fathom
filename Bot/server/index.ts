@@ -8577,20 +8577,6 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       res.setHeader("set-cookie", serializeSessionCookie(SESSION_COOKIE, issued.token, { secure, maxAgeSeconds: cookieMaxAgeSeconds(issued.session) }));
       return json(res, 200, { session: issued.session, environment });
     }
-    const modularHandled = await handleMemoryAndSearchRoutes({
-      req,
-      res,
-      url,
-      method,
-      path,
-      store,
-      readBody: async () => {
-        const raw = await readBody(req);
-        return JSON.stringify(raw ?? {});
-      },
-      json,
-    });
-    if (modularHandled) return;
     if (method === "POST" && path === "/api/auth/pair") {
       // JSON only: a cross-site HTML form cannot send this content type
       // without a preflight, so a stray unused code cannot be planted as a
@@ -8651,6 +8637,21 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
     }
     if (!gate.auth) return json(res, gate.status, { error: gate.error });
     const auth = gate.auth;
+
+    const modularHandled = await handleMemoryAndSearchRoutes({
+      req,
+      res,
+      url,
+      method,
+      path,
+      store,
+      readBody: async () => {
+        const raw = await readBody(req);
+        return JSON.stringify(raw ?? {});
+      },
+      json,
+    });
+    if (modularHandled) return;
 
     if (await workspaceBackupRoutes(req, res, path, auth)) return;
     // Count ordinary requests until their asynchronous handler returns, not
