@@ -3312,11 +3312,24 @@ bus.subscribe((event: RuntimeEvent) => {
   }
 
   switch (event.type) {
-    case "session.started":
-      if (bot && event.sessionId && event.providerInstanceId) {
-        store.setResumeCursor(bot.id, event.providerInstanceId, event.sessionId, event.threadId);
+    case "item.updated":
+      if (event.itemType === "tool" && event.itemId) {
+        const itemKey = `${event.threadId}:${event.itemId}`;
+        const messageId = toolMessageByItem.get(itemKey);
+        if (messageId) {
+          const existing = store.messagesFor(event.threadId).find((m) => m.id === messageId)?.tool;
+          const updatedName = event.title || existing?.name || "tool";
+          const updatedSummary = event.summary || existing?.summary;
+          store.patchMessage(event.threadId, messageId, {
+            tool: {
+              name: updatedName,
+              ok: existing?.ok,
+              spoken: existing?.spoken,
+              summary: updatedSummary,
+            },
+          });
+        }
       }
-      if (typeof event.model === "string" && event.model) sessionModelByThread.set(event.threadId, event.model);
       break;
     case "item.completed":
       if (event.itemType === "assistant_text") {

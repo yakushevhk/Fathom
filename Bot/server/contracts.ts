@@ -126,8 +126,15 @@ export type RuntimeEvent = RuntimeEventBase &
          * that run no command (a Read, a fetch). */
         summary?: string;
       }
-    | { type: "item.updated"; itemType: "tool" | "reasoning"; tokens?: number | null }
-    | { type: "item.completed"; itemType: "tool"; ok: boolean }
+    | {
+        type: "item.updated";
+        itemType: "tool" | "reasoning";
+        itemId?: string;
+        tokens?: number | null;
+        title?: string;
+        summary?: string;
+      }
+    | { type: "item.completed"; itemType: "tool"; itemId?: string; ok: boolean; title?: string; summary?: string }
     | { type: "item.completed"; itemType: "assistant_text"; text: string }
     /** Provider-generated raster bytes. This event is folded into the
      * private attachment store and is never forwarded to renderer SSE: a

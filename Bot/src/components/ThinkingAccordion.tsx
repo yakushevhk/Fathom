@@ -181,9 +181,13 @@ export function ThinkingAccordion({
               <Brain size={12} />
               <span>Internal Thought Stream</span>
             </div>
-            <div className="rounded-xl border border-hairline/40 bg-inset/40 px-3 py-2.5 text-[12px] leading-relaxed text-ink/80 font-mono whitespace-pre-wrap max-h-64 overflow-y-auto select-text">
-              {reasoning || (
-                <div className="flex items-center gap-2 italic text-ink-secondary py-1">
+            <div className="rounded-xl border border-hairline/40 bg-inset/40 px-3.5 py-3 text-[12.5px] leading-relaxed text-ink/90 max-h-72 overflow-y-auto select-text font-sans">
+              {reasoning ? (
+                <div className="space-y-2 whitespace-pre-wrap font-sans [&_strong]:text-ink [&_strong]:font-semibold">
+                  {reasoning}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 italic text-ink-secondary py-1 font-mono text-[12px]">
                   <Sparkles size={13} className="animate-spin text-accent" />
                   <span>Synthesizing internal thought path...</span>
                 </div>
