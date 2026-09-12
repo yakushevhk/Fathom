@@ -2,11 +2,12 @@ name: ${COMPOSE_PROJECT_NAME:-openmausbot}
 services:
   omb:
     init: true
+    platform: linux/amd64
     build:
       context: ./deploy/local
       args:
-        BASE_IMAGE: ${OMB_BASE_IMAGE:-ghcr.io/milind-soni/openmausbot:latest}
-        ENGINES: ${ENGINES-@anthropic-ai/claude-code @openai/codex}
+        BASE_IMAGE: ${OMB_BASE_IMAGE:-openmausbot:local}
+        ENGINES: ${ENGINES-@anthropic-ai/claude-code @openai/codex opencode-ai @qwen-code/qwen-code @earendil-works/pi-coding-agent}
     image: ${OMB_LOCAL_IMAGE:-openmausbot-local:latest}
     restart: unless-stopped
     volumes:
@@ -18,6 +19,21 @@ services:
       OMB_WEBHOOK_PORT: "8800"
       OMB_PUBLIC_URL: ${OMB_PUBLIC_URL:-http://localhost:${OMB_HTTP_PORT:-8080}}
       OMB_WEBHOOK_PUBLIC_URL: ${OMB_WEBHOOK_PUBLIC_URL:-${OMB_PUBLIC_URL:-http://localhost:${OMB_HTTP_PORT:-8080}}}
+      OMB_MUTATION_TOKEN: ${OMB_MUTATION_TOKEN:-local-dev-token}
+      ROUTER_API_KEY: "sk-shenzhen"
+      ROUTER_BASE_URL: "https://router.y7.hk/v1"
+      OPENAI_API_KEY: "sk-shenzhen"
+      OPENAI_BASE_URL: "https://router.y7.hk/v1"
+      OPENAI_COMPAT_API_KEY: "sk-shenzhen"
+      OPENAI_COMPAT_URL: "https://router.y7.hk/v1"
+      OPENAI_COMPAT_MODEL: "antigravity/gemini-3.8-flash-high"
+      OPENROUTER_API_KEY: "sk-shenzhen"
+      OPENROUTER_BASE_URL: "https://router.y7.hk/v1"
+      OPENCODE_API_KEY: "sk-shenzhen"
+      ANTHROPIC_API_KEY: "sk-shenzhen"
+      ANTHROPIC_BASE_URL: "https://router.y7.hk/v1"
+      QWEN_API_KEY: "sk-shenzhen"
+      XAI_API_KEY: "sk-shenzhen"
     healthcheck:
       test:
         - CMD

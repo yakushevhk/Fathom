@@ -19,7 +19,7 @@ export const STATIC_GROK_MODELS: ModelCatalog = {
   ],
 };
 
-const SLUG = /^[a-z0-9][a-z0-9._-]*$/i;
+const SLUG = /^[a-z0-9][a-z0-9._/-]*$/i;
 
 function grokHome(env: Record<string, string | undefined>): string {
   if (env.GROK_HOME) return env.GROK_HOME;

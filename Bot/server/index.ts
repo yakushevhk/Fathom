@@ -2,7 +2,7 @@
 // (upstream rule): the React app dispatches typed commands over HTTP and
 // folds one SSE event stream; every provider process runs here.
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
-import { existsSync, readFileSync, rmSync, unlinkSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { extname, join } from "node:path";
 
@@ -453,6 +453,11 @@ const DESKTOP_MANAGED = process.env.OMB_DESKTOP_PARENT === "1";
 let desktopMutationToken: string | undefined = DESKTOP_MANAGED
   ? ""
   : (process.env.OMB_MUTATION_TOKEN || randomBytes(32).toString("hex"));
+if (!DESKTOP_MANAGED && desktopMutationToken) {
+  try {
+    writeFileSync(join(DATA_DIR, "mutation-token"), desktopMutationToken, { mode: 0o600 });
+  } catch {}
+}
 let companionMutationToken: string | undefined = DESKTOP_MANAGED ? "" : undefined;
 // Where remote clients reach this server (a proxy's public address); pairing URLs use it.
 const FALLBACK_PUBLIC_URL = process.env.OMB_PUBLIC_URL?.trim().replace(/\/+$/, "") || null;

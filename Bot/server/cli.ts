@@ -310,8 +310,23 @@ export function serverVersion(here = HERE): string {
 const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 // ── talking to a running server (loopback = owner) ────────────────────
-async function api(port: number, path: string, init: { method?: string; body?: string } = {}): Promise<{ status: number; body: any }> {
-  const res = await fetch(`http://127.0.0.1:${port}${path}`, { method: init.method, body: init.body, headers: { "content-type": "application/json" }, signal: AbortSignal.timeout(3000) });
+async function api(port: number, path: string, init: { method?: string; body?: string; headers?: Record<string, string>; dataDir?: string } = {}): Promise<{ status: number; body: any }> {
+  const headers: Record<string, string> = { "content-type": "application/json", ...init.headers };
+  let mutationToken = process.env.OMB_MUTATION_TOKEN;
+  if (!mutationToken && init.dataDir) {
+    try {
+      const tokenFile = join(init.dataDir, "mutation-token");
+      if (existsSync(tokenFile)) mutationToken = readFileSync(tokenFile, "utf8").trim();
+    } catch {}
+  }
+  if (!mutationToken) {
+    try {
+      const defaultTokenFile = join(process.env.HOME || "/data", ".openmausbot", "mutation-token");
+      if (existsSync(defaultTokenFile)) mutationToken = readFileSync(defaultTokenFile, "utf8").trim();
+    } catch {}
+  }
+  if (mutationToken) headers["x-openmausbot-desktop-owner"] = mutationToken;
+  const res = await fetch(`http://127.0.0.1:${port}${path}`, { method: init.method, body: init.body, headers, signal: AbortSignal.timeout(3000) });
   const body: unknown = await res.json().catch(() => ({}));
   return { status: res.status, body };
 }
@@ -398,7 +413,7 @@ async function showPhonePairing(options: CliOptions, origin: string | undefined,
     return false;
   }
   for (const line of phonePairingInstructions(options.phone ?? "ios", { origin: origin!, ready })) log(line);
-  log(await mintPairing(options.port, { client: true, label: options.label ?? (options.phone === "android" ? "Android" : "iPhone / iPad"), publicUrl: origin }));
+  log(await mintPairing(options.port, { client: true, label: options.label ?? (options.phone === "android" ? "Android" : "iPhone / iPad"), publicUrl: origin, dataDir: options.dataDir }));
   log("Waiting for you to connect on the phone. Keep this terminal and the code private.");
   return true;
 }
@@ -425,11 +440,11 @@ export function qrToString(text: string): string {
   return out;
 }
 
-async function mintPairing(port: number, options: { label?: string; client?: boolean; publicUrl?: string }): Promise<string> {
+async function mintPairing(port: number, options: { label?: string; client?: boolean; publicUrl?: string; dataDir?: string }): Promise<string> {
   const request: { label?: string; scopes?: string[] } = {};
   if (options.label) request.label = options.label;
   if (options.client) request.scopes = ["client"];
-  const { status, body } = await api(port, "/api/auth/pairing", { method: "POST", body: JSON.stringify(request) });
+  const { status, body } = await api(port, "/api/auth/pairing", { method: "POST", body: JSON.stringify(request), dataDir: options.dataDir });
   if (status !== 200) throw new Error(`server refused to mint a pairing code: ${typeof body?.error === "string" ? body.error : status}`);
   const url = options.publicUrl ? `${options.publicUrl}/pair#code=${body.code}` : typeof body.url === "string" ? body.url : null;
   return pairingBlock({ code: body.code, url, expiresAt: body.expiresAt, hint: typeof body.hint === "string" ? body.hint : null });
@@ -474,7 +489,7 @@ export async function runPair(options: CliOptions): Promise<number> {
       return 130;
     }
   }
-  console.log(await mintPairing(options.port, { label: options.label, client: options.client, publicUrl: options.publicUrl }));
+  console.log(await mintPairing(options.port, { label: options.label, client: options.client, publicUrl: options.publicUrl, dataDir: options.dataDir }));
   if (options.client) console.log("(client scope: chat and approvals only; cannot change settings or pair others)");
   return 0;
 }

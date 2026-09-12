@@ -39,21 +39,34 @@ RUN apt-get update \
     libfontconfig1 libdbus-1-3 libnss3 libnss3-tools libnspr4 \
     libatk-bridge2.0-0 libdrm2 libxkbcommon0 libatspi2.0-0 libcups2 \
     libxshmfence1 libgbm1 fonts-noto-color-emoji fonts-noto-cjk fonts-freefont-ttf \
+    chromium \
   && rm -rf /var/lib/apt/lists/* \
   && useradd --create-home --home-dir /data --shell /bin/bash maus
 WORKDIR /app
 COPY --from=build --chown=maus:maus /src/dist-server ./dist-server
 COPY --from=build --chown=maus:maus /src/dist ./dist
-# Optional engine CLIs baked into the image (space-separated npm packages).
-ARG ENGINES=""
-RUN if [ -n "$ENGINES" ]; then npm install -g $ENGINES; fi
+# Install coding agent CLIs out of the box:
+# Claude Code, Codex, OpenCode, Qwen Code, Pi
+ARG ENGINES="@anthropic-ai/claude-code @openai/codex opencode-ai @qwen-code/qwen-code @earendil-works/pi-coding-agent"
+RUN npm install -g $ENGINES
+
+# Install Grok CLI into /opt/grok so it survives empty volume mounts at /data
+RUN HOME=/opt/grok GROK_BIN_DIR=/opt/grok/bin bash <(curl -fsSL https://x.ai/cli/install.sh) \
+  && cp -f /opt/grok/downloads/grok-* /usr/local/bin/grok \
+  && chmod a+rx /usr/local/bin/grok \
+  && rm -rf /opt/grok
+RUN curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --skip-setup --no-skills \
+  && chmod -R a+rx /usr/local/lib/hermes-agent /usr/local/share/uv
+
+COPY --chown=maus:maus scripts/setup-router-agents.mjs /app/scripts/setup-router-agents.mjs
+COPY deploy/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 # The bots' browser (docs/plans/browser-engine.md): the pinned agent-browser
 # and a Chrome for Testing with its libraries, so a server bot can browse.
 # Pin here and in server/browser-engine-release.ts together.
 ARG AGENT_BROWSER_VERSION=0.37.0
 RUN npm install -g agent-browser@${AGENT_BROWSER_VERSION} \
-  && HOME=/opt/openmausbot-browser agent-browser install \
-  && ln -s /opt/openmausbot-browser/.agent-browser/browsers/chrome-*/chrome /opt/openmausbot-browser/chrome \
+  && (HOME=/opt/openmausbot-browser agent-browser install && ln -s /opt/openmausbot-browser/.agent-browser/browsers/chrome-*/chrome /opt/openmausbot-browser/chrome || (mkdir -p /opt/openmausbot-browser && ln -s /usr/bin/chromium /opt/openmausbot-browser/chrome)) \
   && agent-browser --version
 # Keep the baked-in browser outside both root's private home and /data,
 # which may be an existing mounted volume. Session state still lives in HOME.
@@ -65,7 +78,7 @@ ENV HOME=/data \
     OMB_WEBHOOK_PORT=8800 \
     NODE_ENV=production
 VOLUME ["/data"]
-USER maus
+ENTRYPOINT ["docker-entrypoint.sh"]
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD curl -sf http://127.0.0.1:8799/api/health | grep -q openmausbot || exit 1
 CMD ["node", "dist-server/index.js"]
