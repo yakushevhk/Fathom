@@ -23,6 +23,7 @@ import {
   type FailedComposerSend,
 } from "@/lib/drafts";
 import { BotAvatar } from "./Avatar";
+import { triggerHaptic } from "@/lib/haptics";
 import { MentionTextarea } from "./MentionTextarea";
 import { ComposerAttachments, pathForFile } from "./ComposerAttachments";
 import { LocalComputerAutoWarning } from "./LocalComputerAutoWarning";
@@ -614,12 +615,51 @@ export function Composer({
   }, [recording, editText]);
 
   const toggleMic = () => {
+    triggerHaptic("tap");
     if (!capabilities.dictation.available || !window.ogb) {
       setSpeechError(t("composer.dictation.unavailable"));
       return;
     }
     baseText.current = text.trim();
     setRecording((r) => !r);
+  };
+
+  const [isDragOver, setIsDragOver] = useState(false);
+  const dragCounter = useRef(0);
+
+  const handleComposerDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current += 1;
+    if (e.dataTransfer.types.includes("Files")) {
+      setIsDragOver(true);
+    }
+  };
+
+  const handleComposerDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current -= 1;
+    if (dragCounter.current <= 0) {
+      setIsDragOver(false);
+      dragCounter.current = 0;
+    }
+  };
+
+  const handleComposerDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleComposerDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    dragCounter.current = 0;
+    triggerHaptic("light");
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      void pickFiles(e.dataTransfer.files);
+    }
   };
 
   return (
@@ -802,7 +842,25 @@ export function Composer({
             data-composer-backdrop
             className="pointer-events-none absolute -left-5 -right-5 -bottom-[max(0.75rem,env(safe-area-inset-bottom,0px))] top-1/2 bg-app"
           />
-        <div data-tour="composer" className="relative z-[1] rounded-3xl bg-composer/95 backdrop-blur-md px-2 py-1.5 ring-1 ring-composer-ring shadow-lg shadow-black/20">
+        <div
+          data-tour="composer"
+          onDragEnter={handleComposerDragEnter}
+          onDragLeave={handleComposerDragLeave}
+          onDragOver={handleComposerDragOver}
+          onDrop={handleComposerDrop}
+          className={cn(
+            "relative z-[1] rounded-3xl bg-composer/95 backdrop-blur-md px-2 py-1.5 ring-1 ring-composer-ring shadow-lg shadow-black/20 transition-all",
+            isDragOver && "ring-2 ring-accent border-accent/60 bg-accent/10 shadow-accent/20"
+          )}
+        >
+          {isDragOver && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center rounded-3xl bg-panel/90 backdrop-blur-sm border-2 border-dashed border-accent pointer-events-none">
+              <div className="flex items-center gap-2 text-sm font-medium text-accent animate-pulse">
+                <Paperclip size={18} />
+                <span>Drop files or images here</span>
+              </div>
+            </div>
+          )}
         {canApplyBotFullAccess && modeBot && !locked && (
           <button
             type="button"
@@ -1013,7 +1071,10 @@ export function Composer({
         )}
         {hasContent && !locked && (
           <button
-            onClick={send}
+            onClick={() => {
+              triggerHaptic("tap");
+              send();
+            }}
             disabled={attachmentPending}
             aria-label={
               busy && canSteer

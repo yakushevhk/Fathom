@@ -635,6 +635,12 @@ export interface AppState {
   /** the guided tour on the live interface that follows the welcome flow */
   tourOpen: boolean;
   botSettingsSection: BotSettingsSection;
+  /** secondary split-pane chat target (botId or groupId), null when single-pane */
+  secondarySelectedId: string | null;
+  /** split ratio: 0.2 to 0.8 (default 0.5) */
+  splitRatio: number;
+  /** active focus pane: "primary" or "secondary" */
+  activeFocusPane: "primary" | "secondary";
   /** latest live frame of a bot's computer, per botId */
   screens: Record<string, { png: string; mime: string }>;
   /** bots whose cloud computer is being provisioned */
@@ -800,6 +806,10 @@ export type Action =
   | { type: "instances"; instances: InstanceInfo[] }
   | { type: "configStatus"; config: ConfigStatus }
   | { type: "select"; id: string }
+  | { type: "openSplitChat"; id: string }
+  | { type: "closeSplitChat" }
+  | { type: "setSplitRatio"; ratio: number }
+  | { type: "focusPane"; pane: "primary" | "secondary" }
   | {
       type: "send";
       botId: string;
@@ -1185,6 +1195,33 @@ export function reducer(state: AppState, action: Action): AppState {
         action.id,
         (b) => ({ ...b, unread: Boolean(b.tasks?.some((task) => task.threadId !== b.threadId && task.unread)), tasks: b.tasks?.map((task) => task.threadId === b.threadId ? { ...task, unread: false } : task) }),
       );
+    }
+    case "openSplitChat": {
+      if (action.id === state.selectedId) return state;
+      return {
+        ...state,
+        secondarySelectedId: action.id,
+        activeFocusPane: "secondary",
+      };
+    }
+    case "closeSplitChat": {
+      return {
+        ...state,
+        secondarySelectedId: null,
+        activeFocusPane: "primary",
+      };
+    }
+    case "setSplitRatio": {
+      return {
+        ...state,
+        splitRatio: Math.min(0.8, Math.max(0.2, action.ratio)),
+      };
+    }
+    case "focusPane": {
+      return {
+        ...state,
+        activeFocusPane: action.pane,
+      };
     }
     // optimistic card settle; the server's message.patch confirms it later
     case "answerCard": {
@@ -1811,6 +1848,9 @@ export const initialState: AppState = {
   instances: [],
   config: null,
   selectedId: "",
+  secondarySelectedId: null,
+  splitRatio: 0.5,
+  activeFocusPane: "primary",
   activeView: "chat",
   routines: [],
   routineRuns: [],

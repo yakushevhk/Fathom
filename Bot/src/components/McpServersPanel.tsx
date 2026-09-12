@@ -10,7 +10,9 @@ import {
   RefreshCw,
   ServerCog,
   Trash2,
+  Wrench,
 } from "lucide-react";
+import { McpToolInspector } from "./McpToolInspector";
 
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
@@ -151,6 +153,8 @@ export function McpServersPanel() {
     void load();
     return () => { loadGeneration.current += 1; };
   }, [load]);
+
+  const [inspectingServer, setInspectingServer] = useState<McpServerListing | null>(null);
 
   const closeEditor = () => {
     setEditing(null);
@@ -451,6 +455,9 @@ export function McpServersPanel() {
                       {server.envKeys.length > 0 && <div className="mt-1 truncate text-[11px] text-ink-secondary">{t("mcp.secretsSaved", { keys: server.envKeys.join(", ") })}</div>}
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
+                      <button type="button" onClick={() => setInspectingServer(server)} className="flex items-center gap-1.5 rounded-lg bg-control px-2.5 py-2 text-[12px] text-ink hover:bg-raised-hover" title="Inspect tools and run test payload">
+                        <Wrench size={14} className="text-accent" /> Sandbox
+                      </button>
                       <button type="button" disabled={busy !== null} onClick={() => void test(server)} className="flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-[12px] text-ink-secondary hover:bg-raised hover:text-ink disabled:opacity-40">
                         {busy === `test:${server.name}` ? <Loader2 size={14} className="animate-spin" /> : <FlaskConical size={14} />} {t("mcp.test")}
                       </button>
@@ -475,6 +482,14 @@ export function McpServersPanel() {
               );
             })}
           </div>
+        )}
+
+        {inspectingServer && (
+          <McpToolInspector
+            serverName={inspectingServer.name}
+            tools={probe[inspectingServer.name]?.tools ?? []}
+            onClose={() => setInspectingServer(null)}
+          />
         )}
       </div>
     </div>

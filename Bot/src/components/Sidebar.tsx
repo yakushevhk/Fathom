@@ -1,4 +1,5 @@
 import { track } from "@/lib/analytics";
+import { triggerHaptic } from "@/lib/haptics";
 import { createContext, useContext, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -1673,7 +1674,10 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
         <span className="text-[14px] font-semibold text-ink">Menu</span>
         <button
           type="button"
-          onClick={onClose}
+          onClick={() => {
+            triggerHaptic("tap");
+            onClose();
+          }}
           aria-label="Close menu"
           className="flex size-10 items-center justify-center rounded-lg text-ink-secondary hover:bg-raised hover:text-ink active:scale-95"
         >

@@ -32,6 +32,8 @@ import { repairMarkdownTables } from "../lib/markdown-tables";
 import { remarkThreadRefs } from "../lib/thread-refs";
 import { MarkdownImagePreview, useLocalFileSave, type MessageAttachmentContext } from "./AttachmentPreview";
 import { ThreadLink, threadLinkFromProps, useThreadRefs } from "./ThreadRefs";
+import { MermaidViewer } from "./MermaidViewer";
+import { KaTeXMath } from "./KaTeXMath";
 
 // tiny highlight cache so revisiting a thread doesn't re-tokenize settled
 // blocks; keys are content-hashed and capped. Streamed partials may land here
@@ -244,6 +246,16 @@ export function CodeBlock({ code, lang, streaming }: CodeBlockProps) {
       if (timer !== undefined) clearTimeout(timer);
     };
   }, [code, lang, streaming]);
+
+  // Intercept Mermaid diagrams
+  if (lang.toLowerCase() === "mermaid") {
+    return <MermaidViewer code={code} />;
+  }
+
+  // Intercept LaTeX Math block (math, latex, katex)
+  if (["math", "latex", "katex"].includes(lang.toLowerCase())) {
+    return <KaTeXMath math={code} block={true} />;
+  }
 
   const copy = () => {
     if (!navigator.clipboard?.writeText) return;
@@ -564,10 +576,11 @@ function ChatMarkdownComponent({ text, streaming = false, message, mentionPeers 
             );
           },
           code({ children }: { children?: ReactNode }) {
-            // break-words because a path or an identifier can be longer than
-            // the bubble is wide, and an unbreakable token has nowhere to go
-            // but outside it — off the left edge in a right-to-left paragraph,
-            // where the line ends.
+            const raw = typeof children === "string" ? children : "";
+            // Check for inline math $...$
+            if (raw.startsWith("$") && raw.endsWith("$") && raw.length > 2 && !raw.startsWith("$$")) {
+              return <KaTeXMath math={raw.slice(1, -1)} block={false} />;
+            }
             return (
               <code dir="ltr" className="rounded bg-inset px-1 py-px text-[13px] break-words [unicode-bidi:isolate]">{children}</code>
             );

@@ -27,7 +27,10 @@ import { CommandPalette } from "@/components/CommandPalette";
 import { KeyboardShortcutsModal } from "@/components/KeyboardShortcutsModal";
 import { LocalVmWorkspace } from "@/components/LocalVmWorkspace";
 import { TeamMapPage } from "@/components/TeamMapPage";
+import { SplitWorkspace } from "@/components/SplitWorkspace";
+import { SwarmCapabilityMatrix } from "@/components/SwarmCapabilityMatrix";
 import { setLocale } from "@/lib/i18n";
+import { triggerHaptic } from "@/lib/haptics";
 import { shouldOpenKeyboardShortcuts } from "@/lib/keyboard-shortcuts";
 
 function Shell() {
@@ -52,6 +55,14 @@ function Shell() {
     setLocaleEpoch((epoch) => epoch + 1);
   }, [language]);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [capabilityMatrixOpen, setCapabilityMatrixOpen] = useState(false);
+
+  useEffect(() => {
+    const onOpenMatrix = () => setCapabilityMatrixOpen(true);
+    window.addEventListener("open-swarm-matrix", onOpenMatrix);
+    return () => window.removeEventListener("open-swarm-matrix", onOpenMatrix);
+  }, []);
+
   const [localVmWorkspaceBotId, setLocalVmWorkspaceBotId] = useState<string | null>(null);
   // the Browser tab, expanded into the main column (the small preview in
   // the panel hands off to this and back)
@@ -210,7 +221,10 @@ function Shell() {
         ref={menuButtonRef}
         aria-label="Open bot list"
         aria-expanded={drawerOpen}
-        onClick={() => setDrawerOpen(true)}
+        onClick={() => {
+          triggerHaptic("tap");
+          setDrawerOpen(true);
+        }}
         className="absolute left-2 top-[calc(0.625rem+env(safe-area-inset-top,0px))] z-30 flex size-11 items-center justify-center rounded-xl bg-panel/85 text-ink-secondary backdrop-blur-sm border border-hairline/40 shadow-sm active:scale-95 hover:bg-raised hover:text-ink md:hidden"
       >
         <Menu size={20} />
@@ -243,6 +257,13 @@ function Shell() {
         />
       ) : noEngines ? (
         <NoEngines />
+      ) : state.secondarySelectedId ? (
+        <SplitWorkspace
+          primaryBot={bot}
+          primaryGroup={group}
+          secondaryBot={state.bots.find((b) => b.id === state.secondarySelectedId)}
+          secondaryGroup={state.groups.find((g) => g.id === state.secondarySelectedId)}
+        />
       ) : group ? (
         <GroupView key={group.id} group={group} />
       ) : bot ? (
@@ -289,6 +310,9 @@ function Shell() {
       {/* mounted after the modals: same z-50 tier, so DOM order keeps the
           palette on top when one of them is open underneath */}
       <CommandPalette onOpenChange={setPaletteOpen} />
+      {capabilityMatrixOpen && (
+        <SwarmCapabilityMatrix onClose={() => setCapabilityMatrixOpen(false)} />
+      )}
       </div>
     </div>
   );
