@@ -13,6 +13,7 @@ import {
 import { ThinkingOrb } from "thinking-orbs";
 import { BorderBeam } from "border-beam";
 import { cn } from "@/lib/cn";
+import { WorkingTimer } from "@/components/WorkingIndicator";
 import type { Message } from "@/state/store";
 interface ThinkingAccordionProps {
   reasoning: string;
@@ -33,11 +34,11 @@ export function ThinkingAccordion({
 
   const charCount = reasoning.length;
   const estimatedTokens = Math.max(1, Math.round(charCount / 4));
-  const toolStepsCount = steps.filter((s) => s.kind === "activity" && s.tool).length;
-  const inFlightStep = steps.find(
-    (s) => s.kind === "activity" && s.tool && s.tool.ok === undefined,
-  );
-
+  const toolSteps = steps.filter((s) => s.kind === "activity" && s.tool);
+  const toolStepsCount = toolSteps.length;
+  const runningStepsCount = toolSteps.filter((s) => s.tool && s.tool.ok === undefined).length;
+  const doneStepsCount = toolSteps.filter((s) => s.tool && s.tool.ok === true).length;
+  const inFlightStep = toolSteps.find((s) => s.tool && s.tool.ok === undefined);
   const content = (
     <div className="my-2.5 max-w-3xl overflow-hidden rounded-xl border border-hairline/40 bg-card shadow-xs transition-all">
       <button
@@ -67,10 +68,12 @@ export function ThinkingAccordion({
           </span>
           {/* Tool calls & steps count badge */}
           {toolStepsCount > 0 && (
-            <span className="flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-[11px] font-medium text-accent">
+            <span className="flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-0.5 text-[11px] font-medium text-accent border border-accent/25">
               <Layers size={11} />
               <span>
                 {toolStepsCount} {toolStepsCount === 1 ? "step" : "steps"}
+                {runningStepsCount > 0 && ` (${runningStepsCount} running${doneStepsCount > 0 ? `, ${doneStepsCount} done` : ""})`}
+                {runningStepsCount === 0 && doneStepsCount > 0 && ` (${doneStepsCount} done)`}
               </span>
             </span>
           )}
@@ -100,12 +103,27 @@ export function ThinkingAccordion({
           {/* Tool execution steps log */}
           {steps.length > 0 && (
             <div className="space-y-1.5">
-              <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-ink-secondary">
-                <Terminal size={12} />
-                <span>Tool Calls & Operations ({steps.length})</span>
+              <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-ink-secondary">
+                <div className="flex items-center gap-1.5">
+                  <Terminal size={12} />
+                  <span>Tool Calls & Operations ({steps.length})</span>
+                </div>
+                <div className="flex items-center gap-2 font-mono text-[10.5px] normal-case tracking-normal">
+                  {runningStepsCount > 0 && (
+                    <span className="text-accent flex items-center gap-1">
+                      <span className="size-1.5 rounded-full bg-accent animate-ping" />
+                      {runningStepsCount} in progress
+                    </span>
+                  )}
+                  {doneStepsCount > 0 && (
+                    <span className="text-success">
+                      {doneStepsCount} completed
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="divide-y divide-hairline/30 rounded-xl border border-hairline/40 bg-panel/80 overflow-hidden">
-                {steps.map((step) => {
+                {steps.map((step, idx) => {
                   const tool = step.tool;
                   if (!tool) return null;
                   const isFailed = tool.ok === false;
@@ -142,7 +160,7 @@ export function ThinkingAccordion({
                             ? "border-hairline/50 bg-control text-ink"
                             : "border-hairline/30 bg-raised text-ink-secondary"
                         )}>
-                          {isTask ? "🤖 " + tool.name : isBash ? "$ " + tool.name : tool.name}
+                          {isTask ? "🤖 Subagent #" + (idx + 1) : isBash ? "$ " + tool.name : tool.name}
                         </span>
 
                         {tool.summary && tool.summary !== tool.name ? (
@@ -151,12 +169,17 @@ export function ThinkingAccordion({
                           </span>
                         ) : (
                           <span className="text-ink-secondary truncate max-w-[300px]">
-                            {isTask ? `Subagent task #${steps.indexOf(step) + 1} execution…` : isBash ? "Shell command execution…" : "Tool execution in progress…"}
+                            {isTask ? `Subagent task #${idx + 1} execution…` : isBash ? "Shell command execution…" : "Tool execution in progress…"}
                           </span>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-1.5 text-[10px] font-mono shrink-0">
+                      <div className="flex items-center gap-2 text-[10.5px] font-mono shrink-0">
+                        {step.at && (
+                          <span className="text-ink-secondary/60 text-[10px] tabular-nums">
+                            {isRunning ? <WorkingTimer since={step.at} /> : null}
+                          </span>
+                        )}
                         {isRunning ? (
                           <span className="inline-flex items-center gap-1 rounded bg-accent/10 border border-accent/20 px-1.5 py-0.2 text-accent animate-pulse font-semibold">
                             <span className="size-1.5 rounded-full bg-accent animate-ping" />
