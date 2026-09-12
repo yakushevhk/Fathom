@@ -911,19 +911,24 @@ export function Composer({
             data-composer-backdrop
             className="pointer-events-none absolute -left-5 -right-5 -bottom-[max(0.75rem,env(safe-area-inset-bottom,0px))] top-1/2 bg-app"
           />
-        <div
-          data-tour="composer"
-          onDragEnter={handleComposerDragEnter}
-          onDragLeave={handleComposerDragLeave}
-          onDragOver={handleComposerDragOver}
-          onDrop={handleComposerDrop}
-          className={cn(
-            "relative z-[1] rounded-xl bg-[#0c0c0c] px-3 py-2 border border-[#222222] shadow-2xl transition-all overflow-hidden",
-            isDragOver && "border-white/60 bg-[#141414]"
-          )}
+        <BorderBeam
+          size="md"
+          colorVariant="colorful"
+          duration={6}
+          className="w-full"
         >
-          <BorderBeam size="line" colorVariant="mono">{null}</BorderBeam>
-          {isDragOver && (
+          <div
+            data-tour="composer"
+            onDragEnter={handleComposerDragEnter}
+            onDragLeave={handleComposerDragLeave}
+            onDragOver={handleComposerDragOver}
+            onDrop={handleComposerDrop}
+            className={cn(
+              "relative z-[1] rounded-2xl bg-[#0d0d0d] px-3.5 py-2.5 border border-[#222222] shadow-2xl transition-all",
+              isDragOver && "border-white/60 bg-[#141414]"
+            )}
+          >
+            {isDragOver && (
             <div className="absolute inset-0 z-20 flex items-center justify-center rounded-3xl bg-panel/90 backdrop-blur-sm border-2 border-dashed border-accent pointer-events-none">
               <div className="flex items-center gap-2 text-sm font-medium text-accent animate-pulse">
                 <Paperclip size={18} />
@@ -1174,6 +1179,7 @@ export function Composer({
         </div>
         {bot && !group && !remoteClient && !locked && <ComposerTray bot={bot} />}
         </div>
+        </BorderBeam>
         </div>
       </div>
       <div className="pointer-events-auto">

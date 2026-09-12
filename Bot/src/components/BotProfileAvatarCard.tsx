@@ -188,6 +188,42 @@ export function BotProfileAvatarCard({
             </button>
           ))}
         </div>
+        {crop === "orb" && (
+          <>
+            <div className="mb-2 mt-4 text-[12px] font-medium uppercase tracking-[0.08em] text-ink-secondary">
+              Orb Animation State
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {(
+                [
+                  { id: "breathing", label: "Breathing" },
+                  { id: "solving", label: "Solving" },
+                  { id: "working", label: "Working" },
+                  { id: "listening", label: "Listening" },
+                  { id: "connecting", label: "Connecting" },
+                  { id: "weaving", label: "Weaving" },
+                  { id: "searching", label: "Searching" },
+                  { id: "shaping", label: "Shaping" },
+                  { id: "composing", label: "Composing" },
+                ] as const
+              ).map((mode) => (
+                <button
+                  key={mode.id}
+                  type="button"
+                  disabled={busy}
+                  aria-pressed={(bot.mascotExpression ?? "breathing") === mode.id}
+                  onClick={() => onPatch({ mascotExpression: mode.id })}
+                  className={cn(
+                    "flex flex-col items-center justify-center gap-1 rounded-xl bg-inset p-2.5 transition-colors hover:bg-control disabled:opacity-50 border",
+                    (bot.mascotExpression ?? "breathing") === mode.id ? "border-white bg-control text-white" : "border-hairline/30 text-ink-secondary"
+                  )}
+                >
+                  <span className="text-[12px] font-mono font-medium">{mode.label}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         {crop === "mascot" && (
           <>

@@ -259,7 +259,10 @@ export function BotAvatar({ bot, size = 44, label, ...mascotProps }: BotAvatarPr
       confused: "searching",
       alerting: "composing",
     };
-    const orbState: OrbState = orbStateMap[mascotProps.state ?? "idle"] ?? (mascotProps.state === "working" ? "working" : "breathing");
+    const specificOrb = (bot as { mascotExpression?: string | null })?.mascotExpression;
+    const orbState: OrbState = (specificOrb && ["working", "searching", "solving", "listening", "connecting", "weaving", "composing", "breathing", "shaping"].includes(specificOrb))
+      ? (specificOrb as OrbState)
+      : (orbStateMap[mascotProps.state ?? "idle"] ?? (mascotProps.state === "working" ? "working" : "breathing"));
     const orbSizePreset = size <= 28 ? 20 : 64;
 
     return (
