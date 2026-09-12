@@ -1,4 +1,4 @@
-// Parallel server — the harness host. Clients hold no transports
+// OpenMausBot server — the harness host. Clients hold no transports
 // (upstream rule): the React app dispatches typed commands over HTTP and
 // folds one SSE event stream; every provider process runs here.
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
@@ -154,7 +154,7 @@ import {
   parseMcpServersImport,
   parseStoredMcpServer,
 } from "./mcp-registry.ts";
-import { probeMcpServer } from "./mcp-probe.ts";
+import { probeMcpServer, callMcpServerTool } from "./mcp-probe.ts";
 import {
   GROUP_GOAL_MAX_TURNS,
   groupGoalAssignmentKey,
@@ -447,9 +447,12 @@ const ENVIRONMENT_ID = loadEnvironmentId(DATA_DIR);
 const sessions = new SessionRegistry({ file: join(DATA_DIR, "sessions.json") });
 const SESSION_COOKIE = sessionCookieName(PORT, ENVIRONMENT_ID);
 const DESKTOP_MANAGED = process.env.OMB_DESKTOP_PARENT === "1";
-// Empty is deliberately a deny-all bootstrap state. Only Electron's private
-// utility-process port can replace it with the per-launch owner capability.
-let desktopMutationToken: string | undefined = DESKTOP_MANAGED ? "" : undefined;
+// In desktop mode, initialized to empty deny-all until Electron utility-process sets it.
+// In headless server mode, auto-generate a secure 32-byte hex token or read OMB_MUTATION_TOKEN
+// to prevent SSRF / unauthenticated loopback mutations.
+let desktopMutationToken: string | undefined = DESKTOP_MANAGED
+  ? ""
+  : (process.env.OMB_MUTATION_TOKEN || randomBytes(32).toString("hex"));
 let companionMutationToken: string | undefined = DESKTOP_MANAGED ? "" : undefined;
 // Where remote clients reach this server (a proxy's public address); pairing URLs use it.
 const FALLBACK_PUBLIC_URL = process.env.OMB_PUBLIC_URL?.trim().replace(/\/+$/, "") || null;
@@ -580,7 +583,7 @@ const browserCleanup: BrowserCleanupCoordinator = new BrowserCleanupCoordinator(
     const work = status.kind === "ready" && sessions.length
       ? Promise.all(sessions.map(async (session) => {
           const ok = await clearBrowserSessionState(status.binaryPath, session, { encryptionKey: browserEngineEncryptionKey() });
-          if (!ok) console.warn(`browser cleanup: could not clear saved state for session ${session}; restart Parallel to retry this profile's cleanup. Do not use state clear --all: it erases other profiles too.`);
+          if (!ok) console.warn(`browser cleanup: could not clear saved state for session ${session}; restart OpenMausBot to retry this profile's cleanup. Do not use state clear --all: it erases other profiles too.`);
           return ok;
         }))
       : Promise.resolve([true]);
@@ -734,7 +737,8 @@ function internalCapabilityIsActive(capability: InternalCapability): boolean {
 // Cap message chains: depth 0 = a user-initiated turn (may ask a peer);
 // a peer invoked via ask_bot runs at depth 1 and gets NO agents tool, so
 // A→B is allowed but B→C (and A→B→A loops) never start.
-const MAX_COMMS_DEPTH = 1;
+// Configurable maximum comms depth (defaults to 3, allowing coordinator -> specialist -> helper hierarchy)
+const MAX_COMMS_DEPTH = Math.max(1, parseInt(process.env.OMB_MAX_COMMS_DEPTH || "3", 10));
 const MAX_WORKSPACE_BOTS = 100;
 const createSidebarSectionSchema = z.object({
   name: z.string(),
@@ -1421,7 +1425,7 @@ function previewSystemPrompt(bot: BotRecord) {
   // `cfg` is the module-level config (`const cfg = loadConfig()` near the
   // top of index.ts), the same object the turn code reads.
   const persona = [
-    `You are ${bot.name}, a personal bot in Parallel.`,
+    `You are ${bot.name}, a personal bot in OpenMausBot.`,
     bot.title && `Role: ${bot.title}.`,
     bot.description && `About: ${bot.description}`,
   ]
@@ -3377,7 +3381,7 @@ bus.subscribe((event: RuntimeEvent) => {
       const permission = event.requestType === "permission";
       // A permission request here is one the provider left for a person: its
       // own mode already ran (Ask, Edits, Auto's reviewer, Custom's config).
-      // Parallel decides nothing about the action itself. Only Full access
+      // OpenMausBot decides nothing about the action itself. Only Full access
       // answers, because that is exactly what the person granted. A QUESTION
       // always reaches the human — even Full access never invents an answer.
       const asker = bot ?? (speaker ? store.bot(speaker.botId) : undefined);
@@ -4659,7 +4663,7 @@ async function startTurn(
   const recoveryText = resumeCursor !== undefined ? buildRecoveryText({ text: turnText, transcript }) : undefined;
 
   const persona = [
-    `You are ${bot.name}, a personal bot in Parallel.`,
+    `You are ${bot.name}, a personal bot in OpenMausBot.`,
     bot.title && `Role: ${bot.title}.`,
     bot.description && `About: ${bot.description}`,
   ]
@@ -4847,7 +4851,7 @@ async function startTurn(
           throw new Error("this model engine cannot control this computer — choose Claude or an ACP engine, or select another destination");
         }
         const cua = readCuaConnection();
-        if (!cua) throw new Error("CUA Driver is not ready for this computer — check permissions and restart Parallel");
+        if (!cua) throw new Error("CUA Driver is not ready for this computer — check permissions and restart OpenMausBot");
         bindTurnComputer(resourceOwner, "computer:host");
         integrations.localComputer = gatedLocalComputer(cua, controlIntegration(bot.id, threadId, dispatchClaimId));
         computerKind = "local";
@@ -5554,10 +5558,10 @@ store.reconcileInterruptedGroupGoals((runId, threadId) => {
   );
   const detail = run.output ?? run.error ?? (
     status === "completed"
-      ? "The scheduled team goal completed before Parallel restarted."
+      ? "The scheduled team goal completed before OpenMausBot restarted."
       : status === "stopped"
         ? "The scheduled team goal was stopped."
-        : "Parallel restarted before this scheduled team goal finished."
+        : "OpenMausBot restarted before this scheduled team goal finished."
   );
   return { status, detail, finishedAt: run.finishedAt ?? groupGoalRecoveryAt };
 });
@@ -5595,7 +5599,7 @@ async function cloudRoutineReadiness(): Promise<{ ready: boolean; reason?: strin
   }
   const instance = registry.instances().find((candidate) => candidate.driverKind === "boxAgent");
   if (!instance) {
-    return { ready: false, reason: "The Cloud VM runner is unavailable. Restart Parallel and try again." };
+    return { ready: false, reason: "The Cloud VM runner is unavailable. Restart OpenMausBot and try again." };
   }
   try {
     const snapshot = await instance.snapshot();
@@ -6262,7 +6266,7 @@ async function runGroupMemberTurn(
     ? reachablePeers(store.bots, bot).filter((peer) => !readyGroup.memberIds.includes(peer.id))
     : [];
   const system = [
-    `You are ${bot.name}, a bot in the room "${readyGroup.name}" in Parallel.`,
+    `You are ${bot.name}, a bot in the room "${readyGroup.name}" in OpenMausBot.`,
     bot.title && `Role: ${bot.title}.`,
     bot.description && `About: ${bot.description}`,
     `Room members: ${roster}, and ${userName} (the human).`,
@@ -7656,7 +7660,7 @@ function dispatchConnectorResume(entry: { botId: string; threadId: string; resum
   const owner = connectorThread(entry.botId, entry.threadId);
   if (!owner) return;
   const names = entry.labels.join(", ");
-  const prompt = `Parallel connection update: the user securely connected ${names}. Continue the task that paused for this connection. Do not ask them to connect it again.`;
+  const prompt = `OpenMausBot connection update: the user securely connected ${names}. Continue the task that paused for this connection. Do not ask them to connect it again.`;
   if (owner.group ? owner.bot.busy : threadBusy(entry.botId, entry.threadId) || activeGroupTurnForBot(entry.botId)) {
     pendingConnectorResumes.set(`${entry.threadId}:${entry.resumeKey}`, entry);
     return;
@@ -7763,7 +7767,7 @@ function phoneSecretSubmissionKey(threadId: string, messageId: string, requestKe
 }
 
 function credentialDesktopHandoff(label: string): string {
-  return `Securely provide the ${label} from Parallel on your phone or computer. It is never added to chat.`;
+  return `Securely provide the ${label} from OpenMausBot on your phone or computer. It is never added to chat.`;
 }
 
 function secretMessage(botId: string, threadId: string, messageId: string): Message | null {
@@ -7800,8 +7804,8 @@ function dispatchSecretResume(entry: SecretResumeEntry) {
   if (!owner) return;
   const prompt =
     entry.outcome === "provided"
-      ? `Parallel credential update: the user securely provided ${entry.label}. Continue the task that paused for it. You do not receive the secret and must not ask them to paste it into chat.`
-      : `Parallel credential update: the user declined to provide ${entry.label}. Continue without it if possible, or briefly explain the limitation. Do not ask them to paste it into chat.`;
+      ? `OpenMausBot credential update: the user securely provided ${entry.label}. Continue the task that paused for it. You do not receive the secret and must not ask them to paste it into chat.`
+      : `OpenMausBot credential update: the user declined to provide ${entry.label}. Continue without it if possible, or briefly explain the limitation. Do not ask them to paste it into chat.`;
   if (owner.group ? owner.bot.busy : threadBusy(entry.botId, entry.threadId) || activeGroupTurnForBot(entry.botId)) {
     pendingSecretResumes.set(`${entry.threadId}:${entry.messageId}`, entry);
     return;
@@ -8666,7 +8670,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       res.setHeader("cache-control", "no-store");
       if (method === "GET") return json(res, 200, customDomainStatus());
       if (method === "POST" || method === "DELETE") {
-        if (DESKTOP_MANAGED) return json(res, 409, { error: "Custom domains are configured on a self-hosted Parallel server, not the desktop companion." });
+        if (DESKTOP_MANAGED) return json(res, 409, { error: "Custom domains are configured on a self-hosted OpenMausBot server, not the desktop companion." });
         if (!/^application\/json\b/i.test(String(req.headers["content-type"] ?? ""))) {
           return json(res, 415, { error: "content-type must be application/json" });
         }
@@ -9249,7 +9253,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
         const depth = internalCapability.depth;
         if (!toBotId || !message) return json(res, 400, { error: "toBotId and message required" });
         if (toBotId === fromBotId) return json(res, 400, { error: "a bot cannot message itself" });
-        if (depth >= MAX_COMMS_DEPTH) return json(res, 200, { error: "message chains are limited to one hop" });
+        if (depth >= MAX_COMMS_DEPTH) return json(res, 200, { error: `message chains are limited to ${MAX_COMMS_DEPTH} hops` });
         const target = store.bot(toBotId);
         if (!target) return json(res, 404, { error: "no such bot" });
         // An unknown sender used to fall through: no mirroring AND no
@@ -9715,7 +9719,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
         // again in the drain at dispatch time.
         const depth = internalCapability.depth;
         if (depth >= MAX_COMMS_DEPTH) {
-          return json(res, 200, { error: "thread chains are limited to one hop — open the thread on yourself, or do this one here" });
+          return json(res, 200, { error: `thread chains are limited to ${MAX_COMMS_DEPTH} hops — open the thread on yourself, or do this one here` });
         }
         if (sectionKey(from.section) !== sectionKey(target.section)) {
           return json(res, 403, { error: "that bot belongs to a different section" });
@@ -10188,7 +10192,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
     // ── independent webhook triggers ────────────────────────────────────
     // Management stays on the app-only server. Actual deliveries land on a
     // second, webhook-only loopback listener so Funnel or a future hosted
-    // relay never has to expose the rest of Parallel's control surface.
+    // relay never has to expose the rest of OpenMausBot's control surface.
     if (path === "/api/webhooks" && method === "GET") {
       return json(res, 200, { webhooks: webhooks.list(), attempts: webhooks.listAttempts(), ingress: webhookIngressStatus() });
     }
@@ -10417,7 +10421,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
     // a bot must render a Markdown link to it, while a user message must carry
     // the exact standalone attachment tag written by the composer. The bot
     // branch derives conversation/workspace roots; the user branch is limited
-    // to Parallel's private attachment directory. This is deliberately not
+    // to OpenMausBot's private attachment directory. This is deliberately not
     // a general path reader.
     m = path.match(/^\/api\/threads\/([\w-]+)\/messages\/([\w-]+)\/file$/);
     const streamsMessageImage = Boolean(
@@ -12148,7 +12152,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
           });
         }
         // LIST is eventually consistent, and a remembered Box may also have
-        // been renamed outside Parallel. The create journal is stronger
+        // been renamed outside OpenMausBot. The create journal is stronger
         // ownership evidence: inspect every durable id directly before the bot
         // record that makes it discoverable can be removed. Missing credentials
         // or an unavailable provider must fail closed.
@@ -12561,7 +12565,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       // to open by hand instead.
       const workspacePath = memoryOverview(m[1]).workspacePath;
       if (auth.kind !== "loopback") {
-        return json(res, 403, { error: `This only works on the computer running Parallel. The memory folder there is ${workspacePath}`, workspacePath });
+        return json(res, 403, { error: `This only works on the computer running OpenMausBot. The memory folder there is ${workspacePath}`, workspacePath });
       }
       const opened = await openMemoryLocation(m[1], parsed.data.target);
       if (!opened.ok) return json(res, 500, { error: opened.error, workspacePath: opened.workspacePath });
@@ -13605,7 +13609,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
           return json(res, 200, { instances: await describeInstances() });
         }
         if (action === "install") {
-          if (!(await registry.installRuntime(instanceId))) return json(res, 404, { error: "Installing this engine from Settings is not available on this server. Use the install command on the machine running Parallel." });
+          if (!(await registry.installRuntime(instanceId))) return json(res, 404, { error: "Installing this engine from Settings is not available on this server. Use the install command on the machine running OpenMausBot." });
           return json(res, 200, { instances: await describeInstances() });
         }
         if (action === "auth/start") {
@@ -13818,6 +13822,32 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       } finally {
         res.off("close", disconnect);
         mcpProbesInFlight -= 1;
+      }
+    }
+
+    const mcpCall = /^\/api\/mcp\/servers\/([a-z][a-z0-9_-]{0,31})\/call$/.exec(path);
+    if (method === "POST" && mcpCall) {
+      const raw = cfg.mcpServers?.[mcpCall[1]];
+      if (raw === undefined) return json(res, 404, { error: "MCP server not found." });
+      const parsed = parseStoredMcpServer(mcpCall[1], raw);
+      if (!parsed.ok) return json(res, 400, { error: parsed.error });
+      const body = await readBody(req);
+      const toolName = typeof body?.tool === "string" ? body.tool.trim() : "";
+      if (!toolName) return json(res, 400, { error: "Missing tool name." });
+      const toolArgs = body?.arguments && typeof body.arguments === "object" ? body.arguments : {};
+      
+      const controller = new AbortController();
+      const disconnect = () => {
+        if (!res.writableEnded) controller.abort();
+      };
+      res.once("close", disconnect);
+      const startMs = Date.now();
+      try {
+        const result = await callMcpServerTool(parsed.server, toolName, toolArgs as Record<string, unknown>, 15_000, controller.signal);
+        const durationMs = Date.now() - startMs;
+        return json(res, 200, { ...result, durationMs });
+      } finally {
+        res.off("close", disconnect);
       }
     }
 

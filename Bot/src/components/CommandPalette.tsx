@@ -3,6 +3,7 @@ import {
   Bot as BotIcon,
   Calculator,
   Columns,
+  Database,
   Download,
   FolderPlus,
   HelpCircle,
@@ -10,6 +11,7 @@ import {
   Layers,
   MessageSquare,
   Monitor,
+  Network,
   Plus,
   RefreshCw,
   Search,
@@ -178,6 +180,34 @@ export function CommandPalette({ onOpenChange }: { onOpenChange?: (open: boolean
             dispatch({ type: "openSplitChat", id: alternate.id });
           }
         }
+      },
+    },
+    {
+      id: "toggle-zen-mode",
+      title: "Toggle Zen Mode (Distraction-Free)",
+      subtitle: "Focus purely on active chat transcript without peripheral chrome",
+      shortcut: "⌘⇧D",
+      icon: Layers,
+      perform: () => {
+        window.dispatchEvent(new CustomEvent("toggle-zen-mode"));
+      },
+    },
+    {
+      id: "open-memory-manager",
+      title: "Open Memory & Knowledge Graph Manager",
+      subtitle: "Inspect entities, topic files, and vector embeddings",
+      icon: Database,
+      perform: () => {
+        window.dispatchEvent(new CustomEvent("open-memory-manager"));
+      },
+    },
+    {
+      id: "open-dag-visualizer",
+      title: "Open Swarm DAG Workflow Visualizer",
+      subtitle: "Inspect multi-agent DAG pipeline, consensus debate & step debugger",
+      icon: Network,
+      perform: () => {
+        window.dispatchEvent(new CustomEvent("open-dag-visualizer"));
       },
     },
     {

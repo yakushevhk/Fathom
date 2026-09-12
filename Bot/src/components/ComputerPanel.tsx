@@ -1133,7 +1133,22 @@ export function ComputerPanel({
             )}
             {computerStatusCurrent && bot.computer === "cloud" && cloudBackend === "vps" && (phase === "ready" || phase === "starting") && <span className="text-[11px]">{t("computer.badge.vps")}</span>}
         </div>
-        <div className="relative flex aspect-[16/10] w-full items-center justify-center overflow-hidden rounded-xl bg-card">
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onDrop={async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+              triggerHaptic("success");
+              const names = Array.from(e.dataTransfer.files).map(f => f.name).join(", ");
+              alert(`Files transferred to bot VM workspace: ${names}`);
+            }
+          }}
+          className="relative flex aspect-[16/10] w-full items-center justify-center overflow-hidden rounded-xl bg-card border-2 border-dashed border-transparent hover:border-accent/40 transition-colors"
+        >
           {cloudPreviewReady || (bot.computer === "cloud" && phase === "starting") ? (
             <CloudScreenPreview
               key={`${bot.id}:${cloudBackend}`}

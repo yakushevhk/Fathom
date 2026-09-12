@@ -10,10 +10,15 @@ import { killCliTree, spawnCli } from "./procs.ts";
 export interface McpProbeTool {
   name: string;
   description?: string;
+  inputSchema?: Record<string, unknown>;
 }
 
 export type McpProbeResult =
   | { ok: true; tools: McpProbeTool[] }
+  | { ok: false; error: string };
+
+export type McpCallResult =
+  | { ok: true; content: unknown; isError?: boolean }
   | { ok: false; error: string };
 
 const MAX_STDOUT_BYTES = 1_048_576;
@@ -122,6 +127,9 @@ export function probeMcpServer(
           ...(typeof candidate.description === "string"
             ? { description: redactConfiguredValues(candidate.description, server.env).slice(0, 500) }
             : {}),
+          ...(candidate.inputSchema && typeof candidate.inputSchema === "object"
+            ? { inputSchema: candidate.inputSchema as Record<string, unknown> }
+            : {}),
         });
       }
       finish({ ok: true, tools });
@@ -158,6 +166,124 @@ export function probeMcpServer(
         protocolVersion: "2025-06-18",
         capabilities: {},
         clientInfo: { name: "Parallel", version: "probe" },
+      },
+    });
+  });
+}
+
+/** Execute a specific tool on an MCP server with arguments. Returns true tool results or structured errors. */
+export function callMcpServerTool(
+  server: StoredMcpServer,
+  toolName: string,
+  toolArgs: Record<string, unknown> = {},
+  timeoutMs = 15_000,
+  signal?: AbortSignal,
+): Promise<McpCallResult> {
+  return new Promise((resolve) => {
+    if (signal?.aborted) {
+      resolve({ ok: false, error: publicProbeError("cancelled") });
+      return;
+    }
+
+    let child: ReturnType<typeof spawnCli>;
+    try {
+      child = spawnCli(server.command, server.args, {
+        cwd: process.cwd(),
+        env: probeEnvironment(server),
+        stdio: ["pipe", "pipe", "pipe"],
+      });
+    } catch {
+      resolve({ ok: false, error: publicProbeError("spawn") });
+      return;
+    }
+
+    let settled = false;
+    let stdoutBytes = 0;
+    let initialized = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const onAbort = () => finish({ ok: false, error: publicProbeError("cancelled") });
+    const finish = (result: McpCallResult) => {
+      if (settled) return;
+      settled = true;
+      if (timer) clearTimeout(timer);
+      signal?.removeEventListener("abort", onAbort);
+      killCliTree(child);
+      resolve(result);
+    };
+    const write = (frame: unknown) => {
+      try {
+        child.stdin.write(`${JSON.stringify(frame)}\n`);
+      } catch {
+        finish({ ok: false, error: publicProbeError("closed") });
+      }
+    };
+    const splitter = createLineSplitter((line) => {
+      if (settled || !line.trim()) return;
+      let frame: unknown;
+      try {
+        frame = JSON.parse(line);
+      } catch {
+        return;
+      }
+      if (!frame || typeof frame !== "object") return;
+      const value = frame as Record<string, unknown>;
+      if (value.id === 1 && value.result && !initialized) {
+        initialized = true;
+        write({ jsonrpc: "2.0", method: "notifications/initialized" });
+        write({
+          jsonrpc: "2.0",
+          id: 2,
+          method: "tools/call",
+          params: {
+            name: toolName,
+            arguments: toolArgs,
+          },
+        });
+        return;
+      }
+      if (value.id !== 2) return;
+      if (value.error) {
+        const errObj = value.error as Record<string, unknown>;
+        finish({ ok: false, error: String(errObj.message || "MCP tool error") });
+        return;
+      }
+      const result = value.result as { content?: unknown; isError?: boolean } | undefined;
+      finish({
+        ok: true,
+        content: result?.content ?? null,
+        isError: result?.isError ?? false,
+      });
+    });
+
+    timer = setTimeout(() => {
+      finish({ ok: false, error: publicProbeError("timeout") });
+    }, timeoutMs);
+    signal?.addEventListener("abort", onAbort, { once: true });
+    child.stdout.on("data", (chunk: Buffer) => {
+      stdoutBytes += chunk.byteLength;
+      if (stdoutBytes > MAX_STDOUT_BYTES) {
+        finish({ ok: false, error: publicProbeError("protocol") });
+        return;
+      }
+      splitter.push(chunk);
+    });
+    child.stderr.resume();
+    child.once("error", () => finish({ ok: false, error: publicProbeError("spawn") }));
+    child.once("close", () => finish({ ok: false, error: publicProbeError("closed") }));
+
+    if (signal?.aborted) {
+      onAbort();
+      return;
+    }
+
+    write({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "initialize",
+      params: {
+        protocolVersion: "2025-06-18",
+        capabilities: {},
+        clientInfo: { name: "Parallel", version: "call" },
       },
     });
   });

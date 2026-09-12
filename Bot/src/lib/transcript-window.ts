@@ -2,8 +2,8 @@
  * included); mounting all of them makes the DOM heavy even though the memoized
  * list bails out of re-renders. Only the last `TRANSCRIPT_WINDOW_SIZE`
  * messages mount by default; a pill expands by the same step. */
-export const TRANSCRIPT_WINDOW_SIZE = 120;
-export const MAX_TRANSCRIPT_MOUNTED = 240;
+export const TRANSCRIPT_WINDOW_SIZE = 60;
+export const MAX_TRANSCRIPT_MOUNTED = 120;
 
 export interface TranscriptWindow<T> {
   visible: T[];

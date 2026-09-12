@@ -23,6 +23,7 @@ import {
   RotateCcw,
   X,
 } from "lucide-react";
+import { WaveformAudioPlayer } from "@/components/WaveformAudioPlayer";
 
 import {
   attachmentBasename,
@@ -745,15 +746,7 @@ function AttachedFileChip({ file, message }: { file: TranscriptFileAttachment; m
 
   if (isAudio && file.path) {
     const audioUrl = `/api/threads/${encodeURIComponent(message?.threadId ?? "")}/messages/${encodeURIComponent(message?.messageId ?? "")}/file?ref=0`;
-    return (
-      <div className="my-1 flex w-full max-w-[320px] flex-col gap-1 rounded-xl border border-hairline/40 bg-inset/90 p-2.5 shadow-xs">
-        <div className="flex items-center gap-2 text-[12px] font-medium text-ink">
-          <FileText size={14} className="shrink-0 text-accent" aria-hidden="true" />
-          <span className="truncate">{file.name}</span>
-        </div>
-        <audio controls src={audioUrl} className="h-8 w-full rounded-md" preload="metadata" />
-      </div>
-    );
+    return <WaveformAudioPlayer src={audioUrl} fileName={file.name} />;
   }
 
   if (!message || !file.private) {

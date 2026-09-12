@@ -42,6 +42,8 @@ export interface ControlLeaseReleaseResult {
 const NO_CONTROL: ControlSnapshot = { held: false, helpReason: null, heldSinceMs: null };
 /** Keep a shouted help reason card-sized; the transcript has the rest. */
 const MAX_REASON_CHARS = 280;
+/** Automatic timeout (10 minutes) for human control hold to prevent permanent bot deadlock on abandoned tabs */
+export const HUMAN_CONTROL_TIMEOUT_MS = 10 * 60 * 1000;
 
 interface Entry {
   heldSinceMs: number | null;
@@ -68,6 +70,12 @@ export class ComputerControl {
   snapshot(botId: string): ControlSnapshot {
     const entry = this.entries.get(botId);
     if (!entry) return NO_CONTROL;
+    // Check watchdog timeout: if human took control and vanished for > 10 mins, release
+    if (entry.heldSinceMs !== null && this.now() - entry.heldSinceMs > HUMAN_CONTROL_TIMEOUT_MS) {
+      this.entries.delete(botId);
+      this.onChange(botId, NO_CONTROL);
+      return NO_CONTROL;
+    }
     return {
       held: entry.heldSinceMs !== null,
       helpReason: entry.helpReason,

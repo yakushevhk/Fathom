@@ -24,6 +24,7 @@ import {
 } from "@/lib/drafts";
 import { BotAvatar } from "./Avatar";
 import { triggerHaptic } from "@/lib/haptics";
+import { compressImageForUpload } from "@/lib/image-compress";
 import { MentionTextarea } from "./MentionTextarea";
 import { ComposerAttachments, pathForFile } from "./ComposerAttachments";
 import { LocalComputerAutoWarning } from "./LocalComputerAutoWarning";
@@ -387,7 +388,8 @@ export function Composer({
   const canApplyBotFullAccess = Boolean(modeBot && profile && !remoteClient && window.ogb?.approvals && capabilities.host.packaged &&
     approvalModeFor(profile) === "full" && approvalModeFor(modeBot) !== "full" &&
     approvalEngine?.driverKind === state.instances.find((instance) => instance.instanceId === profile.modelSelection.instanceId)?.driverKind);
-  const uploadImage = useCallback(async (file: File): Promise<Attachment | null> => {
+  const uploadImage = useCallback(async (rawFile: File): Promise<Attachment | null> => {
+    const file = await compressImageForUpload(rawFile);
     const optimistic = optimisticImageAttachment(file);
     if (!optimistic) return null;
     appendDraftAttachments(draftId, [optimistic]);

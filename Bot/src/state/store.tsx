@@ -3267,6 +3267,12 @@ export function useStore() {
   return ctx;
 }
 
+/** Hook for selecting only a specific slice of AppState to avoid re-rendering entire component trees */
+export function useStoreSelector<T>(selector: (state: AppState) => T): T {
+  const { state } = useStore();
+  return selector(state);
+}
+
 export function formatTime(at: number) {
   return new Date(at).toLocaleTimeString([], {
     hour: "numeric",

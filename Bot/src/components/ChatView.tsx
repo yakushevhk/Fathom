@@ -38,6 +38,7 @@ import { EngineSetup } from "./EngineSetup";
 import { isProviderSafetyBlock, PROVIDER_SAFETY_GUIDANCE, PROVIDER_SAFETY_HELP_URL } from "../../shared/provider-safety";
 import { BotAvatar } from "./Avatar";
 import { TurnPresence } from "./TurnPresence";
+import { ThinkingAccordion } from "./ThinkingAccordion";
 import { showToolCallsEnabled, skillAuthoringEnabled } from "@/lib/feature-flags";
 import { stateForBot } from "@/lib/mascot";
 import { showWorkingDots } from "@/lib/turn-tail";
@@ -1335,6 +1336,11 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
             onRegenerate={regenerate}
             onReply={selectReply}
           />
+          {(reasoning || (bot.busy && streaming)) && (
+            <div className="px-1">
+              <ThinkingAccordion reasoning={reasoning || ""} isStreaming={bot.busy && !streaming} />
+            </div>
+          )}
           {laterCount > 0 && (
             <div className="flex justify-center">
               <button

@@ -47,7 +47,7 @@ export function McpToolInspector({ serverName, tools = [], onClose }: { serverNa
 
     try {
       const parsedArgs = JSON.parse(jsonInput || "{}");
-      const res = await api(`/api/mcp/servers/${encodeURIComponent(serverName)}/test`, {
+      const res = await api(`/api/mcp/servers/${encodeURIComponent(serverName)}/call`, {
         method: "POST",
         body: JSON.stringify({
           tool: selectedTool.name,

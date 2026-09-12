@@ -16,6 +16,19 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(version),
   },
+  build: {
+    chunkSizeWarningLimit: 900,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom"],
+          "vendor-markdown": ["react-markdown", "remark-gfm"],
+          "vendor-math": ["katex"],
+          "vendor-diagram": ["mermaid"],
+        },
+      },
+    },
+  },
   test: {
     environment: "node",
     include: [

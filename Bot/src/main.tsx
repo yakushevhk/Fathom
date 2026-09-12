@@ -24,6 +24,13 @@ async function chooseRoot(): Promise<React.ReactNode> {
   return <App />;
 }
 
+// Register service worker for PWA support
+if ("serviceWorker" in navigator && !window.location.hostname.includes("localhost")) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
+}
+
 void Promise.all([bootstrapBrand(), chooseRoot()]).then(([, root]) => {
   createRoot(document.getElementById("root")!).render(<StrictMode>{root}</StrictMode>);
 });

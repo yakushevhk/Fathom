@@ -1,37 +1,42 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, Menu } from "lucide-react";
 import { StoreProvider, useStore } from "@/state/store";
-import { WelcomeFlow } from "@/components/onboarding/WelcomeFlow";
-import { FirstConversationTour } from "@/components/onboarding/FirstConversationTour";
-import { GuidedTour } from "@/components/onboarding/GuidedTour";
 import { welcomeDue } from "@/lib/onboarding";
 import { ThreadRefsProvider } from "@/components/ThreadRefs";
 import { emailGateDone, initAnalytics } from "@/lib/analytics";
 import { Sidebar } from "@/components/Sidebar";
 import { ChatView } from "@/components/ChatView";
 import { GroupView } from "@/components/GroupView";
-import { BotSettingsDialog } from "@/components/BotSettingsDialog";
-import { RemoteAgentSettingsPanel } from "@/components/RemoteAgentSettingsPanel";
-import { NewBotDialog } from "@/components/NewBotDialog";
-import { PluginsPanel, preloadConnectedApps } from "@/components/PluginsPanel";
-import { ComputerPanel } from "@/components/ComputerPanel";
-import { RemoteDesktopPanel } from "@/components/remote-desktop-panel";
-import { InspectorPanel } from "@/components/InspectorPanel";
-import { SettingsModal } from "@/components/SettingsModal";
-import { WorkspaceBackupRecovery } from "@/components/WorkspaceBackupSettings";
+import { preloadConnectedApps } from "@/components/PluginsPanel";
 import { UpdateBanner } from "@/components/UpdateBanner";
 import { DesktopCapabilitiesProvider } from "@/components/DesktopCapabilities";
-import { RoutinesPage } from "@/components/RoutinesPage";
 import { NoEngines } from "@/components/NoEngines";
 import { CommandPalette } from "@/components/CommandPalette";
-import { KeyboardShortcutsModal } from "@/components/KeyboardShortcutsModal";
-import { LocalVmWorkspace } from "@/components/LocalVmWorkspace";
-import { TeamMapPage } from "@/components/TeamMapPage";
-import { SplitWorkspace } from "@/components/SplitWorkspace";
-import { SwarmCapabilityMatrix } from "@/components/SwarmCapabilityMatrix";
 import { setLocale } from "@/lib/i18n";
 import { triggerHaptic } from "@/lib/haptics";
 import { shouldOpenKeyboardShortcuts } from "@/lib/keyboard-shortcuts";
+
+// Code splitting: secondary views and modals loaded lazily
+const WelcomeFlow = lazy(() => import("@/components/onboarding/WelcomeFlow").then(m => ({ default: m.WelcomeFlow })));
+const FirstConversationTour = lazy(() => import("@/components/onboarding/FirstConversationTour").then(m => ({ default: m.FirstConversationTour })));
+const GuidedTour = lazy(() => import("@/components/onboarding/GuidedTour").then(m => ({ default: m.GuidedTour })));
+const BotSettingsDialog = lazy(() => import("@/components/BotSettingsDialog").then(m => ({ default: m.BotSettingsDialog })));
+const RemoteAgentSettingsPanel = lazy(() => import("@/components/RemoteAgentSettingsPanel").then(m => ({ default: m.RemoteAgentSettingsPanel })));
+const NewBotDialog = lazy(() => import("@/components/NewBotDialog").then(m => ({ default: m.NewBotDialog })));
+const PluginsPanel = lazy(() => import("@/components/PluginsPanel").then(m => ({ default: m.PluginsPanel })));
+const ComputerPanel = lazy(() => import("@/components/ComputerPanel").then(m => ({ default: m.ComputerPanel })));
+const RemoteDesktopPanel = lazy(() => import("@/components/remote-desktop-panel").then(m => ({ default: m.RemoteDesktopPanel })));
+const InspectorPanel = lazy(() => import("@/components/InspectorPanel").then(m => ({ default: m.InspectorPanel })));
+const SettingsModal = lazy(() => import("@/components/SettingsModal").then(m => ({ default: m.SettingsModal })));
+const WorkspaceBackupRecovery = lazy(() => import("@/components/WorkspaceBackupSettings").then(m => ({ default: m.WorkspaceBackupRecovery })));
+const RoutinesPage = lazy(() => import("@/components/RoutinesPage").then(m => ({ default: m.RoutinesPage })));
+const KeyboardShortcutsModal = lazy(() => import("@/components/KeyboardShortcutsModal").then(m => ({ default: m.KeyboardShortcutsModal })));
+const LocalVmWorkspace = lazy(() => import("@/components/LocalVmWorkspace").then(m => ({ default: m.LocalVmWorkspace })));
+const TeamMapPage = lazy(() => import("@/components/TeamMapPage").then(m => ({ default: m.TeamMapPage })));
+const SplitWorkspace = lazy(() => import("@/components/SplitWorkspace").then(m => ({ default: m.SplitWorkspace })));
+const SwarmCapabilityMatrix = lazy(() => import("@/components/SwarmCapabilityMatrix").then(m => ({ default: m.SwarmCapabilityMatrix })));
+const DagWorkflowVisualizer = lazy(() => import("@/components/DagWorkflowVisualizer").then(m => ({ default: m.DagWorkflowVisualizer })));
+const MemoryManagerModal = lazy(() => import("@/components/MemoryManagerModal").then(m => ({ default: m.MemoryManagerModal })));
 
 function Shell() {
   const { state, dispatch } = useStore();
@@ -56,11 +61,25 @@ function Shell() {
   }, [language]);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [capabilityMatrixOpen, setCapabilityMatrixOpen] = useState(false);
+  const [dagVisualizerOpen, setDagVisualizerOpen] = useState(false);
+  const [memoryManagerOpen, setMemoryManagerOpen] = useState(false);
+  const [zenMode, setZenMode] = useState(false);
 
   useEffect(() => {
     const onOpenMatrix = () => setCapabilityMatrixOpen(true);
+    const onOpenDag = () => setDagVisualizerOpen(true);
+    const onOpenMemory = () => setMemoryManagerOpen(true);
+    const onToggleZen = () => setZenMode((z) => !z);
     window.addEventListener("open-swarm-matrix", onOpenMatrix);
-    return () => window.removeEventListener("open-swarm-matrix", onOpenMatrix);
+    window.addEventListener("open-dag-visualizer", onOpenDag);
+    window.addEventListener("open-memory-manager", onOpenMemory);
+    window.addEventListener("toggle-zen-mode", onToggleZen);
+    return () => {
+      window.removeEventListener("open-swarm-matrix", onOpenMatrix);
+      window.removeEventListener("open-dag-visualizer", onOpenDag);
+      window.removeEventListener("open-memory-manager", onOpenMemory);
+      window.removeEventListener("toggle-zen-mode", onToggleZen);
+    };
   }, []);
 
   const [localVmWorkspaceBotId, setLocalVmWorkspaceBotId] = useState<string | null>(null);
@@ -215,8 +234,8 @@ function Shell() {
     <div className="flex h-full flex-col">
       {/* fixed-position popup, bottom-left — outside the layout flow */}
       <UpdateBanner />
-      <div className="relative flex min-h-0 flex-1">
-      {!calendarFocus && <button
+      <div className={`relative flex min-h-0 flex-1 ${zenMode ? "zen-mode-active" : ""}`}>
+      {!calendarFocus && !zenMode && <button
         type="button"
         ref={menuButtonRef}
         aria-label="Open bot list"
@@ -229,7 +248,7 @@ function Shell() {
       >
         <Menu size={20} />
       </button>}
-      {drawerOpen && !calendarFocus && (
+      {drawerOpen && !calendarFocus && !zenMode && (
         <div
           aria-hidden
           onClick={() => setDrawerOpen(false)}
@@ -237,82 +256,92 @@ function Shell() {
           className="animate-drawer-backdrop absolute inset-0 z-30 bg-black/60 backdrop-blur-[3px] md:hidden"
         />
       )}
-      {!calendarFocus && <Sidebar
+      {!calendarFocus && !zenMode && <Sidebar
         open={drawerOpen}
         onClose={() => {
           setDrawerOpen(false);
           menuButtonRef.current?.focus();
         }}
       />}
-      {state.activeView === "team-map" ? (
-        <TeamMapPage />
-      ) : state.activeView === "routines" ? (
-        <RoutinesPage onBack={closeCalendar} onOpenRoom={openCalendarRoom} />
-      ) : !remoteClient && localVmWorkspaceBotId ? (
-        <LocalVmWorkspace
-          primaryBotId={localVmWorkspaceBotId}
-          overlayOpen={nativeViewOverlayOpen}
-          onClose={() => setLocalVmWorkspaceBotId(null)}
-          onOpenComputer={openComputerFromWorkspace}
-        />
-      ) : noEngines ? (
-        <NoEngines />
-      ) : state.secondarySelectedId ? (
-        <SplitWorkspace
-          primaryBot={bot}
-          primaryGroup={group}
-          secondaryBot={state.bots.find((b) => b.id === state.secondarySelectedId)}
-          secondaryGroup={state.groups.find((g) => g.id === state.secondarySelectedId)}
-        />
-      ) : group ? (
-        <GroupView key={group.id} group={group} />
-      ) : bot ? (
-        <ChatView bot={bot} />
-      ) : (
-        <main className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-3 bg-app text-ink-secondary">
-          <Loader2 size={20} className="animate-spin" />
-          <div className="text-[14px]">
-            {state.connected ? "No bots yet" : "Connecting to the bot server…"}
-          </div>
-          {!state.connected && (
-            <div className="text-[12px]">
-              Start it with <code className="rounded bg-raised px-1.5 py-0.5">pnpm dev:server</code>
-            </div>
-          )}
-        </main>
-      )}
-      {state.settingsOpen && bot && (
-        remoteClient
-          ? <RemoteAgentSettingsPanel bot={bot} />
-          : <BotSettingsDialog key={bot.id} bot={bot} />
-      )}
-      {state.computerOpen && bot && (
-        remoteClient ? (
-          <RemoteDesktopPanel key={bot.id} bot={bot} />
-        ) : (
-          <ComputerPanel
-            key={bot.id}
-            bot={bot}
-            onOpenVmWorkspace={openLocalVmWorkspace}
+      <Suspense fallback={null}>
+        {state.activeView === "team-map" ? (
+          <TeamMapPage />
+        ) : state.activeView === "routines" ? (
+          <RoutinesPage onBack={closeCalendar} onOpenRoom={openCalendarRoom} />
+        ) : !remoteClient && localVmWorkspaceBotId ? (
+          <LocalVmWorkspace
+            primaryBotId={localVmWorkspaceBotId}
+            overlayOpen={nativeViewOverlayOpen}
+            onClose={() => setLocalVmWorkspaceBotId(null)}
+            onOpenComputer={openComputerFromWorkspace}
           />
-        )
-      )}
-      {!remoteClient && state.inspectorOpen && bot && <InspectorPanel key={bot.threadId} bot={bot} />}
-      {state.appSettingsOpen && <SettingsModal />}
-      {state.pluginsOpen && <PluginsPanel />}
-      {state.newBotOpen && <NewBotDialog />}
-      {state.shortcutsOpen && (
-        <KeyboardShortcutsModal
-          open={state.shortcutsOpen}
-          onClose={() => dispatch({ type: "toggleShortcuts", open: false })}
-        />
-      )}
+        ) : noEngines ? (
+          <NoEngines />
+        ) : state.secondarySelectedId ? (
+          <SplitWorkspace
+            primaryBot={bot}
+            primaryGroup={group}
+            secondaryBot={state.bots.find((b) => b.id === state.secondarySelectedId)}
+            secondaryGroup={state.groups.find((g) => g.id === state.secondarySelectedId)}
+          />
+        ) : group ? (
+          <GroupView key={group.id} group={group} />
+        ) : bot ? (
+          <ChatView bot={bot} />
+        ) : (
+          <main className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-3 bg-app text-ink-secondary">
+            <Loader2 size={20} className="animate-spin" />
+            <div className="text-[14px]">
+              {state.connected ? "No bots yet" : "Connecting to the bot server…"}
+            </div>
+            {!state.connected && (
+              <div className="text-[12px]">
+                Start it with <code className="rounded bg-raised px-1.5 py-0.5">pnpm dev:server</code>
+              </div>
+            )}
+          </main>
+        )}
+      </Suspense>
+      <Suspense fallback={null}>
+        {state.settingsOpen && bot && (
+          remoteClient
+            ? <RemoteAgentSettingsPanel bot={bot} />
+            : <BotSettingsDialog key={bot.id} bot={bot} />
+        )}
+        {state.computerOpen && bot && (
+          remoteClient ? (
+            <RemoteDesktopPanel key={bot.id} bot={bot} />
+          ) : (
+            <ComputerPanel
+              key={bot.id}
+              bot={bot}
+              onOpenVmWorkspace={openLocalVmWorkspace}
+            />
+          )
+        )}
+        {!remoteClient && state.inspectorOpen && bot && <InspectorPanel key={bot.threadId} bot={bot} />}
+        {state.appSettingsOpen && <SettingsModal />}
+        {state.pluginsOpen && <PluginsPanel />}
+        {state.newBotOpen && <NewBotDialog />}
+        {state.shortcutsOpen && (
+          <KeyboardShortcutsModal
+            open={state.shortcutsOpen}
+            onClose={() => dispatch({ type: "toggleShortcuts", open: false })}
+          />
+        )}
+        {capabilityMatrixOpen && (
+          <SwarmCapabilityMatrix onClose={() => setCapabilityMatrixOpen(false)} />
+        )}
+        {dagVisualizerOpen && (
+          <DagWorkflowVisualizer onClose={() => setDagVisualizerOpen(false)} />
+        )}
+        {memoryManagerOpen && bot && (
+          <MemoryManagerModal botId={bot.id} onClose={() => setMemoryManagerOpen(false)} />
+        )}
+      </Suspense>
       {/* mounted after the modals: same z-50 tier, so DOM order keeps the
           palette on top when one of them is open underneath */}
       <CommandPalette onOpenChange={setPaletteOpen} />
-      {capabilityMatrixOpen && (
-        <SwarmCapabilityMatrix onClose={() => setCapabilityMatrixOpen(false)} />
-      )}
       </div>
     </div>
   );
