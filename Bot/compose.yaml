@@ -4,7 +4,8 @@ services:
     init: true
     platform: linux/amd64
     build:
-      context: ./deploy/local
+      context: .
+      dockerfile: ./deploy/local/Dockerfile
       args:
         BASE_IMAGE: ${OMB_BASE_IMAGE:-parallel:local}
         ENGINES: ${ENGINES-@anthropic-ai/claude-code @openai/codex opencode-ai @qwen-code/qwen-code @earendil-works/pi-coding-agent}

@@ -5,10 +5,8 @@ ARG ENGINES="@anthropic-ai/claude-code @openai/codex opencode-ai @qwen-code/qwen
 RUN if [ -n "$ENGINES" ]; then npm install -g $ENGINES; fi
 
 RUN if ! command -v grok >/dev/null 2>&1; then \
-      HOME=/opt/grok GROK_BIN_DIR=/opt/grok/bin bash <(curl -fsSL https://x.ai/cli/install.sh) && \
-      cp -f /opt/grok/downloads/grok-* /usr/local/bin/grok && \
-      chmod a+rx /usr/local/bin/grok && \
-      rm -rf /opt/grok; \
+      curl -fsSL https://x.ai/cli/install.sh | HOME=/opt/grok GROK_BIN_DIR=/usr/local/bin bash && \
+      chmod a+rx /usr/local/bin/grok /usr/local/bin/agent 2>/dev/null || true; \
     fi
 
 RUN if ! command -v hermes >/dev/null 2>&1; then \
@@ -17,5 +15,7 @@ RUN if ! command -v hermes >/dev/null 2>&1; then \
     fi
 
 COPY scripts/setup-router-agents.mjs /app/scripts/setup-router-agents.mjs
+COPY deploy/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "dist-server/index.js"]
