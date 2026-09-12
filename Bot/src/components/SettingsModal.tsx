@@ -545,7 +545,7 @@ export function SettingsModal() {
         aria-modal="true"
         aria-labelledby="app-settings-title"
         tabIndex={-1}
-        className={cn("animate-pop-in flex max-h-[calc(100dvh-24px)] w-full overflow-hidden rounded-2xl border border-hairline/50 bg-panel shadow-2xl outline-none", section === "engines" ? "h-[min(760px,85dvh)] max-w-[1040px]" : "h-[min(620px,80dvh)] max-w-[860px]")}
+        className={cn("animate-pop-in flex max-h-[calc(100dvh-3rem)] w-full overflow-hidden rounded-2xl border border-hairline/50 bg-panel shadow-2xl outline-none", section === "engines" ? "h-[min(760px,calc(100dvh-3rem))] max-w-[1040px]" : "h-[min(620px,calc(100dvh-3rem))] max-w-[860px]")}
       >
         {/* section nav */}
         <span id="app-settings-title" className="sr-only">{t("settings.title")}</span>

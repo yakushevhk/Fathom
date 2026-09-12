@@ -249,7 +249,7 @@ export function BotSettingsDialog({ bot }: { bot: Bot }) {
         aria-modal="true"
         aria-labelledby="bot-settings-title"
         tabIndex={-1}
-        className="animate-pop-in flex h-[min(640px,calc(100dvh-1.5rem))] w-full max-w-[860px] overflow-hidden rounded-2xl border border-hairline/50 bg-panel shadow-2xl outline-none"
+        className="animate-pop-in flex h-[min(640px,calc(100dvh-3rem))] max-h-[calc(100dvh-3rem)] w-full max-w-[860px] overflow-hidden rounded-2xl border border-hairline/50 bg-panel shadow-2xl outline-none"
       >
         {/* section nav */}
         <nav className="hidden w-[190px] shrink-0 flex-col gap-0.5 border-r border-hairline/40 p-3 sm:flex">
