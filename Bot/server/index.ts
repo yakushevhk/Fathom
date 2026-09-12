@@ -9419,11 +9419,14 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
         const from = internalSender;
         if (!connectorThread(from.id, fromThreadId)) return json(res, 403, { error: "unknown sender" });
         if (method === "DELETE") {
-          const canceled = cancelQueuedDelegation(commsBus, taskId);
+          const canceled = cancelQueuedDelegation(commsBus, taskId, fromThreadId);
           if (canceled) return json(res, 200, { ok: true, message: `Task ${taskId} was canceled.` });
           const runningEntry = [...delegationWatch.entries()].find(([, watch]) => watch.taskId === taskId);
           if (runningEntry) {
             const [targetThreadId, watch] = runningEntry;
+            if (watch.sourceThreadId !== fromThreadId) {
+              return json(res, 403, { error: "that task belongs to a different conversation" });
+            }
             finalizeDelegationWatch(targetThreadId, false, "", "Canceled by sender");
             void interruptDirectThread(watch.toBotId, targetThreadId).catch(() => {});
             return json(res, 200, { ok: true, message: `Running task ${taskId} was interrupted.` });
@@ -13018,6 +13021,20 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       const requestOwner = owner ? botForThread(owner.id, threadId) : null;
       const outcome = await answerRequest(threadId, requestOwner?.modelSelection.instanceId ?? "", requestId, behavior, body.message, owner ? { id: owner.id, name: owner.name } : undefined, body.always === true);
       return json(res, 200, { ok: true, outcome });
+    }
+    m = path.match(/^\/api\/delegations\/([\w-]{4,64})$/);
+    if (m && method === "DELETE") {
+      const taskId = m[1];
+      const canceled = cancelQueuedDelegation(commsBus, taskId);
+      if (canceled) return json(res, 200, { ok: true, message: `Task ${taskId} was canceled.` });
+      const runningEntry = [...delegationWatch.entries()].find(([, watch]) => watch.taskId === taskId);
+      if (runningEntry) {
+        const [targetThreadId, watch] = runningEntry;
+        finalizeDelegationWatch(targetThreadId, false, "", "Canceled by user");
+        void interruptDirectThread(watch.toBotId, targetThreadId).catch(() => {});
+        return json(res, 200, { ok: true, message: `Running task ${taskId} was interrupted.` });
+      }
+      return json(res, 404, { error: "task not found or already finished" });
     }
     m = path.match(/^\/api\/bots\/([\w-]+)\/interrupt$/);
     if (m && method === "POST") {

@@ -205,7 +205,7 @@ export function DagWorkflowVisualizer({ onClose }: DagVisualizerProps) {
                             <h4 className="text-sm font-semibold text-ink">{node.name}</h4>
                             {node.dependsOn && node.dependsOn.length > 0 && (
                               <span className="rounded bg-raised/80 px-1.5 py-0.5 text-[10px] font-mono text-ink-secondary">
-                                ↖ from {node.dependsOn.map((depId) => visibleBots.find((b) => b.id === depId)?.name ?? depId).join(", ")}
+                                ↖ from {node.dependsOn.map((depId) => state.bots.find((b) => b.id === depId)?.name ?? depId).join(", ")}
                               </span>
                             )}
                           </div>

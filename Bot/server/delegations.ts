@@ -678,9 +678,11 @@ function holdWhileTargetBusy(
 }
 
 /** Cancel a queued delegation by id, recording a canceled receipt. Returns
- * true if the task was found and canceled before dispatch. */
-export function cancelQueuedDelegation(bus: CommsBus, id: string): boolean {
+ * true if the task was found and canceled before dispatch. When expectedSourceThreadId
+ * is provided, only cancels if the task belongs to that thread. */
+export function cancelQueuedDelegation(bus: CommsBus, id: string, expectedSourceThreadId?: string): boolean {
   for (const [threadId, items] of pendingDelegations) {
+    if (expectedSourceThreadId && threadId !== expectedSourceThreadId) continue;
     const idx = items.findIndex((candidate) => candidate.id === id);
     if (idx !== -1) {
       const [item] = items.splice(idx, 1);

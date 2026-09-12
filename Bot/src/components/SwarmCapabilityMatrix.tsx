@@ -156,17 +156,27 @@ export function SwarmCapabilityMatrix({ onClose }: { onClose: () => void }) {
                   </td>
 
                   <td className="py-3 px-3 text-center">
-                    <button
-                      type="button"
-                      onClick={() => togglePeerComms(bot)}
-                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium border transition-colors ${
-                        !bot.approvePeerComms
-                          ? "border-accent/40 bg-accent/15 text-accent"
-                          : "border-hairline/30 bg-inset text-ink-secondary hover:text-ink"
-                      }`}
-                    >
-                      {!bot.approvePeerComms ? "Autonomous" : "Ask"}
-                    </button>
+                    {(() => {
+                      const canCoord = getCanCoordinate(bot);
+                      const disabled = bot.approvePeerComms && !canCoord;
+                      return (
+                        <button
+                          type="button"
+                          disabled={disabled}
+                          title={disabled ? "This engine cannot contact other bots" : undefined}
+                          onClick={() => togglePeerComms(bot)}
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium border transition-colors ${
+                            disabled
+                              ? "opacity-50 cursor-not-allowed border-hairline/20 bg-inset text-ink-secondary"
+                              : !bot.approvePeerComms
+                              ? "border-accent/40 bg-accent/15 text-accent"
+                              : "border-hairline/30 bg-inset text-ink-secondary hover:text-ink"
+                          }`}
+                        >
+                          {!bot.approvePeerComms ? "Autonomous" : "Ask"}
+                        </button>
+                      );
+                    })()}
                   </td>
 
                   <td className="py-3 px-3 text-center">

@@ -582,7 +582,7 @@ function ActivityChip({ message }: { message: Message }) {
               e.stopPropagation();
               setCanceling(true);
               try {
-                await fetch(`/api/internal/delegations/${encodeURIComponent(tool.delegationId!)}`, { method: "DELETE" });
+                await api(`/api/delegations/${encodeURIComponent(tool.delegationId!)}`, { method: "DELETE" });
               } catch (err) {
                 console.error("failed to cancel delegation", err);
               } finally {
