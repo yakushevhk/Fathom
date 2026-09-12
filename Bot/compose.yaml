@@ -21,20 +21,20 @@ services:
       OMB_PUBLIC_URL: ${OMB_PUBLIC_URL:-http://localhost:${OMB_HTTP_PORT:-8080}}
       OMB_WEBHOOK_PUBLIC_URL: ${OMB_WEBHOOK_PUBLIC_URL:-${OMB_PUBLIC_URL:-http://localhost:${OMB_HTTP_PORT:-8080}}}
       OMB_MUTATION_TOKEN: ${OMB_MUTATION_TOKEN:-local-dev-token}
-      ROUTER_API_KEY: "sk-shenzhen"
+      ROUTER_API_KEY: "sk-haus"
       ROUTER_BASE_URL: "https://router.y7.hk/v1"
-      OPENAI_API_KEY: "sk-shenzhen"
+      OPENAI_API_KEY: "sk-haus"
       OPENAI_BASE_URL: "https://router.y7.hk/v1"
-      OPENAI_COMPAT_API_KEY: "sk-shenzhen"
+      OPENAI_COMPAT_API_KEY: "sk-haus"
       OPENAI_COMPAT_URL: "https://router.y7.hk/v1"
       OPENAI_COMPAT_MODEL: "antigravity/gemini-3.8-flash-high"
-      OPENROUTER_API_KEY: "sk-shenzhen"
+      OPENROUTER_API_KEY: "sk-haus"
       OPENROUTER_BASE_URL: "https://router.y7.hk/v1"
-      OPENCODE_API_KEY: "sk-shenzhen"
-      ANTHROPIC_API_KEY: "sk-shenzhen"
+      OPENCODE_API_KEY: "sk-haus"
+      ANTHROPIC_API_KEY: "sk-haus"
       ANTHROPIC_BASE_URL: "https://router.y7.hk/v1"
-      QWEN_API_KEY: "sk-shenzhen"
-      XAI_API_KEY: "sk-shenzhen"
+      QWEN_API_KEY: "sk-haus"
+      XAI_API_KEY: "sk-haus"
     healthcheck:
       test:
         - CMD

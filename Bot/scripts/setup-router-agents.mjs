@@ -16,7 +16,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const ROUTER_URL = (process.env.ROUTER_BASE_URL || process.env.OPENAI_BASE_URL || "https://router.y7.hk/v1").replace(/\/+$/, "");
-const ROUTER_KEY = process.env.ROUTER_API_KEY || process.env.OPENAI_API_KEY || "sk-shenzhen";
+const ROUTER_KEY = process.env.ROUTER_API_KEY || process.env.OPENAI_API_KEY || "sk-haus";
 const DATA_DIR = process.env.HOME || "/data";
 
 const FALLBACK_MODELS = [

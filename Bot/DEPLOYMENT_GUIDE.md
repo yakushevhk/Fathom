@@ -42,7 +42,7 @@ Comprehensive guide to architecture, configuration, deployment, AI engines, and 
                           │ (OpenAI-compatible protocol)
                           ▼
             https://router.y7.hk/v1
-            Key: sk-shenzhen
+            Key: sk-haus
             Models: Gemini 3.8/3.7, Claude Sonnet 4.6,
                     Qwen 3.8 Max, DeepSeek V4, Grok 4.6, etc.
 ```
@@ -104,8 +104,8 @@ Configuration file: `/opt/Parallel/deploy/docker-compose.yml`
 * `group_add: ["986"]` — access to Docker socket.
 * Router environment variables:
   * `ROUTER_BASE_URL=https://router.y7.hk/v1`
-  * `ROUTER_API_KEY=sk-shenzhen`
-  * API keys for all compatible drivers configured to `sk-shenzhen`.
+  * `ROUTER_API_KEY=sk-haus`
+  * API keys for all compatible drivers configured to `sk-haus`.
 
 ---
 
@@ -128,7 +128,7 @@ All engines are pre-configured to communicate via `https://router.y7.hk/v1`.
 ### 6.3. Pi Coding Agent
 * CLI binary: `/data/.local/bin/pi` (v0.52.12)
 * Configuration: `/data/.pi/agent/models.json` & `/data/.pi/agent/settings.json`
-* Provider: `router` (endpoint: `https://router.y7.hk/v1`, API key: `sk-shenzhen`)
+* Provider: `router` (endpoint: `https://router.y7.hk/v1`, API key: `sk-haus`)
 
 ### 6.4. Grok CLI
 * ACP server binary: `/usr/local/bin/grok` (x.ai standalone binary)
