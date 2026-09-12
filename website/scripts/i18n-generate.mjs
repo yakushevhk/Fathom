@@ -58,6 +58,23 @@ function resolveKey(key, lang) {
   return v != null ? v : (n[DEFAULT_LANG] ?? null);
 }
 
+// Dictionary values carry editorial markup (<em class="it">, <br />) meant for
+// page body injection. <title>/<meta> must be plain text: strip tags, unescape
+// entities, collapse whitespace so `<br />` becomes a single space.
+function plainText(value) {
+  if (value == null) return null;
+  const named = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', mdash: '—', ndash: '–', hellip: '…', laquo: '«', raquo: '»' };
+  return String(value)
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(Number(d)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/&([a-z]+);/gi, (m, n) => (n in named ? named[n] : m))
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+
 // ---------- file walking ----------
 function collectHtmls(dir, base) {
   const out = [];
@@ -120,16 +137,16 @@ function translateHtml(html, lang, langRoot, pageUrl) {
     let cleanPage = pageUrl.replace(/^\/+/g, '').replace(/\/+$/g, '');
     let titleKey = cleanPage === '' ? 'site.home_title' : `meta.${cleanPage}.title`;
     let descKey = cleanPage === '' ? 'site.home_desc' : `meta.${cleanPage}.desc`;
-    let localizedTitle = resolveKey(titleKey, lang);
-    let localizedDesc = resolveKey(descKey, lang);
+    let localizedTitle = plainText(resolveKey(titleKey, lang));
+    let localizedDesc = plainText(resolveKey(descKey, lang));
 
-    // Fallback: if page-specific meta title missing, check first h1 with data-i18n
+    // Fallback: if page-specific meta title missing, use the translated <h1>.
     if (!localizedTitle && cleanPage !== '') {
       let foundH1 = null;
       walkNodes(doc, (n) => {
         if (!foundH1 && n.tagName === 'h1') {
           const key = getAttr(n, 'data-i18n')?.value;
-          if (key) foundH1 = resolveKey(key, lang);
+          if (key) foundH1 = plainText(resolveKey(key, lang));
         }
       });
       if (foundH1) {
