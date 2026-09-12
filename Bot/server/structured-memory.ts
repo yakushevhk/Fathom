@@ -22,9 +22,9 @@ export function ensureStructuredMemoryTable(): void {
 
 export function saveFact(
   botId: string,
-  factData: { id?: string; category: MemoryFact["category"]; entity: string; fact: string; confidence?: number },
+  factData: { id?: string; category: MemoryFact["category"]; entity: string; fact: string; confidence?: number; updatedAt?: number },
 ): MemoryFact {
-  const updatedAt = Date.now();
+  const updatedAt = factData.updatedAt ?? Date.now();
   const confidence = factData.confidence ?? 1.0;
   const cleanEntity = factData.entity.trim();
   const cleanFact = factData.fact.replace(/[\r\n]+/g, " ").trim();

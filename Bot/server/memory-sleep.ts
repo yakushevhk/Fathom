@@ -91,72 +91,88 @@ export function getBotSleepState(botId: string): BotSleepState {
 }
 
 export async function executeBotSleep(botId: string): Promise<SleepConsolidationReport> {
-  const facts = listFacts(botId);
+  const database = db();
   const now = Date.now();
   let duplicatesRemoved = 0;
   let conflictsResolved = 0;
   let confidenceAdjusted = 0;
+  let initialFactsCount = 0;
 
-  // Group facts by (category, entity)
-  const grouped = new Map<string, MemoryFact[]>();
-  for (const f of facts) {
-    const key = `${f.category}:${f.entity.toLowerCase().trim()}`;
-    const list = grouped.get(key) ?? [];
-    list.push(f);
-    grouped.set(key, list);
-  }
+  database.exec("BEGIN IMMEDIATE");
+  try {
+    const facts = listFacts(botId);
+    initialFactsCount = facts.length;
+    const deletedIds = new Set<string>();
 
-  for (const [, items] of grouped) {
-    if (items.length <= 1) continue;
-
-    // Sort newest first
-    items.sort((a, b) => b.updatedAt - a.updatedAt);
-    const newest = items[0];
-
-    // Remove older duplicate facts for the same entity
-    for (let i = 1; i < items.length; i++) {
-      deleteFact(botId, items[i].id);
-      duplicatesRemoved++;
+    // Group facts by (category, entity) using exact trimmed casing matching SQLite natural key
+    const grouped = new Map<string, MemoryFact[]>();
+    for (const f of facts) {
+      const key = `${f.category}:${f.entity.trim()}`;
+      const list = grouped.get(key) ?? [];
+      list.push(f);
+      grouped.set(key, list);
     }
 
-    // Ensure the newest fact has high confidence
-    if (newest.confidence < 1.0) {
-      saveFact(botId, {
-        id: newest.id,
-        category: newest.category,
-        entity: newest.entity,
-        fact: newest.fact,
-        confidence: 1.0,
-      });
-      conflictsResolved++;
+    for (const [, items] of grouped) {
+      if (items.length <= 1) continue;
+
+      // Sort newest first
+      items.sort((a, b) => b.updatedAt - a.updatedAt);
+      const newest = items[0];
+
+      // Remove older duplicate facts for the same entity
+      for (let i = 1; i < items.length; i++) {
+        deleteFact(botId, items[i].id);
+        deletedIds.add(items[i].id);
+        duplicatesRemoved++;
+      }
+
+      // Ensure the newest fact has high confidence
+      if (newest.confidence < 1.0) {
+        saveFact(botId, {
+          id: newest.id,
+          category: newest.category,
+          entity: newest.entity,
+          fact: newest.fact,
+          confidence: 1.0,
+          updatedAt: newest.updatedAt,
+        });
+        conflictsResolved++;
+      }
     }
-  }
 
-  // Decay confidence of facts older than 30 days that haven't been updated
-  const THIRTY_DAYS_MS = 30 * 24 * 60 * 60_000;
-  for (const f of facts) {
-    if (now - f.updatedAt > THIRTY_DAYS_MS && f.confidence > 0.6) {
-      saveFact(botId, {
-        id: f.id,
-        category: f.category,
-        entity: f.entity,
-        fact: f.fact,
-        confidence: Math.max(0.5, f.confidence - 0.2),
-      });
-      confidenceAdjusted++;
+    // Decay confidence of surviving facts older than 30 days that haven't been updated
+    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60_000;
+    for (const f of facts) {
+      if (deletedIds.has(f.id)) continue; // Skip already deleted duplicates
+      if (now - f.updatedAt > THIRTY_DAYS_MS && f.confidence > 0.6) {
+        saveFact(botId, {
+          id: f.id,
+          category: f.category,
+          entity: f.entity,
+          fact: f.fact,
+          confidence: Math.max(0.5, f.confidence - 0.2),
+          updatedAt: f.updatedAt, // Preserve original timestamp so age isn't reset
+        });
+        confidenceAdjusted++;
+      }
     }
+
+    const summary = `Сон завершен: консолидировано ${initialFactsCount} фактов, удалено ${duplicatesRemoved} дубликатов, обновлено ${conflictsResolved + confidenceAdjusted} записей.`;
+    recordBotSleep(botId, summary);
+    database.exec("COMMIT");
+
+    return {
+      botId,
+      sleptAt: now,
+      factsProcessed: initialFactsCount,
+      duplicatesRemoved,
+      conflictsResolved,
+      confidenceAdjusted,
+      summary,
+    };
+  } catch (error) {
+    database.exec("ROLLBACK");
+    throw error;
   }
-
-  const summary = `Сон завершен: консолидировано ${facts.length} фактов, удалено ${duplicatesRemoved} дубликатов, обновлено ${conflictsResolved + confidenceAdjusted} записей.`;
-  recordBotSleep(botId, summary);
-
-  return {
-    botId,
-    sleptAt: now,
-    factsProcessed: facts.length,
-    duplicatesRemoved,
-    conflictsResolved,
-    confidenceAdjusted,
-    summary,
-  };
 }

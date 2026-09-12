@@ -211,6 +211,10 @@ export const CLIENT_ALLOW: ReadonlyArray<{ methods: readonly string[]; path: Reg
   { methods: ["POST", "PATCH", "DELETE"], path: /^\/api\/bots\/[\w-]+\/tasks\/[\w-]+$/ },
   { methods: ["PATCH"], path: /^\/api\/bots\/[\w-]+\/profile$/ },
   { methods: ["PATCH"], path: /^\/api\/bots\/[\w-]+$/ }, // display fields only: see clientBotPatchViolation
+  { methods: ["GET", "POST"], path: /^\/api\/bots\/[\w-]+\/sleep$/ },
+  { methods: ["GET", "POST"], path: /^\/api\/bots\/[\w-]+\/facts$/ },
+  { methods: ["DELETE"], path: /^\/api\/bots\/[\w-]+\/facts\/[\w-]+$/ },
+  { methods: ["GET"], path: /^\/api\/web-search$/ },
   // approvals and cards
   { methods: ["POST"], path: /^\/api\/bots\/[\w-]+\/respond$/ },
   { methods: ["POST"], path: /^\/api\/threads\/[\w-]+\/respond$/ },

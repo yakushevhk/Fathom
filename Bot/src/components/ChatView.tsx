@@ -1091,6 +1091,15 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
 
   useEffect(() => setBottomFollow(true), [bot.id, setBottomFollow]);
 
+  const [sleeping, setSleeping] = useState(false);
+  const [sleepNotice, setSleepNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!sleepNotice) return;
+    const timer = setTimeout(() => setSleepNotice(null), 5000);
+    return () => clearTimeout(timer);
+  }, [sleepNotice]);
+
   // A search result may be hundreds of rows before the mounted tail. Open a
   // bounded window around it first; useFocusMessage then scrolls and flashes
   // the row after React commits that window.
@@ -1227,21 +1236,28 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
             </span>
           )}
           <button
+            disabled={sleeping || bot.busy}
+            aria-busy={sleeping}
+            aria-label="Отправить бота в сон (консолидация памяти)"
             onClick={async () => {
+              if (sleeping || bot.busy) return;
+              setSleeping(true);
               try {
                 const res = (await api(`/api/bots/${bot.id}/sleep`, { method: "POST" })) as { ok?: boolean; report?: { summary?: string } };
                 if (res.report?.summary) {
-                  alert(`💤 ${res.report.summary}`);
+                  setSleepNotice(`💤 ${res.report.summary}`);
                 }
               } catch (e) {
                 dispatch({ type: "error", message: e instanceof Error ? e.message : "Сон не удался" });
+              } finally {
+                setSleeping(false);
               }
             }}
-            className="flex items-center gap-1 rounded-full border border-hairline/40 bg-control px-2 py-0.5 text-[11px] font-medium text-ink-secondary hover:text-ink hover:border-hairline transition-all active:scale-95"
+            className="flex items-center gap-1 rounded-full border border-hairline/40 bg-control px-2 py-0.5 text-[11px] font-medium text-ink-secondary hover:text-ink hover:border-hairline disabled:opacity-50 disabled:pointer-events-none transition-all active:scale-95"
             title="Отправить бота в сон (консолидация памяти)"
           >
-            <span className="text-[12px]">💤</span>
-            <span className="hidden sm:inline">Сон</span>
+            <span className={cn("text-[12px]", sleeping && "animate-pulse")}>💤</span>
+            <span className="hidden sm:inline">{sleeping ? "Консолидация..." : "Сон"}</span>
           </button>
           {bot.busy && <WorkingDots className="text-ink-secondary" />}
         </div>
@@ -1310,6 +1326,18 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
         </div>
       </div>
 
+      {sleepNotice && (
+        <div className="sticky top-[53px] z-20 mx-4 mt-2 flex items-center justify-between rounded-lg border border-hairline/50 bg-raised/90 px-3.5 py-2 text-[12px] text-ink shadow-md backdrop-blur animate-in fade-in slide-in-from-top-2 duration-200">
+          <span>{sleepNotice}</span>
+          <button
+            onClick={() => setSleepNotice(null)}
+            className="ml-2 rounded p-1 text-ink-secondary hover:text-ink"
+            aria-label="Закрыть"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       <BotActivityPicker bot={bot} />
       {routineExecution && <div className="mx-5 mb-2 flex flex-wrap items-center gap-2 rounded-lg border border-hairline/40 bg-inset px-3 py-2 text-[11.5px] text-ink-secondary">
         <span className="min-w-0 flex-1 truncate">{t("routines.executionDetails", { name: routineExecution.routineName })}</span>

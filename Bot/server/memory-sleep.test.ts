@@ -38,4 +38,28 @@ describe("memory-sleep", () => {
     expect(afterSleep.sleepCycleCount).toBe(1);
     expect(afterSleep.lastSleptAt).toBeTypeOf("number");
   });
+
+  it("decays confidence on 30+ day unreinforced facts without resetting updatedAt", async () => {
+    const fortyDaysAgo = Date.now() - 40 * 24 * 60 * 60_000;
+    saveFact("bot-1", {
+      category: "preference",
+      entity: "framework",
+      fact: "Uses jQuery.",
+      confidence: 1.0,
+      updatedAt: fortyDaysAgo,
+    });
+
+    const before = listFacts("bot-1");
+    expect(before[0].confidence).toBe(1.0);
+    expect(before[0].updatedAt).toBe(fortyDaysAgo);
+
+    // Execute sleep
+    const report = await executeBotSleep("bot-1");
+    expect(report.confidenceAdjusted).toBe(1);
+
+    const after = listFacts("bot-1");
+    expect(after[0].confidence).toBe(0.8);
+    // Age timestamp must be preserved so repeated sleeps don't reset age to 0 days
+    expect(after[0].updatedAt).toBe(fortyDaysAgo);
+  });
 });
