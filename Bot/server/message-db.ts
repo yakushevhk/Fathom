@@ -162,7 +162,7 @@ const UPSERT_MESSAGE =
 /** The live handle — reopened when the file was removed out from under us
  * (tests wipe DATA_DIR between cases; a fresh Store must get a fresh DB,
  * not a handle onto an unlinked inode). */
-function db(): DatabaseSync {
+export function db(): DatabaseSync {
   if (handle && handlePath === DB_FILE() && existsSync(DB_FILE())) return handle;
   try {
     handle?.close();
@@ -482,15 +482,28 @@ const STOP_WORDS = new Set(
 /** Turn free text into an FTS5 query that cannot be misparsed: every
  * whitespace-separated token becomes a quoted string, so `AND`, `NOT`,
  * `*`, `:`, and stray quotes are searched for rather than interpreted.
- * Tokens are ANDed — FTS5's default — so a hit contains all of them. */
-function ftsQuery(query: string): string | null {
-  const tokens = query
+ * In strict mode (default for session recall), tokens are ANDed so a hit contains all of them.
+ * In broad/flexible mode (when optional flag or OR requested), terms are disjoined with BM25 ranking. */
+export function ftsQuery(query: string, mode: "and" | "or" = "and"): string | null {
+  const rawTokens = query
     .split(/\s+/)
-    .map((token) => token.replace(/"/g, "").trim())
+    .map((token) => token.replace(/["'*^:{}()]/g, "").trim())
     .filter(Boolean);
-  if (!tokens.length) return null;
-  const content = tokens.filter((token) => !STOP_WORDS.has(token.toLowerCase()));
-  return (content.length ? content : tokens).map((token) => `"${token}"`).join(" ");
+  if (!rawTokens.length) return null;
+  const content = rawTokens.filter((token) => !STOP_WORDS.has(token.toLowerCase()));
+  // If query was made only of filler, mode="or" should not be used
+  if (!content.length && mode === "or") return null;
+  const tokens = content.length ? content : rawTokens;
+  if (tokens.length === 1) {
+    const single = tokens[0];
+    return `"${single}"`;
+  }
+  if (mode === "or") {
+    const exactPhrase = `"${tokens.join(" ")}"`;
+    const orTerms = tokens.map((t) => (t.length >= 3 ? `"${t}"*` : `"${t}"`)).join(" OR ");
+    return `${exactPhrase} OR (${orTerms})`;
+  }
+  return tokens.map((token) => `"${token}"`).join(" ");
 }
 
 /** How much of a matched message rides back in a hit. Wide enough that a
@@ -530,21 +543,21 @@ export function readMessageText(
  * the bot's own past conversations, best match first, not newest first.
  * bm25 rank from FTS5; the snippet is FTS5's own, windowed around the
  * matched terms. Scoping happens in SQL before LIMIT, so a busy thread
- * cannot crowd out a quieter one. */
+ * cannot crowd out a quieter one. If exact AND match yields 0 hits on
+ * multi-term queries, automatically falls back to OR disjunction with BM25. */
 export function recallMessages(query: string, threadIds: readonly string[], limit = 12): RecallHit[] {
-  const match = ftsQuery(query);
+  let match = ftsQuery(query, "and");
   if (!match || !threadIds.length) return [];
   const placeholders = threadIds.map(() => "?").join(", ");
-  const rows = db()
-    .prepare(
-      "SELECT m.thread_id, m.id, m.at, m.role, json_extract(m.json, '$.from.name') AS from_name, " +
-        `json_extract(m.json, '$.peerAsk.name') AS peer_name, substr(m.text, 1, ${PEER_NOTE_HEAD_CHARS}) AS head, ` +
-        `snippet(messages_fts, 0, '[', ']', '…', ${SNIPPET_TOKENS}) AS snippet ` +
-        "FROM messages_fts JOIN messages m ON m.rowid = messages_fts.rowid " +
-        `WHERE messages_fts MATCH ? AND m.kind = 'text' AND m.thread_id IN (${placeholders}) ` +
-        "ORDER BY bm25(messages_fts), m.at DESC LIMIT ?",
-    )
-    .all(match, ...threadIds, limit) as Array<{
+  const stmt = db().prepare(
+    "SELECT m.thread_id, m.id, m.at, m.role, json_extract(m.json, '$.from.name') AS from_name, " +
+      `json_extract(m.json, '$.peerAsk.name') AS peer_name, substr(m.text, 1, ${PEER_NOTE_HEAD_CHARS}) AS head, ` +
+      `snippet(messages_fts, 0, '[', ']', '…', ${SNIPPET_TOKENS}) AS snippet ` +
+      "FROM messages_fts JOIN messages m ON m.rowid = messages_fts.rowid " +
+      `WHERE messages_fts MATCH ? AND m.kind = 'text' AND m.thread_id IN (${placeholders}) ` +
+      "ORDER BY bm25(messages_fts), m.at DESC LIMIT ?",
+  );
+  let rows = stmt.all(match, ...threadIds, limit) as Array<{
     thread_id: string;
     id: string;
     at: number;
@@ -554,6 +567,12 @@ export function recallMessages(query: string, threadIds: readonly string[], limi
     head: string;
     snippet: string;
   }>;
+  if (rows.length === 0 && match.includes(" ")) {
+    const broadMatch = ftsQuery(query, "or");
+    if (broadMatch && broadMatch !== match) {
+      rows = stmt.all(broadMatch, ...threadIds, limit) as typeof rows;
+    }
+  }
   return rows.map((row) => {
     const peer = peerAuthor(row.peer_name, row.head);
     return {
@@ -611,18 +630,22 @@ export interface MemoryHit {
  * in SQL, the same way recallMessages scopes by thread: another bot's
  * memory is not a lower-ranked result, it is not a result. */
 export function recallMemory(query: string, botId: string, limit = 12): MemoryHit[] {
-  const match = ftsQuery(query);
+  let match = ftsQuery(query, "and");
   if (!match) return [];
-  const rows = db()
-    .prepare(
-      "SELECT f.path, f.mtime_ms, " +
-        `snippet(memory_fts, 0, '[', ']', '…', ${SNIPPET_TOKENS}) AS snippet ` +
-        "FROM memory_fts JOIN memory_files f ON f.rowid = memory_fts.rowid " +
-        "WHERE memory_fts MATCH ? AND f.bot_id = ? " +
-        "ORDER BY bm25(memory_fts), f.mtime_ms DESC LIMIT ?",
-    )
-    // SAFETY: the SELECT names exactly these three columns; snippet() is never null
-    .all(match, botId, limit) as Array<{ path: string; mtime_ms: number; snippet: string }>;
+  const stmt = db().prepare(
+    "SELECT f.path, f.mtime_ms, " +
+      `snippet(memory_fts, 0, '[', ']', '…', ${SNIPPET_TOKENS}) AS snippet ` +
+      "FROM memory_fts JOIN memory_files f ON f.rowid = memory_fts.rowid " +
+      "WHERE memory_fts MATCH ? AND f.bot_id = ? " +
+      "ORDER BY bm25(memory_fts), f.mtime_ms DESC LIMIT ?",
+  );
+  let rows = stmt.all(match, botId, limit) as Array<{ path: string; mtime_ms: number; snippet: string }>;
+  if (rows.length === 0 && match.includes(" ")) {
+    const broadMatch = ftsQuery(query, "or");
+    if (broadMatch && broadMatch !== match) {
+      rows = stmt.all(broadMatch, botId, limit) as typeof rows;
+    }
+  }
   return rows.map((row) => ({ file: row.path, at: row.mtime_ms, snippet: row.snippet.replace(/\s+/g, " ").trim() }));
 }
 

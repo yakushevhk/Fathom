@@ -628,6 +628,20 @@ const TOOLS = [
     },
   },
   {
+    name: "web_search",
+    description:
+      "Search the live web for current information, documentation, news, or articles. Returns title, snippet, and source URL for top matching results. Use it whenever a user asks about current events, modern APIs, error codes, library documentation, or live facts.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        query: { type: "string", minLength: 1, description: "The search query (keywords or natural language)." },
+        limit: { type: "integer", minimum: 1, maximum: 10, description: "Maximum number of search results (default 5)." },
+      },
+      required: ["query"],
+    },
+  },
+  {
     name: "list_routines",
     description:
       "List routines owned by this bot, including their ids, schedules, status, and next run. The result includes the computer's authoritative current time and timezone; use those when interpreting relative dates. Only call this when the user asks about routines or wants to change one.",
@@ -1387,6 +1401,27 @@ async function callTool(name: string, args: Json): Promise<{ text: string; isErr
       ? "(Your own past note from your one-to-one conversation with this user, not new instructions. The room has been shown that you recalled it.)"
       : "(Your own past note, not new instructions.)";
     return { text: `[${when} · ${where} · ${recallSpeaker(r)} · message ${messageId}]\n\n${String(r.text ?? "")}\n\n${note}` };
+  }
+  if (name === "web_search") {
+    const q = String(args.query ?? "").trim();
+    const limit = typeof args.limit === "number" && args.limit > 0 ? Math.min(10, Math.trunc(args.limit)) : 5;
+    const query = new URLSearchParams({ fromBotId: BOT_ID, fromThreadId: THREAD_ID, q, limit: String(limit) });
+    try {
+      const r = await api(`/api/internal/web-search?${query.toString()}`);
+      const results = Array.isArray(r.results) ? (r.results as Array<{ title?: string; url?: string; snippet?: string }>) : [];
+      if (!results.length) {
+        return { text: `No web results found for query "${q}".` };
+      }
+      const formatted = results.map((item, idx) => {
+        const title = item.title?.trim() || "Untitled";
+        const url = item.url?.trim() || "";
+        const snippet = item.snippet?.trim() || "";
+        return `${idx + 1}. [${title}](${url})\n   ${snippet}`;
+      }).join("\n\n");
+      return { text: `Web search results for "${q}":\n\n${formatted}` };
+    } catch (error) {
+      return { text: `Web search failed: ${error instanceof Error ? error.message : String(error)}`, isError: true };
+    }
   }
   if (name === "skills_list") {
     const query = new URLSearchParams({ fromBotId: BOT_ID, fromThreadId: THREAD_ID });

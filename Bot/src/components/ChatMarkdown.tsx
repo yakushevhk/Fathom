@@ -602,7 +602,7 @@ function ChatMarkdownComponent({ text, streaming = false, message, mentionPeers 
               return <KaTeXMath math={raw.slice(1, -1)} block={false} />;
             }
             return (
-              <code dir="ltr" className="rounded bg-inset px-1 py-px text-[13px] break-words [unicode-bidi:isolate]">{children}</code>
+              <code dir="ltr" className="rounded border border-hairline/30 bg-control/60 px-1.5 py-0.5 font-mono text-[12.5px] text-ink break-words [unicode-bidi:isolate]">{children}</code>
             );
           },
           // markdown never emits a span itself (no raw HTML); the only

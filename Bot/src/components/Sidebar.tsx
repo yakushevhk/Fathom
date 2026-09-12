@@ -1707,17 +1707,17 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
         {macInset ? (
           <div className={density === "icons" ? "h-5 w-full" : "w-14"} />
         ) : density === "icons" ? (
-          <div className="flex size-7 items-center justify-center rounded border border-[#262626] bg-[#111111] text-[#ededed]">
+          <div className="flex size-7 items-center justify-center rounded border border-hairline/40 bg-control text-ink">
             <span className="text-[11px] font-mono font-bold">F</span>
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <div className="flex size-6 items-center justify-center rounded border border-[#262626] bg-[#141414]">
-              <span className="text-[11px] font-mono font-bold text-[#ededed]">F</span>
+            <div className="flex size-6 items-center justify-center rounded border border-hairline/40 bg-control">
+              <span className="text-[11px] font-mono font-bold text-ink">F</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[13px] font-mono font-semibold tracking-wide text-[#ededed]">FATHOM</span>
-              <span className="rounded border border-[#222222] bg-[#111111] px-1 py-0.2 text-[9px] font-mono text-[#737373]">SYS</span>
+              <span className="text-[13px] font-mono font-semibold tracking-wide text-ink">FATHOM</span>
+              <span className="rounded border border-hairline/40 bg-control px-1 py-0.2 text-[9px] font-mono text-ink-secondary">SYS</span>
             </div>
           </div>
         )}
@@ -2084,13 +2084,13 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
           </div>
         ) : (
           <div className="mt-2.5 space-y-2">
-            <div className="rounded-lg border border-[#1e1e1e] bg-[#0c0c0c] px-2.5 py-2">
+            <div className="rounded-lg border border-hairline/40 bg-control px-2.5 py-2">
               <div className="flex items-center justify-between text-[11px] font-mono">
-                <span className="flex items-center gap-1.5 text-[#888888]">
-                  <span className="size-1.5 rounded-full bg-[#22c55e]" />
+                <span className="flex items-center gap-1.5 text-ink-secondary">
+                  <span className="size-1.5 rounded-full bg-success" />
                   SYS.ROUTER
                 </span>
-                <span className="text-[#555555]">18ms</span>
+                <span className="text-ink-secondary/70">18ms</span>
               </div>
             </div>
             <SidebarProfileMenu />

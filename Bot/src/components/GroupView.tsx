@@ -110,33 +110,33 @@ export function RoomToolChip({ message, roomId }: { message: Message; roomId?: s
         className={cn(
           "flex max-w-[min(640px,100%)] min-w-0 items-center gap-2 rounded-xl border px-3 py-1.5 text-[12px] font-mono shadow-xs transition-colors",
           failed
-            ? "border-[#ef4444]/40 bg-[#160b0b] text-[#ef4444]"
-            : "border-[#222222] bg-[#0c0c0c] text-[#a3a3a3] hover:border-[#333333]",
+            ? "border-danger/40 bg-danger/10 text-danger"
+            : "border-hairline/40 bg-panel text-ink hover:border-hairline/70",
         )}
       >
         <div className="flex size-4 shrink-0 items-center justify-center">
           {tool.ok === undefined ? (
             <Loader2 size={12} className="animate-spin text-accent" />
           ) : failed ? (
-            <X size={12} className="text-[#ef4444]" />
+            <X size={12} className="text-danger" />
           ) : (
-            <Check size={12} className="text-[#22c55e]" />
+            <Check size={12} className="text-success" />
           )}
         </div>
         <span className={cn(
-          "shrink-0 rounded px-1.5 py-0.2 text-[10px] font-bold uppercase tracking-wide",
+          "shrink-0 rounded px-1.5 py-0.2 text-[10px] font-bold uppercase tracking-wide border",
           isCommand
-            ? "bg-[#1f1f1f] text-[#ededed] border border-[#2a2a2a]"
-            : "bg-[#141414] text-[#888888] border border-[#1e1e1e]"
+            ? "bg-control text-ink border-hairline/50"
+            : "bg-raised text-ink-secondary border-hairline/30"
         )}>
           {isCommand ? "$ bash" : tool.name}
         </span>
         {commandText ? (
-          <span className="min-w-0 flex-1 truncate text-[#ededed] font-medium selection:bg-[#262626]" title={commandText}>
+          <span className="min-w-0 flex-1 truncate text-ink font-medium" title={commandText}>
             {commandText}
           </span>
         ) : (
-          <span className="min-w-0 flex-1 truncate text-[#737373]" title={tool.name}>
+          <span className="min-w-0 flex-1 truncate text-ink-secondary" title={tool.name}>
             {tool.name}
           </span>
         )}
@@ -305,8 +305,8 @@ const Transcript = memo(function Transcript({
                   className={cn(
                     !user && m.id === emergingId && "turn-answer",
                     user
-                      ? "chat-text whitespace-pre-wrap bg-[#141414] text-[#ededed] border border-[#262626] rounded-xl rounded-br-xs font-normal px-4 py-2.5"
-                      : "border border-[#1f1f1f] bg-[#0a0a0a] text-[#ededed] rounded-xl rounded-bl-xs px-4 py-2.5",
+                      ? "chat-text whitespace-pre-wrap bg-bubble-user text-ink border border-hairline/40 rounded-xl rounded-br-xs font-normal px-4 py-2.5 shadow-xs"
+                      : "border border-hairline/40 bg-card text-ink rounded-xl rounded-bl-xs px-4 py-2.5 shadow-xs",
                   )}
                 >
                   {m.replyToId && (() => {

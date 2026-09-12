@@ -369,8 +369,8 @@ function Bubble({
             user && webhookView
               ? "overflow-hidden border border-hairline/60 bg-card text-ink"
               : user
-                ? "bg-[#141414] text-[#ededed] border border-[#262626] px-4 py-2.5 whitespace-pre-wrap rounded-br-xs font-normal"
-                : "border border-[#1f1f1f] bg-[#0a0a0a] px-4 py-2.5 text-[#ededed] rounded-bl-xs",
+                ? "bg-bubble-user text-ink border border-hairline/40 px-4 py-2.5 whitespace-pre-wrap rounded-br-xs font-normal shadow-xs"
+                : "border border-hairline/40 bg-card px-4 py-2.5 text-ink rounded-bl-xs shadow-xs",
           )}
           title={new Date(message.at).toLocaleString()}
         >
@@ -567,43 +567,43 @@ function ActivityChip({ message }: { message: Message }) {
         className={cn(
           "flex max-w-[min(640px,100%)] min-w-0 items-center gap-2 rounded-xl border px-3 py-1.5 text-[12px] font-mono shadow-xs transition-colors",
           failed
-            ? "border-[#ef4444]/40 bg-[#160b0b] text-[#ef4444]"
-            : "border-[#222222] bg-[#0c0c0c] text-[#a3a3a3] hover:border-[#333333]",
+            ? "border-danger/40 bg-danger/10 text-danger"
+            : "border-hairline/40 bg-panel text-ink hover:border-hairline/70",
         )}
       >
         <div className="flex size-4 shrink-0 items-center justify-center">
           {tool.ok === undefined ? (
             <Loader2 size={12} className="animate-spin text-accent" />
           ) : failed ? (
-            <X size={12} className="text-[#ef4444]" />
+            <X size={12} className="text-danger" />
           ) : (
-            <Check size={12} className="text-[#22c55e]" />
+            <Check size={12} className="text-success" />
           )}
         </div>
 
         {/* Tool name / category tag */}
         <span className={cn(
-          "shrink-0 rounded px-1.5 py-0.2 text-[10px] font-bold uppercase tracking-wide",
+          "shrink-0 rounded px-1.5 py-0.2 text-[10px] font-bold uppercase tracking-wide border",
           isCommand
-            ? "bg-[#1f1f1f] text-[#ededed] border border-[#2a2a2a]"
-            : "bg-[#141414] text-[#888888] border border-[#1e1e1e]"
+            ? "bg-control text-ink border-hairline/50"
+            : "bg-raised text-ink-secondary border-hairline/30"
         )}>
           {isCommand ? "$ bash" : tool.name}
         </span>
 
         {/* Command string or call summary */}
         {commandText ? (
-          <span className="min-w-0 flex-1 truncate text-[#ededed] font-medium selection:bg-[#262626]" title={commandText}>
+          <span className="min-w-0 flex-1 truncate text-ink font-medium" title={commandText}>
             {commandText}
           </span>
         ) : (
-          <span className="min-w-0 flex-1 truncate text-[#737373]" title={tool.name}>
+          <span className="min-w-0 flex-1 truncate text-ink-secondary" title={tool.name}>
             {tool.name}
           </span>
         )}
 
         {/* Status / timing tag */}
-        <span className="shrink-0 text-[10.5px] text-[#555555]">
+        <span className="shrink-0 text-[10.5px] text-ink-secondary/70">
           {tool.ok === undefined ? "running…" : failed ? "exit 1" : "done"}
         </span>
 
@@ -1184,7 +1184,7 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
       <div
         className={cn(
           "@container/chathead flex items-center justify-between px-3 py-2 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] md:px-5 md:py-2.5",
-          "border-b border-[#1a1a1a] bg-[#000000] sticky top-0 z-30",
+          "border-b border-hairline/30 bg-app sticky top-0 z-30",
           "pl-14 md:pl-5",
         )}
       >

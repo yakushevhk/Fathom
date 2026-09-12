@@ -38,11 +38,11 @@ export function ThinkingAccordion({
   );
 
   const content = (
-    <div className="my-2.5 max-w-3xl overflow-hidden rounded-xl border border-[#1f1f1f] bg-[#0c0c0c] transition-all">
+    <div className="my-2.5 max-w-3xl overflow-hidden rounded-xl border border-hairline/40 bg-card shadow-xs transition-all">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between px-3 py-2 text-left text-[12px] font-mono text-[#888888] hover:bg-[#141414] hover:text-[#ededed] transition-colors"
+        className="flex w-full items-center justify-between px-3 py-2 text-left text-[12px] font-mono text-ink-secondary hover:bg-raised/50 hover:text-ink transition-colors"
       >
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-2">
@@ -51,17 +51,17 @@ export function ThinkingAccordion({
                 <ThinkingOrb state="solving" size={20} theme="dark" />
               </div>
             ) : (
-              <div className="flex size-5 shrink-0 items-center justify-center rounded bg-[#141414] border border-[#222222]">
-                <span className="text-[10px] font-mono text-[#a3a3a3]">✦</span>
+              <div className="flex size-5 shrink-0 items-center justify-center rounded bg-raised border border-hairline/40">
+                <span className="text-[10px] font-mono text-ink-secondary">✦</span>
               </div>
             )}
-            <span className="font-semibold text-[#ededed]">
+            <span className="font-semibold text-ink">
               {isStreaming ? "Thinking…" : "Thought & Execution"}
             </span>
           </div>
 
           {/* Tokens indicator */}
-          <span className="rounded bg-[#141414] border border-[#222222] px-1.5 py-0.5 text-[10.5px] font-mono text-[#888888]">
+          <span className="rounded bg-control border border-hairline/40 px-1.5 py-0.5 text-[10.5px] font-mono text-ink-secondary">
             ~{estimatedTokens} tokens
           </span>
           {/* Tool calls & steps count badge */}

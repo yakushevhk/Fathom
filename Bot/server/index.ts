@@ -8,7 +8,9 @@ import { extname, join } from "node:path";
 
 import { z } from "zod";
 import { botAvatarUrlFromStoredPath } from "../shared/bot-avatar.ts";
+import { executeWebSearch } from "./web-search.ts";
 import { BOT_PROFILE_LIMITS } from "../shared/bot-profile.ts";
+import { handleMemoryAndSearchRoutes } from "./routes/memory-search.ts";
 import {
   approvalModeFor,
   supportsApprovalMode,
@@ -8575,6 +8577,20 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       res.setHeader("set-cookie", serializeSessionCookie(SESSION_COOKIE, issued.token, { secure, maxAgeSeconds: cookieMaxAgeSeconds(issued.session) }));
       return json(res, 200, { session: issued.session, environment });
     }
+    const modularHandled = await handleMemoryAndSearchRoutes({
+      req,
+      res,
+      url,
+      method,
+      path,
+      store,
+      readBody: async () => {
+        const raw = await readBody(req);
+        return JSON.stringify(raw ?? {});
+      },
+      json,
+    });
+    if (modularHandled) return;
     if (method === "POST" && path === "/api/auth/pair") {
       // JSON only: a cross-site HTML form cannot send this content type
       // without a preflight, so a stray unused code cannot be planted as a
@@ -9165,6 +9181,21 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
           discloseRecall(from, fromThreadId, hits.filter((hit) => hit.crossed).map((hit) => hit.threadId));
         }
         return json(res, 200, { hits, memoryHits });
+      }
+      if (method === "GET" && path === "/api/internal/web-search") {
+        const fromBotId = String(url.searchParams.get("fromBotId") ?? "");
+        const from = store.bot(fromBotId);
+        if (!from) return json(res, 403, { error: "unknown sender" });
+        const q = String(url.searchParams.get("q") ?? "").trim();
+        if (!q) return json(res, 400, { error: "q is required" });
+        const rawLimit = Number(url.searchParams.get("limit"));
+        const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(Math.trunc(rawLimit), 10) : 5;
+        try {
+          const results = await executeWebSearch(q, limit);
+          return json(res, 200, { ok: true, results });
+        } catch (error) {
+          return json(res, 500, { error: error instanceof Error ? error.message : String(error) });
+        }
       }
       // session_read: the whole message behind a session_search hit. Same
       // own-bot scope — a message id from another bot's thread reads as

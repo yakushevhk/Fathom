@@ -161,10 +161,10 @@ const ACCENT_MAP: Record<string, { dot: string; badge: string; text: string; fil
     fill: "bg-purple-500",
   },
   neutral: {
-    dot: "bg-[#737373]",
-    badge: "border border-[#262626] bg-[#141414] text-[#a3a3a3]",
-    text: "text-[#ededed]",
-    fill: "bg-[#737373]",
+    dot: "bg-ink-secondary",
+    badge: "border border-hairline/40 bg-control text-ink-secondary",
+    text: "text-ink",
+    fill: "bg-ink-secondary",
   },
 };
 
@@ -206,14 +206,14 @@ function RangeBarView({
   range: { min: number; max: number; current: number; optimalMin?: number; optimalMax?: number };
 }) {
   const span = range.max - range.min || 1;
-  const pct = Math.min(100, Math.max(0, ((range.current - range.min) / span) * 100));
+  const currentPos = Math.min(100, Math.max(0, ((range.current - range.min) / span) * 100));
 
   return (
     <div className="mt-2 w-full space-y-1">
-      <div className="relative h-1.5 w-full rounded-full bg-[#1e1e1e] overflow-hidden">
+      <div className="relative h-1.5 w-full rounded-full bg-control overflow-hidden">
         {range.optimalMin !== undefined && range.optimalMax !== undefined && (
           <div
-            className="absolute top-0 bottom-0 bg-[#22c55e]/25"
+            className="absolute top-0 bottom-0 bg-success/25"
             style={{
               left: `${Math.max(0, ((range.optimalMin - range.min) / span) * 100)}%`,
               width: `${Math.min(100, ((range.optimalMax - range.optimalMin) / span) * 100)}%`,
@@ -221,13 +221,13 @@ function RangeBarView({
           />
         )}
         <div
-          className="absolute top-0 bottom-0 w-1.5 rounded-full bg-white shadow-[0_0_6px_rgba(255,255,255,0.8)] -translate-x-1/2"
-          style={{ left: `${pct}%` }}
+          className="absolute top-0 bottom-0 w-1 bg-ink rounded-full"
+          style={{ left: `calc(${currentPos}% - 2px)` }}
         />
       </div>
-      <div className="flex justify-between text-[9.5px] font-mono text-[#737373]">
+      <div className="flex justify-between text-[9.5px] font-mono text-ink-secondary">
         <span>{range.min}</span>
-        <span className="text-[#a3a3a3] font-medium">{range.current}</span>
+        <span className="text-ink font-medium">{range.current}</span>
         <span>{range.max}</span>
       </div>
     </div>
@@ -246,33 +246,30 @@ function SegmentedBarView({
     emerald: "bg-emerald-500",
     amber: "bg-amber-500",
     rose: "bg-rose-500",
-    neutral: "bg-[#555555]",
+    neutral: "bg-ink-secondary",
   };
 
   return (
     <div className="mt-2 w-full space-y-1.5">
-      <div className="flex h-2 w-full overflow-hidden rounded-md bg-[#1a1a1a] gap-0.5">
+      <div className="flex h-2 w-full overflow-hidden rounded-md bg-control gap-0.5">
         {segments.map((seg, idx) => (
           <div
             key={idx}
-            className={cn("h-full transition-all duration-300", seg.color ? (colorMap[seg.color] || "bg-emerald-500") : "bg-emerald-500")}
-            style={{ width: `${Math.max(2, seg.percent)}%` }}
+            className={cn("h-full transition-all duration-300", colorMap[seg.color || "neutral"] || "bg-accent")}
+            style={{ width: `${seg.percent}%` }}
             title={`${seg.label}: ${seg.value} (${seg.percent}%)`}
           />
         ))}
       </div>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-[#888888]">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-ink-secondary">
         {segments.map((seg, idx) => (
           <div key={idx} className="flex items-center gap-1.5">
             <span
-              className={cn(
-                "size-1.5 rounded-full shrink-0",
-                seg.color ? (colorMap[seg.color] || "bg-emerald-500") : "bg-emerald-500"
-              )}
+              className={cn("size-1.5 rounded-full shrink-0", colorMap[seg.color || "neutral"] || "bg-accent")}
             />
-            <span className="font-mono text-[#ededed] font-medium">{seg.label}</span>
-            <span className="text-[#737373]">{seg.value}</span>
-            <span className="text-[#555555]">({seg.percent}%)</span>
+            <span className="font-mono text-ink font-medium">{seg.label}</span>
+            <span className="text-ink-secondary">{seg.value}</span>
+            <span className="text-ink-secondary/70">({seg.percent}%)</span>
           </div>
         ))}
       </div>
@@ -285,26 +282,27 @@ function RadialRingView({ percent, color = "#22c55e" }: { percent: number; color
   const size = 38;
   const stroke = 3.5;
   const radius = (size - stroke) / 2;
-  const circ = 2 * Math.PI * radius;
-  const offset = circ - (Math.min(100, Math.max(0, percent)) / 100) * circ;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (Math.min(100, Math.max(0, percent)) / 100) * circumference;
 
   return (
     <div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} stroke="#1e1e1e" strokeWidth={stroke} fill="none" />
+        <circle cx={size / 2} cy={size / 2} r={radius} stroke="currentColor" className="text-hairline/40" strokeWidth={stroke} fill="none" />
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={color}
+          stroke={color.startsWith("#") ? color : undefined}
+          className={cn("transition-all duration-500", !color.startsWith("#") && (color.startsWith("bg-") ? color.replace("bg-", "text-") : "text-success"))}
           strokeWidth={stroke}
-          strokeDasharray={circ}
-          strokeDashoffset={offset}
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
           strokeLinecap="round"
           fill="none"
         />
       </svg>
-      <span className="absolute text-[9.5px] font-mono font-bold text-[#ededed]">{percent}%</span>
+      <span className="absolute text-[9.5px] font-mono font-bold text-ink">{percent}%</span>
     </div>
   );
 }
@@ -383,17 +381,17 @@ export function UniversalCard({
   };
 
   const cardBody = (
-    <div className="my-3 w-full max-w-2xl overflow-hidden rounded-xl border border-[#1f1f1f] bg-[#0c0c0c] shadow-lg transition-all hover:border-[#2a2a2a]">
+    <div className="my-3 w-full max-w-2xl overflow-hidden rounded-xl border border-hairline/40 bg-card shadow-lg transition-all hover:border-hairline/80">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-[#1a1a1a] px-3.5 py-2.5 bg-[#0e0e0e]">
+      <div className="flex items-center justify-between border-b border-hairline/30 px-3.5 py-2.5 bg-raised/50">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="flex size-6 shrink-0 items-center justify-center rounded border border-[#222222] bg-[#141414] text-[#ededed]">
+          <div className="flex size-6 shrink-0 items-center justify-center rounded border border-hairline/40 bg-control text-ink">
             <HeaderIcon size={13} />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className={cn("size-1.5 rounded-full shrink-0", colors.dot)} />
-              <h3 className="text-[13px] font-mono font-semibold text-[#ededed] truncate">{card.title}</h3>
+              <h3 className="text-[13px] font-mono font-semibold text-ink truncate">{card.title}</h3>
               {card.badge && (
                 <span className={cn("rounded px-1.5 py-0.2 text-[9.5px] font-mono font-medium", colors.badge)}>
                   {card.badge}
@@ -401,14 +399,13 @@ export function UniversalCard({
               )}
             </div>
             {card.subtitle && (
-              <p className="text-[11px] font-mono text-[#737373] truncate">{card.subtitle}</p>
+              <p className="text-[11px] font-mono text-ink-secondary truncate">{card.subtitle}</p>
             )}
           </div>
         </div>
 
         {/* Pin Control */}
         <div className="flex items-center gap-1.5 shrink-0 ml-2">
-
           {onPin && (
             <button
               type="button"
@@ -419,7 +416,7 @@ export function UniversalCard({
               title={isPinned ? "Unpin widget" : "Pin widget to top"}
               className={cn(
                 "flex size-6 items-center justify-center rounded border transition-colors",
-                isPinned ? "border-white bg-white text-black" : "border-[#222222] bg-[#141414] text-[#737373] hover:text-[#ededed] hover:border-[#333333]"
+                isPinned ? "border-accent bg-accent text-accent-ink" : "border-hairline/40 bg-control text-ink-secondary hover:text-ink hover:border-hairline"
               )}
             >
               <Pin size={11} className={isPinned ? "fill-current" : ""} />
@@ -450,15 +447,15 @@ export function UniversalCard({
                 <div
                   key={idx}
                   onClick={() => stat.copyable !== false && copyToClipboard(String(stat.value), copyId)}
-                  className="group relative flex flex-col justify-between rounded-lg border border-[#1a1a1a] bg-[#090909] p-3 transition-colors hover:border-[#262626] cursor-pointer"
+                  className="group relative flex flex-col justify-between rounded-lg border border-hairline/30 bg-inset/50 p-3 transition-colors hover:border-hairline/70 cursor-pointer"
                   title="Click to copy value"
                 >
                   <div className="flex items-center justify-between gap-1">
-                    <span className="text-[11px] font-mono text-[#737373] truncate" title={stat.label}>
+                    <span className="text-[11px] font-mono text-ink-secondary truncate" title={stat.label}>
                       {stat.label}
                     </span>
                     {isCopied ? (
-                      <span className="text-[9px] font-mono text-[#22c55e]">✓ copied</span>
+                      <span className="text-[9px] font-mono text-success">✓ copied</span>
                     ) : stat.ringPercent !== undefined ? (
                       <RadialRingView percent={stat.ringPercent} color={colors.fill.replace("bg-", "")} />
                     ) : null}
@@ -466,10 +463,10 @@ export function UniversalCard({
 
                   <div className="mt-1 flex items-baseline justify-between gap-2">
                     <div className="flex items-baseline gap-1.5 flex-wrap">
-                      <span className="text-[17px] font-mono font-bold tracking-tight text-[#ededed]">
+                      <span className="text-[17px] font-mono font-bold tracking-tight text-ink">
                         {stat.value}
                       </span>
-                      {stat.unit && <span className="text-[10.5px] font-mono text-[#737373]">{stat.unit}</span>}
+                      {stat.unit && <span className="text-[10.5px] font-mono text-ink-secondary">{stat.unit}</span>}
                     </div>
                     {stat.sparkline && (
                       <SparklineView points={stat.sparkline} color="#22c55e" />
@@ -487,9 +484,9 @@ export function UniversalCard({
                   )}
 
                   {(stat.change || stat.description) && !stat.range && !stat.segments && (
-                    <div className="mt-1.5 flex items-center gap-1 text-[10px] font-mono text-[#737373] truncate">
-                      {stat.trend === "up" && <TrendingUp size={11} className="text-[#22c55e] shrink-0" />}
-                      {stat.trend === "down" && <TrendingDown size={11} className="text-[#ef4444] shrink-0" />}
+                    <div className="mt-1.5 flex items-center gap-1 text-[10px] font-mono text-ink-secondary truncate">
+                      {stat.trend === "up" && <TrendingUp size={11} className="text-success shrink-0" />}
+                      {stat.trend === "down" && <TrendingDown size={11} className="text-danger shrink-0" />}
                       <span className="truncate">{stat.change || stat.description}</span>
                     </div>
                   )}
@@ -508,10 +505,10 @@ export function UniversalCard({
               const alreadyHasPercent = unitText.includes("%");
 
               return (
-                <div key={idx} className="rounded-lg border border-[#1a1a1a] bg-[#090909] p-2.5">
-                  <div className="flex items-center justify-between text-[11.5px] font-mono text-[#ededed] mb-1.5">
+                <div key={idx} className="rounded-lg border border-hairline/30 bg-inset/50 p-2.5">
+                  <div className="flex items-center justify-between text-[11.5px] font-mono text-ink mb-1.5">
                     <span className="truncate">{prog.label}</span>
-                    <span className="text-[#888888]">
+                    <span className="text-ink-secondary">
                       {prog.current} / {prog.total} {unitText} {!alreadyHasPercent && `(${percent}%)`}
                     </span>
                   </div>
@@ -525,9 +522,9 @@ export function UniversalCard({
                       }))}
                     />
                   ) : (
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#1c1c1c]">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-control">
                       <div
-                        className="h-full bg-[#ededed] transition-all duration-500 rounded-full"
+                        className="h-full bg-accent transition-all duration-500 rounded-full"
                         style={{ width: `${percent}%` }}
                       />
                     </div>
@@ -546,7 +543,7 @@ export function UniversalCard({
 
           return (
             <div className="space-y-1.5">
-              <div className="rounded-lg border border-[#1a1a1a] bg-[#090909] divide-y divide-[#171717] overflow-hidden">
+              <div className="rounded-lg border border-hairline/30 bg-inset/50 divide-y divide-hairline/20 overflow-hidden">
                 {visibleRows.map((kv, idx) => {
                   const copyId = `kv-${idx}`;
                   const isCopied = copiedKey === copyId;
@@ -555,24 +552,24 @@ export function UniversalCard({
                     <div
                       key={idx}
                       onClick={() => kv.copyable !== false && copyToClipboard(String(kv.value), copyId)}
-                      className="flex items-center justify-between px-3 py-2 text-[12px] font-mono hover:bg-[#121212] transition-colors cursor-pointer group"
+                      className="flex items-center justify-between px-3 py-2 text-[12px] font-mono hover:bg-raised/40 transition-colors cursor-pointer group"
                       title="Click to copy"
                     >
-                      <span className="text-[#737373] truncate mr-2">{kv.key}</span>
+                      <span className="text-ink-secondary truncate mr-2">{kv.key}</span>
                       <div className="text-right shrink-0 flex items-center gap-2">
                         {isCopied ? (
-                          <span className="text-[10px] text-[#22c55e]">✓ copied</span>
+                          <span className="text-[10px] text-success">✓ copied</span>
                         ) : (
                           <>
-                            <span className="font-semibold text-[#ededed]">{kv.value}</span>
+                            <span className="font-semibold text-ink">{kv.value}</span>
                             {kv.badge && (
-                              <span className="rounded border border-[#262626] bg-[#141414] px-1 py-0.2 text-[9.5px] text-[#888888]">
+                              <span className="rounded border border-hairline/40 bg-control px-1 py-0.2 text-[9.5px] text-ink-secondary">
                                 {kv.badge}
                               </span>
                             )}
                           </>
                         )}
-                        {kv.hint && <span className="text-[10px] text-[#555555]">({kv.hint})</span>}
+                        {kv.hint && <span className="text-[10px] text-ink-secondary/70">({kv.hint})</span>}
                       </div>
                     </div>
                   );
@@ -585,7 +582,7 @@ export function UniversalCard({
                     triggerHaptic("tap");
                     setIsExpanded(!isExpanded);
                   }}
-                  className="w-full rounded border border-[#1a1a1a] bg-[#0c0c0c] py-1 text-center text-[10.5px] font-mono text-[#737373] hover:text-[#ededed] hover:border-[#262626] transition-colors"
+                  className="w-full rounded border border-hairline/30 bg-control/50 py-1 text-center text-[10.5px] font-mono text-ink-secondary hover:text-ink hover:border-hairline transition-colors"
                 >
                   {isExpanded ? "Свернуть" : `Показать еще ${card.keyValue.length - limit} параметров`}
                 </button>
@@ -596,19 +593,19 @@ export function UniversalCard({
 
         {/* Layout: timeline */}
         {layout === "timeline" && card.timeline && (
-          <div className="relative pl-4 space-y-3.5 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-px before:bg-[#222222]">
+          <div className="relative pl-4 space-y-3.5 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-px before:bg-hairline/40">
             {card.timeline.map((tItem, idx) => (
               <div key={idx} className="relative">
                 <span className={cn(
-                  "absolute -left-[14px] top-1.5 size-2 rounded-full ring-2 ring-[#0c0c0c]",
-                  tItem.status === "done" ? "bg-[#22c55e]" : tItem.status === "current" ? "bg-white animate-pulse" : "bg-[#333333]"
+                  "absolute -left-[14px] top-1.5 size-2 rounded-full ring-2 ring-card",
+                  tItem.status === "done" ? "bg-success" : tItem.status === "current" ? "bg-accent animate-pulse" : "bg-hairline"
                 )} />
                 <div className="flex items-baseline gap-2">
-                  <span className="text-[10.5px] font-mono font-medium text-[#737373]">{tItem.time}</span>
-                  <span className="text-[12px] font-mono font-medium text-[#ededed]">{tItem.title}</span>
+                  <span className="text-[10.5px] font-mono font-medium text-ink-secondary">{tItem.time}</span>
+                  <span className="text-[12px] font-mono font-medium text-ink">{tItem.title}</span>
                 </div>
                 {tItem.description && (
-                  <p className="mt-0.5 text-[11px] font-mono text-[#737373]">{tItem.description}</p>
+                  <p className="mt-0.5 text-[11px] font-mono text-ink-secondary">{tItem.description}</p>
                 )}
               </div>
             ))}
@@ -623,26 +620,26 @@ export function UniversalCard({
               return (
                 <div
                   key={idx}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-[#1a1a1a] bg-[#090909] px-3 py-2 hover:border-[#262626] transition-colors"
+                  className="flex items-center justify-between gap-3 rounded-lg border border-hairline/30 bg-inset/50 px-3 py-2 hover:border-hairline/60 transition-colors"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className="flex size-5 shrink-0 items-center justify-center rounded bg-[#141414] text-[#737373]">
+                    <div className="flex size-5 shrink-0 items-center justify-center rounded bg-control text-ink-secondary">
                       <ItemIcon size={12} />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[12px] font-mono font-medium text-[#ededed] truncate">{item.title}</span>
+                        <span className="text-[12px] font-mono font-medium text-ink truncate">{item.title}</span>
                         {item.badge && (
-                          <span className="rounded border border-[#222222] bg-[#141414] px-1 py-0.2 text-[9px] font-mono text-[#888888]">
+                          <span className="rounded border border-hairline/40 bg-control px-1 py-0.2 text-[9px] font-mono text-ink-secondary">
                             {item.badge}
                           </span>
                         )}
                       </div>
-                      {item.subtitle && <p className="text-[10.5px] font-mono text-[#666666] truncate">{item.subtitle}</p>}
+                      {item.subtitle && <p className="text-[10.5px] font-mono text-ink-secondary/70 truncate">{item.subtitle}</p>}
                     </div>
                   </div>
                   {item.value !== undefined && (
-                    <span className="font-mono text-[12px] font-semibold text-[#ededed] shrink-0">
+                    <span className="font-mono text-[12px] font-semibold text-ink shrink-0">
                       {item.value}
                     </span>
                   )}
@@ -655,22 +652,23 @@ export function UniversalCard({
 
       {/* Quick Action Buttons */}
       {card.actions && card.actions.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 border-t border-[#1a1a1a] bg-[#0e0e0e] px-3.5 py-2">
+        <div className="flex flex-wrap items-center gap-1.5 border-t border-hairline/30 bg-raised/30 px-3.5 py-2">
           {card.actions.map((act, idx) => {
             const isDanger = act.style === "danger";
             const isPrimary = act.style === "primary";
+
             return (
               <button
                 key={idx}
                 type="button"
                 onClick={() => handleActionClick(act)}
                 className={cn(
-                  "flex items-center gap-1 rounded border px-2.5 py-1 text-[11px] font-mono transition-colors active:scale-95",
+                  "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11.5px] font-mono font-medium transition-all active:scale-95 cursor-pointer",
                   isDanger
-                    ? "border-[#ef4444]/40 bg-[#ef4444]/10 text-[#ef4444] hover:bg-[#ef4444]/20"
+                    ? "border-danger/40 bg-danger/10 text-danger hover:bg-danger/20"
                     : isPrimary
-                    ? "border-white bg-white text-black hover:bg-[#e0e0e0]"
-                    : "border-[#262626] bg-[#141414] text-[#a3a3a3] hover:border-[#383838] hover:text-[#ededed]"
+                    ? "border-accent bg-accent text-accent-ink hover:brightness-105"
+                    : "border-hairline/40 bg-control text-ink hover:border-hairline hover:bg-raised"
                 )}
               >
                 {act.url ? <ExternalLink size={10} className="opacity-70" /> : <Send size={10} className="opacity-70" />}
@@ -683,8 +681,8 @@ export function UniversalCard({
 
       {/* Footer */}
       {card.footer && (
-        <div className="border-t border-[#1a1a1a] bg-[#0a0a0a] px-3.5 py-1.5 text-[10.5px] font-mono text-[#666666] flex items-center gap-1.5">
-          <Info size={11} className="shrink-0 text-[#555555]" />
+        <div className="border-t border-hairline/30 bg-raised/20 px-3.5 py-1.5 text-[10.5px] font-mono text-ink-secondary flex items-center gap-1.5">
+          <Info size={11} className="shrink-0 text-ink-secondary/70" />
           <span className="truncate">{card.footer}</span>
         </div>
       )}

@@ -848,9 +848,9 @@ export function Composer({
                 });
               }
             }}
-            className="flex shrink-0 items-center gap-1.5 rounded-md border border-[#222222] bg-[#0d0d0d] px-2.5 py-1 text-[11.5px] font-mono text-[#a3a3a3] transition-colors hover:border-[#383838] hover:bg-[#171717] hover:text-[#ededed] active:scale-95"
+            className="flex shrink-0 items-center gap-1.5 rounded-md border border-hairline/40 bg-control px-2.5 py-1 text-[11.5px] font-mono text-ink-secondary transition-colors hover:border-hairline hover:bg-raised-hover hover:text-ink active:scale-95"
           >
-            <span className="text-[10px] text-[#737373]">⌘1</span>
+            <span className="text-[10px] text-ink-secondary/70">⌘1</span>
             <span>Статус серверов</span>
           </button>
           <button
@@ -865,9 +865,9 @@ export function Composer({
                 });
               }
             }}
-            className="flex shrink-0 items-center gap-1.5 rounded-md border border-[#222222] bg-[#0d0d0d] px-2.5 py-1 text-[11.5px] font-mono text-[#a3a3a3] transition-colors hover:border-[#383838] hover:bg-[#171717] hover:text-[#ededed] active:scale-95"
+            className="flex shrink-0 items-center gap-1.5 rounded-md border border-hairline/40 bg-control px-2.5 py-1 text-[11.5px] font-mono text-ink-secondary transition-colors hover:border-hairline hover:bg-raised-hover hover:text-ink active:scale-95"
           >
-            <span className="text-[10px] text-[#737373]">⌘2</span>
+            <span className="text-[10px] text-ink-secondary/70">⌘2</span>
             <span>Безопасность</span>
           </button>
           <button
@@ -882,9 +882,9 @@ export function Composer({
                 });
               }
             }}
-            className="flex shrink-0 items-center gap-1.5 rounded-md border border-[#222222] bg-[#0d0d0d] px-2.5 py-1 text-[11.5px] font-mono text-[#a3a3a3] transition-colors hover:border-[#383838] hover:bg-[#171717] hover:text-[#ededed] active:scale-95"
+            className="flex shrink-0 items-center gap-1.5 rounded-md border border-hairline/40 bg-control px-2.5 py-1 text-[11.5px] font-mono text-ink-secondary transition-colors hover:border-hairline hover:bg-raised-hover hover:text-ink active:scale-95"
           >
-            <span className="text-[10px] text-[#737373]">⌘3</span>
+            <span className="text-[10px] text-ink-secondary/70">⌘3</span>
             <span>Docker</span>
           </button>
           <button
@@ -899,9 +899,9 @@ export function Composer({
                 });
               }
             }}
-            className="flex shrink-0 items-center gap-1.5 rounded-md border border-[#222222] bg-[#0d0d0d] px-2.5 py-1 text-[11.5px] font-mono text-[#a3a3a3] transition-colors hover:border-[#383838] hover:bg-[#171717] hover:text-[#ededed] active:scale-95"
+            className="flex shrink-0 items-center gap-1.5 rounded-md border border-hairline/40 bg-control px-2.5 py-1 text-[11.5px] font-mono text-ink-secondary transition-colors hover:border-hairline hover:bg-raised-hover hover:text-ink active:scale-95"
           >
-            <span className="text-[10px] text-[#737373]">⌘4</span>
+            <span className="text-[10px] text-ink-secondary/70">⌘4</span>
             <span>Аналитика</span>
           </button>
         </div>
@@ -924,8 +924,8 @@ export function Composer({
             onDragOver={handleComposerDragOver}
             onDrop={handleComposerDrop}
             className={cn(
-              "relative z-[1] rounded-2xl bg-[#0d0d0d] px-3.5 py-2.5 border border-[#222222] shadow-2xl transition-all",
-              isDragOver && "border-white/60 bg-[#141414]"
+              "relative z-[1] rounded-2xl bg-composer px-3.5 py-2.5 border border-hairline/50 shadow-2xl transition-all",
+              isDragOver && "border-accent/60 bg-raised"
             )}
           >
             {isDragOver && (

@@ -3275,10 +3275,30 @@ export function useStore() {
   return ctx;
 }
 
-/** Hook for selecting only a specific slice of AppState to avoid re-rendering entire component trees */
+/** Hook for selecting only a specific slice of AppState with shallow equality check to prevent redundant re-renders */
 export function useStoreSelector<T>(selector: (state: AppState) => T): T {
   const { state } = useStore();
-  return selector(state);
+  const selected = selector(state);
+  const ref = useRef<T>(selected);
+
+  if (!shallowEqual(ref.current, selected)) {
+    ref.current = selected;
+  }
+  return ref.current;
+}
+
+function shallowEqual<T>(a: T, b: T): boolean {
+  if (Object.is(a, b)) return true;
+  if (typeof a !== "object" || a === null || typeof b !== "object" || b === null) return false;
+  const keysA = Object.keys(a) as Array<keyof T>;
+  const keysB = Object.keys(b) as Array<keyof T>;
+  if (keysA.length !== keysB.length) return false;
+  for (const key of keysA) {
+    if (!Object.prototype.hasOwnProperty.call(b, key) || !Object.is(a[key], b[key])) {
+      return false;
+    }
+  }
+  return true;
 }
 
 export function formatTime(at: number) {
