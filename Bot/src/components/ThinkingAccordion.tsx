@@ -10,8 +10,9 @@ import {
   Loader2,
   Layers,
 } from "lucide-react";
+import { ThinkingOrb } from "thinking-orbs";
+import { BorderBeam } from "border-beam";
 import type { Message } from "@/state/store";
-
 interface ThinkingAccordionProps {
   reasoning: string;
   isStreaming?: boolean;
@@ -36,29 +37,33 @@ export function ThinkingAccordion({
     (s) => s.kind === "activity" && s.tool && s.tool.ok === undefined,
   );
 
-  return (
-    <div className="my-2.5 max-w-3xl overflow-hidden rounded-2xl border border-hairline/60 bg-panel/75 shadow-xs backdrop-blur-md transition-all">
+  const content = (
+    <div className="my-2.5 max-w-3xl overflow-hidden rounded-xl border border-[#1f1f1f] bg-[#0c0c0c] transition-all">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between px-3.5 py-2.5 text-left text-[12.5px] font-medium text-ink-secondary hover:bg-raised/50 hover:text-ink transition-colors"
+        className="flex w-full items-center justify-between px-3 py-2 text-left text-[12px] font-mono text-[#888888] hover:bg-[#141414] hover:text-[#ededed] transition-colors"
       >
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1.5">
-            <Brain
-              size={15}
-              className={isStreaming ? "animate-pulse text-accent" : "text-ink-secondary"}
-            />
-            <span className="font-medium text-ink">
-              {isStreaming ? "Thinking in progress…" : "Thought & Execution"}
+          <div className="flex items-center gap-2">
+            {isStreaming ? (
+              <div className="flex size-5 shrink-0 items-center justify-center">
+                <ThinkingOrb state="solving" size={20} theme="dark" />
+              </div>
+            ) : (
+              <div className="flex size-5 shrink-0 items-center justify-center rounded bg-[#141414] border border-[#222222]">
+                <span className="text-[10px] font-mono text-[#a3a3a3]">✦</span>
+              </div>
+            )}
+            <span className="font-semibold text-[#ededed]">
+              {isStreaming ? "Thinking…" : "Thought & Execution"}
             </span>
           </div>
 
           {/* Tokens indicator */}
-          <span className="rounded-full bg-raised/80 px-2 py-0.5 text-[11px] font-mono text-ink-secondary">
+          <span className="rounded bg-[#141414] border border-[#222222] px-1.5 py-0.5 text-[10.5px] font-mono text-[#888888]">
             ~{estimatedTokens} tokens
           </span>
-
           {/* Tool calls & steps count badge */}
           {toolStepsCount > 0 && (
             <span className="flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-[11px] font-medium text-accent">
@@ -155,4 +160,14 @@ export function ThinkingAccordion({
       )}
     </div>
   );
+
+  if (isStreaming) {
+    return (
+      <BorderBeam size="sm" colorVariant="mono">
+        {content}
+      </BorderBeam>
+    );
+  }
+
+  return content;
 }

@@ -19,6 +19,7 @@ import {
   TrendingUp,
   Zap,
 } from "lucide-react";
+import { BorderBeam } from "border-beam";
 import { cn } from "@/lib/cn";
 import { useStore } from "@/state/store";
 import { triggerHaptic } from "@/lib/haptics";
@@ -381,7 +382,7 @@ export function UniversalCard({
     setTimeout(() => setCopiedKey(null), 1600);
   };
 
-  return (
+  const cardBody = (
     <div className="my-3 w-full max-w-2xl overflow-hidden rounded-xl border border-[#1f1f1f] bg-[#0c0c0c] shadow-lg transition-all hover:border-[#2a2a2a]">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[#1a1a1a] px-3.5 py-2.5 bg-[#0e0e0e]">
@@ -689,6 +690,16 @@ export function UniversalCard({
       )}
     </div>
   );
+
+  if (isPinned) {
+    return (
+      <BorderBeam size="md" colorVariant="mono">
+        {cardBody}
+      </BorderBeam>
+    );
+  }
+
+  return cardBody;
 }
 
 export function parseUniversalCardJson(raw: string): UniversalCardData | null {

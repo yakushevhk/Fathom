@@ -25,6 +25,7 @@ type AvatarPatch = Partial<
 >;
 
 const CROP_LABEL = {
+  orb: "Orb (AI)",
   mascot: "Mascot",
   circle: "Circle",
   rounded: "Rounded",
@@ -169,7 +170,7 @@ export function BotProfileAvatarCard({
         <div className="mb-2 mt-4 text-[12px] font-medium uppercase tracking-[0.08em] text-ink-secondary">
           Shape
         </div>
-        <div className="grid grid-cols-4 overflow-hidden rounded-lg border border-hairline/40">
+        <div className="grid grid-cols-5 overflow-hidden rounded-lg border border-hairline/40">
           {BOT_AVATAR_CROPS.map((candidate, index) => (
             <button
               key={candidate}

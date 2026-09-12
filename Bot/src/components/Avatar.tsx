@@ -15,9 +15,9 @@ import {
 } from "react";
 import { MAUS_COLORS, type MausColor, type MausMotion, type MausState } from "@/lib/mascot";
 import { CursorAvatar, type CursorAvatarHandle } from "./CursorAvatar";
+import { ThinkingOrb, type OrbState } from "thinking-orbs";
 import { botAvatarProfile, type BotAvatarCrop } from "../../shared/bot-avatar";
 import { MASCOT_BODIES, botMascotBody, type MascotBodyId } from "../../shared/mascot-bodies";
-
 export const EYE_SCALE = 1.12;
 export const MOUTH_WEIGHT = 11;
 
@@ -209,19 +209,11 @@ export type BotAvatarProps = Omit<MausAvatarProps, "color"> & {
   };
 };
 
-export type BotAvatarOutcome = "flatImage" | "gradientMascot";
+export type BotAvatarOutcome = "flatImage" | "gradientMascot" | "orb";
 
 /**
- * Pick which of the two ways to render a bot's avatar, given the parsed
- * profile plus whether the image has already failed to load. Kept as a pure
- * function — independent of React state and effects — so both arms can be
- * unit-tested directly: `imageFailed` is set by the `<img>`'s own `onError`,
- * which `renderToStaticMarkup` never fires, so the failure fallback is
- * unreachable from a synchronous render test.
- *
- * The iOS half of this decision is `resolveBotAvatarOutcome` in
- * `ios/Sources/CompanionCore/BotAvatarRendering.swift`, which mirrors this
- * union name for name so the two renderers can be read side by side.
+ * Pick which of the ways to render a bot's avatar.
+ * "orb" renders the high-tech ThinkingOrb canvas from thinking-orbs.
  */
 export function resolveBotAvatarOutcome(params: {
   avatarCrop: BotAvatarCrop;
@@ -229,6 +221,7 @@ export function resolveBotAvatarOutcome(params: {
   imageFailed: boolean;
 }): BotAvatarOutcome {
   const { avatarCrop, hasUrl, imageFailed } = params;
+  if (avatarCrop === "orb") return "orb";
   if (!hasUrl) return "gradientMascot";
   if (avatarCrop === "mascot") return "gradientMascot";
   if (imageFailed) return "gradientMascot";
@@ -251,6 +244,41 @@ export function BotAvatar({ bot, size = 44, label, ...mascotProps }: BotAvatarPr
     hasUrl: Boolean(profile.avatarUrl),
     imageFailed,
   });
+
+  if (outcome === "orb") {
+    // Map bot/mascot states to the hand-tuned 9 ThinkingOrb animation modes
+    const orbStateMap: Record<string, OrbState> = {
+      idle: "breathing",
+      happy: "breathing",
+      thinking: "solving",
+      working: "working",
+      listening: "listening",
+      speaking: "weaving",
+      sending: "connecting",
+      sleeping: "shaping",
+      confused: "searching",
+      alerting: "composing",
+    };
+    const orbState: OrbState = orbStateMap[mascotProps.state ?? "idle"] ?? (mascotProps.state === "working" ? "working" : "breathing");
+    const orbSizePreset = size <= 28 ? 20 : 64;
+
+    return (
+      <div
+        className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#0d0d0d] border border-[#222222]"
+        style={{ width: size, height: size }}
+        title={label ?? bot.name}
+      >
+        <div style={{ transform: `scale(${size / orbSizePreset})`, transformOrigin: "center" }}>
+          <ThinkingOrb
+            state={orbState}
+            size={orbSizePreset}
+            theme="dark"
+            paused={mascotProps.animated === false}
+          />
+        </div>
+      </div>
+    );
+  }
 
   if (outcome !== "flatImage") {
     return (
