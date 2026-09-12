@@ -13,48 +13,44 @@ export interface MemoryFact {
   updatedAt: number;
 }
 
+export const MAX_PROMPT_FACTS = 40;
+export const MAX_PROMPT_FACTS_CHARS = 4000;
+
 export function ensureStructuredMemoryTable(): void {
-  db().exec(`
-    CREATE TABLE IF NOT EXISTS bot_facts (
-      id TEXT PRIMARY KEY,
-      bot_id TEXT NOT NULL,
-      category TEXT NOT NULL,
-      entity TEXT NOT NULL,
-      fact TEXT NOT NULL,
-      confidence REAL DEFAULT 1.0,
-      updated_at INTEGER NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS idx_bot_facts_lookup ON bot_facts (bot_id, entity);
-    CREATE INDEX IF NOT EXISTS idx_bot_facts_category ON bot_facts (bot_id, category);
-  `);
+  // Table and unique natural-key index created once in message-db.ts open()
 }
 
 export function saveFact(
   botId: string,
   factData: { id?: string; category: MemoryFact["category"]; entity: string; fact: string; confidence?: number },
 ): MemoryFact {
-  ensureStructuredMemoryTable();
-  const id = factData.id || `fact-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   const updatedAt = Date.now();
   const confidence = factData.confidence ?? 1.0;
+  const cleanEntity = factData.entity.trim();
+  const cleanFact = factData.fact.replace(/[\r\n]+/g, " ").trim();
+
+  // Check for existing fact by natural key (bot_id, category, entity)
+  const existing = db().prepare(`
+    SELECT id FROM bot_facts WHERE bot_id = ? AND category = ? AND entity = ?
+  `).get(botId, factData.category, cleanEntity) as { id: string } | undefined;
+
+  const id = existing?.id || factData.id || `fact-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
   db().prepare(`
     INSERT INTO bot_facts (id, bot_id, category, entity, fact, confidence, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET
-      category = excluded.category,
-      entity = excluded.entity,
+    ON CONFLICT(bot_id, category, entity) DO UPDATE SET
       fact = excluded.fact,
       confidence = excluded.confidence,
       updated_at = excluded.updated_at
-  `).run(id, botId, factData.category, factData.entity, factData.fact, confidence, updatedAt);
+  `).run(id, botId, factData.category, cleanEntity, cleanFact, confidence, updatedAt);
 
   return {
     id,
     botId,
     category: factData.category,
-    entity: factData.entity,
-    fact: factData.fact,
+    entity: cleanEntity,
+    fact: cleanFact,
     confidence,
     updatedAt,
   };
@@ -123,6 +119,17 @@ export function deleteFact(botId: string, factId: string): boolean {
 export function formatFactsAsPromptSection(botId: string): string {
   const facts = listFacts(botId);
   if (!facts.length) return "";
-  const lines = facts.map((f) => `- [${f.category}] ${f.entity}: ${f.fact}`);
-  return `\n\nStructured Facts:\n${lines.join("\n")}`;
+  const lines: string[] = [];
+  let charCount = 0;
+
+  for (const f of facts) {
+    if (lines.length >= MAX_PROMPT_FACTS) break;
+    const safeFact = f.fact.replace(/[\r\n]+/g, " ");
+    const line = `- [${f.category}] ${f.entity}: ${safeFact}`;
+    if (charCount + line.length > MAX_PROMPT_FACTS_CHARS) break;
+    lines.push(line);
+    charCount += line.length;
+  }
+
+  return lines.length ? `\n\nStructured Facts:\n${lines.join("\n")}` : "";
 }

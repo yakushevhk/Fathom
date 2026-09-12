@@ -3292,18 +3292,18 @@ function shallowEqual<T>(a: T, b: T): boolean {
   if (typeof a !== "object" || a === null || typeof b !== "object" || b === null) return false;
 
   // Special object types comparison
-  if (a instanceof Date && b instanceof Date) {
-    return a.getTime() === b.getTime();
+  if (a instanceof Date || b instanceof Date) {
+    return a instanceof Date && b instanceof Date && a.getTime() === b.getTime();
   }
-  if (a instanceof Set && b instanceof Set) {
-    if (a.size !== b.size) return false;
+  if (a instanceof Set || b instanceof Set) {
+    if (!(a instanceof Set && b instanceof Set) || a.size !== b.size) return false;
     for (const item of a) {
       if (!b.has(item)) return false;
     }
     return true;
   }
-  if (a instanceof Map && b instanceof Map) {
-    if (a.size !== b.size) return false;
+  if (a instanceof Map || b instanceof Map) {
+    if (!(a instanceof Map && b instanceof Map) || a.size !== b.size) return false;
     for (const [k, v] of a) {
       if (!b.has(k) || !Object.is(v, b.get(k))) return false;
     }
