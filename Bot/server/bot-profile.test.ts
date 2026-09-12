@@ -90,7 +90,7 @@ describe("parseBotProfilePatch (both modes)", () => {
   it("maps an avatarCrop issue to the readable message", () => {
     expect(parseBotProfilePatch({ avatarCrop: "hexagon" } as never, true)).toEqual({
       ok: false,
-      error: "avatarCrop must be mascot, circle, rounded, or square",
+      error: "avatarCrop must be orb, mascot, circle, rounded, or square",
     });
   });
 });

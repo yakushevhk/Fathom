@@ -2,6 +2,7 @@ import { ComposerTray } from "./ComposerTray";
 import { track } from "@/lib/analytics";
 import { useCallback, useEffect, useMemo, useRef, useState, type SetStateAction } from "react";
 import { ArrowUp, BookOpen, Clock, Mic, Paperclip, Square, Target, Users, X } from "lucide-react";
+import { BorderBeam } from "border-beam";
 import { useStore, visibleMessages, currentTaskBot, type Bot, type Group, type Message } from "@/state/store";
 import { cn } from "@/lib/cn";
 import { activeLocale, t } from "@/lib/i18n";
@@ -917,10 +918,11 @@ export function Composer({
           onDragOver={handleComposerDragOver}
           onDrop={handleComposerDrop}
           className={cn(
-            "relative z-[1] rounded-xl bg-[#0c0c0c] px-3 py-2 border border-[#222222] shadow-xl shadow-black/80 transition-all",
+            "relative z-[1] rounded-xl bg-[#0c0c0c] px-3 py-2 border border-[#222222] shadow-2xl transition-all overflow-hidden",
             isDragOver && "border-white/60 bg-[#141414]"
           )}
         >
+          <BorderBeam size="line" colorVariant="mono">{null}</BorderBeam>
           {isDragOver && (
             <div className="absolute inset-0 z-20 flex items-center justify-center rounded-3xl bg-panel/90 backdrop-blur-sm border-2 border-dashed border-accent pointer-events-none">
               <div className="flex items-center gap-2 text-sm font-medium text-accent animate-pulse">
