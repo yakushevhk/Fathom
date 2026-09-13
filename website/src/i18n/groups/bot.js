@@ -1,111 +1,128 @@
 // Auto-imported by switcher.js via import.meta.glob('./groups/*.js').
-// Fathom Bot page translations. Each key resolves {en,ru}.
+// Fathom Bot page translations matching real Fathom capabilities.
 export default {
   botPage: {
     hero: {
       badge: { en: 'Fathom Bot', ru: 'Fathom Bot' },
-      title: { en: 'Your team of AI bots,<br />in a <em class="it">chat app.</em>', ru: 'Ваша команда ИИ-ботов<br />в <em class="it">мессенджере.</em>' },
+      title: { en: 'Your autonomous AI workforce,<br />in a <em class="it">chat app.</em>', ru: 'Автономные ИИ-сотрудники<br />в <em class="it">мессенджере.</em>' },
       sub: {
-        en: 'Every bot in the sidebar is a real agent — Claude, Codex, or Grok running locally under the hood — with its own personality, its own model, its own cloud computer, and its own connected apps. Talk to them like contacts, watch them work, approve what matters.',
-        ru: 'Каждый бот в сайдбаре — настоящий агент: Claude, Codex или Grok, работающий локально, — со своей личностью, своей моделью, своим облачным компьютером и своими подключёнными приложениями. Общайтесь с ними как с контактами, наблюдайте за работой, одобряйте важное.',
+        en: 'Every contact in the sidebar is a real, universal AI coworker running on your private infrastructure. They execute terminal commands, conduct deep web intelligence, automate recurring operations, and deliver interactive rich cards right in the discussion.',
+        ru: 'Каждый контакт в боковом меню — полноценный автономный ИИ-сотрудник, работающий на вашей приватной инфраструктуре. Боты выполняют терминальные команды, проводят глубокие веб-исследования, запускают фоновые рутины и возвращают интерактивные карточки прямо в чат.',
       },
-      chip1: { en: 'Bring-your-own agents', ru: 'Свои агенты' },
-      chip2: { en: 'Local first', ru: 'Локально в первую очередь' },
-      chip3: { en: '500+ connected apps', ru: '500+ подключённых приложений' },
-      chip4: { en: 'Cloud computers', ru: 'Облачные компьютеры' },
+      chip1: { en: 'Universal Coworkers', ru: 'Универсальные сотрудники' },
+      chip2: { en: '100% On-Premise', ru: '100% On-Premise' },
+      chip3: { en: 'Multi-Tool Execution', ru: 'Мультиинструментальность' },
+      chip4: { en: 'Human Governance', ru: 'Полный контроль человека' },
     },
     features: {
-      badge: { en: 'Capabilities', ru: 'Возможности' },
-      title: { en: 'Agents with <em class="it">hands</em>', ru: 'Агенты с <em class="it">руками</em>' },
+      badge: { en: 'Universal Capabilities', ru: 'Возможности платформы' },
+      title: { en: 'Digital coworkers that <em class="it">execute</em>', ru: 'Цифровые сотрудники, которые <em class="it">действуют</em>' },
       sub: {
-        en: 'Each bot can use a cloud Linux desktop, an isolated Local VM, or — where the platform safety boundary is certified — your own computer, plus hundreds of apps through Composio.',
-        ru: 'Каждый бот может использовать облачный Linux-десктоп, изолированную локальную VM или — там, где сертифицирована граница безопасности — ваш собственный компьютер, плюс сотни приложений через Composio.',
+        en: 'Fathom Bot connects your team with sovereign autonomous agents capable of performing complex multi-hour tasks with transparent reasoning and verifiable results.',
+        ru: 'Fathom Bot объединяет вашу команду с суверенными автономными агентами, способными выполнять сложные многочасовые задачи с прозрачными рассуждениями и проверяемыми результатами.',
       },
-      brain: {
-        name: { en: 'Pick a brain per bot', ru: 'Свой мозг для каждого бота' },
-        d: { en: 'A model picker with a provider rail — Claude and Codex models side by side, defaults marked, unavailable providers dimmed with the reason. Switch a bot\'s model mid-conversation.', ru: 'Выбор модели с панелью провайдеров — Claude и Codex рядом, дефолты отмечены, недоступные провайдеры затемнены с указанием причины. Смена модели бота прямо в диалоге.' },
+      persona: {
+        name: { en: 'Configurable Personas', ru: 'Настраиваемые роли и персоны' },
+        d: { en: 'Customize system prompts, role boundaries, behavioral instructions, and dedicated persistent memory per digital coworker.', ru: 'Настраивайте системные инструкции, границы ролей, шаблоны поведения и долговременную память для каждого ИИ-сотрудника.' },
       },
-      computer: {
-        name: { en: 'Every bot gets a computer', ru: 'У каждого бота свой компьютер' },
-        d: { en: 'Open the Computer panel and the bot\'s cloud desktop spins up on its own — live screen preview while it works, "Open desktop" to take over in your browser, or point the bot at this machine instead.', ru: 'Откройте панель Computer — и облачный десктоп бота запустится сам: живое видео экрана, «Open desktop» для управления в браузере или направьте бота на эту машину.' },
+      thinking: {
+        name: { en: 'Live Chain-of-Thought', ru: 'Прозрачные рассуждения' },
+        d: { en: 'Real-time streaming of internal agent reasoning and dynamic tool selection so you always know why and how decisions are made.', ru: 'Стриминг рассуждений агента в реальном времени и динамический выбор инструментов — вы всегда видите логику решений.' },
       },
-      approvals: {
-        name: { en: 'Bots ask before they act', ru: 'Боты спрашивают перед действием' },
-        d: { en: 'Shell commands, file edits, and questions surface as inline cards — Allow / Deny / answer in chat. A permission broker turns every risky action into a decision you make.', ru: 'Команды shell, правки файлов и вопросы появляются карточками прямо в чате — Allow / Deny / ответ. Permission broker превращает каждое рискованное действие в ваше решение.' },
+      routines: {
+        name: { en: '24/7 Scheduled Routines', ru: 'Фоновые рутины 24/7' },
+        d: { en: 'Schedule recurring autonomous research, daily briefings, and automated database syncs while your human team sleeps.', ru: 'Настраивайте регулярные веб-исследования, утренние сводки и автоматическую синхронизацию баз данных по расписанию.' },
       },
-      apps: {
-        name: { en: 'Connected apps', ru: 'Подключённые приложения' },
-        d: { en: 'A one-click marketplace over Composio Sessions: Gmail, Slack, GitHub, Notion, Linear and hundreds more. OAuth once, and every bot can use them as tools.', ru: 'Маркетплейс в один клик на базе Composio Sessions: Gmail, Slack, GitHub, Notion, Linear и сотни других. OAuth один раз — и все боты используют их как инструменты.' },
+      research: {
+        name: { en: 'Deep Web Intelligence', ru: 'Глубокий веб-поиск и OSINT' },
+        d: { en: 'Autonomous crawling, multi-source registry synthesis, and structured tabular deliverables for market intelligence.', ru: 'Автономный краулинг, сведение данных из реестров и генерация структурированных таблиц для бизнес-аналитики.' },
       },
-      channels: {
-        name: { en: 'Channels for every context', ru: 'Каналы для любого контекста' },
-        d: { en: 'Keep Work, Personal, and each project in separate channels without cloning your bots. Every channel has its own transcript, instructions, working folder, and roster.', ru: 'Держите Work, Personal и каждый проект в отдельных каналах, не клонируя ботов. У каждого канала свои переписка, инструкции, рабочая папка и состав.' },
+      cards: {
+        name: { en: 'Interactive Action Cards', ru: 'Интерактивные карточки' },
+        d: { en: 'Deliverables render as interactive visual cards, widgets, and mini-dashboards directly in the conversation stream.', ru: 'Результаты работы выводятся в виде интерактивных карточек, виджетов и мини-дашбордов прямо в ленту переписки.' },
       },
-      voice: {
-        name: { en: 'Bots that talk back', ru: 'Боты, которые отвечают голосом' },
-        d: { en: 'Press the speaker on any reply, or switch a bot to read its answers out as they land. Hit call and it is a conversation — it hears you and asks for approvals out loud.', ru: 'Нажмите динамик у любого ответа или включите озвучку: бот читает ответы вслух. Позвоните — и это разговор: бот слышит вас и озвучивает запросы на одобрение.' },
+      telemetry: {
+        name: { en: 'Telemetry & Governance', ru: 'Телеметрия и аудит' },
+        d: { en: 'Live tracking of server resources (CPU, RAM, tokens) and signed verification receipts for every executed action.', ru: 'Мониторинг серверных ресурсов (CPU, RAM, токены) в реальном времени и подписанные чеки верификации на каждое действие.' },
       },
     },
-    picker: {
-      badge: { en: 'Model picker', ru: 'Выбор модели' },
-      title: { en: 'One bot, any model', ru: 'Один бот — любая модель' },
-      sub: {
-        en: 'A provider rail puts Claude and Codex models side by side with defaults marked and unavailable providers dimmed. Point any engine at a custom CLI binary or wrapper in Settings → Engines, and switch a bot\'s model mid-conversation.',
-        ru: 'Панель провайдеров ставит модели Claude и Codex рядом: дефолты отмечены, недоступные затемнены. Направьте любой движок на свой CLI-бинарник или обёртку в Settings → Engines и меняйте модель бота прямо в диалоге.',
+    sections: {
+      s1: {
+        badge: { en: 'Reasoning & Tools', ru: 'Рассуждения и инструменты' },
+        title: { en: 'Autonomous Execution with Live Thinking', ru: 'Автономное выполнение с прозрачной логикой' },
+        sub: {
+          en: 'Watch agents break complex instructions into logical sub-tasks, execute shell commands, query external databases, and synthesize findings in real time with zero black-box obscurity.',
+          ru: 'Смотрите, как агенты декомпозируют задачи на понятные шаги, выполняют команды терминала, опрашивают базы данных и выдают структурированный результат в реальном времени.',
+        },
       },
-    },
-    computer: {
-      badge: { en: 'Cloud computers', ru: 'Облачные компьютеры' },
-      title: { en: 'A desktop for every bot', ru: 'Десктоп для каждого бота' },
-      sub: {
-        en: 'Open the Computer panel and the bot\'s cloud desktop spins up on its own — live screen preview while it works, "Open desktop" to take over in your browser, or point the bot at a Local VM (or this Mac) instead.',
-        ru: 'Откройте панель Computer — облачный десктоп бота запустится сам: живое видео экрана, «Open desktop» для управления в браузере или направьте бота на локальную VM (или этот Mac).',
+      s2: {
+        badge: { en: 'Personalization & Roles', ru: 'Персонализация и роли' },
+        title: { en: 'Dedicated Personas & Behavioral Profiles', ru: 'Специализированные персоны и профили' },
+        sub: {
+          en: 'Assign dedicated avatars, specialized skillsets, custom instructions, and long-term vector memory to build the exact digital colleague your department requires.',
+          ru: 'Назначайте уникальные аватары, специализированные навыки, системные инструкции и долговременную память для создания именно того сотрудника, который нужен отделу.',
+        },
       },
-    },
-    approval: {
-      badge: { en: 'Approvals', ru: 'Одобрения' },
-      title: { en: 'Ask before you act', ru: 'Спросите перед действием' },
-      sub: {
-        en: 'Shell commands, file edits, and questions surface as inline cards — Allow / Deny / answer in chat. A permission broker turns every risky action into a decision you make, for cloud and local computers alike.',
-        ru: 'Команды shell, правки файлов и вопросы появляются карточками в чате — Allow / Deny / ответ. Permission broker превращает каждое рискованное действие в ваше решение — для облачных и локальных компьютеров.',
+      s3: {
+        badge: { en: 'Automations & Triggers', ru: 'Автоматизация и триггеры' },
+        title: { en: 'Autonomous Background Routines 24/7', ru: 'Фоновые рутины и расписания 24/7' },
+        sub: {
+          en: 'Set up visual calendar triggers and cron schedules. Agents monitor competitor updates, compile daily briefings, and audit system states without waiting for human prompts.',
+          ru: 'Настраивайте расписания по календарю и cron. Агенты отслеживают обновления конкурентов, формируют утренние сводки и аудируют состояние систем без ручных запросов.',
+        },
       },
-    },
-    routines: {
-      badge: { en: 'Routines', ru: 'Рутины' },
-      title: { en: 'Work that runs itself', ru: 'Работа, которая выполняется сама' },
-      sub: {
-        en: 'Routines run once, on selected weekdays, or every 5–1,440 minutes using an agent\'s configured model or the Cloud VM runner. Webhook triggers reuse the same queued executor — a webhook-only receiver listens on 127.0.0.1:8800 with a one-time secret.',
-        ru: 'Рутины запускаются однократно, по выбранным дням недели или каждые 5–1 440 минут на настроенной модели агента или Cloud VM. Вебхук-триггеры используют тот же исполнитель — приёмник слушает 127.0.0.1:8800 с одноразовым секретом.',
+      s4: {
+        badge: { en: 'Market Intelligence', ru: 'Бизнес-разведка' },
+        title: { en: 'Deep Autonomous Research & OSINT', ru: 'Глубокое веб-исследование и OSINT' },
+        sub: {
+          en: 'From mapping regional venture funds and analyzing legal registries to competitive pricing audits, agents extract, verify, and format unstructured web data into structured tables.',
+          ru: 'От поиска венчурных фондов и анализа госреестров до аудита цен конкурентов: агенты извлекают, проверяют и сводят неструктурированные веб-данные в готовые таблицы.',
+        },
+      },
+      s5: {
+        badge: { en: 'Deliverables & Cards', ru: 'Интерактивные карточки' },
+        title: { en: 'Rich Action Cards in the Discussion Stream', ru: 'Интерактивные карточки в потоке чата' },
+        sub: {
+          en: 'Say goodbye to plain text replies. Fathom Bot renders structured interactive widgets, live weather forecasts, status monitors, and one-click approvals inline.',
+          ru: 'Забудьте о сухом тексте. Fathom Bot выводит структурированные интерактивные виджеты, прогноз погоды, статусные карточки и действия в один клик прямо в переписке.',
+        },
+      },
+      s6: {
+        badge: { en: 'Observability & Diagnostics', ru: 'Телеметрия и аудит' },
+        title: { en: 'Full Host Telemetry & Resource Diagnostics', ru: 'Телеметрия хоста и диагностика ресурсов' },
+        sub: {
+          en: 'Inspect CPU load, memory headroom, container health, and token throughput live. Agents proactively report anomalies and maintain self-healing server operations.',
+          ru: 'Контролируйте нагрузку CPU, оперативную память, состояние контейнеров и расход токенов. Агенты проактивно сообщают об аномалиях и поддерживают работу серверов.',
+        },
       },
     },
     flow: {
-      badge: { en: 'How it works', ru: 'Как это работает' },
-      title: { en: 'Two processes, one team', ru: 'Два процесса — одна команда' },
+      badge: { en: 'Deployment Architecture', ru: 'Архитектура развёртывания' },
+      title: { en: 'From Private Server to Team Desktops', ru: 'От приватного сервера до десктопа команды' },
       s1: {
-        t: { en: 'Install the harness', ru: 'Установите harness' },
-        d: { en: 'One small server on 127.0.0.1 owns every agent process. Transcripts, keys, and events stay in ~/.openmausbot, not a cloud.', ru: 'Один небольшой сервер на 127.0.0.1 управляет всеми процессами агентов. Переписка, ключи и события хранятся в ~/.openmausbot, а не в облаке.' },
+        t: { en: 'Deploy Private Core', ru: 'Разверните сервер' },
+        d: { en: 'Launch the ultra-fast Rust runtime on your bare-metal server or private cloud node in under 5 minutes.', ru: 'Запустите сверхбыстрый рантайм на Rust на собственном сервере или в приватном облаке менее чем за 5 минут.' },
       },
       s2: {
-        t: { en: 'Bring your agents', ru: 'Подключите своих агентов' },
-        d: { en: 'Bots run on the claude, codex, and grok CLIs already installed on your machine — your existing logins and subscriptions, no new accounts.', ru: 'Боты работают на CLI claude, codex и grok, уже установленных на вашей машине, — ваши логины и подписки, без новых аккаунтов.' },
+        t: { en: 'Define Agent Roles', ru: 'Настройте роли ботов' },
+        d: { en: 'Configure system directives, connected internal tools (CRM, ERP, SQL), and choose local or private LLMs.', ru: 'Задайте системные инструкции, подключите внутренние инструменты (CRM, ERP, SQL) и выберите локальные или приватные LLM.' },
       },
       s3: {
-        t: { en: 'Chat like contacts', ru: 'Общайтесь как с контактами' },
-        d: { en: 'Every bot in the sidebar is a real agent with its own personality, model, computer, and apps. Watch them work, approve what matters.', ru: 'Каждый бот в сайдбаре — настоящий агент со своей личностью, моделью, компьютером и приложениями. Смотрите, как они работают, одобряйте важное.' },
+        t: { en: 'Collaborate in Chat', ru: 'Общайтесь в чате' },
+        d: { en: 'Invite your team to Fathom Bot. Talk 1-on-1, create multi-bot channels, and delegate complex tasks.', ru: 'Подключите команду к Fathom Bot. Общайтесь тет-а-тет, создавайте каналы из нескольких ботов и делегируйте задачи.' },
       },
       s4: {
-        t: { en: 'Scale the team', ru: 'Расширяйте команду' },
-        d: { en: 'Install an outcome-driven team from one Markdown file, or manage bots, channels, and routines right from the chat app.', ru: 'Установите команду под результат из одного Markdown-файла или управляйте ботами, каналами и рутинами прямо из приложения.' },
+        t: { en: 'Automate & Audit', ru: 'Автоматизируйте и аудируйте' },
+        d: { en: 'Schedule 24/7 background workflows and inspect cryptographic verification receipts for full compliance.', ru: 'Настройте фоновые процессы 24/7 и просматривайте криптографические чеки верификации для полного соответствия нормам.' },
       },
     },
     cta: {
-      title: { en: 'Run it from source, or download the app', ru: 'Запускайте из исходников или скачайте приложение' },
+      title: { en: 'Deploy Sovereign AI Workforce Today', ru: 'Разверните суверенный ИИ-воркфорс сегодня' },
       sub: {
-        en: 'macOS, Windows, and Ubuntu 24.04 x64 builds are released with an embedded harness — no separate server setup required. From source it is pnpm, two dev commands, and your agent CLIs.',
-        ru: 'Сборки для macOS, Windows и Ubuntu 24.04 x64 выходят со встроенным harness — отдельный сервер не нужен. Из исходников: pnpm, две dev-команды и ваши CLI агентов.',
-      },
-      readme: { en: 'Read the Bot README →', ru: 'Читать README Bot →' },
-      code: { en: 'Browse Bot/ source', ru: 'Исходники Bot/' },
+        en: 'Available as an on-premise binary, private cloud cluster, and local-first desktop application for macOS, Windows, and Linux.',
+        ru: 'Доступно в виде он-премиз бинарника, приватного облачного кластера и локального десктоп-клиента для macOS, Windows и Linux.' },
+      readme: { en: 'Read Bot Documentation →', ru: 'Документация Fathom Bot →' },
+      code: { en: 'View Systems Whitepaper', ru: 'Изучить Вайтпейпер' },
     },
   },
 };
