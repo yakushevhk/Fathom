@@ -119,11 +119,18 @@ Runs the given command in `bash` within the working directory. Returns combined 
             )));
         }
 
-        let mut cmd = tokio::process::Command::new("bash");
-        cmd.args(["-c", &params.command])
+        // Use HostSandbox to constrain execution to workspace directory where supported
+        let sandbox = pr_supervisor::HostSandbox::new(&ctx.working_dir);
+        let (prog, args) = if std::env::var("FATHOM_DISABLE_SANDBOX").map(|v| v == "1" || v == "true").unwrap_or(false) {
+            ("bash".to_string(), vec!["-c".to_string(), params.command.clone()])
+        } else {
+            sandbox.wrap_command("bash", &["-c".to_string(), params.command.clone()])
+        };
+
+        let mut cmd = tokio::process::Command::new(prog);
+        cmd.args(&args)
             .current_dir(&ctx.working_dir)
             .kill_on_drop(true);
-
         let output = tokio::time::timeout(
             std::time::Duration::from_secs(params.timeout),
             cmd.output(),

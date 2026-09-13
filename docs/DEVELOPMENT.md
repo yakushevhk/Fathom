@@ -170,7 +170,7 @@ The workspace uses a strict layering strategy to minimise compilation units and 
 | **pr-core** | *(none)* | Fundamental types, config, error types, memory models, export, CRM, skills, notifications |
 | **pr-llm** | pr-core | `LlmProvider` trait, DeepSeek/OAI-compatible impl, retry, concurrency, factory |
 | **pr-persistence** | pr-core | SQLite (WAL) + PostgreSQL storage, session history, contact DB, jobs DB |
-| **pr-tools** | pr-core, pr-llm | 51 always-registered tools, optional CDP/computer tools, registry, search backends |
+| **pr-tools** | pr-core, pr-llm, pr-supervisor | 63 built-in tools, optional CDP/computer/LSP tools (up to 75), registry, search backends |
 | **pr-memory** | pr-core, pr-persistence | Long-term semantic memory (hybrid vector + BM25, mem0/Memora-inspired) |
 | **pr-mcp** | pr-core, pr-tools | Model Context Protocol client + server |
 | **pr-agent** | pr-core, pr-llm, pr-tools, pr-persistence, pr-memory | Agent runtime, coordinator, compaction, IPC, prompts, doom-loop detection, hooks, resume, budget |

@@ -7,31 +7,21 @@
 // identify(), so PostHog's Persons tab doubles as the collected-email list.
 import posthog from "posthog-js";
 
-const TOKEN = "phc_m2hP39w8y2gLPvHgDvSXAu6xcZ3agjf4ruL56rGcMZEe";
-
-// Analytics are on by default; Settings → General turns them off. The choice
-// lives in localStorage because it has to be readable BEFORE init() runs: an
-// opted-out install must never call posthog.init(), so no request — not even
-// the library's own — leaves the machine. Once running, opting out routes
-// through opt_out_capturing(), which also drops anything already queued.
-const OPT_OUT_KEY = "omb-analytics-opt-out";
+// Sovereign on-premise & air-gapped configuration:
+// Telemetry is DISABLED by default (strict opt-in).
+// No third-party network requests are ever sent unless explicitly activated by the user.
+const OPT_IN_KEY = "fathom-analytics-opt-in";
 
 let ready = false;
-
-// The choice as made in THIS process, which outranks storage. Without it a
-// rejected write silently loses an opt-out: the setter would swallow the
-// error, the next analyticsEnabled() would read nothing and answer true, and
-// a later initAnalytics() would start the client the user just switched off.
-// Storage is how the choice survives a restart, not where it lives.
 let choice: boolean | undefined;
 
-/** False once the user has opted out on this machine. */
+/** True ONLY if the user explicitly opted in on this machine. Default is strictly false. */
 export function analyticsEnabled(): boolean {
   if (choice !== undefined) return choice;
   try {
-    return localStorage.getItem(OPT_OUT_KEY) !== "1";
+    return localStorage.getItem(OPT_IN_KEY) === "true";
   } catch {
-    return true; // storage unreadable → behave like a fresh install
+    return false; // Sovereign zero-exfiltration default
   }
 }
 
@@ -46,21 +36,21 @@ export function optAction(enabled: boolean, running: boolean): OptAction {
 
 /** Flip the setting and act on it immediately, in both directions. */
 export function setAnalyticsEnabled(enabled: boolean) {
-  choice = enabled; // before persisting: the decision must not depend on it
+  choice = enabled;
   try {
-    localStorage.setItem(OPT_OUT_KEY, enabled ? "0" : "1");
+    localStorage.setItem(OPT_IN_KEY, enabled ? "true" : "false");
   } catch {
-    /* it will not survive a restart, but it holds for this session */
+    /* holds for this session */
   }
   switch (optAction(enabled, ready)) {
     case "opt-out":
-      posthog.opt_out_capturing(); // also drops whatever is still queued
+      posthog.opt_out_capturing();
       break;
     case "opt-in":
       posthog.opt_in_capturing();
       break;
     case "init":
-      initAnalytics(); // first opt-in of a session that started opted out
+      initAnalytics();
       break;
     case "none":
       break;

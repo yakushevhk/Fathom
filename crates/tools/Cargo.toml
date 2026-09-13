@@ -10,6 +10,7 @@ pr-llm.workspace = true
 pr-lsp.workspace = true
 pr-persistence.workspace = true
 pr-memory.workspace = true
+pr-supervisor = { path = "../supervisor" }
 tokio.workspace = true
 reqwest.workspace = true
 scraper.workspace = true

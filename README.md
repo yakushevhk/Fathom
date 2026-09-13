@@ -165,18 +165,19 @@ Deploying autonomous agents in mission-critical environments requires mathematic
 
 ---
 
-## 🛠️ Extensible Tool Registry (51 Base Built-in + CDP Browser + Computer Use + LSP)
+## 🛠️ Extensible Tool Registry (63 Built-in + CDP Browser + Computer Use + LSP = Up to 75 Tools)
 | Category | Tools | Description |
 |---|---|---|
-| **Web Search** | `web_search`, `web_fetch`, `web_crawl`, `web_feed` | 7 search engines with hybrid fallback & RRF ranking |
+| **Web Search & Crawl** | `web_search`, `web_fetch`, `web_crawl`, `web_feed` | 7 search engines with hybrid fallback & RRF ranking |
 | **Browser (CDP)** | `browser_navigate`, `browser_click`, `browser_type`, `browser_extract`, `browser_screenshot` | Headless Playwright Chrome automation |
-| **Computer Use** | `computer_snapshot`, `computer_navigate`, `computer_click`, `computer_type`, `computer_key` | ARIA DOM accessibility navigation & screen streaming |
-| **File System** | `file_read`, `file_write`, `file_edit`, `glob`, `grep` | High-speed ripgrep & surgical multi-chunk file modifications |
-| **Code Analysis** | `code_symbols`, `repo_map` | Tree-sitter AST codebase indexing (34ms across 240 files) |
-| **OSINT / Leads** | `find_leads`, `suggest_emails`, `verify_email`, `enrich_company`, `parse_corporate_site` | Sourcing, DNS MX checks, port 25 SMTP handshakes |
-| **Memory Graph** | `memory_absorb`, `memory_search`, `memory_digest`, `memory_link`, `memory_graph` | In-process SQLite FTS5 + vector graph memory |
-| **Governance** | `governance_check`, `vault_resolve` | Fail-closed allow/deny policy validation |
-
+| **Computer Use** | `computer_snapshot`, `computer_navigate`, `computer_click`, `computer_type`, `computer_key`, `computer_screenshot` | ARIA DOM accessibility navigation & screen streaming |
+| **File & Hashline Edit** | `file_read`, `file_write`, `file_edit`, `edit`, `glob`, `grep` | High-speed ripgrep & surgical multi-chunk hashline edits |
+| **Code & AST Intelligence** | `code_symbols`, `repo_map`, `code_ast`, `ast_edit`, `compiler_check`, `repro_test`, `debug`, `lsp` | Tree-sitter AST, DAP debuggers, compiler diagnostics |
+| **Worktrees & Subagents** | `task`, `spawn_agent`, `hub`, `daemon`, `git_worktree`, `scratchpad`, `undo` | Multi-agent DAG fan-out, peer messaging, background jobs |
+| **Skills & Learning** | `learn`, `manage_skill`, `skill`, `question` | Autonomous skill synthesis and persistent procedure capture |
+| **OSINT & Enrichment** | `find_leads`, `suggest_emails`, `verify_email`, `verify_phone`, `verify_social_profile`, `enrich_company`, `enrich_person`, `extract_contacts`, `save_contacts`, `parse_corporate_site`, `search_business_directory`, `search_social`, `search_news` | Sourcing, DNS MX checks, SMTP validation, contact CRM export |
+| **Memory Graph** | `memory`, `memory_absorb`, `memory_search`, `memory_digest`, `memory_boost`, `memory_link`, `memory_graph` | In-process SQLite FTS5 + vector graph memory |
+| **System & Sandboxing** | `shell`, `os_input`, `cookie_vault`, `analyze_image`, `pdf_extract`, `python_exec`, `node_exec`, `git_status`, `git_diff`, `git_log`, `git_add`, `git_commit`, `git_push` | Secure HostSandbox execution, document parsing, git ops |
 ---
 
 ## 🚀 Quick Start

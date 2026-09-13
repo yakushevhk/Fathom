@@ -71,9 +71,23 @@ impl ApiKeyAuth {
         !self.keys.is_empty()
     }
 
-    /// Validate a key, returning its info if it is registered.
+    /// Validate a key using constant-time comparison against registered keys to prevent timing attacks.
     pub fn validate(&self, key: &str) -> Option<&ApiKeyInfo> {
-        self.keys.get(key)
+        let input_bytes = key.as_bytes();
+        let mut matched_info = None;
+        for (registered_key, info) in &self.keys {
+            let reg_bytes = registered_key.as_bytes();
+            if input_bytes.len() == reg_bytes.len() {
+                let mut diff = 0u8;
+                for (a, b) in input_bytes.iter().zip(reg_bytes.iter()) {
+                    diff |= a ^ b;
+                }
+                if diff == 0 {
+                    matched_info = Some(info);
+                }
+            }
+        }
+        matched_info
     }
 
     pub fn len(&self) -> usize {

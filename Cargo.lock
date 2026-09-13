@@ -5262,6 +5262,7 @@ dependencies = [
  "pr-lsp",
  "pr-memory",
  "pr-persistence",
+ "pr-supervisor",
  "proptest",
  "quick-xml 0.36.2",
  "regex",

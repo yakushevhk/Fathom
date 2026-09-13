@@ -1,6 +1,5 @@
 import { LANGS, DEFAULT_LANG } from './translations.js';
-import { translations } from './translations.js';
-
+import { unifiedTranslations as translations } from './unified.js';
 const LANGS_SET = ['en', 'ru'];
 
 // Language is now derived from the URL path:

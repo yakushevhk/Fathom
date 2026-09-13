@@ -185,7 +185,7 @@ The system defines 5 agent roles, each with specific spawn permissions, tool acc
 
 | Decision | Description | Rationale |
 |---|---|---|
-| **12 crates** | Clear separation of responsibilities into 12 workspace crates | Enforces dependency direction, enables independent compilation and testing, allows crate-level feature flags (e.g., `postgres` feature in `pr-persistence`) |
+| **13 crates** | Clear separation of responsibilities into 13 workspace crates | Enforces dependency direction, enables independent compilation and testing, allows crate-level feature flags (e.g., `postgres` feature in `pr-persistence`) |
 | **Hierarchical agents** | Agents can spawn children (up to `max_depth` levels, default 2) | Enables structured decomposition: coordinator → researchers → verifiers. Each level narrows focus. `max_agents` (default 20) caps total agents per session. |
 | **Two-phase tool execution** | Tools with `parallel_safe: true` run concurrently; `parallel_safe: false` run sequentially | Maximizes throughput for safe operations (web_search, file_read) while preventing race conditions on stateful operations (file_write, git_push). Shell cascade cancellation: if one shell tool fails, sibling shell tools are cancelled. |
 | **Doom loop detection** | Sliding window of 3 identical (tool_name, argument_hash) calls → nudge → stop | Prevents the LLM from getting stuck repeating the same tool call. Two-stage response: first nudge (gentle correction), then hard stop (force agent termination). |

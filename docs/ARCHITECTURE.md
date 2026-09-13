@@ -14,7 +14,7 @@ fathom/
 │   ├── core/          # Fundamental types and domain logic
 │   ├── llm/           # LLM provider abstraction
 │   ├── agent/         # Agent runtime, coordination, control plane
-│   ├── tools/         # 51 always-registered + optional CDP/computer tools
+│   ├── tools/         # 63 built-in + optional CDP/computer/LSP tools (up to 75)
 │   ├── memory/        # Long-term semantic memory + entity graph
 │   ├── mcp/           # Model Context Protocol (client and server)
 │   ├── persistence/   # Data storage (SQLite, connection pool, jobs)
@@ -338,7 +338,7 @@ Running ──park()──► Parked ──revive()──► Running ──relea
 ---
 
 ## crates/tools
-**51 always-registered tools**, plus up to 5 CDP browser tools and 6 computer tools when their services are available; all implement the `Tool` trait:
+**63 always-registered built-in tools**, plus up to 5 CDP browser tools, 6 computer tools, and LSP integration (up to 75 tools total); all implement the `Tool` trait:
 
 ```rust
 #[async_trait]
