@@ -6,7 +6,7 @@ Developer guide: project structure, building, testing, adding tools, adding LLM 
 
 ## Project Structure
 
-The project is a Rust workspace organised into 12 crates (`crates/`), each with a single responsibility. The binary entry point is `src/main.rs`, which dispatches to CLI subcommands (`run`, `worker`, `tui`, `serve`, `config`, `jobs`, `profiles`, `contacts`, `sessions`, `memory`, `mcp-serve`, `bench`, `stats`).
+The project is a Rust workspace organised into 13 crates (`crates/`), each with a single responsibility. The binary entry point is `src/main.rs`, which dispatches to CLI subcommands (`run`, `worker`, `tui`, `serve`, `config`, `jobs`, `profiles`, `contacts`, `sessions`, `memory`, `mcp-serve`, `bench`, `stats`).
 
 ```
 fathom/
@@ -54,7 +54,7 @@ fathom/
 │   │       ├── task_tree.rs
 │   │       ├── improvement.rs
 │   │       └── reflection.rs
-│   ├── tools/              # 51 always + up to 5 CDP + up to 6 computer tools
+│   ├── tools/              # 63 built-in + up to 5 CDP + up to 6 computer tools (up to 75)
 │   │   └── src/
 │   │       ├── registry.rs     # ToolRegistry, ToolContext
 │   │       ├── web.rs
@@ -407,7 +407,7 @@ pub mod my_tool;
 registry.register(Arc::new(crate::my_tool::MyTool));
 ```
 
-The `with_builtins()` method is the single registration point for all built-in tools. It currently registers 51 always-available tools, plus up to 5 CDP browser tools and 6 computer-use tools when their services are configured, across categories: web fetch/search, file I/O, shell, browser automation, computer use, vision, git, PDF, code REPLs, OSINT lead generation, contact extraction, memory, coordination, and hierarchical delegation.
+The `with_builtins()` method is the single registration point for all built-in tools. It currently registers 63 always-available tools, plus up to 5 CDP browser tools, 6 computer-use tools, and LSP integration when configured, across categories: web fetch/search, file I/O, shell, browser automation, computer use, vision, git, PDF, code REPLs, OSINT lead generation, contact extraction, memory, coordination, and hierarchical delegation.
 
 ### 4. Classify for parallelism
 

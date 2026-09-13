@@ -7,11 +7,11 @@ export default {
     hero: {
       badge: { en: 'Repository', ru: 'Репозиторий' },
       title: { en: 'The source,<br /><em class="it">crate by byte.</em>', ru: 'Исходники,<br /><em class="it">крейт за крейтом.</em>' },
-      sub: { en: '12 workspace crates, 3 apps, 50+ built-in tools, and a Rust CLI — everything in one public repository at <a href="https://github.com/yakushevhk/Fathom" target="_blank" rel="noopener">github.com/yakushevhk/Fathom</a>.', ru: '12 крейтов, 3 приложения, 50+ встроенных инструментов и Rust CLI — всё в одном публичном репозитории на <a href="https://github.com/yakushevhk/Fathom" target="_blank" rel="noopener">github.com/yakushevhk/Fathom</a>.' },
+      sub: { en: '13 workspace crates, 3 apps, 63 built-in tools (up to 75), and a Rust CLI — everything in one public repository at <a href="https://github.com/yakushevhk/Fathom" target="_blank" rel="noopener">github.com/yakushevhk/Fathom</a>.', ru: '13 крейтов, 3 приложения, 63 встроенных инструмента (до 75) и Rust CLI — всё в одном публичном репозитории на <a href="https://github.com/yakushevhk/Fathom" target="_blank" rel="noopener">github.com/yakushevhk/Fathom</a>.' },
     },
     workspace: {
       badge: { en: 'Workspace', ru: 'Workspace' },
-      title: { en: '12 crates, one binary', ru: '12 крейтов, один бинарник' },
+      title: { en: '13 crates, one binary', ru: '13 крейтов, один бинарник' },
       sub: { en: 'Cargo workspace with resolver 2. Each crate is a focused module — together they compile into a single <code>fathom</code> binary, plus optional apps.', ru: 'Cargo workspace с resolver 2. Каждый крейт — отдельный модуль, собираемый в единый бинарник <code>fathom</code> плюс сопутствующие приложения.' },
       coreDesc: { en: 'Shared types, config, error handling, event bus (<code>IrcBus</code>), session management, tool trait, token accounting, async jobs, daemon registry, and capability definitions. Foundation every other crate depends on.', ru: 'Общие типы, конфигурация, ошибки, шина событий (<code>IrcBus</code>), управление сессиями, трейт инструментов, учет токенов, асинхронные задачи и политики возможностей.' },
       llmDesc: { en: 'Streaming LLM provider abstraction. Provider factory (DeepSeek, OpenAI-compatible), concurrency-limited dispatch, retry with backoff, token-aware response streaming.', ru: 'Потоковая абстракция над LLM-провайдерами (DeepSeek, OpenAI-совместимые), ограничение параллелизма, повторные попытки с backoff и стриминг ответов.' },

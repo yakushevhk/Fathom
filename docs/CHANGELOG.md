@@ -133,7 +133,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Normalized result schema** — all backends return structured results with titles, snippets, URLs, and metadata.
 
 #### Tool system
-- **Conditional tool registry** — 51 always-registered built-in tools, plus up to 5 CDP browser tools when CDP is reachable and up to 6 computer-use tools when `COMPUTER_URL` is configured; LSP tools are optional and separately registered. All are managed through a central `ToolRegistry` with typed schemas and validation.
+- **Conditional tool registry** — 63 always-registered built-in tools, plus up to 5 CDP browser tools when CDP is reachable and up to 6 computer-use tools when `COMPUTER_URL` is configured; LSP tools are optional and separately registered. All are managed through a central `ToolRegistry` with typed schemas and validation.
 - **Tool categories:**
   | Category | Tools |
   |---|---|
@@ -254,7 +254,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Tool discovery and schema caching.
   - Automatic reconnection on transport failure.
   - OAuth token refresh for authenticated servers.
-- **MCP Server** (`mcp-serve`) — exposes the tools registered by the runtime to external MCP clients. The default registry has 51 always-registered tools, with up to 5 CDP browser tools when CDP is reachable and up to 6 computer tools when `COMPUTER_URL` is configured; LSP tools are optional and separately registered.
+- **MCP Server** (`mcp-serve`) — exposes the tools registered by the runtime to external MCP clients. The default registry has 63 always-registered tools, with up to 5 CDP browser tools when CDP is reachable and up to 6 computer tools when `COMPUTER_URL` is configured; LSP tools are optional and separately registered.
 
 #### LLM abstraction
 - **Unified LLM interface** (`pr-llm`) — pluggable provider abstraction.

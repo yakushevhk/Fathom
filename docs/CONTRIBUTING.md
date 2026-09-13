@@ -53,7 +53,7 @@ cargo test --test e2e_basic_research -- --ignored
 
 ### Project Structure
 
-Fathom is a Rust workspace with 12 crates plus a top-level binary:
+Fathom is a Rust workspace with 13 crates plus a top-level binary:
 
 ```
 Fathom/
@@ -742,7 +742,7 @@ Each crate enforces a **compile-time boundary** that prevents accidental couplin
 | `governance` | Policy engine, approvals | Security boundary — can be audited in isolation |
 | `supervisor` | Process lifecycle | Operational concerns separated from business logic |
 
-Splitting further (e.g., separating each tool category into its own crate) would add build overhead with minimal benefit. 12 crates is the sweet spot for compile-time isolation without excessive dependency ceremony.
+Splitting further (e.g., separating each tool category into its own crate) would add build overhead with minimal benefit. 13 crates is the sweet spot for compile-time isolation without excessive dependency ceremony.
 
 ### Tool Dispatch Design
 

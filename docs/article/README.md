@@ -33,7 +33,7 @@ code.
 
 | File | About |
 |---|---|
-| [01-architecture.md](./01-architecture.md) | Architecture: 12 crates, research pipeline, agent model, guardrails |
+| [01-architecture.md](./01-architecture.md) | Architecture: 13 crates, research pipeline, agent model, guardrails |
 | [02-tool-calling.md](./02-tool-calling.md) | Tool-calling mechanics: registry, batches, partitioning, join_all vs spawn parallelism |
 | [03-benchmarks.md](./03-benchmarks.md) | Benchmarks: dispatch, parallel batches, parsing, live session statistics |
 | [04-parsing.md](./04-parsing.md) | Parsing guide: `parse_html`, `extract_json`, SSRF protection, cache |
@@ -104,7 +104,7 @@ Each file answers one question, and the answers build on each other:
 
 - planning and decomposition of the task into subtasks;
 - parallel execution across research, code, data, and computer-use workflows;
-- **51 always-registered tools, plus up to 5 CDP and up to 6 computer tools when configured** (web, parsing, files, shell, git, REPL, memory, OSINT, and computer use);
+- **63 always-registered tools, plus up to 5 CDP and up to 6 computer tools when configured (up to 75)** (web, parsing, files, shell, git, REPL, memory, OSINT, and computer use);
 - batched tool calling with true multi-threaded parallelism (`tokio::spawn`);
 - protection: SSRF guard, prompt-injection filters, file locks, cancellation on shell failure;
 - everything is written to SQLite: every tool call with duration — later analyzed
@@ -125,7 +125,7 @@ and SQLite tracing makes every session debuggable after the fact.
 
 | Metric | Value |
 |---|---|
-| Built-in tools | 51 always-available (+6 computer use, +5 browser CDP conditional; + MCP tools dynamic) |
+| Built-in tools | 63 always-available (+6 computer use, +5 browser CDP conditional, +1 LSP; + MCP tools dynamic = up to 75) |
 | Dispatch overhead for a 1-call batch | ~141 µs over raw call |
 | Per-call overhead in an 8-call batch | ≈0 µs (amortized) |
 | serde tool-argument speed | ~316 ns per round-trip |

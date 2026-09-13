@@ -29,7 +29,7 @@ cargo build --release
 ./target/release/fathom --help
 ```
 
-The Rust workspace consists of 12 crates (`pr-core`, `pr-llm`, `pr-agent`, `pr-tools`, `pr-mcp`, `pr-persistence`, `pr-memory`, `pr-server`, `pr-tui`, `pr-lsp`, `pr-governance`, `pr-supervisor`) plus the root binary. The release profile uses LTO and symbol stripping for minimal binary size.
+The Rust workspace consists of 13 crates (`pr-core`, `pr-llm`, `pr-agent`, `pr-tools`, `pr-mcp`, `pr-persistence`, `pr-memory`, `pr-server`, `pr-tui`, `pr-lsp`, `pr-governance`, `pr-supervisor`, `pr-desktop`) plus the root binary. The release profile uses LTO and symbol stripping for minimal binary size.
 
 ---
 

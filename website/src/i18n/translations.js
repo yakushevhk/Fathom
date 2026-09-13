@@ -238,8 +238,8 @@ export const translations = {
       "ru": "Создано для масштаба"
     },
     "hero_subtitle": {
-      "en": "12 workspace crates, hierarchical coordination, durable sessions, and production-grade persistence",
-      "ru": "12 крейтов рабочего пространства, иерархическая координация, долговечные сессии и надёжное хранение"
+      "en": "13 workspace crates, hierarchical coordination, durable sessions, and production-grade persistence",
+      "ru": "13 крейтов рабочего пространства, иерархическая координация, долговечные сессии и надёжное хранение"
     },
     "docs": {
       "en": "Read the technical docs",
@@ -1405,7 +1405,7 @@ export const translations = {
     "hero": {
       "badge": { "en": "Source & runtime map", "ru": "Карта исходников и рантайма" },
       "title": { "en": "Source & runtime, <em class=\"it\">mapped.</em>", "ru": "Исходники и рантайм — <em class=\"it\">на карте.</em>" },
-      "sub": { "en": "A current map of the Fathom binary, its 12 workspace crates, and the tools available at runtime.", "ru": "Актуальная карта бинарника Fathom, его 12 крейтов воркспейса и инструментов, доступных в рантайме." }
+      "sub": { "en": "A current map of the Fathom binary, its 13 workspace crates, and the tools available at runtime.", "ru": "Актуальная карта бинарника Fathom, его 13 крейтов воркспейса и инструментов, доступных в рантайме." }
     },
     "stats": {
       "crates": { "en": "Workspace crates", "ru": "Крейтов воркспейса" },
@@ -1432,7 +1432,7 @@ export const translations = {
         "core": { "desc": { "en": "Shared agent types, coordination, steering and in-process async jobs", "ru": "Общие типы агентов, координация, стиринг и внутрипроцессные асинхронные задачи" } },
         "llm": { "desc": { "en": "Streaming LLM provider abstraction", "ru": "Абстракция стримингового провайдера LLM" } },
         "agent": { "desc": { "en": "Hierarchical agents, batch spawn, output schemas and handoff", "ru": "Иерархические агенты, пакетный спавн, схемы вывода и передача задач" } },
-        "tools": { "desc": { "en": "51 always-registered tools, plus up to 5 CDP browser tools and up to 6 computer tools when configured", "ru": "51 постоянно зарегистрированный инструмент, плюс до 5 браузерных инструментов CDP и до 6 инструментов computer use при настройке" } },
+        "tools": { "desc": { "en": "63 always-registered tools, plus up to 5 CDP browser tools and up to 6 computer tools when configured (up to 75)", "ru": "63 постоянно зарегистрированных инструмента, плюс до 5 браузерных инструментов CDP и до 6 инструментов computer use при настройке (до 75)" } },
         "mcp": { "desc": { "en": "MCP client and server integration", "ru": "Интеграция MCP-клиента и сервера" } },
         "persistence": { "desc": { "en": "SQLite/PostgreSQL sessions, contacts and durable jobs", "ru": "Сессии, контакты и устойчивые задачи в SQLite/PostgreSQL" } },
         "memory": { "desc": { "en": "Semantic memory with vector search, BM25 and entity graph", "ru": "Семантическая память с векторным поиском, BM25 и графом сущностей" } },

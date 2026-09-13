@@ -361,7 +361,7 @@ export default {
       sub: { en: 'Install Fathom, start the server and open /dashboard in your browser.', ru: 'Установите Fathom, запустите сервер и откройте /dashboard в браузере.' },
       docs: { en: 'API reference', ru: 'API-справка' },
       playground: { en: 'Open the repository', ru: 'Открыть репозиторий' },
-      playgroundNote: { en: 'Explore the full source: 12 crates, tools, apps, and documentation — all in one GitHub repository.', ru: 'Изучите исходный код: 12 крейтов, инструменты, приложения и документацию — всё в одном GitHub-репозитории.' },
+      playgroundNote: { en: 'Explore the full source: 13 crates, tools, apps, and documentation — all in one GitHub repository.', ru: 'Изучите исходный код: 13 крейтов, инструменты, приложения и документацию — всё в одном GitHub-репозитории.' },
     },
   },
   securityPage: {
@@ -395,7 +395,7 @@ export default {
     hero: {
       badge: { en: 'Source & runtime map', ru: 'Карта исходников и рантайма' },
       title: { en: 'Source &amp; runtime, <em class="it">mapped.</em>', ru: 'Исходники и рантайм, <em class="it">наглядно.</em>' },
-      sub: { en: 'A current map of the Fathom binary, its 12 workspace crates, and the tools available at runtime.', ru: 'Актуальная карта бинарника Fathom, его 12 крейтов и инструментов, доступных во время выполнения.' },
+      sub: { en: 'A current map of the Fathom binary, its 13 workspace crates, and the tools available at runtime.', ru: 'Актуальная карта бинарника Fathom, его 13 крейтов и инструментов, доступных во время выполнения.' },
     },
     stats: {
       crates: { en: 'Workspace crates', ru: 'Крейтов в workspace' },
@@ -422,7 +422,7 @@ export default {
         core: { desc: { en: 'Shared agent types, coordination, steering and in-process async jobs', ru: 'Общие типы агентов, координация, управление и фоновые задачи' } },
         llm: { desc: { en: 'Streaming LLM provider abstraction', ru: 'Потоковая абстракция над LLM-провайдерами' } },
         agent: { desc: { en: 'Hierarchical agents, batch spawn, output schemas and handoff', ru: 'Иерархические агенты, пакетный запуск, схемы вывода и передача данных' } },
-        tools: { desc: { en: '51 always-registered tools, plus up to 5 CDP browser tools and up to 6 computer tools when configured', ru: '51 встроенный инструмент, до 5 CDP-браузерных и до 6 инструментов управления компьютером' } },
+        tools: { desc: { en: '63 always-registered tools, plus up to 5 CDP browser tools and up to 6 computer tools when configured (up to 75)', ru: '63 встроенных инструмента, до 5 CDP-браузерных и до 6 инструментов управления компьютером (до 75)' } },
         mcp: { desc: { en: 'MCP client and server integration', ru: 'Интеграция MCP-клиента и сервера' } },
         persistence: { desc: { en: 'SQLite/PostgreSQL sessions, contacts and durable jobs', ru: 'Сессии SQLite/PostgreSQL, контакты и надежные задачи' } },
         memory: { desc: { en: 'Semantic memory with vector search, BM25 and entity graph', ru: 'Семантическая память с векторным поиском, BM25 и графом сущностей' } },
