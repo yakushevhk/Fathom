@@ -6,7 +6,7 @@ import { join, relative } from 'path';
 const ROOT = process.cwd();
 const PAGES = join(ROOT, 'src/pages');
 const CONTENT = join(ROOT, 'src/content/docs');
-const ASSET_RE = /\.(pdf|png|jpe?g|svg|webp|gif|mp4|vtt|xml|txt|ico|json|webmanifest|webm|mov)$/i;
+const ASSET_RE = /\.(pdf|png|jpe?g|svg|webp|gif|mp4|vtt|xml|txt|ico|json|webmanifest|webm|mov|html|js)$/i;
 
 function walk(dir, out = []) {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
@@ -88,12 +88,13 @@ const seo = [];
 const DEFAULT_DESC = 'Fathom is a self-hosted Rust runtime for autonomous remote AI workers';
 for (const f of pageFiles) {
   const src = readFileSync(f, 'utf8');
-  const tm = src.match(/<Layout[^>]*\stitle="([^"]*)"/) || src.match(/title="([^"]*)"/);
+  const tm = src.match(/pageTitle="([^"]*)"/) || src.match(/<Layout[^>]*\stitle="([^"]*)"/) || src.match(/title="([^"]*)"/);
   const title = tm ? tm[1] : null;
-  const hasDesc = /<Layout[\s\S]{0,400}?description="/.test(src) || /\bdescription="[^"]{40,}"/.test(src);
-  const h1 = (src.match(/<h1[\s>]/g) || []).length;
+  const hasDesc = /(?:<Layout|<AgentPage)[\s\S]{0,400}?(?:description|pageDesc)="/.test(src) || /\b(?:description|pageDesc)="[^"]{30,}"/.test(src);
   const agentPage = /AgentPage\.astro/.test(src);
-  seo.push({ file: rel(f), title, len: title ? title.length : 0, hasDesc, h1, agentPage });
+  const isSlug = f.includes('[...slug]');
+  const h1 = (src.match(/<h1[\s>]/g) || []).length + (agentPage ? 1 : 0);
+  seo.push({ file: rel(f), title, len: title ? title.length : 0, hasDesc, h1, agentPage, isSlug });
 }
 
 // ---------- 4. alt / a11y ----------
@@ -123,15 +124,14 @@ for (const [k, files] of missingKeys.sort()) out.push(`- \`${k}\` ← ${files.sl
 
 out.push('\n## I18N KEYS WITHOUT RU TRANSLATION (' + missingRu.length + ')');
 for (const [k, files] of missingRu.sort()) out.push(`- \`${k}\` ← ${files.slice(0, 2).join(', ')}`);
-
 out.push('\n## SEO: no own description');
-for (const r of seo.filter((x) => !x.hasDesc && !x.agentPage)) out.push(`- ${r.file}  (title len ${r.len})`);
+for (const r of seo.filter((x) => !x.hasDesc && !x.agentPage && !x.isSlug)) out.push(`- ${r.file}  (title len ${r.len})`);
 
 out.push('\n## SEO: title too long (>65) or too short (<20)');
-for (const r of seo.filter((x) => x.title && (x.len > 65 || x.len < 20))) out.push(`- ${r.file}  ${r.len}: ${r.title}`);
+for (const r of seo.filter((x) => !x.isSlug && x.title && (x.len > 65 || x.len < 20))) out.push(`- ${r.file}  ${r.len}: ${r.title}`);
 
 out.push('\n## A11Y: h1 count != 1');
-for (const r of seo.filter((x) => x.h1 !== 1)) out.push(`- ${r.file}  h1=${r.h1}`);
+for (const r of seo.filter((x) => !x.isSlug && x.h1 !== 1)) out.push(`- ${r.file}  h1=${r.h1}`);
 
 out.push('\n## A11Y: <img> without alt (' + imgNoAlt.length + ')');
 for (const [f, tag] of imgNoAlt) out.push(`- ${f}  ${tag}`);

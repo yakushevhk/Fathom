@@ -54,7 +54,7 @@ export default {
     breadcrumb: { en: 'Solutions', ru: 'Решения' },
     exploreAll: { en: 'Explore all solutions →', ru: 'Все решения →' },
     requestAccess: { en: 'Request Dedicated Server Access →', ru: 'Запросить доступ к серверу →' },
-    readWp: { en: 'Read 42-Page Whitepaper', ru: 'Читать 42-страничный Вайтпейпер' },
+    readWp: { en: 'Read 42-Page Whitepaper', ru: 'Читать 42-страничный документ' },
     b2b: {
       crumb: { en: 'Sales Outbound', ru: 'Исходящие продажи' },
       title: { en: 'Autonomous <em class="it">Outbound SDR</em>', ru: 'Автономный <em class="it">SDR для продаж</em>' },

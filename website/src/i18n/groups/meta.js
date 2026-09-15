@@ -44,7 +44,7 @@ export default {
     whitepaper: {
       title: {
         en: "Technical Whitepaper & Formal Specifications — Fathom",
-        ru: "Технический вайтпейпер и спецификации — Fathom",
+        ru: "Техническая документация и спецификации — Fathom",
       },
       desc: {
         en: "Mathematical foundations, multi-agent swarms, DAG orchestration, benchmark methodology, and cryptographic verification receipts.",

@@ -151,6 +151,12 @@ export default {
       title: { en: 'Generate your first lead list', ru: 'Сформируйте свой первый список лидов' },
       start: { en: 'Get started →', ru: 'Начать →' },
     },
+    audit: {
+      eyebrow: { en: 'Live Deliverable', ru: 'Реальный результат работы' },
+      title: { en: 'Pre-Verified Executive Lead Audit', ru: 'Аудит подтверждённых контактов руководителей' },
+      desc: { en: 'Goal Mode in action: 50 pre-verified decision-makers, direct emails with live SMTP 250 OK handshakes, LinkedIn links, and 1-click CRM pipeline export.', ru: 'Режим достижения цели в деле: 50 проверенных лиц, принимающих решения, прямые email с подтверждением от почтовых серверов (SMTP 250 OK), профили в LinkedIn и выгрузка в CRM в один клик.' },
+      caption: { en: 'Fig 3.1 — OSINT Lead Audit: 50 enterprise contacts validated through 5 verification gates with zero email bounces and CRM sync staging.', ru: 'Рис 3.1 — Аудит контактов: 50 корпоративных лидов, прошедших 5 ступеней проверки без риска возврата писем.' },
+    },
   },
   featuresOutreach: {
     hero: {

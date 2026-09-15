@@ -1,9 +1,9 @@
 export default {
   whitepaperPage: {
     hero: {
-      eyebrow: { en: 'Technical Whitepaper & Architecture Deck', ru: 'Технический Вайтпейпер и презентация архитектуры' },
+      eyebrow: { en: 'Technical Whitepaper & Architecture Deck', ru: 'Техническая документация и архитектурная презентация' },
       title: { en: 'Fathom Systems <em class="it">Architecture</em>', ru: 'Архитектура систем <em class="it">Fathom</em>' },
-      sub: { en: 'The definitive 42-page engineering and economic blueprint for universal autonomous AI employee fleets.', ru: 'Полный 42-страничный инженерный и экономический манифест универсальных флотов автономных ИИ-сотрудников.' },
+      sub: { en: 'The definitive 42-page engineering and economic blueprint for universal autonomous AI employee fleets.', ru: 'Подробное 42-страничное руководство по архитектуре, технологиям и экономике внедрения автономных ИИ-сотрудников.' },
       downloadPdf: { en: 'Download PDF (7.6 MB)', ru: 'Скачать PDF (7.6 МБ)' },
       viewDeck: { en: 'Full-Screen Slide Deck ↗', ru: 'Полноэкранный слайд-дек ↗' },
     },
@@ -29,9 +29,9 @@ export default {
       p1: { title: { en: 'Executive Summary & Vision', ru: 'Резюме для руководства и видение' }, desc: { en: 'The autonomous workforce shift, multi-agent coordination, and universal runtime architecture.', ru: 'Переход к автономным сотрудникам, координация агентов и универсальная архитектура рантайма.' } },
       p2: { title: { en: 'Archetypes & Day-in-the-Life Workflows', ru: 'Архетипы и ежедневные рабочие процессы' }, desc: { en: 'SDR, Talent Scout, DevOps Maintainer, Chief of Staff, and Back-Office Accounting personas.', ru: 'Персоны SDR, рекрутера, DevOps-инженера, Chief of Staff и бухгалтера.' } },
       p3: { title: { en: 'Governed Computer Use & Playwright Service', ru: 'Управляемый Computer Use и сервис Playwright' }, desc: { en: 'ARIA accessibility tree navigation, live screen streams, and 2FA human takeover mutex.', ru: 'Навигация по дереву доступности ARIA, живой видеопоток и 2FA перехват управления человеком.' } },
-      p4: { title: { en: 'OSINT Lead Generation & Outreach Engine', ru: 'OSINT-генерация лидов и движок outreach' }, desc: { en: '7 search backends, 5-stage SMTP verification gates, and CRM push adapters.', ru: '7 поисковых бэкендов, 5 шлюзов SMTP-верификации и адаптеры отправки в CRM.' } },
-      p5: { title: { en: 'Enterprise Security & Governance Vault', ru: 'Корпоративная безопасность и сейф Governance' }, desc: { en: 'AES-256-GCM hardware key isolation, fail-closed policy engine, and GDPR audit trails.', ru: 'Аппаратная изоляция ключей AES-256-GCM, fail-closed движок политик и аудит GDPR.' } },
-      p6: { title: { en: 'Persistent Memory & Entity Knowledge Graph', ru: 'Долговечная память и граф сущностей' }, desc: { en: 'Hybrid BM25 + Vector SQLite search (1.62ms) and 3-hop recursive entity relationship graphs.', ru: 'Гибридный BM25 + Vector поиск в SQLite (1.62 мс) и 3-хоповые графы связей сущностей.' } },
+      p4: { title: { en: 'OSINT Lead Generation & Outreach Engine', ru: 'OSINT-генерация лидов и модуль аутрича' }, desc: { en: '7 search backends, 5-stage SMTP verification gates, and CRM push adapters.', ru: '7 поисковых систем, 5 ступеней проверки через SMTP и адаптеры синхронизации с CRM.' } },
+      p5: { title: { en: 'Enterprise Security & Governance Vault', ru: 'Корпоративная безопасность и политики Governance' }, desc: { en: 'AES-256-GCM hardware key isolation, fail-closed policy engine, and GDPR audit trails.', ru: 'Аппаратная изоляция ключей AES-256-GCM, надёжный движок политик и аудит соответствия GDPR.' } },
+      p6: { title: { en: 'Persistent Memory & Entity Knowledge Graph', ru: 'Долговечная память и граф сущностей' }, desc: { en: 'Hybrid BM25 + Vector SQLite search (1.62ms) and 3-hop recursive entity relationship graphs.', ru: 'Гибридный BM25 + Vector поиск в SQLite (1,62 мс) и рекурсивные графы связей сущностей.' } },
       p7: { title: { en: 'Hardware Efficiency & Benchmark Analysis', ru: 'Эффективность оборудования и бенчмарки' }, desc: { en: 'Tokio async concurrency, 15.4 MB RAM footprint, and empirical Rust vs Python benchmarks.', ru: 'Асинхронность Tokio, 15.4 МБ RAM и сравнительные бенчмарки Rust vs Python.' } },
       p8: { title: { en: 'Economics, Agency Scaling & Strategic Roadmap', ru: 'Экономика, масштабирование агентств и Roadmap' }, desc: { en: 'Flat monthly seat pricing, unlimited neural compute economics, and agency multi-tenancy.', ru: 'Фиксированная цена за место, экономика безлимитных нейровычислений и мультитенантность.' } },
     },

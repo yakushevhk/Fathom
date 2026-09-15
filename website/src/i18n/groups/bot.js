@@ -122,7 +122,7 @@ export default {
         en: 'Available as an on-premise binary, private cloud cluster, and local-first desktop application for macOS, Windows, and Linux.',
         ru: 'Доступно в виде он-премиз бинарника, приватного облачного кластера и локального десктоп-клиента для macOS, Windows и Linux.' },
       readme: { en: 'Read Bot Documentation →', ru: 'Документация Fathom Bot →' },
-      code: { en: 'View Systems Whitepaper', ru: 'Изучить Вайтпейпер' },
+      code: { en: 'View Systems Whitepaper', ru: 'Изучить Белую книгу' },
     },
   },
 };

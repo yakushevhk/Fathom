@@ -38,7 +38,7 @@ export const translations = {
     },
     "whitepaper": {
       "en": "Whitepaper",
-      "ru": "Вайтпейпер"
+      "ru": "Белая книга"
     },
     "pricing": {
       "en": "Pricing",
@@ -678,11 +678,11 @@ export const translations = {
   "landing": {
       "badge": {
         "en": "Universal autonomous AI worker",
-        "ru": "Универсальный автономный ИИ-воркер"
+        "ru": "Универсальный автономный ИИ-сотрудник"
       },
       "title": {
         "en": "One worker.<br /><em class=\"it\">Every</em> job done.",
-        "ru": "Один воркер.<br /><em class=\"it\">Любая</em> задача решена."
+        "ru": "Один сотрудник.<br /><em class=\"it\">Любая</em> задача решена."
       },
       "subtitle": {
         "en": "Fathom is a universal AI worker you self-host: it runs outreach, does deep research, writes code, operates a computer, and works on a schedule — with durable memory, governance, and human review built into one runtime.",
@@ -715,7 +715,7 @@ export const translations = {
         },
         "tag_run": {
           "en": "Researching",
-          "ru": "Ресёрч"
+          "ru": "Исследование"
         },
         "tag_ok": {
           "en": "Complete",
@@ -727,7 +727,7 @@ export const translations = {
         },
         "plan": {
           "en": "Decomposing into 4 sub-tasks…",
-          "ru": "Декомпозиция на 4 подзадачи…"
+          "ru": "Разбивка задачи на 4 шага…"
         },
         "spawn": {
           "en": "Spawning 4 parallel agents",
@@ -739,7 +739,7 @@ export const translations = {
         },
         "a2": {
           "en": "Verifying emails through 5 gates",
-          "ru": "Проверяет email через 5 шлюзов"
+          "ru": "Проверяет email через 5 ступеней"
         },
         "a3": {
           "en": "Drafting personalized sequences",
@@ -768,7 +768,7 @@ export const translations = {
       },
       "uc_title": {
         "en": "Delegate the <em class=\"it\">whole pipeline</em>",
-        "ru": "Делегируйте <em class=\"it\">цепочку задач целиком</em>"
+        "ru": "Поручите задачу <em class=\"it\">от начала до конца</em>"
       },
       "uc_sub": {
         "en": "One goal in — finished work out. The same worker runs outreach, research, code and operations, switching roles as the task demands.",
@@ -948,7 +948,7 @@ export const translations = {
       },
       "agents_sub": {
         "en": "Each sub-agent has a focused role and its own behavior. Coordinators decompose, fan out, reflect, and synthesize.",
-        "ru": "У каждого суб-агента своя роль и поведение. Координатор декомпозирует, раздаёт задачи, переосмысливает и синтезирует."
+        "ru": "У каждого агента своя специализация. Координатор разбивает задачу на шаги, запускает параллельные процессы и формирует готовый результат."
       },
       "agent": {
         "researcher": { "name": { "en": "Researcher", "ru": "Исследователь" }, "status": { "en": "breathing · scanning sources", "ru": "дыхание · сканирование источников" } },
@@ -1322,7 +1322,7 @@ export const translations = {
         },
         "a1": {
           "en": "Fathom is a universal autonomous worker runtime in Rust: it plans goals, coordinates sub-agents, uses code and computer tools, remembers context, and keeps side effects behind governance gates — not a single-session chat context window.",
-          "ru": "Fathom — универсальный рантайм автономных воркеров на Rust: он планирует цели, координирует суб-агентов, использует инструменты кода и компьютера, помнит контекст и держит побочные эффекты за шлюзами управления — а не просто чат с контекстным окном."
+          "ru": "Fathom — автономная платформа цифровых сотрудников на Rust: она планирует цели, управляет специализированными агентами, использует инструменты для кода и компьютера, сохраняет память между сессиями и защищает важные действия политиками безопасности — в отличие от обычных чат-ботов с ограниченным окном диалога."
         },
         "q2": {
           "en": "Which search engines are supported?",
@@ -1359,7 +1359,7 @@ export const translations = {
     },
     "ocean_sub": {
       "en": "A fathom is a nautical measure of depth. Ours is measured in gates and backends: seven search engines deep, five verification gates deep, every session replayable to the bottom.",
-      "ru": "Fathom — морская мера глубины. Наша измеряется в шлюзах и бэкендах: семь поисковиков вглубь, пять шлюзов верификации вглубь, каждая сессия воспроизводима до самого дна."
+      "ru": "Fathom — морская сажень, традиционная мера глубины. В Fathom глубина измеряется качеством: поиск через 7 независимых систем, 5 ступеней проверки данных и полная запись сессий, воспроизводимых от начала до конца."
     },
     "ocean_mono": {
       "en": "1 fathom = 1.829 m · depth of work",

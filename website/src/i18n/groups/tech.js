@@ -96,6 +96,10 @@ export default {
         en: 'Alongside facts, the store maintains a real-world entity graph: nodes (person, company, project, technology, role, location, event, product) deduplicated by name+type, typed edges (<code class="ic">works_at</code>, <code class="ic">leads</code>, <code class="ic">founded</code>…) and multi-hop BFS up to 4 hops — "who leads X", "who works at companies in Kazan".',
         ru: 'Параллельно с фактами хранилище ведёт граф сущностей реального мира: узлы (person, company, project, technology, role, location, event, product) дедуплицируются по имя+тип, типизированные рёбра (<code class="ic">works_at</code>, <code class="ic">leads</code>, <code class="ic">founded</code>…) и multi-hop BFS до 4 хопов — «кто руководит X», «кто работает в компаниях Казани».',
       },
+      caption: {
+        en: 'Fig 4.1 — Enterprise Entity Knowledge Graph: 3-hop relationship traversal across 5,420 interconnected entities in 1.62 ms with zero cloud Vector DB fees.',
+        ru: 'Рис 4.1 — Корпоративный граф сущностей: обход связей на 3 шага вглубь по 5 420 взаимосвязанным сущностям за 1,62 мс в локальной БД.',
+      },
     },
     tools: {
       badge: { en: 'Agent tools', ru: 'Инструменты агента' },
@@ -152,7 +156,21 @@ export default {
       file_lock: { name: { en: 'File locking', ru: 'Блокировка файлов' }, d: { en: 'Concurrent write serialization prevents multiple agents from writing to the same file at the same time.', ru: 'Сериализация конкурентной записи предотвращает одновременную запись нескольких агентов в один файл.' } },
       scratchpad: { name: { en: 'Scratchpad', ru: 'Блокнот' }, d: { en: 'Session-shared ledger for inter-agent coordination — agents leave notes, partial results and status updates for each other.', ru: 'Общий журнал сессии для межагентной координации — агенты оставляют заметки, промежуточные результаты и обновления статуса.' } },
       output_truncation: { name: { en: 'Output truncation', ru: 'Усечение вывода' }, d: { en: 'Per-tool byte/line caps and turn budget enforcement — oversized tool outputs are truncated with a marker, never silently dropped.', ru: 'Байтовые/строчные лимиты по инструментам и бюджет на ход — слишком большие выводы усекаются с маркером, никогда не теряются молча.' } },
-      stall_detection: { name: { en: 'Stall detection', ru: 'Детекция зависаний' }, d: { en: 'Configurable warn (450s) and kill (1200s) timeouts per agent. Cancellation tokens propagate across the entire agent tree — cancelling the coordinator cancels every descendant. Heartbeat monitoring detects stuck workers.', ru: 'Настраиваемые таймауты предупреждения (450с) и убийства (1200с) на агента. Токены отмены распространяются по всему дереву агентов — отмена координатора отменяет каждого потомка. Мониторинг сердцебиения обнаруживает застрявших воркеров.' } },
+      stall_detection: { name: { en: 'Stall detection', ru: 'Детекция зависаний' }, d: { en: 'Configurable warn (450s) and kill (1200s) timeouts per agent. Cancellation tokens propagate across the entire agent tree — cancelling the coordinator cancels every descendant. Heartbeat monitoring detects stuck workers.', ru: 'Настраиваемые таймауты предупреждения (450с) и остановки (1200с) для агента. Токены отмены передаются по всему дереву агентов — отмена координатора останавливает все дочерние процессы. Мониторинг пульса выявляет зависших воркеров.' } },
+    },
+    showcase: {
+      inbox: {
+        eyebrow: { en: 'Autonomous Chief of Staff', ru: 'Автономный бизнес-ассистент' },
+        title: { en: 'Continuous Inbox Sweep & Multi-Persona Triage', ru: 'Непрерывный разбор почты и сортировка входящих' },
+        desc: { en: 'Sweeping 41 active threads, filtering low-priority marketing noise, drafting context-rich executive replies, and orchestrating delegated tasks across specialized personas.', ru: 'Анализ десятков входящих веток, фильтрация рекламного спама, подготовка выверенных ответов от лица руководителя и распределение задач по сотрудникам.' },
+        caption: { en: 'Fig 7.1 — Chief of Staff Persona: 41-thread sweep, noise archival, priority triage, and multi-persona execution.', ru: 'Рис 7.1 — Режим ассистента: разбор 41 диалога, архивация спама, приоритизация и запуск нужных задач.' },
+      },
+      agency: {
+        eyebrow: { en: 'Agency Multi-Tenancy', ru: 'Мультиарендность для агентств' },
+        title: { en: 'Agency Fleet Scaling & Client Pods', ru: 'Масштабирование воркеров под клиентов агентства' },
+        desc: { en: 'Managing 12 isolated client coworker fleets from a unified control plane. Dedicated Docker sandboxes, separate SQLite memory graphs, and white-label branding with 92% net margins.', ru: 'Управление 12 изолированными пулами цифровых сотрудников из единой панели. Отдельные песочницы Docker, независимые базы памяти и white-label брендинг.' },
+        caption: { en: 'Fig 7.2 — Agency Fleet Manager: 12 client worker pods operating in isolation with 92% net profit margin.', ru: 'Рис 7.2 — Панель агентства: изолированная работа воркеров под каждого клиента с маржинальностью до 92%.' },
+      },
     },
   },
   mcpPage: {
@@ -383,7 +401,19 @@ export default {
     },
     pipeline: { badge: { en: 'Verification Pipeline', ru: 'Пайплайн верификации' }, title: { en: '5-gateway email verification', ru: 'Email-верификация через 5 шлюзов' }, sub: { en: 'Every email passes through five sequential verification stages. A failure at any stage short-circuits the pipeline.', ru: 'Каждый email проходит через пять последовательных этапов. Отказ на любом этапе прерывает пайплайн.' }, s1: { name: { en: 'Syntax', ru: 'Синтаксис' }, desc: { en: 'RFC 5322 validation. Rejects malformed addresses before any network call.', ru: 'Валидация RFC 5322. Отклоняет некорректные адреса.' } }, s2: { name: { en: 'MX Lookup', ru: 'MX-запрос' }, desc: { en: 'DNS MX record resolution. Domains without mail exchangers are rejected.', ru: 'Разрешение MX-записей. Домены без почтовых серверов отклоняются.' } }, s3: { name: { en: 'Disposable Detection', ru: 'Детекция одноразовых' }, desc: { en: 'Known disposable email providers are flagged and filtered out.', ru: 'Известные одноразовые провайдеры помечаются и отфильтровываются.' } }, s4: { name: { en: 'Role-based Check', ru: 'Проверка ролевых' }, desc: { en: 'info@, admin@, support@ and similar role addresses are flagged as low-value.', ru: 'info@, admin@, support@ и аналоги помечаются как низкоценные.' } }, s5: { name: { en: 'SMTP Probe', ru: 'SMTP-зонд' }, desc: { en: 'Live SMTP handshake to verify the mailbox exists without sending mail.', ru: 'Живое SMTP-рукопожатие для проверки почтового ящика.' } } },
     stats: { patterns: { en: 'injection patterns detected', ru: 'обнаруженных паттернов инъекций' }, destructive: { en: 'destructive command patterns', ru: 'паттернов деструктивных команд' }, pipeline: { en: 'verification gateways', ru: 'шлюзов верификации' }, silent: { en: 'silent failures', ru: 'тихих отказов' } },
-    cta: { title: { en: 'Security is not optional', ru: 'Безопасность — не опция' }, sub: { en: 'The runtime provides layered controls; enable governance and optional services according to your deployment policy.', ru: 'Рантайм предоставляет многоуровневые контроли; включайте governance и опциональные сервисы согласно политике деплоя.' }, docs: { en: 'Read the docs', ru: 'Читать документацию' }, arch: { en: 'View architecture', ru: 'Смотреть архитектуру' } },
+    cta: { title: { en: 'Make worker actions reviewable', ru: 'Контролируемые действия воркеров' }, sub: { en: 'Choose and configure the safeguards, authentication, rate limits and approval gates that fit your deployment. Read the security architecture and verify the active policy in the documentation.', ru: 'Настраивайте защиту, аутентификацию, лимиты и этапы согласования под требования вашей инфраструктуры. Изучите архитектуру безопасности и проверяйте политики в документации.' }, docs: { en: 'Read the docs', ru: 'Читать документацию' }, arch: { en: 'View architecture', ru: 'Смотреть архитектуру' } },
+    vault: {
+      eyebrow: { en: 'Hardware-Grade Isolation', ru: 'Аппаратная изоляция' },
+      title: { en: 'The Ironclad Credentials Vault', ru: 'Защищённое хранилище учётных данных' },
+      desc: { en: 'API keys, passwords, and database tokens are encrypted with AES-256-GCM via the Rust <code>ring</code> crate. Secrets are resolved in memory before TLS dispatch — LLM prompts never see plaintext credentials.', ru: 'API-ключи, пароли и токены баз данных шифруются AES-256-GCM через крейт <code>ring</code>. Секреты подставляются в памяти перед отправкой по TLS — промпты языковых моделей никогда не видят открытых данных.' },
+      caption: { en: 'Fig 5.1 — Hardware Credentials Vault: AES-256-GCM encrypted key derivation with zero LLM prompt visibility and fail-closed audit log telemetry.', ru: 'Рис 5.1 — Защищённое хранилище: шифрование ключей AES-256-GCM без попадания в промпты моделей и с полным журналом аудита.' },
+    },
+    audit: {
+      eyebrow: { en: 'Regulatory Audits', ru: 'Нормативный аудит' },
+      title: { en: 'Autonomous Legal & Compliance Verification', ru: 'Автономная проверка договоров и соответствия нормам' },
+      desc: { en: 'Multi-jurisdiction contract and policy audits: evaluating vendor Master Services Agreements against GDPR, CCPA, and statutory liability limits with paragraph-level citation traceability.', ru: 'Аудит договоров в разных юрисдикциях: проверка соглашений на соответствие GDPR, CCPA и лимитам ответственности с точными ссылками на пункты документов.' },
+      caption: { en: 'Fig 5.2 — Regulatory Document Auditor: Automated compliance evaluation across 200 vendor agreements in under 30 minutes.', ru: 'Рис 5.2 — Аудит документов: автоматическая проверка более 200 соглашений менее чем за 30 минут.' },
+    },
   },
   intPage: {
     hero: { badge: { en: 'Integrations', ru: 'Интеграции' }, title: { en: 'Connect to <em class="it">your stack.</em>', ru: 'Подключите <em class="it">свой стек.</em>' }, sub: { en: 'CRM, MCP, browser automation, notifications, search backends, and export formats.', ru: 'CRM, MCP, браузерная автоматизация, уведомления, поисковые бэкенды и форматы экспорта.' } },
@@ -519,9 +549,9 @@ export default {
     banner: {
       eyebrow: { en: 'Verified Systems Proof', ru: 'Подтверждённые бенчмарки' },
       title: { en: 'Read the Full Empirical Benchmark Suite', ru: 'Изучите полную серию эмпирических бенчмарков' },
-      sub: { en: 'Chapter VII of our Whitepaper details the complete microbenchmark test harness with memory profiles, flame graphs, and tokens/sec throughput data.', ru: 'Глава VII Вайтпейпера подробно описывает микро-бенчмарки, профили памяти, флеймграфы и пропускную способность токенов/сек.' },
-      download: { en: '⬇ Download Whitepaper (PDF, 7.6 MB)', ru: '⬇ Скачать Вайтпейпер (PDF, 7.6 МБ)' },
-      deck: { en: 'View Interactive Deck', ru: 'Открыть интерактивный Deck' },
+      sub: { en: 'Chapter VII of our Whitepaper details the complete microbenchmark test harness with memory profiles, flame graphs, and tokens/sec throughput data.', ru: 'В главе VII подробно описаны методология тестирования, профилирование памяти, флеймграфы и скорость генерации токенов в секунду.' },
+      download: { en: '⬇ Download Whitepaper (PDF, 7.6 MB)', ru: '⬇ Скачать PDF-документ (7.6 МБ)' },
+      deck: { en: 'View Interactive Deck', ru: 'Открыть интерактивную презентацию' },
     },
   },
 };
