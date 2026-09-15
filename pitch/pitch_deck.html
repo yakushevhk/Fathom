@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Fathom — Sovereign Autonomous AI Workforce (Pitch Deck)</title>
+  <title>Fathom — Universal Autonomous AI Workforce (Pitch Deck)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
@@ -166,6 +166,17 @@
       padding: 24px 0;
       position: relative;
     }
+    /* Slide Content Container */
+    .slide-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 16px 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+
 
     /* Headings */
     .hero-title {
@@ -308,6 +319,30 @@
       background: #0f172a;
     }
 
+    /* Screenshot wrapper styles */
+    .screenshot-wrapper {
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      max-height: 740px;
+      margin-top: 14px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.07);
+      background: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .screenshot-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+      display: block;
+    }
     /* Stat Box */
     .stat-box {
       background: var(--bg-alt);
@@ -362,6 +397,7 @@
 <div class="deck-container">
 
   <!-- ==================== SLIDE 1: COVER ==================== -->
+  <!-- ==================== SLIDE 1 ==================== -->
   <section class="slide" id="slide-1">
     <div class="slide-header">
       <div class="brand-group">
@@ -372,7 +408,7 @@
         </div>
       </div>
       <div class="slide-category">Investment Pitch Deck</div>
-      <div class="slide-number">01 / 20</div>
+      <div class="slide-number">01 / 18</div>
     </div>
 
     <div class="slide-body" style="justify-content: space-between; padding: 20px 0;">
@@ -381,35 +417,34 @@
           🚀 Approved Startup #1924 • Winner of PAA AI in Business & Industry Award
         </div>
         <h1 class="hero-title" style="font-size: 58px; max-width: 1400px; margin-bottom: 18px;">
-          The Sovereign, Self-Hosted <br>
-          <span class="accent">Autonomous AI Workforce</span> <br>
-          for Enterprises & Government
+          Autonomous AI Workforce Platform <br>
+          <span class="accent">Train Once in Chat. Operates Autonomously 24/7.</span>
         </h1>
-        <p class="section-subtitle" style="font-size: 20px; max-width: 1200px; margin-bottom: 0;">
-          Fathom delivers universal digital employees deployed inside your private infrastructure. Powered by a high-performance compiled Rust server engine and an intuitive desktop chat application, executing end-to-end workflows with full auditability, computer use, and team coordination.
+        <p class="section-subtitle" style="font-size: 20px; max-width: 1250px; margin-bottom: 0;">
+          Fathom delivers digital employees powered by top-tier cloud models and a high-performance compiled Rust engine. You train your digital worker naturally in chat — and it continuously executes end-to-end operational workflows 100% autonomously without human intervention.
         </p>
       </div>
 
       <div class="grid-4">
         <div class="card card-alt" style="border-left: 4px solid var(--accent);">
-          <div class="tag tag-blue">Sovereign Deployment</div>
-          <div class="card-title" style="font-size: 18px;">100% On-Premise</div>
-          <p class="card-desc">Zero vendor data leaks. Runs air-gapped on bare-metal, private cloud, or sovereign state data centers.</p>
+          <div class="tag tag-blue">Cloud-Native Autonomy</div>
+          <div class="card-title" style="font-size: 18px;">100% Autonomous</div>
+          <p class="card-desc">Zero manual supervision needed. Once trained, bots execute complex recurring workflows completely without human intervention.</p>
         </div>
         <div class="card card-alt" style="border-left: 4px solid var(--emerald);">
           <div class="tag tag-green">Rust Core Speed</div>
           <div class="card-title" style="font-size: 18px;">~0.75 ms Dispatch</div>
-          <p class="card-desc">15.4 MB memory baseline, sub-millisecond tool routing, and Tokio asynchronous sub-agent swarms.</p>
+          <p class="card-desc">15.4 MB memory baseline, sub-millisecond tool routing, and Tokio asynchronous multi-agent orchestration.</p>
         </div>
         <div class="card card-alt" style="border-left: 4px solid var(--purple);">
-          <div class="tag tag-purple">Fathom Bot Surface</div>
-          <div class="card-title" style="font-size: 18px;">Local-First Chat App</div>
-          <p class="card-desc">Every contact is an autonomous agent. Multi-agent group chats, routine cron schedules, and computer control.</p>
+          <div class="tag tag-purple">Universal AI Hub</div>
+          <div class="card-title" style="font-size: 18px;">Best Industry Models</div>
+          <p class="card-desc">Seamlessly aggregates state-of-the-art AI solutions into one universal interface with persistent state, scheduled cron routines, and computer control.</p>
         </div>
         <div class="card card-alt" style="border-left: 4px solid var(--amber);">
-          <div class="tag tag-amber">Enterprise Trust</div>
-          <div class="card-title" style="font-size: 18px;">Human-in-the-Loop</div>
-          <p class="card-desc">Signed verification receipts, strict permission cards, and RBAC governance built for regulated sectors.</p>
+          <div class="tag tag-amber">Natural Chat Training</div>
+          <div class="card-title" style="font-size: 18px;">Conversational Setup</div>
+          <p class="card-desc">Onboard bots naturally via /setup. The agent learns your company procedures and converts them into standing SOUL.md operational rules.</p>
         </div>
       </div>
     </div>
@@ -426,209 +461,123 @@
     </div>
   </section>
 
-  <!-- ==================== SLIDE 2: THE PROBLEM ==================== -->
+  <!-- ==================== SLIDE 4: THE PRODUCT INTERFACE ==================== -->
+  <!-- ==================== SLIDE 2 ==================== -->
   <section class="slide" id="slide-2">
     <div class="slide-header">
       <div class="brand-group">
         <div class="brand-logo-icon">⚡</div>
         <div>
-          <div class="brand-title">FATHOM</div>
-          <div class="brand-subtitle">The Problem</div>
+          <div class="brand-name">FATHOM</div>
+          <div class="brand-tagline">Universal Autonomous AI Workforce</div>
         </div>
       </div>
-      <div class="slide-category">Market Pain</div>
-      <div class="slide-number">02 / 20</div>
+      <div class="slide-number">02 / 18</div>
     </div>
+    <div class="slide-content">
+      <div class="section-badge"><span class="section-badge-dot"></span> AUTONOMOUS BOT ARCHITECTURE</div>
+      <div class="section-title">Inside Fathom Bot: Persistent Digital Coworker State Machine</div>
+      <div class="section-subtitle">Beyond simple chat windows: each Bot is a persistent, stateful employee with isolated CWD directories, AppArmor sandboxing, and dynamic SOUL.md execution rules.</div>
 
-    <div class="slide-body">
-      <h2 class="section-title">The Enterprise AI Conundrum: Cloud Leaks vs. Toy Scripts</h2>
-      <p class="section-subtitle">
-        Companies and governments want autonomous digital workers, but current options fail three critical enterprise requirements.
-      </p>
-
-      <div class="grid-3" style="gap: 28px;">
-        <div class="card card-alt" style="border-top: 4px solid var(--rose); padding: 30px;">
-          <div style="font-size: 36px; margin-bottom: 14px;">🛑</div>
-          <div class="card-title" style="font-size: 21px;">Data Sovereignty & Security Leaks</div>
-          <p class="card-desc" style="font-size: 15px;">
-            Public AI SaaS (OpenAI, Anthropic Cloud, Copilot) force enterprises to stream proprietary banking, customer, and state data to foreign servers. Regulators strictly penalize cross-border personal data transfers.
-          </p>
-          <div style="margin-top: 24px; padding: 12px 16px; background: var(--rose-light); border: 1px solid var(--rose-border); border-radius: 8px; font-size: 14px; color: var(--rose); font-weight: 600;">
-            82% of enterprises restrict public cloud AI due to compliance risk.
+      <div class="grid-3" style="margin-top: 14px; margin-bottom: 20px;">
+        <div class="card card-alt" style="border-left: 4px solid var(--accent); padding: 18px 20px;">
+          <div style="font-weight: 800; font-size: 15px; color: var(--accent); margin-bottom: 6px;">1. Persistent State Machine</div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
+            Unique identity, voice persona, isolated <code style="font-size: 11px; background: #e2e8f0; padding: 2px 4px; border-radius: 4px;">bot-cwd</code> working folder, and 24KB standing instructions via <code style="font-size: 11px; background: #e2e8f0; padding: 2px 4px; border-radius: 4px;">SOUL.md</code> with dynamic context interpolation.
           </div>
         </div>
-
-        <div class="card card-alt" style="border-top: 4px solid var(--amber); padding: 30px;">
-          <div style="font-size: 36px; margin-bottom: 14px;">🐌</div>
-          <div class="card-title" style="font-size: 21px;">Bloated Python Stacks & Fragile Scripts</div>
-          <p class="card-desc" style="font-size: 15px;">
-            Frameworks like LangChain, CrewAI, and AutoGen are written in interpreted Python. They consume 2.5 GB RAM per agent, suffer from GIL bottlenecks, ~400ms latency, and crash during multi-hour background tasks.
-          </p>
-          <div style="margin-top: 24px; padding: 12px 16px; background: var(--amber-light); border: 1px solid var(--amber-border); border-radius: 8px; font-size: 14px; color: var(--amber); font-weight: 600;">
-            Unstable in production; incapable of running 10+ sub-agents reliably.
+        <div class="card card-alt" style="border-left: 4px solid var(--emerald); padding: 18px 20px;">
+          <div style="font-weight: 800; font-size: 15px; color: var(--emerald); margin-bottom: 6px;">2. Hardened AppArmor Sandbox</div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
+            Web browsing runs in a dedicated <code style="font-size: 11px; background: #e2e8f0; padding: 2px 4px; border-radius: 4px;">openmausbot-browser</code> AppArmor profile with cgroups resource caps (2GB RAM, 2 CPUs, 512 PIDs fork-bomb guard).
           </div>
         </div>
-
-        <div class="card card-alt" style="border-top: 4px solid var(--purple); padding: 30px;">
-          <div style="font-size: 36px; margin-bottom: 14px;">🔒</div>
-          <div class="card-title" style="font-size: 21px;">Uncontrollable Black Boxes Without Approvals</div>
-          <p class="card-desc" style="font-size: 15px;">
-            Existing autonomous tools lack granular human governance. They execute unchecked terminal commands, mutate files, and interact with external systems without cryptographic audit trails or interactive approval cards.
-          </p>
-          <div style="margin-top: 24px; padding: 12px 16px; background: var(--purple-light); border: 1px solid var(--purple-border); border-radius: 8px; font-size: 14px; color: var(--purple); font-weight: 600;">
-            Executives refuse full autonomy without deterministic safety rails.
+        <div class="card card-alt" style="border-left: 4px solid var(--purple); padding: 18px 20px;">
+          <div style="font-weight: 800; font-size: 15px; color: var(--purple); margin-bottom: 6px;">3. Cryptographic Drift Guard</div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
+            SHA-256 integrity checks between disk files and system state. External modifications trigger visual diff alerts with human verification before execution.
           </div>
         </div>
       </div>
-    </div>
 
+      <div class="screenshot-wrapper" style="height: 560px; overflow: hidden; border-radius: 12px; border: 1px solid var(--border); background: #0f172a;">
+        <img src="assets/screenshots/fathom-agent-thinking-stream-tool-call.png" alt="Fathom Bot Live Execution & Thinking Stream" class="screenshot-img" style="width: 100%; height: 100%; object-fit: contain; object-position: center center; display: block;" />
+      </div>
+    </div>
     <div class="slide-footer">
       <div class="footer-left">
         <span>Fathom Investment Pitch Deck</span>
         <span>•</span>
-        <span>Problem Identification</span>
+        <span>Bot Subsystem Architecture</span>
       </div>
       <div class="footer-right">fathom.uz</div>
     </div>
   </section>
-
-  <!-- ==================== SLIDE 3: THE SOLUTION ==================== -->
+  <!-- ==================== SLIDE 5: CONFIGURABLE PERSONAS & SWARMS ==================== -->
+  <!-- ==================== SLIDE 3 ==================== -->
   <section class="slide" id="slide-3">
     <div class="slide-header">
       <div class="brand-group">
         <div class="brand-logo-icon">⚡</div>
         <div>
-          <div class="brand-title">FATHOM</div>
-          <div class="brand-subtitle">The Solution</div>
+          <div class="brand-name">FATHOM</div>
+          <div class="brand-tagline">Universal Autonomous AI Workforce</div>
         </div>
       </div>
-      <div class="slide-category">Product Architecture</div>
-      <div class="slide-number">03 / 20</div>
+      <div class="slide-number">03 / 18</div>
     </div>
+    <div class="slide-content">
+      <div class="section-badge"><span class="section-badge-dot"></span> THREAD-AWARE MULTI-AGENT SWARMS</div>
+      <div class="section-title">Thread-Aware Concurrency & Autonomous Swarm Delegation</div>
+      <div class="section-subtitle">A single bot handles up to 10 concurrent tasks via FIFO queueing, or acts as Section Chief orchestrating teams of specialist bots via MCP thread tools without user UI disruption.</div>
 
-    <div class="slide-body">
-      <h2 class="section-title">The Solution: Full-Stack Sovereign Autonomous Workforce</h2>
-      <p class="section-subtitle">
-        Fathom combines an enterprise on-premise server engine with an intuitive desktop chat workspace where every colleague is an autonomous specialist.
-      </p>
-
-      <div class="grid-3" style="gap: 28px; margin-bottom: 24px;">
-        <div class="card card-alt" style="border-left: 5px solid var(--accent); padding: 30px;">
-          <div class="tag tag-blue">Core Engine</div>
-          <div class="card-title" style="font-size: 20px;">1. Compiled Rust Runtime</div>
-          <p class="card-desc" style="font-size: 15px; margin-bottom: 16px;">
-            Built with Tokio asynchronous swarms, sub-millisecond dispatch (~0.75 ms), 15.4 MB memory baseline, SQLite/PostgreSQL persistence, and long-term semantic memory.
-          </p>
-          <ul style="font-size: 13px; color: var(--text-dim); line-height: 1.7; padding-left: 18px;">
-            <li>Zero Python dependencies in runtime core</li>
-            <li>13 modular workspace crates</li>
-            <li>63 built-in tools (up to 75 with Computer & CDP)</li>
-          </ul>
-        </div>
-
-        <div class="card card-alt" style="border-left: 5px solid var(--purple); padding: 30px;">
-          <div class="tag tag-purple">Operator Surface</div>
-          <div class="card-title" style="font-size: 20px;">2. Fathom Bot Chat App</div>
-          <p class="card-desc" style="font-size: 15px; margin-bottom: 16px;">
-            Local-first desktop chat client (React 19 + Electron). Talk to agents in 1-on-1s, add multiple bots to shared discussion channels, and schedule autonomous routines via visual cron.
-          </p>
-          <ul style="font-size: 13px; color: var(--text-dim); line-height: 1.7; padding-left: 18px;">
-            <li>Every sidebar contact is a specialized agent</li>
-            <li>Multi-bot group discussions & peer reviews</li>
-            <li>Calendar automations & morning briefings</li>
-          </ul>
-        </div>
-
-        <div class="card card-alt" style="border-left: 5px solid var(--emerald); padding: 30px;">
-          <div class="tag tag-green">Execution & Safety</div>
-          <div class="card-title" style="font-size: 20px;">3. Governed Computer Use</div>
-          <p class="card-desc" style="font-size: 15px; margin-bottom: 16px;">
-            Agents control browser tabs and VM desktops with visual feedback. High-risk actions require explicit human click-to-approve cards before execution.
-          </p>
-          <ul style="font-size: 13px; color: var(--text-dim); line-height: 1.7; padding-left: 18px;">
-            <li>Interactive human-in-the-loop approval cards</li>
-            <li>Signed cryptographic verification receipts</li>
-            <li>Sandboxed Linux/macOS VM environments</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="card card-alt" style="padding: 20px 28px; border: 1px solid var(--border);">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <span style="font-weight: 700; color: var(--text); font-size: 16px;">Enterprise Ready Today:</span>
-            <span style="font-size: 14px; color: var(--text-muted); margin-left: 10px;">Connects to amoCRM, Bitrix24, 1C, SAP, private databases, and sovereign local LLMs without external dependencies.</span>
+      <div class="grid-3" style="margin-top: 14px; margin-bottom: 20px;">
+        <div class="card card-alt" style="border-left: 4px solid var(--accent); padding: 18px 20px;">
+          <div style="font-weight: 800; font-size: 15px; color: var(--accent); margin-bottom: 6px;">1–10 Parallel Tasks / Bot</div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
+            Independent execution slots (<code style="font-size: 11px; background: #e2e8f0; padding: 2px 4px; border-radius: 4px;">TaskRecord</code>) with visible queue indicators so incoming requests never block running workflows.
           </div>
-          <div class="tag tag-green" style="margin: 0;">100% PRIVATE & SOVEREIGN</div>
+        </div>
+        <div class="card card-alt" style="border-left: 4px solid var(--emerald); padding: 18px 20px;">
+          <div style="font-weight: 800; font-size: 15px; color: var(--emerald); margin-bottom: 6px;">Autonomous Thread Creation</div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
+            Bots spawn child worker threads via <code style="font-size: 11px; background: #e2e8f0; padding: 2px 4px; border-radius: 4px;">start_thread</code> (with <code style="font-size: 11px; background: #e2e8f0; padding: 2px 4px; border-radius: 4px;">activate: false</code>), delegating subtasks with depth-1 runaway loop guards.
+          </div>
+        </div>
+        <div class="card card-alt" style="border-left: 4px solid var(--amber); padding: 18px 20px;">
+          <div style="font-weight: 800; font-size: 15px; color: var(--amber); margin-bottom: 6px;">Prompt Cache Optimization</div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
+            Stable identity hashing keeps LLM context cache alive across delegations, cutting token latency by 70% and provider costs by up to 90%.
+          </div>
         </div>
       </div>
-    </div>
 
+      <div class="screenshot-wrapper" style="height: 560px; overflow: hidden; border-radius: 12px; border: 1px solid var(--border); background: #0f172a;">
+        <img src="assets/screenshots/fathom-bot-identity-settings.png" alt="Fathom Bot Identity and Persona Settings" class="screenshot-img" style="width: 100%; height: 100%; object-fit: contain; object-position: center center; display: block;" />
+      </div>
+    </div>
     <div class="slide-footer">
       <div class="footer-left">
         <span>Fathom Investment Pitch Deck</span>
         <span>•</span>
-        <span>Solution Architecture</span>
+        <span>Multi-Bot Swarm Orchestration</span>
       </div>
       <div class="footer-right">fathom.uz</div>
     </div>
   </section>
 
-  <!-- ==================== SLIDE 4: THE PRODUCT INTERFACE ==================== -->
+  <!-- ==================== SLIDE 6: MARKET RESEARCH 1 (IDC / GARTNER) ==================== -->
+  <!-- ==================== SLIDE 4 ==================== -->
   <section class="slide" id="slide-4">
     <div class="slide-header">
       <div class="brand-group">
         <div class="brand-logo-icon">⚡</div>
         <div>
           <div class="brand-name">FATHOM</div>
-          <div class="brand-tagline">Sovereign Autonomous Workforce</div>
+          <div class="brand-tagline">Universal Autonomous AI Workforce</div>
         </div>
       </div>
-      <div class="slide-number">04 / 20</div>
-    </div>
-    <div class="slide-content">
-      <div class="section-badge"><span class="section-badge-dot"></span> THE CONVERSATIONAL SURFACE</div>
-      <div class="section-title">Fathom Bot: Digital Coworkers in a Clean Desktop Client</div>
-      <div class="section-subtitle">A native, local-first chat application where every sidebar contact is an autonomous agent with distinct skills, memory, and scheduled background routines.</div>
-      <div class="screenshot-wrapper">
-        <img src="/images/bot/fathom-agent-thinking-stream-tool-call.png" alt="Fathom Bot Live Execution & Thinking Stream" class="screenshot-img" />
-      </div>
-    </div>
-  </section>
-
-  <!-- ==================== SLIDE 5: CONFIGURABLE PERSONAS ==================== -->
-  <section class="slide" id="slide-5">
-    <div class="slide-header">
-      <div class="brand-group">
-        <div class="brand-logo-icon">⚡</div>
-        <div>
-          <div class="brand-name">FATHOM</div>
-          <div class="brand-tagline">Sovereign Autonomous Workforce</div>
-        </div>
-      </div>
-      <div class="slide-number">05 / 20</div>
-    </div>
-    <div class="slide-content">
-      <div class="section-badge"><span class="section-badge-dot"></span> AGENT CUSTOMIZATION</div>
-      <div class="section-title">Dedicated Personas, Roles & Persistent Long-Term Memory</div>
-      <div class="section-subtitle">Enterprise administrators configure behavioral profiles, connected corporate databases, and system prompts tailored to specific departmental workflows.</div>
-      <div class="screenshot-wrapper">
-        <img src="/images/bot/fathom-bot-identity-settings.png" alt="Fathom Bot Identity and Persona Settings" class="screenshot-img" />
-      </div>
-    </div>
-  </section>
-
-  <!-- ==================== SLIDE 6: MARKET RESEARCH 1 (IDC / GARTNER) ==================== -->
-  <section class="slide" id="slide-6">
-    <div class="slide-header">
-      <div class="brand-group">
-        <div class="brand-logo-icon">⚡</div>
-        <div>
-          <div class="brand-name">FATHOM</div>
-          <div class="brand-tagline">Sovereign Autonomous Workforce</div>
-        </div>
-      </div>
-      <div class="slide-number">06 / 20</div>
+      <div class="slide-number">04 / 18</div>
     </div>
     <div class="slide-content">
       <div class="section-badge"><span class="section-badge-dot"></span> MARKET VALIDATION</div>
@@ -655,103 +604,139 @@
   </section>
 
   <!-- ==================== SLIDE 7: SCREENSHOT PROOF - DEEP RESEARCH ==================== -->
-  <section class="slide" id="slide-7">
+  <!-- ==================== SLIDE 5 ==================== -->
+  <section class="slide" id="slide-5">
     <div class="slide-header">
       <div class="brand-group">
         <div class="brand-logo-icon">⚡</div>
         <div>
           <div class="brand-name">FATHOM</div>
-          <div class="brand-tagline">Sovereign Autonomous Workforce</div>
+          <div class="brand-tagline">Universal Autonomous AI Workforce</div>
         </div>
       </div>
-      <div class="slide-number">07 / 20</div>
+      <div class="slide-number">05 / 18</div>
     </div>
     <div class="slide-content">
       <div class="section-badge"><span class="section-badge-dot"></span> MARKET INTELLIGENCE IN ACTION</div>
       <div class="section-title">Autonomous OSINT: Web Crawling & Tabular Deliverables</div>
       <div class="section-subtitle">Real execution example: Fathom autonomously mapping regional venture capital funds, extracting contacts, and compiling structured tabular summaries.</div>
       <div class="screenshot-wrapper">
-        <img src="/images/bot/fathom-uzbekistan-vc-funds-research.png" alt="Fathom Deep Autonomous Market Research" class="screenshot-img" />
+        <img src="assets/screenshots/fathom-uzbekistan-vc-funds-research.png" alt="Fathom Deep Autonomous Market Research" class="screenshot-img" />
       </div>
+    </div>
+    <div class="slide-footer">
+      <div class="footer-left">
+        <span>Fathom Investment Pitch Deck</span>
+        <span>•</span>
+        <span>Autonomous Market Intelligence</span>
+      </div>
+      <div class="footer-right">fathom.uz</div>
     </div>
   </section>
 
   <!-- ==================== SLIDE 8: 24/7 BACKGROUND ROUTINES ==================== -->
-  <section class="slide" id="slide-8">
+  <!-- ==================== SLIDE 6 ==================== -->
+  <section class="slide" id="slide-6">
     <div class="slide-header">
       <div class="brand-group">
         <div class="brand-logo-icon">⚡</div>
         <div>
           <div class="brand-name">FATHOM</div>
-          <div class="brand-tagline">Sovereign Autonomous Workforce</div>
+          <div class="brand-tagline">Universal Autonomous AI Workforce</div>
         </div>
       </div>
-      <div class="slide-number">08 / 20</div>
+      <div class="slide-number">06 / 18</div>
     </div>
     <div class="slide-content">
       <div class="section-badge"><span class="section-badge-dot"></span> PROACTIVE WORKFLOWS</div>
       <div class="section-title">24/7 Scheduled Automations & Visual Calendar Triggers</div>
       <div class="section-subtitle">Digital employees execute continuous routines while human teams sleep: competitor price tracking, daily morning summaries, and recurring system audits.</div>
       <div class="screenshot-wrapper">
-        <img src="/images/bot/fathom-automations-calendar-schedule-modal.png" alt="Fathom Automations and Calendar Schedules" class="screenshot-img" />
+        <img src="assets/screenshots/fathom-automations-calendar-schedule-modal.png" alt="Fathom Automations and Calendar Schedules" class="screenshot-img" />
       </div>
+    </div>
+    <div class="slide-footer">
+      <div class="footer-left">
+        <span>Fathom Investment Pitch Deck</span>
+        <span>•</span>
+        <span>Proactive Autonomous Routines</span>
+      </div>
+      <div class="footer-right">fathom.uz</div>
     </div>
   </section>
 
   <!-- ==================== SLIDE 9: REGULATORY SOVEREIGNTY & MOAT ==================== -->
-  <section class="slide" id="slide-9">
+  <!-- ==================== SLIDE 7 ==================== -->
+  <section class="slide" id="slide-7">
     <div class="slide-header">
       <div class="brand-group">
         <div class="brand-logo-icon">⚡</div>
         <div>
           <div class="brand-name">FATHOM</div>
-          <div class="brand-tagline">Sovereign Autonomous Workforce</div>
+          <div class="brand-tagline">Universal Autonomous AI Workforce</div>
         </div>
       </div>
-      <div class="slide-number">09 / 20</div>
+      <div class="slide-number">07 / 18</div>
     </div>
     <div class="slide-content">
-      <div class="section-badge"><span class="section-badge-dot"></span> REGULATORY MOAT</div>
-      <div class="section-title">Uzbekistan Law #547 & Sovereign Enterprise Compliance</div>
-      <div class="section-subtitle">Mandatory personal data localization creates an unbreachable barrier against US cloud AI providers in banking, telecom, and public sector accounts.</div>
+      <div class="section-badge"><span class="section-badge-dot"></span> TOP-TIER CLOUD INTELLIGENCE</div>
+      <div class="section-title">Best-in-Class Foundation Models & Universal Cloud Orchestration</div>
+      <div class="section-subtitle">Fathom connects directly to the latest state-of-the-art frontier models (Claude 3.7 Sonnet, OpenAI o3/GPT-4o, DeepSeek V3/R1, Qwen 2.5 Max) inside high-performance cloud infrastructure.</div>
       <div class="grid-2" style="margin-top: 14px;">
         <div class="card">
-          <span class="tag tag-rose">Regulatory Barrier</span>
-          <div class="card-title">Uzbekistan Law #ZRU-547 (Data Localization)</div>
-          <div class="card-desc">Requires all personal data of Uzbekistan citizens to be processed and physically stored on servers located within the territory of Uzbekistan. Foreign cloud wrappers (Claude, OpenAI) are legally non-compliant for enterprise core workflows.</div>
+          <span class="tag tag-blue">Universal Model Router</span>
+          <div class="card-title">Frontier Model Intelligence</div>
+          <div class="card-desc">Automatic intelligent routing directs reasoning, deep research, and coding tasks to the highest-performing frontier models in real-time, ensuring maximum accuracy and complex task success.</div>
         </div>
         <div class="card">
-          <span class="tag tag-green">The Fathom Advantage</span>
-          <div class="card-title">100% On-Premise Air-Gapped Deployment</div>
-          <div class="card-desc">Fathom compiles to a single native binary deployed directly onto the customer's bare-metal hardware or private cloud. Zero telemetry exfiltration, local model weights (vLLM / Ollama), and complete data sovereignty.</div>
+          <span class="tag tag-green">Zero-Intervention Cloud Execution</span>
+          <div class="card-title">Continuous 24/7 Autonomy</div>
+          <div class="card-desc">Bots run continuously in managed cloud sandboxes without human supervision. Teach the bot your standard operating procedures in chat once — it executes background routines around the clock.</div>
         </div>
       </div>
+    </div>
+    <div class="slide-footer">
+      <div class="footer-left">
+        <span>Fathom Investment Pitch Deck</span>
+        <span>•</span>
+        <span>Foundation Models & Cloud Routing</span>
+      </div>
+      <div class="footer-right">fathom.uz</div>
     </div>
   </section>
 
   <!-- ==================== SLIDE 10: SCREENSHOT PROOF - OBSERVABILITY ==================== -->
-  <section class="slide" id="slide-10">
+  <!-- ==================== SLIDE 8 ==================== -->
+  <section class="slide" id="slide-8">
     <div class="slide-header">
       <div class="brand-group">
         <div class="brand-logo-icon">⚡</div>
         <div>
           <div class="brand-name">FATHOM</div>
-          <div class="brand-tagline">Sovereign Autonomous Workforce</div>
+          <div class="brand-tagline">Universal Autonomous AI Workforce</div>
         </div>
       </div>
-      <div class="slide-number">10 / 20</div>
+      <div class="slide-number">08 / 18</div>
     </div>
     <div class="slide-content">
       <div class="section-badge"><span class="section-badge-dot"></span> HOST TELEMETRY & HARDWARE CONTROL</div>
       <div class="section-title">Live Hardware Diagnostics & Enterprise Observability</div>
       <div class="section-subtitle">Real-time resource utilization tracking: CPU, memory, token throughput, and container states with proactive anomaly detection and autonomous self-healing.</div>
       <div class="screenshot-wrapper">
-        <img src="/images/bot/fathom-system-resources-monitor-report.png" alt="Fathom System Resource Monitoring" class="screenshot-img" />
+        <img src="assets/screenshots/fathom-system-resources-monitor-report.png" alt="Fathom System Resource Monitoring" class="screenshot-img" />
       </div>
     </div>
+    <div class="slide-footer">
+      <div class="footer-left">
+        <span>Fathom Investment Pitch Deck</span>
+        <span>•</span>
+        <span>Telemetry & Observability</span>
+      </div>
+      <div class="footer-right">fathom.uz</div>
+    </div>
   </section>
-  <!-- ==================== SLIDE 11: MARKET RESEARCH 1 (IDC/GARTNER) ==================== -->
-  <section class="slide" id="slide-11">
+  <!-- ==================== SLIDE 9 ==================== -->
+  <section class="slide" id="slide-9">
     <div class="slide-header">
       <div class="brand-group">
         <div class="brand-logo-icon">⚡</div>
@@ -761,7 +746,7 @@
         </div>
       </div>
       <div class="slide-category">Market Inflection</div>
-      <div class="slide-number">11 / 20</div>
+      <div class="slide-number">09 / 18</div>
     </div>
 
     <div class="slide-body">
@@ -803,7 +788,7 @@
               Analyst Takeaway: The "Toy Chatbot" Era Has Ended
             </div>
             <div style="font-size: 14px; color: var(--text-muted); max-width: 1050px; line-height: 1.6;">
-              Enterprise buyers no longer allocate budget for novelty chat windows that output text advice. They demand sovereign digital agents that execute complete multi-step tasks inside their existing CRM, ERP, and database perimeter.
+              Enterprise buyers no longer allocate budget for novelty chat windows that output text advice. They demand autonomous digital agents that execute complete multi-step tasks inside their existing CRM, ERP, and database perimeter.
             </div>
           </div>
           <div class="tag tag-blue" style="font-size: 13px; margin: 0; padding: 8px 16px;">
@@ -824,7 +809,8 @@
   </section>
 
   <!-- ==================== SLIDE 12: MARKET RESEARCH 2 (MCKINSEY/ECONOMICS) ==================== -->
-  <section class="slide" id="slide-12">
+  <!-- ==================== SLIDE 10 ==================== -->
+  <section class="slide" id="slide-10">
     <div class="slide-header">
       <div class="brand-group">
         <div class="brand-logo-icon">⚡</div>
@@ -834,25 +820,25 @@
         </div>
       </div>
       <div class="slide-category">Productivity Impact</div>
-      <div class="slide-number">12 / 20</div>
+      <div class="slide-number">10 / 18</div>
     </div>
 
     <div class="slide-body">
-      <h2 class="section-title">The New Economics of Labor: McKinsey Agentic Advantage</h2>
+      <h2 class="section-title">The New Economics of Labor: McKinsey Agentic Advantage & ROI</h2>
       <p class="section-subtitle">
-        Deploying sovereign autonomous workers shifts enterprise cost structures from linear human payroll to sub-dollar compute execution.
+        Deploying autonomous autonomous workers shifts enterprise cost structures from linear human payroll to sub-dollar compute execution, unlocking unprecedented operating margins.
       </p>
 
-      <div class="grid-3" style="gap: 26px; margin-bottom: 28px;">
-        <div class="card card-alt" style="border-left: 5px solid var(--emerald); padding: 26px;">
+      <div class="grid-3" style="gap: 24px; margin-bottom: 24px;">
+        <div class="card card-alt" style="border-left: 5px solid var(--emerald); padding: 24px;">
           <div class="tag tag-green">MGI Research</div>
-          <div class="card-title" style="font-size: 20px;">60%–70% Labor Hour Automation</div>
+          <div class="card-title" style="font-size: 20px;">60%–70% Work Automation</div>
           <p class="card-desc" style="font-size: 14px; line-height: 1.6;">
             McKinsey Global Institute calculates that current generative and agentic AI capabilities can automate corporate work activities absorbing 60% to 70% of employee time today.
           </p>
         </div>
 
-        <div class="card card-alt" style="border-left: 5px solid var(--accent); padding: 26px;">
+        <div class="card card-alt" style="border-left: 5px solid var(--accent); padding: 24px;">
           <div class="tag tag-blue">Cost Deflation</div>
           <div class="card-title" style="font-size: 20px;">92% Cost Reduction per Task</div>
           <p class="card-desc" style="font-size: 14px; line-height: 1.6;">
@@ -860,7 +846,7 @@
           </p>
         </div>
 
-        <div class="card card-alt" style="border-left: 5px solid var(--purple); padding: 26px;">
+        <div class="card card-alt" style="border-left: 5px solid var(--purple); padding: 24px;">
           <div class="tag tag-purple">Organizational Velocity</div>
           <div class="card-title" style="font-size: 20px;">10x Execution Throughput</div>
           <p class="card-desc" style="font-size: 14px; line-height: 1.6;">
@@ -869,23 +855,40 @@
         </div>
       </div>
 
-      <div class="card card-alt" style="padding: 24px 28px;">
+      <div class="grid-3" style="gap: 24px; margin-bottom: 24px;">
+        <div class="card" style="padding: 20px; background: #ffffff; border: 1px solid var(--border);">
+          <div style="font-size: 12px; font-weight: 700; color: var(--text-dim); text-transform: uppercase;">Traditional Human BPO / QA</div>
+          <div style="font-size: 24px; font-weight: 800; color: var(--rose); margin: 6px 0;">$2,400 – $4,500 / mo</div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.4;">40 hrs/wk, onboarding ramp-up 60 days, error rate 4.2%, non-working nights/weekends.</div>
+        </div>
+        <div class="card" style="padding: 20px; background: var(--emerald-light); border: 1px solid var(--emerald-border);">
+          <div style="font-size: 12px; font-weight: 700; color: var(--emerald); text-transform: uppercase;">Fathom Autonomous Bot Worker</div>
+          <div style="font-size: 24px; font-weight: 800; color: var(--emerald); margin: 6px 0;">$200 – $500 / mo</div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.4;">168 hrs/wk (24/7), instant self-setup via <code style="font-size: 11px;">/setup</code>, deterministic audit logs, zero data leakage.</div>
+        </div>
+        <div class="card" style="padding: 20px; background: var(--accent-light); border: 1px solid var(--accent-border);">
+          <div style="font-size: 12px; font-weight: 700; color: var(--accent); text-transform: uppercase;">Net Economic Payback</div>
+          <div style="font-size: 24px; font-weight: 800; color: var(--accent); margin: 6px 0;">8.4x – 12x ROI</div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.4;">Break-even achieved in under 3 weeks of enterprise deployment with full on-premise governance.</div>
+        </div>
+      </div>
+
+      <div class="card card-alt" style="padding: 20px 24px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <div>
-            <div style="font-weight: 700; color: var(--text); font-size: 16px; margin-bottom: 4px;">
-              Enterprise Invariant: Sovereign Security Unlocks Deployment
+            <div style="font-weight: 700; color: var(--text); font-size: 16px; margin-bottom: 2px;">
+              Enterprise Invariant: Autonomous Security Unlocks Deployment
             </div>
-            <div style="font-size: 14px; color: var(--text-muted); max-width: 1050px; line-height: 1.6;">
+            <div style="font-size: 13px; color: var(--text-muted); max-width: 1050px; line-height: 1.5;">
               Enterprises cannot realize these 90%+ productivity gains if using cloud tools that violate state data regulations. Fathom’s 100% on-premise Rust engine delivers full agentic labor economics inside corporate firewalls.
             </div>
           </div>
-          <div class="tag tag-green" style="font-size: 13px; margin: 0; padding: 8px 16px;">
+          <div class="tag tag-green" style="font-size: 13px; margin: 0; padding: 6px 14px; white-space: nowrap;">
             MCKINSEY RESEARCH BACKED
           </div>
         </div>
       </div>
     </div>
-
     <div class="slide-footer">
       <div class="footer-left">
         <span>Fathom Investment Pitch Deck</span>
@@ -897,7 +900,8 @@
   </section>
 
   <!-- ==================== SLIDE 13: MARKET SIZE (TAM / SAM / SOM) ==================== -->
-  <section class="slide" id="slide-13">
+  <!-- ==================== SLIDE 11 ==================== -->
+  <section class="slide" id="slide-11">
     <div class="slide-header">
       <div class="brand-group">
         <div class="brand-logo-icon">⚡</div>
@@ -907,13 +911,13 @@
         </div>
       </div>
       <div class="slide-category">Market Opportunity</div>
-      <div class="slide-number">13 / 20</div>
+      <div class="slide-number">11 / 18</div>
     </div>
 
     <div class="slide-body">
-      <h2 class="section-title">Addressable Market: Global $165B Wave with Sovereign Focus</h2>
+      <h2 class="section-title">Addressable Market: Global $165B Wave with Autonomous Focus</h2>
       <p class="section-subtitle">
-        Massive global tailwinds paired with an immediate, high-margin niche in sovereign state institutions and regulated enterprise clusters.
+        Massive global tailwinds paired with an immediate, high-margin niche in autonomous state institutions and regulated enterprise clusters.
       </p>
 
       <div class="grid-3" style="gap: 30px; margin-bottom: 30px;">
@@ -925,8 +929,8 @@
 
         <div class="stat-box" style="border-top: 4px solid var(--emerald); padding: 36px 24px;">
           <div class="stat-val" style="color: var(--emerald); font-size: 52px;">$12.4B</div>
-          <div class="stat-lbl" style="margin-top: 10px;">SAM: Sovereign On-Premise & Regulated Gov/B2B</div>
-          <p style="font-size: 15px; color: var(--text-muted); margin-top: 12px; line-height: 1.5;">Financial institutions, telecom operators, healthcare, and state ministries requiring sovereign data silos.</p>
+          <div class="stat-lbl" style="margin-top: 10px;">SAM: Autonomous On-Premise & Regulated Gov/B2B</div>
+          <p style="font-size: 15px; color: var(--text-muted); margin-top: 12px; line-height: 1.5;">Financial institutions, telecom operators, healthcare, and state ministries requiring enterprise workflow automation.</p>
         </div>
 
         <div class="stat-box" style="border-top: 4px solid var(--amber); padding: 36px 24px;">
@@ -939,10 +943,10 @@
       <div class="card card-alt" style="padding: 26px 30px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <div>
-            <div style="font-weight: 700; color: var(--text); font-size: 18px; margin-bottom: 6px;">Macro Drivers Accelerating Sovereign Adoption:</div>
+            <div style="font-weight: 700; color: var(--text); font-size: 18px; margin-bottom: 6px;">Macro Drivers Accelerating Autonomous Adoption:</div>
             <div style="font-size: 15px; color: var(--text-muted); max-width: 1050px; line-height: 1.6;">
               <strong>1. Open-Weight Model Revolution:</strong> Open models now match closed proprietary APIs, making private on-premise execution superior in cost, latency, and data control.<br>
-              <strong>2. Strict Regulatory Mandates:</strong> Personal Data Protection laws (e.g. Uzbekistan Law #547, EU AI Act) mandate that sensitive citizen and corporate records remain strictly on sovereign soil.
+              <strong>2. Strict Regulatory Mandates:</strong> Personal Data Protection laws (e.g. Uzbekistan Law #547, EU AI Act) mandate that sensitive citizen and corporate records remain strictly on autonomous soil.
             </div>
           </div>
           <div style="text-align: center; padding: 14px 28px; background: #ffffff; border: 1px solid var(--border); border-radius: 12px;">
@@ -964,7 +968,8 @@
   </section>
 
   <!-- ==================== SLIDE 14: MARKET RESEARCH 3 (REGULATORY SOVEREIGNTY) ==================== -->
-  <section class="slide" id="slide-14">
+  <!-- ==================== SLIDE 12 ==================== -->
+  <section class="slide" id="slide-12">
     <div class="slide-header">
       <div class="brand-group">
         <div class="brand-logo-icon">⚡</div>
@@ -974,48 +979,48 @@
         </div>
       </div>
       <div class="slide-category">Compliance Moat</div>
-      <div class="slide-number">14 / 20</div>
+      <div class="slide-number">12 / 18</div>
     </div>
 
     <div class="slide-body">
-      <h2 class="section-title">The Sovereign Mandate: Compliance as an Enterprise Moat</h2>
+      <h2 class="section-title">Train Once in Chat: Full Lifecycle Autonomous Operations</h2>
       <p class="section-subtitle">
-        Global data localization laws are erecting permanent barriers against foreign cloud AI, creating massive demand for self-hosted enterprise agent engines.
+        Traditional RPA and automation tools require rigid Python scripting and brittle integrations. Fathom replaces complex code with conversational natural training.
       </p>
 
       <div class="grid-3" style="gap: 26px; margin-bottom: 28px;">
-        <div class="card card-alt" style="padding: 26px;">
-          <div class="tag tag-blue">Central Asia</div>
-          <div class="card-title" style="font-size: 19px;">Uzbekistan Law #547 on Personal Data</div>
+        <div class="card card-alt" style="padding: 26px; border-left: 4px solid var(--accent);">
+          <div class="tag tag-blue">Step 1: Chat Training</div>
+          <div class="card-title" style="font-size: 19px;">Conversational Onboarding</div>
           <p class="card-desc" style="font-size: 14px; line-height: 1.6;">
-            Mandates physical database localization within the Republic of Uzbekistan for processing citizen records. Foreign cloud AI tools create direct legal liability for corporate executives.
+            The manager interacts with the bot in plain natural language via <code style="font-size: 12px; background: #e2e8f0; padding: 2px 4px; border-radius: 4px;">/setup</code>, explaining duties, corporate guidelines, APIs, and business edge cases.
           </p>
         </div>
 
-        <div class="card card-alt" style="padding: 26px;">
-          <div class="tag tag-emerald">European Union</div>
-          <div class="card-title" style="font-size: 19px;">EU AI Act & GDPR Strictures</div>
+        <div class="card card-alt" style="padding: 26px; border-left: 4px solid var(--emerald);">
+          <div class="tag tag-emerald">Step 2: Rule Compilation</div>
+          <div class="card-title" style="font-size: 19px;">Persistent SOUL.md & Skills</div>
           <p class="card-desc" style="font-size: 14px; line-height: 1.6;">
-            Bans unmonitored automated biometric, financial, and workplace decision-making. Requires deterministic logging, human-in-the-loop overrides, and verifiable audit trails.
+            Fathom automatically synthesizes the training session into standing operational instructions (<code style="font-size: 12px; background: #e2e8f0; padding: 2px 4px; border-radius: 4px;">SOUL.md</code>) and portable action skills committed with user review.
           </p>
         </div>
 
-        <div class="card card-alt" style="padding: 26px;">
-          <div class="tag tag-amber">Middle East / GCC</div>
-          <div class="card-title" style="font-size: 19px;">UAE & KSA Sovereign Cloud Policies</div>
+        <div class="card card-alt" style="padding: 26px; border-left: 4px solid var(--purple);">
+          <div class="tag tag-purple">Step 3: 24/7 Autonomy</div>
+          <div class="card-title" style="font-size: 19px;">Zero-Touch Execution</div>
           <p class="card-desc" style="font-size: 14px; line-height: 1.6;">
-            Government entities and national banks must deploy AI within national sovereign data centers (e.g. Injazat, Moro Hub), prohibiting transmission to offshore LLM APIs.
+            The trained bot runs completely without human supervision: managing inboxes, reconciling invoices, running CRM syncs, and orchestrating multi-agent subtasks on schedule.
           </p>
         </div>
       </div>
 
       <div class="card card-alt" style="padding: 24px 28px;">
         <div style="font-weight: 700; color: var(--text); font-size: 16px; margin-bottom: 6px;">
-          Fathom's Native Architecture Fits Existing Compliance Frameworks Out of the Box:
+          Enterprise Advantage: Universal Intelligence Powered by Top Cloud Models
         </div>
         <div style="font-size: 14px; color: var(--text-muted); line-height: 1.6;">
-          • <strong>Zero External Phoning:</strong> Can run completely air-gapped without an active Internet connection using local quantized LLM weights.<br>
-          • <strong>Signed Verification Receipts:</strong> Cryptographically records every tool call, file write, and bash command into an unalterable local audit journal.
+          • <strong>Seamless Cloud Orchestration:</strong> Operates 100% in high-availability cloud infrastructure with zero local server maintenance.<br>
+          • <strong>State-of-the-Art Frontier Models:</strong> Leverages the latest reasoning and coding capabilities (Claude 3.7, OpenAI o3, DeepSeek R1) for flawless execution.
         </div>
       </div>
     </div>
@@ -1024,14 +1029,15 @@
       <div class="footer-left">
         <span>Fathom Investment Pitch Deck</span>
         <span>•</span>
-        <span>Regulatory & Data Sovereignty Drivers</span>
+        <span>Regulatory & Autonomous Efficiency Drivers</span>
       </div>
       <div class="footer-right">fathom.uz</div>
     </div>
   </section>
 
   <!-- ==================== SLIDE 15: COMPETITIVE ADVANTAGE ==================== -->
-  <section class="slide" id="slide-15">
+  <!-- ==================== SLIDE 13 ==================== -->
+  <section class="slide" id="slide-13">
     <div class="slide-header">
       <div class="brand-group">
         <div class="brand-logo-icon">⚡</div>
@@ -1041,11 +1047,11 @@
         </div>
       </div>
       <div class="slide-category">Unfair Advantage</div>
-      <div class="slide-number">15 / 20</div>
+      <div class="slide-number">13 / 18</div>
     </div>
 
     <div class="slide-body">
-      <h2 class="section-title">Why Fathom Wins: Compiled Rust Performance & Sovereignty</h2>
+      <h2 class="section-title">Why Fathom Wins: Compiled Rust Performance & Autonomousty</h2>
       <p class="section-subtitle">
         How Fathom fundamentally outperforms public cloud bots, legacy Python agent frameworks, and enterprise copilots.
       </p>
@@ -1055,10 +1061,10 @@
         <div class="card" style="border: 2px solid var(--accent); background: #f0f7ff; padding: 24px;">
           <div class="tag tag-blue" style="font-size: 12px;">OUR PLATFORM</div>
           <div class="card-title" style="font-size: 22px; color: var(--accent);">⚡ FATHOM</div>
-          <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 16px; font-weight: 600;">Sovereign AI Workforce</div>
+          <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 16px; font-weight: 600;">Autonomous AI Workforce</div>
           
           <div style="display: flex; flex-direction: column; gap: 12px; font-size: 13px; line-height: 1.5;">
-            <div><strong>Deployment:</strong> 100% Self-Hosted & Air-Gapped</div>
+            <div><strong>Deployment:</strong> Cloud-Managed & Fully Autonomous</div>
             <div><strong>Engine:</strong> Compiled Rust 1.97 (~0.75 ms dispatch)</div>
             <div><strong>Memory:</strong> 15.4 MB baseline RAM footprint</div>
             <div><strong>Interface:</strong> Fathom Bot (React 19 + Electron)</div>
@@ -1128,7 +1134,8 @@
   </section>
 
   <!-- ==================== SLIDE 16: BUSINESS MODEL & PRICING ==================== -->
-  <section class="slide" id="slide-16">
+  <!-- ==================== SLIDE 14 ==================== -->
+  <section class="slide" id="slide-14">
     <div class="slide-header">
       <div class="brand-group">
         <div class="brand-logo-icon">⚡</div>
@@ -1138,7 +1145,7 @@
         </div>
       </div>
       <div class="slide-category">Commercial Strategy</div>
-      <div class="slide-number">16 / 20</div>
+      <div class="slide-number">14 / 18</div>
     </div>
 
     <div class="slide-body">
@@ -1175,7 +1182,7 @@
         <!-- Enterprise Plan -->
         <div class="card" style="padding: 36px; border: 2px solid var(--emerald); background: #f0fdf4;">
           <div class="tag tag-green" style="font-size: 12px;">ENTERPRISE & GOV SOVEREIGN</div>
-          <div class="card-title" style="font-size: 26px; color: var(--emerald);">Enterprise Sovereign</div>
+          <div class="card-title" style="font-size: 26px; color: var(--emerald);">Enterprise Autonomous</div>
 
           <div style="margin: 16px 0 20px 0;">
             <span style="font-size: 38px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--emerald);">Custom</span>
@@ -1183,11 +1190,11 @@
           </div>
             • 63 built-in tools + computer control (up to 75)<br>
           <div style="padding: 12px 16px; background: #dcfce7; border: 1px solid var(--emerald-border); border-radius: 8px; font-weight: 700; color: var(--emerald); font-size: 15px; margin-bottom: 20px;">
-            ⚡ Unlimited AI Tokens • 100% On-Premise Air-Gapped
+            ⚡ Unlimited AI Tokens • 100% Autonomous Execution Air-Gapped
           </div>
 
           <ul style="font-size: 15px; color: var(--text-muted); line-height: 1.8; list-style: none;">
-            <li>✓ 100% On-Premise deployment inside private infrastructure</li>
+            <li>✓ 100% Autonomous Execution deployment inside private infrastructure</li>
             <li>✓ Unlimited internal operator seats across the organization</li>
             <li>✓ Multi-bot shared team channels with peer review delegation</li>
             <li>✓ Governed computer use with interactive permission cards</li>
@@ -1225,7 +1232,8 @@
   </section>
 
   <!-- ==================== SLIDE 17: TRACTION & ROADMAP ==================== -->
-  <section class="slide" id="slide-17">
+  <!-- ==================== SLIDE 15 ==================== -->
+  <section class="slide" id="slide-15">
     <div class="slide-header">
       <div class="brand-group">
         <div class="brand-logo-icon">⚡</div>
@@ -1235,7 +1243,7 @@
         </div>
       </div>
       <div class="slide-category">Execution</div>
-      <div class="slide-number">17 / 20</div>
+      <div class="slide-number">15 / 18</div>
     </div>
 
     <div class="slide-body">
@@ -1264,7 +1272,7 @@
             • 5 enterprise pilots deployed<br>
             • amoCRM, Bitrix24 & 1C native sync<br>
             • Multi-bot channel collaboration<br>
-            • Sovereign on-premise bundle<br>
+            • Autonomous on-premise bundle<br>
             • 500+ active waitlist operators
           </div>
         </div>
@@ -1283,7 +1291,7 @@
 
         <div class="card card-alt" style="border-top: 4px solid var(--amber); padding: 22px;">
           <div class="tag tag-amber">Q3-Q4 2027 • SCALE</div>
-          <div class="card-title" style="font-size: 17px;">Sovereign Fleet</div>
+          <div class="card-title" style="font-size: 17px;">Enterprise AI Fleet</div>
           <div style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">
             • Expansion into GCC banking sector<br>
             • Fathom Marketplace for custom bots<br>
@@ -1321,7 +1329,8 @@
   </section>
 
   <!-- ==================== SLIDE 18: TEAM ==================== -->
-  <section class="slide" id="slide-18">
+  <!-- ==================== SLIDE 16 ==================== -->
+  <section class="slide" id="slide-16">
     <div class="slide-header">
       <div class="brand-group">
         <div class="brand-logo-icon">⚡</div>
@@ -1331,7 +1340,7 @@
         </div>
       </div>
       <div class="slide-category">Leadership</div>
-      <div class="slide-number">18 / 20</div>
+      <div class="slide-number">16 / 18</div>
     </div>
 
     <div class="slide-body">
@@ -1340,46 +1349,100 @@
         Founders combining low-level systems engineering, enterprise product execution, and regional B2B growth.
       </p>
 
-      <div class="grid-3" style="gap: 30px;">
-        <div class="card card-alt" style="padding: 30px; text-align: center;">
-          <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--accent); color: #ffffff; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 800;">
-            GY
+      <div class="grid-4" style="gap: 22px;">
+        <!-- German Yakushev -->
+        <div class="card" style="padding: 0; overflow: hidden; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 16px rgba(0,0,0,0.04); display: flex; flex-direction: column; justify-content: space-between; background: #ffffff;">
+          <div style="height: 190px; width: 100%; position: relative; background: #0f172a; overflow: hidden;">
+            <img src="assets/team/german-yakushev.jpg" alt="German Yakushev" style="width: 100%; height: 100%; object-fit: cover; object-position: center; object-position: center 20%;" onerror="this.onerror=null; this.src='assets/team/german-yakushev.jpg';" />
+            <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 60px; background: linear-gradient(to top, rgba(15,23,42,0.85), transparent);"></div>
+            <div style="position: absolute; bottom: 12px; left: 16px; color: #ffffff;">
+              <span class="tag tag-blue" style="background: rgba(37,99,235,0.9); color: #ffffff; border: none; font-size: 10px; padding: 3px 8px; backdrop-filter: blur(4px);">FOUNDER & CEO</span>
+            </div>
           </div>
-          <h3 style="font-size: 21px; font-weight: 800; color: var(--text); margin-bottom: 4px;">German Yakushev</h3>
-          <div class="tag tag-blue" style="margin: 0 auto 14px;">Founder & CEO • Lead Architect</div>
-          <p class="card-desc" style="font-size: 14px; text-align: left; line-height: 1.6;">
-            Systems programmer and technology founder. Designed and built Fathom's 13-crate Rust engine, Tokio async multi-agent pipeline, and Fathom Bot messaging architecture. Deep experience in autonomous agent systems and enterprise software architecture.
-          </p>
-          <div style="margin-top: 18px; font-size: 12px; color: var(--text-dim); text-align: left; border-top: 1px solid var(--border); padding-top: 10px;">
-            📍 Tashkent, Uzbekistan • PINFL: 31210968380014
-          </div>
-        </div>
-
-        <div class="card card-alt" style="padding: 30px; text-align: center;">
-          <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--emerald); color: #ffffff; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 800;">
-            MA
-          </div>
-          <h3 style="font-size: 21px; font-weight: 800; color: var(--text); margin-bottom: 4px;">Mirtemir Anorboyev</h3>
-          <div class="tag tag-green" style="margin: 0 auto 14px;">Co-Founder & Product Manager</div>
-          <p class="card-desc" style="font-size: 14px; text-align: left; line-height: 1.6;">
-            Product strategist directing operator user experience, enterprise workflow discovery, and automated templates. Oversees product roadmap alignment between technical architecture and customer requirements across banking, CRM, and corporate back-office workflows.
-          </p>
-          <div style="margin-top: 18px; font-size: 12px; color: var(--text-dim); text-align: left; border-top: 1px solid var(--border); padding-top: 10px;">
-            📍 Tashkent, Uzbekistan • PINFL: 51607005470010
+          <div style="padding: 18px 18px 16px; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <h3 style="font-size: 19px; font-weight: 800; color: var(--text); margin-bottom: 2px;">German Yakushev</h3>
+              <div style="font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 10px;">Lead Systems Architect</div>
+              <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+                Systems engineer & founder. Architected Fathom's 13-crate Rust engine, Tokio async multi-agent pipeline, and autonomous Bot state machine.
+              </p>
+            </div>
+            <div style="margin-top: 14px; font-size: 11px; color: var(--text-dim); border-top: 1px solid var(--border); padding-top: 10px; display: flex; align-items: center; justify-content: space-between;">
+              <span>📍 Tashkent</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-dim);">PINFL: 31210968380014</span>
+            </div>
           </div>
         </div>
 
-        <div class="card card-alt" style="padding: 30px; text-align: center;">
-          <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--amber); color: #ffffff; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 800;">
-            EY
+        <!-- Mirtemir Anorboyev -->
+        <div class="card" style="padding: 0; overflow: hidden; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 16px rgba(0,0,0,0.04); display: flex; flex-direction: column; justify-content: space-between; background: #ffffff;">
+          <div style="height: 190px; width: 100%; position: relative; background: #0f172a; overflow: hidden;">
+            <img src="assets/team/mirtemir-anorboyev.jpg" alt="Mirtemir Anorboyev" style="width: 100%; height: 100%; object-fit: cover; object-position: center; object-position: center 20%;" onerror="this.onerror=null; this.src='assets/team/mirtemir-anorboyev.jpg';" />
+            <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 60px; background: linear-gradient(to top, rgba(15,23,42,0.85), transparent);"></div>
+            <div style="position: absolute; bottom: 12px; left: 16px; color: #ffffff;">
+              <span class="tag tag-green" style="background: rgba(5,150,105,0.9); color: #ffffff; border: none; font-size: 10px; padding: 3px 8px; backdrop-filter: blur(4px);">CO-FOUNDER & PRODUCT</span>
+            </div>
           </div>
-          <h3 style="font-size: 21px; font-weight: 800; color: var(--text); margin-bottom: 4px;">Elbek Yuldashev</h3>
-          <div class="tag tag-amber" style="margin: 0 auto 14px;">Co-Founder & Head of Growth</div>
-          <p class="card-desc" style="font-size: 14px; text-align: left; line-height: 1.6;">
-            Enterprise sales and growth lead managing commercial pilots, government agency relations, and channel partnerships across Central Asia and the CIS. Spearheads enterprise outbound acquisition, customer success onboarding, and corporate pilot conversions.
-          </p>
-          <div style="margin-top: 18px; font-size: 12px; color: var(--text-dim); text-align: left; border-top: 1px solid var(--border); padding-top: 10px;">
-            📍 Tashkent, Uzbekistan • PINFL: 51204066180078
+          <div style="padding: 18px 18px 16px; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <h3 style="font-size: 19px; font-weight: 800; color: var(--text); margin-bottom: 2px;">Mirtemir Anorboyev</h3>
+              <div style="font-size: 12px; font-weight: 700; color: var(--emerald); margin-bottom: 10px;">Product & Workflow Lead</div>
+              <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+                Product strategist directing operator UX, enterprise workflow discovery, and CRM/ERP template pipelines across banking and corporate back-office.
+              </p>
+            </div>
+            <div style="margin-top: 14px; font-size: 11px; color: var(--text-dim); border-top: 1px solid var(--border); padding-top: 10px; display: flex; align-items: center; justify-content: space-between;">
+              <span>📍 Tashkent</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-dim);">PINFL: 51607005470010</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Elbek Yuldashev -->
+        <div class="card" style="padding: 0; overflow: hidden; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 16px rgba(0,0,0,0.04); display: flex; flex-direction: column; justify-content: space-between; background: #ffffff;">
+          <div style="height: 190px; width: 100%; position: relative; background: #0f172a; overflow: hidden;">
+            <img src="assets/team/elbek-yuldashev.jpg" alt="Elbek Yuldashev" style="width: 100%; height: 100%; object-fit: cover; object-position: center; object-position: center 25%;" onerror="this.onerror=null; this.src='assets/team/elbek-yuldashev.jpg';" />
+            <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 60px; background: linear-gradient(to top, rgba(15,23,42,0.85), transparent);"></div>
+            <div style="position: absolute; bottom: 12px; left: 16px; color: #ffffff;">
+              <span class="tag tag-amber" style="background: rgba(217,119,6,0.9); color: #ffffff; border: none; font-size: 10px; padding: 3px 8px; backdrop-filter: blur(4px);">CO-FOUNDER & GROWTH</span>
+            </div>
+          </div>
+          <div style="padding: 18px 18px 16px; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <h3 style="font-size: 19px; font-weight: 800; color: var(--text); margin-bottom: 2px;">Elbek Yuldashev</h3>
+              <div style="font-size: 12px; font-weight: 700; color: var(--amber); margin-bottom: 10px;">Enterprise Growth & GovRel</div>
+              <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+                B2B growth lead managing enterprise pilots, government relations, and regional channel partnerships across Central Asia and the CIS.
+              </p>
+            </div>
+            <div style="margin-top: 14px; font-size: 11px; color: var(--text-dim); border-top: 1px solid var(--border); padding-top: 10px; display: flex; align-items: center; justify-content: space-between;">
+              <span>📍 Tashkent</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-dim);">PINFL: 51204066180078</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sanjar Shukurov -->
+        <div class="card" style="padding: 0; overflow: hidden; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 16px rgba(0,0,0,0.04); display: flex; flex-direction: column; justify-content: space-between; background: #ffffff;">
+          <div style="height: 190px; width: 100%; position: relative; background: #0f172a; overflow: hidden;">
+            <img src="assets/team/sanjar-shukurov.jpg" alt="Sanjar Shukurov" style="width: 100%; height: 100%; object-fit: cover; object-position: center; object-position: center 25%;" onerror="this.onerror=null; this.src='assets/team/sanjar-shukurov.jpg';" />
+            <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 60px; background: linear-gradient(to top, rgba(15,23,42,0.85), transparent);"></div>
+            <div style="position: absolute; bottom: 12px; left: 16px; color: #ffffff;">
+              <span class="tag tag-purple" style="background: rgba(124,58,237,0.9); color: #ffffff; border: none; font-size: 10px; padding: 3px 8px; backdrop-filter: blur(4px);">AI SPECIALIST</span>
+            </div>
+          </div>
+          <div style="padding: 18px 18px 16px; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <h3 style="font-size: 19px; font-weight: 800; color: var(--text); margin-bottom: 2px;">Sanjar Shukurov</h3>
+              <div style="font-size: 12px; font-weight: 700; color: var(--purple); margin-bottom: 10px;">ML & Agent Alignment</div>
+              <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+                Specialist in LLM agent alignment, domain model fine-tuning, RAG semantic architectures, and high-load inference on local autonomous GPU clusters.
+              </p>
+            </div>
+            <div style="margin-top: 14px; font-size: 11px; color: var(--text-dim); border-top: 1px solid var(--border); padding-top: 10px; display: flex; align-items: center; justify-content: space-between;">
+              <span>📍 Tashkent</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--text); font-weight: 700;">+998 93 346 16 38</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1396,7 +1459,8 @@
   </section>
 
   <!-- ==================== SLIDE 19: INVESTMENT OPPORTUNITY ==================== -->
-  <section class="slide" id="slide-19">
+  <!-- ==================== SLIDE 17 ==================== -->
+  <section class="slide" id="slide-17">
     <div class="slide-header">
       <div class="brand-group">
         <div class="brand-logo-icon">⚡</div>
@@ -1406,11 +1470,11 @@
         </div>
       </div>
       <div class="slide-category">Funding Round</div>
-      <div class="slide-number">19 / 20</div>
+      <div class="slide-number">17 / 18</div>
     </div>
 
     <div class="slide-body">
-      <h2 class="section-title">Scaling the Sovereign AI Workforce Across Central Asia & MENA</h2>
+      <h2 class="section-title">Scaling the Autonomous AI Workforce Across Central Asia & MENA</h2>
       <p class="section-subtitle">
         Partnering with visionary investors to accelerate enterprise deployments, state certifications, and commercial fleet scaling.
       </p>
@@ -1421,7 +1485,7 @@
             <div class="tag tag-blue" style="font-size: 12px;">INVESTMENT PROPOSITION</div>
             <div class="card-title" style="font-size: 26px; margin-bottom: 14px;">Seed Capital for Strategic Scaling</div>
             <p style="font-size: 16px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px;">
-              We are opening an early-stage investment round for strategic partners to accelerate commercial enterprise pilots, establish sovereign government installations, and expand engineering capacity over an 18-month growth runway.
+              We are opening an early-stage investment round for strategic partners to accelerate commercial enterprise pilots, establish autonomous government installations, and expand engineering capacity over an 18-month growth runway.
             </p>
 
             <div style="display: flex; flex-direction: column; gap: 10px; font-size: 14px; color: var(--text);">
@@ -1432,7 +1496,7 @@
                 <span style="color: var(--emerald); font-weight: 800;">✓</span> <strong>Runway:</strong> 18 Months of aggressive product & sales acceleration
               </div>
               <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="color: var(--emerald); font-weight: 800;">✓</span> <strong>Key Milestone:</strong> 30+ Enterprise Sovereign Nodes deployed
+                <span style="color: var(--emerald); font-weight: 800;">✓</span> <strong>Key Milestone:</strong> 30+ Enterprise Enterprise AI Nodes deployed
               </div>
             </div>
           </div>
@@ -1506,7 +1570,8 @@
   </section>
 
   <!-- ==================== SLIDE 20: CONTACT & DEMO ==================== -->
-  <section class="slide" id="slide-20">
+  <!-- ==================== SLIDE 18 ==================== -->
+  <section class="slide" id="slide-18">
     <div class="slide-header">
       <div class="brand-group">
         <div class="brand-logo-icon">⚡</div>
@@ -1516,17 +1581,17 @@
         </div>
       </div>
       <div class="slide-category">Contact & Closing</div>
-      <div class="slide-number">20 / 20</div>
+      <div class="slide-number">18 / 18</div>
     </div>
 
     <div class="slide-body" style="justify-content: space-between; padding: 24px 0;">
       <div>
         <h2 class="hero-title" style="font-size: 56px; margin-bottom: 16px;">
           Deploy Autonomous AI Workforce <br>
-          <span class="accent">Without Compromising Data Sovereignty</span>
+          <span class="accent">Without Compromising Autonomous Efficiency</span>
         </h2>
         <p class="section-subtitle" style="font-size: 20px; max-width: 1100px;">
-          We are ready to demonstrate a live deployment on your private infrastructure in under 15 minutes. Join us in establishing the sovereign AI backbone for businesses and governments.
+          We are ready to demonstrate a live deployment on your private infrastructure in under 15 minutes. Join us in establishing the autonomous AI backbone for businesses and governments.
         </p>
       </div>
 
@@ -1542,14 +1607,15 @@
         <div class="card card-alt" style="padding: 26px; border-left: 4px solid var(--emerald);">
           <div style="font-size: 26px; margin-bottom: 10px;">🌐</div>
           <div class="card-title" style="font-size: 19px;">Live Product Resources</div>
-          <div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px;">
-            <div>Web Platform: <a href="https://fathom.uz" style="color: var(--accent); text-decoration: none; font-weight: 600;">fathom.uz</a></div>
+          <div style="display: flex; flex-direction: column; gap: 7px; font-size: 13.5px;">
+            <div>Web Platform: <a href="https://fathom.uz" style="color: var(--accent); text-decoration: none; font-weight: 700;">fathom.uz</a></div>
+            <div>Live Demo Sandbox: <a href="https://demo.fathom.uz" style="color: var(--emerald); text-decoration: none; font-weight: 700; background: var(--emerald-light); padding: 1px 5px; border-radius: 4px; border: 1px solid var(--emerald-border);">demo.fathom.uz</a></div>
+            <div>Docker Hub Image: <a href="https://hub.docker.com/r/yakushevhk/fathom" style="color: var(--accent); text-decoration: none; font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 12px;">docker pull yakushevhk/fathom</a></div>
             <div>Fathom Bot App: <a href="https://fathom.uz/bot" style="color: var(--accent); text-decoration: none; font-weight: 600;">fathom.uz/bot</a></div>
             <div>Systems Whitepaper: <a href="https://fathom.uz/whitepaper" style="color: var(--accent); text-decoration: none; font-weight: 600;">fathom.uz/whitepaper</a></div>
             <div>GitHub Repository: <a href="https://github.com/yakushevhk/Fathom" style="color: var(--accent); text-decoration: none; font-weight: 600;">github.com/yakushevhk/Fathom</a></div>
           </div>
         </div>
-
         <div class="card card-alt" style="padding: 26px; border-left: 4px solid var(--purple);">
           <div style="font-size: 26px; margin-bottom: 10px;">🏢</div>
           <div class="card-title" style="font-size: 19px;">Legal & Accreditation</div>
@@ -1562,8 +1628,10 @@
         </div>
       </div>
 
-      <div style="text-align: center; padding: 18px; background: var(--bg-alt); border: 1px solid var(--border); border-radius: 12px;">
-        <span style="font-size: 17px; font-weight: 700; color: var(--text);">Building the future of sovereign enterprise intelligence together.</span>
+      <div style="text-align: center; padding: 18px; background: var(--bg-alt); border: 1px solid var(--border); border-radius: 12px; display: flex; justify-content: space-around; align-items: center;">
+        <span style="font-size: 16px; font-weight: 700; color: var(--text);">Official Website: <a href="https://fathom.uz" style="color: var(--accent); text-decoration: none;">fathom.uz</a></span>
+        <span style="color: var(--border-dark);">|</span>
+        <span style="font-size: 16px; font-weight: 700; color: var(--emerald);">Interactive Live Demo: <a href="https://demo.fathom.uz" style="color: var(--emerald); text-decoration: none;">demo.fathom.uz</a></span>
       </div>
     </div>
 
