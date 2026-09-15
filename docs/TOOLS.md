@@ -437,20 +437,19 @@ Navigates the active tab to a URL. Egress guard rejects localhost/private/link-l
 | `url` | string | URL to open |
 
 ### `computer_click`
-Clicks a UI element by its opaque snapshot ref.
+Clicks a UI element by its opaque snapshot ref (`reference`).
 
 | Parameter | Type | Description |
 |----------|------|-------------|
-| `ref` | string | Element ref from a snapshot |
+| `reference` | string | Element reference from a snapshot |
 
 ### `computer_type`
-Types text into a focused element (or one addressed by ref).
+Types text into an element addressed by reference.
 
 | Parameter | Type | Description |
 |----------|------|-------------|
+| `reference` | string | Element reference from a snapshot |
 | `text` | string | Text to type |
-| `ref` | string? | Element ref from a snapshot |
-
 ### `computer_key`
 Sends a keyboard key / chord (Enter, Tab, Ctrl+C…).
 
@@ -861,3 +860,73 @@ Swarm batch subagent dispatch with specialized archetypes (`scout`, `coder`, `re
 
 ### `learn` & `manage_skill`
 Continuous self-evolution: capture workflow insights into `MEMORY.md` or mint/edit/delete `SKILL.md` instruction files in `~/.fathom/skills/`.
+
+### `compiler_check`
+Runs compiler, linter, or type-checker diagnostics (`cargo check`, `tsc`, `ruff`/`mypy`, `go build`, `auto`) directly from the workspace.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `toolchain` | string? | Toolchain override (`auto`, `rust`, `typescript`, `python`, `go`) |
+| `path` | string? | Target directory / workspace path |
+
+### `repro_test`
+TDD regression and bug reproduction synthesis tool (`create`, `run`, `cleanup`, `synthesize`).
+
+| Parameter | Type | Description |
+|---|---|---|
+| `action` | string | `create` \| `run` \| `cleanup` \| `synthesize` |
+| `test_name` | string? | Target test identifier |
+| `test_code` | string? | Code of synthesized reproduction test |
+
+### `debug`
+DAP (Debug Adapter Protocol) client tool for stepping, inspecting variables, setting breakpoints, and stack traces.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `action` | string | `launch` \| `attach` \| `set_breakpoint` \| `step_over` \| `step_in` \| `continue` \| `stack_trace` \| `variables` |
+| `program` | string? | Executable target or source path |
+| `line` | usize? | Target line number for breakpoints |
+
+### `ast_edit`
+AST-aware structural code rewrite across Rust, TypeScript, Python, and Go via tree-sitter / pattern match.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `ops` | array | Array of `[{ pat: string, out: string }]` AST replacement rules |
+| `paths` | array | Target files, directories, or globs |
+| `action` | string? | `stage` (default) \| `apply` \| `reject` |
+
+### `cookie_vault`
+AES-256-GCM hardware/keychain encrypted browser cookie vault for authenticated web sessions.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `action` | string | `save` \| `load` \| `list` \| `delete` |
+| `domain` | string | Target web domain |
+| `cookies` | array/object? | Cookie payload to encrypt and store |
+
+### `os_input`
+OS-level desktop accessibility and mouse/keyboard automation for native desktop apps.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `action` | string | `mouse_move` \| `mouse_click` \| `key_type` \| `hotkey` \| `focus_window` |
+| `x` / `y` | i32? | Screen coordinates for cursor actions |
+| `text` / `key` | string? | Text or key sequence to emit |
+
+### `daemon`
+Manages long-running persistent background processes (dev servers, watchers, REPLs).
+
+| Parameter | Type | Description |
+|---|---|---|
+| `action` | string | `start` \| `stop` \| `restart` \| `status` \| `logs` |
+| `name` | string | Stable process name identifier |
+| `command` | string? | Shell command or executable path |
+| `ready_pattern` | string? | Regex pattern to wait for readiness |
+
+### `hub` (Extended PTY Actions)
+In addition to agent messaging (`send`, `wait`, `inbox`, `list`, `jobs`), `hub` controls interactive PTY sessions:
+- `start`: launches an interactive PTY process (`application`, `args`, `ready_log`, `cwd`).
+- `logs`: reads streaming PTY output buffer (`name`, `cursor`, `limit`).
+- `pty_send`: writes stdin text, terminal keys (`CTRL_C`, `ENTER`), or signals to the process.
+- `stop`: gracefully terminates the PTY process tree.

@@ -482,7 +482,32 @@ Computer use gives agents a browser (via Playwright) they can drive — navigate
 
 **Egress policy.** `COMPUTER_ALLOW_PRIVATE_HOSTS=true` permits localhost and private ranges for development. It **never** bypasses hard denies for cloud-metadata endpoints (e.g. 169.254.169.254) or multicast addresses. Keep it `false` in production.
 
+| Environment variable | Default | Description |
+| -------------------- | ------- | ----------- |
+| `COMPUTER_URL` | *(none)* | URL of computer service used by agent tools in `crates/tools` |
+| `FATHOM_COMPUTER_SERVICE_URL` | `http://127.0.0.1:8765` | URL of computer service used by server relay in `crates/server` |
+| `COMPUTER_SERVICE_URL` | `http://127.0.0.1:8765` | Internal fallback alias |
+| `COMPUTER_TOKEN` | *(required)* | Shared secret token for computer service authentication |
+
 See [COMPUTER-USE.md](COMPUTER-USE.md) for the full protocol and container lifecycle details.
+
+### Environment Overrides for Headless / Container Deployments
+
+The following environment variables take precedence over settings in `~/.fathom/config.toml` when set:
+
+| Environment variable | Maps to config key | Description |
+| -------------------- | ------------------ | ----------- |
+| `PR_CONFIG` | *(custom path)* | Path to alternate TOML config file (bypasses `~/.fathom/config.toml`) |
+| `LLM_API_KEY` | `llm.api_key` | Primary LLM API key |
+| `LLM_PROVIDER` | `llm.provider` | Primary LLM provider (`anthropic`, `deepseek`, `openai`, etc.) |
+| `LLM_MODEL` | `llm.model` | Model name / ID |
+| `LLM_BASE_URL` | `llm.base_url` | Base URL for OpenAI-compatible LLM endpoints |
+| `SEARCH_BACKEND` | `search.backend` | Default search provider (`linkup`, `exa`, `tavily`, `serper`, `brave`, `duckduckgo`) |
+| `FATHOM_DISABLE_SANDBOX` | *(system)* | Set to `1` or `true` to bypass `HostSandbox` command wrapper |
+| `PARALLEL_2GIS_API_KEY` | *(tools)* | API key for 2GIS business directory search |
+| `PARALLEL_GOOGLE_PLACES_API_KEY` | *(tools)* | API key for Google Places directory search |
+| `PARALLEL_YANDEX_MAPS_API_KEY` | *(tools)* | API key for Yandex Maps directory search |
+| `PARALLEL_TWITTER_BEARER_TOKEN` | *(tools)* | Bearer token for Twitter/X social search |
 
 ### `[server]`
 

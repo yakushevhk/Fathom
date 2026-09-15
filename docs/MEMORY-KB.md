@@ -179,8 +179,7 @@ How the digest actually reaches the model, in the agent runtime:
 
 ### MemoryClass — durability classes
 
-When absorbing, a fact can be marked with a durability class via the `memory_class` field:
-
+In the internal memory engine (`pr_memory::AbsorbFact`), facts support a durability class:
 | class | behavior |
 |-------|-----------|
 | `durable` | (default) stored forever, not archived by TTL |

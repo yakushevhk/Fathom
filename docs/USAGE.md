@@ -568,7 +568,7 @@ fathom bench [--scenario all] [--n 16] [--save <PATH>]
 Options:
   -s, --scenario <SCENARIO>  Scenario: all | dispatch | parallel-io |
                               parallel-cpu | mixed | parse-scale |
-                              extract-json | feed-parse | code-map
+                              extract-json | feed-parse | code-map | memory
   -n <N>                     Number of parallel calls / data files
   --save <PATH>              Write the markdown report to a file
 ```

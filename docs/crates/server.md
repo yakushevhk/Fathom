@@ -25,6 +25,10 @@ The `pr-server` crate provides an HTTP JSON API for managing research sessions, 
 | `notifications_api.rs` | Operator-triggered notification delivery test |
 | `observability.rs` | Bounded operational summary (live metrics + audit counts) |
 | `agui.rs` | AG-UI SSE compatibility bridge |
+| `ws.rs` | Multiplexed WebSocket event stream and ping/pong handling |
+| `openapi.rs` | OpenAPI 3.1.0 JSON schema generator |
+| `webhooks.rs` | Inbound webhook reactor (HMAC-SHA256 verification and trigger) |
+| `watcher.rs` | Filesystem watcher and self-healing compiler loop |
 
 ---
 

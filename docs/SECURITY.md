@@ -13,7 +13,7 @@ Fathom operates across four trust boundaries, each with its own enforcement laye
 ```
 ┌──────────────────────────────────────────────────────┐
 │  User (CLI / HTTP API)                               │
-│  → Authentication: API key or JWT (§6)               │
+│  → Authentication: API key (Bearer / X-Api-Key) (§6) │
 │  → Rate limiting: per-client sliding window (§6)     │
 ├──────────────────────────────────────────────────────┤
 │  Agent Runtime (Rust process)                        │
@@ -341,7 +341,7 @@ When `FATHOM_WEBHOOK_SECRET` is set in the environment, inbound webhooks to `POS
 
 1. The server reads the signature from either `x-fathom-signature` or `x-hub-signature-256` headers.
 2. If the header is missing, the request is rejected immediately with `401 Unauthorized`.
-3. The server computes the expected HMAC-SHA256 tag over the raw JSON bytes of `body.payload` using the configured secret key via `ring::hmac`.
+3. The server computes the expected HMAC-SHA256 tag over the raw canonical request body bytes (`raw_body`) using the configured secret key via `ring::hmac`.
 4. The hex-encoded signature is matched in constant time (stripping optional `sha256=` prefixes). Mismatched signatures are rejected with `401 Unauthorized`.
 
 ### Rate Limiting

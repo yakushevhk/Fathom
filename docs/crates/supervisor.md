@@ -19,7 +19,8 @@ The `supervisor` crate (`pr-supervisor`) provides a **Docker-backed lifecycle su
 
 | File | Purpose |
 |------|---------|
-| `src/lib.rs` | All types and logic: `SupervisorConfig`, `ComputerSupervisor`, `AgentContainer`, `Names`, validation, tests (single file, ~250 lines) |
+| `src/lib.rs` | Docker container supervision: `SupervisorConfig`, `ComputerSupervisor`, `AgentContainer`, `Names`, validation |
+| `src/host.rs` | `HostSandbox`: sub-millisecond OS sandboxing via Linux bubblewrap (`bwrap`) or macOS `sandbox-exec` |
 
 Dependencies: `bollard` (Docker daemon client), `tokio` (async, timeout), `serde`, `thiserror`, `tracing`.
 

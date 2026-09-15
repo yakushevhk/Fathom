@@ -316,8 +316,9 @@ When configured, contacts saved during a run may be pushed to the selected CRM a
 # List all contacts
 fathom contacts list
 
-# Search contacts
-fathom contacts search "Acme Corp"
+# Search contacts via semantic memory or inspect dedup
+fathom memory search "Acme Corp"
+fathom contacts dedup
 
 # Export contacts
 fathom contacts export --format csv

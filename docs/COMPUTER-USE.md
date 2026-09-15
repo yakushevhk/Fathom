@@ -58,9 +58,7 @@ The agent interacts with the computer through 6 dedicated tools, exposed via the
 
 Takes an accessibility-tree snapshot of the current page. The agent "sees" the page like a screen-reader — a structured tree of interactive elements with **opaque refs** that the agent uses to interact (never brittle CSS selectors).
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `tab` | string? | Tab identifier (default: active tab) |
+Takes no arguments.
 
 **Returns**: accessibility tree with elements annotated with `[ref=eN]` identifiers. Multiple tab-scoped snapshots are supported; stale refs are rejected with a clear error.
 
@@ -71,7 +69,6 @@ Navigates the browser to a URL.
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `url` | string | URL to navigate to |
-| `tab` | string? | Tab identifier (default: active tab) |
 
 **Returns**: navigation result with page title and URL.
 
@@ -81,8 +78,7 @@ Clicks an element identified by its accessibility ref.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `ref` | string | Accessibility ref (e.g., `e5`) |
-| `tab` | string? | Tab identifier |
+| `reference` | string | Accessibility ref (e.g., `e5`) |
 
 ### `computer_type`
 
@@ -90,9 +86,8 @@ Types text into an element identified by its accessibility ref.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `ref` | string | Accessibility ref |
+| `reference` | string | Accessibility ref |
 | `text` | string | Text to type |
-| `tab` | string? | Tab identifier |
 
 ### `computer_key`
 
@@ -101,16 +96,12 @@ Presses a key or key combination (e.g., `Enter`, `Control+C`, `Escape`).
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `key` | string | Key or key combination |
-| `tab` | string? | Tab identifier |
 
 ### `computer_screenshot`
 
 Takes a screenshot of the current page.
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `full_page` | bool? | Full-page screenshot (default: false) |
-| `tab` | string? | Tab identifier |
+Takes no arguments.
 
 **Returns**: base64-encoded PNG image.
 
@@ -345,7 +336,8 @@ The supervisor-managed agent-scoped routes are the primary interface for compute
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `FATHOM_COMPUTER_SERVICE_URL` | `http://127.0.0.1:8765` | URL of the computer service (used by the server relay) |
+| `COMPUTER_URL` | *(none)* | URL of the computer service used by `ToolRegistry` to register agent tools (`crates/tools`) |
+| `FATHOM_COMPUTER_SERVICE_URL` | `http://127.0.0.1:8765` | URL of the computer service (used by the server relay in `crates/server`) |
 | `COMPUTER_SERVICE_URL` | `http://127.0.0.1:8765` | URL of the computer service (internal, legacy alias) |
 | `COMPUTER_TOKEN` | *(required)* | Shared authentication token; supervisor is unavailable when unset |
 | `COMPUTER_IMAGE` | `fathom/computer:latest` | Docker image for supervisor-provisioned containers |

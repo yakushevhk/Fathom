@@ -173,7 +173,7 @@ export const automationRecipes = [
   },
   {
     t: 'Telegram alerts for new verified contacts',
-    d: `fathom config set alerts.telegram.bot-token "123456:ABC..." && fathom config set alerts.telegram.chat-id "-1001234567890" && fathom run "..."`,
+    d: `fathom config set notifications.telegram_bot_token "123456:ABC..." && fathom config set notifications.telegram_chat_id "-1001234567890" && fathom run "..."`,
     notes: 'Set Telegram bot token and chat ID once, then any session can send alerts to the channel. Alerts include contact name, company, email, and a link to the full result in the dashboard.',
   },
   {
@@ -693,7 +693,7 @@ export const deploymentRecipes = [
       </div>
       <div class="step">
         <h3 data-i18n="docsRecipes.httpTitle">HTTP + dashboard</h3>
-        <p data-i18n="docsRecipes.httpSub"><code>fathom mcp-serve</code> — expose 63 always-registered tools, plus up to 5 browser tools when CDP is reachable and up to 6 computer tools when COMPUTER_URL is configured to any MCP client over stdio.</p>
+        <p data-i18n="docsRecipes.httpSub"><code>fathom serve --port 8080</code> — start the Axum HTTP REST/SSE API and embedded dashboard on port 8080.</p>
       </div>
       <div class="step">
         <h3 data-i18n="docsRecipes.mcpTitle">MCP for Claude/ZCode</h3>
@@ -1082,9 +1082,8 @@ ls ./leads/q1-2025/
         <h3>Start shallow, then go deep</h3>
         <div class="code-block">
           <div class="code-header"><span class="code-lang">bash</span></div>
-          <pre><code set:html={`# First pass: broad, shallow
-fathom run "..." --depth 2 -o ./broad
-
+          <pre><code set:html={`# First pass: broad, shallow (preset profile or config)
+fathom run "..." --profile hunter -o ./broad
 # Second pass: deep dive on top results
 fathom run "Analyze top 20 from ./broad"`} /></pre>
         </div>

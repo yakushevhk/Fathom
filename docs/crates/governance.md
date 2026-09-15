@@ -20,9 +20,10 @@ The crate deliberately has **no persistence dependency**. Audit events are plain
 
 | File | Purpose |
 |------|---------|
-| `src/lib.rs` | All types and logic: `ActionContext`, `PolicyEngine`, `AuditEvent`, redaction, `TargetResolver`, `Governance` facade (single file, ~300 lines) |
+| `src/lib.rs` | Core types and logic: `ActionContext`, `PolicyEngine`, `AuditEvent`, redaction, `TargetResolver`, atomic `kill_switch`, `Governance` facade |
+| `src/budget.rs` | `BudgetPolicy`: enforcement of max USD spending and total token usage per session/agent |
 
-Dependencies: `serde`, `serde_json`, `chrono`, `uuid`, `thiserror`, `url`. No tokio, no database access.
+Dependencies: `serde`, `serde_json`, `chrono`, `uuid`, `thiserror`, `url`.
 
 ---
 

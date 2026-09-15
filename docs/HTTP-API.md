@@ -71,6 +71,31 @@ Built-in live dashboard (single HTML file, no build step): session and job table
 
 The dashboard provides a local visual overview of worker sessions, agent trees, events, memory (when enabled), and durable jobs. It is a convenience surface for the self-hosted server, not a hosted control plane.
 
+
+---
+
+### `GET /api/v1/openapi.json`
+
+Returns the complete OpenAPI 3.1.0 JSON specification for the Fathom HTTP API.
+
+---
+
+### `GET /api/v1/ws`
+
+Bidirectional multiplexed WebSocket connection for live agent telemetry, control, and event streaming.
+
+**Authentication:**
+- Query parameter: `?api_key=<KEY>` or `?token=<KEY>` (ideal for browser clients).
+- Or standard `Authorization: Bearer <KEY>` header during HTTP upgrade.
+
+**Client Messages (JSON):**
+- Subscribe to a specific session: `{"type": "subscribe", "session_id": "<ID>"}`
+- Keepalive ping: `{"type": "ping"}`
+
+**Server Messages (JSON):**
+- Keepalive pong: `{"type": "pong"}`
+- Broadcasted event (with credentials automatically redacted): `{"type": "event", "payload": <AgentEvent>}`
+- Stream sync notification: `{"type": "sync_required", "skipped_events": 5}`
 ---
 
 ### `POST /api/v1/sessions`
@@ -928,13 +953,14 @@ scrape_configs:
     metrics_path: '/metrics'
 ```
 
+| Metric | Type | Description |
+|--------|------|-------------|
 | `pr_request_duration_seconds` | Histogram | Request duration (buckets: 0.005–10 s) |
+| `pr_requests_total` | Counter | Total HTTP requests handled |
+| `pr_sessions_active` | Gauge | Currently executing sessions |
+| `pr_tokens_total` | Counter | Total LLM tokens consumed |
 
 The metrics are recorded by a middleware that wraps all API routes. Counters and gauges are lock-free atomic integers; the histogram uses fixed cumulative buckets. The `pr_sessions_active` gauge is decremented exactly once per session regardless of cancellation path, using an `AtomicBool` guard in the session's Drop handler.
-| `pr_request_duration_seconds` | Histogram | Request duration in buckets (0.1, 1, 10, +Inf) |
-
-The metrics are recorded by a middleware that wraps all API routes. The `sessions_active` gauge is decremented exactly once per session regardless of cancellation path (normal completion, failure, or cancellation), using an `AtomicBool` guard in the session's Drop handler. Metrics are thread-safe lock-free counters and gauges implemented with `AtomicU64` and a histogram backed by `AtomicU64` buckets.
-
 ---
 
 ### `POST /api/v1/webhooks/inbound`
@@ -943,7 +969,7 @@ Ingest external webhooks (GitHub, Sentry, Stripe, CRM) and trigger proactive wor
 
 **Headers:**
 - `Content-Type: application/json`
-- `x-fathom-signature` or `x-hub-signature-256`: *(optional, required when `FATHOM_WEBHOOK_SECRET` is set)* HMAC-SHA256 signature (hex string, optional `sha256=` prefix) calculated over the JSON-encoded `payload` field.
+- `x-fathom-signature` or `x-hub-signature-256`: *(optional, required when `FATHOM_WEBHOOK_SECRET` is set)* HMAC-SHA256 signature (hex string, optional `sha256=` prefix) calculated over the entire raw canonical HTTP request body bytes (`raw_body`).
 
 **Request body:**
 ```json
@@ -981,4 +1007,4 @@ Ingest external webhooks (GitHub, Sentry, Stripe, CRM) and trigger proactive wor
 
 ## CORS
 
-The API uses restrictive CORS when API-key authentication is disabled. When API keys are configured, the server enables permissive CORS for authenticated clients. Review the middleware in `crates/server/src/lib.rs` before exposing the API cross-origin.
+CORS is strictly restricted to loopback origins (`localhost`, `127.0.0.1`, `::1`) over HTTP across all deployment configurations. Non-loopback cross-origin requests are rejected by `dashboard_cors()` to prevent malicious websites from accessing the agent API from a victim's browser.

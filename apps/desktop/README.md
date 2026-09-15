@@ -12,7 +12,7 @@ Fathom Desktop provides an integrated, native desktop application for running an
 
 ## Prerequisites
 
-- **Rust** 1.80+ (`rustup default stable`)
+- **Rust** 1.97+ (`rustup default stable`; matching workspace MSRV)
 - **Node.js** 20+ (or Bun / pnpm)
 - Platform-specific Tauri v2 dependencies:
   - **macOS**: Xcode Command Line Tools
@@ -40,3 +40,5 @@ npm run tauri build
 
 - `src/` — React 19 UI components (Chat, Coworker, Governance, System metrics).
 - `src-tauri/` — Tauri v2 Rust backend handling window lifecycle, tray icon, local process supervision, and native API bridges.
+
+> **Note on Desktop Surfaces**: This package is the Tauri v2 webview wrapper. For the pure Rust GPUI native desktop client, see [`crates/desktop/`](../../crates/desktop/).

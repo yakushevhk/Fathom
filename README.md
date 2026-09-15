@@ -235,7 +235,7 @@ Fathom/
 │   ├── core/                  # Shared domain primitives: IDs, events, config, notifications, CRM
 │   ├── llm/                   # LlmProvider trait, native Anthropic Claude (thinking & caching), DeepSeek/OpenAI streaming
 │   ├── agent/                 # Autonomous multi-turn reasoning loops, JoinSet sub-agent swarms
-│   ├── tools/                 # 51 base tools + Playwright CDP + computer-use registry
+│   ├── tools/                 # 63 built-in tools + Playwright CDP + computer-use registry
 │   ├── memory/                # Long-term semantic memory: SQLite FTS5 (BM25) + vector graph
 │   ├── mcp/                   # MCP client & server (stdio / HTTP / OAuth2 transports)
 │   ├── persistence/           # SQLite WAL persistence: jobs, sessions, contacts, credentials

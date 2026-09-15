@@ -661,6 +661,20 @@ The system is wired together through three shared primitives:
 
 The `AppState` struct in the server crate holds Arc references to the persistence layer, the broadcast sender, the control-plane channels, the governance policy engine, and the supervisor provisioner. The TUI holds similar references, allowing both frontends to operate on the same running sessions interchangeably. The **native GPUI desktop app** (`crates/desktop`) and the **Next.js 16 web dashboard** (`apps/web`) are frontends that consume the HTTP/SSE surface: live screens and agent trees, human takeover, secret entry, policy governance, and session steering.
 
+
+### `crates/lsp` — Language Server Protocol Integration
+
+`crates/lsp` provides native IDE-grade code intelligence:
+- `client.rs` manages the JSON-RPC stdio connection to external language servers.
+- `detect.rs` auto-detects language servers based on project files (`rust-analyzer` for Cargo projects, `typescript-language-server` for TS/JS, `pyright` / `ruff` for Python, `gopls` for Go).
+- `tool.rs` wraps language server capabilities into the agent `lsp` tool: go-to-definition, find-references, hover diagnostics, code-actions, and symbol search.
+
+### `crates/desktop` — Native GPUI Client
+
+`crates/desktop` is a high-performance native desktop application built with Zed's GPU-accelerated **GPUI** framework (`gpui 0.2.2`):
+- Renders at native 120 FPS with direct Metal/DirectX/Vulkan shader acceleration.
+- Direct live screen viewport consuming the computer-use snapshot stream.
+- Native operator takeover leases, approval dialogs, and instant session steering.
 ## Fathom Bot — the chat-app frontend (`Bot/`)
 
 Alongside the Rust runtime's own frontends, the repository ships **Fathom Bot** (`Bot/`): a local-first
