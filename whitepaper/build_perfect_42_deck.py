@@ -182,34 +182,38 @@ set_page(2, "TABLE OF CONTENTS", "Document Outline & Executive Roadmap", "Compre
 # Page 03: Universal AI Workforce Runtime
 set_page(3, "EXECUTIVE STRATEGY · PARADIGM SHIFT",
 "Universal Autonomous AI Workforce Runtime",
-"High-Performance Rust Architecture for End-to-End Remote Digital Employees",
+"High-Performance Rust Architecture & Fathom Bot Desktop Surface for Sovereign AI Employees",
 f"""
 <div class="card-dark">
-  <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">From Scripted Automation to Autonomous Digital Employees</div>
+  <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">From Fragile Scripted Bots to Universal Autonomous Digital Coworkers</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
-    <strong>Fathom</strong> introduces an enterprise-grade, self-hosted <strong>Rust runtime</strong> designed to coordinate fleets of <strong>autonomous remote digital employees</strong>. These agents formulate plans, execute multi-day workflows, operate browsers via accessibility trees, perform OSINT investigations, engineer software, and interact across corporate channels 100% remotely.
+    <strong>Fathom</strong> unites a microsecond, self-hosted <strong>Rust runtime daemon</strong> (127.0.0.1:8080) with <strong>Fathom Bot</strong> — a local-first conversational desktop application (React 19 + Electron on 127.0.0.1:8799). Every contact in the sidebar is a sovereign, universal AI coworker running on company infrastructure: formulating multi-day plans, controlling computers, and executing complex workflows without human handholding.
   </p>
 </div>
 
 {mockup("01_sales_outbound_sdr.png", "Figure 3.1: Fathom Command Center — 3-pane execution workspace with sub-agent swarm dispatch, live computer use, and CRM synchronization")}
 
-<div class="grid-3">
+<div class="grid-4">
   <div class="card card-accent">
-    <div class="card-title-sm">100% Remote Operation</div>
-    <p style="font-size: 7.0pt; line-height: 1.30;">Autonomous agents operate independently inside sandboxed environments, interacting with web portals, registries, APIs, and CRMs 24/7.</p>
+    <div class="card-title-sm">Universal Coworkers</div>
+    <p style="font-size: 6.8pt; line-height: 1.25;">Each contact is an autonomous agent with its own persona (<code>SOUL.md</code>), dedicated model (Claude/Codex/Grok), and workspace.</p>
   </div>
   <div class="card card-emerald">
     <div class="card-title-sm">Microsecond Rust Engine</div>
-    <p style="font-size: 7.0pt; line-height: 1.30;">Zero-cost abstractions and Tokio task trees provide ~0.75 ms tool dispatch, 94 µs memory absorption, and 500x faster cold starts.</p>
+    <p style="font-size: 6.8pt; line-height: 1.25;">~0.75 ms tool dispatch, 15.4 MB base RAM, 94 µs SQLite absorption, and 500x faster cold starts than Python stacks.</p>
   </div>
   <div class="card card-purple">
-    <div class="card-title-sm">Unlimited Neural Compute</div>
-    <p style="font-size: 7.0pt; line-height: 1.30;">Routing to frontier models (Kimi k3, Qwen 3.8 Max, GLM 5.3) enables flat monthly per-seat economics with zero metering anxiety.</p>
+    <div class="card-title-sm">Interactive Action Cards</div>
+    <p style="font-size: 6.8pt; line-height: 1.25;">Deliverables render as rich interactive cards (<code>UniversalCard</code>) and data widgets inline, replacing noisy wall-of-text chats.</p>
+  </div>
+  <div class="card card-indigo">
+    <div class="card-title-sm">24/7 Autonomous Agency</div>
+    <p style="font-size: 6.8pt; line-height: 1.25;">Scheduled background routines (cron/calendar) awaken agents overnight to enrich pipelines, scrape leads, and sync systems.</p>
   </div>
 </div>
 
 <div class="callout callout-info" style="margin-bottom: 0;">
-  <strong>Strategic Objective:</strong> Deliver a scalable software foundation where businesses deploy specialized digital workers on demand—scaling operational capacity infinitely without linear headcount expansion.
+  <strong>Strategic Objective:</strong> Deliver a production-grade software foundation where businesses deploy specialized, universal digital workers on demand — scaling operational capacity infinitely without linear headcount expansion or token billing anxiety.
 </div>
 """)
 
@@ -301,12 +305,12 @@ set_page(4, "MACRO PROBLEM · THE HIRING BOTTLENECK",
 # Page 05: Digital Coworkers vs. Scripted Chatbots
 set_page(5, "PRODUCT PHILOSOPHY · PARADIGM COMPARISON",
 "Digital Coworkers vs. Scripted Chatbots",
-"Moving Beyond Single-Prompt Chat Interfaces to Autonomous Goal-Driven Agents",
+"Moving Beyond Ephemeral Prompts to Autonomous Multi-Agent Teammates in Fathom Bot",
 """
 <div class="card-dark">
-  <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">The Fundamental Difference: Proactive Agency vs. Reactive Text Generation</div>
+  <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">The Fundamental Difference: Proactive Multi-Agent Collaboration vs. Reactive Text Generation</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
-    Most commercial AI tools are <strong>passive text assistants</strong>: they wait for a human prompt, generate conversational text, and stop immediately. <strong>Fathom instantiates proactive digital coworkers</strong>: given a high-level goal, they independently formulate a multi-step plan, spawn specialized sub-agents, operate browser tools, verify work against objective criteria, and deliver finalized deliverables directly to your CRM, database, or team channels.
+    Most AI tools are <strong>passive text assistants</strong>: they wait for a human prompt, generate prose, and halt immediately. <strong>Fathom instantiates sovereign digital coworkers in Fathom Bot</strong>: each bot has a tailored identity (<code>SOUL.md</code>), dedicated model brain (Claude/Codex/Grok), and tool permissions. They formulate plans, delegate tasks to peers via <code>delegate_bot</code>, control computers, and deliver interactive rich action cards inline.
   </p>
 </div>
 
@@ -323,109 +327,111 @@ set_page(5, "PRODUCT PHILOSOPHY · PARADIGM COMPARISON",
   </div>
 
   <div class="card card-emerald">
-    <div class="card-title-sm">Fathom Autonomous Coworker (Multi-Agent Swarm)</div>
+    <div class="card-title-sm">Fathom Autonomous Coworker (Fathom Bot Teammate)</div>
     <div class="diagram-flow" style="flex-direction: column; gap: 3px; padding: 4px;">
-      <div class="flow-step" style="width: 100%; text-align: left; font-size: 6.6pt;"><strong>1. Goal Assigned:</strong> "Enrich 50 verified London FinTech VP leads"</div>
-      <div class="flow-step" style="width: 100%; text-align: left; font-size: 6.6pt;"><strong>2. Autonomous Plan:</strong> Coordinator spawns 4 parallel Tokio sub-agents</div>
+      <div class="flow-step" style="width: 100%; text-align: left; font-size: 6.6pt;"><strong>1. Goal Assigned:</strong> Assigned in 1-on-1 chat or multi-agent channel</div>
+      <div class="flow-step" style="width: 100%; text-align: left; font-size: 6.6pt;"><strong>2. Autonomous Delegation:</strong> Chief delegates subtasks via <code>delegate_bot</code></div>
       <div class="flow-step" style="width: 100%; text-align: left; font-size: 6.6pt;"><strong>3. Active Execution:</strong> Scrapes registries, runs SMTP 250 OK probes</div>
-      <div class="flow-step" style="width: 100%; text-align: left; font-size: 6.6pt;"><strong>4. System Sync:</strong> LLM Judge validates quality & pushes directly to amoCRM</div>
+      <div class="flow-step" style="width: 100%; text-align: left; font-size: 6.6pt;"><strong>4. Interactive Cards:</strong> Renders live <code>UniversalCard</code> & syncs CRM automatically</div>
     </div>
     <p style="font-size: 6.8pt; color: var(--emerald); margin-top: 2px;"><strong>Advantage:</strong> Complete end-to-end task ownership from initial query to final system-of-record synchronization.</p>
   </div>
 </div>
 
 <div class="card">
-  <div class="card-title" style="font-size: 8.2pt;">Key Lifecycle Differences at a Glance</div>
+  <div class="card-title" style="font-size: 8.2pt;">Key Architectural Differences: Ephemeral Bots vs. Fathom Universal Coworkers</div>
   <table>
     <thead>
       <tr><th>Lifecycle Dimension</th><th>Single-Turn Chatbots</th><th>Fathom Digital Coworkers</th></tr>
     </thead>
     <tbody>
-      <tr><td><strong>Initiation Mechanism</strong></td><td>Requires constant synchronous human prompting.</td><td><strong>Autonomous scheduled triggers (Cron), webhooks, or API.</strong></td></tr>
-      <tr><td><strong>Concurrency Model</strong></td><td>Single sequential thread of thought.</td><td><strong>Parallel multi-core Tokio task swarms (JoinSet).</strong></td></tr>
-      <tr><td><strong>Failure Recovery</strong></td><td>Crashes or hallucinates; requires human reprompting.</td><td><strong>Self-healing retries with error diagnosis & task augmentation.</strong></td></tr>
-      <tr><td><strong>State Persistence</strong></td><td>Stateless; context vanishes on tab closure.</td><td><strong>Durable SQLite database with append-only fact versioning.</strong></td></tr>
-      <tr><td><strong>Action Verification</strong></td><td>Unchecked text generation with zero validation.</td><td><strong>Multi-signal validation gates & automated LLM Judge review.</strong></td></tr>
+      <tr><td><strong>Identity & Directive</strong></td><td>Static prompt text box; erased on new thread.</td><td><strong>Dedicated <code>SOUL.md</code>, persistent persona, and custom system prompt.</strong></td></tr>
+      <tr><td><strong>Collaboration Model</strong></td><td>Isolated single-bot prompt box.</td><td><strong>Multi-bot group channels, <code>delegate_bot</code> peer handoffs, and team rooms.</strong></td></tr>
+      <tr><td><strong>Deliverable Format</strong></td><td>Plain markdown text; raw code blocks.</td><td><strong>Interactive <code>UniversalCard</code> widgets, progress bars, tables & approvals.</strong></td></tr>
+      <tr><td><strong>Trigger Mechanism</strong></td><td>Requires synchronous human typing.</td><td><strong>Autonomous 24/7 background calendar routines, webhooks, or chat.</strong></td></tr>
+      <tr><td><strong>Supervision & Control</strong></td><td>Black-box output or silent crash.</td><td><strong>Real-time Chain-of-Thought streaming & 1-click permission cards.</strong></td></tr>
     </tbody>
   </table>
 </div>
 
 <div class="callout callout-success" style="margin-bottom: 0;">
-  <strong>The Autonomous Standard:</strong> Fathom coworkers don't just draft emails or write snippets—they find the decision-maker, verify deliverability, operate the sales platform, and track pipeline outcomes completely autonomously.
+  <strong>The Autonomous Standard:</strong> In Fathom Bot, you don't copy-paste prompt templates — you talk to digital specialists who retain context, collaborate with peers, use computers, and deliver finished business outcomes.
 </div>
 """)
 
 # Page 06: The 5 Core Digital Worker Archetypes
 set_page(6, "WORKFORCE ARCHETYPES · PERSONAS",
 "The 5 Core Digital Worker Archetypes",
-"Specialized Autonomous Roles Pre-Tuned for Immediate Enterprise Deployment",
+"Specialized Autonomous Roles & SOUL.md Identity Configuration in Fathom Bot",
 f"""
 <div class="card-accent">
-  <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Pre-Configured Autonomous Employee Roles</div>
+  <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Pre-Configured Autonomous Employee Roles & Behavioral Directives</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
-    Fathom supports specialized coworker personas out-of-the-box. Each persona is configured with role-specific system prompts (up to 32,000 characters), optimized tool sets, strict governance policies, and tailored verification loops.
+    Every digital coworker in Fathom Bot is instantiated with an isolated <code>SOUL.md</code> persona file, role-specific system prompts (up to 32,000 chars), explicit tool permissions, dedicated model choice (Claude, Codex, Grok, ACP), and long-term vector memory.
   </p>
 </div>
 
-{mockup("07_inbox_manager.png", "Figure 6.1: Autonomous Chief of Staff — 41-thread inbox sweep, noise archival, draft triage, and multi-persona execution")}
+{mockup("bot_identity_soul.png", "Figure 6.1: Fathom Bot Identity & SOUL.md Tuning — Dedicated persona boundaries, avatar identity, model provider routing, and custom instructions")}
 
 <div class="grid-2">
   <div class="card card-emerald">
     <div class="card-title-sm">1. Autonomous Sales Rep (SDR)</div>
-    <p style="font-size: 7.0pt; line-height: 1.30;">Searches business directories (Companies House, registries), traverses leadership rosters, runs SMTP 250 OK probes, and pushes leads to amoCRM/HubSpot.</p>
+    <p style="font-size: 7.0pt; line-height: 1.30;">Discovers decision-makers across national registries, runs SMTP 250 OK deliverability handshakes, and stages enriched leads in CRM pipelines.</p>
   </div>
   <div class="card card-accent">
     <div class="card-title-sm">2. Market Intelligence & OSINT</div>
-    <p style="font-size: 7.0pt; line-height: 1.30;">Monitors competitor websites, pricing tables, and feature matrices; tracks executive hiring velocity; assimilates facts into memory graphs in 94 µs.</p>
+    <p style="font-size: 7.0pt; line-height: 1.30;">Monitors competitor sites, DOM diffs, pricing changes, and executive hirings; assimilates corporate facts into local memory graphs in 94 µs.</p>
   </div>
 </div>
 
 <div class="grid-3">
   <div class="card card-purple">
     <div class="card-title-sm">3. Executive Talent Scout</div>
-    <p style="font-size: 6.8pt; line-height: 1.25;">Scours GitHub commit logs and AST structures to map senior engineers, constructing verified dossiers.</p>
+    <p style="font-size: 6.8pt; line-height: 1.25;">Scours GitHub commit logs and AST structures to map senior engineering talent and compile verified candidate dossiers.</p>
   </div>
   <div class="card card-amber">
     <div class="card-title-sm">4. Back-Office Assistant</div>
-    <p style="font-size: 6.8pt; line-height: 1.25;">Operates corporate web portals via Playwright accessibility trees, reconciles invoices against POs.</p>
+    <p style="font-size: 6.8pt; line-height: 1.25;">Operates enterprise web portals via accessibility trees, executes 3-way invoice reconciliation against purchase orders in accounting SaaS.</p>
   </div>
   <div class="card card-indigo">
     <div class="card-title-sm">5. DevOps Maintainer</div>
-    <p style="font-size: 6.8pt; line-height: 1.25;">Maps codebases via AST parsing (34ms across 240 files), reproduces bugs in sandboxes, and opens PRs.</p>
+    <p style="font-size: 6.8pt; line-height: 1.25;">Performs symbol-aware AST repo mapping (34 ms across 240 files), reproduces error traces in sandboxes, and opens clean pull requests.</p>
   </div>
 </div>
 
 <div class="callout callout-info" style="margin-bottom: 0;">
-  <strong>Organizational Leverage:</strong> A single human department manager can effortlessly supervise a team of 10 to 50 specialized digital employees across multiple business functions.
+  <strong>Organizational Leverage:</strong> A single human manager supervises a fleet of 10 to 50 specialized digital employees in Fathom Bot, communicating via 1-on-1 direct messages or cross-functional team channels.
 </div>
 """)
 
 # Page 07: A Day in the Life of a Digital Employee
 set_page(7, "DAY IN THE LIFE · OPERATIONAL WORKFLOW",
 "A Day in the Life of a Digital Employee",
-"24-Hour Continuous Execution Cycle of an Autonomous Fathom Worker",
-"""
+"24-Hour Continuous Execution Cycle & Autonomous Calendar Routines in Fathom Bot",
+f"""
 <div class="card-dark">
-  <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Continuous 24/7 Autonomy: Zero Idle Time, Zero Latency</div>
+  <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">Continuous 24/7 Autonomy: Visual Calendar Routines & Background Execution</div>
   <p style="font-size: 7.6pt; line-height: 1.38;">
-    While human teams sleep, Fathom coworkers execute scheduled background operations, monitor market shifts, prepare outbound campaigns, verify deliverability, and stage pipeline deliverables for morning review.
+    While human teams sleep, Fathom Bot's autonomous <strong>routine engine</strong> (<code>routines.ts</code>) triggers scheduled cron workflows. Agents wake on schedule, conduct OSINT research, verify deliverables, consolidate long-term memory, and stage interactive <code>UniversalCard</code> deliverables for morning review.
   </p>
 </div>
+
+{mockup("bot_calendar_routines.png", "Figure 7.1: Fathom Bot Visual Routine Calendar & Automations Modal — Recurring cron triggers, execution frequencies, and autonomous task blueprints")}
 
 <div class="timeline">
   <div class="timeline-item">
     <div class="timeline-time">02:00 AM</div>
     <div class="timeline-content">
-      <div class="timeline-title">Scheduled Pipeline Trigger (Atomic Cron Lock)</div>
-      <div class="timeline-desc">The SDR coworker wakes via atomic cron claim in SQLite, loads target market parameters, and initializes its search session.</div>
+      <div class="timeline-title">Scheduled Routine Trigger (Automations Calendar)</div>
+      <div class="timeline-desc">The SDR coworker wakes via background cron schedule, loads ICP criteria from <code>SOUL.md</code>, and initializes its search session.</div>
     </div>
   </div>
 
   <div class="timeline-item">
     <div class="timeline-time">02:15 AM</div>
     <div class="timeline-content">
-      <div class="timeline-title">Parallel Multi-Engine Web Scraping Swarm</div>
-      <div class="timeline-desc">The coordinator spawns 4 worker sub-agents querying registries and corporate websites, extracting 85 candidate records.</div>
+      <div class="timeline-title">Parallel Web Scraping & Multi-Source Synthesis</div>
+      <div class="timeline-desc">The coordinator delegates subtasks via <code>delegate_bot</code> to 4 parallel workers querying business registries, extracting 85 candidate records.</div>
     </div>
   </div>
 
@@ -433,48 +439,29 @@ set_page(7, "DAY IN THE LIFE · OPERATIONAL WORKFLOW",
     <div class="timeline-time">03:30 AM</div>
     <div class="timeline-content">
       <div class="timeline-title">Multi-Signal Verification & Non-Intrusive SMTP Probing</div>
-      <div class="timeline-desc">Validates DNS MX records and conducts gentle port 25 SMTP handshakes. 62 emails confirmed deliverable (0.95+ confidence).</div>
+      <div class="timeline-desc">Validates DNS MX records and conducts port 25 SMTP handshakes. 62 emails confirmed deliverable (0.95+ confidence score).</div>
     </div>
   </div>
 
   <div class="timeline-item">
     <div class="timeline-time">05:00 AM</div>
     <div class="timeline-content">
-      <div class="timeline-title">Goal Mode LLM Judge Review & Gap-Filling Sweep</div>
-      <div class="timeline-desc">Evaluates lead quality against the goal. Identifies missing LinkedIn URLs; launches targeted gap-filling subtasks.</div>
-    </div>
-  </div>
-
-  <div class="timeline-item">
-    <div class="timeline-time">07:00 AM</div>
-    <div class="timeline-content">
-      <div class="timeline-title">Deduplication & Long-Term Memory Assimilation</div>
-      <div class="timeline-desc">Deduplicates records against local contact registry; absorbs new facts into the SQLite entity graph at 94 µs per fact.</div>
+      <div class="timeline-title">Memory Sleep Consolidation & Entity Graph Sync</div>
+      <div class="timeline-desc">The night-time sleep consolidation loop (<code>memory-sleep.ts</code>) assimilates new company relationships into local SQLite at 94 µs per fact.</div>
     </div>
   </div>
 
   <div class="timeline-item">
     <div class="timeline-time">08:30 AM</div>
     <div class="timeline-content">
-      <div class="timeline-title">CRM Synchronization & Morning Executive Briefing</div>
-      <div class="timeline-desc">Pushes 62 verified leads into amoCRM/HubSpot with full enrichment, and sends an executive briefing to Telegram.</div>
+      <div class="timeline-title">CRM Push & Interactive UniversalCard Delivery</div>
+      <div class="timeline-desc">Syncs 62 verified leads into CRM and posts an interactive summary card in the team's Fathom Bot channel ready for 1-click human action.</div>
     </div>
   </div>
 </div>
 
-<div class="grid-2">
-  <div class="card-slate">
-    <div class="card-title-sm">Real-Time Telemetry & Exception Handling</div>
-    <p style="font-size: 7.0pt; line-height: 1.35;">If a web portal throws a Cloudflare challenge or rate limits, Fathom automatically pivots to secondary search engines or pauses gracefully for human lease takeover.</p>
-  </div>
-  <div class="card-slate">
-    <div class="card-title-sm">Zero Human Prospecting Friction</div>
-    <p style="font-size: 7.0pt; line-height: 1.35;">Account executives arrive at 9:00 AM to a pipeline populated with pre-verified decision-makers, direct email addresses, and personalized outreach drafts ready for 1-click execution.</p>
-  </div>
-</div>
-
 <div class="callout callout-success" style="margin-bottom: 0;">
-  <strong>The Compounding Advantage:</strong> 6 hours of autonomous nighttime execution delivers more qualified pipeline than a full-time human SDR produces in an entire work week.
+  <strong>The Compounding Advantage:</strong> 6 hours of autonomous nighttime execution delivers more verified pipeline than a human SDR produces in an entire work week — zero human prompting required.
 </div>
 """)
 
@@ -1166,54 +1153,32 @@ f"""
 # Page 25: How the Virtual Office Operates
 set_page(25, "SYSTEM ARCHITECTURE · VIRTUAL OFFICE",
 "How the Virtual Office Operates",
-"The Conceptual Architecture of an Autonomous Multi-Agent Organization",
-"""
-<div class="card-dark">
-  <div class="card-title" style="font-size: 8.8pt; margin-bottom: 2px;">The Virtual Office Model: Conceptual Elegance Meets Execution Rigor</div>
-  <p style="font-size: 7.6pt; line-height: 1.38;">
-    Fathom does not operate as a single bloated AI model trying to do everything. Instead, it mirrors a <strong>high-performing corporate department</strong>: a hierarchical topology of specialized digital workers collaborating asynchronously over a shared event bus and persistent memory fabric.
+"The Unified Architecture of Fathom Bot & Rust Autonomous Worker Swarms",
+f"""
+<div class="card-dark" style="padding: 6px 10px;">
+  <div class="card-title" style="font-size: 8.4pt; margin-bottom: 2px;">Dual-Layer Sovereign Topology: Native Rust Core Daemon + Fathom Bot Client</div>
+  <p style="font-size: 7.2pt; line-height: 1.34;">
+    Fathom mirrors a <strong>high-performing corporate department</strong>. A compiled <strong>Rust Core Daemon</strong> (127.0.0.1:8080) executes parallel Tokio worker tasks, while <strong>Fathom Bot</strong> (127.0.0.1:8799, React 19 + Electron) acts as the operational conversational surface. Operators talk to universal coworkers, inspect live reasoning streams, and govern actions via interactive <code>UniversalCard</code> action widgets.
   </p>
 </div>
 
-<div class="diagram-flow">
-  <div class="flow-step"><div class="flow-title">Coordinator</div><div class="flow-desc">Breaks objective into directed subtask tree</div></div>
-  <div class="flow-arrow">→</div>
-  <div class="flow-step"><div class="flow-title">Workers</div><div class="flow-desc">Parallel scraping, coding, and OSINT execution</div></div>
-  <div class="flow-arrow">→</div>
-  <div class="flow-step"><div class="flow-title">Analysts</div><div class="flow-desc">Synthesize data & cross-reference facts</div></div>
-  <div class="flow-arrow">→</div>
-  <div class="flow-step"><div class="flow-title">Reviewer / Judge</div><div class="flow-desc">Validates against acceptance criteria</div></div>
-</div>
+{mockup("bot_thinking_stream.png", "Figure 25.1: Fathom Bot Operator Surface — Live Chain-of-Thought reasoning stream, tool telemetry, and step-by-step verification")}
 
 <div class="grid-3">
   <div class="card card-accent">
-    <div class="card-title-sm">1. Task Tree Delegation</div>
-    <p style="font-size: 7.0pt; line-height: 1.30;">The coordinator assigns clear deliverables, max execution depths (<code>max_depth=3</code>), and token quotas to sub-agents.</p>
+    <div class="card-title-sm">1. Task Delegation (delegate_bot)</div>
+    <p style="font-size: 6.8pt; line-height: 1.25;">Chief of Staff breaks objectives down and delegates subtasks asynchronously without blocking the user chat stream.</p>
   </div>
 
   <div class="card card-emerald">
     <div class="card-title-sm">2. Non-Blocking Concurrency</div>
-    <p style="font-size: 7.0pt; line-height: 1.30;">Sub-agents run concurrently on Tokio OS threads. If one worker hits rate limits, sibling workers continue.</p>
+    <p style="font-size: 6.8pt; line-height: 1.25;">Sub-agents run concurrently on Tokio OS green threads. Rate limits on one worker never stall sibling execution.</p>
   </div>
 
   <div class="card card-purple">
-    <div class="card-title-sm">3. Disk-Spill Scaling</div>
-    <p style="font-size: 7.0pt; line-height: 1.30;">Sub-agents return concise summaries while spilling large raw artifacts to disk, avoiding context overflow.</p>
+    <div class="card-title-sm">3. Universal Action Cards</div>
+    <p style="font-size: 6.8pt; line-height: 1.25;">Deliverables render as interactive visual cards with progress bars, data tables, and 1-click approvals directly in chat.</p>
   </div>
-</div>
-
-<div class="card">
-  <div class="card-title" style="font-size: 8.2pt;">Virtual Office Roles & Operational Boundaries</div>
-  <table>
-    <thead>
-      <tr><th>Role Archetype</th><th>Primary Responsibility</th><th>Permitted Tools</th><th>Context Scope</th></tr>
-    </thead>
-    <tbody>
-      <tr><td><strong>Swarm Coordinator</strong></td><td>Goal breakdown, sub-agent spawning, deliverable synthesis</td><td><code>invoke_subagent</code>, <code>send_message</code></td><td>High-level strategic context only</td></tr>
-      <tr><td><strong>OSINT Lead Researcher</strong></td><td>Registry discovery, email extraction, SMTP verification</td><td><code>find_leads</code>, <code>verify_email</code>, <code>save_contacts</code></td><td>Raw directory data, discarded on task end</td></tr>
-      <tr><td><strong>Computer Operator</strong></td><td>Browser automation, accessibility tree navigation, form filling</td><td><code>playwright_action</code>, <code>takeover_request</code></td><td>Active browser DOM snapshots (@e1..@eN)</td></tr>
-    </tbody>
-  </table>
 </div>
 
 <div class="callout callout-info" style="margin-bottom: 0;">
