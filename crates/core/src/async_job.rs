@@ -54,6 +54,7 @@ pub struct JobResult {
 /// turn boundary.
 pub struct AsyncJobManager {
     jobs: Mutex<HashMap<JobId, JobInfo>>,
+    abort_handles: Mutex<HashMap<JobId, tokio::task::AbortHandle>>,
     /// Delivery sinks: agent id → sender.
     sinks: Mutex<HashMap<String, mpsc::UnboundedSender<JobResult>>>,
     next_id: AtomicU64,
@@ -65,13 +66,12 @@ impl AsyncJobManager {
     fn new() -> Self {
         Self {
             jobs: Mutex::new(HashMap::new()),
+            abort_handles: Mutex::new(HashMap::new()),
             sinks: Mutex::new(HashMap::new()),
             next_id: AtomicU64::new(1),
             max_running: AtomicU64::new(15),
         }
     }
-
-    /// Access the process-global singleton.
     pub fn global() -> &'static Self {
         static MGR: std::sync::LazyLock<AsyncJobManager> =
             std::sync::LazyLock::new(AsyncJobManager::new);
@@ -125,6 +125,10 @@ impl AsyncJobManager {
         false
     }
 
+    /// Associate an AbortHandle with a running job so cancel() can cleanly abort it.
+    pub fn attach_abort_handle(&self, id: JobId, handle: tokio::task::AbortHandle) {
+        self.abort_handles.lock().insert(id, handle);
+    }
     /// Configure the process-wide running-job limit.
     pub fn set_max_running(&self, max: usize) {
         self.max_running.store(max.max(1) as u64, Ordering::Relaxed);
@@ -162,7 +166,11 @@ impl AsyncJobManager {
     }
 
     /// Cancel a job.
+    /// Cancel a job and abort its underlying Tokio task if an AbortHandle was registered.
     pub fn cancel(&self, id: JobId) {
+        if let Some(handle) = self.abort_handles.lock().remove(&id) {
+            handle.abort();
+        }
         if let Some(job) = self.jobs.lock().get_mut(&id) {
             job.status = JobStatus::Cancelled;
         }

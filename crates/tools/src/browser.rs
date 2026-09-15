@@ -380,6 +380,9 @@ impl BrowserNavigateTool {
         params: &NavigateParams,
         ctx: &ToolContext,
     ) -> anyhow::Result<ToolOutput> {
+        crate::guard::ensure_safe_url(&params.url)
+            .await
+            .map_err(|err| anyhow::anyhow!("SSRF guard blocked URL: {err}"))?;
         let client = &ctx.http_client;
 
         // Reuse an existing page target when available to avoid leaking tabs.

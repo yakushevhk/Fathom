@@ -145,10 +145,18 @@ impl ComputerClient {
     }
 
     pub async fn session(&self, url: Option<&str>) -> anyhow::Result<ComputerResponse> {
+        if let Some(target) = url {
+            crate::guard::ensure_safe_url(target)
+                .await
+                .map_err(|err| anyhow::anyhow!("SSRF guard blocked URL: {err}"))?;
+        }
         self.post_json("/session", json!({"url": url})).await
     }
 
     pub async fn navigate(&self, url: &str) -> anyhow::Result<ComputerResponse> {
+        crate::guard::ensure_safe_url(url)
+            .await
+            .map_err(|err| anyhow::anyhow!("SSRF guard blocked URL: {err}"))?;
         self.post_json("/navigate", json!({"url": url})).await
     }
 
@@ -161,6 +169,9 @@ impl ComputerClient {
     }
 
     pub async fn open_tab(&self, url: &str) -> anyhow::Result<ComputerResponse> {
+        crate::guard::ensure_safe_url(url)
+            .await
+            .map_err(|err| anyhow::anyhow!("SSRF guard blocked URL: {err}"))?;
         self.post_json("/tabs/open", json!({"url": url})).await
     }
 

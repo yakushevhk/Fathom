@@ -74,7 +74,7 @@ pub struct BacklogEntry {
 }
 
 /// In-memory index: fingerprint → entry, plus raw line preservation.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 struct State {
     by_fp: HashMap<String, BacklogEntry>,
 }
@@ -211,11 +211,13 @@ impl ImprovementBacklog {
             context,
             proposed_next_step,
         };
-        let mut state = self.inner.lock().await;
-        state.by_fp.insert(fp, entry);
-        self.persist(&state).await
+        let snapshot = {
+            let mut state = self.inner.lock().await;
+            state.by_fp.insert(fp, entry);
+            state.clone()
+        };
+        self.persist(&snapshot).await
     }
-
     /// Close a set of entries by fingerprint or summary match (e.g. on commit).
     pub async fn close(&self, task_id_or_fps: &[&str]) -> anyhow::Result<usize> {
         let mut state = self.inner.lock().await;
@@ -244,7 +246,9 @@ impl ImprovementBacklog {
             }
         }
         if closed > 0 {
-            self.persist(&state).await?;
+            let snapshot = state.clone();
+            drop(state);
+            self.persist(&snapshot).await?;
         }
         Ok(closed)
     }

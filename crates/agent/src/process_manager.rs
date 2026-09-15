@@ -111,6 +111,10 @@ impl ProcessManager {
         // Belt and braces: if the Child handle is ever dropped (spawn timeout
         // below, ProcessManager drop, ...), tokio kills the OS process.
         cmd.kill_on_drop(true);
+        #[cfg(unix)]
+        {
+            cmd.process_group(0);
+        }
         cmd.arg("worker")
             .arg("--session-id").arg(session_id)
             .arg("--agent-id").arg(&agent_id.0)
@@ -192,6 +196,7 @@ impl ProcessManager {
                 Err(e) if e.kind() == std::io::ErrorKind::InvalidData => {
                     // Protocol violation (over-long line): fail the worker
                     // cleanly rather than propagating an IO error or OOMing.
+                    kill_and_reap(&mut handle.process).await;
                     return Ok(WorkerResult::Failed {
                         error: format!("worker protocol error: {e}"),
                     });
@@ -206,6 +211,7 @@ impl ProcessManager {
             let line = match std::str::from_utf8(&buf) {
                 Ok(s) => s,
                 Err(_) => {
+                    kill_and_reap(&mut handle.process).await;
                     return Ok(WorkerResult::Failed {
                         error: "worker protocol error: invalid UTF-8 in message line"
                             .to_string(),
@@ -337,9 +343,15 @@ async fn wait_for_socket(
     }
 }
 
-/// Kill a child process and reap it. Errors are ignored: a child that is
-/// already dead counts as success here.
+/// Kill a child process and its entire process group, then reap it. Errors are
+/// ignored: a child that is already dead counts as success here.
 async fn kill_and_reap(child: &mut Child) {
+    #[cfg(unix)]
+    if let Some(pid) = child.id() {
+        unsafe {
+            libc::killpg(pid as i32, libc::SIGKILL);
+        }
+    }
     let _ = child.kill().await;
     let _ = child.wait().await;
 }

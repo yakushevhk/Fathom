@@ -1,5 +1,5 @@
 use anyhow::{anyhow, bail, Result};
-use chrono::{DateTime, Datelike, Duration, NaiveDateTime, Timelike, Utc};
+use chrono::{DateTime, Datelike, Duration, Timelike, Utc};
 use rusqlite::{params, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
@@ -91,18 +91,46 @@ fn parse_offset(tz: &str) -> Option<i32> {
     }
     None
 }
-fn cron_matches(local: &NaiveDateTime, fields: &[Vec<u32>]) -> bool {
-    let dow = local.weekday().num_days_from_sunday();
-    fields[0].contains(&local.minute()) && fields[1].contains(&local.hour()) && fields[2].contains(&local.day()) && fields[3].contains(&local.month()) && (fields[4].contains(&dow) || (dow == 0 && fields[4].contains(&7)))
-}
 fn next_occurrence(cron: &str, timezone: &str, after: DateTime<Utc>) -> Result<String> {
     let raw: Vec<_> = cron.split_whitespace().collect();
     let fields = [(0,59),(0,23),(1,31),(1,12),(0,7)].iter().zip(raw).map(|(&(lo,hi),v)| parse_field(v,lo,hi)).collect::<Result<Vec<_>>>()?;
     let offset = parse_offset(timezone).unwrap_or(0);
     let local_start = after.naive_utc().with_second(0).and_then(|v| v.with_nanosecond(0)).ok_or_else(|| anyhow!("invalid timestamp"))? + Duration::seconds(offset as i64) + Duration::minutes(1);
-    for minute in 0..(366 * 24 * 60) {
-        let candidate = local_start + Duration::minutes(minute);
-        if cron_matches(&candidate, &fields) { let utc = candidate - Duration::seconds(offset as i64); return Ok(DateTime::<Utc>::from_naive_utc_and_offset(utc,Utc).to_rfc3339()); }
+    let mut current = local_start;
+    let max_time = local_start + Duration::days(366);
+    while current < max_time {
+        let month = current.month();
+        if !fields[3].contains(&month) {
+            // Jump to beginning of next month
+            let (next_y, next_m) = if month == 12 { (current.year() + 1, 1) } else { (current.year(), month + 1) };
+            if let Some(nd) = chrono::NaiveDate::from_ymd_opt(next_y, next_m, 1) {
+                if let Some(nt) = nd.and_hms_opt(0, 0, 0) {
+                    current = nt;
+                    continue;
+                }
+            }
+        }
+        let day = current.day();
+        let dow = current.weekday().num_days_from_sunday();
+        let dow_match = fields[4].contains(&dow) || (dow == 0 && fields[4].contains(&7));
+        if !fields[2].contains(&day) || !dow_match {
+            // Jump to start of next day
+            current = current.date().succ_opt().and_then(|d| d.and_hms_opt(0, 0, 0)).unwrap_or(current + Duration::days(1));
+            continue;
+        }
+        let hour = current.hour();
+        if !fields[1].contains(&hour) {
+            // Jump to start of next hour
+            current = current + Duration::hours(1);
+            current = current.with_minute(0).unwrap_or(current);
+            continue;
+        }
+        let min = current.minute();
+        if fields[0].contains(&min) {
+            let utc = current - Duration::seconds(offset as i64);
+            return Ok(DateTime::<Utc>::from_naive_utc_and_offset(utc, Utc).to_rfc3339());
+        }
+        current = current + Duration::minutes(1);
     }
     bail!("cron expression has no occurrence within one year")
 }

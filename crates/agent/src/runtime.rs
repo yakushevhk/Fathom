@@ -3271,20 +3271,20 @@ mod tests {
         let db = Arc::new(Persistence::in_memory().unwrap());
         let llm = Arc::new(MockProvider::new(vec![]));
 
-        // Default fallback is "allow".
+        // Default fallback is fail-safe "deny".
         let agent = make_runtime(llm.clone(), db.clone(), AppConfig::default(), 0);
         assert_eq!(
             agent.request_approval("save_contacts", &serde_json::json!({})).await,
-            crate::control::ApprovalVerdict::Allowed
+            crate::control::ApprovalVerdict::Denied
         );
 
-        // Configured "deny" fallback.
+        // Configured "allow" fallback.
         let mut config = AppConfig::default();
-        config.agent.approval_fallback = "deny".to_string();
+        config.agent.approval_fallback = "allow".to_string();
         let agent = make_runtime(llm, db, config, 0);
         assert_eq!(
             agent.request_approval("save_contacts", &serde_json::json!({})).await,
-            crate::control::ApprovalVerdict::Denied
+            crate::control::ApprovalVerdict::Allowed
         );
     }
 

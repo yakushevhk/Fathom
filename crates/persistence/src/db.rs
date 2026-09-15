@@ -186,12 +186,18 @@ impl Persistence {
                 created_at TEXT NOT NULL
             );
 
+            CREATE INDEX IF NOT EXISTS idx_sessions_status_updated ON sessions(status, updated_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_sessions_updated_at ON sessions(updated_at DESC, created_at DESC);
             CREATE INDEX IF NOT EXISTS idx_agents_session ON agents(session_id);
+            CREATE INDEX IF NOT EXISTS idx_agents_created_at ON agents(created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_agents_parent_id ON agents(parent_id);
+            CREATE INDEX IF NOT EXISTS idx_tool_results_agent ON tool_results(agent_id);
             CREATE INDEX IF NOT EXISTS idx_messages_agent ON messages(agent_id);
             CREATE INDEX IF NOT EXISTS idx_findings_agent ON findings(agent_id);
             CREATE INDEX IF NOT EXISTS idx_subtasks_session ON subtasks(session_id);
+            CREATE INDEX IF NOT EXISTS idx_subtasks_session_task ON subtasks(session_id, task);
             CREATE INDEX IF NOT EXISTS idx_file_changes_session ON file_changes(session_id);
-
+            CREATE INDEX IF NOT EXISTS idx_file_changes_session_id_desc ON file_changes(session_id, id DESC);
             CREATE TABLE IF NOT EXISTS coworkers (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,

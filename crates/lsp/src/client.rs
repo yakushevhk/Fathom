@@ -49,10 +49,10 @@ pub struct LspClient {
 
 /// Internal request type sent to the writer task.
 struct LspRequest {
-    id: u64,
+    id: Option<u64>,
     method: String,
     params: Value,
-    reply_tx: oneshot::Sender<Result<Value, String>>,
+    reply_tx: Option<oneshot::Sender<Result<Value, String>>>,
 }
 
 impl LspClient {
@@ -83,15 +83,15 @@ impl LspClient {
         tokio::spawn(async move {
             let mut stdin = stdin;
             while let Some(req) = request_rx.recv().await {
-                // Register pending request
-                {
+                // Register pending request if expecting response
+                if let (Some(id), Some(reply_tx)) = (req.id, req.reply_tx) {
                     let mut map = pending_writer.lock().await;
-                    map.insert(req.id, PendingRequest { reply_tx: req.reply_tx });
+                    map.insert(id, PendingRequest { reply_tx });
                 }
-                // Send JSON-RPC message
+                // Send JSON-RPC message (notifications have id = None)
                 let msg = JsonRpcMessage {
                     jsonrpc: "2.0".into(),
-                    id: Some(req.id),
+                    id: req.id,
                     method: Some(req.method),
                     params: Some(req.params),
                     result: None,
@@ -130,13 +130,12 @@ impl LspClient {
                     if line.is_empty() {
                         break;
                     }
-                    if let Some(val) = line.strip_prefix("Content-Length: ") {
-                        content_length = val.parse().ok();
+                    if let Some(val) = line.strip_prefix("Content-Length: ").or_else(|| line.strip_prefix("content-length: ")) {
+                        content_length = val.trim().parse().ok();
                     }
                 }
-                let len = match content_length {
-                    Some(l) => l,
-                    None => continue,
+                let Some(len) = content_length else {
+                    continue;
                 };
                 let mut buf = vec![0u8; len];
                 if tokio::io::AsyncReadExt::read_exact(&mut reader, &mut buf).await.is_err() {
@@ -196,28 +195,25 @@ impl LspClient {
         static COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
         let id = COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
-        let (tx, rx) = oneshot::channel();
+        let (reply_tx, reply_rx) = oneshot::channel();
         self.request_tx.send(LspRequest {
-            id,
+            id: Some(id),
             method: method.to_string(),
             params,
-            reply_tx: tx,
+            reply_tx: Some(reply_tx),
         })?;
-
-        let result = rx.await.map_err(|_| anyhow::anyhow!("LSP channel closed"))?;
+        let result = reply_rx.await.map_err(|_| anyhow::anyhow!("LSP channel closed"))?;
         result.map_err(|e| anyhow::anyhow!("LSP error: {}", e))
     }
 
     /// Send a notification (no response expected) via the writer channel.
     async fn notify_raw(&self, method: &str, params: Value) -> anyhow::Result<()> {
         // Notifications don't have an id and don't expect a response.
-        // We send through the same channel but with a dummy reply_tx that we drop.
-        let (tx, _rx) = oneshot::channel();
         self.request_tx.send(LspRequest {
-            id: 0, // notifications use id 0
+            id: None,
             method: method.to_string(),
             params,
-            reply_tx: tx,
+            reply_tx: None,
         })?;
         Ok(())
     }
@@ -873,12 +869,12 @@ if __name__ == "__main__":
         // Verify LspRequest struct layout
         let (tx, _rx) = oneshot::channel();
         let req = LspRequest {
-            id: 42,
+            id: Some(42),
             method: "test".into(),
             params: serde_json::json!({"x": 1}),
-            reply_tx: tx,
+            reply_tx: Some(tx),
         };
-        assert_eq!(req.id, 42);
+        assert_eq!(req.id, Some(42));
         assert_eq!(req.method, "test");
         assert_eq!(req.params, serde_json::json!({"x": 1}));
     }

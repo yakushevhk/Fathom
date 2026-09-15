@@ -73,18 +73,14 @@ impl ApiKeyAuth {
 
     /// Validate a key using constant-time comparison against registered keys to prevent timing attacks.
     pub fn validate(&self, key: &str) -> Option<&ApiKeyInfo> {
-        let input_bytes = key.as_bytes();
+        use ring::digest::{digest, SHA256};
+        let input_hash = digest(&SHA256, key.as_bytes());
         let mut matched_info = None;
         for (registered_key, info) in &self.keys {
-            let reg_bytes = registered_key.as_bytes();
-            if input_bytes.len() == reg_bytes.len() {
-                let mut diff = 0u8;
-                for (a, b) in input_bytes.iter().zip(reg_bytes.iter()) {
-                    diff |= a ^ b;
-                }
-                if diff == 0 {
-                    matched_info = Some(info);
-                }
+            let reg_hash = digest(&SHA256, registered_key.as_bytes());
+            // ring::constant_time::verify_slices_are_equal does not leak length or content differences
+            if ring::constant_time::verify_slices_are_equal(input_hash.as_ref(), reg_hash.as_ref()).is_ok() {
+                matched_info = Some(info);
             }
         }
         matched_info
@@ -274,13 +270,13 @@ mod tests {
     #[test]
     fn extracts_bearer_token() {
         let h = headers_with(&[("authorization", "Bearer secret-key")]);
-        assert_eq!(extract_api_key(&h).as_deref(), Some("secret-key"));
+        assert_eq!(extract_api_key(&h, None).as_deref(), Some("secret-key"));
     }
 
     #[test]
     fn extracts_x_api_key_header() {
         let h = headers_with(&[("x-api-key", "secret-key")]);
-        assert_eq!(extract_api_key(&h).as_deref(), Some("secret-key"));
+        assert_eq!(extract_api_key(&h, None).as_deref(), Some("secret-key"));
     }
 
     #[test]
@@ -289,19 +285,19 @@ mod tests {
             ("authorization", "Bearer first"),
             ("x-api-key", "second"),
         ]);
-        assert_eq!(extract_api_key(&h).as_deref(), Some("first"));
+        assert_eq!(extract_api_key(&h, None).as_deref(), Some("first"));
     }
 
     #[test]
     fn no_key_returns_none() {
         let h = headers_with(&[]);
-        assert_eq!(extract_api_key(&h), None);
+        assert_eq!(extract_api_key(&h, None), None);
 
         let h = headers_with(&[("authorization", "Basic abc")]);
-        assert_eq!(extract_api_key(&h), None);
+        assert_eq!(extract_api_key(&h, None), None);
 
         let h = headers_with(&[("x-api-key", "   ")]);
-        assert_eq!(extract_api_key(&h), None);
+        assert_eq!(extract_api_key(&h, None), None);
     }
 
     #[test]

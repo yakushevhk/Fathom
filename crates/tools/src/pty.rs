@@ -155,7 +155,11 @@ impl PtyBroker {
         cmd.stdin(std::process::Stdio::piped());
         cmd.stdout(std::process::Stdio::piped());
         cmd.stderr(std::process::Stdio::piped());
-
+        #[cfg(unix)]
+        {
+            use std::os::unix::process::CommandExt;
+            cmd.process_group(0);
+        }
         let mut child = cmd.spawn().map_err(|e| {
             PrError::Tool(format!("Failed to spawn process '{}' ({}): {}", name, app, e))
         })?;
@@ -177,6 +181,10 @@ impl PtyBroker {
         let child_killer: Box<dyn FnOnce() + Send> = Box::new(move || {
             let mut guard = child_killer_arc.lock();
             if let Some(mut c) = guard.take() {
+                #[cfg(unix)]
+                unsafe {
+                    libc::killpg(pid as i32, libc::SIGKILL);
+                }
                 let _ = c.kill();
             }
         });
