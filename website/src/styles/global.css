@@ -547,10 +547,10 @@ html.js [data-reveal] {
   transform: translateY(22px);
   transition: opacity var(--rise-dur) var(--rise-ease), transform var(--rise-dur) var(--rise-ease);
 }
-.reveal.in-view,
-.reveal[data-in="true"],
-[data-reveal].in-view,
-[data-reveal][data-in="true"] {
+html.js .reveal.in-view,
+html.js .reveal[data-in="true"],
+html.js [data-reveal].in-view,
+html.js [data-reveal][data-in="true"] {
   opacity: 1;
   transform: none;
 }
@@ -638,8 +638,8 @@ html.js .reveal {
   transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
 }
 
-.reveal.in-view,
-.reveal[data-in="true"] {
+html.js .reveal.in-view,
+html.js .reveal[data-in="true"] {
   opacity: 1;
   transform: none;
 }
