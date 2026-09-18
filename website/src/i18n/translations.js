@@ -1,15 +1,4 @@
-export const LANGS = {
-  "en": {
-    "label": "EN",
-    "name": "English"
-  },
-  "ru": {
-    "label": "RU",
-    "name": "Русский"
-  }
-};
-
-export const DEFAULT_LANG = "en";
+export { LANGS, DEFAULT_LANG } from './langnav.js';
 
 export const translations = {
   "site": {
@@ -226,6 +215,22 @@ export const translations = {
     "mcp": {
       "en": "MCP",
       "ru": "MCP"
+    },
+    "demo": {
+      "en": "Live demo",
+      "ru": "Живое демо"
+    },
+    "video": {
+      "en": "Video showreel",
+      "ru": "Видео-шоурил"
+    },
+    "playground": {
+      "en": "Source explorer",
+      "ru": "Обозреватель исходного кода"
+    },
+    "source": {
+      "en": "Source &amp; tools",
+      "ru": "Код и инструменты"
     }
   },
   "arch": {
@@ -1268,7 +1273,10 @@ export const translations = {
       },
       "form": {
         "email_ph": { "en": "work@company.com", "ru": "work@company.com" },
+        "email_aria": { "en": "Work Email", "ru": "Рабочая почта" },
         "name_ph": { "en": "Your name or @telegram", "ru": "Ваше имя или @telegram" },
+        "name_aria": { "en": "Your Name or Telegram", "ru": "Ваше имя или Telegram" },
+        "scenario_aria": { "en": "Primary Scenario", "ru": "Основной сценарий" },
         "opt_outreach": { "en": "B2B Outbound SDR", "ru": "B2B Outbound SDR (лидогенерация)" },
         "opt_research": { "en": "Deep Market Intelligence", "ru": "Глубокий анализ рынка и OSINT" },
         "opt_code": { "en": "Code & Computer Work", "ru": "Код и автоматизация за компьютером" },
@@ -1485,7 +1493,11 @@ export const translations = {
     "aes256": { "en": "AES-256-GCM hardware key isolation", "ru": "Изоляция ключей AES-256-GCM" },
     "microbenchmarks": { "en": "Microbenchmarks", "ru": "Микробенчмарки" },
     "empiricalLatency": { "en": "Empirical latency & memory tests", "ru": "Эмпирические тесты задержки и памяти" },
-    "rustVsLangchain": { "en": "Rust vs LangChain / CrewAI comparison", "ru": "Сравнение Rust с LangChain / CrewAI" }
+    "rustVsLangchain": { "en": "Rust vs LangChain / CrewAI comparison", "ru": "Сравнение Rust с LangChain / CrewAI" },
+    "liveDemo": { "en": "Live Demo", "ru": "Живое демо" },
+    "liveDemoDesc": { "en": "Pick a worker & watch it plan and act", "ru": "Выберите воркера и смотрите, как он работает" },
+    "showreel": { "en": "Video Showreel", "ru": "Видео-шоурил" },
+    "showreelDesc": { "en": "3-minute screen recording tour", "ru": "Трёхминутный обзор экрана" }
   },
   "pricingCalc": {
     "sectionTitle": { "en": "Interactive Financial Modeling", "ru": "Интерактивный финансовый расчёт" },

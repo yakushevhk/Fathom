@@ -6,6 +6,7 @@ const posts = [
   {
     href: '/blog/benchmarks-repo-map',
     gradient: 'linear-gradient(160deg,#e9f0f5,#c9dfe9)',
+    mark: '31×',
     cat: 'Benchmarks',
     title: 'The benchmark that caught a 31× slowdown',
     meta: 'Aug 8, 2026 · Fathom Team',
@@ -13,6 +14,7 @@ const posts = [
   {
     href: '/blog/memory-that-remembers',
     gradient: 'linear-gradient(160deg,#f3efe9,#dcd1c0)',
+    mark: 'memory.append()',
     cat: 'Memory',
     title: 'A memory that remembers: append-only knowledge for research agents',
     meta: 'Aug 9, 2026 · Fathom Team',
@@ -20,6 +22,7 @@ const posts = [
   {
     href: '/blog/anatomy-of-fan-out',
     gradient: 'linear-gradient(160deg,#eef2e6,#cdd8b8)',
+    mark: '1 → N',
     cat: 'Architecture',
     title: 'Anatomy of a fan-out: one question, a fleet of agents',
     meta: 'Aug 10, 2026 · Fathom Team',
@@ -27,6 +30,7 @@ const posts = [
   {
     href: '/blog/verification-pipeline',
     gradient: 'linear-gradient(160deg,#f0e9ef,#d9c8d7)',
+    mark: '5 gates',
     cat: 'Verification',
     title: 'Five gates: how we verify every email before it hits the CRM',
     meta: 'Aug 10, 2026 · Fathom Team',
@@ -47,7 +51,9 @@ const posts = [
         {
           posts.map((p, i) => (
             <a class="blog-card" href={p.href}>
-              <div class="bc-thumb" style={`background:${p.gradient}`}></div>
+              <div class="bc-thumb" style={`background:${p.gradient}`}>
+                <span class="bc-mark">{p.mark}</span>
+              </div>
               <div class="bc-body">
                 <div class="bc-cat" data-i18n={'blog.post.' + i + '.cat'}>{p.cat}</div>
                 <div class="bc-title" data-i18n={'blog.post.' + i + '.title'}>{p.title}</div>
@@ -82,7 +88,26 @@ const posts = [
   .blog-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
   .blog-card { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); overflow: hidden; transition: transform .25s var(--ease-out), box-shadow .25s, border-color .25s; }
   .blog-card:hover { transform: translateY(-4px); border-color: var(--grey-400); box-shadow: 0 24px 50px -30px rgba(0, 0, 0, .3); }
-  .blog-card .bc-thumb { height: 220px; position: relative; overflow: hidden; }
+  .blog-card .bc-thumb { height: 220px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .blog-card .bc-thumb::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(0, 0, 0, .07) 1px, transparent 1px);
+    background-size: 14px 14px;
+  }
+  .blog-card .bc-thumb::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .18), rgba(0, 0, 0, .04));
+  }
+  .blog-card .bc-mark {
+    position: relative;
+    font-family: var(--font-mono);
+    font-size: clamp(30px, 4vw, 44px);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: rgba(20, 22, 26, .72);
+  }
   .blog-card .bc-body { padding: 20px; }
   .blog-card .bc-cat { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--grey-600); }
   .blog-card .bc-title { font-size: 17px; font-weight: 500; margin: 8px 0; letter-spacing: -.01em; line-height: 1.3; color: var(--grey-900); }

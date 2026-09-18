@@ -51,5 +51,25 @@ export default {
         ru: "Математические основы, многоагентные рои, DAG-оркестрация, методология бенчмарков и криптографические квитанции действий.",
       },
     },
+    demo: {
+      title: {
+        en: "Interactive Live Worker Demo — Fathom",
+        ru: "Интерактивное демо воркеров — Fathom",
+      },
+      desc: {
+        en: "Pick a worker, type a task, and watch it plan, run tools, absorb memory, verify, and deliver.",
+        ru: "Выберите воркера, опишите задачу и смотрите, как он планирует, вызывает инструменты и выдаёт результат.",
+      },
+    },
+    docs: {
+      title: {
+        en: "Documentation — Fathom",
+        ru: "Документация — Fathom",
+      },
+      desc: {
+        en: "Fathom documentation: quickstart, tools catalog, memory system, configuration, HTTP API, and architecture.",
+        ru: "Документация Fathom: быстрый старт, каталог инструментов, память, конфигурация, HTTP API и архитектура.",
+      },
+    },
   },
 };

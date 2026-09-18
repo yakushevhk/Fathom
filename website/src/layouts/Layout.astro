@@ -153,6 +153,14 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
                 <span class="nav-dropdown-title" data-i18n="nav.profiles">Worker Profiles</span>
                 <span class="nav-dropdown-desc" data-i18n="navDesc.sdrScoutMaintainer">SDR, scout, maintainer personas</span>
               </a>
+              <a href="/demo" class="nav-dropdown-item">
+                <span class="nav-dropdown-title" data-i18n="navDesc.liveDemo">Live Demo</span>
+                <span class="nav-dropdown-desc" data-i18n="navDesc.liveDemoDesc">Pick a worker &amp; watch it plan and act</span>
+              </a>
+              <a href="/video" class="nav-dropdown-item">
+                <span class="nav-dropdown-title" data-i18n="navDesc.showreel">Video Showreel</span>
+                <span class="nav-dropdown-desc" data-i18n="navDesc.showreelDesc">3-minute screen recording tour</span>
+              </a>
               <a href="/bot" class="nav-dropdown-item">
                 <span class="nav-dropdown-title" data-i18n="nav.bot">Fathom Bot</span>
                 <span class="nav-dropdown-desc" data-i18n="navDesc.chatAppBots">A chat app where every contact is an agent</span>
@@ -308,6 +316,7 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
             <a href="/memory" data-i18n="nav.memory">Memory</a>
             <a href="/security" data-i18n="nav.security">Security</a>
             <a href="/integrations" data-i18n="nav.integrations">Integrations</a>
+            <a href="/demo" data-i18n="footer.demo">Live demo</a>
           </div>
           <div class="foot-cols">
             <span class="c-title" data-i18n="footer.resources">Resources</span>
@@ -317,6 +326,9 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
             <a href="/osint" data-i18n="footer.osint">OSINT Playbook</a>
             <a href="/mcp" data-i18n="footer.mcp">MCP</a>
             <a href="/dashboard" data-i18n="footer.dashboard">Dashboard</a>
+            <a href="/code" data-i18n="footer.source">Source &amp; tools</a>
+            <a href="/playground" data-i18n="footer.playground">Source explorer</a>
+            <a href="/video" data-i18n="footer.video">Video showreel</a>
           </div>
           <div class="foot-cols">
             <span class="c-title" data-i18n="footer.company">Company</span>
@@ -712,7 +724,7 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
     </style>
 
     <script>
-      import { initI18n } from '../i18n/switcher.js';
+      import { initI18n } from '../i18n/langnav.js';
       import { initTheme } from '../theme.js';
       initI18n();
       initTheme();
