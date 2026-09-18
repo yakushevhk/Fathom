@@ -928,22 +928,57 @@ url       = <span class="code-string">"https://mcp.example.com"</span>`} /></pre
           <tr>
             <td><code>FATHOM_CREDENTIAL_KEY</code></td>
             <td>—</td>
-            <td>32-byte AES-256-GCM vault key, supplied as 64-character hex or base64</td>
+            <td data-i18n="docsConfig.env.credentialKey">32-byte AES-256-GCM vault key, supplied as 64-character hex or base64</td>
           </tr>
           <tr>
             <td><code>FATHOM_COMPUTER_SERVICE_URL</code></td>
             <td>—</td>
-            <td>Computer relay service URL (default: <code>http://127.0.0.1:8765</code>)</td>
+            <td data-i18n="docsConfig.env.computerServiceUrl">Computer relay service URL used by the HTTP API (default: <code>http://127.0.0.1:8765</code>)</td>
+          </tr>
+          <tr>
+            <td><code>COMPUTER_URL</code></td>
+            <td>—</td>
+            <td data-i18n="docsConfig.env.computerUrl">Computer service URL — enables the six <code>computer_*</code> tools for workers (http/https)</td>
           </tr>
           <tr>
             <td><code>COMPUTER_TOKEN</code></td>
             <td>—</td>
-            <td>Authentication token for the computer service or supervisor</td>
+            <td data-i18n="docsConfig.env.computerToken">Authentication token for the computer service or supervisor</td>
           </tr>
           <tr>
-            <td><code>COMPUTER_ALLOW_PRIVATE_HOSTS</code></td>
+            <td><code>COMPUTER_BASE_PORT</code></td>
             <td>—</td>
-            <td>Development-only override for private/localhost browser targets (default: false)</td>
+            <td data-i18n="docsConfig.env.computerBasePort">Supervisor: base host port for per-agent computer containers</td>
+          </tr>
+          <tr>
+            <td><code>COMPUTER_IMAGE</code></td>
+            <td>—</td>
+            <td data-i18n="docsConfig.env.computerImage">Supervisor: Docker image for computer containers</td>
+          </tr>
+          <tr>
+            <td><code>COMPUTER_NETWORK</code></td>
+            <td>—</td>
+            <td data-i18n="docsConfig.env.computerNetwork">Supervisor: Docker network for computer containers</td>
+          </tr>
+          <tr>
+            <td><code>FATHOM_GOVERNANCE_ENABLED</code></td>
+            <td>—</td>
+            <td data-i18n="docsConfig.env.governanceEnabled">Enable the governance layer (policy checks + audit) in the HTTP server</td>
+          </tr>
+          <tr>
+            <td><code>FATHOM_GOVERNANCE_POLICY</code></td>
+            <td>—</td>
+            <td data-i18n="docsConfig.env.governancePolicy">Path or inline definition of the governance policy</td>
+          </tr>
+          <tr>
+            <td><code>FATHOM_WEBHOOK_SECRET</code></td>
+            <td>—</td>
+            <td data-i18n="docsConfig.env.webhookSecret">HMAC secret for inbound webhooks — required; without it webhook ingestion is disabled</td>
+          </tr>
+          <tr>
+            <td><code>FATHOM_DISABLE_SANDBOX</code></td>
+            <td>—</td>
+            <td data-i18n="docsConfig.env.disableSandbox">Disable shell sandboxing (escape hatch for restricted environments)</td>
           </tr>
         </tbody>
       </table>

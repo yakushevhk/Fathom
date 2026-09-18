@@ -12,22 +12,57 @@ order: 4
   <p class="doc-lead" data-i18n="docsProtocolGui.lead">Fathom combines the TUI and HTTP/MCP interfaces with language-server code intelligence for repository work.</p>
 </div>
 
-## LSP integration
+<section id="lsp-overview">
+  <h2 data-i18n="docsProtocolGui.lspTitle">LSP integration</h2>
+  <p data-i18n="docsProtocolGui.lspP1">Fathom includes an <code>lsp</code> tool for code intelligence. It detects the project language, checks for the matching language server, and connects over stdio — one lazily-spawned client per project root.</p>
+  <p data-i18n="docsProtocolGui.lspP2">The tool is registered with the normal tool registry, so workers can call it from <code>fathom run</code>, <code>fathom tui</code>, <code>fathom serve</code>, or expose it to MCP clients via <code>fathom mcp-serve</code>.</p>
+</section>
 
-Fathom includes an `lsp` tool for code intelligence. It detects the project
-language, checks for the matching language server, and connects over stdio.
-Supported operations include document symbols, go-to-definition, find
-references, hover information, and workspace symbol search.
+<section id="lsp-actions">
+  <h2 data-i18n="docsProtocolGui.actionsTitle">Operations</h2>
+  <div class="mini-table-wrap">
+    <table class="mini-table">
+      <thead><tr><th data-i18n="docsProtocolGui.thAction">Action</th><th data-i18n="docsProtocolGui.thParams">Required params</th><th data-i18n="docsProtocolGui.thDesc">Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>document_symbols</code></td><td><code>file</code></td><td data-i18n="docsProtocolGui.a.symbols">List functions, classes and structs in a file</td></tr>
+        <tr><td><code>goto_definition</code></td><td><code>file, line, character</code></td><td data-i18n="docsProtocolGui.a.def">Jump to the symbol definition</td></tr>
+        <tr><td><code>find_references</code></td><td><code>file, line, character</code></td><td data-i18n="docsProtocolGui.a.refs">Find all usages across the codebase</td></tr>
+        <tr><td><code>hover</code></td><td><code>file, line, character</code></td><td data-i18n="docsProtocolGui.a.hover">Type signature and documentation at a position</td></tr>
+        <tr><td><code>workspace_symbols</code></td><td><code>query</code></td><td data-i18n="docsProtocolGui.a.wsSymbols">Global symbol search by name</td></tr>
+        <tr><td><code>rename</code></td><td><code>file, line, character, new_name</code></td><td data-i18n="docsProtocolGui.a.rename">Rename a symbol atomically across the project</td></tr>
+        <tr><td><code>code_actions</code></td><td><code>file, line, character</code></td><td data-i18n="docsProtocolGui.a.codeActions">List and apply compiler quick-fixes and auto-imports</td></tr>
+        <tr><td><code>rename_file</code></td><td><code>file, new_path</code></td><td data-i18n="docsProtocolGui.a.renameFile">Move a file and rewrite its imports project-wide</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p data-i18n="docsProtocolGui.actionsNote">Positions are 0-indexed lines and columns. Refactoring actions (<code>rename</code>, <code>code_actions</code>, <code>rename_file</code>) apply edits immediately by default — pass <code>apply: false</code> to preview the workspace edit without writing it.</p>
+</section>
 
-The integration currently maps common project languages to these servers:
-
-| Language | Server |
-| --- | --- |
-| Rust | `rust-analyzer` |
-| Python | `pyright-langserver --stdio` |
-| JavaScript / TypeScript | `typescript-language-server --stdio` |
-
-When a server is missing, Fathom attempts the available package-manager or
-`rustup` installation path, then reports a clear error if it cannot be found.
-The tool is registered with the normal tool registry and can be used from
-`fathom run`, `fathom tui`, `fathom serve`, or `fathom mcp-serve`.
+<section id="lsp-languages">
+  <h2 data-i18n="docsProtocolGui.langTitle">Language servers</h2>
+  <p data-i18n="docsProtocolGui.langSub">Fathom detects the language from file extensions and project markers, then maps it to a language server:</p>
+  <div class="mini-table-wrap">
+    <table class="mini-table">
+      <thead><tr><th data-i18n="docsProtocolGui.thLang">Language</th><th>Server</th></tr></thead>
+      <tbody>
+        <tr><td>Rust</td><td><code>rust-analyzer</code></td></tr>
+        <tr><td>Python</td><td><code>pyright-langserver --stdio</code></td></tr>
+        <tr><td>JavaScript / TypeScript</td><td><code>typescript-language-server --stdio</code></td></tr>
+        <tr><td>Go</td><td><code>gopls</code></td></tr>
+        <tr><td>C / C++</td><td><code>clangd</code></td></tr>
+        <tr><td>Java</td><td><code>jdtls</code></td></tr>
+        <tr><td>Kotlin</td><td><code>kotlin-language-server</code></td></tr>
+        <tr><td>Swift</td><td><code>sourcekit-lsp</code></td></tr>
+        <tr><td>Ruby</td><td><code>solargraph</code></td></tr>
+        <tr><td>PHP</td><td><code>intelephense</code></td></tr>
+        <tr><td>Lua</td><td><code>lua-language-server</code></td></tr>
+        <tr><td>Zig</td><td><code>zls</code></td></tr>
+        <tr><td>Haskell</td><td><code>haskell-language-server-wrapper</code></td></tr>
+        <tr><td>Elixir</td><td><code>elixir-ls</code></td></tr>
+        <tr><td>OCaml</td><td><code>ocamllsp</code></td></tr>
+        <tr><td>Dart</td><td><code>dart language-server</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p data-i18n="docsProtocolGui.langNote">When a server is missing, Fathom attempts the available package-manager or <code>rustup</code> installation path, then reports a clear error if it cannot be installed or found.</p>
+</section>
