@@ -1,0 +1,24 @@
+[package]
+name = "fathom-app"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+fathom-core = { path = "../fathom-core" }
+gpui.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio = { workspace = true, features = ["sync", "rt", "macros", "process", "io-util"] }
+reqwest.workspace = true
+futures.workspace = true
+anyhow.workspace = true
+uuid.workspace = true
+time.workspace = true
+dirs.workspace = true
+unicode-segmentation = "1"
+fathom-harness = { path = "../fathom-harness" }
+
+[[bin]]
+name = "fathombot"
+path = "src/main.rs"
