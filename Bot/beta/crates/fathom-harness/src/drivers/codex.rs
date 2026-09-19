@@ -85,14 +85,21 @@ impl EngineSession for CodexSession {
     ) {
         let mut args = vec!["exec".to_string(), "--json".to_string()];
         args.push("--sandbox".into());
-        args.push(if input.auto_approve {
-            "danger-full-access".into()
-        } else {
-            "workspace-write".into()
+        // Codex's Ask already runs workspace-write upstream; only Full opens
+        // the sandbox. Custom lands as workspace-write with the same review.
+        args.push(match input.approval_mode {
+            ApprovalMode::Full => "danger-full-access".into(),
+            _ => "workspace-write".into(),
         });
         if let Some(model) = &input.model {
             args.push("--model".into());
             args.push(model.clone());
+        }
+        if let Some(effort) = &input.effort {
+            if effort != "none" {
+                args.push("-c".into());
+                args.push(format!("model_reasoning_effort=\"{effort}\""));
+            }
         }
         let mut prompt = input.prompt.clone();
         if let Some(sys) = &input.system_prompt {

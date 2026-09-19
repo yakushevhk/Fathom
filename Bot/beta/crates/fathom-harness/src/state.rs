@@ -2,20 +2,27 @@
 
 use crate::drivers;
 use crate::engine::*;
+use crate::sessions::QueuedSend;
 use fathom_core::types::*;
 use fathom_core::Store;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Arc;
-use tokio::sync::{broadcast, Mutex};
+use tokio::sync::{broadcast, mpsc, Mutex};
 
 pub struct AppState {
     pub store: Store,
     /// SSE fan-out: every ServerEvent goes to every subscriber.
     pub bus: broadcast::Sender<ServerEvent>,
-    /// thread_id → live engine session.
+    /// session key (thread_id, or thread_id#bot_id in rooms) → live session.
     pub sessions: SessionMap,
     /// approval request_id → decision resolver.
     pub decisions: SharedDecisions,
+    /// Session keys with a turn in flight.
+    pub running: Mutex<HashSet<String>>,
+    /// Sends waiting behind a running turn, per session key.
+    pub queues: Mutex<HashMap<String, VecDeque<QueuedSend>>>,
+    /// Live stdin steer channels, per session key.
+    pub steers: Mutex<HashMap<String, mpsc::UnboundedSender<String>>>,
     drivers: HashMap<EngineKind, Arc<dyn EngineDriver>>,
 }
 
@@ -39,6 +46,9 @@ impl AppState {
             bus,
             sessions: new_session_map(),
             decisions: Arc::new(Mutex::new(HashMap::new())),
+            running: Mutex::new(HashSet::new()),
+            queues: Mutex::new(HashMap::new()),
+            steers: Mutex::new(HashMap::new()),
             drivers,
         })
     }

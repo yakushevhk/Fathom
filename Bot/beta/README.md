@@ -53,27 +53,62 @@ persisted in the store (`engines.<kind>` kv rows).
 
 ## Permissions
 
-Claude turns run with `--permission-prompt-tool stdio`: when the engine asks
-for approval, a `PermissionRequest` turn event parks a oneshot in the harness
-`decisions` map. The UI shows an inline approval card; `POST /api/approvals/{id}`
-with `{"decision":"allow"|"deny"}` resolves it. `auto_approve` per-bot or
-per-engine skips the prompt entirely (`--dangerously-skip-permissions`).
+Per-bot `approval_mode` mirrors OpenMausBot's five modes
+(`ask`/`edits`/`auto`/`full`/`custom`):
+
+- claude: `ask`/`custom` → interactive prompts; `edits`/`auto` →
+  `--permission-mode acceptEdits`; `full` → `--dangerously-skip-permissions`.
+- codex: `full` → `danger-full-access`, anything else → `workspace-write`.
+- `auto_approve` (legacy bool) is still accepted on PATCH and folds into
+  `approval_mode=auto`.
+
+When a permission prompt surfaces, a `PermissionRequest` parks a oneshot in the
+harness `decisions` map. `POST /api/approvals/{id}` with
+`{"decision":"allow"|"always"|"deny"|"<option>"}` resolves it; `always`
+adds the tool to the bot's `always_allow` list so future prompts auto-grant.
+Structured question cards (`options[]`) return the chosen option as the answer.
+
+Mid-turn **steering** works for stdin-driven sessions (claude): sending while a
+turn is running injects the message into the live session when `park_dms=false`;
+otherwise sends queue per thread and drain in order after the turn completes.
 
 ## API surface
 
 ```
 GET  /api/health
-GET  /api/config
+GET/PATCH /api/config                profile_name, analytics_enabled
 GET  /api/events                     SSE stream of ServerEvent
-GET/POST /api/bots                   list / create {name, engine, model?, soul?, cwd?}
-PATCH/DELETE /api/bots/{id}
+GET  /api/search?q=                  bots + rooms + message text search
+
+GET/POST /api/bots                   list / create {name, engine, model?, soul?, cwd?, title?}
+GET/PATCH/DELETE /api/bots/{id}      all bot fields incl. approval_mode,
+                                   always_allow, effort, pinned, hidden,
+                                   section, notifications, park_dms, avatar
+GET  /api/bots?archived=1            archived bots
 POST /api/bots/{id}/read             mark read (clears unread badge)
 GET/PUT /api/bots/{id}/soul          persona (SOUL.md, written to <data>/souls/)
 GET  /api/bots/{id}/thread           direct thread for a bot
-GET/POST /api/threads/{id}/messages  history / send {text, model?} — starts a turn
-POST /api/threads/{id}/stop          abort the running turn
+GET/POST /api/bots/{id}/threads      task threads list / create
+
+PATCH/DELETE /api/threads/{id}       {title?, pinned_message_id?} / delete
+GET/POST /api/threads/{id}/messages  history / send {text, model?, reply_to?,
+                                   attachments?[]id, sender?, via_api?}
+                                   — returns {user, pending} or {user, queued:true}
+POST /api/threads/{id}/stop          abort running turns (incl. room members)
+GET  /api/threads/{id}/export        markdown transcript download
+
+PATCH/DELETE /api/messages/{id}      edit text / delete
+POST /api/messages/{id}/reactions    toggle reaction {emoji, by}
+
+POST /api/attachments                raw bytes + x-file-name / content-type
+GET  /api/attachments/{id}           serve stored blob
+
+GET/POST /api/rooms                  rooms list / create {name, member_ids, responder}
+GET/PATCH/DELETE /api/rooms/{id}     responder ∈ member|everyone|mentions
+POST /api/rooms/{id}/read            clear room unread
+
 GET  /api/approvals                  pending approvals
-POST /api/approvals/{id}             resolve {decision: allow|deny|answer}
+POST /api/approvals/{id}             resolve {decision, reason?}
 GET  /api/engines                    probe status + model catalog + config
 PUT  /api/engines/{kind}             persist engine config
 GET  /api/models[?engine=..]         model catalog
@@ -81,23 +116,48 @@ GET  /api/computers                  companion computers (stub — returns [])
 ```
 
 All mutations publish `ServerEvent`s on the broadcast bus (`/api/events`):
-`message_upsert`, `bot_upsert`, `approval_upsert`, `thread_upsert`, `engines`,
-`turn_error`.
+`message_upsert`, `message_deleted`, `bot_upsert`, `room_upsert`,
+`thread_upsert`, `approval_upsert`, `engines`, `turn_error`.
 
 ## UI
 
-Dark sidebar roster (avatar, engine, last message, unread badge, working
-spinner), chat pane with user/bot bubbles, streamed thinking segments,
-tool-call cards, approval cards, markdown-lite code blocks, model picker per
-bot, new-bot dialog (name/engine/model/persona/cwd), per-bot profile editor
-(SOUL.md), settings dialog (per-engine binary/URL/key env/auto-approve), and a
+Dark sidebar roster (avatar, engine badge, last message, unread + waiting-on-
+you indicators, pinned ordering, custom sections, Rooms group, archived panel),
+chat pane with user/bot bubbles, `from_bot` + sender attribution for rooms,
+streamed thinking segments, tool-call cards, approval cards (allow / always /
+deny / option answers), flat reply quotes, reactions, message pin/delete,
+queued & steered chips, per-bot task picker (multi-thread), approval-mode
+selector, effort selector, model picker, attachment staging + inline images,
+global search, per-thread drafts, markdown export, archived-bot restore, and a
 stubbed computer panel for remote-companion bots.
 
-## Status vs OpenMausBot
+## Parity vs OpenMausBot
 
-Ported: roster, chat, streaming segments (text/thinking/tool use), approval
-loop, personas (SOUL.md), per-bot model+cwd, unread badges, engine probing and
-config, standalone harness server, SSE for external clients.
+Ported and verified end-to-end (`/api/*` exercised via curl):
 
-Not yet: companion iOS/Android app, Cloudflare remote relay, room threads
-(multi-bot), and the Electron shell — GPUI replaces it natively.
+| OpenMausBot | Bot/beta |
+|---|---|
+| approval modes ask/edits/auto/full/custom | `ApprovalMode` per bot, cycled in header/profile |
+| `autoApprove` legacy flag | folded into `approval_mode=auto` (accepts both on PATCH) |
+| always-allow list | `always_allow[]`, granted via `decision:"always"`, removable chips in profile |
+| permission/option question cards | `ApprovalRequest.options[]`, answered via decision=option label |
+| multi-thread tasks per bot | `bot.threads`, tasks dropdown + create/rename/delete |
+| rooms (multi-bot group chat) | `Room` type, `member|everyone|mentions` responders, `from_bot` attribution |
+| attachments | `attachments` table + blobs dir, upload/serve, inline image render |
+| reactions | `reactions[]` toggle per (emoji, by) |
+| reply-to / pin / delete / edit | `reply_to`, `Thread.pinned_message_id`, PATCH/DELETE routes |
+| steer + send queue | per-thread queue; mid-turn stdin injection (claude) or parked queue |
+| unread / waiting-on-you | unread counters on bots + rooms, `waiting_on_you` from pending approvals |
+| search | `/api/search?q=` across bots, rooms, message text |
+| export | `GET /api/threads/{id}/export` markdown |
+| drafts | per-thread composer drafts in kv store |
+| profile name / analytics opt-in | `GET/PATCH /api/config` |
+| effort levels none..max | `EFFORT_LEVELS`, passed to engines (`model_reasoning_effort` on codex) |
+| pinned/hidden/section roster metadata | stored + rendered (sections group, hidden → archive filter) |
+
+Intentionally out of scope for `beta` (OpenMausBot infra scale):
+fleet/teams management, cloud computers + VPS provisioning, browser engine,
+TTS/voice calls, Composio connectors, phone pairing, routines/goals scheduler,
+MCP registry UI, mobile apps, Cloudflare relay, Electron shell (GPUI replaces
+it). The wire types (`computer_id`, `Room`, `via_api`, `from_bot`) leave room
+for these without schema churn.

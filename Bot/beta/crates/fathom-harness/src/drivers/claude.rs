@@ -113,8 +113,16 @@ impl ClaudeSession {
             args.push("--model".into());
             args.push(model.clone());
         }
-        if input.auto_approve {
-            args.push("--dangerously-skip-permissions".into());
+        // Approval posture → claude's own permission mode.
+        match input.approval_mode {
+            ApprovalMode::Ask | ApprovalMode::Custom => {}
+            ApprovalMode::Edits | ApprovalMode::Auto => {
+                args.push("--permission-mode".into());
+                args.push("acceptEdits".into());
+            }
+            ApprovalMode::Full => {
+                args.push("--dangerously-skip-permissions".into());
+            }
         }
 
         let mut cmd = Command::new(&self.cli);
@@ -174,39 +182,54 @@ impl EngineSession for ClaudeSession {
         }
         let live = self.live.as_mut().unwrap();
 
-        let user = json!({
-            "type": "user",
-            "message": { "role": "user", "content": [{ "type": "text", "text": input.prompt }] },
-        });
-        if live
-            .stdin
-            .write_all(user.to_string().as_bytes())
-            .await
-            .is_err()
-            || live.stdin.write_all(b"\n").await.is_err()
-            || live.stdin.flush().await.is_err()
-        {
+        if !write_user(&mut live.stdin, &input.prompt).await {
             let _ = events.send(TurnEvent::Error("claude stdin closed".into()));
             self.live = None;
             return;
         }
 
+        // Mid-turn steer: queued user messages feed stdin while the turn runs.
+        let mut steer_rx = input.steer_rx;
+
         loop {
-            match live.rx.recv().await {
-                None => {
-                    let _ = events.send(TurnEvent::Error("claude process exited".into()));
-                    self.live = None;
-                    return;
-                }
-                Some(v) => {
-                    if !handle_event(&v, live, &events, &decisions).await {
-                        return;
+            tokio::select! {
+                line = live.rx.recv() => {
+                    match line {
+                        None => {
+                            let _ = events.send(TurnEvent::Error("claude process exited".into()));
+                            self.live = None;
+                            return;
+                        }
+                        Some(v) => {
+                            if !handle_event(&v, live, &events, &decisions).await {
+                                return;
+                            }
+                            if v.get("type").and_then(|t| t.as_str()) == Some("result") {
+                                let _ = events.send(TurnEvent::Done {
+                                    text: result_text(&v),
+                                });
+                                return;
+                            }
+                        }
                     }
-                    if v.get("type").and_then(|t| t.as_str()) == Some("result") {
-                        let _ = events.send(TurnEvent::Done {
-                            text: result_text(&v),
-                        });
-                        return;
+                }
+                steer = async {
+                    match steer_rx.as_mut() {
+                        Some(rx) => rx.recv().await,
+                        None => std::future::pending().await,
+                    }
+                } => {
+                    match steer {
+                        // Steered mid-turn: the reply keeps streaming into the
+                        // same pending message — keep folding.
+                        Some(text) => {
+                            if !write_user(&mut live.stdin, &text).await {
+                                let _ = events.send(TurnEvent::Error("claude stdin closed".into()));
+                                self.live = None;
+                                return;
+                            }
+                        }
+                        None => steer_rx = None,
                     }
                 }
             }
@@ -219,6 +242,17 @@ impl EngineSession for ClaudeSession {
             live.reader.abort();
         }
     }
+}
+
+/// Write one user-message line into claude's stdin stream.
+async fn write_user(stdin: &mut ChildStdin, text: &str) -> bool {
+    let user = json!({
+        "type": "user",
+        "message": { "role": "user", "content": [{ "type": "text", "text": text }] },
+    });
+    stdin.write_all(user.to_string().as_bytes()).await.is_ok()
+        && stdin.write_all(b"\n").await.is_ok()
+        && stdin.flush().await.is_ok()
 }
 
 /// Handle one stdout line. Returns false when the turn should stop early.
@@ -319,6 +353,7 @@ async fn handle_event(
                     request_id: request_id.clone(),
                     title: format!("{tool} wants to run"),
                     detail: detail.chars().take(800).collect(),
+                    tool: Some(tool.to_string()),
                 });
                 let decision = rx.await.unwrap_or(ApprovalDecision::Deny("closed".into()));
                 decisions.lock().await.remove(&request_id);

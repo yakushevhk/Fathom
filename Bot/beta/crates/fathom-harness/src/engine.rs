@@ -32,6 +32,8 @@ pub enum TurnEvent {
         request_id: String,
         title: String,
         detail: String,
+        /// Tool name — the key "always allow" grants remember.
+        tool: Option<String>,
     },
     /// Turn finished (final text in `text` when present).
     Done {
@@ -47,14 +49,32 @@ pub enum ApprovalDecision {
 }
 
 /// What the turn needs to run: prompt text + optional SOUL.md system prompt.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct TurnInput {
     pub prompt: String,
     pub system_prompt: Option<String>,
     pub model: Option<String>,
+    /// Reasoning effort hint (engines that accept it).
+    pub effort: Option<String>,
     pub cwd: Option<PathBuf>,
-    /// Auto-approve risky actions (skip permission prompts) where supported.
-    pub auto_approve: bool,
+    /// Canonical approval posture the driver maps onto provider flags.
+    pub approval_mode: ApprovalMode,
+    /// Tool names this bot may always run without asking.
+    pub always_allow: Vec<String>,
+    /// Local paths of attachments the user sent with this turn.
+    pub attachments: Vec<PathBuf>,
+    /// Display name of the human sender (room attribution into the prompt).
+    pub sender: Option<String>,
+    /// Mid-turn user messages for engines that can steer a live session
+    /// (claude stream-json stdin). Drivers ignore it when unsupported.
+    pub steer_rx: Option<tokio::sync::mpsc::UnboundedReceiver<String>>,
+}
+
+impl TurnInput {
+    /// Legacy flag kept for simple drivers: mode is Auto or Full.
+    pub fn auto_approve(&self) -> bool {
+        matches!(self.approval_mode, ApprovalMode::Auto | ApprovalMode::Full)
+    }
 }
 
 /// Pending permission decisions: request_id → resolver. Engines stash a

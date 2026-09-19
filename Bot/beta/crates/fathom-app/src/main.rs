@@ -72,15 +72,39 @@ fn main() {
                                             &ev
                                         {
                                             if !d.messages.contains_key(&message.thread_id) {
-                                                let msgs = d
-                                                    .harness
-                                                    .store
-                                                    .list_messages(&message.thread_id, 200, None)
-                                                    .unwrap_or_default();
-                                                d.messages.insert(message.thread_id.clone(), msgs);
+                                                d.load_thread(&message.thread_id);
                                             }
                                         }
                                         d.apply(&ev);
+                                        // Clear unread while the user is
+                                        // looking at this thread.
+                                        if let fathom_core::ServerEvent::MessageUpsert { message } =
+                                            &ev
+                                        {
+                                            if d.active_thread().as_deref()
+                                                == Some(&message.thread_id)
+                                            {
+                                                match &d.active {
+                                                    Some(crate::state::ChatTarget::Bot(b)) => {
+                                                        let _ = d.harness.store.mark_read(b);
+                                                        if let Ok(Some(bot)) =
+                                                            d.harness.store.get_bot(b)
+                                                        {
+                                                            d.apply(&fathom_core::ServerEvent::BotUpsert { bot });
+                                                        }
+                                                    }
+                                                    Some(crate::state::ChatTarget::Room(r)) => {
+                                                        let _ = d.harness.store.mark_room_read(r);
+                                                        if let Ok(Some(room)) =
+                                                            d.harness.store.get_room(r)
+                                                        {
+                                                            d.apply(&fathom_core::ServerEvent::RoomUpsert { room });
+                                                        }
+                                                    }
+                                                    None => {}
+                                                }
+                                            }
+                                        }
                                         d.reload();
                                         cx.notify();
                                     });
