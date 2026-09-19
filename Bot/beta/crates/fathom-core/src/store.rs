@@ -59,10 +59,87 @@ struct BotExtra {
     section: Option<String>,
     #[serde(default = "default_true")]
     park_dms: bool,
+    // --- WireBot parity fields ---
+    #[serde(default)]
+    projects: Vec<BotProject>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    model_variant: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    mascot_expression: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    mascot_body: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    avatar_crop: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    computer: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    cloud_backend: Option<String>,
+    #[serde(default)]
+    auto_start_vps: bool,
+    #[serde(default)]
+    speak_replies: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    voice: Option<String>,
+    #[serde(default)]
+    rewound: bool,
+    #[serde(default)]
+    chief_of_staff: bool,
+    #[serde(default)]
+    managed_sections: Vec<String>,
+    #[serde(default)]
+    approve_peer_comms: bool,
+    #[serde(default)]
+    peers: Vec<String>,
+    #[serde(default)]
+    composio: bool,
+    #[serde(default)]
+    browser: bool,
+    #[serde(default)]
+    mcp_servers: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    browser_profile: Option<String>,
+    #[serde(default)]
+    playbooks: Vec<InstalledPlaybook>,
 }
 
 fn default_true() -> bool {
     true
+}
+
+/// Thread fields that live in the `extra` JSON column.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+struct ThreadExtra {
+    #[serde(default)]
+    title_from_first_message: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    archived_at: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    cwd: Option<String>,
+    #[serde(default)]
+    rewound: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    turn_started_at: Option<i64>,
+}
+
+/// Room fields that live in the `extra` JSON column.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+struct RoomExtra {
+    #[serde(default)]
+    bulletin: String,
+    #[serde(default)]
+    dm: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    section: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    cwd: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    busy_bot_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    turn_started_at: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    setup_completed_at: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    setup_skipped_at: Option<i64>,
 }
 
 /// Message fields that live in the `extra` JSON column.
@@ -88,6 +165,31 @@ struct MsgExtra {
     queued: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     turn_id: Option<String>,
+    // --- WireMessage parity fields ---
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    parent_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    send_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    channel_mode: Option<String>,
+    #[serde(default)]
+    turn_terminal: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    queue_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    png: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    mime: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    comm: Option<CommChip>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    thread_ref: Option<ThreadRef>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    peer_post: Option<PeerRef>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    peer_ask: Option<PeerRef>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    room_request: Option<RoomRequest>,
 }
 
 impl Store {
@@ -113,6 +215,9 @@ impl Store {
         let conn = self.conn.lock().unwrap();
         ensure_column(&conn, "bots", "extra", "TEXT NOT NULL DEFAULT '{}'")?;
         ensure_column(&conn, "threads", "pinned_message_id", "TEXT")?;
+        ensure_column(&conn, "threads", "room_id", "TEXT")?;
+        ensure_column(&conn, "threads", "extra", "TEXT NOT NULL DEFAULT '{}'")?;
+        ensure_column(&conn, "rooms", "extra", "TEXT NOT NULL DEFAULT '{}'")?;
         ensure_column(&conn, "messages", "extra", "TEXT NOT NULL DEFAULT '{}'")?;
         ensure_column(&conn, "approvals", "tool", "TEXT")?;
         ensure_column(&conn, "approvals", "held", "TEXT")?;
@@ -140,6 +245,26 @@ impl Store {
             hidden: bot.hidden,
             section: bot.section.clone(),
             park_dms: bot.park_dms,
+            projects: bot.projects.clone(),
+            model_variant: bot.model_variant.clone(),
+            mascot_expression: bot.mascot_expression.clone(),
+            mascot_body: bot.mascot_body.clone(),
+            avatar_crop: bot.avatar_crop.clone(),
+            computer: bot.computer.clone(),
+            cloud_backend: bot.cloud_backend.clone(),
+            auto_start_vps: bot.auto_start_vps,
+            speak_replies: bot.speak_replies,
+            voice: bot.voice.clone(),
+            rewound: bot.rewound,
+            chief_of_staff: bot.chief_of_staff,
+            managed_sections: bot.managed_sections.clone(),
+            approve_peer_comms: bot.approve_peer_comms,
+            peers: bot.peers.clone(),
+            composio: bot.composio,
+            browser: bot.browser,
+            mcp_servers: bot.mcp_servers.clone(),
+            browser_profile: bot.browser_profile.clone(),
+            playbooks: bot.playbooks.clone(),
         })?;
         self.conn.lock().unwrap().execute(
             "INSERT INTO bots (id,name,engine,model,soul,avatar_seed,cwd,auto_approve,archived,computer_id,created_at,updated_at,last_message,last_activity_at,unread,working,extra)
@@ -163,7 +288,7 @@ impl Store {
     }
 
     pub fn get_bot(&self, id: &str) -> Result<Option<Bot>, StoreError> {
-        Ok(self
+        let bot = self
             .conn
             .lock()
             .unwrap()
@@ -172,7 +297,33 @@ impl Store {
                 params![id],
                 row_to_bot,
             )
-            .optional()?)
+            .optional()?;
+        Ok(bot.map(|mut b| {
+            self.decorate_bot(&mut b);
+            b
+        }))
+    }
+
+    /// Fill read-time fields: the SOUL.md mirror hash/drift and the active
+    /// thread's pinned message. Runs outside the connection lock.
+    fn decorate_bot(&self, b: &mut Bot) {
+        if let Ok(disk) = std::fs::read_to_string(self.soul_path(&b.id)) {
+            b.soul_hash = Some(fnv64(disk.as_bytes()));
+            b.soul_drift = disk != b.soul;
+        }
+        b.pinned_message_id = self
+            .conn
+            .lock()
+            .unwrap()
+            .query_row(
+                "SELECT pinned_message_id FROM threads WHERE bot_id=?1 AND kind='direct' ORDER BY created_at LIMIT 1",
+                params![b.id],
+                |r| r.get::<_, Option<String>>(0),
+            )
+            .optional()
+            .ok()
+            .flatten()
+            .flatten();
     }
 
     /// `archived=None` lists visible bots, `Some(true)` the archive,
@@ -189,6 +340,11 @@ impl Store {
         )?;
         let rows = stmt.query_map(params![archived], row_to_bot)?;
         let mut bots = rows.collect::<Result<Vec<_>, _>>()?;
+        drop(stmt);
+        drop(conn);
+        for b in &mut bots {
+            self.decorate_bot(b);
+        }
         if !archived {
             bots.retain(|b| !b.hidden);
         }
@@ -217,10 +373,18 @@ impl Store {
     // ---- threads ----------------------------------------------------------
 
     pub fn upsert_thread(&self, t: &Thread) -> Result<(), StoreError> {
+        let extra = serde_json::to_string(&ThreadExtra {
+            title_from_first_message: t.title_from_first_message,
+            archived_at: t.archived_at,
+            cwd: t.cwd.clone(),
+            rewound: t.rewound,
+            turn_started_at: t.turn_started_at,
+        })?;
         self.conn.lock().unwrap().execute(
-            "INSERT INTO threads (id,kind,bot_id,title,pinned_message_id,created_at,updated_at) VALUES (?1,?2,?3,?4,?5,?6,?7)
-             ON CONFLICT(id) DO UPDATE SET title=excluded.title, pinned_message_id=excluded.pinned_message_id, updated_at=excluded.updated_at",
-            params![t.id, t.kind, t.bot_id, t.title, t.pinned_message_id, t.created_at, t.updated_at],
+            "INSERT INTO threads (id,kind,bot_id,title,pinned_message_id,created_at,updated_at,room_id,extra) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)
+             ON CONFLICT(id) DO UPDATE SET title=excluded.title, pinned_message_id=excluded.pinned_message_id,
+               room_id=excluded.room_id, extra=excluded.extra, updated_at=excluded.updated_at",
+            params![t.id, t.kind, t.bot_id, t.title, t.pinned_message_id, t.created_at, t.updated_at, t.room_id, extra],
         )?;
         Ok(())
     }
@@ -231,7 +395,7 @@ impl Store {
             .lock()
             .unwrap()
             .query_row(
-                "SELECT id,kind,bot_id,title,pinned_message_id,created_at,updated_at FROM threads WHERE id=?1",
+                "SELECT id,kind,bot_id,title,pinned_message_id,created_at,updated_at,room_id,extra FROM threads WHERE id=?1",
                 params![id],
                 row_to_thread,
             )
@@ -242,9 +406,19 @@ impl Store {
     pub fn bot_threads(&self, bot_id: &str) -> Result<Vec<Thread>, StoreError> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
-            "SELECT id,kind,bot_id,title,pinned_message_id,created_at,updated_at FROM threads WHERE bot_id=?1 AND kind='direct' ORDER BY updated_at DESC",
+            "SELECT id,kind,bot_id,title,pinned_message_id,created_at,updated_at,room_id,extra FROM threads WHERE bot_id=?1 AND kind='direct' ORDER BY updated_at DESC",
         )?;
         let rows = stmt.query_map(params![bot_id], row_to_thread)?;
+        Ok(rows.collect::<Result<_, _>>()?)
+    }
+
+    /// All task threads a room owns (GroupTask list), newest first.
+    pub fn room_threads(&self, room_id: &str) -> Result<Vec<Thread>, StoreError> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT id,kind,bot_id,title,pinned_message_id,created_at,updated_at,room_id,extra FROM threads WHERE room_id=?1 ORDER BY updated_at DESC",
+        )?;
+        let rows = stmt.query_map(params![room_id], row_to_thread)?;
         Ok(rows.collect::<Result<_, _>>()?)
     }
 
@@ -259,13 +433,63 @@ impl Store {
             id: new_id("th"),
             kind: "direct".into(),
             bot_id: Some(bot_id.into()),
+            room_id: None,
             title,
             pinned_message_id: None,
+            title_from_first_message: false,
+            archived_at: None,
+            cwd: None,
+            rewound: false,
+            turn_started_at: None,
             created_at: now,
             updated_at: now,
         };
         self.upsert_thread(&t)?;
         Ok(t)
+    }
+
+    /// Create a task thread inside a room (GroupTask channel).
+    pub fn new_room_thread(
+        &self,
+        room_id: &str,
+        title: Option<String>,
+    ) -> Result<Thread, StoreError> {
+        let now = now_ms();
+        let t = Thread {
+            id: new_id("th"),
+            kind: "room".into(),
+            bot_id: None,
+            room_id: Some(room_id.into()),
+            title,
+            pinned_message_id: None,
+            title_from_first_message: false,
+            archived_at: None,
+            cwd: None,
+            rewound: false,
+            turn_started_at: None,
+            created_at: now,
+            updated_at: now,
+        };
+        self.upsert_thread(&t)?;
+        Ok(t)
+    }
+
+    /// Set the thread title from its first user message exactly once —
+    /// never overwrites a title the person already set.
+    pub fn title_thread_once(&self, thread_id: &str, title: &str) -> Result<bool, StoreError> {
+        let changed = self.conn.lock().unwrap().execute(
+            "UPDATE threads SET title=?2, extra=json_set(COALESCE(extra,'{}'),'$.title_from_first_message',1), updated_at=?3
+             WHERE id=?1 AND title IS NULL",
+            params![thread_id, title, now_ms()],
+        )?;
+        if changed == 0 {
+            // Still flip the flag so later sends don't retry.
+            self.conn.lock().unwrap().execute(
+                "UPDATE threads SET extra=json_set(COALESCE(extra,'{}'),'$.title_from_first_message',1) WHERE id=?1",
+                params![thread_id],
+            )?;
+        }
+        Ok(changed > 0)
     }
 
     pub fn delete_thread(&self, id: &str) -> Result<(), StoreError> {
@@ -283,7 +507,7 @@ impl Store {
             .lock()
             .unwrap()
             .query_row(
-                "SELECT id,kind,bot_id,title,pinned_message_id,created_at,updated_at FROM threads WHERE bot_id=?1 AND kind='direct' ORDER BY created_at LIMIT 1",
+                "SELECT id,kind,bot_id,title,pinned_message_id,created_at,updated_at,room_id,extra FROM threads WHERE bot_id=?1 AND kind='direct' ORDER BY created_at LIMIT 1",
                 params![bot_id],
                 row_to_thread,
             )
@@ -294,34 +518,87 @@ impl Store {
         self.new_task_thread(bot_id, None)
     }
 
+    /// Idempotent-send lookup: find the user message a retry would duplicate.
+    pub fn find_by_send_id(
+        &self,
+        thread_id: &str,
+        send_id: &str,
+    ) -> Result<Option<Message>, StoreError> {
+        Ok(self
+            .conn
+            .lock()
+            .unwrap()
+            .query_row(
+                "SELECT id,thread_id,role,text,engine,model,segments,pending,error,created_at,extra FROM messages
+                 WHERE thread_id=?1 AND json_extract(extra,'$.send_id')=?2 LIMIT 1",
+                params![thread_id, send_id],
+                row_to_message,
+            )
+            .optional()?)
+    }
+
     // ---- rooms --------------------------------------------------------------
 
     pub fn upsert_room(&self, r: &Room) -> Result<(), StoreError> {
+        let extra = serde_json::to_string(&RoomExtra {
+            bulletin: r.bulletin.clone(),
+            dm: r.dm,
+            section: r.section.clone(),
+            cwd: r.cwd.clone(),
+            busy_bot_id: r.busy_bot_id.clone(),
+            turn_started_at: r.turn_started_at,
+            setup_completed_at: r.setup_completed_at,
+            setup_skipped_at: r.setup_skipped_at,
+        })?;
         self.conn.lock().unwrap().execute(
-            "INSERT INTO rooms (id,name,member_ids,thread_id,responder,unread,last_message,last_activity_at,created_at,updated_at)
-             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)
+            "INSERT INTO rooms (id,name,member_ids,thread_id,responder,unread,last_message,last_activity_at,created_at,updated_at,extra)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)
              ON CONFLICT(id) DO UPDATE SET name=excluded.name, member_ids=excluded.member_ids,
-               responder=excluded.responder, unread=excluded.unread, last_message=excluded.last_message,
-               last_activity_at=excluded.last_activity_at, updated_at=excluded.updated_at",
+               responder=excluded.responder, thread_id=excluded.thread_id, unread=excluded.unread,
+               last_message=excluded.last_message,
+               last_activity_at=excluded.last_activity_at, updated_at=excluded.updated_at, extra=excluded.extra",
             params![
                 r.id, r.name, serde_json::to_string(&r.member_ids)?, r.thread_id,
                 serde_json::to_string(&r.responder)?,
-                r.unread, r.last_message, r.last_activity_at, r.created_at, r.updated_at,
+                r.unread, r.last_message, r.last_activity_at, r.created_at, r.updated_at, extra,
             ],
         )?;
+        Ok(())
+    }
+
+    /// Set/clear the transient busy-speaker fields on a room.
+    pub fn set_room_busy(&self, room_id: &str, bot_id: Option<&str>) -> Result<(), StoreError> {
+        if let Some(mut r) = self.get_room(room_id)? {
+            r.busy_bot_id = bot_id.map(|s| s.to_string());
+            r.turn_started_at = bot_id.map(|_| now_ms());
+            self.upsert_room(&r)?;
+        }
         Ok(())
     }
 
     fn room_from_row(r: &rusqlite::Row) -> rusqlite::Result<Room> {
         let members: String = r.get(2)?;
         let responder: String = r.get(4)?;
+        let extra_raw: Option<String> = r.get(10).ok();
+        let extra: RoomExtra = extra_raw
+            .as_deref()
+            .and_then(|s| serde_json::from_str(s).ok())
+            .unwrap_or_default();
         Ok(Room {
             id: r.get(0)?,
             name: r.get(1)?,
             member_ids: serde_json::from_str(&members).unwrap_or_default(),
             thread_id: r.get(3)?,
             responder: serde_json::from_str(&responder).unwrap_or_default(),
+            bulletin: extra.bulletin,
+            dm: extra.dm,
+            section: extra.section,
+            cwd: extra.cwd,
             working: false,
+            busy_bot_id: extra.busy_bot_id,
+            turn_started_at: extra.turn_started_at,
+            setup_completed_at: extra.setup_completed_at,
+            setup_skipped_at: extra.setup_skipped_at,
             unread: r.get(5)?,
             last_message: r.get(6)?,
             last_activity_at: r.get(7)?,
@@ -336,20 +613,31 @@ impl Store {
             .lock()
             .unwrap()
             .query_row(
-                "SELECT id,name,member_ids,thread_id,responder,unread,last_message,last_activity_at,created_at,updated_at FROM rooms WHERE id=?1",
+                "SELECT id,name,member_ids,thread_id,responder,unread,last_message,last_activity_at,created_at,updated_at,extra FROM rooms WHERE id=?1",
                 params![id],
                 Self::room_from_row,
             )
             .optional()?)
     }
 
+    /// The room that owns a thread — via the room's active thread_id or a
+    /// task thread carrying room_id (GroupTask channels).
     pub fn get_room_by_thread(&self, thread_id: &str) -> Result<Option<Room>, StoreError> {
-        Ok(self
-            .conn
-            .lock()
-            .unwrap()
+        let conn = self.conn.lock().unwrap();
+        if let Some(r) = conn
             .query_row(
-                "SELECT id,name,member_ids,thread_id,responder,unread,last_message,last_activity_at,created_at,updated_at FROM rooms WHERE thread_id=?1",
+                "SELECT id,name,member_ids,thread_id,responder,unread,last_message,last_activity_at,created_at,updated_at,extra FROM rooms WHERE thread_id=?1",
+                params![thread_id],
+                Self::room_from_row,
+            )
+            .optional()?
+        {
+            return Ok(Some(r));
+        }
+        Ok(conn
+            .query_row(
+                "SELECT r.id,r.name,r.member_ids,r.thread_id,r.responder,r.unread,r.last_message,r.last_activity_at,r.created_at,r.updated_at,r.extra
+                 FROM rooms r JOIN threads t ON t.room_id = r.id WHERE t.id=?1",
                 params![thread_id],
                 Self::room_from_row,
             )
@@ -359,7 +647,7 @@ impl Store {
     pub fn list_rooms(&self) -> Result<Vec<Room>, StoreError> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
-            "SELECT id,name,member_ids,thread_id,responder,unread,last_message,last_activity_at,created_at,updated_at FROM rooms ORDER BY COALESCE(last_activity_at, created_at) DESC",
+            "SELECT id,name,member_ids,thread_id,responder,unread,last_message,last_activity_at,created_at,updated_at,extra FROM rooms ORDER BY COALESCE(last_activity_at, created_at) DESC",
         )?;
         let rows = stmt.query_map([], Self::room_from_row)?;
         Ok(rows.collect::<Result<_, _>>()?)
@@ -424,6 +712,18 @@ impl Store {
             steered: m.steered,
             queued: m.queued,
             turn_id: m.turn_id.clone(),
+            parent_id: m.parent_id.clone(),
+            send_id: m.send_id.clone(),
+            channel_mode: m.channel_mode.clone(),
+            turn_terminal: m.turn_terminal,
+            queue_id: m.queue_id.clone(),
+            png: m.png.clone(),
+            mime: m.mime.clone(),
+            comm: m.comm.clone(),
+            thread_ref: m.thread_ref.clone(),
+            peer_post: m.peer_post.clone(),
+            peer_ask: m.peer_ask.clone(),
+            room_request: m.room_request.clone(),
         })?;
         self.conn.lock().unwrap().execute(
             "INSERT INTO messages (id,thread_id,role,text,engine,model,segments,pending,error,created_at,extra)
@@ -507,7 +807,7 @@ impl Store {
     /// Full-text-ish search across transcripts (LIKE on text + segments).
     pub fn search_messages(&self, q: &str, limit: i64) -> Result<Vec<Message>, StoreError> {
         let conn = self.conn.lock().unwrap();
-        let like = format!("%{}%", q.replace('%', "").replace('_', ""));
+        let like = format!("%{}%", q.replace(['%', '_'], ""));
         let mut stmt = conn.prepare(
             "SELECT id,thread_id,role,text,engine,model,segments,pending,error,created_at,extra FROM messages
              WHERE text LIKE ?1 ORDER BY created_at DESC LIMIT ?2",
@@ -596,6 +896,37 @@ impl Store {
         let refs: Vec<&dyn rusqlite::ToSql> = p.iter().map(|b| b.as_ref()).collect();
         let rows = stmt.query_map(refs.as_slice(), row_to_approval)?;
         Ok(rows.collect::<Result<_, _>>()?)
+    }
+
+    /// Decision log — all approvals (any status), newest first (`/api/decisions`).
+    pub fn recent_approvals(&self, limit: i64) -> Result<Vec<ApprovalRequest>, StoreError> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT id,bot_id,thread_id,request_id,kind,title,detail,tool,held,options,status,response,created_at FROM approvals ORDER BY created_at DESC LIMIT ?1",
+        )?;
+        let rows = stmt.query_map(params![limit], row_to_approval)?;
+        Ok(rows.collect::<Result<_, _>>()?)
+    }
+
+    /// Distinct sidebar section labels across bots and rooms.
+    pub fn sidebar_sections(&self) -> Result<Vec<String>, StoreError> {
+        let mut out: Vec<String> = Vec::new();
+        for b in self.list_bots_filtered(false)? {
+            if let Some(s) = b.section {
+                if !s.is_empty() && !out.contains(&s) {
+                    out.push(s);
+                }
+            }
+        }
+        for r in self.list_rooms()? {
+            if let Some(s) = r.section {
+                if !s.is_empty() && !out.contains(&s) {
+                    out.push(s);
+                }
+            }
+        }
+        out.sort();
+        Ok(out)
     }
 
     // ---- attachments ----------------------------------------------------------
@@ -718,6 +1049,16 @@ impl Store {
     }
 }
 
+/// FNV-1a 64 — stable content hash for the SOUL.md mirror (drift detection).
+fn fnv64(bytes: &[u8]) -> String {
+    let mut h: u64 = 0xcbf29ce484222325;
+    for b in bytes {
+        h ^= *b as u64;
+        h = h.wrapping_mul(0x100000001b3);
+    }
+    format!("{h:016x}")
+}
+
 fn ensure_column(conn: &Connection, table: &str, col: &str, def: &str) -> Result<(), StoreError> {
     let mut stmt = conn.prepare(&format!("PRAGMA table_info({table})"))?;
     let cols: Vec<String> = stmt
@@ -769,10 +1110,38 @@ fn row_to_bot(r: &rusqlite::Row) -> rusqlite::Result<Bot> {
         unread: r.get(14)?,
         working: r.get(15)?,
         waiting_on_you: false,
+        projects: extra.projects,
+        model_variant: extra.model_variant,
+        soul_hash: None,
+        soul_drift: false,
+        mascot_expression: extra.mascot_expression,
+        mascot_body: extra.mascot_body,
+        avatar_crop: extra.avatar_crop,
+        computer: extra.computer,
+        cloud_backend: extra.cloud_backend,
+        auto_start_vps: extra.auto_start_vps,
+        speak_replies: extra.speak_replies,
+        voice: extra.voice,
+        rewound: extra.rewound,
+        chief_of_staff: extra.chief_of_staff,
+        managed_sections: extra.managed_sections,
+        approve_peer_comms: extra.approve_peer_comms,
+        peers: extra.peers,
+        composio: extra.composio,
+        browser: extra.browser,
+        mcp_servers: extra.mcp_servers,
+        browser_profile: extra.browser_profile,
+        playbooks: extra.playbooks,
+        pinned_message_id: None,
     })
 }
 
 fn row_to_thread(r: &rusqlite::Row) -> rusqlite::Result<Thread> {
+    let extra_raw: Option<String> = r.get(8).ok();
+    let extra: ThreadExtra = extra_raw
+        .as_deref()
+        .and_then(|s| serde_json::from_str(s).ok())
+        .unwrap_or_default();
     Ok(Thread {
         id: r.get(0)?,
         kind: r.get(1)?,
@@ -781,6 +1150,12 @@ fn row_to_thread(r: &rusqlite::Row) -> rusqlite::Result<Thread> {
         pinned_message_id: r.get(4)?,
         created_at: r.get(5)?,
         updated_at: r.get(6)?,
+        room_id: r.get(7)?,
+        title_from_first_message: extra.title_from_first_message,
+        archived_at: extra.archived_at,
+        cwd: extra.cwd,
+        rewound: extra.rewound,
+        turn_started_at: extra.turn_started_at,
     })
 }
 
@@ -819,6 +1194,18 @@ fn row_to_message(r: &rusqlite::Row) -> rusqlite::Result<Message> {
         pending: r.get(7)?,
         error: r.get(8)?,
         created_at: r.get(9)?,
+        parent_id: extra.parent_id,
+        send_id: extra.send_id,
+        channel_mode: extra.channel_mode,
+        turn_terminal: extra.turn_terminal,
+        queue_id: extra.queue_id,
+        png: extra.png,
+        mime: extra.mime,
+        comm: extra.comm,
+        thread_ref: extra.thread_ref,
+        peer_post: extra.peer_post,
+        peer_ask: extra.peer_ask,
+        room_request: extra.room_request,
     })
 }
 
@@ -835,6 +1222,9 @@ fn row_to_approval(r: &rusqlite::Row) -> rusqlite::Result<ApprovalRequest> {
         detail: r.get(6)?,
         tool: r.get(7)?,
         held: r.get(8)?,
+        held_code: None,
+        allow_session: true,
+        dismissed: false,
         options: serde_json::from_str(&options).unwrap_or_default(),
         status: match status.as_str() {
             "allowed" => ApprovalStatus::Allowed,
@@ -874,7 +1264,9 @@ CREATE TABLE IF NOT EXISTS threads (
   title TEXT,
   pinned_message_id TEXT,
   created_at INTEGER NOT NULL,
-  updated_at INTEGER NOT NULL
+  updated_at INTEGER NOT NULL,
+  room_id TEXT,
+  extra TEXT NOT NULL DEFAULT '{}'
 );
 CREATE TABLE IF NOT EXISTS rooms (
   id TEXT PRIMARY KEY,
@@ -886,7 +1278,8 @@ CREATE TABLE IF NOT EXISTS rooms (
   last_message TEXT,
   last_activity_at INTEGER,
   created_at INTEGER NOT NULL,
-  updated_at INTEGER NOT NULL
+  updated_at INTEGER NOT NULL,
+  extra TEXT NOT NULL DEFAULT '{}'
 );
 CREATE TABLE IF NOT EXISTS messages (
   id TEXT PRIMARY KEY,

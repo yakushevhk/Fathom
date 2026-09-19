@@ -90,10 +90,13 @@ GET/PUT /api/bots/{id}/soul          persona (SOUL.md, written to <data>/souls/)
 GET  /api/bots/{id}/thread           direct thread for a bot
 GET/POST /api/bots/{id}/threads      task threads list / create
 
-PATCH/DELETE /api/threads/{id}       {title?, pinned_message_id?} / delete
+GET/PATCH/DELETE /api/threads/{id}   read / {title?, pinned_message_id?, cwd?,
+                                   archived_at?} / delete
 GET/POST /api/threads/{id}/messages  history / send {text, model?, reply_to?,
-                                   attachments?[]id, sender?, via_api?}
-                                   — returns {user, pending} or {user, queued:true}
+                                   attachments?[]id, sender?, via_api?,
+                                   send_id? (dedupe), channel_mode?}
+                                   — returns {user, pending} | {user, queued}
+                                   | {user, deduped:true}
 POST /api/threads/{id}/stop          abort running turns (incl. room members)
 GET  /api/threads/{id}/export        markdown transcript download
 
@@ -103,23 +106,43 @@ POST /api/messages/{id}/reactions    toggle reaction {emoji, by}
 POST /api/attachments                raw bytes + x-file-name / content-type
 GET  /api/attachments/{id}           serve stored blob
 
-GET/POST /api/rooms                  rooms list / create {name, member_ids, responder}
+GET/POST /api/rooms                  rooms list / create {name, member_ids,
+                                   responder, bulletin?, section?, cwd?, dm?}
 GET/PATCH/DELETE /api/rooms/{id}     responder is serde-tagged:
                                    {"kind":"member","bot_id":"…"} |
                                    {"kind":"everyone"} | {"kind":"mentions"}
+                                   also: thread_id (task switch), bulletin,
+                                   section, cwd, setup_completed/skipped
+GET/POST /api/rooms/{id}/threads     task threads inside a room
 POST /api/rooms/{id}/read            clear room unread
+/api/groups*                         wire-name aliases for /api/rooms*
 
 GET  /api/approvals                  pending approvals
 POST /api/approvals/{id}             resolve {decision, reason?}
+GET  /api/decisions                  recent resolved approvals (audit log)
+GET  /api/sidebar-sections           distinct bot section labels
 GET  /api/engines                    probe status + model catalog + config
 PUT  /api/engines/{kind}             persist engine config
 GET  /api/models[?engine=..]         model catalog
+POST /api/cli-test                   probe a CLI engine ({engine} → {installed})
+GET  /api/cli-candidates             resolved CLI path per engine
+GET  /api/usage + /api/usage.csv     per-bot message/reply counters
+GET  /api/files[?path=]              directory listing for the cwd picker
+GET/POST/DELETE /api/mcp/servers     app-wide MCP server registry (kv)
 GET  /api/computers                  companion computers (stub — returns [])
+
+POST /api/internal/ask-bot           engine tool: synchronous peer question
+POST /api/internal/delegate-bot      engine tool: spawn a task on a peer
+POST /api/internal/post-to-room      engine tool: post into a room as a bot
+POST /api/internal/coordinate-bots   engine tool: spin up a room + directive
+                                     (all gated by bot.approve_peer_comms and
+                                      restricted by bot.peers)
 ```
 
 All mutations publish `ServerEvent`s on the broadcast bus (`/api/events`):
 `message_upsert`, `message_deleted`, `bot_upsert`, `room_upsert`,
-`thread_upsert`, `approval_upsert`, `engines`, `turn_error`.
+`thread_upsert`, `approval_upsert`, `engines`, `turn_error`,
+`queued_messages`, `bot_deleted`, `room_deleted`, `notify`.
 
 ## UI
 
@@ -156,10 +179,23 @@ Ported and verified end-to-end (`/api/*` exercised via curl):
 | profile name / analytics opt-in | `GET/PATCH /api/config` |
 | effort levels none..max | `EFFORT_LEVELS`, passed to engines (`model_reasoning_effort` on codex) |
 | pinned/hidden/section roster metadata | stored + rendered (sections group, hidden → archive filter) |
+| send_id dedupe / auto-title | `find_by_send_id` short-circuit; `title_from_first_message` |
+| thread cwd / archive / rewind flags | `Thread.{cwd, archived_at, rewound, turn_started_at}` in `extra` |
+| room tasks + bulletin + room cwd | `room_threads`, `Room.{bulletin, section, cwd, busy_bot_id}` |
+| wire "groups" naming | `/api/groups*` alias routes on top of `/api/rooms*` |
+| peer comms (ask / delegate / post / coordinate) | `/api/internal/*` endpoints + `approve_peer_comms` approval card + `peers` allow-list |
+| decisions log / sidebar sections | `GET /api/decisions`, `GET /api/sidebar-sections` |
+| usage counters | `GET /api/usage` + `.csv` export |
+| cwd file picker | `GET /api/files` directory listing |
+| MCP server registry | `GET/POST/DELETE /api/mcp/servers` (kv), `bot.mcp_servers` mount list |
+| CLI probe/candidates | `POST /api/cli-test`, `GET /api/cli-candidates` |
+| notification toasts | `ServerEvent::Notify` → in-app toast overlay |
+| wire parity fields | `projects`, `model_variant`, `soul_hash/drift`, `mascot_*`, `avatar_crop`, `computer`, `cloud_backend`, `auto_start_vps`, `speak_replies`, `voice`, `rewound`, `chief_of_staff`, `managed_sections`, `composio`, `browser`, `browser_profile`, `playbooks`, `approve_peer_comms`, `peers`, `pinned_message_id` |
 
 Intentionally out of scope for `beta` (OpenMausBot infra scale):
-fleet/teams management, cloud computers + VPS provisioning, browser engine,
-TTS/voice calls, Composio connectors, phone pairing, routines/goals scheduler,
-MCP registry UI, mobile apps, Cloudflare relay, Electron shell (GPUI replaces
-it). The wire types (`computer_id`, `Room`, `via_api`, `from_bot`) leave room
-for these without schema churn.
+fleet/teams management, cloud computers + VPS provisioning, browser engine
+execution, live TTS/voice calls, live Composio connectors, phone pairing,
+routines/goals scheduler, webhooks, auth tokens, mobile apps, Cloudflare
+relay, Electron shell (GPUI replaces it). The wire fields (`computer`,
+`speak_replies`, `voice`, `composio`, `browser`, `projects`, `playbooks`, …)
+are already persisted/patched, so filling in the runtimes is additive.

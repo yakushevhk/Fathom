@@ -11,7 +11,7 @@ use axum::routing::{get, post, put};
 use axum::{Json, Router};
 use fathom_core::types::*;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::convert::Infallible;
 use std::sync::Arc;
 use tower_http::cors::CorsLayer;
@@ -38,7 +38,7 @@ pub fn router(state: Arc<AppState>) -> Router {
         )
         .route(
             "/api/threads/{id}",
-            axum::routing::patch(patch_thread).delete(delete_thread),
+            get(get_thread).patch(patch_thread).delete(delete_thread),
         )
         .route(
             "/api/threads/{id}/messages",
@@ -58,7 +58,45 @@ pub fn router(state: Arc<AppState>) -> Router {
             "/api/rooms/{id}",
             get(get_room).patch(patch_room).delete(delete_room),
         )
+        .route(
+            "/api/rooms/{id}/threads",
+            get(list_room_threads).post(create_room_thread),
+        )
         .route("/api/rooms/{id}/read", post(mark_room_read))
+        // Wire name for rooms is "groups" — alias the same handlers.
+        .route("/api/groups", get(list_rooms).post(create_room))
+        .route(
+            "/api/groups/{id}",
+            get(get_room).patch(patch_room).delete(delete_room),
+        )
+        .route(
+            "/api/groups/{id}/threads",
+            get(list_room_threads).post(create_room_thread),
+        )
+        .route("/api/groups/{id}/read", post(mark_room_read))
+        .route("/api/decisions", get(list_decisions))
+        .route("/api/sidebar-sections", get(sidebar_sections))
+        .route("/api/cli-test", post(cli_test))
+        .route("/api/usage", get(usage))
+        .route("/api/usage.csv", get(usage_csv))
+        .route("/api/files", get(list_files))
+        .route("/api/cli-candidates", get(cli_candidates))
+        .route(
+            "/api/mcp/servers",
+            get(list_mcp_servers).post(add_mcp_server),
+        )
+        .route(
+            "/api/mcp/servers/{name}",
+            axum::routing::delete(del_mcp_server),
+        )
+        // Peer comms — the bot↔bot internal tools (engines call these).
+        .route("/api/internal/ask-bot", post(internal_ask_bot))
+        .route("/api/internal/delegate-bot", post(internal_delegate_bot))
+        .route("/api/internal/post-to-room", post(internal_post_to_room))
+        .route(
+            "/api/internal/coordinate-bots",
+            post(internal_coordinate_bots),
+        )
         .route("/api/approvals", get(list_approvals))
         .route("/api/approvals/{id}", post(resolve_approval))
         .route("/api/engines", get(list_engines))
@@ -233,6 +271,29 @@ async fn create_bot(
         unread: 0,
         working: false,
         waiting_on_you: false,
+        projects: vec![],
+        model_variant: None,
+        soul_hash: None,
+        soul_drift: false,
+        mascot_expression: None,
+        mascot_body: None,
+        avatar_crop: None,
+        computer: None,
+        cloud_backend: None,
+        auto_start_vps: false,
+        speak_replies: false,
+        voice: None,
+        rewound: false,
+        chief_of_staff: false,
+        managed_sections: vec![],
+        approve_peer_comms: false,
+        peers: vec![],
+        composio: false,
+        browser: false,
+        mcp_servers: vec![],
+        browser_profile: None,
+        playbooks: vec![],
+        pinned_message_id: None,
     };
     let _ = s.store.upsert_bot(&bot);
     let _ = s.store.write_soul(&id, &soul);
@@ -264,6 +325,26 @@ struct PatchBot {
     avatar: Option<Option<String>>,
     archived: Option<bool>,
     computer_id: Option<Option<String>>,
+    // --- WireBot parity fields ---
+    projects: Option<Vec<BotProject>>,
+    model_variant: Option<Option<String>>,
+    mascot_expression: Option<Option<String>>,
+    mascot_body: Option<Option<String>>,
+    avatar_crop: Option<Option<String>>,
+    computer: Option<Option<String>>,
+    cloud_backend: Option<Option<String>>,
+    auto_start_vps: Option<bool>,
+    speak_replies: Option<bool>,
+    voice: Option<Option<String>>,
+    chief_of_staff: Option<bool>,
+    managed_sections: Option<Vec<String>>,
+    approve_peer_comms: Option<bool>,
+    peers: Option<Vec<String>>,
+    composio: Option<bool>,
+    browser: Option<bool>,
+    mcp_servers: Option<Vec<String>>,
+    browser_profile: Option<Option<String>>,
+    playbooks: Option<Vec<InstalledPlaybook>>,
 }
 
 async fn patch_bot(
@@ -334,6 +415,63 @@ async fn patch_bot(
     if let Some(v) = body.computer_id {
         bot.computer_id = v;
     }
+    if let Some(v) = body.projects {
+        bot.projects = v;
+    }
+    if let Some(v) = body.model_variant {
+        bot.model_variant = v;
+    }
+    if let Some(v) = body.mascot_expression {
+        bot.mascot_expression = v;
+    }
+    if let Some(v) = body.mascot_body {
+        bot.mascot_body = v;
+    }
+    if let Some(v) = body.avatar_crop {
+        bot.avatar_crop = v;
+    }
+    if let Some(v) = body.computer {
+        bot.computer = v;
+    }
+    if let Some(v) = body.cloud_backend {
+        bot.cloud_backend = v;
+    }
+    if let Some(v) = body.auto_start_vps {
+        bot.auto_start_vps = v;
+    }
+    if let Some(v) = body.speak_replies {
+        bot.speak_replies = v;
+    }
+    if let Some(v) = body.voice {
+        bot.voice = v;
+    }
+    if let Some(v) = body.chief_of_staff {
+        bot.chief_of_staff = v;
+    }
+    if let Some(v) = body.managed_sections {
+        bot.managed_sections = v;
+    }
+    if let Some(v) = body.approve_peer_comms {
+        bot.approve_peer_comms = v;
+    }
+    if let Some(v) = body.peers {
+        bot.peers = v;
+    }
+    if let Some(v) = body.composio {
+        bot.composio = v;
+    }
+    if let Some(v) = body.browser {
+        bot.browser = v;
+    }
+    if let Some(v) = body.mcp_servers {
+        bot.mcp_servers = v;
+    }
+    if let Some(v) = body.browser_profile {
+        bot.browser_profile = v;
+    }
+    if let Some(v) = body.playbooks {
+        bot.playbooks = v;
+    }
     if let Some(ar) = body.archived {
         bot.archived = ar;
     }
@@ -354,6 +492,7 @@ async fn delete_bot(State(s): State<Arc<AppState>>, Path(id): Path<String>) -> i
         sessions::abort_thread(&s, &t.id).await;
     }
     let _ = s.store.delete_bot(&id);
+    let _ = s.bus.send(ServerEvent::BotDeleted { bot_id: id });
     StatusCode::NO_CONTENT.into_response()
 }
 
@@ -422,12 +561,25 @@ async fn create_thread(
     }
 }
 
+async fn get_thread(State(s): State<Arc<AppState>>, Path(id): Path<String>) -> impl IntoResponse {
+    match s.store.get_thread(&id) {
+        Ok(Some(t)) => Json(t).into_response(),
+        _ => StatusCode::NOT_FOUND.into_response(),
+    }
+}
+
 #[derive(Deserialize)]
 struct PatchThread {
     #[serde(default)]
     title: Option<Option<String>>,
     #[serde(default)]
     pinned_message_id: Option<Option<String>>,
+    /// Archive timestamp: set to ms epoch, or null to unarchive.
+    #[serde(default)]
+    archived_at: Option<Option<i64>>,
+    /// Per-task pinned working directory.
+    #[serde(default)]
+    cwd: Option<Option<String>>,
 }
 
 async fn patch_thread(
@@ -443,6 +595,12 @@ async fn patch_thread(
     }
     if let Some(v) = body.pinned_message_id {
         t.pinned_message_id = v;
+    }
+    if let Some(v) = body.archived_at {
+        t.archived_at = v;
+    }
+    if let Some(v) = body.cwd {
+        t.cwd = v;
     }
     t.updated_at = now_ms();
     let _ = s.store.upsert_thread(&t);
@@ -499,6 +657,8 @@ async fn send_message(
         attachments: body.attachments.clone(),
         sender: body.sender.clone(),
         via_api: true,
+        send_id: body.send_id.clone(),
+        channel_mode: body.channel_mode.clone(),
     };
     // Room threads fan out to member bots.
     if thread.kind == "room" {
@@ -519,6 +679,9 @@ async fn send_message(
         }
         Ok(SendOutcome::Queued { user }) => {
             Json(serde_json::json!({ "user": user, "queued": true })).into_response()
+        }
+        Ok(SendOutcome::Deduped { user }) => {
+            Json(serde_json::json!({ "user": user, "deduped": true })).into_response()
         }
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, format!("{e:#}")).into_response(),
     }
@@ -696,6 +859,16 @@ struct CreateRoom {
     member_ids: Vec<String>,
     #[serde(default)]
     responder: Option<Responder>,
+    /// Shared instructions prepended to every member's persona.
+    #[serde(default)]
+    bulletin: Option<String>,
+    #[serde(default)]
+    section: Option<String>,
+    /// Shared working directory overriding each member's cwd.
+    #[serde(default)]
+    cwd: Option<String>,
+    #[serde(default)]
+    dm: Option<bool>,
 }
 
 async fn list_rooms(State(s): State<Arc<AppState>>) -> impl IntoResponse {
@@ -719,8 +892,14 @@ async fn create_room(
         id: new_id("th"),
         kind: "room".into(),
         bot_id: None,
+        room_id: Some(id.clone()),
         title: Some(body.name.clone()),
         pinned_message_id: None,
+        title_from_first_message: false,
+        archived_at: None,
+        cwd: None,
+        rewound: false,
+        turn_started_at: None,
         created_at: now,
         updated_at: now,
     };
@@ -731,7 +910,15 @@ async fn create_room(
         member_ids: body.member_ids,
         thread_id: thread.id.clone(),
         responder: body.responder.unwrap_or_default(),
+        bulletin: body.bulletin.unwrap_or_default(),
+        dm: body.dm.unwrap_or(false),
+        section: body.section,
+        cwd: body.cwd,
         working: false,
+        busy_bot_id: None,
+        turn_started_at: None,
+        setup_completed_at: None,
+        setup_skipped_at: None,
         unread: 0,
         last_message: None,
         last_activity_at: Some(now),
@@ -748,6 +935,13 @@ struct PatchRoom {
     name: Option<String>,
     member_ids: Option<Vec<String>>,
     responder: Option<Responder>,
+    /// Switch the active task channel.
+    thread_id: Option<String>,
+    bulletin: Option<String>,
+    section: Option<Option<String>>,
+    cwd: Option<Option<String>>,
+    setup_completed_at: Option<Option<i64>>,
+    setup_skipped_at: Option<Option<i64>>,
 }
 
 async fn patch_room(
@@ -767,6 +961,35 @@ async fn patch_room(
     if let Some(v) = body.responder {
         room.responder = v;
     }
+    if let Some(v) = body.thread_id {
+        // Only task threads owned by this room may become active.
+        let owned = s
+            .store
+            .get_thread(&v)
+            .ok()
+            .flatten()
+            .map(|t| t.room_id.as_deref() == Some(id.as_str()))
+            .unwrap_or(false);
+        if !owned {
+            return (StatusCode::BAD_REQUEST, "thread not in room").into_response();
+        }
+        room.thread_id = v;
+    }
+    if let Some(v) = body.bulletin {
+        room.bulletin = v;
+    }
+    if let Some(v) = body.section {
+        room.section = v;
+    }
+    if let Some(v) = body.cwd {
+        room.cwd = v;
+    }
+    if let Some(v) = body.setup_completed_at {
+        room.setup_completed_at = v;
+    }
+    if let Some(v) = body.setup_skipped_at {
+        room.setup_skipped_at = v;
+    }
     room.updated_at = now_ms();
     let _ = s.store.upsert_room(&room);
     let _ = s.bus.send(ServerEvent::RoomUpsert { room: room.clone() });
@@ -778,7 +1001,41 @@ async fn delete_room(State(s): State<Arc<AppState>>, Path(id): Path<String>) -> 
         sessions::abort_thread(&s, &room.thread_id).await;
     }
     let _ = s.store.delete_room(&id);
+    let _ = s.bus.send(ServerEvent::RoomDeleted { room_id: id });
     StatusCode::NO_CONTENT.into_response()
+}
+
+/// A room's task channels (GroupTask list).
+async fn list_room_threads(
+    State(s): State<Arc<AppState>>,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
+    if s.store.get_room(&id).ok().flatten().is_none() {
+        return StatusCode::NOT_FOUND.into_response();
+    }
+    Json(s.store.room_threads(&id).unwrap_or_default()).into_response()
+}
+
+/// Open a new task channel inside a room and make it active.
+async fn create_room_thread(
+    State(s): State<Arc<AppState>>,
+    Path(id): Path<String>,
+    Json(body): Json<CreateThread>,
+) -> impl IntoResponse {
+    let Some(mut room) = s.store.get_room(&id).ok().flatten() else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    match s.store.new_room_thread(&id, body.title) {
+        Ok(t) => {
+            room.thread_id = t.id.clone();
+            room.updated_at = now_ms();
+            let _ = s.store.upsert_room(&room);
+            let _ = s.bus.send(ServerEvent::ThreadUpsert { thread: t.clone() });
+            let _ = s.bus.send(ServerEvent::RoomUpsert { room });
+            (StatusCode::CREATED, Json(t)).into_response()
+        }
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, format!("{e}")).into_response(),
+    }
 }
 
 async fn mark_room_read(
@@ -825,6 +1082,327 @@ async fn search(State(s): State<Arc<AppState>>, Query(q): Query<SearchQ>) -> imp
         .collect();
     let messages = s.store.search_messages(&needle, 50).unwrap_or_default();
     Json(serde_json::json!({ "bots": bots, "messages": messages, "rooms": rooms }))
+}
+
+// ---- decisions / sections / cli-test / usage -------------------------------
+
+/// Decision log — every approval card (resolved included), newest first.
+async fn list_decisions(State(s): State<Arc<AppState>>) -> impl IntoResponse {
+    Json(s.store.recent_approvals(500).unwrap_or_default())
+}
+
+async fn sidebar_sections(State(s): State<Arc<AppState>>) -> impl IntoResponse {
+    Json(s.store.sidebar_sections().unwrap_or_default())
+}
+
+#[derive(Deserialize)]
+struct CliTest {
+    engine: EngineKind,
+}
+
+/// Probe an engine — same check the engines list runs, on demand.
+async fn cli_test(State(s): State<Arc<AppState>>, Json(body): Json<CliTest>) -> impl IntoResponse {
+    let cfg = s.engine_config(body.engine);
+    let status = s.driver_for(body.engine).probe(&cfg).await;
+    Json(status)
+}
+
+/// Aggregate usage: message/turn counts per bot (tokens when engines report).
+async fn usage(State(s): State<Arc<AppState>>) -> impl IntoResponse {
+    Json(usage_rows(&s))
+}
+
+async fn usage_csv(State(s): State<Arc<AppState>>) -> impl IntoResponse {
+    let rows = usage_rows(&s);
+    let mut csv = String::from("bot_id,name,engine,messages,bot_replies\n");
+    for r in &rows {
+        csv.push_str(&format!(
+            "{},{},{},{},{}\n",
+            r["bot_id"].as_str().unwrap_or_default(),
+            r["name"].as_str().unwrap_or_default().replace(',', ";"),
+            r["engine"].as_str().unwrap_or_default(),
+            r["messages"],
+            r["bot_replies"],
+        ));
+    }
+    ([(header::CONTENT_TYPE, "text/csv; charset=utf-8")], csv)
+}
+
+fn usage_rows(s: &AppState) -> Vec<serde_json::Value> {
+    let mut out = Vec::new();
+    let mut bots = s.store.list_bots_filtered(false).unwrap_or_default();
+    bots.extend(s.store.list_bots_filtered(true).unwrap_or_default());
+    for b in bots {
+        let mut messages = 0i64;
+        let mut bot_replies = 0i64;
+        if let Ok(threads) = s.store.bot_threads(&b.id) {
+            for t in threads {
+                for m in s
+                    .store
+                    .list_messages(&t.id, 100000, None)
+                    .unwrap_or_default()
+                {
+                    messages += 1;
+                    if m.role == Role::Bot {
+                        bot_replies += 1;
+                    }
+                }
+            }
+        }
+        out.push(serde_json::json!({
+            "bot_id": b.id,
+            "name": b.name,
+            "engine": b.engine.to_string(),
+            "messages": messages,
+            "bot_replies": bot_replies,
+        }));
+    }
+    out
+}
+
+// ---- files / cli-candidates / mcp registry ------------------------------------
+
+#[derive(Deserialize)]
+struct FilesQ {
+    /// Directory to list; defaults to the data dir.
+    path: Option<String>,
+}
+
+/// Browse the filesystem for the attach picker (local files only).
+async fn list_files(State(s): State<Arc<AppState>>, Query(q): Query<FilesQ>) -> impl IntoResponse {
+    let dir = q
+        .path
+        .filter(|p| !p.trim().is_empty())
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| s.store.data_dir.clone());
+    let mut out = Vec::new();
+    match std::fs::read_dir(&dir) {
+        Ok(rd) => {
+            for e in rd.flatten().take(500) {
+                let md = e.metadata().ok();
+                out.push(serde_json::json!({
+                    "name": e.file_name().to_string_lossy(),
+                    "path": e.path().display().to_string(),
+                    "dir": md.as_ref().map(|m| m.is_dir()).unwrap_or(false),
+                    "size": md.map(|m| m.len()).unwrap_or(0),
+                }));
+            }
+            out.sort_by(|a, b| {
+                b["dir"].as_bool().cmp(&a["dir"].as_bool()).then(
+                    a["name"]
+                        .as_str()
+                        .unwrap_or("")
+                        .cmp(b["name"].as_str().unwrap_or("")),
+                )
+            });
+            Json(serde_json::json!({ "path": dir.display().to_string(), "entries": out }))
+                .into_response()
+        }
+        Err(e) => (StatusCode::BAD_REQUEST, format!("{e}")).into_response(),
+    }
+}
+
+/// CLI binaries discovered on PATH for each engine kind.
+async fn cli_candidates(State(s): State<Arc<AppState>>) -> impl IntoResponse {
+    let mut out = Vec::new();
+    for kind in EngineKind::ALL {
+        let cfg = s.engine_config(kind);
+        let bin = match kind {
+            EngineKind::Claude => "claude",
+            EngineKind::Codex => "codex",
+            EngineKind::Grok | EngineKind::OpenAiCompat => continue,
+            _ => "fathom",
+        };
+        out.push(serde_json::json!({
+            "engine": kind.to_string(),
+            "cli": crate::engine::resolve_cli(&cfg, bin),
+        }));
+    }
+    Json(out)
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+struct McpServer {
+    name: String,
+    /// stdio command (e.g. "npx -y some-mcp") or an http url.
+    command: String,
+    #[serde(default)]
+    args: Vec<String>,
+}
+
+fn mcp_registry(s: &AppState) -> Vec<McpServer> {
+    s.store
+        .get_kv("mcp_servers")
+        .ok()
+        .flatten()
+        .and_then(|v| serde_json::from_str(&v).ok())
+        .unwrap_or_default()
+}
+
+async fn list_mcp_servers(State(s): State<Arc<AppState>>) -> impl IntoResponse {
+    Json(mcp_registry(&s))
+}
+
+async fn add_mcp_server(
+    State(s): State<Arc<AppState>>,
+    Json(body): Json<McpServer>,
+) -> impl IntoResponse {
+    if body.name.trim().is_empty() || body.command.trim().is_empty() {
+        return (StatusCode::BAD_REQUEST, "name and command required").into_response();
+    }
+    let mut reg = mcp_registry(&s);
+    reg.retain(|m| m.name != body.name);
+    reg.push(body);
+    let _ = s.store.set_kv(
+        "mcp_servers",
+        &serde_json::to_string(&reg).unwrap_or_default(),
+    );
+    StatusCode::NO_CONTENT.into_response()
+}
+
+async fn del_mcp_server(
+    State(s): State<Arc<AppState>>,
+    Path(name): Path<String>,
+) -> impl IntoResponse {
+    let mut reg = mcp_registry(&s);
+    reg.retain(|m| m.name != name);
+    let _ = s.store.set_kv(
+        "mcp_servers",
+        &serde_json::to_string(&reg).unwrap_or_default(),
+    );
+    StatusCode::NO_CONTENT.into_response()
+}
+
+// ---- peer comms (internal, called by engines/tools) ---------------------------
+
+#[derive(Deserialize)]
+struct PeerCall {
+    /// Target bot id or name.
+    bot: String,
+    text: String,
+    /// Caller identity — enforces peers list + approvePeerComms.
+    #[serde(default)]
+    from_bot: Option<String>,
+    #[serde(default)]
+    unattended: bool,
+    /// delegate-bot only: task title.
+    #[serde(default)]
+    title: Option<String>,
+}
+
+/// Synchronous bot→bot question — returns the reply once the turn settles.
+async fn internal_ask_bot(
+    State(s): State<Arc<AppState>>,
+    Json(body): Json<PeerCall>,
+) -> impl IntoResponse {
+    let (cid, cname) = caller(&s, &body.from_bot);
+    match sessions::ask_bot(
+        &s,
+        &body.bot,
+        &body.text,
+        cid.as_deref(),
+        cname.as_deref(),
+        body.unattended,
+    )
+    .await
+    {
+        Ok(m) => Json(serde_json::json!({
+            "bot_id": m.from_bot.as_ref().map(|f| f.bot_id.clone()),
+            "thread_id": m.thread_id,
+            "text": m.text,
+            "message_id": m.id,
+        }))
+        .into_response(),
+        Err(e) => (StatusCode::BAD_REQUEST, format!("{e:#}")).into_response(),
+    }
+}
+
+/// Async delegation — opens a task thread on the target and returns it.
+async fn internal_delegate_bot(
+    State(s): State<Arc<AppState>>,
+    Json(body): Json<PeerCall>,
+) -> impl IntoResponse {
+    let (cid, cname) = caller(&s, &body.from_bot);
+    match sessions::delegate_bot(
+        &s,
+        &body.bot,
+        &body.text,
+        body.title,
+        cid.as_deref(),
+        cname.as_deref(),
+    )
+    .await
+    {
+        Ok(v) => Json(v).into_response(),
+        Err(e) => (StatusCode::BAD_REQUEST, format!("{e:#}")).into_response(),
+    }
+}
+
+#[derive(Deserialize)]
+struct PostToRoom {
+    /// Caller bot id or name.
+    bot: String,
+    /// Room id or name.
+    room: String,
+    text: String,
+    #[serde(default)]
+    unattended: bool,
+}
+
+/// Bot pushes a line into a room thread (peer_post chip).
+async fn internal_post_to_room(
+    State(s): State<Arc<AppState>>,
+    Json(body): Json<PostToRoom>,
+) -> impl IntoResponse {
+    let Some(bot) = sessions::find_bot(&s, &body.bot) else {
+        return (StatusCode::NOT_FOUND, "bot not found").into_response();
+    };
+    match sessions::post_to_room(&s, &bot, &body.room, &body.text, body.unattended).await {
+        Ok(m) => Json(m).into_response(),
+        Err(e) => (StatusCode::BAD_REQUEST, format!("{e:#}")).into_response(),
+    }
+}
+
+#[derive(Deserialize)]
+struct Coordinate {
+    /// Caller bot id or name.
+    bot: String,
+    /// Member bot ids or names (caller is added automatically).
+    members: Vec<String>,
+    /// The directive — becomes the room bulletin and first message.
+    directive: String,
+    #[serde(default)]
+    name: Option<String>,
+}
+
+/// Bot spins up a coordination room with the named members.
+async fn internal_coordinate_bots(
+    State(s): State<Arc<AppState>>,
+    Json(body): Json<Coordinate>,
+) -> impl IntoResponse {
+    let Some(caller) = sessions::find_bot(&s, &body.bot) else {
+        return (StatusCode::NOT_FOUND, "bot not found").into_response();
+    };
+    match sessions::coordinate_bots(
+        &s,
+        &caller,
+        &body.members,
+        &body.directive,
+        body.name.as_deref(),
+    )
+    .await
+    {
+        Ok(v) => Json(v).into_response(),
+        Err(e) => (StatusCode::BAD_REQUEST, format!("{e:#}")).into_response(),
+    }
+}
+
+/// Resolve a `from_bot` field (id or name) to (id, display name).
+fn caller(s: &AppState, from: &Option<String>) -> (Option<String>, Option<String>) {
+    from.as_deref()
+        .and_then(|f| sessions::find_bot(s, f))
+        .map(|b| (Some(b.id), Some(b.name)))
+        .unwrap_or((None, None))
 }
 
 // ---- approvals --------------------------------------------------------------

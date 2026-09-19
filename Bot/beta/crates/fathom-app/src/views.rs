@@ -190,6 +190,8 @@ impl RootView {
             attachments: self.staged.drain(..).map(|a| a.id).collect(),
             sender: None,
             via_api: false,
+            send_id: Some(fathom_core::new_id("send")),
+            channel_mode: None,
         };
         rt.spawn(async move {
             match target {
@@ -256,6 +258,7 @@ impl RootView {
         let harness = self.data.read(cx).harness.clone();
         self.data.update(cx, |d, _| {
             d.active = Some(ChatTarget::Room(room_id.clone()));
+            d.reload_room_threads(&room_id);
             let tid = d.room(&room_id).map(|r| r.thread_id.clone());
             if let Some(tid) = tid {
                 d.load_thread(&tid);
@@ -330,16 +333,53 @@ impl RootView {
     }
 
     fn new_task(&mut self, cx: &mut Context<Self>) {
-        let Some(ChatTarget::Bot(bot_id)) = self.data.read(cx).active.clone() else {
-            return;
-        };
-        let harness = self.data.read(cx).harness.clone();
-        if let Ok(t) = harness.store.new_task_thread(&bot_id, None) {
-            let _ = harness
-                .bus
-                .send(ServerEvent::ThreadUpsert { thread: t.clone() });
-            self.select_thread(bot_id, t.id, cx);
+        match self.data.read(cx).active.clone() {
+            Some(ChatTarget::Bot(bot_id)) => {
+                let harness = self.data.read(cx).harness.clone();
+                if let Ok(t) = harness.store.new_task_thread(&bot_id, None) {
+                    let _ = harness
+                        .bus
+                        .send(ServerEvent::ThreadUpsert { thread: t.clone() });
+                    self.select_thread(bot_id, t.id, cx);
+                }
+            }
+            Some(ChatTarget::Room(room_id)) => {
+                let harness = self.data.read(cx).harness.clone();
+                if let Ok(t) = harness.store.new_room_thread(&room_id, None) {
+                    let _ = harness
+                        .bus
+                        .send(ServerEvent::ThreadUpsert { thread: t.clone() });
+                    self.select_room_thread(&room_id, &t.id, cx);
+                }
+            }
+            _ => {}
         }
+    }
+
+    /// Switch a room's active task channel (GroupTask pick).
+    fn select_room_thread(&mut self, room_id: &str, thread_id: &str, cx: &mut Context<Self>) {
+        self.save_draft(cx);
+        let harness = self.data.read(cx).harness.clone();
+        if let Ok(Some(mut room)) = harness.store.get_room(room_id) {
+            if harness
+                .store
+                .get_thread(thread_id)
+                .ok()
+                .flatten()
+                .map(|t| t.room_id.as_deref() == Some(room_id))
+                .unwrap_or(false)
+            {
+                room.thread_id = thread_id.to_string();
+                room.updated_at = now_ms();
+                let _ = harness.store.upsert_room(&room);
+                let _ = harness.bus.send(ServerEvent::RoomUpsert { room });
+            }
+        }
+        self.data.update(cx, |d, _| d.load_thread(thread_id));
+        self.restore_draft(cx);
+        self.tasks_menu = false;
+        self.scroll.scroll_to_bottom();
+        cx.notify();
     }
 
     fn react(&mut self, msg_id: String, emoji: &'static str, cx: &mut Context<Self>) {
@@ -543,6 +583,29 @@ impl RootView {
             unread: 0,
             working: false,
             waiting_on_you: false,
+            projects: vec![],
+            model_variant: None,
+            soul_hash: None,
+            soul_drift: false,
+            mascot_expression: None,
+            mascot_body: None,
+            avatar_crop: None,
+            computer: None,
+            cloud_backend: None,
+            auto_start_vps: false,
+            speak_replies: false,
+            voice: None,
+            rewound: false,
+            chief_of_staff: false,
+            managed_sections: vec![],
+            approve_peer_comms: false,
+            peers: vec![],
+            composio: false,
+            browser: false,
+            mcp_servers: vec![],
+            browser_profile: None,
+            playbooks: vec![],
+            pinned_message_id: None,
         };
         let _ = harness.store.upsert_bot(&bot);
         let _ = harness.store.write_soul(&bot.id, &soul);
@@ -562,18 +625,25 @@ impl RootView {
         }
         let harness = self.data.read(cx).harness.clone();
         let now = now_ms();
+        let room_id = fathom_core::new_id("room");
         let thread = Thread {
             id: fathom_core::new_id("th"),
             kind: "room".into(),
             bot_id: None,
+            room_id: Some(room_id.clone()),
             title: Some(name.trim().to_string()),
             pinned_message_id: None,
+            title_from_first_message: false,
+            archived_at: None,
+            cwd: None,
+            rewound: false,
+            turn_started_at: None,
             created_at: now,
             updated_at: now,
         };
         let _ = harness.store.upsert_thread(&thread);
         let room = Room {
-            id: fathom_core::new_id("room"),
+            id: room_id,
             name: name.trim().to_string(),
             member_ids: self.room_members.iter().cloned().collect(),
             thread_id: thread.id.clone(),
@@ -582,7 +652,15 @@ impl RootView {
             } else {
                 Responder::Mentions
             },
+            bulletin: String::new(),
+            dm: false,
+            section: None,
+            cwd: None,
             working: false,
+            busy_bot_id: None,
+            turn_started_at: None,
+            setup_completed_at: None,
+            setup_skipped_at: None,
             unread: 0,
             last_message: None,
             last_activity_at: Some(now),
@@ -1111,7 +1189,7 @@ impl RootView {
     }
 
     fn chat_header(&mut self, cx: &mut Context<Self>) -> impl IntoElement {
-        let (active, bots, rooms, bot_threads, threads, thread_meta) = {
+        let (active, bots, rooms, bot_threads, threads, thread_meta, queued, room_threads) = {
             let d = self.data.read(cx);
             (
                 d.active.clone(),
@@ -1120,6 +1198,8 @@ impl RootView {
                 d.bot_threads.clone(),
                 d.threads.clone(),
                 d.thread_meta.clone(),
+                d.queued.clone(),
+                d.room_threads.clone(),
             )
         };
         let find_bot = |id: &str| bots.iter().find(|b| b.id == id).cloned();
@@ -1150,6 +1230,11 @@ impl RootView {
                     .get(&bot.id)
                     .and_then(|t| thread_meta.get(t))
                     .and_then(|t| t.title.clone());
+                let queued_n = threads
+                    .get(&bot.id)
+                    .and_then(|t| queued.get(t))
+                    .map(|v| v.len())
+                    .unwrap_or(0);
                 header = header
                     .child(self.avatar(&bot, cx))
                     .child(
@@ -1235,6 +1320,18 @@ impl RootView {
                             }),
                         )
                     })
+                    .when(queued_n > 0, |d| {
+                        d.child(
+                            div()
+                                .text_xs()
+                                .px_2()
+                                .py_1()
+                                .rounded_md()
+                                .bg(rgb(t::BG_RAISED))
+                                .text_color(rgb(t::AMBER))
+                                .child(format!("⏳ {queued_n} queued")),
+                        )
+                    })
                     .child(self.icon_btn("profile-btn", "✎", cx, {
                         let bid = bot.id.clone();
                         move |this, cx| {
@@ -1258,6 +1355,17 @@ impl RootView {
                     return header.child("room not found");
                 };
                 let rid = room.id.clone();
+                let rid2 = room.id.clone();
+                let busy_name = room
+                    .busy_bot_id
+                    .as_ref()
+                    .and_then(|id| find_bot(id))
+                    .map(|b| b.name.clone());
+                let room_tasks_n = room_threads
+                    .get(&room.id)
+                    .map(|v| v.len())
+                    .unwrap_or(1)
+                    .max(1);
                 let responder_label = match &room.responder {
                     Responder::Mentions => "mentions",
                     Responder::Everyone => "everyone",
@@ -1291,13 +1399,28 @@ impl RootView {
                                     .text_color(rgb(t::TEXT))
                                     .child(room.name.clone()),
                             )
-                            .child(div().text_xs().text_color(rgb(t::CYAN)).child(format!(
-                                "{} members · answer: {}",
-                                room.member_ids.len(),
-                                responder_label
-                            ))),
+                            .child(div().text_xs().text_color(rgb(t::CYAN)).child(
+                                match busy_name {
+                                    Some(n) => format!("{n} is replying…"),
+                                    None => format!(
+                                        "{} members · answer: {}",
+                                        room.member_ids.len(),
+                                        responder_label
+                                    ),
+                                },
+                            )),
                     )
                     .child(div().flex_1())
+                    .child(self.chip_btn(
+                        "room-tasks-btn",
+                        &format!("tasks ({room_tasks_n}) ▾"),
+                        cx,
+                        |this, cx| {
+                            this.tasks_menu = !this.tasks_menu;
+                            this.model_menu = false;
+                            cx.notify();
+                        },
+                    ))
                     .child(
                         self.chip_btn("resp-chip", "answer mode ↻", cx, move |this, cx| {
                             this.patch_room(
@@ -1312,7 +1435,26 @@ impl RootView {
                             );
                         }),
                     )
-                    .child(self.icon_btn("export-btn", "⤓", cx, |this, cx| this.export_thread(cx)));
+                    .when(room.working || room.busy_bot_id.is_some(), |d| {
+                        d.child(
+                            self.icon_btn("stop-btn", "■ stop", cx, |this, cx| {
+                                this.stop_turn(cx)
+                            }),
+                        )
+                    })
+                    .child(self.icon_btn("export-btn", "⤓", cx, |this, cx| this.export_thread(cx)))
+                    .child(self.icon_btn("room-edit", "✎", cx, move |this, cx| {
+                        if let Some(r) = this.data.read(cx).room(&rid2).cloned() {
+                            this.dlg_name.update(cx, |i, cx| i.set_text(&r.name, cx));
+                            this.dlg_desc
+                                .update(cx, |i, cx| i.set_text(&r.bulletin, cx));
+                            this.dlg_cwd
+                                .update(cx, |i, cx| i.set_text(&r.cwd.unwrap_or_default(), cx));
+                        }
+                        this.data
+                            .update(cx, |d, _| d.dialog = Some(Dialog::RoomEdit(rid2.clone())));
+                        cx.notify();
+                    }));
             }
             None => {}
         }
@@ -1393,6 +1535,7 @@ impl RootView {
                 .child("+ New task"),
         );
         div()
+            .id("tasks-menu")
             .absolute()
             .top(px(56.))
             .right(px(200.))
@@ -1403,6 +1546,159 @@ impl RootView {
             .shadow_lg()
             .w(px(240.))
             .child(menu)
+    }
+
+    /// Task-channel picker for a room (GroupTasks).
+    fn room_tasks_menu(&self, room_id: &str, cx: &mut Context<Self>) -> impl IntoElement {
+        let data = self.data.read(cx);
+        let threads = data.room_threads.get(room_id).cloned().unwrap_or_default();
+        let current = data.room(room_id).map(|r| r.thread_id.clone());
+        let rid = room_id.to_string();
+        let mut menu = div().flex().flex_col().py_1();
+        for th in threads {
+            let tid = th.id.clone();
+            let selected = current.as_deref() == Some(&th.id);
+            let label = th
+                .title
+                .clone()
+                .unwrap_or_else(|| format!("task {}", &th.id[th.id.len().saturating_sub(4)..]));
+            menu = menu.child(
+                div()
+                    .id(SharedString::from(format!("rtask-{tid}")))
+                    .cursor_pointer()
+                    .px_4()
+                    .py_2()
+                    .text_sm()
+                    .when(selected, |d| d.text_color(rgb(t::CYAN)))
+                    .when(!selected, |d| d.text_color(rgb(t::TEXT)))
+                    .hover(|d| d.bg(rgb(t::BG_HOVER)))
+                    .on_mouse_down(
+                        MouseButton::Left,
+                        cx.listener({
+                            let rid = rid.clone();
+                            move |this, _, _, cx| {
+                                this.select_room_thread(&rid, &tid, cx);
+                            }
+                        }),
+                    )
+                    .child(label),
+            );
+        }
+        menu = menu.child(
+            div()
+                .id("rtask-new")
+                .cursor_pointer()
+                .px_4()
+                .py_2()
+                .text_sm()
+                .text_color(rgb(t::ACCENT))
+                .hover(|d| d.bg(rgb(t::BG_HOVER)))
+                .on_mouse_down(
+                    MouseButton::Left,
+                    cx.listener(|this, _, _, cx| this.new_task(cx)),
+                )
+                .child("+ New task"),
+        );
+        div()
+            .id("room-tasks-menu")
+            .absolute()
+            .top(px(56.))
+            .right(px(200.))
+            .bg(rgb(t::BG_RAISED))
+            .border_1()
+            .border_color(rgb(t::BORDER))
+            .rounded_md()
+            .shadow_lg()
+            .w(px(240.))
+            .child(menu)
+    }
+
+    /// Toast for `notify` events (title + body, dismiss on click).
+    fn notice_toast(&self, title: &str, body: &str, cx: &mut Context<Self>) -> impl IntoElement {
+        div()
+            .id("notify-toast")
+            .absolute()
+            .top(px(56.))
+            .right(px(16.))
+            .cursor_pointer()
+            .bg(rgb(t::BG_RAISED))
+            .border_1()
+            .border_color(rgb(t::BORDER))
+            .rounded_md()
+            .shadow_lg()
+            .px_4()
+            .py_3()
+            .w(px(280.))
+            .on_mouse_down(
+                MouseButton::Left,
+                cx.listener(|this, _, _, cx| {
+                    this.data.update(cx, |d, _| d.notice = None);
+                    cx.notify();
+                }),
+            )
+            .child(
+                div()
+                    .text_sm()
+                    .font_weight(gpui::FontWeight::SEMIBOLD)
+                    .text_color(rgb(t::TEXT))
+                    .child(title.to_string()),
+            )
+            .child(
+                div()
+                    .text_xs()
+                    .text_color(rgb(t::TEXT_DIM))
+                    .child(body.to_string()),
+            )
+    }
+
+    /// Room settings dialog: name, bulletin (shared instructions), cwd.
+    fn room_edit_dialog(&mut self, room_id: &str, cx: &mut Context<Self>) -> impl IntoElement {
+        let Some(room) = self.data.read(cx).room(room_id).cloned() else {
+            return div().into_any_element();
+        };
+        let rid = room_id.to_string();
+        self.dialog_card(cx)
+            .child(
+                div()
+                    .text_lg()
+                    .font_weight(gpui::FontWeight::BOLD)
+                    .text_color(rgb(t::TEXT))
+                    .child(format!("Room — {}", room.name)),
+            )
+            .child(self.field("Name", &self.dlg_name))
+            .child(self.field(
+                "Bulletin — shared instructions for all members",
+                &self.dlg_desc,
+            ))
+            .child(self.field("Shared cwd (overrides members' default)", &self.dlg_cwd))
+            .child(self.dialog_buttons(
+                cx,
+                "room-cancel",
+                "room-save",
+                "Save",
+                move |this, _w, cx| {
+                    let name = this.dlg_name.read(cx).content.to_string();
+                    let bulletin = this.dlg_desc.read(cx).content.to_string();
+                    let cwd = this.dlg_cwd.read(cx).content.to_string();
+                    this.patch_room(
+                        &rid,
+                        |r| {
+                            if !name.trim().is_empty() {
+                                r.name = name.trim().to_string();
+                            }
+                            r.bulletin = bulletin.trim().to_string();
+                            r.cwd = if cwd.trim().is_empty() {
+                                None
+                            } else {
+                                Some(cwd.trim().to_string())
+                            };
+                        },
+                        cx,
+                    );
+                    this.data.update(cx, |d, _| d.dialog = None);
+                },
+            ))
+            .into_any_element()
     }
 
     fn model_menu(&self, bot: &Bot, cx: &mut Context<Self>) -> impl IntoElement {
@@ -1782,7 +2078,7 @@ impl RootView {
                     .py_2()
                     .text_sm()
                     .text_color(rgb(t::RED))
-                    .child(format!("{err}")),
+                    .child(err.to_string()),
             );
         }
 
@@ -3490,6 +3786,14 @@ impl Render for RootView {
                 root = root.child(self.tasks_menu(&bot.id, cx));
             }
         }
+        if self.tasks_menu {
+            if let Some(ChatTarget::Room(rid)) = &active {
+                root = root.child(self.room_tasks_menu(rid, cx));
+            }
+        }
+        if let Some((title, body)) = self.data.read(cx).notice.clone() {
+            root = root.child(self.notice_toast(&title, &body, cx));
+        }
 
         match dialog {
             Some(Dialog::NewBot) => {
@@ -3527,6 +3831,10 @@ impl Render for RootView {
             }
             Some(Dialog::RenameThread(_)) => {
                 let card = self.rename_dialog(cx);
+                root = root.child(self.dialog_overlay(card, cx));
+            }
+            Some(Dialog::RoomEdit(rid)) => {
+                let card = self.room_edit_dialog(&rid, cx);
                 root = root.child(self.dialog_overlay(card, cx));
             }
             None => {}

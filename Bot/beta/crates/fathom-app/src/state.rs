@@ -26,8 +26,14 @@ pub struct AppData {
     pub threads: HashMap<String, String>,
     /// bot_id → that bot's task threads (lazy-loaded)
     pub bot_threads: HashMap<String, Vec<Thread>>,
+    /// room_id → that room's task channels (GroupTasks, lazy-loaded)
+    pub room_threads: HashMap<String, Vec<Thread>>,
     /// thread_id → thread record (titles/pins)
     pub thread_meta: HashMap<String, Thread>,
+    /// thread_id → pending steer-queue entries (bot.queued snapshot)
+    pub queued: HashMap<String, Vec<QueuedItem>>,
+    /// Transient toast (title, body) pushed by `notify` events.
+    pub notice: Option<(String, String)>,
     pub engines: Vec<EngineStatus>,
     pub approvals: Vec<ApprovalRequest>,
     /// The roster entry currently open in the chat pane.
@@ -55,6 +61,8 @@ pub enum Dialog {
     Attach,
     /// Rename a thread (task). Field is thread id.
     RenameThread(String),
+    /// Room settings (name, bulletin, cwd). Field is room id.
+    RoomEdit(String),
 }
 
 impl AppData {
@@ -68,7 +76,10 @@ impl AppData {
             messages: HashMap::new(),
             threads: HashMap::new(),
             bot_threads: HashMap::new(),
+            room_threads: HashMap::new(),
             thread_meta: HashMap::new(),
+            queued: HashMap::new(),
+            notice: None,
             engines: vec![],
             approvals: vec![],
             active: None,
@@ -139,6 +150,16 @@ impl AppData {
         }
     }
 
+    /// (Re)load the task channel list for a room.
+    pub fn reload_room_threads(&mut self, room_id: &str) {
+        if let Ok(ts) = self.harness.store.room_threads(room_id) {
+            for t in &ts {
+                self.thread_meta.insert(t.id.clone(), t.clone());
+            }
+            self.room_threads.insert(room_id.to_string(), ts);
+        }
+    }
+
     /// Load a thread's messages into the cache.
     pub fn load_thread(&mut self, thread_id: &str) {
         if let Ok(msgs) = self.harness.store.list_messages(thread_id, 200, None) {
@@ -199,6 +220,35 @@ impl AppData {
                 if let Some(bid) = &thread.bot_id {
                     self.reload_threads(bid);
                 }
+                if let Some(rid) = &thread.room_id {
+                    self.reload_room_threads(rid);
+                }
+            }
+            ServerEvent::BotDeleted { bot_id } => {
+                self.bots.retain(|b| &b.id != bot_id);
+                self.archived.retain(|b| &b.id != bot_id);
+                self.bot_threads.remove(bot_id);
+                self.threads.remove(bot_id);
+                if self.active == Some(ChatTarget::Bot(bot_id.clone())) {
+                    self.active = None;
+                }
+            }
+            ServerEvent::RoomDeleted { room_id } => {
+                self.rooms.retain(|r| &r.id != room_id);
+                self.room_threads.remove(room_id);
+                if self.active == Some(ChatTarget::Room(room_id.clone())) {
+                    self.active = None;
+                }
+            }
+            ServerEvent::QueuedMessages { thread_id, items } => {
+                if items.is_empty() {
+                    self.queued.remove(thread_id);
+                } else {
+                    self.queued.insert(thread_id.clone(), items.clone());
+                }
+            }
+            ServerEvent::Notify { title, body } => {
+                self.notice = Some((title.clone(), body.clone()));
             }
             ServerEvent::ApprovalUpsert { approval } => {
                 match self.approvals.iter_mut().find(|a| a.id == approval.id) {

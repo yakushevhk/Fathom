@@ -221,6 +221,29 @@ pub struct ModelInfo {
 
 // ---- bots -------------------------------------------------------------------
 
+/// A lightweight organizational label within one bot (WireBot.projects).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BotProject {
+    pub id: String,
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub emoji: Option<String>,
+}
+
+/// Public, package-authored playbook installed for a bot — process guidance
+/// only, never executable code (WireBot.playbooks).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InstalledPlaybook {
+    pub key: String,
+    pub name: String,
+    #[serde(default)]
+    pub summary: String,
+    #[serde(default)]
+    pub triggers: Vec<String>,
+    #[serde(default)]
+    pub instructions: String,
+}
+
 /// A bot contact in the sidebar roster.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Bot {
@@ -253,7 +276,7 @@ pub struct Bot {
     #[serde(default = "default_approval_mode")]
     pub approval_mode: ApprovalMode,
     /// Tools this bot may always use without asking.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub always_allow: Vec<String>,
     /// Desktop notifications for this bot's replies.
     #[serde(default = "default_true")]
@@ -288,6 +311,77 @@ pub struct Bot {
     /// True while this bot has a pending approval card (waiting on you).
     #[serde(default)]
     pub waiting_on_you: bool,
+
+    // --- parity fields with the OpenMausBot WireBot (persisted in extra) ---
+    /// Task groupings (labels only, never directories).
+    #[serde(default)]
+    pub projects: Vec<BotProject>,
+    /// Model variant (provider-specific sub-mode), part of modelSelection.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model_variant: Option<String>,
+    /// sha256 of the SOUL.md mirror — set at read time, never persisted.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub soul_hash: Option<String>,
+    /// The SOUL.md mirror differed from `soul` at the last check.
+    #[serde(default)]
+    pub soul_drift: bool,
+    /// Mascot skin ids — expressive avatar overlay (WireBot.mascot*).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mascot_expression: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mascot_body: Option<String>,
+    /// Crop applied to the avatar image ({x,y,w,h}).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub avatar_crop: Option<String>,
+    /// Where the bot works: cloud | vm | local | browser | off (unset = auto).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub computer: Option<String>,
+    /// Which cloud backend backs computer=cloud ("box" | "vps").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cloud_backend: Option<String>,
+    /// Auto mode may prepare/start this bot's managed VPS container.
+    #[serde(default)]
+    pub auto_start_vps: bool,
+    /// Speak this bot's replies aloud as they settle (TTS opt-in).
+    #[serde(default)]
+    pub speak_replies: bool,
+    /// This bot's voice id, so a room of bots doesn't sound like one person.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub voice: Option<String>,
+    /// true after an edit/branch-switch rewound the visible conversation.
+    #[serde(default)]
+    pub rewound: bool,
+    /// Coordinator for this bot's sidebar section (chief-of-staff).
+    #[serde(default)]
+    pub chief_of_staff: bool,
+    /// Owner-selected additional sections this chief may coordinate.
+    #[serde(default)]
+    pub managed_sections: Vec<String>,
+    /// Pause for human approval before this bot talks to a peer bot.
+    #[serde(default)]
+    pub approve_peer_comms: bool,
+    /// Bot ids this bot is allowed to contact (empty = all).
+    #[serde(default)]
+    pub peers: Vec<String>,
+    /// Whether this bot may use the workspace's connected apps (Composio).
+    #[serde(default)]
+    pub composio: bool,
+    /// Whether this bot gets the built-in browser engine.
+    #[serde(default)]
+    pub browser: bool,
+    /// App-wide MCP server names this bot mounts.
+    #[serde(default)]
+    pub mcp_servers: Vec<String>,
+    /// Named browser profile id; absent = the bot's own private session.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub browser_profile: Option<String>,
+    /// Public, package-authored playbooks installed for this bot.
+    #[serde(default)]
+    pub playbooks: Vec<InstalledPlaybook>,
+    /// The one message pinned to the top of this bot's active thread —
+    /// computed mirror, set at read time.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pinned_message_id: Option<String>,
 }
 
 fn default_approval_mode() -> ApprovalMode {
@@ -300,19 +394,38 @@ fn default_true() -> bool {
 // ---- threads ---------------------------------------------------------------
 
 /// A chat thread. Bots own `direct` threads (one primary + extra tasks);
-/// rooms own `room` threads.
+/// rooms own `room` threads (WireTask / GroupTask).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Thread {
     pub id: String,
-    /// `direct` (bot DM) or `room` (group).
+    /// `direct` (bot DM) or `room` (group channel task).
     pub kind: String,
-    /// Owning bot for direct threads; owning room id for room threads.
+    /// Owning bot for direct threads.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bot_id: Option<String>,
+    /// Owning room for room threads (GroupTask linkage).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub room_id: Option<String>,
     pub title: Option<String>,
     /// The one message pinned to the top of this thread.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pinned_message_id: Option<String>,
+    /// The first message already drove a title attempt — later sends do not
+    /// rename a thread the person may have retitled.
+    #[serde(default)]
+    pub title_from_first_message: bool,
+    /// When the person archived this thread; absent = unarchived.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub archived_at: Option<i64>,
+    /// Folder this task's turns run in, pinned on its first turn.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cwd: Option<String>,
+    /// true after an edit/branch-switch rewound the visible conversation.
+    #[serde(default)]
+    pub rewound: bool,
+    /// Epoch ms when the current busy stretch began (elapsed readout anchor).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub turn_started_at: Option<i64>,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -372,6 +485,45 @@ pub struct FromBot {
     pub avatar_seed: u8,
 }
 
+/// Comm chip — "Messaged @X" linking to a bot-bot channel.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CommChip {
+    pub group_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thread_id: Option<String>,
+    pub with_bot_id: String,
+    pub with_name: String,
+    #[serde(default)]
+    pub with_seed: u8,
+}
+
+/// Thread chip — "Opened thread #Title on @X".
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ThreadRef {
+    pub bot_id: String,
+    pub thread_id: String,
+    pub title: String,
+}
+
+/// Peer-comms provenance: a bot pushed this line in / delivered it.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PeerRef {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bot_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default)]
+    pub unattended: bool,
+}
+
+/// Durable delivery identity for room requests (roomRequest wire field).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RoomRequest {
+    pub id: String,
+    /// `request` | `result`
+    pub phase: String,
+}
+
 /// One chat message. Rich payloads (approvals, tool calls, thinking) ride in
 /// `segments` JSON so the wire format stays stable.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -424,6 +576,45 @@ pub struct Message {
     #[serde(default)]
     pub error: Option<String>,
     pub created_at: i64,
+
+    // --- parity fields with the OpenMausBot WireMessage (extra column) ---
+    /// The message this one follows in the reply tree; null = thread root.
+    /// Flat reply (`reply_to`) stays the user-facing inline quote.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_id: Option<String>,
+    /// Stable client id for at-most-once chat POST retries.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub send_id: Option<String>,
+    /// Per-send channel behavior — `chat` (default) or `goal`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub channel_mode: Option<String>,
+    /// The last assistant text item from a settled provider turn.
+    #[serde(default)]
+    pub turn_terminal: bool,
+    /// Steer-queue entry id this drained user line came from.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub queue_id: Option<String>,
+    /// screen messages: a frame of the bot's computer (base64 image).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub png: Option<String>,
+    /// Mime of an inline screen/frame payload.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mime: Option<String>,
+    /// Comm chip linking to a bot-bot channel.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub comm: Option<CommChip>,
+    /// Thread chip linking to a task thread on another bot.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thread_ref: Option<ThreadRef>,
+    /// Set on a room message a bot pushed in with post_to_room.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub peer_post: Option<PeerRef>,
+    /// Set on a user-role line another bot delivered into this conversation.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub peer_ask: Option<PeerRef>,
+    /// Durable delivery identity for room requests.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub room_request: Option<RoomRequest>,
 }
 
 fn default_msg_kind() -> String {
@@ -454,6 +645,18 @@ impl Message {
             pending: false,
             error: None,
             created_at: now_ms(),
+            parent_id: None,
+            send_id: None,
+            channel_mode: None,
+            turn_terminal: false,
+            queue_id: None,
+            png: None,
+            mime: None,
+            comm: None,
+            thread_ref: None,
+            peer_post: None,
+            peer_ask: None,
+            room_request: None,
         }
     }
 }
@@ -461,6 +664,7 @@ impl Message {
 /// A piece of a message — rendered in order by clients.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
+#[allow(clippy::large_enum_variant)]
 pub enum Segment {
     Text {
         text: String,
@@ -514,6 +718,15 @@ pub struct ApprovalRequest {
     /// Why this card is waiting, when held by guard/mode/sandbox.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub held: Option<String>,
+    /// Catalog key for `held` when it is one of the fixed notes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub held_code: Option<String>,
+    /// The provider can remember an allow for the rest of its session.
+    #[serde(default)]
+    pub allow_session: bool,
+    /// Dismissed without answering (card goes quiet, engine sees deny).
+    #[serde(default)]
+    pub dismissed: bool,
     pub status: ApprovalStatus,
     /// The answer/denial reason recorded on resolve.
     #[serde(default)]
@@ -535,34 +748,55 @@ pub enum ApprovalStatus {
 /// Who answers an unattended room message.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "lowercase")]
+#[derive(Default)]
 pub enum Responder {
     /// One named member answers.
     Member { bot_id: String },
     /// Every member takes a turn, in roster order.
     Everyone,
     /// Only @-mentioned members answer (default when unset).
+    #[default]
     Mentions,
 }
 
-impl Default for Responder {
-    fn default() -> Self {
-        Responder::Mentions
-    }
-}
-
-/// A group channel: one thread shared by several member bots.
+/// A group channel: member bots share one or more task threads
+/// (WireGroup). `thread_id` is the *active* task; `kind='room'` threads
+/// carrying `room_id` are this room's task list.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Room {
     pub id: String,
     pub name: String,
     pub member_ids: Vec<String>,
-    /// The room's chat thread.
+    /// The active task's thread.
     pub thread_id: String,
     #[serde(default)]
     pub responder: Responder,
+    /// The room's shared instructions, prepended to every member's persona.
+    #[serde(default)]
+    pub bulletin: String,
+    /// true for auto-created bot-bot channels.
+    #[serde(default)]
+    pub dm: bool,
+    /// Sidebar section heading this room is filed under.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub section: Option<String>,
+    /// The room's shared desk — overrides each member's default cwd.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cwd: Option<String>,
     /// Aggregate transient flag: a member turn is running.
     #[serde(default)]
     pub working: bool,
+    /// Transient: the member currently running a turn.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub busy_bot_id: Option<String>,
+    /// Transient: when the busy member's turn started (elapsed readout).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub turn_started_at: Option<i64>,
+    /// New user-created rooms start with setup pending (null = pending).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub setup_completed_at: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub setup_skipped_at: Option<i64>,
     #[serde(default)]
     pub unread: i64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -610,6 +844,17 @@ pub enum ServerEvent {
     ApprovalUpsert { approval: ApprovalRequest },
     /// Thread created/renamed.
     ThreadUpsert { thread: Thread },
+    /// Bot removed from the roster.
+    BotDeleted { bot_id: String },
+    /// Room removed.
+    RoomDeleted { room_id: String },
+    /// Steer-queue snapshot for a thread (bot.queued frame).
+    QueuedMessages {
+        thread_id: String,
+        items: Vec<QueuedItem>,
+    },
+    /// A transient notification for the UI (toast).
+    Notify { title: String, body: String },
     /// Engine status refresh (installed/uninstalled/version).
     Engines { engines: Vec<EngineStatus> },
     /// Computer status change.
@@ -623,6 +868,15 @@ pub enum ServerEvent {
 }
 
 // ---- request payloads -------------------------------------------------------
+
+/// One pending steer-queue entry, as `queued_messages` frames carry them.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QueuedItem {
+    pub queue_id: String,
+    pub text: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
 
 /// Request body for `POST /api/threads/:id/messages` — a user chat send.
 #[derive(Debug, Clone, Deserialize)]
@@ -640,6 +894,13 @@ pub struct SendMessage {
     /// Sender display name (shared/multi-user).
     #[serde(default)]
     pub sender: Option<String>,
+    /// Stable client id — retrying the same send_id is idempotent.
+    #[serde(default)]
+    pub send_id: Option<String>,
+    /// Per-send channel behavior: absent/"chat" = quick chat, "goal" =
+    /// a bounded multi-bot channel goal (reserved).
+    #[serde(default)]
+    pub channel_mode: Option<String>,
 }
 
 /// Harness-wide settings persisted in the store's kv table.
