@@ -225,9 +225,13 @@ function translateHtml(html, lang, langRoot, pageUrl) {
       if (val != null) setAttrVal(node, 'aria-label', val);
       rmAttr(node, 'data-i18n-aria');
     }
-    // rewrite href
+    // rewrite href + src (iframes, images, scripts) — relative URLs are
+    // resolved against the page's directory first, so assets keep pointing at
+    // the canonical (unlocalized) files instead of /ru/... 404s.
     const href = getAttr(node, 'href');
-    if (href) href.value = rewriteInternal(href.value, langRoot);
+    if (href) href.value = rewriteInternal(href.value, langRoot, pageUrl);
+    const src = getAttr(node, 'src');
+    if (src) src.value = rewriteInternal(src.value, langRoot, pageUrl);
   }
 
   function replaceText(node, text) {
@@ -273,17 +277,34 @@ function findTag(node, name) {
   return res;
 }
 
-function rewriteInternal(href, langRoot) {
+// Resolve a possibly-relative URL against the page's URL path and return the
+// absolute site path (e.g. `styles.css` on /deck/page_01.html -> /deck/styles.css).
+function resolveToAbsolute(url, pageUrl) {
+  if (url.startsWith('/')) return url;
+  const dir = pageUrl.endsWith('/')
+    ? pageUrl
+    : /\.[a-z0-9]+$/i.test(pageUrl.slice(pageUrl.lastIndexOf('/') + 1))
+      ? pageUrl.slice(0, pageUrl.lastIndexOf('/') + 1)
+      : pageUrl + '/';
+  try {
+    return new URL(url, 'https://site.local' + dir).pathname;
+  } catch {
+    return url;
+  }
+}
+
+function rewriteInternal(href, langRoot, pageUrl) {
   if (!href) return href;
   if (href.startsWith('http') || href.startsWith('//') || href.startsWith('mailto:') ||
       href.startsWith('tel:') || href.startsWith('#') || href.startsWith('data:') ||
       href.includes('google') || href.includes('fonts') || href.includes('github')) return href;
-  if (href.startsWith('/assets/') || href.startsWith('/favicon') || href.startsWith('/_astro/')) return href;
+  const resolved = resolveToAbsolute(href, pageUrl || '/');
+  if (resolved.startsWith('/assets/') || resolved.startsWith('/favicon') || resolved.startsWith('/_astro/')) return resolved;
   // static assets and downloads must never be prefixed with /ru/
-  if (/\.(pdf|webmanifest|png|jpe?g|svg|webp|gif|mp4|vtt|xml|txt|ico|json)$/i.test(href)) return href;
+  if (/\.(css|m?js|map|pdf|webmanifest|png|jpe?g|svg|webp|gif|mp4|webm|vtt|xml|txt|ico|json|woff2?|ttf|otf|eot)$/i.test(resolved)) return resolved;
   // avoid double prefix, including the locale root without a trailing slash
-  if (href === '/ru' || href.startsWith('/ru/')) return href;
-  return langRoot + (href.startsWith('/') ? href : '/' + href);
+  if (resolved === '/ru' || resolved.startsWith('/ru/')) return resolved;
+  return langRoot + resolved;
 }
 
 // ---------- main ----------

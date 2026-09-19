@@ -1,0 +1,98 @@
+// Lightweight language navigation — deliberately does NOT import the
+// translation dictionary. Production pages are translated at build time by
+// scripts/i18n-generate.mjs, so client JS only needs URL mapping + the
+// switcher dropdown behavior. (The full dictionary lives in switcher.js and
+// is loaded dynamically, only in dev when untranslated data-i18n attrs exist.)
+export const LANGS = {
+  en: { label: 'EN', name: 'English' },
+  ru: { label: 'RU', name: 'Русский' },
+};
+export const DEFAULT_LANG = 'en';
+export const LANGS_SET = ['en', 'ru'];
+
+export function currentLangFromPath() {
+  const parts = location.pathname.split('/').filter(Boolean);
+  if (parts[0] && LANGS_SET.includes(parts[0])) return parts[0];
+  return DEFAULT_LANG;
+}
+
+// Build a localized URL for a given lang from the current location.
+export function langUrl(pathName, toLang) {
+  if (toLang === DEFAULT_LANG) {
+    const parts = pathName.split('/').filter(Boolean);
+    if (parts[0] && LANGS_SET.includes(parts[0])) {
+      return '/' + parts.slice(1).join('/');
+    }
+    return pathName;
+  }
+  const cleanPath = pathName.replace(/^\/(ru)(\/|$)/, '$2');
+  return '/' + toLang + (cleanPath === '' || cleanPath === '/' ? '' : cleanPath.startsWith('/') ? cleanPath : '/' + cleanPath);
+}
+
+export function getLang() {
+  if (typeof window === 'undefined') return DEFAULT_LANG;
+  return currentLangFromPath();
+}
+
+// Mark active lang buttons + label. Does NOT rewrite the page text — in a
+// production `astro build` the HTML is already translated server-side.
+function updateActive(lang) {
+  document.querySelectorAll('[data-lang-option]').forEach((btn) => {
+    const optionLang = btn.getAttribute('data-lang-option');
+    btn.classList.toggle('active', optionLang === lang);
+  });
+  const current = document.querySelector('[data-lang-current]');
+  if (current) current.textContent = (LANGS[lang] || {}).label || lang.toUpperCase();
+  document.documentElement.lang = lang;
+}
+
+export function applyLanguage(lang) {
+  updateActive(lang);
+}
+
+export function initI18n() {
+  const lang = getLang();
+  updateActive(lang);
+
+  // language options are navigation links to the same page in another language
+  document.querySelectorAll('[data-lang-option]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const toLang = btn.getAttribute('data-lang-option');
+      if (toLang === lang) {
+        closeDropdown();
+        return;
+      }
+      try { localStorage.setItem('fathom_lang', toLang); } catch (_) {}
+      const targetPath = langUrl(location.pathname, toLang);
+      location.assign(targetPath + location.search + location.hash);
+    });
+  });
+
+  const toggle = document.querySelector('[data-lang-toggle]');
+  const dropdown = document.querySelector('[data-lang-dropdown]');
+  if (toggle && dropdown) {
+    toggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropdown.classList.toggle('open');
+    });
+    document.addEventListener('click', (e) => {
+      if (!dropdown.contains(e.target)) dropdown.classList.remove('open');
+    });
+  }
+
+  // Dev mode only: astro dev serves untranslated pages that still carry
+  // data-i18n attributes; load the dictionary lazily to translate in place.
+  if (import.meta.env && import.meta.env.DEV && document.querySelector('[data-i18n], [data-i18n-html], [data-i18n-placeholder], [data-i18n-aria]')) {
+    import('./unified.js').then(() => import('./switcher.js')).then((m) => {
+      if (m.translateDomInPlace) m.translateDomInPlace(lang);
+    }).catch(() => {});
+  }
+}
+
+function closeDropdown() {
+  const dropdown = document.querySelector('[data-lang-dropdown]');
+  if (dropdown) dropdown.classList.remove('open');
+}

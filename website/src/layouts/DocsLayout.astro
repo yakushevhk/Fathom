@@ -263,6 +263,9 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
               </>
             )}
           </nav>
+          <div class="docs-ru-notice" role="note">
+            Эта страница документации пока на английском — навигация и интерфейс переведены, перевод содержимого в работе.
+          </div>
           <slot />
           {
             (prevItem || nextItem) && (
@@ -629,6 +632,22 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
         line-height: 1.35;
       }
 
+      .docs-ru-notice {
+        display: none;
+        margin: 0 0 24px;
+        padding: 12px 16px;
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--accent, #d97706);
+        border-radius: 8px;
+        background: var(--bg-tertiary, #fafafa);
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        line-height: 1.5;
+      }
+      html[lang="ru"] .docs-ru-notice {
+        display: block;
+      }
+
       .docs-main {
         min-width: 0;
         padding: 48px 56px 80px;
@@ -761,7 +780,7 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
 
     <script>
       import { initTheme } from '../theme.js';
-      import { initI18n } from '../i18n/switcher.js';
+      import { initI18n } from '../i18n/langnav.js';
       initTheme();
       initI18n();
 

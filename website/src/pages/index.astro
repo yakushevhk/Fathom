@@ -401,7 +401,7 @@ const metrics = [
       <div class="lead-form-wrap">
         <form class="lead-form" id="leadForm" novalidate>
           <div class="lead-form__grid">
-            <label for="lead-email" class="sr-only">Work Email</label>
+            <label for="lead-email" class="sr-only" data-i18n="landing.form.email_aria">Work Email</label>
             <input 
               type="email" 
               id="lead-email"
@@ -411,11 +411,12 @@ const metrics = [
               placeholder="work@company.com" 
               class="lead-input" 
               data-i18n-placeholder="landing.form.email_ph" 
+              data-i18n-aria="landing.form.email_aria"
               aria-label="Work Email"
               aria-describedby="leadStatus" 
             />
 
-            <label for="lead-name" class="sr-only">Your Name or Telegram</label>
+            <label for="lead-name" class="sr-only" data-i18n="landing.form.name_aria">Your Name or Telegram</label>
             <input 
               type="text" 
               id="lead-name"
@@ -424,11 +425,12 @@ const metrics = [
               placeholder="Name or @telegram" 
               class="lead-input" 
               data-i18n-placeholder="landing.form.name_ph" 
+              data-i18n-aria="landing.form.name_aria"
               aria-label="Your Name or Telegram" 
             />
 
-            <label for="lead-scenario" class="sr-only">Primary Scenario</label>
-            <select id="lead-scenario" name="scenario" class="lead-input lead-select" aria-label="Primary Scenario">
+            <label for="lead-scenario" class="sr-only" data-i18n="landing.form.scenario_aria">Primary Scenario</label>
+            <select id="lead-scenario" name="scenario" class="lead-input lead-select" data-i18n-aria="landing.form.scenario_aria" aria-label="Primary Scenario">
               <option value="outreach" data-i18n="landing.form.opt_outreach">B2B Outbound SDR</option>
               <option value="research" data-i18n="landing.form.opt_research">Deep Market Intelligence</option>
               <option value="code" data-i18n="landing.form.opt_code">Code & Computer Work</option>
