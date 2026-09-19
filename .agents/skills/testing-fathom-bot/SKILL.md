@@ -32,6 +32,11 @@ App renders inside an X11 window titled "wlroots - X11-1". Focus with `wmctrl -i
 - **Flaky typing**: multi-char `type` may drop leading characters ("UI-Scout" → "-cout"). Click the field, `ctrl+a`/`Delete`, retype, nudge+screenshot to confirm; or drive via REST and verify the UI reflects it.
 - **Kill cleanly**: `pkill -x fathombot` then `pkill -x cage` — never loose `pkill -f` (matches your own wrapper shell).
 - `pgrep -a fathombot-harness` may show nothing (process name truncates to "fathombot-harne"); use `ss -tlnp | grep 8799` or `pgrep -f`.
+- **Stale-instance trap**: if :8799 is already bound, a new harness fails with EADDRINUSE and your curls silently hit the OLD process with a DIFFERENT data dir. Always `ss -tlnp | grep 8799` before launching and verify `GET /api/config` returns YOUR `data_dir`.
+- **Composer input position**: the Message field sits at the very bottom of the window — at ~930x620 it's around y=428, not mid-window. Clicking empty chat area does NOT focus it.
+- **Missing glyph font**: emoji icons (📌🗄🖥☺🗑 etc.) render as empty boxes — count positions, don't hunt for shapes. Zoom the header/action row to locate them; tiny icons (~8px) are hard to hit — enlarge the window first.
+- **img element never paints under pixman** — inline image attachments show nothing (data is correct via REST; mark env-limited, not a bug).
+- Search dialog retains the last query between opens; Enter triggers `Submitted` only when the field is focused.
 
 ## UI structure (crates/fathom-app/src/views.rs)
 Sidebar (250px): "F fathom" header + "+" (New bot dialog); bot rows = colored avatar (initial from `avatar_seed`) + name + engine label/last message. Header: avatar + name + "Engine · model" + "model ▾" + stop/edit buttons. Composer: "Message" input + Send + ⏎. Settings gear bottom-left → engine config dialog (persists via PUT /api/engines/{kind}). Error messages render as red-bordered bubbles; user bubbles right-aligned blue.

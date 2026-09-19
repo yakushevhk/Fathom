@@ -104,7 +104,9 @@ POST /api/attachments                raw bytes + x-file-name / content-type
 GET  /api/attachments/{id}           serve stored blob
 
 GET/POST /api/rooms                  rooms list / create {name, member_ids, responder}
-GET/PATCH/DELETE /api/rooms/{id}     responder ∈ member|everyone|mentions
+GET/PATCH/DELETE /api/rooms/{id}     responder is serde-tagged:
+                                   {"kind":"member","bot_id":"…"} |
+                                   {"kind":"everyone"} | {"kind":"mentions"}
 POST /api/rooms/{id}/read            clear room unread
 
 GET  /api/approvals                  pending approvals
