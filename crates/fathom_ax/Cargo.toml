@@ -24,5 +24,6 @@ libc.workspace = true
 which.workspace = true
 
 [dev-dependencies]
+libc.workspace = true
 tempfile = "3"
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "process", "time"] }

@@ -541,13 +541,23 @@ impl AxController {
     }
 
     /// Await the actor's exit and mark the task terminal. The child is a
-    /// std process (runtime-free spawn), so the wait runs on the
-    /// blocking pool; if the pool is already shutting down the monitor
-    /// exits quietly and `recover()` finalizes via the exit file.
+    /// std process (runtime-free spawn) polled via try_wait; if the task is
+    /// abandoned by runtime shutdown, `recover()` finalizes via the exit
+    /// file on the next open.
     async fn monitor_child(&self, key: &str, actor_id: String, mut child: std::process::Child) {
-        let status = match tokio::task::spawn_blocking(move || child.wait()).await {
-            Ok(s) => s,
-            Err(_) => return,
+        // Poll try_wait rather than a blocking wait(): a blocking wait on a
+        // suspended actor never returns, and Runtime::drop waits for
+        // in-flight spawn_blocking work — wedging every runtime shutdown
+        // (CLI exit, embedder teardown, test harness) while a task is
+        // suspended. A plain async poll is simply abandoned on drop.
+        let status = loop {
+            match child.try_wait() {
+                Ok(Some(s)) => break Ok(s),
+                Ok(None) => {
+                    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+                }
+                Err(e) => break Err(e),
+            }
         };
         let (atespace, name) = key.split_once('/').unwrap_or(("default", key));
         let Ok(mut task) = self.store.get_task(atespace, name) else {

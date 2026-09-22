@@ -9,6 +9,38 @@ use pr_ax::manifest::{kind, phase, AxManifest};
 use pr_ax::{AxController, AxStore};
 use tempfile::TempDir;
 
+/// (state, starttime) of a pid from /proc; None when the process is gone.
+fn proc_state(pid: i64) -> Option<(String, String)> {
+    let stat = std::fs::read_to_string(format!("/proc/{pid}/stat")).ok()?;
+    let after = stat.rsplit(')').next()?;
+    let mut it = after.split_whitespace();
+    let state = it.next()?.to_string();
+    let starttime = it.nth(19)?.to_string(); // field 22 of /proc/pid/stat
+    Some((state, starttime))
+}
+
+/// SIGKILL an actor process group on drop — test cleanup for the
+/// panic path so a failed assertion cannot leak T-stopped actors.
+struct KillGuard(i64);
+
+impl Drop for KillGuard {
+    fn drop(&mut self) {
+        if self.0 > 0 {
+            unsafe { libc::kill(-(self.0 as libc::pid_t), libc::SIGKILL) };
+        }
+    }
+}
+
+/// The actor is really gone: pid absent, a zombie (signal delivered,
+/// awaiting reap), or the pid was recycled by an unrelated process
+/// (starttime changed).
+fn actor_gone(pid: i64, starttime: &str) -> bool {
+    match proc_state(pid) {
+        None => true,
+        Some((state, st)) => state == "Z" || state == "X" || st != starttime,
+    }
+}
+
 fn task_yaml(name: &str, command: &str) -> String {
     format!(
         r#"apiVersion: ax.io/v1alpha1
@@ -257,34 +289,36 @@ async fn suspend_resume_and_delete() {
 
     let t = ctl.suspend_task("default", "sleeper").await.unwrap();
     assert_eq!(t.status.phase, phase::SUSPENDED);
-    // SIGSTOP actually froze the process. Signal delivery is async —
-    // poll /proc until the state flips to T (bounded).
+    // SIGSTOP actually froze the process. Signal delivery is async: a
+    // running process passes through D (uninterruptible during the stop
+    // transition) before settling on T — an idle sh/sleep has no other
+    // reason to enter D, so either state proves the signal landed.
     let pid = t.status.pid;
+    let _guard = KillGuard(pid);
     let mut state = String::new();
-    for _ in 0..50 {
-        let stat = std::fs::read_to_string(format!("/proc/{pid}/stat")).unwrap();
-        state = stat
-            .rsplit(')')
-            .next()
-            .unwrap()
-            .split_whitespace()
-            .next()
-            .unwrap()
-            .to_string();
-        if state == "T" {
+    for _ in 0..100 {
+        let (s, _) = proc_state(pid).expect("actor pid must exist");
+        state = s;
+        if state == "T" || state == "D" {
             break;
         }
         tokio::time::sleep(Duration::from_millis(100)).await;
     }
-    assert_eq!(state, "T");
+    assert!(
+        state == "T" || state == "D",
+        "actor pid {pid} never left running state (last={state})"
+    );
+    let (_, starttime) = proc_state(pid).unwrap();
 
     let t = ctl.resume_task("default", "sleeper").await.unwrap();
     assert_eq!(t.status.phase, phase::RUNNING);
 
     ctl.delete_task("default", "sleeper").await.unwrap();
     assert!(ctl.store().get("task", "default", "sleeper").is_err());
-    // Actor process group is dead.
-    assert!(!pr_ax::actor::alive(pid));
+    // Actor process group is dead. A killed-but-unreaped shim shows as a
+    // zombie (kill(0) still succeeds), and a fast-recycled pid is not ours —
+    // compare /proc state + starttime instead of bare liveness.
+    assert!(actor_gone(pid, &starttime), "actor pid {pid} still running");
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

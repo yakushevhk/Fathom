@@ -1325,7 +1325,6 @@ mod tests {
             .expect("run_bench dispatch");
     }
 
-    /// Race on shared `pr-bench-{pid}` temp dir when run in parallel.
     #[tokio::test]
     async fn test_run_bench_parallel_io() {
         run_bench("parallel-io", 2, None)
@@ -1333,7 +1332,6 @@ mod tests {
             .expect("run_bench parallel-io");
     }
 
-    /// Race on shared `pr-bench-{pid}` temp dir when run in parallel.
     #[tokio::test]
     async fn test_run_bench_parallel_cpu() {
         run_bench("parallel-cpu", 2, None)
@@ -1341,14 +1339,12 @@ mod tests {
             .expect("run_bench parallel-cpu");
     }
 
-    /// Race on shared `pr-bench-{pid}` temp dir when run in parallel.
     #[tokio::test]
     async fn test_run_bench_mixed() {
         run_bench("mixed", 2, None).await.expect("run_bench mixed");
     }
 
-    /// Parse-scale benchmark creates large temp files. Race on shared
-    /// `pr-bench-{pid}` dir when run in parallel. Marked `#[ignore]`.
+    /// Parse-scale benchmark creates large temp files.
     #[tokio::test]
     async fn test_run_bench_parse_scale() {
         run_bench("parse-scale", 2, None)
@@ -1356,7 +1352,6 @@ mod tests {
             .expect("run_bench parse-scale");
     }
 
-    /// Race on shared `pr-bench-{pid}` temp dir when run in parallel.
     #[tokio::test]
     async fn test_run_bench_extract_json() {
         run_bench("extract-json", 2, None)
@@ -1364,7 +1359,6 @@ mod tests {
             .expect("run_bench extract-json");
     }
 
-    /// Race on shared `pr-bench-{pid}` temp dir when run in parallel.
     #[tokio::test]
     async fn test_run_bench_feed_parse() {
         run_bench("feed-parse", 2, None)
@@ -1372,10 +1366,7 @@ mod tests {
             .expect("run_bench feed-parse");
     }
 
-    /// code_map benchmark requires external tools (tree-sitter). Crashes when
-    /// the temp dir `pr-bench-{pid}` raced by parallel tests corrupts the
-    /// 240-file fixture. Marked `#[ignore]`; run via
-    /// `cargo test -- --ignored test_run_bench_code_map`.
+    /// code_map benchmark builds a 240-file fixture in a per-test temp dir.
     #[tokio::test]
     async fn test_run_bench_code_map() {
         run_bench("code-map", 2, None)
@@ -1383,7 +1374,6 @@ mod tests {
             .expect("run_bench code-map");
     }
 
-    /// Race on shared `pr-bench-{pid}` temp dir when run in parallel.
     #[tokio::test]
     async fn test_run_bench_memory() {
         run_bench("memory", 2, None)
@@ -1391,7 +1381,6 @@ mod tests {
             .expect("run_bench memory");
     }
 
-    /// Race on shared `pr-bench-{pid}` temp dir when run in parallel.
     #[tokio::test]
     async fn test_run_bench_unknown_scenario_errors() {
         let err = run_bench("nonexistent", 4, None).await.unwrap_err();
@@ -1496,8 +1485,7 @@ mod tests {
         env.cleanup();
     }
 
-    /// Feed-parse benchmark also creates large temp fixtures. Race on shared
-    /// `pr-bench-{pid}` dir. Marked `#[ignore]`.
+    /// Feed-parse benchmark also creates large temp fixtures.
     #[tokio::test]
     async fn test_bench_feed_parse_reports_items() {
         let env = BenchEnv::setup(2).expect("env");
@@ -1508,7 +1496,7 @@ mod tests {
         env.cleanup();
     }
 
-    /// Same race condition as `test_run_bench_code_map`. Marked `#[ignore]`.
+    /// Same fixture as `test_run_bench_code_map`.
     #[tokio::test]
     async fn test_bench_code_map_reports_symbols() {
         let env = BenchEnv::setup(2).expect("env");
@@ -1619,7 +1607,6 @@ mod tests {
     }
 
     #[test]
-    /// Race on shared `pr-bench-{pid}` temp dir when run in parallel.
     fn test_benchenv_cleanup_removes_workdir() {
         let env = BenchEnv::setup(2).expect("setup");
         let workdir = env.workdir.clone();
