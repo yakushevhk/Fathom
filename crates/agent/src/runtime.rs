@@ -1990,7 +1990,7 @@ impl AgentRuntime {
                             1,
                             spill_dir.clone(),
                         );
-                        tokio::spawn(async move {
+                        let join = tokio::spawn(async move {
                             // Keep the subtree token count — it feeds the
                             // session budget accounting (fleet round 2).
                             let (res, tokens) = match fut.await {
@@ -2001,6 +2001,7 @@ impl AgentRuntime {
                             let mgr = pr_core::async_job::AsyncJobManager::global();
                             mgr.complete(job_id, res, tokens);
                         });
+                        mgr.attach_abort_handle(job_id, join.abort_handle());
                         bg_launched.push((call_id, aid.0.clone()));
                     } else {
                         items.push((call_id, aid, child));

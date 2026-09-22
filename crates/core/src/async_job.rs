@@ -46,6 +46,10 @@ pub struct JobResult {
     pub tokens: u64,
 }
 
+/// Maximum number of job records retained in the registry. Oldest
+/// terminal-state jobs are evicted first past this cap.
+const MAX_RETAINED_JOBS: usize = 4096;
+
 /// Process-global manager for async background jobs.
 ///
 /// Singleton. Jobs are created by `spawn_agent` with `background: true`.
@@ -106,7 +110,35 @@ impl AsyncJobManager {
                 tokens: 0,
             },
         );
+        self.prune_jobs();
         id
+    }
+
+    /// Evict the oldest terminal jobs when the registry grows past
+    /// `MAX_RETAINED_JOBS`, so a long-lived daemon cannot accumulate
+    /// finished job records without bound.
+    fn prune_jobs(&self) {
+        let mut jobs = self.jobs.lock();
+        if jobs.len() <= MAX_RETAINED_JOBS {
+            return;
+        }
+        let mut terminal: Vec<JobId> = jobs
+            .values()
+            .filter(|j| {
+                matches!(
+                    j.status,
+                    JobStatus::Completed | JobStatus::Failed | JobStatus::Cancelled
+                )
+            })
+            .map(|j| j.id)
+            .collect();
+        terminal.sort_unstable();
+        for id in terminal
+            .into_iter()
+            .take(jobs.len().saturating_sub(MAX_RETAINED_JOBS))
+        {
+            jobs.remove(&id);
+        }
     }
 
     /// Mark a job as running if a concurrency slot is available.
@@ -140,6 +172,7 @@ impl AsyncJobManager {
     /// Complete a job with a result. The result is delivered to the owner's
     /// sink.
     pub fn complete(&self, id: JobId, result: Result<String, String>, tokens: u64) {
+        self.abort_handles.lock().remove(&id);
         let label;
         let owner;
         {
@@ -147,6 +180,14 @@ impl AsyncJobManager {
             let Some(job) = jobs.get_mut(&id) else {
                 return;
             };
+            // A terminal record (e.g. a cancelled job) must not be
+            // resurrected by a late completion.
+            if matches!(
+                job.status,
+                JobStatus::Completed | JobStatus::Failed | JobStatus::Cancelled
+            ) {
+                return;
+            }
             job.status = JobStatus::Completed;
             job.result = Some(result.clone());
             job.tokens = tokens;
@@ -166,7 +207,14 @@ impl AsyncJobManager {
 
     /// Mark a job as failed (without a delivery sink notification).
     pub fn fail(&self, id: JobId, error: String) {
+        self.abort_handles.lock().remove(&id);
         if let Some(job) = self.jobs.lock().get_mut(&id) {
+            if matches!(
+                job.status,
+                JobStatus::Completed | JobStatus::Failed | JobStatus::Cancelled
+            ) {
+                return;
+            }
             job.status = JobStatus::Failed;
             job.result = Some(Err(error));
         }
@@ -179,6 +227,9 @@ impl AsyncJobManager {
             handle.abort();
         }
         if let Some(job) = self.jobs.lock().get_mut(&id) {
+            if matches!(job.status, JobStatus::Completed | JobStatus::Failed) {
+                return;
+            }
             job.status = JobStatus::Cancelled;
         }
     }
@@ -271,5 +322,60 @@ mod tests {
         mgr.mark_running(a);
         mgr.mark_running(b);
         assert_eq!(mgr.running_count(), 2);
+    }
+
+    #[tokio::test]
+    async fn test_cancelled_job_not_resurrected_by_late_complete() {
+        let mgr = AsyncJobManager::new();
+        let owner = AgentId::new();
+        let mut rx = mgr.register_sink(&owner);
+        let id = mgr.create_job(&owner, "dead-job");
+        mgr.mark_running(id);
+        mgr.cancel(id);
+        // A late completion (e.g. the task finished just as cancel landed)
+        // must not flip the record back or notify the sink.
+        mgr.complete(id, Ok("too late".to_string()), 1);
+        assert_eq!(mgr.get(id).unwrap().status, JobStatus::Cancelled);
+        assert!(rx.try_recv().is_err());
+    }
+
+    #[test]
+    fn test_completed_job_cannot_be_failed_or_cancelled() {
+        let mgr = AsyncJobManager::new();
+        let owner = AgentId::new();
+        let id = mgr.create_job(&owner, "done-job");
+        mgr.complete(id, Ok("ok".to_string()), 0);
+        mgr.fail(id, "nope".to_string());
+        mgr.cancel(id);
+        assert_eq!(mgr.get(id).unwrap().status, JobStatus::Completed);
+    }
+
+    #[tokio::test]
+    async fn test_complete_prunes_abort_handle() {
+        let mgr = AsyncJobManager::new();
+        let owner = AgentId::new();
+        let id = mgr.create_job(&owner, "h");
+        let jh = tokio::spawn(async {});
+        mgr.attach_abort_handle(id, jh.abort_handle());
+        assert_eq!(mgr.abort_handles.lock().len(), 1);
+        mgr.complete(id, Ok("x".to_string()), 0);
+        assert!(mgr.abort_handles.lock().is_empty());
+    }
+
+    #[test]
+    fn test_prune_evicts_oldest_terminal_jobs() {
+        let mgr = AsyncJobManager::new();
+        let owner = AgentId::new();
+        for _ in 0..MAX_RETAINED_JOBS {
+            let id = mgr.create_job(&owner, "j");
+            mgr.complete(id, Ok("x".to_string()), 0);
+        }
+        assert_eq!(mgr.snapshot().len(), MAX_RETAINED_JOBS);
+        // The next job pushes us past the cap: the oldest terminal
+        // record is evicted while running/registered jobs stay.
+        let running = mgr.create_job(&owner, "still-running");
+        assert!(mgr.snapshot().len() <= MAX_RETAINED_JOBS);
+        assert!(mgr.get(1).is_none());
+        assert_eq!(mgr.get(running).unwrap().status, JobStatus::Registered);
     }
 }

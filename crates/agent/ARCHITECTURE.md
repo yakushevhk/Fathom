@@ -1560,7 +1560,7 @@ Each agent runtime registers a sink at startup. Completed job results for that o
 
 ### 10.6. `complete(id, result, tokens)` / `fail(id, error)` / `cancel(id)`
 
-`complete`/`fail` mark the `JobInfo` terminal and route a `JobResult` into the owner's sink. `cancel` aborts via the stored `AbortHandle` (see `attach_abort_handle`) and records `Cancelled`.
+`complete`/`fail` mark the `JobInfo` terminal and route a `JobResult` into the owner's sink. `cancel` aborts via the stored `AbortHandle` (see `attach_abort_handle`) and records `Cancelled`. Terminal methods remove the stored abort handle, and a terminal record is never overwritten by a late `complete`/`fail`/`cancel`. The registry is capped at `MAX_RETAINED_JOBS` (4096) records — oldest terminal jobs are evicted first so a long-lived daemon cannot accumulate records without bound.
 
 ### 10.7. `list_by_owner(owner_id)` / `snapshot()` / `running_count()`
 

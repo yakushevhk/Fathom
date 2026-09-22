@@ -75,7 +75,7 @@ impl Tool for McpBridgeTool {
                 Ok(v) => Ok(v),
                 // A dead stdio server fails every subsequent call; try to
                 // re-establish the connection once before giving up.
-                Err(e) if e.to_string().contains("closed the connection") => {
+                Err(e) if is_transport_failure(&e) => {
                     tracing::warn!("MCP server {} went away; attempting reconnect", self.server);
                     match client.reconnect(&self.server).await {
                         Ok(()) => client.call_tool(&self.server, &self.tool_name, args).await,
@@ -94,6 +94,17 @@ impl Tool for McpBridgeTool {
             ))),
         }
     }
+}
+
+/// Whether a `tools/call` failure indicates a broken transport (server
+/// process exited, pipe closed, or read timed out) rather than an
+/// application-level JSON-RPC error — i.e. worth a reconnect + retry.
+fn is_transport_failure(e: &anyhow::Error) -> bool {
+    if e.downcast_ref::<std::io::Error>().is_some() {
+        return true;
+    }
+    let msg = e.to_string();
+    msg.contains("closed the connection") || msg.contains("timed out waiting")
 }
 
 /// Convert an MCP `tools/call` result into a [`ToolOutput`].

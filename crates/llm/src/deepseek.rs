@@ -46,7 +46,7 @@ impl DeepSeekProvider {
         let http = reqwest::Client::builder()
             .timeout(Duration::from_secs(300)) // 5-minute timeout
             .build()
-            .expect("failed to build HTTP client");
+            .unwrap_or_else(|_| reqwest::Client::new());
 
         Self {
             base_url: base_url.trim_end_matches('/').to_string(),
