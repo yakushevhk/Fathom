@@ -90,15 +90,31 @@ fathom ax delete task <name>                # two-phase (Terminating → gone)
 fathom ax events [--from-seq N]             # raw event log
 ```
 
+## Environment
+
+| Variable | Meaning |
+|---|---|
+| `FATHOM_AX_HOME` | State dir (default `~/.fathom/ax`): store, actor logs, materialized workspaces |
+| `FATHOM_BIN` | Path to the `fathom` binary used by the built-in harness (default: `fathom` resolved via `PATH`) — set this when testing from a build tree |
+
 ## Durability, resumption, forking
+
+`apply` is **synchronous**: ref resolution, workspace materialization
+(git clone into an atomic `.partial` staging dir renamed on success),
+actor spawn and the durable actor record all complete before the command
+returns — so a one-shot CLI never leaves work pending on a runtime that
+is about to exit. Multi-document files are applied two-pass: non-task
+resources first, so a Task resolves its refs regardless of file order.
 
 Every state change is appended to `store/events` **before** the status row
 is written — replay recovers exact history (`watch --from-seq`,
 `ax events`). On controller start, `recover()`:
 
 - reattaches monitors to still-running actors (pid registry), or
-- marks tasks whose actor vanished `Interrupted` — `ax resume` then
-  respawns the declared command durably.
+- resolves the recorded exit file (`<log>.exit`, written by the actor's
+  own `sh -c` wrapper) into Completed/Failed, or marks a task whose actor
+  vanished without one `Interrupted` — `ax resume` then respawns the
+  declared command durably.
 
 `fork` creates a sibling task with `status.forked_from` +
 `status.fork_seq` recorded and its own event chain — divergent execution

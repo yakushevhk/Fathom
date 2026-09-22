@@ -238,11 +238,65 @@ impl AxStore {
         Ok(())
     }
 
-    /// Load a task (manifest with status merged in).
+    /// Load a task — the `status` column (written by `save_status`) is
+    /// authoritative and overlaid onto the manifest, so status survives
+    /// re-applies that carry an empty status in the spec document.
     pub fn get_task(&self, atespace: &str, name: &str) -> AxResult<crate::manifest::Task> {
         match self.get("task", atespace, name)? {
-            AxManifest::Task(t) => Ok(t),
-            _ => unreachable!("kind filter guarantees Task"),
+            AxManifest::Task(mut t) => {
+                if let Some(status) = self.task_status(atespace, name)? {
+                    t.status = status;
+                }
+                Ok(t)
+            }
+            _ => Err(AxError::NotFound {
+                kind: "task",
+                name: name.into(),
+                atespace: atespace.into(),
+            }),
+        }
+    }
+
+    /// List tasks with their authoritative status overlaid.
+    pub fn list_tasks(&self, atespace: &str) -> AxResult<Vec<crate::manifest::Task>> {
+        self.list("task", atespace)?
+            .into_iter()
+            .filter_map(|m| match m {
+                AxManifest::Task(t) => {
+                    let meta = t.metadata.clone();
+                    match self.task_status(meta.atespace_or_default(), &meta.name) {
+                        Ok(Some(status)) => {
+                            let mut t = t;
+                            t.status = status;
+                            Some(Ok(t))
+                        }
+                        Ok(None) => Some(Ok(t)),
+                        Err(e) => Some(Err(e)),
+                    }
+                }
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// The status column for a task, if it has ever been written.
+    fn task_status(
+        &self,
+        atespace: &str,
+        name: &str,
+    ) -> AxResult<Option<crate::manifest::TaskStatus>> {
+        let conn = self.conn.lock();
+        let raw: Option<String> = conn
+            .query_row(
+                "SELECT status FROM resources WHERE kind='task' AND atespace=?1 AND name=?2",
+                params![atespace, name],
+                |r| r.get(0),
+            )
+            .ok()
+            .flatten();
+        match raw {
+            Some(s) if !s.is_empty() => Ok(Some(serde_json::from_str(&s).unwrap_or_default())),
+            _ => Ok(None),
         }
     }
 

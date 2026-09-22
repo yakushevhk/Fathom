@@ -11,7 +11,8 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-use tokio::process::{Child, Command};
+use std::os::unix::process::CommandExt;
+use std::process::{Child, Command};
 
 use crate::error::{AxError, AxResult};
 
@@ -44,15 +45,15 @@ pub fn spawn(spec: &ActorSpec, log_path: &Path) -> AxResult<(Child, i64)> {
         .stdin(std::process::Stdio::null())
         .stdout(log)
         .stderr(err)
-        .envs(&spec.env)
-        // Own process group: suspend/kill target the group, covering
-        // grandchildren the actor spawns.
-        .process_group(0);
+        .envs(&spec.env);
+    // Own process group: suspend/kill target the group, covering
+    // grandchildren the actor spawns.
+    cmd.process_group(0);
 
     let child = cmd
         .spawn()
         .map_err(|e| AxError::Actor(format!("spawn '{}': {e}", spec.argv.join(" "))))?;
-    let pid = child.id().unwrap_or(0) as i64;
+    let pid = child.id() as i64;
     Ok((child, pid))
 }
 

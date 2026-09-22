@@ -132,6 +132,47 @@ fn camel_case_roundtrip() {
     assert!(yaml.contains("creationTimestamp") || !yaml.contains("creation_timestamp"));
 }
 
+#[test]
+fn rejects_path_traversal_in_workspace_and_git_fields() {
+    // ws path escaping the task dir
+    let bad = r#"apiVersion: ax.io/v1alpha1
+kind: Task
+metadata:
+  name: evil
+spec:
+  command: ["true"]
+  workspaces:
+    - name: ws
+      path: "../../tmp/escape"
+"#;
+    assert!(AxManifest::parse_documents(bad).is_err());
+    // git name with a slash
+    let bad2 = r#"apiVersion: ax.io/v1alpha1
+kind: Workspace
+metadata:
+  name: w
+spec:
+  git:
+    - name: "../x"
+      repo: https://example.com/r.git
+"#;
+    assert!(AxManifest::parse_documents(bad2).is_err());
+    // absolute ws path
+    let bad3 = r#"apiVersion: ax.io/v1alpha1
+kind: Task
+metadata:
+  name: evil3
+spec:
+  command: ["true"]
+  workspaces:
+    - name: ws
+      path: /etc
+"#;
+    assert!(AxManifest::parse_documents(bad3).is_err());
+    // and the legit shape still parses
+    assert!(AxManifest::parse_documents(&multi_doc()).is_ok());
+}
+
 // ── Store ────────────────────────────────────────────────────────────────
 
 #[test]
@@ -216,17 +257,25 @@ async fn suspend_resume_and_delete() {
 
     let t = ctl.suspend_task("default", "sleeper").await.unwrap();
     assert_eq!(t.status.phase, phase::SUSPENDED);
-    // SIGSTOP actually froze the process.
+    // SIGSTOP actually froze the process. Signal delivery is async —
+    // poll /proc until the state flips to T (bounded).
     let pid = t.status.pid;
-    let stat = std::fs::read_to_string(format!("/proc/{pid}/stat")).unwrap();
-    let state = stat
-        .rsplit(')')
-        .next()
-        .unwrap()
-        .split_whitespace()
-        .next()
-        .unwrap()
-        .to_string();
+    let mut state = String::new();
+    for _ in 0..50 {
+        let stat = std::fs::read_to_string(format!("/proc/{pid}/stat")).unwrap();
+        state = stat
+            .rsplit(')')
+            .next()
+            .unwrap()
+            .split_whitespace()
+            .next()
+            .unwrap()
+            .to_string();
+        if state == "T" {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
     assert_eq!(state, "T");
 
     let t = ctl.resume_task("default", "sleeper").await.unwrap();
@@ -328,6 +377,24 @@ async fn fork_creates_sibling_at_seq() {
     // And the child really re-ran the command.
     let log = std::fs::read_to_string(&child.status.log_path).unwrap();
     assert!(log.contains("parent-run"));
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn status_survives_reapply() {
+    let tmp = TempDir::new().unwrap();
+    let ctl = AxController::open(tmp.path()).unwrap();
+    let yaml = task_yaml("reapply", "\"true\"");
+    ctl.apply_documents(&yaml).unwrap();
+    wait_phase(ctl.store(), "reapply", &[phase::COMPLETED], 15).await;
+    // Re-apply the same manifest (fresh spec, empty status) — the stored
+    // status must not be lost (it is preserved in the status column and
+    // overlaid on read), then the new generation re-runs to Completed.
+    ctl.apply_documents(&yaml).unwrap();
+    let t = ctl.store().get_task("default", "reapply").unwrap();
+    assert!(!t.status.phase.is_empty(), "status lost on re-apply");
+    wait_phase(ctl.store(), "reapply", &[phase::COMPLETED], 15).await;
+    let t = ctl.store().get_task("default", "reapply").unwrap();
+    assert_eq!(t.status.phase, phase::COMPLETED);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

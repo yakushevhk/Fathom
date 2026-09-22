@@ -497,11 +497,8 @@ impl AxManifest {
         match self {
             Self::Task(t) => {
                 for ws in &t.spec.workspaces {
-                    if ws.name.is_empty() {
-                        return Err(AxError::Validation(
-                            "spec.workspaces[].name is required".into(),
-                        ));
-                    }
+                    check_name("spec.workspaces[].name", &ws.name)?;
+                    check_rel_path("spec.workspaces[].path", &ws.path)?;
                 }
                 for e in &t.spec.env {
                     if e.name.is_empty() {
@@ -545,6 +542,8 @@ impl AxManifest {
             }
             Self::Workspace(w) => {
                 for g in &w.spec.git {
+                    check_name("spec.git[].name", &g.name)?;
+                    check_rel_path("spec.git[].dir", &g.dir)?;
                     if g.repo.is_empty() {
                         return Err(AxError::Validation(format!(
                             "git repo '{}' requires a repo URL",
@@ -563,4 +562,44 @@ impl AxManifest {
         }
         Ok(())
     }
+}
+
+/// Names that become filesystem path components must use the same safe
+/// charset as metadata.name — a `..` or `/` would let a manifest write
+/// outside the task's workspace dir.
+fn check_name(field: &str, value: &str) -> AxResult<()> {
+    if value.is_empty() {
+        return Err(AxError::Validation(format!("{field} is required")));
+    }
+    if !value
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '.' || c == '_')
+    {
+        return Err(AxError::Validation(format!(
+            "invalid {field} '{value}' (alphanumerics, '-', '.', '_' only)"
+        )));
+    }
+    Ok(())
+}
+
+/// A path field, when present, must be relative and contain no `..`
+/// components — the controller joins it under the task workspace dir.
+fn check_rel_path(field: &str, value: &str) -> AxResult<()> {
+    if value.is_empty() {
+        return Ok(());
+    }
+    let p = std::path::Path::new(value);
+    if p.is_absolute()
+        || p.components().any(|c| {
+            matches!(
+                c,
+                std::path::Component::ParentDir | std::path::Component::RootDir
+            )
+        })
+    {
+        return Err(AxError::Validation(format!(
+            "{field} '{value}' must be a relative path without '..'"
+        )));
+    }
+    Ok(())
 }

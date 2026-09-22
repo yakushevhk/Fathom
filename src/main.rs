@@ -2677,9 +2677,8 @@ async fn cmd_ax(action: AxAction) -> anyhow::Result<()> {
             }
         }
         AxAction::List { kind, atespace } => {
-            let docs = ctl.list(&kind, &atespace)?;
             if kind.eq_ignore_ascii_case("task") {
-                let rows = pr_ax::ops::task_rows(docs);
+                let rows = pr_ax::ops::task_rows(ctl.store().list_tasks(&atespace)?);
                 println!(
                     "{:<30} {:<12} {:<12} {:<8} ACTOR",
                     "NAME", "ATESPACE", "PHASE", "PID"
@@ -2696,7 +2695,7 @@ async fn cmd_ax(action: AxAction) -> anyhow::Result<()> {
                     );
                 }
             } else {
-                for m in docs {
+                for m in ctl.list(&kind, &atespace)? {
                     println!(
                         "{}/{}\t{}",
                         m.kind().to_lowercase(),
@@ -2711,15 +2710,19 @@ async fn cmd_ax(action: AxAction) -> anyhow::Result<()> {
             name,
             atespace,
         } => {
-            let m = ctl.get(&kind, &atespace, &name)?;
+            let m = if kind.eq_ignore_ascii_case("task") {
+                pr_ax::AxManifest::Task(ctl.store().get_task(&atespace, &name)?)
+            } else {
+                ctl.get(&kind, &atespace, &name)?
+            };
             println!("{}", serde_yaml::to_string(&m)?);
         }
         AxAction::Status { name, atespace } => {
-            let docs = match &name {
-                Some(n) => vec![ctl.get("task", nonempty(&atespace), n)?],
-                None => ctl.list("task", &atespace)?,
+            let tasks = match &name {
+                Some(n) => vec![ctl.store().get_task(nonempty(&atespace), n)?],
+                None => ctl.store().list_tasks(&atespace)?,
             };
-            let rows = pr_ax::ops::task_rows(docs);
+            let rows = pr_ax::ops::task_rows(tasks);
             println!(
                 "{:<30} {:<12} {:<12} {:<8} ACTOR",
                 "NAME", "ATESPACE", "PHASE", "PID"
@@ -2895,13 +2898,19 @@ async fn ax_logs(
     }
     let mut offset = 0u64;
     if tail > 0 {
-        let text = std::fs::read_to_string(&task.status.log_path).unwrap_or_default();
+        // Bounded tail: read at most the last 256KiB, then take lines.
+        let file_len = std::fs::metadata(&task.status.log_path)
+            .map(|m| m.len())
+            .unwrap_or(0);
+        let from = file_len.saturating_sub(256 * 1024);
+        let (end_off, chunk) = pr_ax::ops::read_task_log(&task.status.log_path, from)?;
+        let text = String::from_utf8_lossy(&chunk);
         let lines: Vec<&str> = text.lines().collect();
         let start = lines.len().saturating_sub(tail);
         for l in &lines[start..] {
             println!("{l}");
         }
-        offset = text.len() as u64;
+        offset = end_off;
     }
     loop {
         let (new_off, chunk) = pr_ax::ops::read_task_log(&task.status.log_path, offset)?;

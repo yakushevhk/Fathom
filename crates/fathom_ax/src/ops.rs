@@ -5,7 +5,7 @@ use std::path::Path;
 use crate::actor;
 use crate::controller::AxController;
 use crate::error::AxResult;
-use crate::manifest::{AxManifest, Task};
+use crate::manifest::Task;
 use crate::store::{AxStore, Event};
 
 /// One-line task row for `fathom ax list` / `status`.
@@ -20,15 +20,10 @@ pub struct TaskRow {
     pub forked_from: String,
 }
 
-/// Project a manifest list into printable task rows.
-pub fn task_rows(tasks: Vec<AxManifest>) -> Vec<TaskRow> {
-    tasks
-        .into_iter()
-        .filter_map(|m| match m {
-            AxManifest::Task(t) => Some(task_row(t)),
-            _ => None,
-        })
-        .collect()
+/// Project a task list (as returned by `AxStore::list_tasks`, which
+/// overlays the authoritative status column) into printable rows.
+pub fn task_rows(tasks: Vec<Task>) -> Vec<TaskRow> {
+    tasks.into_iter().map(task_row).collect()
 }
 
 fn task_row(t: Task) -> TaskRow {
@@ -64,8 +59,15 @@ pub fn describe_task(ctl: &AxController, atespace: &str, name: &str) -> AxResult
     let task = ctl.store().get_task(atespace, name)?;
     let events = object_events(ctl.store(), "task", atespace, name)?;
     let mut out = serde_yaml::to_string(&task).unwrap_or_default();
-    out.push_str("---\n# events (oldest first)\n");
-    for e in events.iter().take(20) {
+    out.push_str("---\n# events (last 20, oldest first)\n");
+    for e in events
+        .iter()
+        .rev()
+        .take(20)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+    {
         out.push_str(&format!(
             "# seq={} {} at {}\n",
             e.seq, e.action, e.created_at

@@ -50,7 +50,7 @@ pub struct AxController {
     /// source of truth — the broadcast is a notification edge).
     events_tx: broadcast::Sender<TaskEvent>,
     /// Optional path to the fathom binary for the built-in harness.
-    fathom_bin: PathBuf,
+    fathom_bin: Mutex<PathBuf>,
 }
 
 impl AxController {
@@ -67,7 +67,7 @@ impl AxController {
             store,
             live: Mutex::new(HashMap::new()),
             events_tx,
-            fathom_bin,
+            fathom_bin: Mutex::new(fathom_bin),
         });
         ctl.recover();
         Ok(ctl)
@@ -81,15 +81,13 @@ impl AxController {
             store: AxStore::in_memory(root)?,
             live: Mutex::new(HashMap::new()),
             events_tx,
-            fathom_bin: PathBuf::from("fathom"),
+            fathom_bin: Mutex::new(PathBuf::from("fathom")),
         }))
     }
 
-    /// Use an explicit fathom binary path.
-    pub fn with_fathom_bin(self: Arc<Self>, bin: PathBuf) -> Arc<Self> {
-        let mut ctl = Arc::into_inner(self).expect("fresh controller has no other refs");
-        ctl.fathom_bin = bin;
-        Arc::new(ctl)
+    /// Use an explicit fathom binary path for the built-in harness.
+    pub fn set_fathom_bin(&self, bin: PathBuf) {
+        *self.fathom_bin.lock() = bin;
     }
 
     pub fn store(&self) -> &AxStore {
@@ -106,17 +104,17 @@ impl AxController {
         let is_task = matches!(manifest, AxManifest::Task(_));
 
         if is_task {
-            let mut task = match &manifest {
-                AxManifest::Task(t) => t.clone(),
-                _ => unreachable!(),
+            let AxManifest::Task(task) = &manifest else {
+                return Err(AxError::Manifest("expected a Task manifest".into()));
             };
+            let mut task = task.clone();
             if task.status.phase.is_empty() {
                 task.status.phase = phase::PENDING.to_string();
             }
             let manifest = AxManifest::Task(task.clone());
             self.store.upsert(&manifest)?;
             self.publish(&task, "upsert", serde_json::json!({}))?;
-            // Spawned task runs the reconcile loop off the caller's path.
+            // Reconcile runs off the caller's path.
             let ctl = Arc::clone(self);
             spawn_reconcile(ctl, task);
         } else {
@@ -127,10 +125,15 @@ impl AxController {
     }
 
     /// Apply every document in a YAML stream (like `ax apply -f`).
-    /// Returns the number of applied manifests.
+    /// Non-task manifests are stored first so a Task that references a
+    /// Workspace/Gateway/Model resolves its refs regardless of document
+    /// order in the file. Returns the number of applied manifests.
     pub fn apply_documents(self: &Arc<Self>, yaml: &str) -> AxResult<usize> {
         let docs = AxManifest::parse_documents(yaml)?;
-        for m in &docs {
+        for m in docs.iter().filter(|m| !matches!(m, AxManifest::Task(_))) {
+            self.apply(m.clone())?;
+        }
+        for m in docs.iter().filter(|m| matches!(m, AxManifest::Task(_))) {
             self.apply(m.clone())?;
         }
         Ok(docs.len())
@@ -269,13 +272,23 @@ impl AxController {
     // ── Reconciler ───────────────────────────────────────────────────────
 
     /// Reconcile one task to Running (or Suspended when spec.suspend).
-    async fn reconcile(self: &Arc<Self>, task: &Task) {
-        if let Err(e) = self.reconcile_inner(task).await {
+    ///
+    /// Runs fully synchronously on the caller's path: every durable
+    /// mutation — ref resolution, workspace materialization, actor spawn,
+    /// actor record, phase publish — completes before this returns. That
+    /// is what makes a CLI invocation safe: when `fathom ax apply` exits
+    /// and its tokio runtime drops, nothing needed to reach Running state
+    /// is still pending on an async task that will never be polled again.
+    /// The only async work is the exit monitor, which is best-effort: the
+    /// actor's recorded exit file plus `recover()` resolve the terminal
+    /// phase even if the monitor never ran.
+    fn reconcile(self: &Arc<Self>, task: &Task) {
+        if let Err(e) = self.reconcile_sync(task) {
             tracing::warn!("ax reconcile failed for {}: {e:#}", task.metadata.key());
         }
     }
 
-    async fn reconcile_inner(self: &Arc<Self>, task: &Task) -> AxResult<()> {
+    fn reconcile_sync(self: &Arc<Self>, task: &Task) -> AxResult<()> {
         let mut task = task.clone();
         let key = task.metadata.key();
         task.status.id = format!(
@@ -334,9 +347,13 @@ impl AxController {
                     } else {
                         &wref.path
                     })
-                    .join(&repo.name);
+                    .join(if repo.dir.is_empty() {
+                        &repo.name
+                    } else {
+                        &repo.dir
+                    });
                 if !dest.exists() {
-                    if let Err(e) = git_clone(repo, &dest).await {
+                    if let Err(e) = git_clone(repo, &dest) {
                         return self.fail_task(
                             &task,
                             "WorkspaceReady",
@@ -439,12 +456,17 @@ impl AxController {
             task
         };
 
-        // 6. Monitor the child; terminal phase + events on exit.
-        let ctl = Arc::clone(self);
-        let key2 = key.clone();
-        let monitor =
-            tokio::spawn(async move { ctl.monitor_child(&key2, task.status.id, child).await });
-        self.live.lock().insert(key, Live { monitor });
+        // 6. Monitor the child — only when a tokio runtime is live (a
+        //    long-running embedded controller or a `watch`-style command).
+        //    Without one the actor still records its exit code durably and
+        //    the next controller `open()` resolves the terminal phase.
+        if let Ok(h) = tokio::runtime::Handle::try_current() {
+            let ctl = Arc::clone(self);
+            let key2 = key.clone();
+            let actor_id = task.status.id.clone();
+            let monitor = h.spawn(async move { ctl.monitor_child(&key2, actor_id, child).await });
+            self.live.lock().insert(key, Live { monitor });
+        }
         Ok(())
     }
 
@@ -506,7 +528,7 @@ impl AxController {
                 .filter(|g| !g.is_empty())
                 .unwrap_or_else(|| task.metadata.name.clone());
             vec![
-                self.fathom_bin.to_string_lossy().to_string(),
+                self.fathom_bin.lock().to_string_lossy().to_string(),
                 "run".into(),
                 goal,
                 "-o".into(),
@@ -518,9 +540,15 @@ impl AxController {
         Ok(ActorSpec { argv, cwd, env })
     }
 
-    /// Await the actor's exit and mark the task terminal.
-    async fn monitor_child(&self, key: &str, actor_id: String, mut child: tokio::process::Child) {
-        let status = child.wait().await;
+    /// Await the actor's exit and mark the task terminal. The child is a
+    /// std process (runtime-free spawn), so the wait runs on the
+    /// blocking pool; if the pool is already shutting down the monitor
+    /// exits quietly and `recover()` finalizes via the exit file.
+    async fn monitor_child(&self, key: &str, actor_id: String, mut child: std::process::Child) {
+        let status = match tokio::task::spawn_blocking(move || child.wait()).await {
+            Ok(s) => s,
+            Err(_) => return,
+        };
         let (atespace, name) = key.split_once('/').unwrap_or(("default", key));
         let Ok(mut task) = self.store.get_task(atespace, name) else {
             return; // deleted mid-run
@@ -580,13 +608,10 @@ impl AxController {
     /// After a restart, reattach to surviving actors; mark the rest
     /// Interrupted so `ax resume` can respawn them durably.
     fn recover(self: &Arc<Self>) {
-        let Ok(tasks) = self.store.list("task", "") else {
+        let Ok(tasks) = self.store.list_tasks("") else {
             return;
         };
-        for m in tasks {
-            let AxManifest::Task(mut task) = m else {
-                continue;
-            };
+        for mut task in tasks {
             let phase_now = task.status.phase.as_str();
             if !matches!(phase_now, phase::RUNNING | phase::SUSPENDED) {
                 continue;
@@ -847,13 +872,18 @@ fn wrap_exit_recorder(argv: &[String], exit_path: &Path) -> Vec<String> {
         "sh".into(),
         "-c".into(),
         format!(
-            "\"$@\"; rc=$?; echo -n \"$rc\" > '{}'; exit $rc",
-            exit_path.display()
+            "\"$@\"; rc=$?; echo -n \"$rc\" > {}; exit $rc",
+            sh_quote(&exit_path.to_string_lossy())
         ),
         "ax-actor".into(),
     ];
     v.extend(argv.iter().cloned());
     v
+}
+
+/// POSIX single-quote escaping (' → '\'').
+fn sh_quote(s: &str) -> String {
+    format!("'{}'", s.replace('\'', "'\\''"))
 }
 
 /// Read the exit code recorded by the actor shim, if present.
@@ -869,10 +899,11 @@ fn read_exit_code(log_path: &str) -> Option<i64> {
 /// Spawn a reconcile pass when a tokio runtime is present; without one
 /// (plain sync callers) the task stays Pending — honest semantics: no
 /// running controller, no actor.
+/// Reconciliation runs synchronously on the caller's path (see
+/// `reconcile` for why) — no runtime required, so a one-shot CLI
+/// command fully materializes and spawns the actor before it exits.
 fn spawn_reconcile(ctl: Arc<AxController>, task: Task) {
-    if let Ok(h) = tokio::runtime::Handle::try_current() {
-        h.spawn(async move { ctl.reconcile(&task).await });
-    }
+    ctl.reconcile(&task);
 }
 
 fn kind_static(kind: &str) -> &'static str {
@@ -885,11 +916,20 @@ fn kind_static(kind: &str) -> &'static str {
     }
 }
 
-async fn git_clone(repo: &crate::manifest::GitRepo, dest: &Path) -> anyhow::Result<()> {
+/// Clone into a `<dest>.partial` staging dir, then rename — a clone
+/// killed mid-flight (controller exit) leaves no half-checkout behind:
+/// `dest` only ever appears complete. Sync `std::process` deliberately:
+/// a one-shot CLI must not depend on a tokio runtime for this (an async
+/// spawn dies with the runtime before it can even start).
+fn git_clone(repo: &crate::manifest::GitRepo, dest: &Path) -> anyhow::Result<()> {
     if let Some(parent) = dest.parent() {
-        tokio::fs::create_dir_all(parent).await?;
+        std::fs::create_dir_all(parent)?;
     }
-    let mut cmd = tokio::process::Command::new("git");
+    let staged = dest.with_extension("partial");
+    if staged.exists() {
+        std::fs::remove_dir_all(&staged)?;
+    }
+    let mut cmd = std::process::Command::new("git");
     cmd.arg("clone");
     if repo.depth > 0 {
         cmd.arg("--depth").arg(repo.depth.to_string());
@@ -897,10 +937,12 @@ async fn git_clone(repo: &crate::manifest::GitRepo, dest: &Path) -> anyhow::Resu
     if !repo.branch.is_empty() {
         cmd.arg("--branch").arg(&repo.branch);
     }
-    cmd.arg(&repo.repo).arg(dest);
-    let out = cmd.output().await?;
+    cmd.arg(&repo.repo).arg(&staged);
+    let out = cmd.output()?;
     if !out.status.success() {
+        std::fs::remove_dir_all(&staged).ok();
         anyhow::bail!("git clone failed: {}", String::from_utf8_lossy(&out.stderr));
     }
+    std::fs::rename(&staged, dest)?;
     Ok(())
 }
