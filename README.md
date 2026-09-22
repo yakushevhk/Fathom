@@ -3,6 +3,10 @@
 </p>
 
 <p align="center">
+  <a href="README.md">English</a> · <a href="README.ru.md">Русский</a>
+</p>
+
+<p align="center">
   <strong>Universal Autonomous AI Workforce & SOTA Coding Harness.</strong><br>
   <em>Research, outreach, code intelligence, line-anchored patching, computer use — full autonomy in pure Rust.</em>
 
@@ -186,7 +190,7 @@ Deploying autonomous agents in mission-critical environments requires mathematic
 
 ```bash
 # Clone the repository
-git clone https://github.com/fathom-ai/fathom.git
+git clone https://github.com/yakushevhk/Fathom.git
 cd Fathom
 
 # Build native release binary

@@ -6,9 +6,10 @@ interface Props {
   title: string;
   description?: string;
   activePage?: string;
+  ruTranslated?: boolean;
 }
 
-const { title, description = 'Fathom documentation for a universal autonomous AI worker runtime: tools, sessions, HTTP API, MCP, security, and architecture.', activePage = '' } = Astro.props;
+const { title, description = 'Fathom documentation for a universal autonomous AI worker runtime: tools, sessions, HTTP API, MCP, security, and architecture.', activePage = '', ruTranslated = false } = Astro.props;
 const SITE = 'https://fathom.uz';
 const isRu = Astro.currentLocale === 'ru';
 const rawPath = Astro.url.pathname.replace(/^\/ru(\/|$)/, '$1') || '/';
@@ -174,7 +175,7 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
     </script>
   </head>
   <body>
-    <a class="skip-link" href="#main">Skip to content</a>
+    <a class="skip-link" href="#main" data-i18n="docsNav.skipLink">Skip to content</a>
     <nav class="docstop-nav" aria-label="Documentation">
       <div class="docstop-nav-inner">
         <a href={isRu ? '/ru' : '/'} class="docs-logo">
@@ -209,8 +210,8 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
               </button>
             </div>
           </div>
-          <a href="/install" class="docs-btn-ghost">Get Access</a>
-          <a href="/docs/quickstart" class="docs-btn-primary">Get Started →</a>
+          <a href="/install" class="docs-btn-ghost" data-i18n="docsNav.getAccess">Get Access</a>
+          <a href="/docs/quickstart" class="docs-btn-primary" data-i18n="docsNav.getStarted">Get Started →</a>
         </div>
         <button class="docs-mobile-toggle" aria-label="Menu" id="docs-menu-toggle">
           <span></span><span></span><span></span>
@@ -247,7 +248,7 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
           ))}
         </nav>
         <p class="sidebar-empty" id="sidebar-empty" hidden data-i18n="docsNav.noMatches">No matches</p>
-        <div class="sidebar-location">Based in Tashkent, Uzbekistan</div>
+        <div class="sidebar-location" data-i18n="docsNav.location">Based in Tashkent, Uzbekistan</div>
       </aside>
 
       <main class="docs-main" id="main">
@@ -263,9 +264,11 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
               </>
             )}
           </nav>
-          <div class="docs-ru-notice" role="note">
-            Эта страница документации пока на английском — навигация и интерфейс переведены, перевод содержимого в работе.
-          </div>
+          {!ruTranslated && (
+            <div class="docs-ru-notice" role="note">
+              Эта страница документации пока на английском — навигация и интерфейс переведены, перевод содержимого в работе.
+            </div>
+          )}
           <slot />
           {
             (prevItem || nextItem) && (
@@ -294,7 +297,7 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
 
       <aside class="docs-toc" id="docs-toc">
         <div class="toc-inner">
-          <h4 class="toc-title">On this page</h4>
+          <h4 class="toc-title" data-i18n="docsNav.toc">On this page</h4>
           <nav class="toc-nav" id="toc-nav"></nav>
         </div>
       </aside>

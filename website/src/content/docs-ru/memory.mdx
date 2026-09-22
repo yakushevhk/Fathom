@@ -1,0 +1,950 @@
+---
+title: "Память — Fathom"
+description: "Управление постоянной семантической памятью Fathom: граф сущностей, области, поглощение, дистилляция, поиск, хранение и контроль приватности."
+sidebarId: "memory"
+---
+  
+export const absorbSteps = [
+  { n: '1', t: 'Валидация', d: 'Подходят только самодостаточные факты (3–5000 символов). Очень короткие, малоценные фрагменты отклоняются.' },
+  { n: '2', t: 'Сканирование секретов', d: 'API-ключи, токены и пароли отбрасываются до сохранения чего-либо.' },
+  { n: '3', t: 'Консолидация', d: 'Почти-дубликаты фактов (cosine ≥ 0.85) сливаются в одну каноническую запись.' },
+  { n: '4', t: 'Дедупликация и классификация', d: 'LLM (или эвристики) выбирает один из шести исходов: duplicate, supersede, contradict, coexist, related или new.' },
+  { n: '5', t: 'Применение вердикта', d: 'Вытесненные строки архивируются с типизированной связью; противоречия сохраняются обеими сторонами видимо.' },
+];
+
+export const scopes = [
+  ['agent', 'Знания, разделённые между всеми сессиями агента — постоянный мозг.'],
+  ['user', 'Факты о клиенте, которого вы исследуете или которому продаёте.'],
+  ['run', 'Факты эпизода одной сессии, продвигаемые в область agent через дистилляцию.'],
+];
+
+<div class="doc-header">
+    <span class="doc-badge">Память</span>
+    <h1>Память, которая накапливается</h1>
+    <p class="doc-lead">
+      Факты поглощаются в постоянную, доступную для поиска базу знаний — так что каждая сессия
+      автономного воркера может начинаться с того, что вы уже знаете, а не с нуля.
+    </p>
+  </div>
+
+  {/* ============ ОБЛАСТИ ============ */}
+  <section id="scopes">
+    <h2>Где живут факты</h2>
+    <table class="mini-table">
+      <thead><tr><th>Область</th><th>Назначение</th></tr></thead>
+      <tbody>
+        {scopes.map(([k, d]) => (
+          <tr><td><code>{k}</code></td><td>{d}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+
+  {/* ============ ГИБРИДНЫЙ ПОИСК ============ */}
+  <section id="search">
+    <h2>Поиск, сочетающий семантику и ключевые слова</h2>
+    <p>Поиск по памяти — это гибрид семантической (векторной) схожести и сопоставления ключевых слов BM25:</p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">формула</span></div>
+      <pre><code set:html={`score = 0.7·cosine_similarity + 0.3·bm25_normalized
+final  = score × max(0, 1 − 0.01·days_old)`} /></pre>
+    </div>
+    <ul class="check-list">
+      <li><strong>Семантический вес 0.7</strong> балансирует смысл выше точного совпадения.</li>
+      <li><strong>Временное затухание 0.01/день</strong> медленно ослабляет старые факты — выигрывает свежее.</li>
+      <li><strong>top_k 5, min_score 0.25</strong> держат результаты плотными и релевантными.</li>
+      <li>Офлайн TF-IDF эмбеддинги (512 измерений), когда нет API-ключа — сеть не нужна.</li>
+      <li>Граф знаний сущностей (memory_graph) для людей, компаний, мест и типизированных отношений</li>
+    </ul>
+  </section>
+
+  {/* ============ ПОГЛОЩЕНИЕ ============ */}
+  <section id="absorb">
+    <h2>Как факты попадают внутрь</h2>
+    <p>Каждый обнаруженный факт проходит через пайплайн поглощения до того, как попасть в память.</p>
+    <div class="flow-list">
+      {absorbSteps.map((s) => (
+        <div class="flow-item">
+          <div class="flow-index">{s.n}</div>
+          <div class="flow-body">
+            <div class="flow-title">{s.t}</div>
+            <p class="flow-desc">{s.d}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  {/* ============ ГРАФ СУЩНОСТЕЙ + ВЕРСИИ ============ */}
+  <section id="graph">
+    <h2>Факты, которые меняются, — под контролем</h2>
+    <p>
+      Ничего не перезаписывается. Когда факт вытесняется, создаётся новая строка, а старая
+      архивируется за типизированной связью <code>supersedes</code>. <code>contradicts</code> оставляет
+      обе стороны видимыми, а <code>related_to</code> связывает связанные знания. Граф сущностей делает
+      смены ролей, события финансирования и миграции технологий первоклассными фактами, на которые
+      может ссылаться ваш аутрич.
+    </p>
+  </section>
+
+  {/* ============ ДАЙДЖЕСТ ============ */}
+  <section id="digest">
+    <h2>Память подключается автоматически</h2>
+    <p>
+      На глубине 0 верхнеуровневый агент получает <strong>дайджест памяти</strong> в своём системном промпте:
+      релевантные воспоминания, открытые TODO и недавние записи. Ваш аутрич никогда не повторит касание,
+      никогда не назовёт устаревшую роль и всегда строится на том, что вы уже собрали.
+    </p>
+  </section>
+
+  {/* ============ GC ============ */}
+  <section id="gc">
+    <h2>Растёт — и сама наводит порядок</h2>
+    <p>
+      Автоматический сборщик мусора архивирует устаревшие факты области run после 30 дней и компактирует
+      переполненные группы (scope, key) из 200+ активных строк в одну без жёсткого удаления.
+      Явная команда <code>fathom memory nuke --yes</code> — деструктивная и необратимая.
+    </p>
+  </section>
+
+  <section id="distill">
+    <h2>Дистилляция</h2>
+    <p>
+      Дистилляция продвигает факты эпизода области run в долговечные знания области agent. Когда сессия
+      исследования завершается, дистиллятор повторно поглощает её run-факты через полный пайплайн
+      (валидация, дедупликация, классификация), но нацеливается на область agent вместо run.
+      Оригиналы архивируются. Так факты, обнаруженные в одной сессии, становятся постоянными знаниями,
+      доступными всем будущим сессиям — без ручного копирования. Запустите
+      <code>fathom memory distill --session &lt;ключ&gt;</code> или дайте <code>gc_auto = true</code>
+      выполнять почасовое обслуживание памяти в фоне (включая GC и дистилляцию); это отдельно от
+      деструктивной команды <code>nuke</code>.
+    </p>
+  </section>
+
+  {/* ============ СПРАВОЧНИК ИНСТРУМЕНТОВ ПАМЯТИ ============ */}
+  <section id="tools-reference">
+    <h2>Справочник инструментов памяти</h2>
+    <p>
+      Семь специализированных инструментов позволяют агентам читать, писать, искать, связывать
+      и рассуждать о памяти. Файловая память управляется инструментом <code>memory</code>;
+      операции семантической памяти имеют отдельные интерфейсы CLI и REST.
+    </p>
+
+    {/* — memory (файловая) — */}
+    <h3 id="tool-memory"><code>memory</code> — файловый CRUD</h3>
+    <p>
+      Инструмент <code>memory</code> управляет файловым контекстом в <code>MEMORY.md</code> и <code>USER.md</code>.
+      Он применяет текстовые операции к выбранному целевому файлу; семантические записи управляются отдельно
+      через <code>memory_absorb</code>, <code>memory_search</code> и CLI <code>fathom memory</code>.
+    </p>
+    <table class="mini-table">
+      <thead><tr><th>Действие</th><th>Описание</th><th>Пример</th></tr></thead>
+      <tbody>
+        <tr><td><code>add</code></td><td>Добавить содержимое в <code>MEMORY.md</code> или <code>USER.md</code>.</td><td><code>action=add target=memory content=...</code></td></tr>
+        <tr><td><code>replace</code></td><td>Заменить совпадающий существующий текст.</td><td><code>action=replace old_text=... content=...</code></td></tr>
+        <tr><td><code>remove</code></td><td>Удалить совпадающий существующий текст.</td><td><code>action=remove old_text=...</code></td></tr>
+        <tr><td><code>batch</code></td><td>Применить последовательность операций add, replace или remove.</td><td><code>action=batch operations=[...]</code></td></tr>
+      </tbody>
+    </table>
+
+    {/* — memory_absorb — */}
+    <h3 id="tool-absorb"><code>memory_absorb</code> — поглощение фактов</h3>
+    <p>
+      Рекомендуемый способ сохранять новые знания. <code>memory_absorb</code> пропускает сырой текст через
+      полный пайплайн поглощения — валидацию, сканирование секретов, консолидацию, классификацию и создание
+      связей — так что дубликаты или секреты никогда не сохраняются случайно.
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">пример</span></div>
+      <pre><code set:html={`memory_absorb({
+  scope: "agent",
+  fact: "Stripe acquired Lemon Squeezy in March 2024 for merchant-of-record capabilities"
+})`} /></pre>
+    </div>
+    <p>Пайплайн выполняет эти шаги по порядку:</p>
+    <div class="flow-list">
+      <div class="flow-item">
+        <div class="flow-index">1</div>
+        <div class="flow-body">
+          <div class="flow-title">Валидация</div>
+          <p class="flow-desc">Длина должна быть 3–5000 символов. Фрагменты короче 3 символов или бессмыслица отклоняются с <code>ERR_TOO_SHORT</code>.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-index">2</div>
+        <div class="flow-body">
+          <div class="flow-title">Сканирование секретов</div>
+          <p class="flow-desc">Regex-паттерны обнаруживают API-ключи, JWT, приватные ключи SSH и пароли. Совпавшие токены редактируются до сохранения.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-index">3</div>
+        <div class="flow-body">
+          <div class="flow-title">Консолидация</div>
+          <p class="flow-desc">Вычисляются эмбеддинги и сравниваются с существующими фактами. Косинусная схожесть ≥ 0.85 запускает слияние в каноническую запись.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-index">4</div>
+        <div class="flow-body">
+          <div class="flow-title">Классификация</div>
+          <p class="flow-desc">LLM (или эвристический запасной вариант) решает: <code>new</code>, <code>duplicate</code>, <code>supersede</code>, <code>contradict</code>, <code>coexist</code> или <code>related</code>.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-index">5</div>
+        <div class="flow-body">
+          <div class="flow-title">Применение вердикта</div>
+          <p class="flow-desc">Новые строки вставляются; вытесненные получают связь <code>supersedes</code>; противоречия обе выживают со связью <code>contradicts</code>.</p>
+        </div>
+      </div>
+    </div>
+    <p>Типичный ответ:</p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">json</span></div>
+      <pre><code set:html={`{
+  "status": "absorbed",
+  "memory_id": "mem_8f3a2b",
+  "classification": "new",
+  "embedding_model": "tfidf-512",
+  "edges_created": 0,
+  "duplicates_merged": 0
+}`} /></pre>
+    </div>
+
+    {/* — memory_search — */}
+    <h3 id="tool-search"><code>memory_search</code> — гибридный поиск</h3>
+    <p>
+      Сочетает векторную схожесть (семантическую) с сопоставлением ключевых слов BM25 для надёжного
+      извлечения. Результаты ранжируются по взвешенному скору и фильтруются <code>min_score</code>.
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">примеры запросов</span></div>
+      <pre><code set:html={`memory_search({ scope: "agent", query: "Stripe pricing tiers", top_k: 5 })
+memory_search({ scope: "user", query: "CEO name and background", top_k: 3 })
+memory_search({ scope: "all", query: "competitor analysis fintech", min_score: 0.3 })`} /></pre>
+    </div>
+    <p>Формула скоринга подробно:</p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">формула</span></div>
+      <pre><code set:html={`raw_score = semantic_weight × cosine(embedding_q, embedding_doc)
+           + (1 − semantic_weight) × bm25_normalized(query, doc)
+
+temporal  = max(0, 1 − temporal_decay × days_since_last_update)
+
+final_score = raw_score × temporal × importance_boost`} /></pre>
+    </div>
+    <p>Пример результата поиска:</p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">json</span></div>
+      <pre><code set:html={`{
+  "results": [
+    {
+      "id": "mem_8f3a2b",
+      "content": "Stripe acquired Lemon Squeezy in March 2024",
+      "scope": "agent",
+      "score": 0.87,
+      "semantic_component": 0.91,
+      "bm25_component": 0.78,
+      "temporal_factor": 0.96,
+      "importance": 1.0,
+      "updated_at": "2024-03-15T10:30:00Z"
+    }
+  ],
+  "total": 1,
+  "query_time_ms": 12
+}`} /></pre>
+    </div>
+
+    {/* — memory_digest — */}
+    <h3 id="tool-digest"><code>memory_digest</code> — контекстный дайджест</h3>
+    <p>
+      Генерирует сжатый блок памяти, подходящий для внедрения в системные промпты. Дайджест
+      подтягивает наиболее релевантные воспоминания для текущего контекста, открытые TODO и недавние записи.
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">пример</span></div>
+      <pre><code set:html={`memory_digest({
+  scope: "agent",
+  topic: "outreach to fintech companies",
+  max_tokens: 2000
+})`} /></pre>
+    </div>
+    <p>Дайджест включает три секции:</p>
+    <ul class="check-list">
+      <li><strong>Релевантные воспоминания</strong> — top-K фактов по теме, ранжированных по скору.</li>
+      <li><strong>Открытые TODO</strong> — любые записи, помеченные TODO и ещё активные.</li>
+      <li><strong>Недавние записи</strong> — факты, поглощённые за последние 48 часов, независимо от темы.</li>
+    </ul>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">вывод</span></div>
+      <pre><code set:html={`## Memory Digest — "outreach to fintech companies"
+
+### Relevant Facts
+- [agent] Stripe acquired Lemon Squeezy (MoR) in March 2024 (score: 0.87)
+- [agent] Plaid raised Series D at $13.4B valuation (score: 0.72)
+- [user] Target contact: Jane Doe, VP Engineering at Plaid (score: 0.68)
+
+### Open TODOs
+- [run] Draft personalized email for Jane Doe referencing Plaid's API-first approach
+
+### Recent (last 48h)
+- [run] Plaid announced new Transfer product on 2024-03-14`} /></pre>
+    </div>
+
+    {/* — memory_boost — */}
+    <h3 id="tool-boost"><code>memory_boost</code> — настройка важности</h3>
+    <p>
+      Позволяет увеличивать или уменьшать множитель важности конкретной записи памяти.
+      Поднятые факты ранжируются выше в результатах поиска и дайджестах. Важность — дробный множитель,
+      применяемый при скоринге — по умолчанию <code>1.0</code>.
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">пример</span></div>
+      <pre><code set:html={`memory_boost({
+  id: "mem_8f3a2b",
+  importance: 2.0,
+  reason: "Critical acquisition — cite in all Stripe outreach"
+})`} /></pre>
+    </div>
+    <p>Как важность влияет на ранжирование:</p>
+    <table class="mini-table">
+      <thead><tr><th>Важность</th><th>Эффект</th><th>Случай использования</th></tr></thead>
+      <tbody>
+        <tr><td><code>0.5</code></td><td>Половинный вес — пониженный приоритет в результатах</td><td>Фоновый контекст, nice-to-know</td></tr>
+        <tr><td><code>1.0</code></td><td>Обычный вес (по умолчанию)</td><td>Стандартные факты</td></tr>
+        <tr><td><code>1.5</code></td><td>50% буст в ранжировании</td><td>Важные предпочтения клиентов</td></tr>
+        <tr><td><code>2.0</code></td><td>Двойной вес — всегда всплывает первым</td><td>Критические факты, знания к обязательному цитированию</td></tr>
+        <tr><td><code>3.0</code></td><td>Тройной вес — закреплён наверху</td><td>Критичные ограничения, юридические требования</td></tr>
+      </tbody>
+    </table>
+
+    {/* — memory_link — */}
+    <h3 id="tool-link"><code>memory_link</code> — типизированные связи</h3>
+    <p>
+      Создаёт направленную типизированную связь между двумя записями памяти. Связи позволяют выражать
+      отношения вроде «этот факт вытесняет тот» или «эти два факта связаны».
+    </p>
+    <table class="mini-table">
+      <thead><tr><th>Тип связи</th><th>Описание</th><th>Пример</th></tr></thead>
+      <tbody>
+        <tr><td><code>related_to</code></td><td>Общая семантическая связь между двумя фактами.</td><td>«Цены Stripe» ↔ «поглощение Stripe MoR»</td></tr>
+        <tr><td><code>supersedes</code></td><td>Новый факт заменяет старый. Старый архивируется.</td><td>«Series D на $13.4B» вытесняет «Series C на $8B»</td></tr>
+        <tr><td><code>contradicts</code></td><td>Два факта конфликтуют — обе стороны остаются видимыми для проверки.</td><td>«Доход Q1 $5M» противоречит «Доход Q1 $3M»</td></tr>
+        <tr><td><code>implements</code></td><td>Один факт — конкретная реализация другого.</td><td>«Использовался Stripe Checkout v2» реализует «Переход на Stripe»</td></tr>
+        <tr><td><code>extends</code></td><td>Один факт добавляет детали или контекст к другому.</td><td>«Джейн из Google» расширяет «Джейн — VP Engineering»</td></tr>
+        <tr><td><code>references</code></td><td>Один факт цитирует или ссылается на другой как на источник.</td><td>«Размер рынка $50B» ссылается на «отчёт Gartner 2024»</td></tr>
+      </tbody>
+    </table>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">пример</span></div>
+      <pre><code set:html={`memory_link({
+  from_id: "mem_new_series_d",
+  to_id: "mem_old_series_c",
+  edge_type: "supersedes",
+  note: "Valuation updated after Series D announcement"
+})`} /></pre>
+    </div>
+
+    {/* — memory_graph — */}
+    <h3 id="tool-graph"><code>memory_graph</code> — граф знаний сущностей</h3>
+    <p>
+      Управляет лёгким графом сущность-отношение рядом с хранилищем памяти. Сущности представляют
+      реальные объекты (люди, компании, места), а отношения соединяют их типизированными связями.
+    </p>
+    <p>Доступны три действия:</p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">добавить сущность</span></div>
+      <pre><code set:html={`memory_graph({
+  action: "add",
+  entity: {
+    type: "person",
+    name: "Jane Doe",
+    attributes: { role: "VP Engineering", company: "Plaid" }
+  }
+})
+
+memory_graph({
+  action: "add",
+  entity: {
+    type: "company",
+    name: "Plaid",
+    attributes: { industry: "fintech", hq: "San Francisco" }
+  }
+})
+
+memory_graph({
+  action: "add",
+  entity: {
+    type: "location",
+    name: "San Francisco",
+    attributes: { country: "US", state: "CA" }
+  }
+})`} /></pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">добавить отношение</span></div>
+      <pre><code set:html={`memory_graph({
+  action: "add",
+  relation: {
+    from: "person:Jane Doe",
+    to: "company:Plaid",
+    type: "works_at",
+    attributes: { since: "2021" }
+  }
+})
+
+memory_graph({
+  action: "add",
+  relation: {
+    from: "company:Plaid",
+    to: "location:San Francisco",
+    type: "located_in"
+  }
+})`} /></pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">запрос</span></div>
+      <pre><code set:html={`memory_graph({
+  action: "query",
+  start: "location:San Francisco",
+  relation: "located_in",
+  direction: "inbound",
+  hops: 2
+})
+// Возвращает: всех людей, работающих в компаниях, расположенных в Сан-Франциско
+
+memory_graph({
+  action: "list",
+  entity_type: "company",
+  limit: 20
+})`} /></pre>
+    </div>
+  </section>
+
+  {/* ============ ГРАФ СУЩНОСТЕЙ ПОДРОБНО ============ */}
+  <section id="entity-graph-deep-dive">
+    <h2>Граф сущностей подробно</h2>
+    <p>
+      Граф сущностей сидит рядом с хранилищем памяти и предоставляет структурированные, запрашиваемые
+      отношения между реальными сущностями. В отличие от свободных текстовых воспоминаний, граф требует
+      типизированных узлов и связей, чтобы можно было обходить отношения программно.
+    </p>
+
+    <h3>Типы сущностей</h3>
+    <table class="mini-table">
+      <thead><tr><th>Тип</th><th>Описание</th><th>Типичные атрибуты</th></tr></thead>
+      <tbody>
+        <tr><td><code>person</code></td><td>Отдельные люди — контакты, основатели, руководители.</td><td><code>role</code>, <code>company</code>, <code>email</code>, <code>linkedin</code></td></tr>
+        <tr><td><code>company</code></td><td>Организации — потенциальные клиенты, конкуренты, партнёры.</td><td><code>industry</code>, <code>hq</code>, <code>size</code>, <code>founded</code></td></tr>
+        <tr><td><code>location</code></td><td>Географические места — города, страны, регионы.</td><td><code>country</code>, <code>state</code>, <code>timezone</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Построение карты отношений</h3>
+    <p>
+      Сущности соединяются через типизированные отношения. Граф поддерживает направленные связи,
+      поэтому <code>person → works_at → company</code> отличается от <code>company → employs → person</code>.
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">модель отношений</span></div>
+      <pre><code set:html={`person:Jane Doe  ──works_at──▶  company:Plaid
+company:Plaid    ──located_in──▶  location:San Francisco
+person:Jane Doe  ──knows──▶  person:John Smith
+company:Plaid    ──competes_with──▶  company:Stripe
+company:Stripe   ──acquired──▶  company:Lemon Squeezy`} /></pre>
+    </div>
+
+    <h3>Многошаговые запросы</h3>
+    <p>
+      Настоящая сила графа раскрывается в многошаговом обходе. Можно задавать вопросы вроде
+      «найди всех людей, работающих в компаниях со штаб-квартирой в Берлине», следуя по
+      связям <code>works_at</code> и <code>located_in</code> через два шага.
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">пример многошагового обхода</span></div>
+      <pre><code set:html={`// Шаг 1: найти компании в Берлине
+//   location:Berlin ←──located_in── company:N26
+//   location:Berlin ←──located_in── company:Delivery Hero
+
+// Шаг 2: найти людей в этих компаниях
+//   company:N26 ←──works_at── person:Max Tayenthal
+//   company:Delivery Hero ←──works_at── person:Niklas Östberg
+
+// Результат: [Max Tayenthal, Niklas Östberg]`} /></pre>
+    </div>
+
+    <h3>Дедупликация сущностей</h3>
+    <p>
+      Когда одна и та же сущность упоминается из разных источников (например, «Plaid» из новостной статьи
+      и «Plaid Inc.» из экспорта CRM), граф сливает их по нормализованному имени и типу сущности.
+      Проверяйте контекст источников и конфликтующие атрибуты перед экспортом.
+    </p>
+    <ul class="check-list">
+      <li><strong>Нормализация имён</strong> — нормализация пробелов и регистра определяет совпадающие имена по типу сущности.</li>
+      <li><strong>Слияние атрибутов</strong> — конфликтующие атрибуты остаются видимыми для проверки, неконфликтующие значения можно комбинировать.</li>
+      <li><strong>Переподключение связей</strong> — отношения, привязанные к переиспользованному узлу, остаются соединёнными с канонической сущностью.</li>
+    </ul>
+
+    <h3>Концепция визуализации графа</h3>
+    <p>
+      Граф можно визуализировать как диаграмму узлов и связей, где каждая сущность — узел, а каждое
+      отношение — типизированная направленная связь. Размер узла отражает связность (степень центральности),
+      а толщина связи может кодировать силу или свежесть отношения.
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">псевдокод визуализации</span></div>
+      <pre><code set:html={`nodes = graph.list_entities()
+edges = graph.list_relations()
+
+for node in nodes:
+  draw_circle(
+    x=node.x, y=node.y,
+    radius=2 + log(node.degree),
+    color=type_colors[node.type],  // person=синий, company=зелёный, location=оранжевый
+    label=node.name
+  )
+
+for edge in edges:
+  draw_arrow(
+    from=edge.from, to=edge.to,
+    style=edge_type_styles[edge.type],  // сплошная, пунктир, точечная
+    label=edge.type
+  )`} /></pre>
+    </div>
+  </section>
+
+  {/* ============ СПРАВОЧНИК КОНФИГУРАЦИИ ПАМЯТИ ============ */}
+  <section id="config-reference">
+    <h2>Справочник конфигурации памяти</h2>
+    <p>
+      Всё поведение памяти управляется через секцию <code>[memory]</code> вашего
+      файла <code>config.toml</code>. Каждое поле имеет разумное значение по умолчанию,
+      так что переопределять нужно только то, что важно для вашего случая.
+    </p>
+    <table class="mini-table">
+      <thead><tr><th>Поле</th><th>Тип</th><th>По умолчанию</th><th>Описание</th></tr></thead>
+      <tbody>
+        <tr><td><code>enabled</code></td><td>bool</td><td><code>true</code></td><td>Главный выключатель. При false все инструменты памяти возвращают заглушки и ничего не сохраняется.</td></tr>
+        <tr><td><code>db_path</code></td><td>string</td><td><code>~/.fathom/memory.db</code></td><td>Путь к файлу базы SQLite. Создаётся автоматически при первом запуске.</td></tr>
+        <tr><td><code>embeddings</code></td><td>string</td><td><code>"auto"</code></td><td>Бэкенд эмбеддингов: <code>auto</code> (OpenAI при наличии ключа, иначе TF-IDF), <code>openai</code> или <code>tfidf</code>.</td></tr>
+        <tr><td><code>semantic_weight</code></td><td>float</td><td><code>0.7</code></td><td>Вес семантической схожести в гибридном поиске. BM25 получает <code>1 − semantic_weight</code>.</td></tr>
+        <tr><td><code>top_k</code></td><td>int</td><td><code>5</code></td><td>Число результатов, возвращаемых <code>memory_search</code> и <code>memory_digest</code>.</td></tr>
+        <tr><td><code>min_score</code></td><td>float</td><td><code>0.25</code></td><td>Минимальный финальный скор для включения результата. Фильтрует шум.</td></tr>
+        <tr><td><code>temporal_decay</code></td><td>float</td><td><code>0.01</code></td><td>Ежедневный коэффициент затухания для старых фактов. При 0.01 факт возрастом 100 дней оценивается в 0.0 от исходного.</td></tr>
+        <tr><td><code>auto_digest</code></td><td>bool</td><td><code>true</code></td><td>Автоматически внедрять дайджест памяти в системный промпт верхнеуровневого агента.</td></tr>
+        <tr><td><code>llm_classify</code></td><td>bool</td><td><code>true</code></td><td>Использовать LLM для классификации при поглощении. При false возвращается к эвристическим правилам.</td></tr>
+        <tr><td><code>rerank</code></td><td>bool</td><td><code>false</code></td><td>Включить второй проход LLM-реранкера над результатами поиска. Добавляет задержку, но улучшает точность.</td></tr>
+        <tr><td><code>gc_auto</code></td><td>bool</td><td><code>false</code></td><td>Запускать почасовое фоновое обслуживание памяти (GC и дистилляция) во время выполнения сессий.</td></tr>
+        <tr><td><code>gc_ttl_days</code></td><td>int</td><td><code>30</code></td><td>Факты области run старше этого возраста архивируются GC.</td></tr>
+        <tr><td><code>gc_compact_above</code></td><td>int</td><td><code>200</code></td><td>Когда группа (scope, key) превышает это число активных строк, GC их компактирует.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Детали полей</h3>
+    <p><strong><code>enabled</code></strong> — главный выключатель. Установите <code>false</code>, чтобы отключить все функции памяти без удаления конфигурации. Полезно для тестирования или CI-окружений, где постоянное состояние нежелательно.</p>
+    <p><strong><code>db_path</code></strong> — SQLite используется для локального хранения без зависимостей. База содержит таблицы для воспоминаний, эмбеддингов, узлов графа сущностей, связей графа и метаданных. Можно указать на общий том для многомашинных установок, хотя модель одного писателя SQLite может требовать режим WAL.</p>
+    <p><strong><code>embeddings</code></strong> — управляет тем, как текст векторизуется для семантического поиска. <code>auto</code> проверяет переменную окружения <code>OPENAI_API_KEY</code>; если найдена, используется <code>text-embedding-3-small</code> (1536 измерений). Иначе возвращается к локальной модели TF-IDF (512 измерений), работающей полностью офлайн. Варианты <code>tfidf</code> и <code>openai</code> принудительно выбирают один бэкенд независимо от окружения.</p>
+    <p><strong><code>semantic_weight</code></strong> — балансирует смысл против точных ключевых слов. Более высокое значение (напр. 0.85) предпочитает семантическое понимание — хорошо для запросов естественным языком. Более низкое (напр. 0.5) предпочитает сопоставление ключевых слов — лучше для точных названий продуктов, аббревиатур или кодов. Значение по умолчанию 0.7 хорошо работает для смешанных нагрузок.</p>
+    <p><strong><code>top_k</code></strong> и <strong><code>min_score</code></strong> — управляют объёмом и качеством результатов. <code>top_k</code> ограничивает количество возвращаемых результатов; <code>min_score</code> отфильтровывает всё ниже порога. Поднимите <code>min_score</code> до 0.4+ для критичных к точности задач вроде юридических или комплаенс-исследований.</p>
+    <p><strong><code>temporal_decay</code></strong> — делает свежесть важной. Формула: <code>max(0, 1 − decay × days_old)</code>. При значении по умолчанию 0.01 факт стоит 90% после 10 дней, 50% после 50 дней и 0% после 100 дней. Установите 0.0, чтобы полностью отключить затухание (все факты равны независимо от возраста).</p>
+    <p><strong><code>auto_digest</code></strong> — при включении система автоматически генерирует и внедряет дайджест памяти в системный промпт верхнеуровневого агента перед каждым запуском. Это значит, что у агента всегда есть релевантный контекст без явных вызовов инструментов.</p>
+    <p><strong><code>llm_classify</code></strong> — управляет тем, использует ли пайплайн поглощения LLM для классификации входящих фактов (new, duplicate, supersede, contradict, coexist, related) или возвращается к эвристикам на расстоянии эмбеддингов. Путь через LLM точнее, но добавляет один API-вызов на поглощение.</p>
+    <p><strong><code>rerank</code></strong> — при включении результаты поиска проходят второй проход, где LLM переранжирует их по релевантности исходному запросу. Это добавляет задержку (один дополнительный вызов LLM), но может значительно улучшить качество для сложных или неоднозначных запросов.</p>
+    <p><strong>Поля <code>gc_*</code></strong> — сборщик мусора обрабатывает две задачи: (1) архивация фактов области run старше <code>gc_ttl_days</code> и (2) компактификация групп (scope, key), превышающих <code>gc_compact_above</code> активных строк, в одну каноническую запись. Обе операции мягкие — архивированные данные всегда восстановимы.</p>
+
+    <h3>Пример конфигурации</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">config.toml</span></div>
+      <pre><code set:html={`[memory]
+enabled = true
+db_path = "~/.fathom/memory.db"
+embeddings = "auto"
+semantic_weight = 0.7
+top_k = 5
+min_score = 0.25
+temporal_decay = 0.01
+auto_digest = true
+llm_classify = true
+rerank = false
+gc_ttl_days = 30
+gc_compact_above = 200
+gc_auto = false`} /></pre>
+    </div>
+  </section>
+
+  {/* ============ КОМАНДЫ CLI ПАМЯТИ ============ */}
+  <section id="cli-commands">
+    <h2>Команды CLI для памяти</h2>
+    <p>
+      Все операции памяти доступны из командной строки через <code>fathom memory</code>.
+      Эти команды полезны для отладки, ручной курации и скриптов автоматизации.
+    </p>
+
+    <h3>Поиск</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span></div>
+      <pre><code set:html={`fathom memory search "Stripe pricing tiers" --top-k 10 --scope agent
+fathom memory search "competitor analysis" --scope all
+fathom memory search "CEO background" --scope user`} /></pre>
+    </div>
+    <p>
+      Команда <code>search</code> выполняет гибридный поиск vector + BM25 и печатает ранжированные результаты.
+      Используйте <code>--format json</code> для программного потребления или <code>--format table</code> (по умолчанию)
+      для человекочитаемого вывода.
+    </p>
+
+    <h3>Список</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span></div>
+      <pre><code set:html={`fathom memory list --scope all --status active
+fathom memory list --scope agent --status archived -n 50
+fathom memory list --scope run`} /></pre>
+    </div>
+      <p>
+      Выводит записи с опциональной фильтрацией по области, статусу (<code>active</code>, <code>superseded</code>, <code>archived</code>, <code>all</code>)
+      и лимиту результатов. Результаты упорядочены по последнему обновлению.
+    </p>
+
+    <h3>Get</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span></div>
+      <pre><code set:html={`fathom memory get mem_8f3a2b
+fathom memory get mem_8f3a2b --follow full_history
+fathom memory get mem_8f3a2b --follow latest`} /></pre>
+    </div>
+    <p>
+      Получает одну запись по ID. Флаг <code>--follow</code> управляет тем, сколько связанных данных
+      включить: <code>none</code> (по умолчанию), <code>edges</code> (типизированные связи) или
+      <code>full_history</code> (все вытесненные версии и связи).
+    </p>
+
+    <h3>Статистика</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span></div>
+      <pre><code set:html={`fathom memory stats`} /></pre>
+    </div>
+    <p>
+      Печатает сводку хранилища памяти: общие записи по области и статусу, размер графа сущностей,
+      счётчики связей по типам, используемая модель эмбеддингов и размер файла базы.
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">вывод</span></div>
+      <pre><code set:html={`┌─────────────────────────────────────┐
+│  Memory Store Statistics            │
+├─────────────────────────────────────┤
+│  Active records:  1,247             │
+│    agent scope:     892             │
+│    user scope:      203             │
+│    run scope:       152             │
+│  Archived records:   389            │
+│  Entity graph:                       │
+│    nodes:           156             │
+│    edges:           412             │
+│  Embedding model:  tfidf-512        │
+│  DB size:          14.2 MB          │
+└─────────────────────────────────────┘`} /></pre>
+    </div>
+
+    <h3>Rebuild</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span></div>
+      <pre><code set:html={`fathom memory rebuild`} /></pre>
+    </div>
+    <p>
+      Перестраивает индекс памяти с нуля. Полезно после смены моделей эмбеддингов или если индекс
+      повредился. Команда пересчитывает эмбеддинги всех сохранённых воспоминаний текущей моделью.
+    </p>
+
+    <h3>Дистилляция</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span></div>
+      <pre><code set:html={`fathom memory distill --session run_abc123
+fathom memory distill --session run_abc123 --dry-run
+fathom memory distill --session run_abc123`} /></pre>
+    </div>
+    <p>
+      Продвигает факты области run из завершённой сессии в область agent. Используйте <code>--dry-run</code>
+      для предпросмотра того, какие факты будут продвинуты, без реальной записи. Назначение — постоянная область agent.
+    </p>
+
+    <h3>Сборка мусора</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span></div>
+      <pre><code set:html={`fathom memory gc
+fathom memory gc --ttl-days 30 --dry-run
+fathom memory gc --compact-above 200`} /></pre>
+    </div>
+    <p>
+      Вручную запускает сборку мусора. <code>--dry-run</code> показывает, что было бы архивировано или
+      скомпактировано без внесения изменений. Используйте <code>--ttl-days</code>, чтобы переопределить
+      период хранения по умолчанию для фактов области run.
+    </p>
+
+    <h3>Nuke</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span></div>
+      <pre><code set:html={`fathom memory nuke --scope run --yes
+fathom memory nuke --scope all --yes`} /></pre>
+    </div>
+    <p>
+      Навсегда удаляет все записи в указанной области. Требует <code>--yes</code> как подтверждение
+      безопасности. <strong>Это деструктивная команда; операции GC и архивации восстановимы.</strong>
+      Используйте <code>--scope all</code>, чтобы стереть всё хранилище памяти — полезно для чистого
+      старта в окружениях разработки.
+    </p>
+  </section>
+
+  {/* ============ ЭНДПОИНТЫ API ПАМЯТИ ============ */}
+  <section id="api-endpoints">
+    <h2>Эндпоинты API памяти</h2>
+    <p>
+      Когда агент работает как сервер, все операции памяти доступны через REST API.
+      Эндпоинты возвращают JSON и следуют стандартным кодам состояния HTTP.
+    </p>
+
+    <h3>Список и поиск воспоминаний</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">http</span></div>
+      <pre><code set:html={`GET /api/v1/memories?scope=agent&q=stripe+pricing&top_k=5&min_score=0.25`} /></pre>
+    </div>
+    <table class="mini-table">
+      <thead><tr><th>Параметр</th><th>Тип</th><th>Описание</th></tr></thead>
+      <tbody>
+        <tr><td><code>scope</code></td><td>string</td><td>Фильтр по области: <code>agent</code>, <code>user</code>, <code>run</code> или <code>all</code>.</td></tr>
+        <tr><td><code>q</code></td><td>string</td><td>Поисковый запрос. При наличии выполняется гибридный поиск. При отсутствии возвращается простой список.</td></tr>
+        <tr><td><code>top_k</code></td><td>int</td><td>Максимум результатов. По умолчанию значение <code>top_k</code> из конфига.</td></tr>
+        <tr><td><code>min_score</code></td><td>float</td><td>Минимальный порог скора. По умолчанию значение <code>min_score</code> из конфига.</td></tr>
+        <tr><td><code>status</code></td><td>string</td><td><code>active</code> (по умолчанию), <code>archived</code> или <code>all</code>.</td></tr>
+        <tr><td><code>key</code></td><td>string</td><td>Фильтр по префиксу ключа.</td></tr>
+      </tbody>
+    </table>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">ответ json</span></div>
+      <pre><code set:html={`{
+  "memories": [
+    {
+      "id": "mem_8f3a2b",
+      "scope": "agent",
+      "key": "stripe-acquisition",
+      "content": "Stripe acquired Lemon Squeezy in March 2024",
+      "importance": 1.0,
+      "score": 0.87,
+      "status": "active",
+      "created_at": "2024-03-15T10:30:00Z",
+      "updated_at": "2024-03-15T10:30:00Z"
+    }
+  ],
+  "total": 1,
+  "page": 1
+}`} /></pre>
+    </div>
+
+    <h3>Поглощение фактов</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">http</span></div>
+      <pre><code set:html={`POST /api/v1/memories/absorb
+Content-Type: application/json
+
+{
+  "scope": "agent",
+  "fact": "Stripe acquired Lemon Squeezy in March 2024 for merchant-of-record capabilities"
+}`} /></pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">ответ json</span></div>
+      <pre><code set:html={`{
+  "status": "absorbed",
+  "memory_id": "mem_8f3a2b",
+  "classification": "new",
+  "embedding_model": "tfidf-512",
+  "edges_created": 0,
+  "duplicates_merged": 0
+}`} /></pre>
+    </div>
+
+    <h3>Статистика хранилища</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">http</span></div>
+      <pre><code set:html={`GET /api/v1/memories/stats`} /></pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">ответ json</span></div>
+      <pre><code set:html={`{
+  "active_count": 1247,
+  "archived_count": 389,
+  "by_scope": {
+    "agent": 892,
+    "user": 203,
+    "run": 152
+  },
+  "entity_graph": {
+    "nodes": 156,
+    "edges": 412
+  },
+  "embedding_model": "tfidf-512",
+  "db_size_bytes": 14889768
+}`} /></pre>
+    </div>
+
+    <h3>Дистилляция фактов запуска</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">http</span></div>
+      <pre><code set:html={`POST /api/v1/memories/distill
+Content-Type: application/json
+
+{
+  "session_key": "run_abc123",
+  "target_scope": "agent",
+  "dry_run": false
+}`} /></pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">ответ json</span></div>
+      <pre><code set:html={`{
+  "promoted": 12,
+  "archived_originals": 12,
+  "duplicates_found": 3,
+  "new_memories_created": 9
+}`} /></pre>
+    </div>
+
+    <h3>Сборка мусора</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">http</span></div>
+      <pre><code set:html={`POST /api/v1/memories/gc
+Content-Type: application/json
+
+{
+  "ttl_days": 30,
+  "compact_above": 200,
+  "dry_run": true
+}`} /></pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">ответ json</span></div>
+      <pre><code set:html={`{
+  "would_archive": 47,
+  "would_compact": 2,
+  "dry_run": true
+}`} /></pre>
+    </div>
+
+    <h3>Получение одного воспоминания</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">http</span></div>
+      <pre><code set:html={`GET /api/v1/memories/mem_8f3a2b?follow=full_history`} /></pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">ответ json</span></div>
+      <pre><code set:html={`{
+  "id": "mem_8f3a2b",
+  "scope": "agent",
+  "key": "stripe-acquisition",
+  "content": "Stripe acquired Lemon Squeezy in March 2024",
+  "importance": 1.0,
+  "status": "active",
+  "edges": [
+    { "type": "related_to", "target_id": "mem_7c2d1e", "note": "Stripe ecosystem" }
+  ],
+  "history": [
+    {
+      "version": 1,
+      "content": "Stripe reportedly acquiring Lemon Squeezy",
+      "superseded_by": "mem_8f3a2b",
+      "created_at": "2024-02-20T08:00:00Z"
+    }
+  ],
+  "created_at": "2024-03-15T10:30:00Z",
+  "updated_at": "2024-03-15T10:30:00Z"
+}`} /></pre>
+    </div>
+
+    <h3>Архивация (мягкое удаление)</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">http</span></div>
+      <pre><code set:html={`DELETE /api/v1/memories/mem_8f3a2b`} /></pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">ответ json</span></div>
+      <pre><code set:html={`{
+  "id": "mem_8f3a2b",
+  "status": "archived",
+  "archived_at": "2024-03-20T14:00:00Z"
+}`} /></pre>
+    </div>
+    <p>
+      Это мягкое удаление — запись переводится в статус archived и исключается из запросов по умолчанию.
+      Архивированная строка остаётся доступной через историю памяти и команды обслуживания CLI; HTTP API
+      предоставляет архивацию, а не восстановление. Жёсткое удаление доступно только через
+      CLI-команду <code>nuke</code>.
+    </p>
+  </section>
+
+  {/* ============ ЛУЧШИЕ ПРАКТИКИ ============ */}
+  <section id="best-practices">
+    <h2>Лучшие практики</h2>
+
+    <h3>Файловая или семантическая память</h3>
+    <p>
+      Инструмент <code>memory</code> (файловый CRUD) лучше для детерминированных операций —
+      когда вы знаете точный ID, нужно обновить конкретные поля или управлять жизненным циклом
+      записи напрямую. Семантические инструменты (<code>memory_search</code>, <code>memory_absorb</code>,
+      <code>memory_digest</code>) лучше для обнаружения и внесения знаний — когда нужно
+      найти релевантный контекст, поглотить новую информацию или сгенерировать сводки.
+    </p>
+    <div class="callout">
+      <strong>Эмпирическое правило:</strong> используйте <code>memory</code> для CRUD-операций над известными записями.
+      Используйте <code>memory_absorb</code> для сохранения новых фактов и <code>memory_search</code> для поиска
+      существующих. Используйте <code>memory_digest</code>, когда нужен готовый контекстный блок.
+    </div>
+
+    <h3>Структурирование фактов для поиска</h3>
+    <p>Хорошо структурированные факты дают лучшие результаты поиска. Следуйте этим правилам:</p>
+    <ul class="check-list">
+      <li><strong>Будьте самодостаточны</strong> — факт должен иметь смысл без окружающего контекста. «Series D был на $13.4B» — плохо; «Plaid привлекла Series D при оценке $13.4B в апреле 2024» — хорошо.</li>
+      <li><strong>Включайте ключевые сущности</strong> — упоминайте названия компаний, людей и даты явно. Эмбеддинги и BM25 опираются на эти сигналы.</li>
+      <li><strong>Один факт на запись</strong> — не собирайте несколько несвязанных фактов. Каждая запись должна фиксировать один атомарный кусок знания.</li>
+      <li><strong>Используйте описательные ключи</strong> — ключ вроде <code>plaid-series-d-valuation</code> полезнее, чем <code>fact-42</code>, для отладки и ручной проверки.</li>
+      <li><strong>Избегайте дубликатов</strong> — пайплайн поглощения ловит почти-дубликаты (cosine ≥ 0.85), но семантически разные формулировки одного факта могут проскользнуть. Формулируйте последовательно.</li>
+    </ul>
+
+    <h3>Дистилляция или ручное управление</h3>
+    <p>
+      Позвольте дистилляции автоматически обрабатывать продвижение run→agent для большинства нагрузок. Это гарантирует,
+      что выживают только значимые факты, и предотвращает раздувание памяти от временных данных сессий.
+      Используйте ручной <code>memory add</code>, когда нужно посеять агенту базовые знания
+      перед кампанией — профили компаний, каталоги продуктов или конкурентную разведку,
+      которые агент должен знать всегда.
+    </p>
+    <ul class="check-list">
+      <li><strong>Авто-дистилляция</strong> — включите <code>gc_auto = true</code>, чтобы запускать почасовой цикл обслуживания, выполняющий GC и дистилляцию. Лучше для непрерывных рабочих процессов.</li>
+      <li><strong>Ручная дистилляция</strong> — сначала используйте <code>--dry-run</code> для проверки того, что будет продвинуто, затем запускайте без флага. Лучше для ответственных кампаний, где нужен контроль.</li>
+      <li><strong>Посев знаний</strong> — используйте <code>memory_absorb</code> с областью <code>agent</code>, чтобы предварительно загрузить факты перед исследованием. Это даёт агенту стартовое преимущество.</li>
+    </ul>
+
+    <h3>Настройка сборки мусора</h3>
+    <p>
+      GC держит хранилище памяти здоровым со временем. Правильные настройки зависят от вашего паттерна использования:
+    </p>
+    <table class="mini-table">
+      <thead><tr><th>Нагрузка</th><th>gc_ttl_days</th><th>gc_compact_above</th><th>Обоснование</th></tr></thead>
+      <tbody>
+        <tr><td>Высокообъёмное исследование</td><td>14</td><td>100</td><td>Агрессивная очистка — много временных run-данных.</td></tr>
+        <tr><td>Стандартный аутрич</td><td>30</td><td>200</td><td>Сбалансировано — значение по умолчанию подходит большинству команд.</td></tr>
+        <tr><td>Долгосрочные аккаунты</td><td>90</td><td>500</td><td>Консервативно — держать историю для построения отношений.</td></tr>
+        <tr><td>Комплаенс / аудит</td><td>365</td><td>1000</td><td>Минимальная очистка — хранить всё для аудиторских следов.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Гигиена памяти</h3>
+    <p>Периодическое обслуживание держит хранилище памяти точным и полезным:</p>
+    <ul class="check-list">
+      <li><strong>Проверяйте противоречия</strong> — периодически запускайте <code>fathom memory list --scope agent</code> и ищите записи, связанные связями <code>contradicts</code>. Разрешайте их, поднимая правильную и архивируя устаревшую.</li>
+      <li><strong>Аудит скоров важности</strong> — факты с высокой важностью, ставшие нерелевантными, будут доминировать в дайджестах. Используйте <code>memory_boost</code>, чтобы снизить их при изменении контекста.</li>
+      <li><strong>Отсекайте устаревшие run-факты</strong> — если <code>gc_auto</code> отключён, запускайте <code>fathom memory gc --dry-run</code> еженедельно для проверки накопления.</li>
+      <li><strong>Перестраивайте после смены модели</strong> — переключение моделей эмбеддингов инвалидирует существующие векторы. Запускайте <code>fathom memory rebuild</code> после изменения конфигурации <code>embeddings</code>.</li>
+      <li><strong>Следите за размером хранилища</strong> — используйте <code>fathom memory stats</code> для отслеживания роста. Размер хранилища зависит от нагрузки; следите за ростом в вашем развёртывании.</li>
+      <li><strong>Резервное копирование базы</strong> — файл SQLite по <code>db_path</code> содержит всё. Включите его в ротацию бэкапов, особенно перед запуском <code>nuke</code>.</li>
+    </ul>
+  </section>

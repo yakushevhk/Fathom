@@ -1,6 +1,7 @@
 // Unified dictionary loader exporting merged translations across base + all groups
 import { translations as baseTranslations } from './translations.js';
 import bot from './groups/bot.js';
+import demo from './groups/demo.js';
 import meta from './groups/meta.js';
 import postdocs from './groups/postdocs.js';
 import site from './groups/site.js';
@@ -20,7 +21,7 @@ function deepMerge(a, b) {
   return out;
 }
 
-export const unifiedTranslations = [bot, meta, postdocs, site, solutions, tech, whitepaper].reduce(
+export const unifiedTranslations = [bot, demo, meta, postdocs, site, solutions, tech, whitepaper].reduce(
   (acc, grp) => deepMerge(acc, grp),
   baseTranslations
 );

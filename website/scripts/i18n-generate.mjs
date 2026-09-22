@@ -312,9 +312,25 @@ const searchDir = existsSync(join(DIST, 'client')) ? join(DIST, 'client') : DIST
 const enHtmls = collectHtmls(searchDir, searchDir);
 console.log('EN pages found:', enHtmls.length);
 
+// Docs that have a Russian MDX twin in src/content/docs-ru/ are rendered by
+// Astro directly at /ru/docs/<slug>; skip stub generation for those paths.
+const ruDocsDir = join(SRC, 'content', 'docs-ru');
+const ruDocSlugs = new Set(
+  existsSync(ruDocsDir)
+    ? readdirSync(ruDocsDir)
+        .filter((f) => f.endsWith('.mdx'))
+        .map((f) => f.replace(/\.mdx$/, ''))
+    : []
+);
+
 for (const file of enHtmls) {
   const html = readFileSync(file, 'utf-8');
   const path = urlPath(file); // e.g. "/docs/outreach/"
+  const docSlugMatch = path.match(/^\/docs\/([^/]+)\/?$/);
+  if (docSlugMatch && ruDocSlugs.has(docSlugMatch[1])) {
+    console.log('  skip (astro-rendered ru twin):', path);
+    continue;
+  }
   for (const lang of LANGUAGES) {
     const langRoot = '/' + lang;
     // target file: dist/ru/<rel> (and if client/ exists, also dist/client/ru/<rel>)
@@ -339,6 +355,35 @@ for (const file of enHtmls) {
       writeFileSync(vercelOut, translated);
     }
     console.log('  ->', lang, path);
+  }
+}
+
+// Post-process Astro-rendered Russian doc pages (src/pages/ru/docs/* built
+// from src/content/docs-ru): run the same translation pass in place so layout
+// chrome (data-i18n attrs in nav/sidebar/footer/pager) resolves, then mirror
+// to dist/<lang>/ for the nginx image.
+for (const lang of LANGUAGES) {
+  const langRoot = '/' + lang;
+  for (const slug of ruDocSlugs) {
+    const abs = join(CLIENT_DIST, lang, 'docs', slug, 'index.html');
+    if (!existsSync(abs)) continue;
+    const enPath = '/docs/' + slug;
+    const html = readFileSync(abs, 'utf-8');
+    const translated = translateHtml(html, lang, langRoot, enPath);
+    writeFileSync(abs, translated);
+    const rel = join('docs', slug, 'index.html');
+    if (CLIENT_DIST !== DIST) {
+      const mirrorAbs = join(DIST, lang, rel);
+      mkdirSync(dirname(mirrorAbs), { recursive: true });
+      writeFileSync(mirrorAbs, translated);
+    }
+    const vercelStatic = join('.vercel', 'output', 'static');
+    if (existsSync(vercelStatic)) {
+      const vercelOut = join(vercelStatic, lang, rel);
+      mkdirSync(dirname(vercelOut), { recursive: true });
+      writeFileSync(vercelOut, translated);
+    }
+    console.log('  localized', lang, enPath);
   }
 }
 console.log('done');

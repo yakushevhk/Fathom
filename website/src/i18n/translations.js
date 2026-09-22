@@ -14,7 +14,76 @@ export const translations = {
   "video": {
     "eyebrow": { "en": "Interactive Showreel", "ru": "Интерактивный шоурил" },
     "title": { "en": "8 minutes. 15 scenarios.<br /><em class=\"it\">Autonomous AI workers in action.</em>", "ru": "8 минут. 15 сценариев.<br /><em class=\"it\">Автономные ИИ-воркеры в действии.</em>" },
-    "desc": { "en": "Every Fathom autonomous AI worker in action — from SDR outbound and market intelligence to computer use and 2FA takeover. 60fps, 4K-ready, white backdrop. Full interactive demo at <a href=\"/demo\" class=\"link-underline\" style=\"color:var(--accent);\">/demo</a>.", "ru": "Каждый автономный ИИ-воркер Fathom в действии — от исходящих продаж и анализа рынка до работы с компьютером и обхода 2FA. 60fps, 4K, чистый фон. Полное интерактивное демо на <a href=\"/demo\" class=\"link-underline\" style=\"color:var(--accent);\">/demo</a>." }
+    "desc": { "en": "Every Fathom autonomous AI worker in action — from SDR outbound and market intelligence to computer use and 2FA takeover. 60fps, 4K-ready, white backdrop. Full interactive demo at <a href=\"/demo\" class=\"link-underline\" style=\"color:var(--accent);\">/demo</a>.", "ru": "Каждый автономный ИИ-воркер Fathom в действии — от исходящих продаж и анализа рынка до работы с компьютером и обхода 2FA. 60fps, 4K, чистый фон. Полное интерактивное демо на <a href=\"/demo\" class=\"link-underline\" style=\"color:var(--accent);\">/demo</a>." },
+    "nowPlaying": { "en": "Currently Playing:", "ru": "Сейчас играет:" },
+    "intro": { "en": "Introduction", "ru": "Вступление" },
+    "runDemo": { "en": "Run in Demo →", "ru": "Запустить в демо →" },
+    "chipScenarios": { "en": "15 scenarios", "ru": "15 сценариев" },
+    "speed": { "en": "Speed:", "ru": "Скорость:" },
+    "tryDemo": { "en": "▶ Try the live demo", "ru": "▶ Попробовать живое демо" },
+    "browseDeck": { "en": "Browse the slide deck", "ru": "Открыть слайд-деку" },
+    "tlTitle": { "en": "Interactive Timeline", "ru": "Интерактивная шкала" },
+    "tlHint": { "en": "Click any segment to jump", "ru": "Нажмите на сегмент для перехода" },
+    "segIntro": { "en": "Intro", "ru": "Вступление" },
+    "segOutro": { "en": "Outro", "ru": "Финал" },
+    "catAll": { "en": "All Scenarios", "ru": "Все сценарии" },
+    "catGrowth": { "en": "Sales & Growth", "ru": "Продажи и рост" },
+    "catResearch": { "en": "Research & Intel", "ru": "Исследования и аналитика" },
+    "catOps": { "en": "Dev & Operations", "ru": "Разработка и операции" },
+    "catSecurity": { "en": "Security & Governance", "ru": "Безопасность и управление" },
+    "allWorkers": { "en": "All 15 workers", "ru": "Все 15 воркеров" },
+    "inShowreel": { "en": "in the showreel", "ru": "в шоуриле" },
+    "jumpVideo": { "en": "▶ Jump to Video", "ru": "▶ Перейти к видео" },
+    "liveDemo": { "en": "⚡ Live Demo", "ru": "⚡ Живое демо" },
+    "lbClose": { "en": "Close", "ru": "Закрыть" },
+    "lbJump": { "en": "▶ Jump in video", "ru": "▶ Перейти в видео" },
+    "lbTry": { "en": "Try in Demo", "ru": "Попробовать в демо" },
+    "deckTitle": { "en": "Interactive slide deck", "ru": "Интерактивная слайд-дека" },
+    "deckDesc": { "en": "42 pages covering every scenario, architecture detail, and benchmark — rendered as an interactive HTML presentation.", "ru": "42 страницы со всеми сценариями, деталями архитектуры и бенчмарками — в виде интерактивной HTML-презентации." },
+    "deckLive": { "en": "▶ Live demo", "ru": "▶ Живое демо" },
+    "deckBrowse": { "en": "Browse the deck", "ru": "Открыть деку" },
+    "sc_sdr_name": { "en": "Sales Outbound SDR", "ru": "Исходящие продажи (SDR)" },
+    "sc_sdr_role": { "en": "Lead Generation", "ru": "Генерация лидов" },
+    "sc_sdr_desc": { "en": "Discover 50+ verified CISO contacts at London fintech firms. SMTP validation, CRM push, zero bounces.", "ru": "Находит 50+ верифицированных контактов CISO в лондонских финтех-компаниях. SMTP-валидация, отправка в CRM, ноль баунсов." },
+    "sc_intel_name": { "en": "Market Intelligence", "ru": "Рыночная разведка" },
+    "sc_intel_role": { "en": "Competitive Research", "ru": "Конкурентное исследование" },
+    "sc_intel_desc": { "en": "Track 15 competitors across fintech. Real-time alerts on pricing shifts, feature launches, exec hires.", "ru": "Отслеживает 15 конкурентов в финтехе. Оповещения в реальном времени о смене цен, запуске фич и найме руководителей." },
+    "sc_onboard_name": { "en": "Onboarding Agent", "ru": "Агент онбординга" },
+    "sc_onboard_role": { "en": "Client Setup", "ru": "Настройка клиента" },
+    "sc_onboard_desc": { "en": "Provision API keys, configure webhooks, validate payloads in isolated sandbox REPL.", "ru": "Выдаёт API-ключи, настраивает вебхуки, проверяет payload'ы в изолированной sandbox REPL." },
+    "sc_finance_name": { "en": "Finance Ops", "ru": "Финансовые операции" },
+    "sc_finance_role": { "en": "Invoice Processing", "ru": "Обработка счетов" },
+    "sc_finance_desc": { "en": "Ingest 500 PDF invoices. 3-way match: PO / Receipt / Invoice. QuickBooks sync.", "ru": "Обрабатывает 500 PDF-счетов. Трёхсторонняя сверка: заказ / приёмка / счёт. Синхронизация с QuickBooks." },
+    "sc_devops_name": { "en": "Software Maintainer", "ru": "Сопровождение ПО" },
+    "sc_devops_role": { "en": "Bug Triage", "ru": "Разбор багов" },
+    "sc_devops_desc": { "en": "Triage Sentry errors. Map 240+ file repos, sandbox repro, fix + test + PR.", "ru": "Разбирает ошибки Sentry. Картирует репозитории на 240+ файлов, воспроизводит в sandbox, фикс + тест + PR." },
+    "sc_legal_name": { "en": "Compliance Auditor", "ru": "Аудитор комплаенса" },
+    "sc_legal_role": { "en": "Legal Risk", "ru": "Юридический риск" },
+    "sc_legal_desc": { "en": "Audit 200 vendor MSAs for GDPR. Parallel ingestion across 5 analysts.", "ru": "Аудирует 200 соглашений MSA поставщиков на соответствие GDPR. Параллельная обработка 5 аналитиками." },
+    "sc_orch_name": { "en": "Orchestrator", "ru": "Оркестратор" },
+    "sc_orch_role": { "en": "Swarm Coordinator", "ru": "Координатор роя" },
+    "sc_orch_desc": { "en": "Decompose research tasks, spawn sub-agents, parallel dispatch, synthesize, verify.", "ru": "Разбивает задачи исследования, создаёт субагентов, параллельно распределяет, синтезирует, проверяет." },
+    "sc_inbox_name": { "en": "Inbox Manager", "ru": "Менеджер входящих" },
+    "sc_inbox_role": { "en": "Email Intelligence", "ru": "Анализ почты" },
+    "sc_inbox_desc": { "en": "Process 1,000+ emails/day. Auto-categorize, priority triage, CRM sync.", "ru": "Обрабатывает 1000+ писем в день. Автокатегоризация, приоритизация, синхронизация с CRM." },
+    "sc_lead_name": { "en": "Lead Audit Report", "ru": "Отчёт аудита лидов" },
+    "sc_lead_role": { "en": "Data QA", "ru": "QA данных" },
+    "sc_lead_desc": { "en": "Audit 10,000 leads. Deduplicate, validate emails, generate compliance-ready reports.", "ru": "Аудирует 10 000 лидов. Дедупликация, валидация email, отчёты для комплаенса." },
+    "sc_graph_name": { "en": "Entity Knowledge Graph", "ru": "Граф знаний сущностей" },
+    "sc_graph_role": { "en": "Relationship Mapping", "ru": "Картирование связей" },
+    "sc_graph_desc": { "en": "Extract entities from 500+ docs. Build knowledge graph with SQLite FTS5.", "ru": "Извлекает сущности из 500+ документов. Строит граф знаний на SQLite FTS5." },
+    "sc_vault_name": { "en": "Security Vault", "ru": "Хранилище секретов" },
+    "sc_vault_role": { "en": "Credential Governance", "ru": "Управление учётными данными" },
+    "sc_vault_desc": { "en": "AES-256-GCM vault. Fail-closed policy engine. Every tool call audited.", "ru": "Хранилище AES-256-GCM. Политика fail-closed. Каждый вызов инструмента аудируется." },
+    "sc_outreach_name": { "en": "Outreach Dispatcher", "ru": "Диспетчер аутрича" },
+    "sc_outreach_role": { "en": "Campaign Automation", "ru": "Автоматизация кампаний" },
+    "sc_outreach_desc": { "en": "Multi-channel campaigns. Personalize at scale: email, LinkedIn, phone.", "ru": "Многоканальные кампании. Персонализация масштабно: email, LinkedIn, телефон." },
+    "sc_fleet_name": { "en": "Agency Fleet Manager", "ru": "Менеджер флота агентства" },
+    "sc_fleet_role": { "en": "Multi-Client Ops", "ru": "Мультиклиентские операции" },
+    "sc_fleet_desc": { "en": "Manage 15+ client accounts. Isolated worker fleets, SLA tracking.", "ru": "Управляет 15+ клиентскими аккаунтами. Изолированные флоты воркеров, контроль SLA." },
+    "sc_computer_name": { "en": "Computer Use", "ru": "Работа за компьютером" },
+    "sc_computer_role": { "en": "Desktop Automation", "ru": "Автоматизация десктопа" },
+    "sc_computer_desc": { "en": "Browser CDP control. Click, type, navigate SaaS UIs. 2FA human takeover.", "ru": "Управление браузером через CDP. Клик, ввод, навигация по SaaS-интерфейсам. Передача 2FA человеку." }
   },
   "nav": {
     "product": {
@@ -254,9 +323,29 @@ export const translations = {
       "en": "Explore modules",
       "ru": "Изучить модули"
     },
+    "statCrates": {
+      "en": "workspace crates",
+      "ru": "крейтов воркспейса"
+    },
+    "statTools": {
+      "en": "built-in + browser & computer tools",
+      "ru": "встроенных + браузерных и компьютерных инструментов"
+    },
+    "statSearch": {
+      "en": "search backends",
+      "ru": "поисковых бэкендов"
+    },
+    "statAgents": {
+      "en": "parallel agents max",
+      "ru": "макс. параллельных агентов"
+    },
     "overview_label": {
       "en": "System Overview",
       "ru": "Обзор системы"
+    },
+    "figCoordinator": {
+      "en": "Fig 2.1 — Swarm Coordinator: Tokio JoinSet DAG execution across 4 parallel CPU worker pods with fair-share token budgeting and disk-spill memory scaling.",
+      "ru": "Рис. 2.1 — Координатор роя: исполнение DAG через Tokio JoinSet на 4 параллельных CPU-воркерах с fair-share бюджетированием токенов и масштабированием памяти через вытеснение на диск."
     },
     "title": {
       "en": "One runtime, every interface",
@@ -645,7 +734,12 @@ export const translations = {
     "prev": { "en": "Previous", "ru": "Назад" },
     "next": { "en": "Next", "ru": "Далее" },
     "filterPh": { "en": "Filter pages…", "ru": "Фильтр страниц…" },
-    "noMatches": { "en": "No matches", "ru": "Ничего не найдено" }
+    "noMatches": { "en": "No matches", "ru": "Ничего не найдено" },
+    "getStarted": { "en": "Get Started →", "ru": "Начать →" },
+    "skipLink": { "en": "Skip to content", "ru": "К содержимому" },
+    "getAccess": { "en": "Get Access", "ru": "Получить доступ" },
+    "location": { "en": "Based in Tashkent, Uzbekistan", "ru": "Ташкент, Узбекистан" },
+    "toc": { "en": "On this page", "ru": "На этой странице" }
   },
   "arch_perf": {
     "built_on": { "en": "Built on", "ru": "Построен на" },
@@ -1485,7 +1579,8 @@ export const translations = {
     "multiTenant": { "en": "Multi-tenant client pods with 92% margin", "ru": "Мультитенантные клиентские поды с маржой 92%" },
     "backOfficeFinance": { "en": "Back-Office & Finance", "ru": "Бэкоффис и финансы" },
     "invoiceReconciliation": { "en": "3-way invoice reconciliation in QuickBooks", "ru": "Трёхсторонняя сверка счетов в QuickBooks" },
-    "twelveWorkspaceCrates": { "en": "12 Workspace Crates", "ru": "12 крейтов воркспейса" },
+    "thirteenWorkspaceCrates": { "en": "13 Workspace Crates", "ru": "13 крейтов воркспейса" },
+    "rustTools": { "en": "75 Rust Tools", "ru": "75 инструментов Rust" },
     "tokioJoinset": { "en": "Tokio JoinSet swarm coordination", "ru": "Координация роя через Tokio JoinSet" },
     "memoryEntityGraph": { "en": "Memory & Entity Graph", "ru": "Память и граф сущностей" },
     "sqliteFts5": { "en": "SQLite FTS5 hybrid vector memory", "ru": "Гибридная векторная память SQLite FTS5" },

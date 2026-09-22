@@ -1,0 +1,769 @@
+---
+title: "CLI-справочник — Fathom"
+description: "Использование CLI Fathom для запуска задач автономных воркеров, управления TUI или сервером, работы с памятью и сессиями, планирования задач и инспекции статистики рантайма."
+sidebarId: "cli"
+---
+  
+export const tuiKeys = [
+  { k: 'q', d: 'Выход (также Ctrl+C)' },
+  { k: 'i', d: 'Режим вставки — ввод запроса' },
+  { k: 'Enter', d: 'Отправить запрос (режим вставки)' },
+  { k: 'Shift+Enter', d: 'Перенос строки в поле ввода' },
+  { k: 'Esc', d: 'Выйти из режима вставки / вернуться в панель ввода' },
+  { k: 'Tab / BackTab', d: 'Переключение между панелями' },
+  { k: 'Up / Down', d: 'Прокрутка — или перемещение курсора агентов в панели Agents; история ввода в поле ввода' },
+  { k: 'Left / Right', d: 'Свернуть / развернуть поддерево агента (панель Agents)' },
+  { k: 't', d: 'Переключить панель размышлений' },
+  { k: 'c', d: 'Очистить вывод' },
+  { k: 'y / n', d: 'Подтвердить / отклонить ожидающий вызов инструмента с побочным эффектом' },
+  { k: '?', d: 'Оверлей справки по клавишам' },
+  { k: 'Ctrl+V', d: 'Режим вставки (bracketed paste)' },
+];
+
+export const panels = [
+  { name: 'Agents', d: 'Живое дерево агентов: координатор, субагенты, статусы. Навигация курсором, поддеревья сворачиваются через Left/Right.' },
+  { name: 'Output', d: 'Финальный собранный вывод, стримится токен за токеном по мере работы автора.' },
+  { name: 'Log', d: 'Журнал событий: запуски агентов, вызовы инструментов с таймингами, предупреждения и находки.' },
+  { name: 'Jobs', d: 'Долговечные фоновые задачи, отправленные через jobs submit — состояние и попытки одним взглядом.' },
+  { name: 'Memory', d: 'Недавние записи из хранилища семантической памяти, обновляются вживую.' },
+  { name: 'Input', d: 'Поле ввода запроса с навигацией по истории (Up/Down) и выделенным режимом вставки.' },
+];
+
+export const benchScenarios = ['dispatch', 'parallel-io', 'parallel-cpu', 'mixed', 'parse-scale', 'extract-json', 'feed-parse', 'code-map', 'memory', 'all'];
+
+<div class="doc-header">
+    <span class="doc-badge">CLI-справочник</span>
+    <h1>CLI-справочник</h1>
+    <p class="doc-lead">
+      Один бинарник — все рантаймы: headless-запуски, интерактивный TUI, HTTP-сервер, эндпоинт MCP и инструменты обслуживания. Все команды и флаги <code>fathom</code>.
+    </p>
+  </div>
+
+  <section id="overview">
+    <h2>Обзор команд</h2>
+    <div class="code-card">
+      <pre><code set:html={`fathom <КОМАНДА>
+
+run         Запуск задачи исследования (headless)
+tui         Интерактивный TUI
+serve       HTTP API-сервер + дашборд
+mcp-serve   Экспозиция инструментов агента через MCP (stdio)
+memory      Семантическая память: search / list / stats / distill / gc
+sessions    Просмотр прошлых сессий
+resume      Возобновление прерванной сессии
+config      Показать или установить значения конфигурации
+profiles    Список / просмотр / создание персон
+contacts    База контактов: list / export / dedup / push-crm
+jobs        Долговечные фоновые задачи
+bench       Бенчмарк слоя выполнения инструментов
+stats       Статистика вызовов инструментов записанной сессии`} /></pre>
+    </div>
+  </section>
+
+  <section id="run">
+    <h2>run</h2>
+    <p>Автономная работа без интерфейса. Координатор разбивает задачу на субагентов, синтезирует их результаты и пишет структурированный вывод. Задача передаётся позиционным аргументом <code>[QUERY]</code> или читается из файла через <code>--task-file</code>. С <code>--repeat</code> становится режимом наблюдения: каждый запуск сравнивается с предыдущим и настроенные уведомления могут сообщать об изменениях.</p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>Флаг</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td>-o, --output &lt;DIR&gt;</td><td>Выходная директория для результатов (по умолчанию: из конфига)</td></tr>
+          <tr><td>--repeat &lt;SECS&gt;</td><td>Режим наблюдения — повторять каждые N секунд, сравнивать запуски, оповещать о новых контактах</td></tr>
+          <tr><td>--profile &lt;NAME&gt;</td><td>Персона: hunter | analyst | validator | файл в ~/.fathom/profiles/ | путь к .toml</td></tr>
+          <tr><td>--task-file &lt;FILE&gt;</td><td>Читать задачу из файла вместо позиционного аргумента</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="code-card">
+      <pre><code set:html={`fathom run "Compare Rust and Go for backend services" --output ./research/
+
+# режим наблюдения: пересбор каждые 6 часов, оповещение о новых контактах
+fathom run "Acme leadership team" --repeat 21600
+
+# с персоной
+fathom run --profile hunter "Find the CTO of Acme"`} /></pre>
+    </div>
+  </section>
+
+  <section id="tui">
+    <h2>tui</h2>
+    <p>Интерактивный терминальный интерфейс (ratatui): живое дерево агентов, стриминг вывода, журнал событий, панели задач и памяти, процесс подтверждения. Клавиши и панели — в разделе <a href="#tui-interface">Интерфейс TUI</a>.</p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>Флаг</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td>[QUERY]</td><td>Опциональный начальный запрос</td></tr>
+          <tr><td>--profile &lt;NAME&gt;</td><td>Персона, применяемая к сессиям, запущенным из TUI</td></tr>
+          <tr><td>--replay &lt;SESSION-ID&gt;</td><td>Воспроизвести сохранённую сессию вместо живого запуска (принимается префиксное совпадение)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="code-card">
+      <pre><code set:html={`fathom tui
+fathom tui "Find VPs of Engineering at fintech startups" --profile analyst
+fathom tui --replay 3f9c2a   # просмотр сохранённой сессии`} /></pre>
+    </div>
+  </section>
+
+  <section id="serve">
+    <h2>serve</h2>
+    <p>HTTP-сервер на Axum: управление сессиями и задачами, потоки событий SSE, API памяти, метрики Prometheus и веб-дашборд на <code>/dashboard</code>. По умолчанию слушает на loopback.</p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>Флаг</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td>--port &lt;PORT&gt;</td><td>Порт прослушивания (по умолчанию: 8080)</td></tr>
+          <tr><td>--host &lt;HOST&gt;</td><td>Адрес привязки (по умолчанию: 127.0.0.1)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">Привязка не-loopback адреса (<code>--host 0.0.0.0</code>) требует установки <code>FATHOM_API_KEYS</code> — иначе запуск отклоняется. Ключи передаются через <code>Authorization: Bearer</code> или <code>X-Api-Key</code>. Лимит запросов на клиента настраивается через <code>FATHOM_RATE_LIMIT</code>.</div>
+    <div class="code-card">
+      <pre><code set:html={`fathom serve --port 8080
+fathom serve --host 0.0.0.0   # требует FATHOM_API_KEYS`} /></pre>
+    </div>
+  </section>
+
+  <section id="mcp-serve">
+    <h2>mcp-serve</h2>
+    <p>Экспонирует все инструменты агента внешним MCP-клиентам (Claude, ZCode, …) через stdio. Вызовы инструментов выполняются через тот же реестр, который используют агенты. Логирование идёт в stderr, чтобы stdout оставался чистым JSON-RPC.</p>
+    <div class="code-card">
+      <pre><code set:html={`fathom mcp-serve`} /></pre>
+    </div>
+    <p>Добавьте в конфигурацию вашего MCP-клиента:</p>
+    <div class="code-card">
+      <pre><code set:html={`{ "command": "fathom", "args": ["mcp-serve"] }`} /></pre>
+    </div>
+  </section>
+
+  <section id="memory">
+    <h2>memory</h2>
+    <p>Обслуживание долговременной семантической базы знаний без запуска агента: гибридный поиск (векторы + BM25), append-only цепочки версий, дистилляция и GC. Ничего никогда не удаляется молча.</p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>Подкоманда</th><th>Флаги</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td>search &lt;query&gt;</td><td>--top-k (по умолчанию 10), --scope agent|user|run|all</td><td>Гибридный семантический + ключевой поиск</td></tr>
+          <tr><td>list</td><td>--scope, --status active|superseded|archived|all, -n</td><td>Список сохранённых фактов, новые первыми</td></tr>
+          <tr><td>get &lt;id&gt;</td><td>--follow active|latest|full_history</td><td>Одна запись плюс её цепочка версий</td></tr>
+          <tr><td>stats</td><td>—</td><td>Счётчики по области/статусу, граф сущностей, размер БД</td></tr>
+          <tr><td>rebuild</td><td>—</td><td>Пересчитать эмбеддинги всех фактов текущей моделью</td></tr>
+          <tr><td>distill</td><td>--session &lt;key&gt;, --dry-run</td><td>Дистиллировать факты сессии области run в долговечные знания</td></tr>
+          <tr><td>gc</td><td>--ttl-days &lt;N&gt;, --dry-run</td><td>Архивировать устаревшие run-факты, компактировать раздутые группы областей</td></tr>
+          <tr><td>nuke</td><td>--scope, --yes</td><td>Жёстко удалить записи области; требует явного --yes</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="code-card">
+      <pre><code set:html={`fathom memory search "email of the director of Acme" --top-k 10
+fathom memory list --scope agent --status active -n 20
+fathom memory get 7f31 --follow full_history
+fathom memory stats
+fathom memory distill --dry-run
+fathom memory gc --ttl-days 30 --dry-run`} /></pre>
+    </div>
+  </section>
+
+  <section id="sessions">
+    <h2>sessions</h2>
+    <p>Просмотр истории сессий, хранящейся в базе данных.</p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>Подкоманда</th><th>Флаги</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td>list</td><td>-n &lt;LIMIT&gt; (по умолчанию 20), -s, --search &lt;SUBSTR&gt;</td><td>Недавние сессии, новые первыми; опциональный фильтр по подстроке запроса</td></tr>
+          <tr><td>show &lt;id&gt;</td><td>—</td><td>Одна сессия детально: агенты + находки (принимается уникальный префикс)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="code-card">
+      <pre><code set:html={`fathom sessions list -n 10 --search "fintech"
+fathom sessions show 3f9c2a`} /></pre>
+    </div>
+  </section>
+
+  <section id="resume">
+    <h2>resume</h2>
+    <p>Возобновление прерванной сессии: повторно запускает её незавершённые подзадачи из сохранённого состояния в <code>.research.db</code>.</p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>Флаг</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td>-o, --output &lt;DIR&gt;</td><td>Выходная директория сессии (содержит .research.db); по умолчанию: настроенная выходная директория</td></tr>
+          <tr><td>-s, --session-id &lt;ID&gt;</td><td>Сессия для возобновления; по умолчанию: самая недавняя прерванная</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="code-card">
+      <pre><code set:html={`fathom resume --output ./results/`} /></pre>
+    </div>
+  </section>
+
+  <section id="config">
+    <h2>config</h2>
+    <p>Показать или отредактировать <code>~/.fathom/config.toml</code> из командной строки. Ключи используют точечную нотацию: <code>section.field</code>.</p>
+    <div class="code-card">
+      <pre><code set:html={`fathom config show
+fathom config set agent.max_depth 3
+fathom config set agent.max_agents 30`} /></pre>
+    </div>
+  </section>
+
+  <section id="profiles">
+    <h2>profiles</h2>
+    <p>Персоны для <code>run --profile</code> и <code>tui --profile</code>: готовый системный промпт плюс опциональные переопределения модели, температуры, глубины, числа агентов и запрещённых инструментов. Встроенные: <code>hunter</code>, <code>analyst</code>, <code>validator</code>; свои TOML-файлы лежат в <code>~/.fathom/profiles/</code>.</p>
+    <div class="code-card">
+      <pre><code set:html={`fathom profiles list
+fathom profiles show hunter
+fathom profiles new my-persona   # создаёт файл-шаблон`} /></pre>
+    </div>
+  </section>
+
+  <section id="contacts">
+    <h2>contacts</h2>
+    <p>База OSINT-контактов, собранная через <code>save_contacts</code>: список, экспорт, дедупликация и отправка в настроенную CRM (amoCRM, Bitrix24, HubSpot).</p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>Подкоманда</th><th>Флаги</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td>list</td><td>--limit (по умолчанию 50)</td><td>Список сохранённых контактов</td></tr>
+          <tr><td>export</td><td>--format csv|vcf|json|xlsx (по умолчанию csv), -o, --output &lt;DIR&gt;</td><td>Экспорт контактов в файл</td></tr>
+          <tr><td>dedup</td><td>--merge</td><td>Найти дубликаты (нормализованный email/телефон); --merge сворачивает каждую группу в самую полную строку</td></tr>
+          <tr><td>push-crm</td><td>—</td><td>Отправить все сохранённые контакты в настроенную CRM</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="code-card">
+      <pre><code set:html={`fathom contacts list
+fathom contacts export --format csv
+fathom contacts dedup           # пробный запуск: список групп
+fathom contacts dedup --merge   # реально слить их
+fathom contacts push-crm`} /></pre>
+    </div>
+  </section>
+
+  <section id="jobs">
+    <h2>jobs</h2>
+    <p>Долговечные фоновые задачи в SQLite: попытки с самовосстанавливающимися повторами (задача переподчиняется с добавлением предыдущей ошибки), переживают перезапуски.</p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>Подкоманда</th><th>Флаги</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td>submit &lt;task&gt;</td><td>--attempts (по умолчанию 3)</td><td>Запустить задачу отсоединённой в фоне</td></tr>
+          <tr><td>list</td><td>—</td><td>Список всех задач</td></tr>
+          <tr><td>status &lt;id&gt;</td><td>--watch &lt;SECS&gt;</td><td>Детальный статус; --watch обновляет до терминального состояния</td></tr>
+          <tr><td>logs &lt;id&gt;</td><td>-n &lt;LINES&gt; (по умолчанию 50)</td><td>stdout + stderr всех попыток</td></tr>
+          <tr><td>cancel &lt;id&gt;</td><td>—</td><td>Отменить задачу в очереди или выполняющуюся</td></tr>
+          <tr><td>rerun &lt;id&gt;</td><td>—</td><td>Перезапустить завершённую/отменённую/протухшую задачу с нуля</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="code-card">
+      <pre><code set:html={`fathom jobs submit "Analyze the market of AI agents" --attempts 3
+fathom jobs list
+fathom jobs status 9b2e --watch 5
+fathom jobs logs 9b2e
+fathom jobs cancel 9b2e
+fathom jobs rerun 9b2e`} /></pre>
+    </div>
+  </section>
+
+  <section id="bench">
+    <h2>bench</h2>
+    <p>Бенчмарк слоя выполнения инструментов — без сети, без LLM; фикстуры генерируются автоматически. Девять сценариев покрывают накладные расходы диспетчеризации, параллельные пакеты, масштабирование парсера и семантическую память.</p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>Флаг</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td>-s, --scenario &lt;NAME&gt;</td><td>Сценарий для запуска (по умолчанию: all)</td></tr>
+          <tr><td>-n &lt;N&gt;</td><td>параллельно-безопасные вызовы / файлы данных в пакетных сценариях (по умолчанию: 16)</td></tr>
+          <tr><td>--save &lt;FILE&gt;</td><td>Также записать markdown-отчёт в файл</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="chips">
+      {benchScenarios.map((s) => <span class="chip">{s}</span>)}
+    </div>
+    <div class="code-card code-card--gap">
+      <pre><code set:html={`fathom bench                    # все сценарии
+fathom bench -s feed-parse      # парсинг фидов (quick-xml)
+fathom bench -s code-map        # code_symbols / repo_map
+fathom bench -s memory          # absorb / search / digest`} /></pre>
+    </div>
+  </section>
+
+  <section id="stats">
+    <h2>stats</h2>
+    <p>Статистика вызовов по инструментам — задержки p50/p95 — вычисленная из реальной записанной сессии (<code>.research.db</code>).</p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>Флаг</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td>-o, --output &lt;DIR&gt;</td><td>Выходная директория сессии; по умолчанию: настроенная выходная директория</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="code-card">
+      <pre><code set:html={`fathom stats -o ./results/`} /></pre>
+    </div>
+  </section>
+
+  <section id="worker">
+    <h2>worker</h2>
+    <p>Внутренний режим воркера — запускается автоматически координатором при <code>use_multiprocess = true</code>. Не предназначен для прямого вызова.</p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>Флаг</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td>--session-id &lt;ID&gt;</td><td>ID сессии (обязателен)</td></tr>
+          <tr><td>--agent-id &lt;ID&gt;</td><td>ID агента (обязателен)</td></tr>
+          <tr><td>--task &lt;TEXT&gt;</td><td>Описание задачи (обязательно)</td></tr>
+          <tr><td>--socket &lt;PATH&gt;</td><td>Путь Unix-сокета для IPC с координатором (обязателен)</td></tr>
+          <tr><td>--role &lt;ROLE&gt;</td><td>Роль агента: coordinator, researcher, analyst, verifier, writer (по умолчанию: researcher)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="tui-interface">
+    <h2>Интерфейс TUI</h2>
+    <p>Заголовок показывает ID сессии, прошедшее время и спарклайн расхода токенов за сессию. В режиме повтора заголовок помечается <code>[REPLAY]</code>, и сохранённое дерево агентов загружается с финальными статусами.</p>
+
+    <h3 id="tui-keys">Клавиши</h3>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>Клавиша</th><th>Действие</th></tr></thead>
+        <tbody>
+          {tuiKeys.map((r) => (
+            <tr>
+              <td>{r.k}</td>
+              <td>{r.d}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="tui-panels">Панели</h3>
+    <div class="ops-grid">
+      {panels.map((p) => (
+        <div class="ops-card">
+          <div class="ops-name">{p.name}</div>
+          <p>{p.d}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section id="output-structure">
+    <h2>Структура вывода</h2>
+    <p>Каждый запуск пишет одинаковую структуру в свою выходную директорию — плюс опциональные экспорты PDF/HTML/JSON/DOCX при настройке.</p>
+    <div class="code-card">
+      <pre><code set:html={`output/
+├── index.md           # оглавление + метаданные
+├── summary.md         # финальный синтез
+├── findings/          # находки по подзадачам
+│   ├── finding-1.md
+│   ├── finding-2.md
+│   └── finding-3.md
+├── sources.md         # список источников
+└── .research.db       # база SQLite сессии`} /></pre>
+    </div>
+  </section>
+
+  {/* ============ ТИПОВЫЕ РАБОЧИЕ ПРОЦЕССЫ ============ */}
+  <section id="workflows">
+    <h2>Типовые рабочие процессы</h2>
+    <p>
+      Эти многошаговые процессы показывают, как комбинировать команды CLI для реальных сценариев.
+    </p>
+
+    <h3>Процесс 1 — Исследование → Экспорт → Отправка в CRM</h3>
+    <p>
+      Стандартный сквозной пайплайн: запуск задачи исследования, экспорт контактов, дедупликация и отправка в вашу CRM.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">пайплайн</span></div>
+      <pre><code set:html={`# 1. Запустите исследование с профилем hunter
+fathom run --profile hunter "Find VPs of Engineering at Series B startups" -o ./fintech-vps/
+
+# 2. Просмотрите результаты
+fathom sessions show --output ./fintech-vps/
+
+# 3. Экспортируйте контакты в CSV
+fathom contacts export --format csv -o ./fintech-vps/
+
+# 4. Дедупликация (сначала пробный запуск, потом слияние)
+fathom contacts dedup
+fathom contacts dedup --merge
+# 5. Отправьте в настроенную CRM
+fathom contacts push-crm`} /></pre>
+    </div>
+
+    <h3>Процесс 2 — Возобновление упавшей сессии</h3>
+    <p>
+      Если долгая сессия была прервана (обрыв сети, перезапуск системы), можно возобновить с того места,
+      где она остановилась, используя сохранённое состояние в <code>.research.db</code>.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">возобновление</span></div>
+      <pre><code set:html={`# 1. Найдите прерванную сессию
+fathom sessions list -n 5
+
+# 2. Возобновите её (по умолчанию — самая недавняя прерванная сессия)
+fathom resume --output ./fintech-vps/
+
+# 3. Проверьте завершённые результаты
+fathom sessions show --output ./fintech-vps/
+fathom stats -o ./fintech-vps/`} /></pre>
+    </div>
+
+    <h3>Процесс 3 — Управление памятью</h3>
+    <p>
+      Держите хранилище долговременной памяти чистым и полезным: поиск, проверка, повышение важных фактов,
+      дистилляция знаний области сессии в долговечные записи и сборка мусора устаревших записей.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">обслуживание памяти</span></div>
+      <pre><code set:html={`# 1. Проверьте, что в памяти
+fathom memory stats
+
+# 2. Поиск конкретных знаний
+fathom memory search "CTO of Acme Corp" --top-k 5
+
+# 3. Просмотр записи и её истории версий
+fathom memory get 7f31 --follow full_history
+
+# 4. Дистилляция фактов сессии в долговечные знания
+fathom memory distill --session a3f2 --dry-run
+fathom memory distill --session a3f2
+
+# 5. Сборка мусора устаревших run-фактов (старше 30 дней)
+fathom memory gc --ttl-days 30 --dry-run
+fathom memory gc --ttl-days 30
+
+# 6. Перестроение эмбеддингов после обновления модели
+fathom memory rebuild`} /></pre>
+    </div>
+
+    <h3>Процесс 4 — Управление задачами</h3>
+    <p>
+      Отправляйте долгоиграющие задачи как долговечные фоновые задачи, переживающие перезапуски и самовосстанавливающиеся при сбоях.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">задачи</span></div>
+      <pre><code set:html={`# 1. Отправьте задачу (отсоединённая, работает в фоне)
+fathom jobs submit "Analyze the AI agent market landscape" --attempts 3
+
+# 2. Список всех задач и их состояний
+fathom jobs list
+
+# 3. Наблюдение за задачей до завершения (обновление каждые 5 секунд)
+fathom jobs status 9b2e --watch 5
+
+# 4. Просмотр логов stdout/stderr задачи
+fathom jobs logs 9b2e -n 100
+
+# 5. Если упала — перезапустите
+fathom jobs rerun 9b2e
+
+# 6. Отмена застрявшей задачи
+fathom jobs cancel 9b2e`} /></pre>
+    </div>
+
+    <h3>Процесс 5 — Кампании на профилях</h3>
+    <p>
+      Создайте пользовательский профиль под конкретный тип кампании, затем переиспользуйте его в нескольких запусках.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">кампания</span></div>
+      <pre><code set:html={`# 1. Создайте новый профиль из шаблона
+fathom profiles new series-b-outreach
+
+# 2. Отредактируйте профиль (задайте промпт, модель, температуру)
+#    vim ~/.fathom/profiles/series-b-outreach.toml
+
+# 3. Проверьте профиль
+fathom profiles show series-b-outreach
+
+# 4. Запустите с профилем
+fathom run --profile series-b-outreach "Find CTOs at Series B companies in fintech"
+
+# 5. Переиспользуйте для другой вертикали
+fathom run --profile series-b-outreach "Find CTOs at Series B companies in healthtech"`} /></pre>
+    </div>
+  </section>
+
+  {/* ============ TUI ПОДРОБНО ============ */}
+  <section id="tui-deep-dive">
+    <h2>TUI подробно</h2>
+    <p>
+      TUI (терминальный пользовательский интерфейс) построен на <code>ratatui</code> и даёт представление
+      о рое агентов в реальном времени. Подробный взгляд на каждую панель и функцию.
+    </p>
+
+    <h3>Детали панелей</h3>
+    <div class="ops-grid">
+      <div class="ops-card">
+        <div class="ops-name">Agents</div>
+        <p>Живое дерево агентов с координатором в корне и субагентами-детьми. Каждый агент показывает статус (running, complete, failed), текущий вызов инструмента и прошедшее время. Up/Down перемещают курсор, Left/Right сворачивают/разворачивают поддеревья. Детали выбранного агента появляются в панели Output.</p>
+      </div>
+      <div class="ops-card">
+        <div class="ops-name">Output</div>
+        <p>Финальный собранный вывод, стримится токен за токеном по мере работы автора. В режиме повтора показывает полный сохранённый вывод. Когда несколько авторов работают параллельно, их выводы чередуются с маркерами agent-id.</p>
+      </div>
+      <div class="ops-card">
+        <div class="ops-name">Log</div>
+        <p>Журнал событий: запуски агентов с описаниями задач, вызовы инструментов со сводками аргументов и временем выполнения в миллисекундах, предупреждения (события компактификации, усечения) и находки по мере обнаружения. Каждая запись помечена временем относительно начала сессии.</p>
+      </div>
+      <div class="ops-card">
+        <div class="ops-name">Tools</div>
+        <p>Активные и недавние вызовы инструментов с их аргументами, статусом выполнения и таймингом. Показывает, какие инструменты работают параллельно, а какие сериализованы. Ожидающие подтверждения вызовы подсвечены — нажмите <code>y</code> или <code>n</code> для действия.</p>
+      </div>
+      <div class="ops-card">
+        <div class="ops-name">Jobs</div>
+        <p>Долговечные фоновые задачи, отправленные через <code>jobs submit</code>. Показывает состояние задачи (queued, running, complete, failed), число попыток и последнюю ошибку, если есть. Обновляется автоматически.</p>
+      </div>
+      <div class="ops-card">
+        <div class="ops-name">Memory</div>
+        <p>Недавние записи из хранилища семантической памяти. Показывает новые факты по мере их поглощения во время запуска. Полезно для проверки, что агент запоминает правильные вещи.</p>
+      </div>
+    </div>
+
+    <h3>Спарклайн заголовка</h3>
+    <p>
+      Строка заголовка показывает три вещи: ID сессии (первые 8 символов), прошедшее время (формат MM:SS)
+      и спарклайн-график расхода токенов. Спарклайн — скользящее окно в 60 секунд, показывающее, сколько
+      токенов потреблялось в секунду. Плоский спарклайн означает, что агент ждёт (заблокирован на инструменте
+      или простаивает); растущий спарклайн — активная генерация; всплеск указывает на обработку большого
+      вывода инструмента.
+    </p>
+
+    <h3>Браузер сессий (клавиша 'b')</h3>
+    <p>
+      Нажмите <code>b</code>, чтобы открыть браузер сессий — список всех прошлых сессий, хранящихся в
+      базе. Навигация через Up/Down, Enter загружает сессию в режиме повтора. Это эквивалентно
+      <code>tui --replay &lt;id&gt;</code>, но доступно изнутри TUI. Сессии отсортированы новыми
+      первыми и показывают: ID, запрос (усечённый), статус и метку времени.
+    </p>
+
+    <h3>Режим ссылки на файл (клавиша '@')</h3>
+    <p>
+      В режиме вставки введите <code>@</code> и путь, чтобы сослаться на локальный файл. Содержимое файла
+      читается и включается как контекст для агента. Полезно для:
+    </p>
+    <div class="check-list">
+      <div class="check-item"><span class="check-mark">✓</span><span>Передачи CSV контактов для валидации: <code>@./contacts.csv validate these contacts</code></span></div>
+      <div class="check-item"><span class="check-mark">✓</span><span>Подачи файла задачи: <code>@./task.txt</code> читает файл как запрос</span></div>
+      <div class="check-item"><span class="check-mark">✓</span><span>Включения фрагмента исследования: <code>@./notes.md summarize and expand on this</code></span></div>
+    </div>
+
+    <h3>Типичный поток сессии TUI</h3>
+    <div class="steps">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div>
+          <div class="step-title">Запуск</div>
+          <p class="step-desc"><code>fathom tui</code> — TUI открывается с фокусом на панели ввода. Введите запрос и нажмите Enter.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div>
+          <div class="step-title">Наблюдение за роем</div>
+          <p class="step-desc">Переключитесь на панель Agents (Tab), чтобы наблюдать запуск и работу субагентов. Панель Log показывает вызовы инструментов в реальном времени.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div>
+          <div class="step-title">Подтверждение побочных эффектов</div>
+          <p class="step-desc">При появлении запроса на подтверждение нажмите <code>y</code> для подтверждения или <code>n</code> для отказа. Переключитесь на панель Tools, чтобы увидеть ожидающие подтверждения.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">04</div>
+        <div>
+          <div class="step-title">Чтение вывода</div>
+          <p class="step-desc">Переключитесь на панель Output, чтобы читать синтезируемый отчёт по мере стриминга. Up/Down для прокрутки по истории.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">05</div>
+        <div>
+          <div class="step-title">Уточнение</div>
+          <p class="step-desc">Введите уточняющий запрос в панели ввода для продолжения исследования. Агент сохраняет контекст от предыдущего запуска.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* ============ РУКОВОДСТВО ПО СТРУКТУРЕ ВЫВОДА ============ */}
+  <section id="output-guide">
+    <h2>Руководство по структуре вывода</h2>
+    <p>
+      Каждый запуск исследования производит консистентную выходную директорию. Что содержит каждый файл и как его использовать.
+    </p>
+
+    <h3>Разбор по файлам</h3>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>Файл</th><th>Содержимое</th><th>Как использовать</th></tr></thead>
+        <tbody>
+          <tr><td><code>index.md</code></td><td>Оглавление со ссылками на все находки, метаданные запуска (запрос, профиль, метки времени, число агентов)</td><td>Начните здесь — это точка входа в отчёт</td></tr>
+          <tr><td><code>summary.md</code></td><td>Исполнительное резюме от стадии синтеза координатора. Ключевые находки, рекомендации и выделенные контакты</td><td>Делитесь со стейкхолдерами, которым не нужны детали</td></tr>
+          <tr><td><code>findings/*.md</code></td><td>Один файл на подзадачу. Полный вывод исследования субагента со встроенными цитатами источников</td><td>Углубление в конкретные темы или проверка утверждений</td></tr>
+          <tr><td><code>sources.md</code></td><td>Дедуплицированный список всех URL источников, упомянутых во всех находках, с заголовками и датами последнего посещения</td><td>Фактчек отчёта или сборка списка чтения</td></tr>
+          <tr><td><code>.research.db</code></td><td>База SQLite с полным состоянием сессии: агенты, сообщения, вызовы инструментов, находки, контакты, задачи</td><td>Возобновление прерванных сессий, запуск stats или экспорт контактов</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Форматы экспорта</h3>
+    <p>
+      При настройке запуск производит дополнительные файлы в выходной директории:
+    </p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>Формат</th><th>Файл</th><th>Запускается чем</th></tr></thead>
+        <tbody>
+          <tr><td>HTML</td><td><code>report.html</code></td><td><code>export.html = true</code> в конфиге</td></tr>
+          <tr><td>PDF</td><td><code>report.pdf</code></td><td><code>export.pdf = true</code> в конфиге</td></tr>
+          <tr><td>JSON</td><td><code>report.json</code></td><td><code>export.json = true</code> в конфиге</td></tr>
+          <tr><td>DOCX</td><td><code>report.docx</code></td><td><code>export.docx = true</code> в конфиге</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Все экспорты генерируются из одной и той же структуры отчёта в памяти, поэтому всегда консистентны
+      с Markdown-выводом. Формат JSON включает полные метаданные источников и идеален для программного
+      потребления.
+    </p>
+  </section>
+
+  {/* ============ СОВЕТЫ И ХИТРОСТИ CLI ============ */}
+  <section id="tips">
+    <h2>Советы и хитрости CLI</h2>
+
+    <h3>Используйте --task-file для сложных запросов</h3>
+    <p>
+      Для длинных или структурированных запросов записывайте их в файл вместо передачи позиционным аргументом.
+      Это избегает проблем экранирования шелла и позволяет версионировать ваши исследовательские промпты.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">файл задачи</span></div>
+      <pre><code set:html={`# task.txt
+Research the competitive landscape of AI coding assistants.
+Include:
+1. GitHub Copilot, Cursor, Codeium, Tabnine, Cody
+2. Pricing models and enterprise features
+3. Technical architecture (local vs cloud, model choices)
+4. Market share estimates and growth trajectories
+5. Key differentiators and weaknesses
+
+Format as a comparison table with a recommendation section.
+
+# Запуск с файлом задачи
+fathom run --task-file task.txt -o ./ai-coding-tools/`} /></pre>
+    </div>
+
+    <h3>Используйте --repeat для циклов мониторинга</h3>
+    <p>
+      Флаг <code>--repeat</code> превращает <code>run</code> в режим наблюдения. Каждый цикл перезапускает
+      запрос, сравнивает результаты с предыдущим запуском и оповещает о новых контактах или изменённых находках.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">мониторинг</span></div>
+      <pre><code set:html={`# Проверка новых сигналов по Acme Corp каждые 6 часов
+fathom run "Acme Corp latest news and hiring" --repeat 21600
+
+# Мониторинг доски вакансий каждый час
+fathom run "New postings on careers.acme.com" --repeat 3600`} /></pre>
+    </div>
+
+    <h3>Используйте --profile для поведения под кампанию</h3>
+    <p>
+      Комбинируйте профили с одним запросом для разных перспектив. Запустите один раз с <code>hunter</code>
+      для контактов, затем с <code>analyst</code> для глубокого исследования тех же компаний.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">двойной проход</span></div>
+      <pre><code set:html={`# Проход 1: сбор контактов
+fathom run --profile hunter "Series B fintech companies" -o ./fintech/
+
+# Проход 2: глубокий анализ той же темы
+fathom run --profile analyst "Series B fintech companies" -o ./fintech-analysis/`} /></pre>
+    </div>
+
+    <h3>Передавайте вывод другим инструментам</h3>
+    <p>
+      CLI пишет структурированный Markdown и JSON, которые можно передавать другим инструментам для дальнейшей обработки.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">пайпы</span></div>
+      <pre><code set:html={`# Экспорт контактов и фильтрация через jq
+fathom contacts export --format json | jq '.[] | select(.title | contains("CTO"))'
+
+# Поиск в памяти и форматирование как markdown-ссылок
+fathom memory search "fintech" --top-k 5 | grep -oP 'https?://\\\\S+' | sort -u
+
+# Запуск статистики и сохранение в файл
+fathom stats -o ./results/ > stats-report.md`} /></pre>
+    </div>
+
+    <h3>Находите прошлые исследования через sessions</h3>
+    <p>
+      Команда <code>sessions</code> — ваша история исследований. Используйте поиск по подстроке для нахождения
+      прошлых запусков по теме, компании или дате.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">сессии</span></div>
+      <pre><code set:html={`# Найти все сессии про fintech
+fathom sessions list --search "fintech"
+
+# Показать последние 5 сессий
+fathom sessions list -n 5
+
+# Просмотр деталей конкретной сессии (префиксное совпадение)
+fathom sessions show 3f9c2a`} /></pre>
+    </div>
+
+    <h3>Анализируйте производительность инструментов через stats</h3>
+    <p>
+      Команда <code>stats</code> показывает статистику вызовов по инструментам из записанной сессии: числа вызовов,
+      задержки p50/p95 и частоты ошибок. Используйте для нахождения медленных инструментов или оптимизации вашего пайплайна исследования.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">stats</span></div>
+      <pre><code set:html={`# Статистика самой недавней сессии
+fathom stats
+
+# Статистика конкретной выходной директории
+fathom stats -o ./fintech-vps/
+
+# Пример вывода:
+# Tool             Calls   p50(ms)   p95(ms)   Errors
+# web_search         47      312      1840        2
+# web_fetch          89      245      3200        5
+# extract_contacts   23      180       420        0
+# verify_email       15      890      4500        1
+# memory_search      12       45       120        0`} /></pre>
+    </div>
+
+    <h3>Бенчмарк перед развёртыванием</h3>
+    <p>
+      Запустите набор <code>bench</code> для проверки производительности вашего окружения перед стартом больших кампаний.
+      Это ловит проблемы вроде медленного DNS, ограничений памяти или неверно настроенных моделей эмбеддингов.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">bench</span></div>
+      <pre><code set:html={`# Запуск всех сценариев бенчмарка
+fathom bench
+
+# Запуск конкретного сценария с сохранением отчёта
+fathom bench -s memory --save bench-report.md
+
+# Быстрая проверка накладных расходов диспетчеризации
+fathom bench -s dispatch -n 32`} /></pre>
+    </div>
+  </section>

@@ -1,0 +1,578 @@
+---
+title: "Персонализация — Fathom"
+description: "Настройка поведения воркеров Fathom: профили, ролевые модели, политики инструментов, персоны и проверяемые черновики аутрича."
+sidebarId: "personalization"
+---
+  
+export const personas = [
+  { name: 'hunter', d: 'Собирает максимум ВЕРИФИЦИРОВАННЫХ контактов. Устанавливает max_agents = 6 и принудительно включает extract_contacts + save_contacts + verification. Профиль по умолчанию для быстрой сборки списка.' },
+  { name: 'analyst', d: 'Глубина, источники и перекрёстная проверка. Запрещает save_contacts и git_push — read-only исследователь, возвращающий результаты с цитатами без побочных эффектов.' },
+  { name: 'validator', d: 'Берёт ваши существующие контакты и верифицирует / обогащает их. Запрещает spawn_agent — сфокусированная однопроходная очистка уже готового списка.' },
+];
+
+export const draftSteps = [
+  { n: 'A', t: 'Опора на факты', d: 'Автор использует только то, что реально вернули инструменты: раунд финансирования компании, открытая вакансия, недавний пост. Каждое утверждение ссылается на URL источника.' },
+  { n: 'B', t: 'Никаких выдумок', d: 'Железное правило системного промпта: никаких выдуманных фактов, контактов, дат или источников. Если факт отсутствует, черновик прямо об этом говорит или начинается с известного.' },
+  { n: 'C', t: 'Слой памяти', d: 'На глубине 0 агент получает дайджест памяти. Прошлые касания, предыдущие разговоры и известные смены ролей всплывают автоматически — повторный аутрич продолжает диалог, а не начинает с нуля.' },
+  { n: 'D', t: 'Подтверждение человеком', d: 'Побочные эффекты ждут явного «да». Сначала персонализация, затем проверка пакета в TUI или через approve по API — прежде чем что-то уйдёт в CRM.' },
+];
+
+<div class="doc-header">
+    <span class="doc-badge">Персонализация</span>
+    <h1>Профили и персонализированные черновики</h1>
+    <p class="doc-lead">
+      Лид полезен, только если можно <em>написать нужному человеку о нужном</em>.
+      Это руководство показывает, как Fathom превращает сырые факты в персонализированный
+      аутрич — и как вы управляете его тоном, глубиной и стилем через профили.
+    </p>
+  </div>
+
+  {/* ============ ПЕРСОНЫ ============ */}
+  <section id="personas">
+    <h2>Персоны: меняйте поведение, а не код</h2>
+    <p>
+      Профиль — это именованный пресет: блок системного промпта, внедряемый в каждого агента,
+      плюс переопределения model, fast_model, temperature, max_depth, max_agents и запрещённых
+      инструментов. Три профиля встроены из коробки.
+    </p>
+    <table class="mini-table">
+      <thead><tr><th>Профиль</th><th>Поведение</th></tr></thead>
+      <tbody>
+        {personas.map((p) => (
+          <tr><td><code>{p.name}</code></td><td>{p.d}</td></tr>
+        ))}
+      </tbody>
+    </table>
+    <p>
+      Свои профили определяйте в <code>~/.fathom/profiles/&lt;имя&gt;.toml</code>, затем выбирайте через
+      <code>--profile</code> у <code>run</code> или <code>tui</code>. Профили настраивают поведение агента
+      под каждую кампанию — analyst только исследует и ничего не пишет, агрессивный hunter не останавливается.
+    </p>
+  </section>
+
+  {/* ============ КОНТЕКСТ -> ЧЕРНОВИК ============ */}
+  <section id="grounding">
+    <h2>Как факт становится строкой</h2>
+    <p>
+      Fathom не использует шаблоны с подстановкой. Автор компонует каждое сообщение
+      из собранного контекста по четырём правилам.
+    </p>
+    <div class="flow-list">
+      {draftSteps.map((s) => (
+        <div class="flow-item">
+          <div class="flow-index">{s.n}</div>
+          <div class="flow-body">
+            <div class="flow-title">{s.t}</div>
+            <p class="flow-desc">{s.d}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  {/* ============ ПРИМЕР ============ */}
+  <section id="example">
+    <h2>До и после</h2>
+    <p>
+      Без опоры на факты черновик получается шаблонным. С ней первая строка ссылается на то,
+      что агент действительно нашёл.
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">шаблонный</span></div>
+      <pre><code set:html={`Здравствуйте, [Имя], хотел обратиться по поводу нашего решения.`} /></pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">с опорой на факты</span></div>
+      <pre><code set:html={`Здравствуйте, Анна! Видел, что Acme только что закрыла раунд B и нанимает
+6 инженеров платформы. Учитывая ваш опыт CTO в высоконагруженных системах на Rust,
+хотел рассказать, как мы сократили свои расходы на инфраструктуру — буду рад
+обменяться опытом, если актуально.`} /></pre>
+    </div>
+  </section>
+
+  {/* ============ МАРШРУТИЗАЦИЯ МОДЕЛЕЙ ПО РОЛЯМ ============ */}
+  <section id="routing">
+    <h2>Маршрутизация моделей по ролям</h2>
+    <p>
+      Разные роли агентов могут работать на разных моделях. Через <code>[agent].role_models</code> можно
+      дать Автору более сильную модель для текстов, а дешёвая fast_model будет классифицировать и парсить.
+      Если <code>llm.fast_model</code> не задана, массовые вызовы извлечения и верификации остаются дешёвыми.
+    </p>
+  </section>
+
+  {/* ============ СПРАВОЧНИК КОНФИГУРАЦИИ ПРОФИЛЕЙ ============ */}
+  <section id="profile-config">
+    <h2>Справочник конфигурации профилей</h2>
+    <p>
+      Каждый профиль — это TOML-файл с секцией <code>[profile]</code>. Все поля опциональны — незаданные ключи наследуются
+      из <code>config.toml</code>. Ниже перечислены все поддерживаемые поля.
+    </p>
+    <div class="mini-table-wrap">
+      <table class="mini-table full-ref">
+        <thead><tr><th>Поле</th><th>Тип</th><th>Значение по умолчанию</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td><code>name</code></td><td>string</td><td>имя файла</td><td>Отображаемое имя в <code>profiles list</code></td></tr>
+          <tr><td><code>description</code></td><td>string</td><td>—</td><td>Однострочное описание для списка профилей</td></tr>
+          <tr><td><code>prompt</code></td><td>string (многострочный)</td><td>—</td><td>Системный промпт, добавляемый после базового; управляет тоном, стилем, фокусом</td></tr>
+          <tr><td><code>model</code></td><td>string</td><td>из конфига</td><td>Переопределение основной модели для планирования и написания (напр. <code>gpt-4o</code>)</td></tr>
+          <tr><td><code>fast_model</code></td><td>string</td><td>из конфига</td><td>Дешёвая модель для извлечения, классификации, верификации</td></tr>
+          <tr><td><code>temperature</code></td><td>float</td><td>0.7</td><td>Температура сэмплирования (0.0–2.0); ниже = детерминированнее</td></tr>
+          <tr><td><code>max_depth</code></td><td>integer</td><td>3</td><td>Максимальная глубина вложенности субагентов</td></tr>
+          <tr><td><code>max_agents</code></td><td>integer</td><td>8</td><td>Максимум одновременных субагентов в рое</td></tr>
+          <tr><td><code>max_iterations</code></td><td>integer</td><td>20</td><td>Лимит цикла вызовов инструментов на агента до принудительной остановки</td></tr>
+          <tr><td><code>timeout_seconds</code></td><td>integer</td><td>3600</td><td>Жёсткий таймаут по реальному времени на агента</td></tr>
+          <tr><td><code>replan_rounds</code></td><td>integer</td><td>1</td><td>Число раундов Goal Mode для закрытия пробелов после первого синтеза</td></tr>
+          <tr><td><code>deny_tools</code></td><td>массив строк</td><td>[]</td><td>Инструменты, которые агенту нельзя вызывать (напр. <code>["save_contacts", "git_push"]</code>)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  {/* ============ ВСТРОЕННЫЕ ПРОФИЛИ ПОДРОБНО ============ */}
+  <section id="profiles-deep">
+    <h2>Встроенные профили подробно</h2>
+
+    <h3>hunter</h3>
+    <p>
+      Профиль <strong>hunter</strong> оптимизирован для сбора контактов максимальным объёмом. Он принудительно ставит
+      <code>max_agents = 6</code>, держит temperature на 0.4 для стабильного извлечения и всегда включает
+      <code>extract_contacts</code>, <code>save_contacts</code> и <code>verification</code> в цепочку инструментов.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">hunter.toml</span></div>
+      <pre><code set:html={`[profile]
+name = "hunter"
+description = "Harvest maximum verified contacts fast"
+prompt = """
+You are a contact-harvesting agent. Your sole objective is to find and
+verify as many contacts as possible. Prioritize volume but never save
+unverified contacts. Always run email syntax + MX checks before saving.
+For each company, search for C-suite, VP Engineering, and Head of Product.
+"""
+temperature = 0.4
+max_agents = 6
+max_depth = 2
+deny_tools = ["git_push"]`} /></pre>
+    </div>
+    <div class="code-card code-card--gap">
+      <div class="code-header"><span class="code-lang">пример</span></div>
+      <pre><code set:html={`fathom run --profile hunter "Find engineering leaders at YC W24 companies"`} /></pre>
+    </div>
+    <p>
+      Что меняется: агент запускает до 6 параллельных субагентов, каждый обрабатывает свой срез поискового
+      пространства. Системный промпт настроен на широту — проверить каждую компанию, извлечь каждый видимый
+      контакт, верифицировать email и телефон, сохранить сразу. Запрет <code>git_push</code> предотвращает
+      случайные коммиты, если папка исследования — git-репозиторий.
+    </p>
+
+    <h3>analyst</h3>
+    <p>
+      Профиль <strong>analyst</strong> — read-only глубокий исследователь. Он запрещает <code>save_contacts</code>
+      и <code>git_push</code>, поэтому побочных эффектов нет. Temperature 0.3 для точного вывода с цитатами.
+      Лучше всего подходит для конкурентного анализа, технических глубоких погружений и due diligence.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">analyst.toml</span></div>
+      <pre><code set:html={`[profile]
+name = "analyst"
+description = "Deep, cited, read-only research"
+prompt = """
+You are a research analyst. Produce thoroughly sourced findings with
+inline citations. Every claim MUST link to a source URL. Cross-reference
+facts across multiple sources. Flag conflicting information explicitly.
+Never save contacts or modify external systems — you are read-only.
+"""
+model = "gpt-4o"
+temperature = 0.3
+max_agents = 4
+max_depth = 3
+max_iterations = 30
+deny_tools = ["save_contacts", "git_push"]`} /></pre>
+    </div>
+    <div class="code-card code-card--gap">
+      <div class="code-header"><span class="code-lang">пример</span></div>
+      <pre><code set:html={`fathom run --profile analyst "Evaluate the competitive landscape of vector databases"`} /></pre>
+    </div>
+    <p>
+      Что меняется: агент использует <code>max_iterations = 30</code> для более длинных цепочек исследования и
+      <code>max_depth = 3</code> для более глубокой вложенности субагентов. Промпт требует цитировать каждое
+      утверждение и явно помечать противоречия.
+    </p>
+
+    <h3>validator</h3>
+    <p>
+      Профиль <strong>validator</strong> — однопроходный очиститель контактов. Он берёт существующий список
+      контактов, верифицирует каждую запись и обогащает чем может. Запрещает <code>spawn_agent</code>, поэтому
+      работает как сфокусированный однопроцессный агент.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">validator.toml</span></div>
+      <pre><code set:html={`[profile]
+name = "validator"
+description = "Verify and enrich existing contacts"
+prompt = """
+You are a contact validation agent. You have been given an existing
+contact list. For each contact: verify the email (syntax + MX + SMTP),
+normalize the phone to E.164, check the social profile URL, and enrich
+with any missing fields (title, company, LinkedIn). Mark invalid entries
+but do not delete them. Return a clean, enriched list.
+"""
+temperature = 0.2
+max_agents = 1
+max_depth = 1
+max_iterations = 50
+deny_tools = ["spawn_agent"]`} /></pre>
+    </div>
+    <div class="code-card code-card--gap">
+      <div class="code-header"><span class="code-lang">пример</span></div>
+      <pre><code set:html={`fathom run --profile validator "Validate and enrich contacts in ./contacts.csv"`} /></pre>
+    </div>
+    <p>
+      Что меняется: субагенты не запускаются — вся валидация идёт в одном цикле агента.
+      <code>max_iterations = 50</code> даёт агенту запас для проверки больших списков без упора в лимит.
+      Температура самая низкая из всех профилей (0.2) — для детерминированной механической работы.
+    </p>
+  </section>
+
+  {/* ============ СОЗДАНИЕ СВОИХ ПРОФИЛЕЙ ============ */}
+  <section id="custom-profiles">
+    <h2>Создание своих профилей</h2>
+    <p>
+      Свои профили лежат в <code>~/.fathom/profiles/</code> как TOML-файлы. Имя файла
+      (без <code>.toml</code>) становится именем профиля, которое используется с <code>--profile</code>.
+    </p>
+
+    <h3>Расположение файлов и именование</h3>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">структура директории</span></div>
+      <pre><code set:html={`~/.fathom/profiles/
+├── hunter.toml       # встроенный (поставляется с бинарником)
+├── analyst.toml      # встроенный
+├── validator.toml    # встроенный
+├── my-outreach.toml  # ваш профиль
+└── due-diligence.toml`} /></pre>
+    </div>
+
+    <h3>Создание профиля через CLI</h3>
+    <div class="steps">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div>
+          <div class="step-title">Сгенерируйте шаблон</div>
+          <p class="step-desc"><code>fathom profiles new my-outreach</code> — создаёт <code>~/.fathom/profiles/my-outreach.toml</code> со всеми закомментированными полями и заглушкой промпта.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div>
+          <div class="step-title">Отредактируйте TOML</div>
+          <p class="step-desc">Раскомментируйте и задайте нужные поля. Минимум — укажите <code>prompt</code>, именно он делает профиль полезным. Остальные поля при отсутствии наследуются из config.toml.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div>
+          <div class="step-title">Проверьте через show</div>
+          <p class="step-desc"><code>fathom profiles show my-outreach</code> — печатает разрешённый профиль со всеми унаследованными значениями по умолчанию, чтобы было видно, что именно получит агент.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">04</div>
+        <div>
+          <div class="step-title">Список всех профилей</div>
+          <p class="step-desc"><code>fathom profiles list</code> — показывает встроенные и пользовательские профили с описаниями.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Пример своего профиля</h3>
+    <p>
+      Профиль для due-diligence исследования потенциальных целей поглощения. Сильная
+      рассуждающая модель, запрет побочных эффектов и запрос структурированного формата отчёта.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">due-diligence.toml</span></div>
+      <pre><code set:html={`[profile]
+name = "due-diligence"
+description = "Structured M&A due-diligence research"
+prompt = """
+You are a due-diligence research agent. For the given company:
+1. Financial signals — funding rounds, revenue estimates, layoffs
+2. Technical signals — tech stack, GitHub activity, patent filings
+3. Market signals — competitors, market share, customer reviews
+4. Risk signals — litigation, regulatory issues, key-person risk
+
+Format your findings as a structured report with sections and ratings:
+[GREEN] = no concerns, [YELLOW] = monitor, [RED] = deal-breaker.
+Cite every claim with a source URL.
+"""
+model = "claude-3.5-sonnet"
+temperature = 0.3
+max_agents = 4
+max_depth = 3
+max_iterations = 40
+deny_tools = ["save_contacts", "git_push", "send_email"]`} /></pre>
+    </div>
+    <div class="code-card code-card--gap">
+      <div class="code-header"><span class="code-lang">пример</span></div>
+      <pre><code set:html={`fathom run --profile due-diligence "Full due-diligence on Acme Corp"
+fathom tui --profile due-diligence "Analyze Acme Corp and its top 3 competitors"`} /></pre>
+    </div>
+  </section>
+
+  {/* ============ НАСЛЕДОВАНИЕ ПРОФИЛЕЙ ============ */}
+  <section id="profile-inheritance">
+    <h2>Наследование и разрешение профилей</h2>
+    <p>
+      Когда профиль не задаёт поле, рантайм разрешает его из <code>config.toml</code>. Порядок
+      разрешения: TOML профиля → секция <code>[agent]</code> → встроенные значения по умолчанию.
+      Минимальному профилю достаточно только <code>prompt</code> — всё остальное работает из коробки.
+    </p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>Приоритет</th><th>Источник</th><th>Пример</th></tr></thead>
+        <tbody>
+          <tr><td>1 — Профиль</td><td>TOML-файл профиля</td><td><code>temperature = 0.3</code> в analyst.toml</td></tr>
+          <tr><td>2 — Конфиг</td><td><code>~/.fathom/config.toml</code></td><td><code>[agent] temperature = 0.7</code></td></tr>
+          <tr><td>3 — Встроенные</td><td>Скомпилированные значения</td><td><code>temperature = 0.7</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Поле <code>prompt</code> <em>добавляется</em> к базовому системному промпту, а не заменяет его. То есть
+      промпт профиля добавляет ролевые инструкции поверх стандартных правил безопасности, опоры на факты
+      и использования инструментов, которые получает каждый агент.
+    </p>
+  </section>
+
+  {/* ============ ПРАВИЛА ОПОРЫ НА ФАКТЫ ПОДРОБНО ============ */}
+  <section id="grounding-detail">
+    <h2>Правила опоры на факты подробно</h2>
+    <p>
+      Четыре правила опоры на факты — разница между спамом и сигналом. У каждого правила есть конкретный
+      пример «до/после», показывающий, как оно преображает черновик.
+    </p>
+
+    <h3>Правило A — Опора на факты</h3>
+    <p>
+      Автор использует только то, что реально вернули инструменты. Если веб-поиск нашёл анонс раунда B
+      и вакансию на 6 инженеров, в черновик идут эти факты — и только они. Каждое утверждение
+      отслеживается до URL источника.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">до (без опоры)</span></div>
+      <pre><code set:html={`Здравствуйте, Анна! Заметил, что ваша компания быстро растёт и,
+вероятно, ищет решения для масштабирования инфраструктуры.`} /></pre>
+    </div>
+    <div class="code-card code-card--gap">
+      <div class="code-header"><span class="code-lang">после (с опорой на факты)</span></div>
+      <pre><code set:html={`Здравствуйте, Анна! Видел, что Acme в прошлом месяце закрыла раунд B
+(TechCrunch, 12 февраля) и нанимает 6 инженеров платформы (страница вакансий).
+Учитывая стек на Rust в вашей команде и сложности масштабирования при росте
+штатa в 3 раза, хотел рассказать, как мы сократили расходы на инфраструктуру
+на 40%.`} /></pre>
+    </div>
+
+    <h3>Правило B — Никаких выдумок</h3>
+    <p>
+      Железное правило: никаких выдуманных фактов, контактов, дат или источников. Если факта нет,
+      черновик либо прямо об этом говорит, либо начинается с того, что известно. Модель штрафуется
+      в системном промпте за галлюцинации — выдумки вызывают немедленный перезапуск генерации.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">до (выдумано)</span></div>
+      <pre><code set:html={`Здравствуйте, Анна! Поздравляю с недавним раундом B на $50M под
+руководством Sequoia! Видел ваш недавний доклад на RustConf 2025
+про микросервисы.`} /></pre>
+    </div>
+    <div class="code-card code-card--gap">
+      <div class="code-header"><span class="code-lang">после (честно)</span></div>
+      <pre><code set:html={`Здравствуйте, Анна! Видел, что Acme в прошлом месяце закрыла раунд —
+поздравляю команду. Не смог найти деталей по ведущему инвестору, но масштаб
+ваших недавних наймов в инженерию говорит о серьёзном росте впереди.`} /></pre>
+    </div>
+
+    <h3>Правило C — Слой памяти</h3>
+    <p>
+      На глубине 0 агент получает <strong>дайджест памяти</strong> — компактную сводку всех прошлых
+      взаимодействий с этим контактом или компанией. Прошлые касания, предыдущие разговоры и известные
+      смены ролей всплывают автоматически, поэтому повторный аутрич продолжает диалог, а не начинает с нуля.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">до (без памяти)</span></div>
+      <pre><code set:html={`Здравствуйте, Анна! Хотел представить нашу платформу и узнать,
+есть ли совпадение интересов.`} /></pre>
+    </div>
+    <div class="code-card code-card--gap">
+      <div class="code-header"><span class="code-lang">после (с учётом памяти)</span></div>
+      <pre><code set:html={`Здравствуйте, Анна! Продолжаю наш разговор от января — вы упоминали,
+что миграция на Rust была вашим приоритетом на Q1. Сейчас Q2, и я заметил,
+что Acme нанимает инженеров платформы — похоже, всё получилось.
+Интересно, как прошло развёртывание и пригодятся ли ещё наши бенчмарки.`} /></pre>
+    </div>
+    <p>
+      Дайджест памяти включает: имя контакта, компанию, известную роль (и смены ролей), дату последнего
+      взаимодействия, ранее обсуждавшиеся темы и любые факты из прошлых запусков. Эти данные внедряются
+      как замороженный блок промпта на глубине 0, чтобы префикс-кэш оставался тёплым.
+    </p>
+
+    <h3>Правило D — Подтверждение человеком</h3>
+    <p>
+      Побочные эффекты ждут явного «да». Агент составляет черновик и останавливается. В TUI оператор нажимает
+      <code>y</code> для подтверждения или <code>n</code> для отклонения. По API требуется вызов
+      <code>POST /sessions/:id/approve</code>. Ничего не уходит в CRM, письма не отправляются, файлы не
+      меняются, пока человек не скажет «го».
+    </p>
+    <p>
+      Это значит, что можно запустить <code>--profile hunter</code> для генерации 50 персонализированных
+      писем, просмотреть каждое в пакете и подтвердить только те, что проходят вашу планку качества.
+    </p>
+  </section>
+
+  {/* ============ МАРШРУТИЗАЦИЯ МОДЕЛЕЙ ПО РОЛЯМ ============ */}
+  <section id="role-routing">
+    <h2>Маршрутизация моделей по ролям</h2>
+    <p>
+      Таблица <code>[agent].role_models</code> в <code>config.toml</code> позволяет назначать разные LLM
+      разным ролям агентов. Это главный рычаг оптимизации стоимости: дорогие модели там, где важно
+      качество текста, и дешёвые везде в остальных местах.
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">config.toml</span></div>
+      <pre><code set:html={`[agent]
+# Модель по умолчанию для всех ролей
+model = "gpt-4o-mini"
+
+# Переопределения конкретных ролей
+[agent.role_models]
+writer = "gpt-4o"            # лучшее качество текста
+researcher = "deepseek-v3"   # дешёвая, хороша в извлечении
+analyst = "claude-3.5-sonnet" # сильное рассуждение
+verifier = "gpt-4o-mini"     # простые проверки, экономим
+coordinator = "gpt-4o"       # планированию нужна сильная модель
+
+[llm]
+fast_model = "gpt-4o-mini"   # массовое извлечение и парсинг`} /></pre>
+    </div>
+
+    <h3>Как работает role_models</h3>
+    <p>
+      Когда координатор запускает субагента, он назначает роль по типу подзадачи. Рантайм сначала смотрит
+      <code>[agent.role_models]</code>; если для роли задана модель, используется она.
+      Иначе применяется <code>[agent].model</code>.
+    </p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>Роль</th><th>Задачи</th><th>Рекомендуемый уровень модели</th></tr></thead>
+        <tbody>
+          <tr><td><code>coordinator</code></td><td>Планирование, декомпозиция, синтез</td><td>Сильное рассуждение (GPT-4o, Claude Sonnet)</td></tr>
+          <tr><td><code>researcher</code></td><td>Веб-поиск, парсинг страниц, OSINT</td><td>Дешёвая + быстрая (DeepSeek, GPT-4o-mini)</td></tr>
+          <tr><td><code>analyst</code></td><td>Перекрёстная проверка, фактчекинг</td><td>Сильное рассуждение (Claude Sonnet, GPT-4o)</td></tr>
+          <tr><td><code>writer</code></td><td>Персонализированные черновики аутрича</td><td>Лучший текст (GPT-4o, Claude Opus)</td></tr>
+          <tr><td><code>verifier</code></td><td>Проверка email/телефона/соцсетей</td><td>Дешёвая (GPT-4o-mini, локальные модели)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>fast_model для массового извлечения</h3>
+    <p>
+      Настройка <code>llm.fast_model</code> используется для задач, где скорость важнее качества: парсинг
+      HTML, извлечение структурированного JSON из страниц, классификация типов страниц, нормализация данных.
+      Такие вызовы происходят сотни раз за сессию, поэтому более дешёвая OpenAI-совместимая модель заметно
+      экономит бюджет без влияния на качество результата.
+    </p>
+
+    <h3>Стратегии оптимизации стоимости</h3>
+    <div class="check-list">
+      <div class="check-item"><span class="check-mark">✓</span><span>Используйте <code>fast_model</code> для всего извлечения и парсинга — это самый большой выигрыш</span></div>
+      <div class="check-item"><span class="check-mark">✓</span><span>Держите координатора на сильной модели — плохое планирование тратит больше, чем экономит</span></div>
+      <div class="check-item"><span class="check-mark">✓</span><span>Используйте сильную модель для автора — качество текста и есть результат</span></div>
+      <div class="check-item"><span class="check-mark">✓</span><span>Используйте дешёвую модель для верификации — это в основном regex и DNS-запросы</span></div>
+      <div class="check-item"><span class="check-mark">✓</span><span>Ставьте <code>temperature = 0.2</code> для задач извлечения, чтобы уменьшить перегенерации</span></div>
+      <div class="check-item"><span class="check-mark">✓</span><span>Используйте лимиты <code>max_iterations</code> против бесконечных циклов на дешёвых моделях</span></div>
+    </div>
+  </section>
+
+  {/* ============ КОНТРОЛЬ КАЧЕСТВА ЧЕРНОВИКОВ ============ */}
+  <section id="quality">
+    <h2>Контроль качества черновиков</h2>
+    <p>
+      В Fathom несколько слоёв контроля качества, гарантирующих, что черновики точны, подкреплены
+      источниками и безопасны для отправки. Эти проверки работают автоматически — настройка не нужна.
+    </p>
+
+    <h3>Защита от галлюцинаций</h3>
+    <p>
+      Системный промпт содержит явную директиву против галлюцинаций. Автору предписано ссылаться только
+      на факты, которые есть в результатах инструментов. Если факта нет в контексте, автор либо опускает
+      его, либо использует осторожную формулировку («не удалось проверить…»). Рантайм также проверяет,
+      что любой URL, процитированный в черновике, действительно встречался в результатах исследования.
+    </p>
+
+    <h3>Требования к цитированию источников</h3>
+    <p>
+      Каждое фактическое утверждение в черновике должно отслеживаться до результата инструмента. Автор
+      использует встроенные ссылки:
+    </p>
+    <div class="code-card">
+      <div class="code-header"><span class="code-lang">формат цитаты</span></div>
+      <pre><code set:html={`"Acme привлекла $50M в раунде B" → источник: web_search, результат №3 (TechCrunch)
+"Сейчас нанимают 6 инженеров" → источник: web_fetch страницы вакансий
+"CTO с 2022 года" → источник: парсинг профиля LinkedIn`} /></pre>
+    </div>
+    <p>
+      В TUI каждое утверждение черновика можно отследить до исходного вызова инструмента в панели Log.
+    </p>
+
+    <h3>Пороги уверенности</h3>
+    <p>
+      Автор присваивает утверждениям неявные уровни уверенности по качеству источника. Рантайм обеспечивает
+      соблюдение правил:
+    </p>
+    <div class="mini-table-wrap">
+      <table class="mini-table">
+        <thead><tr><th>Уверенность</th><th>Тип источника</th><th>Поведение черновика</th></tr></thead>
+        <tbody>
+          <tr><td>Высокая</td><td>Официальная страница, пресс-релиз, отчёт SEC</td><td>Утверждается как факт</td></tr>
+          <tr><td>Средняя</td><td>Новостная статья, LinkedIn, вакансия</td><td>Утверждается с указанием источника</td></tr>
+          <tr><td>Низкая</td><td>Один непроверенный источник, пост в соцсети</td><td>Осторожная формулировка: «похоже», «судя по»</td></tr>
+          <tr><td>Непроверено</td><td>Подтверждающего источника не найдено</td><td>Опускается или помечается как непроверенное</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Процесс подтверждения человеком</h3>
+    <p>
+      Процесс подтверждения — последний шлюз перед любым побочным эффектом. Полный поток:
+    </p>
+    <div class="steps">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div>
+          <div class="step-title">Агент составляет черновик</div>
+          <p class="step-desc">Автор создаёт персонализированный черновик на основе фактов исследования.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div>
+          <div class="step-title">Состояние pending</div>
+          <p class="step-desc">Черновик переходит в состояние «на рассмотрении». Любой побочный эффект (save_contacts, send_email, crm_push) заблокирован.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div>
+          <div class="step-title">Проверка оператором</div>
+          <p class="step-desc">В TUI: нажмите <code>y</code> для подтверждения или <code>n</code> для отклонения. По API: <code>POST /sessions/:id/approve</code>. Пакетный режим: проверка всех ожидающих черновиков списком.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">04</div>
+        <div>
+          <div class="step-title">Выполнение побочных эффектов</div>
+          <p class="step-desc">Подтверждённые черновики запускают свои побочные эффекты: контакты сохраняются в БД, отправляются в CRM, генерируются экспорты.</p>
+        </div>
+      </div>
+    </div>
+  </section>

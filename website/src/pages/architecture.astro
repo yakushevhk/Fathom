@@ -35,10 +35,10 @@ const modules = [
 ];
 
 const stats = [
-  { v: '12', l: 'workspace crates' },
-  { v: '51+11', l: 'built-in + browser & computer tools' },
-  { v: '7', l: 'search backends' },
-  { v: '20', l: 'parallel agents max' },
+  { v: '13', l: 'workspace crates', i: 'arch.statCrates' },
+  { v: '63+11', l: 'built-in + browser & computer tools', i: 'arch.statTools' },
+  { v: '7', l: 'search backends', i: 'arch.statSearch' },
+  { v: '20', l: 'parallel agents max', i: 'arch.statAgents' },
 ];
 
 const stack = [
@@ -72,7 +72,7 @@ const stack = [
             stats.map((s) => (
               <div class="stat">
                 <div class="stat-v">{s.v}</div>
-                <div class="stat-l">{s.l}</div>
+                <div class="stat-l" data-i18n={s.i}>{s.l}</div>
               </div>
             ))
           }
@@ -124,7 +124,7 @@ const stack = [
           <div class="product-screenshot-frame">
             <img src="/images/mockups/11_swarm_coordinator.png" alt="Tokio JoinSet Swarm Coordinator DAG" loading="lazy" width="1220" height="780" />
           </div>
-          <p class="screenshot-caption">Fig 2.1 — Swarm Coordinator: Tokio JoinSet DAG execution across 4 parallel CPU worker pods with fair-share token budgeting and disk-spill memory scaling.</p>
+          <p class="screenshot-caption" data-i18n="arch.figCoordinator">Fig 2.1 — Swarm Coordinator: Tokio JoinSet DAG execution across 4 parallel CPU worker pods with fair-share token budgeting and disk-spill memory scaling.</p>
         </div>
       </div>
     </section>

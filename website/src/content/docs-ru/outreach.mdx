@@ -1,0 +1,1267 @@
+---
+title: "Аутрич и лиды — Fathom"
+description: "Постройте верифицированные, обогащённые списки лидов и персонализированный аутрич с автономными инструментами воркера, памятью, подтверждениями и интеграциями CRM Fathom."
+sidebarId: "outreach"
+---
+  
+export const leadsPipeline = [
+  { n: '01', t: 'Спросите', d: 'Запишите цель обычным языком. Координатор разбивает её на подзадачи, каждая со своим токен-бюджетом и общим счётчиком-целью контактов.' },
+  { n: '02', t: 'Поиск', d: 'find_leads ищет по бизнес-каталогам + парсит до 6 корпоративных сайтов на компанию + выполняет ролевые социальные поиски параллельно.' },
+  { n: '03', t: 'Извлечение', d: 'extract_contacts вытягивает email, телефоны и соцпрофили со страниц — включая обфусцированные паттерны вроде «bob at acme dot com». Каждая запись несёт скор уверенности и URL источника.' },
+  { n: '04', t: 'Верификация', d: 'verify_email (синтаксис → MX → одноразовые → ролевые → опциональная SMTP-проба), verify_phone (libphonenumber), verify_social_profile (14 платформ). Выживают только верифицированные строки.' },
+  { n: '05', t: 'Обогащение', d: 'enrich_company + enrich_person подтягивают размер, выручку, год основания, штаб-квартиру, технологический стек и титул, био и прямой контакт человека.' },
+  { n: '06', t: 'Сохранение', d: 'Автосохранение пишет каждый извлечённый лид в contacts.db (дедупликация + слияние), поглощает находки в память и опционально отправляет в вашу CRM с дедупликацией по crm_id.' },
+];
+
+export const verifyStages = [
+  ['Синтаксис', 'Подмножество RFC 5322: одна @, ≤254 символов, локальная часть ≤64, без ведущих/двойных точек, нечисловой TLD.'],
+  ['MX-поиск', 'DNS-over-HTTPS (Google + запасной Cloudflare); возврат к A-записи по RFC 5321 §5.1 при отсутствии MX.'],
+  ['Одноразовые', 'Блокирует ~50 известных временных провайдеров (mailinator, yopmail, guerrillamail…).'],
+  ['Ролевые', 'Помечает департаментские ящики (info@, sales@, no-reply@, admin@…).'],
+  ['SMTP-проба', 'Опционально (smtp_check=true): TCP:25 → HELO → MAIL FROM → RCPT TO. Принимает 250/251, отклоняет 5xx. Никогда не отправляет DATA.'],
+];
+
+<div class="doc-header">
+    <span class="doc-badge">Аутрич</span>
+    <h1>Руководство по аутричу и лидогенерации</h1>
+    <p class="doc-lead">
+      Превратите цель обычным языком в <strong>верифицированные, обогащённые, готовые к использованию лиды</strong> —
+      а затем в персонализированные черновики аутрича, синхронизированные с вашей CRM. Это сквозной
+      рабочий процесс, связывающий инструменты агента воедино.
+    </p>
+  </div>
+
+  {/* ============ ПАЙПЛАЙН ============ */}
+  <section id="pipeline">
+    <h2>Полный пайплайн</h2>
+    <p>
+      Запуск исследования — один и тот же цикл на каждом уровне: планирование, fan-out, сбор в рамках
+      бюджетов, верификация, затем передача более чистого сигнала следующей стадии. Вот что реально
+      происходит, инструмент за инструментом.
+    </p>
+    <div class="flow-list">
+      {leadsPipeline.map((s) => (
+        <div class="flow-item">
+          <div class="flow-index">{s.n}</div>
+          <div class="flow-body">
+            <div class="flow-title">{s.t}</div>
+            <p class="flow-desc">{s.d}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  {/* ============ РЕАЛЬНЫЙ ЗАПРОС ============ */}
+  <section id="example">
+    <h2>Начните с цели обычным языком</h2>
+    <p>Без схем, без предварительной настройки CRM. Просите то, что вам нужно, в терминах, которые вам понятны.</p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span></div>
+      <pre><code set:html={`fathom run "Find VP Engineering at Series B startups in SF, verify their emails, and save the leads"`} /></pre>
+    </div>
+    <p>
+      Координатор превращает это в подзадачи с квотами контактов на задачу. Каждая подзадача становится
+      Researcher (или процессом ОС с <code>use_multiprocess = true</code>), работает до исчерпания своего
+      бюджета и передаёт находки дальше.
+    </p>
+  </section>
+
+  {/* ============ ВЕРИФИКАЦИЯ ПОДРОБНО ============ */}
+  <section id="verification">
+    <h2>Почему верификация важна</h2>
+    <p>
+      Каждый баунс стоит репутации отправителя и бюджета. Поэтому email проходит через пять шлюзов
+      до сохранения. <code>verify_email</code> возвращает <strong>скор уверенности в [0,1]</strong>
+      и вердикт — вы сами решаете порог, соответствующий вашей склонности к риску.
+    </p>
+    <table class="mini-table">
+      <thead><tr><th>Стадия</th><th>Что проверяет</th></tr></thead>
+      <tbody>
+        {verifyStages.map(([k, d]) => (
+          <tr><td><code>{k}</code></td><td>{d}</td></tr>
+        ))}
+      </tbody>
+    </table>
+
+    <h3>Скоринг уверенности</h3>
+    <ul class="check-list">
+      <li>База <strong>0.5</strong> — проверки синтаксиса, одноразовых и ролевых корректируют её.</li>
+      <li><strong>+0.4</strong>, если домен резолвится через MX/A.</li>
+      <li><strong>SMTP принял → ≥ 0.95</strong>; отклонил → ≤ 0.2; нет SMTP → ограничено 0.9.</li>
+      <li><strong>−0.3</strong>, если адрес выглядит одноразовым. Финальное значение ограничено [0,1].</li>
+    </ul>
+    <div class="callout">
+      <div class="callout-icon">💡</div>
+      <div class="callout-content">
+        <strong>Не угадывайте email вручную.</strong> <code>suggest_emails</code> генерирует до 9 паттернов
+        (first.last, f.last, last.first…) и выучивает паттерн компании по вашим известным адресам —
+        совпадающие кандидаты получают <strong>+0.15 к уверенности</strong> (с потолком 0.95).
+      </div>
+    </div>
+  </section>
+
+  {/* ============ CRM И ЭКСПОРТ ============ */}
+  <section id="crm">
+    <h2>Доставьте лиды в ваш рабочий процесс</h2>
+    <p>
+      Всё попадает в <code>contacts.db</code> автоматически (дедупликация + слияние). Оттуда — три пути.
+    </p>
+    <div class="steps">
+      <div class="step">
+        <h3>1 · Экспорт</h3>
+        <p>CSV, vCard, JSON или Excel через <code>fathom contacts export</code> — или более богатые отчёты сессии PDF/HTML/DOCX.</p>
+      </div>
+      <div class="step">
+        <h3>2 · Отправка в CRM</h3>
+        <p><code>fathom contacts push-crm</code> синхронизирует с amoCRM, Bitrix24 или HubSpot. Дедупликация по <code>crm_id</code> означает, что повторные запуски никогда не создают дубликаты.</p>
+      </div>
+      <div class="step">
+        <h3>3 · Наблюдение за новыми лидами</h3>
+        <p>Режим <code>watch</code> перезапускает тот же запрос каждые N секунд, сравнивает базу контактов и оповещает о новых строках.</p>
+      </div>
+    </div>
+  </section>
+
+  {/* ============ БЕЗОПАСНОСТЬ ============ */}
+  <section id="safety">
+    <h2>Человек в цикле там, где это важно</h2>
+    <p>
+      Побочные эффекты ждут явного «да». <code>save_contacts</code> и <code>git_push</code> по умолчанию
+      закрыты процессом подтверждения — подтверждайте в TUI или через
+      <code>POST /api/v1/sessions/:id/approve</code> по API.
+    </p>
+  </section>
+
+  {/* ============ OSINT-ИНСТРУМЕНТЫ ПОДРОБНО ============ */}
+  <section id="osint-tools">
+    <h2>OSINT-инструменты подробно</h2>
+    <p>
+      Пайплайн аутрича работает на пяти взаимодополняющих инструментах сбора данных. Каждый нацелен на
+      свою поверхность — бизнес-каталоги, социальные сети, новостное покрытие или отдельные корпоративные
+      сайты — а координатор оркеструет их параллельно для максимального покрытия в рамках бюджетов запуска.
+    </p>
+
+    <div class="tool-card" id="find-leads">
+      <div class="tool-card-header">
+        <div class="tool-card-icon">🔍</div>
+        <div>
+          <h3 class="tool-card-name">find_leads</h3>
+          <span class="tool-card-tag">Движок лидогенерации</span>
+        </div>
+      </div>
+      <p>
+        Основная точка входа для любой задачи аутрича. <code>find_leads</code> принимает цель на естественном
+        языке и разбивает её на поиски по каталогам, парсинги корпоративных сайтов и пробы социальных сетей.
+        Выполняет до 6 парсингов корпоративных сайтов на компанию параллельно и объединяет результаты на лету.
+      </p>
+      <h4>Параметры</h4>
+      <table class="mini-table">
+        <thead><tr><th>Параметр</th><th>Тип</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td><code>industry</code></td><td>string</td><td>Категория SIC/NAICS или свободный текст (напр. "B2B SaaS", "fintech")</td></tr>
+          <tr><td><code>location</code></td><td>string</td><td>Город, регион или страна — парсится в геокоординаты для радиусного поиска по каталогам</td></tr>
+          <tr><td><code>roles</code></td><td>string[]</td><td>Целевые титулы: <code>["VP Engineering", "CTO", "Head of Platform"]</code></td></tr>
+          <tr><td><code>limit</code></td><td>number</td><td>Максимум компаний к возврату (по умолчанию 50, максимум 500)</td></tr>
+          <tr><td><code>enrich</code></td><td>boolean</td><td>При <code>true</code> автоматически запускает <code>enrich_company</code> на каждом совпадении</td></tr>
+        </tbody>
+      </table>
+      <h4>Пример вызова</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">python</span></div>
+        <pre><code set:html={`result = await agent.call_tool("find_leads", {
+    industry: "B2B SaaS",
+    location: "San Francisco Bay Area",
+    roles: ["VP Engineering", "CTO"],
+    limit: 25,
+    enrich: true
+})`} /></pre>
+      </div>
+      <h4>Пример вывода (одна запись)</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json</span></div>
+        <pre><code set:html={`{
+  "company": "Acme Analytics",
+  "website": "https://acme-analytics.com",
+  "industry": "B2B SaaS",
+  "location": "San Francisco, CA",
+  "employees": "80-120",
+  "funding_stage": "Series B",
+  "contacts": [
+    {
+      "name": "Jordan Lee",
+      "title": "VP Engineering",
+      "email": "jordan.lee@acme-analytics.com",
+      "email_confidence": 0.97,
+      "linkedin": "https://linkedin.com/in/jordanlee",
+      "source_url": "https://acme-analytics.com/team"
+    }
+  ],
+  "confidence": 0.92,
+  "sources": [
+    "https://2gis.com/san-francisco/firm/acme-analytics",
+    "https://acme-analytics.com/team",
+    "https://linkedin.com/company/acme-analytics"
+  ]
+}`} /></pre>
+      </div>
+    </div>
+
+    <div class="tool-card" id="search-business-directory">
+      <div class="tool-card-header">
+        <div class="tool-card-icon">📂</div>
+        <div>
+          <h3 class="tool-card-name">search_business_directory</h3>
+          <span class="tool-card-tag">Поиск по нескольким каталогам</span>
+        </div>
+      </div>
+      <p>
+        Ищет по 2GIS, Google Maps, Yandex Maps и Yellow Pages за один вызов. Инструмент
+        расходится по всем доступным каталогам для целевой географии, дедуплицирует по
+        нормализованному имени + адресу и возвращает единый набор результатов.
+      </p>
+      <h4>Параметры</h4>
+      <table class="mini-table">
+        <thead><tr><th>Параметр</th><th>Тип</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td><code>query</code></td><td>string</td><td>Поисковый запрос (напр. "software company", "coworking space")</td></tr>
+          <tr><td><code>city</code></td><td>string</td><td>Целевой город</td></tr>
+          <tr><td><code>country</code></td><td>string</td><td>Название страны или код ISO-3166-1 alpha-2</td></tr>
+          <tr><td><code>limit</code></td><td>number</td><td>Максимум результатов на каталог (по умолчанию 20, максимум 100)</td></tr>
+        </tbody>
+      </table>
+      <h4>Возвращаемые поля на запись</h4>
+      <ul class="check-list">
+        <li><strong>name</strong> — нормализованное название компании</li>
+        <li><strong>category</strong> — категория бизнеса из каталога</li>
+        <li><strong>address</strong> — полный уличный адрес</li>
+        <li><strong>phone</strong> — номер телефона в E.164 при наличии</li>
+        <li><strong>website</strong> — URL сайта компании</li>
+        <li><strong>email</strong> — публичный email, если указан в каталоге</li>
+        <li><strong>rating</strong> — средний звёздный рейтинг (Google Maps, 2GIS)</li>
+        <li><strong>source</strong> — из какого каталога пришла запись</li>
+      </ul>
+      <h4>Пример вывода</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json</span></div>
+        <pre><code set:html={`{
+  "name": "NovaTech Solutions",
+  "category": "Software Development",
+  "address": "45 Market St, Suite 200, San Francisco, CA 94105",
+  "phone": "+14155550123",
+  "website": "https://novatech.io",
+  "email": "hello@novatech.io",
+  "rating": 4.6,
+  "reviews_count": 38,
+  "source": "google_maps"
+}`} /></pre>
+      </div>
+    </div>
+
+    <div class="tool-card" id="search-social">
+      <div class="tool-card-header">
+        <div class="tool-card-icon">🌐</div>
+        <div>
+          <h3 class="tool-card-name">search_social</h3>
+          <span class="tool-card-tag">Поиск по соцсетям</span>
+        </div>
+      </div>
+      <p>
+        Ищет в Twitter/X, Telegram и LinkedIn людей и компании, соответствующие запросу. Полезен для
+        нахождения лиц, принимающих решения, по титулу+компании, обнаружения участников нишевых сообществ
+        и перекрёстной проверки имён, найденных через поиск по каталогам.
+      </p>
+      <h4>Параметры</h4>
+      <table class="mini-table">
+        <thead><tr><th>Параметр</th><th>Тип</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td><code>query</code></td><td>string</td><td>Поисковая строка (напр. "VP Engineering Stripe", "CTO fintech")</td></tr>
+          <tr><td><code>platforms</code></td><td>string[]</td><td>Платформы для поиска: <code>["twitter", "telegram", "linkedin"]</code> (по умолчанию: все)</td></tr>
+          <tr><td><code>limit</code></td><td>number</td><td>Максимум результатов на платформу (по умолчанию 10, максимум 50)</td></tr>
+        </tbody>
+      </table>
+      <h4>Возвращаемые поля на запись</h4>
+      <ul class="check-list">
+        <li><strong>profile_url</strong> — прямая ссылка на профиль</li>
+        <li><strong>name</strong> — отображаемое имя</li>
+        <li><strong>bio</strong> — био / текст описания профиля</li>
+        <li><strong>followers_count</strong> — число подписчиков (Twitter, LinkedIn приблизительно)</li>
+        <li><strong>location</strong> — самостоятельно указанное местоположение</li>
+        <li><strong>platform</strong> — идентификатор платформы-источника</li>
+      </ul>
+      <h4>Пример вывода</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json</span></div>
+        <pre><code set:html={`{
+  "profile_url": "https://twitter.com/jordanlee_eng",
+  "name": "Jordan Lee",
+  "bio": "VP Engineering @AcmeAnalytics · Building data pipelines at scale",
+  "followers_count": 4200,
+  "location": "San Francisco, CA",
+  "platform": "twitter"
+}`} /></pre>
+      </div>
+    </div>
+
+    <div class="tool-card" id="search-news">
+      <div class="tool-card-header">
+        <div class="tool-card-icon">📰</div>
+        <div>
+          <h3 class="tool-card-name">search_news</h3>
+          <span class="tool-card-tag">Поиск по новостям и прессе</span>
+        </div>
+      </div>
+      <p>
+        Ищет новостные статьи, пресс-релизы и блоговое покрытие. Особенно полезен для выявления
+        недавно профинансированных компаний, новых назначений руководителей, запусков продуктов и
+        объявлений о партнёрствах — все высокосигнальные события для тайминга аутрича.
+      </p>
+      <h4>Параметры</h4>
+      <table class="mini-table">
+        <thead><tr><th>Параметр</th><th>Тип</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td><code>query</code></td><td>string</td><td>Поисковые термины (напр. "Series B funding SaaS", "CTO appointment fintech")</td></tr>
+          <tr><td><code>limit</code></td><td>number</td><td>Максимум статей к возврату (по умолчанию 20, максимум 100)</td></tr>
+          <tr><td><code>from_date</code></td><td>string</td><td>Начальная дата в ISO 8601 (напр. "2025-01-01")</td></tr>
+          <tr><td><code>to_date</code></td><td>string</td><td>Конечная дата в ISO 8601 (напр. "2025-06-30")</td></tr>
+        </tbody>
+      </table>
+      <h4>Возвращаемые поля на запись</h4>
+      <ul class="check-list">
+        <li><strong>title</strong> — заголовок статьи</li>
+        <li><strong>url</strong> — канонический URL</li>
+        <li><strong>source</strong> — название издания</li>
+        <li><strong>date</strong> — дата публикации</li>
+        <li><strong>snippet</strong> — выдержка на 200 символов</li>
+        <li><strong>mentioned_persons</strong> — извлечённые именованные сущности (люди)</li>
+        <li><strong>mentioned_companies</strong> — извлечённые именованные сущности (компании)</li>
+      </ul>
+      <h4>Пример вывода</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json</span></div>
+        <pre><code set:html={`{
+  "title": "Acme Analytics Raises $40M Series B Led by Sequoia",
+  "url": "https://techcrunch.com/2025/03/15/acme-series-b",
+  "source": "TechCrunch",
+  "date": "2025-03-15",
+  "snippet": "Acme Analytics, the San Francisco-based B2B data platform, has closed a $40M Series B round...",
+  "mentioned_persons": ["Jordan Lee", "Maria Chen"],
+  "mentioned_companies": ["Acme Analytics", "Sequoia Capital"]
+}`} /></pre>
+      </div>
+    </div>
+
+    <div class="tool-card" id="parse-corporate-site">
+      <div class="tool-card-header">
+        <div class="tool-card-icon">🏢</div>
+        <div>
+          <h3 class="tool-card-name">parse_corporate_site</h3>
+          <span class="tool-card-tag">Анализатор сайтов</span>
+        </div>
+      </div>
+      <p>
+        Анализирует корпоративный сайт для извлечения структурированной разведки по компании. Обходит главную,
+        <code>/about</code>, <code>/team</code> и <code>/contact</code> страницы (соблюдая
+        <code>robots.txt</code>). Разрешает обфусцированные email и телефоны, встроенные в JavaScript или
+        отрисованные через анти-скрапинговые техники.
+      </p>
+      <h4>Что извлекается</h4>
+      <ul class="check-list">
+        <li><strong>Название компании</strong> — из &lt;title&gt;, OG-тегов или структурированных данных (JSON-LD)</li>
+        <li><strong>Описание</strong> — meta-описание или первый значимый абзац</li>
+        <li><strong>Отрасль</strong> — выводится из ключевых слов содержимого + категорий JSON-LD</li>
+        <li><strong>Размер</strong> — диапазон числа сотрудников со страницы вакансий или виджета LinkedIn</li>
+        <li><strong>Штаб-квартира</strong> — адрес из футера, страницы контактов или структурированных данных</li>
+        <li><strong>Контактные email</strong> — извлечённые со страниц, ссылок mailto и контента, отрисованного JS</li>
+        <li><strong>Контактные телефоны</strong> — спарсенные со всех страниц, включая международные форматы</li>
+        <li><strong>Соцпрофили</strong> — ссылки Twitter, LinkedIn, GitHub, Telegram из шапок/футеров</li>
+        <li><strong>Члены команды</strong> — имена и титулы со страниц <code>/team</code>, <code>/about</code> или руководства</li>
+      </ul>
+      <h4>Пример вывода</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json</span></div>
+        <pre><code set:html={`{
+  "company_name": "Acme Analytics",
+  "description": "Real-time data pipelines for modern B2B teams",
+  "industry": "B2B SaaS / Data Infrastructure",
+  "size": "80-120 employees",
+  "hq": "45 Market St, Suite 200, San Francisco, CA 94105",
+  "emails": ["sales@acme-analytics.com", "careers@acme-analytics.com"],
+  "phones": ["+14155550100"],
+  "social": {
+    "twitter": "https://twitter.com/acmeanalytics",
+    "linkedin": "https://linkedin.com/company/acme-analytics",
+    "github": "https://github.com/acme-analytics"
+  },
+  "team": [
+    { "name": "Jordan Lee", "title": "VP Engineering" },
+    { "name": "Maria Chen", "title": "CEO" },
+    { "name": "Alex Rivera", "title": "CTO" }
+  ],
+  "technologies": ["React", "Go", "Kubernetes", "PostgreSQL"]
+}`} /></pre>
+      </div>
+    </div>
+  </section>
+
+  {/* ============ ИНСТРУМЕНТЫ ВЕРИФИКАЦИИ ПОДРОБНО ============ */}
+  <section id="verification-tools">
+    <h2>Инструменты верификации подробно</h2>
+    <p>
+      Сырые данные зашумлены. Инструменты верификации очищают, нормализуют и скорят каждую запись
+      контакта до её попадания в ваш пайплайн. Вот что делает каждый инструмент и как интерпретировать его вывод.
+    </p>
+
+    <div class="tool-card" id="verify-email">
+      <div class="tool-card-header">
+        <div class="tool-card-icon">✉️</div>
+        <div>
+          <h3 class="tool-card-name">verify_email</h3>
+          <span class="tool-card-tag">5-стадийный пайплайн</span>
+        </div>
+      </div>
+      <p>
+        Самый критичный инструмент верификации. Каждый email проходит через пять последовательных стадий —
+        каждая стадия может оборвать пайплайн при жёсткой ошибке (напр. невалидный синтаксис). Финальный
+        скор уверенности — композит всех результатов стадий.
+      </p>
+      <h4>5-стадийный пайплайн в деталях</h4>
+      <table class="mini-table">
+        <thead><tr><th>Стадия</th><th>Что происходит</th><th>Влияние на скор</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>1. Синтаксис</strong></td>
+            <td>
+              Валидация по подмножеству RFC 5322: ровно одна <code>@</code>, общая длина &le;254,
+              локальная часть &le;64, без ведущих/двойных точек, TLD нечисловой и минимум 2 символа.
+            </td>
+            <td>Fail → 0.0 (жёсткая остановка)</td>
+          </tr>
+          <tr>
+            <td><strong>2. MX-поиск</strong></td>
+            <td>
+              DNS-over-HTTPS через Google (основной) и Cloudflare (запасной). При отсутствии MX-записей
+              возвращается к A-записи по RFC 5321 &sect;5.1.
+            </td>
+            <td>Резолвится → +0.4; NXDOMAIN → 0.1 (жёсткая остановка)</td>
+          </tr>
+          <tr>
+            <td><strong>3. Одноразовые</strong></td>
+            <td>
+              Проверяет домен по ~50 известным временным провайдерам: mailinator, yopmail,
+              guerrillamail, tempmail, 10minutemail и т.д.
+            </td>
+            <td>Совпадение → &minus;0.3</td>
+          </tr>
+          <tr>
+            <td><strong>4. Ролевые</strong></td>
+            <td>
+              Помечает департаментские / noreply-адреса: <code>info@</code>, <code>sales@</code>,
+              <code>support@</code>, <code>admin@</code>, <code>no-reply@</code>, <code>billing@</code> и т.д.
+            </td>
+            <td>Совпадение → &minus;0.15 (всё ещё используемый, но с меньшим приоритетом)</td>
+          </tr>
+          <tr>
+            <td><strong>5. SMTP-проба</strong></td>
+            <td>
+              Опционально (<code>smtp_check=true</code>). Открывает TCP:25, отправляет <code>HELO</code>,
+              <code>MAIL FROM</code>, <code>RCPT TO</code>. Принимает 250/251 как доставляемый, 5xx как
+              отклонённый. <strong>Никогда не отправляет DATA</strong> — реальное письмо не доставляется.
+            </td>
+            <td>Принят → &ge;0.95; Отклонён → &le;0.2; Таймаут → ограничено 0.9</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h4>Алгоритм скоринга уверенности</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">python</span></div>
+        <pre><code set:html={`score = 0.5                                    # база
+if mx_resolved:     score += 0.4               # домен реальный
+if disposable:      score -= 0.3               # временный домен
+if role_based:      score -= 0.15              # департаментский ящик
+if smtp_accepted:   score = max(score, 0.95)   # сервер подтвердил
+if smtp_rejected:   score = min(score, 0.2)    # сервер отклонил
+if no_smtp_check:   score = min(score, 0.9)    # нельзя полностью подтвердить
+score = clamp(score, 0.0, 1.0)
+if pattern_matched: score = min(score + 0.15, 0.95)  # бонус suggest_emails`} /></pre>
+      </div>
+
+      <h4>Примеры ответов</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json — валидный корпоративный email</span></div>
+        <pre><code set:html={`{
+  "email": "jordan.lee@acme-analytics.com",
+  "verdict": "valid",
+  "confidence": 0.97,
+  "stages": {
+    "syntax": "pass",
+    "mx": "pass",
+    "disposable": "clean",
+    "role_based": false,
+    "smtp": "accepted (250 OK)"
+  },
+  "mx_records": ["alt1.gmail-smtp-in.l.google.com", "gmail-smtp-in.l.google.com"]
+}`} /></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json — одноразовый email</span></div>
+        <pre><code set:html={`{
+  "email": "test@mailinator.com",
+  "verdict": "disposable",
+  "confidence": 0.05,
+  "stages": {
+    "syntax": "pass",
+    "mx": "pass",
+    "disposable": "flagged (mailinator)",
+    "role_based": false,
+    "smtp": "skipped"
+  }
+}`} /></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json — ролевой, SMTP принял</span></div>
+        <pre><code set:html={`{
+  "email": "info@acme-analytics.com",
+  "verdict": "role_based",
+  "confidence": 0.78,
+  "stages": {
+    "syntax": "pass",
+    "mx": "pass",
+    "disposable": "clean",
+    "role_based": "flagged (info@)",
+    "smtp": "accepted (250 OK)"
+  }
+}`} /></pre>
+      </div>
+    </div>
+
+    <div class="tool-card" id="verify-phone">
+      <div class="tool-card-header">
+        <div class="tool-card-icon">📞</div>
+        <div>
+          <h3 class="tool-card-name">verify_phone</h3>
+          <span class="tool-card-tag">Нормализация телефонов</span>
+        </div>
+      </div>
+      <p>
+        Нормализует номера телефонов через <code>libphonenumber</code> (та же библиотека, что в
+        диалере Android от Google). Парсит сырой ввод в формат E.164, определяет страну и классифицирует
+        тип линии.
+      </p>
+      <h4>Что возвращает</h4>
+      <ul class="check-list">
+        <li><strong>e164</strong> — канонический формат E.164 (напр. <code>+14155550123</code>)</li>
+        <li><strong>country</strong> — код страны ISO-3166-1 alpha-2</li>
+        <li><strong>line_type</strong> — <code>mobile</code>, <code>fixed_line</code>, <code>voip</code>, <code>toll_free</code> или <code>unknown</code></li>
+        <li><strong>valid</strong> — булево: соответствует ли номер нумерному плану определённой страны?</li>
+        <li><strong>carrier</strong> — название оператора при наличии (только мобильные номера)</li>
+      </ul>
+      <h4>Пример</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json</span></div>
+        <pre><code set:html={`{
+  "input": "8 (495) 123-45-67",
+  "e164": "+74951234567",
+  "country": "RU",
+  "line_type": "fixed_line",
+  "valid": true,
+  "carrier": null
+}`} /></pre>
+      </div>
+    </div>
+
+    <div class="tool-card" id="verify-social-profile">
+      <div class="tool-card-header">
+        <div class="tool-card-icon">👤</div>
+        <div>
+          <h3 class="tool-card-name">verify_social_profile</h3>
+          <span class="tool-card-tag">14 платформ</span>
+        </div>
+      </div>
+      <p>
+        Валидирует и обогащает URL соцпрофилей. Возвращает структурированные метаданные, специфичные для
+        каждой платформы — числа подписчиков, био, статус верификации и другое.
+      </p>
+      <h4>Поддерживаемые платформы (14)</h4>
+      <div class="platform-grid">
+        <span class="platform-chip">Twitter / X</span>
+        <span class="platform-chip">LinkedIn</span>
+        <span class="platform-chip">GitHub</span>
+        <span class="platform-chip">Telegram</span>
+        <span class="platform-chip">Instagram</span>
+        <span class="platform-chip">Facebook</span>
+        <span class="platform-chip">YouTube</span>
+        <span class="platform-chip">TikTok</span>
+        <span class="platform-chip">Reddit</span>
+        <span class="platform-chip">Mastodon</span>
+        <span class="platform-chip">Threads</span>
+        <span class="platform-chip">Bluesky</span>
+        <span class="platform-chip">Hacker News</span>
+        <span class="platform-chip">Product Hunt</span>
+      </div>
+      <h4>Пример ответа</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json</span></div>
+        <pre><code set:html={`{
+  "url": "https://twitter.com/jordanlee_eng",
+  "platform": "twitter",
+  "valid": true,
+  "metadata": {
+    "name": "Jordan Lee",
+    "handle": "@jordanlee_eng",
+    "bio": "VP Engineering @AcmeAnalytics",
+    "followers": 4200,
+    "following": 890,
+    "verified": false,
+    "joined": "2019-04-22",
+    "location": "San Francisco, CA"
+  }
+}`} /></pre>
+      </div>
+    </div>
+
+    <div class="tool-card" id="suggest-emails">
+      <div class="tool-card-header">
+        <div class="tool-card-icon">🧩</div>
+        <div>
+          <h3 class="tool-card-name">suggest_emails</h3>
+          <span class="tool-card-tag">Вывод паттернов</span>
+        </div>
+      </div>
+      <p>
+        По полному имени человека и домену компании генерирует кандидатов email с использованием 9
+        самых распространённых корпоративных паттернов. При наличии известных адресов того же домена
+        выводит реальный паттерн компании и повышает совпадающих кандидатов.
+      </p>
+      <h4>9 стандартных паттернов</h4>
+      <table class="mini-table">
+        <thead><tr><th>#</th><th>Паттерн</th><th>Пример (Jordan Lee)</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>first.last</code></td><td>jordan.lee@acme-analytics.com</td></tr>
+          <tr><td>2</td><td><code>firstlast</code></td><td>jordanlee@acme-analytics.com</td></tr>
+          <tr><td>3</td><td><code>f.last</code></td><td>j.lee@acme-analytics.com</td></tr>
+          <tr><td>4</td><td><code>first</code></td><td>jordan@acme-analytics.com</td></tr>
+          <tr><td>5</td><td><code>last</code></td><td>lee@acme-analytics.com</td></tr>
+          <tr><td>6</td><td><code>first_last</code></td><td>jordan_lee@acme-analytics.com</td></tr>
+          <tr><td>7</td><td><code>last.first</code></td><td>lee.jordan@acme-analytics.com</td></tr>
+          <tr><td>8</td><td><code>flast</code></td><td>jlee@acme-analytics.com</td></tr>
+          <tr><td>9</td><td><code>first-last</code></td><td>jordan-lee@acme-analytics.com</td></tr>
+        </tbody>
+      </table>
+      <h4>Скоринг уверенности для предложений</h4>
+      <ul class="check-list">
+        <li>Каждый кандидат получает <strong>базовую уверенность 0.3</strong> — это просто угадывание паттерна.</li>
+        <li>Если выведенный паттерн из известных адресов совпадает → <strong>+0.15</strong> (с потолком 0.95).</li>
+        <li>Запуск <code>verify_email</code> на предложении может поднять скор до <strong>0.97</strong>.</li>
+        <li>Предложения, провалившие MX-поиск, падают до <strong>0.05</strong> немедленно.</li>
+      </ul>
+      <div class="callout">
+        <div class="callout-icon">💡</div>
+        <div class="callout-content">
+          <strong>Вывод паттернов кумулятивен.</strong> Каждый раз, когда вы сохраняете верифицированный email
+          для домена, <code>suggest_emails</code> выучивает паттерн этого домена. После 3+ известных адресов
+          того же домена фиксация паттерна достаточно надёжна, чтобы повышать кандидатов на
+          <strong>+0.20</strong>.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* ============ ИНСТРУМЕНТЫ ОБОГАЩЕНИЯ ПОДРОБНО ============ */}
+  <section id="enrichment-tools">
+    <h2>Инструменты обогащения подробно</h2>
+    <p>
+      После верификации контакта обогащение заполняет контекст, делающий аутрич личным
+      и уместным. Эти два инструмента превращают голые email-адреса в полные профили.
+    </p>
+
+    <div class="tool-card" id="enrich-company">
+      <div class="tool-card-header">
+        <div class="tool-card-icon">🏗️</div>
+        <div>
+          <h3 class="tool-card-name">enrich_company</h3>
+          <span class="tool-card-tag">Разведка по компании</span>
+        </div>
+      </div>
+      <p>
+        Принимает название компании или домен и возвращает структурированную разведку, собранную из
+        публичных источников: корпоративных регистраций, страниц about, объявлений о вакансиях,
+        технологических стеков и пресс-покрытия.
+      </p>
+      <h4>Что обнаруживается</h4>
+      <ul class="check-list">
+        <li><strong>Отрасль</strong> — основная и вторичная категории SIC/NAICS</li>
+        <li><strong>Размер компании</strong> — диапазон сотрудников (напр. 80-120)</li>
+        <li><strong>Выручка</strong> — оценочная годовая выручка при публичной доступности</li>
+        <li><strong>Год основания</strong> — год регистрации или запуска</li>
+        <li><strong>Штаб-квартира</strong> — адрес головного офиса</li>
+        <li><strong>Описание</strong> — одноабзацевое описание компании</li>
+        <li><strong>Технологии</strong> — обнаруженный технологический стек из объявлений о вакансиях, заголовков и скриптов</li>
+        <li><strong>Финансирование</strong> — последний раунд, сумма и инвесторы</li>
+      </ul>
+      <h4>Пример ответа</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json</span></div>
+        <pre><code set:html={`{
+  "domain": "acme-analytics.com",
+  "company_name": "Acme Analytics",
+  "industry": "B2B SaaS — Data Infrastructure",
+  "employee_range": "80-120",
+  "estimated_revenue": "$10M-$25M",
+  "founded": 2019,
+  "hq": "San Francisco, CA, USA",
+  "description": "Real-time data pipeline platform for B2B analytics teams.",
+  "technologies": ["React", "Go", "Kubernetes", "PostgreSQL", "Snowflake"],
+  "funding": {
+    "latest_round": "Series B",
+    "amount": "$40M",
+    "date": "2025-03-15",
+    "investors": ["Sequoia Capital", "Y Combinator"]
+  }
+}`} /></pre>
+      </div>
+    </div>
+
+    <div class="tool-card" id="enrich-person">
+      <div class="tool-card-header">
+        <div class="tool-card-icon">🧑‍💼</div>
+        <div>
+          <h3 class="tool-card-name">enrich_person</h3>
+          <span class="tool-card-tag">Разведка по человеку</span>
+        </div>
+      </div>
+      <p>
+        Принимает имя и компанию (или email) и обнаруживает публично доступную профессиональную информацию.
+        Перекрёстно проверяет LinkedIn, Twitter, GitHub, упоминания в прессе и списки спикеров конференций.
+      </p>
+      <h4>Что обнаруживается</h4>
+      <ul class="check-list">
+        <li><strong>Титул</strong> — текущая должность</li>
+        <li><strong>Компания</strong> — текущий работодатель</li>
+        <li><strong>LinkedIn</strong> — URL профиля</li>
+        <li><strong>Twitter / X</strong> — URL профиля и хендл</li>
+        <li><strong>GitHub</strong> — URL профиля и заметные репозитории</li>
+        <li><strong>Публичные контактные данные</strong> — email и телефоны, найденные в публичных каталогах</li>
+        <li><strong>Местоположение</strong> — город / метро-район</li>
+        <li><strong>Био</strong> — резюме из LinkedIn или биографий конференций</li>
+      </ul>
+      <h4>Пример ответа</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json</span></div>
+        <pre><code set:html={`{
+  "name": "Jordan Lee",
+  "title": "VP Engineering",
+  "company": "Acme Analytics",
+  "location": "San Francisco, CA",
+  "bio": "Engineering leader with 12 years in data infrastructure. Previously at Stripe and Google.",
+  "linkedin": "https://linkedin.com/in/jordanlee",
+  "twitter": "https://twitter.com/jordanlee_eng",
+  "github": "https://github.com/jordanlee",
+  "emails": ["jordan.lee@acme-analytics.com"],
+  "phones": ["+14155550199"],
+  "recent_mentions": [
+    {
+      "title": "Acme Analytics Raises $40M Series B",
+      "source": "TechCrunch",
+      "date": "2025-03-15"
+    }
+  ]
+}`} /></pre>
+      </div>
+    </div>
+  </section>
+
+  {/* ============ РАБОЧИЙ ПРОЦЕСС УПРАВЛЕНИЯ КОНТАКТАМИ ============ */}
+  <section id="contact-management">
+    <h2>Рабочий процесс управления контактами</h2>
+    <p>
+      Каждый контакт, обнаруженный пайплайном, проходит через единый слой управления на SQLite.
+      Система обрабатывает дедупликацию, слияние, экспорт и синхронизацию с CRM — так что вы никогда
+      не теряете данные и не создаёте дубликаты.
+    </p>
+
+    <h3 id="contacts-db">Как работает contacts.db</h3>
+    <p>
+      Все контакты хранятся в <code>contacts.db</code>, базе данных SQLite в директории данных вашего проекта.
+      Схема спроектирована для быстрой дедупликации и гибких метаданных.
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">sql</span></div>
+      <pre><code set:html={`CREATE TABLE contacts (
+    id          TEXT PRIMARY KEY,   -- UUID v4
+    name        TEXT,
+    email       TEXT,
+    phone       TEXT,
+    title       TEXT,
+    company     TEXT,
+    linkedin    TEXT,
+    twitter     TEXT,
+    github      TEXT,
+    website     TEXT,
+    location    TEXT,
+    bio         TEXT,
+    confidence  REAL DEFAULT 0.0,
+    source_url  TEXT,
+    crm_id      TEXT,               -- устанавливается после отправки в CRM
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX idx_dedup
+    ON contacts(email, phone, linkedin);`} /></pre>
+    </div>
+    <h4>Логика дедупликации</h4>
+    <ul class="check-list">
+      <li><strong>Первичный ключ:</strong> композитный email + phone + LinkedIn. Если любые два из трёх совпадают, запись сливается.</li>
+      <li><strong>Стратегия слияния:</strong> непустые поля из более новой записи перезаписывают старые пустые поля; уверенность берётся большее значение.</li>
+      <li><strong>Нормализация имён:</strong> диакритика убирается, пробелы схлопываются, сравнение без учёта регистра.</li>
+    </ul>
+
+    <h3 id="extract-contacts">extract_contacts</h3>
+    <p>
+      Извлекает email, номера телефонов и URL соцпрофилей из свободного текста, сырого HTML или живого URL.
+      Обрабатывает обфусцированные паттерны вроде <code>bob [at] acme [dot] com</code> и контент,
+      отрисованный JavaScript.
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">python</span></div>
+      <pre><code set:html={`result = await agent.call_tool("extract_contacts", {
+    url: "https://acme-analytics.com/team"
+})
+
+result = await agent.call_tool("extract_contacts", {
+    text: "Reach Jordan at jordan.lee@acme-analytics.com or +1 (415) 555-0199"
+})`} /></pre>
+    </div>
+
+    <h3 id="save-contacts">save_contacts</h3>
+    <p>
+      Сохраняет извлечённые контакты в <code>contacts.db</code> с автоматической дедупликацией и слиянием.
+      При настроенной интеграции CRM после сохранения происходит опциональная отправка.
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">python</span></div>
+      <pre><code set:html={`# Сохранить с автоматической отправкой в CRM
+await agent.call_tool("save_contacts", { push_crm: true })
+
+# Сохранить без отправки в CRM (по умолчанию)
+await agent.call_tool("save_contacts", {})`} /></pre>
+    </div>
+
+    <h3 id="cli-commands">Команды CLI</h3>
+    <table class="mini-table">
+      <thead><tr><th>Команда</th><th>Описание</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>contacts list</code></td>
+          <td>Список всех контактов в базе данных с опциональным фильтром <code>--limit</code></td>
+        </tr>
+        <tr>
+          <td><code>contacts export --format csv</code></td>
+          <td>Экспорт контактов в CSV, vCard (.vcf), JSON или XLSX</td>
+        </tr>
+        <tr>
+          <td><code>contacts export --format vcard</code></td>
+          <td>Экспорт как vCard 3.0 — совместимо с Apple Contacts, Google Contacts, Outlook</td>
+        </tr>
+        <tr>
+          <td><code>contacts export --format xlsx</code></td>
+          <td>Экспорт как книга Excel с отдельными листами для контактов и компаний</td>
+        </tr>
+        <tr>
+          <td><code>contacts dedup</code></td>
+          <td>Прогон дедупликации существующей базы; отчитывается о числе слияний и конфликтах</td>
+        </tr>
+        <tr>
+          <td><code>contacts push-crm</code></td>
+          <td>Синхронизация всех неотправленных контактов в настроенную CRM</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 id="crm-integration">Интеграция CRM</h3>
+    <div class="steps">
+      <div class="step">
+        <h3>amoCRM v4</h3>
+        <p>
+          Интеграция CRM API. Отправляет верифицированные контакты в настроенного провайдера и отслеживает
+          удалённый <code>crm_id</code> для идемпотентных повторных запусков, так что повторные синхронизации
+          не создают дубликаты контактов. Учётные данные провайдера и настройки аккаунта приходят из секции <code>[crm]</code> конфигурации.
+        </p>
+      </div>
+      <div class="step">
+        <h3>Bitrix24 REST</h3>
+        <p>
+          Интеграция на основе вебхуков. Создаёт контакты + лиды + компании за один пакетный вызов.
+          Лента активности автоматически заполняется событиями аутрича. Требует переменную окружения
+          <code>BITRIX24_WEBHOOK_URL</code>.
+        </p>
+      </div>
+      <div class="step">
+        <h3>HubSpot v3</h3>
+        <p>
+          Интеграция по токену приватного приложения через CRM v3 Objects API. Создаёт контакты с
+          ассоциациями к компаниям. Поддерживает пакетный upsert (до 100 записей на вызов). Пользовательские
+          свойства мапятся через <code>[crm].hubspot_property_map</code>.
+        </p>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">toml — секция [crm] в config.toml</span></div>
+      <pre><code set:html={`[crm]
+provider = "amocrm"          # amocrm | bitrix24 | hubspot
+domain = "mycompany.amocrm.com"
+api_key = "..."
+
+# Или для HubSpot:
+# provider = "hubspot"
+# domain = "api.hubapi.com"
+# api_key = "pat-xxx-..."`} /></pre>
+    </div>
+  </section>
+
+  {/* ============ ПРОЦЕСС ПОДТВЕРЖДЕНИЯ ПОДРОБНО ============ */}
+  <section id="approval-flow">
+    <h2>Процесс подтверждения подробно</h2>
+    <p>
+      Не каждый инструмент должен выполняться без проверки человеком. Процесс подтверждения закрывает
+      операции с побочными эффектами — так что агент может свободно планировать, но ему нужно ваше явное
+      «да» перед записью в вашу CRM, сохранением контактов или пушем кода.
+    </p>
+
+    <h3 id="gated-tools">Закрытые инструменты (по умолчанию)</h3>
+    <table class="mini-table">
+      <thead><tr><th>Инструмент</th><th>Почему закрыт</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>save_contacts</code></td>
+          <td>Пишет в <code>contacts.db</code> и опционально отправляет в CRM — реальные побочные эффекты</td>
+        </tr>
+        <tr>
+          <td><code>git_push</code></td>
+          <td>Пушит код в удалённый репозиторий — необратимо после публикации</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 id="customize-approval">Как настроить</h3>
+    <p>
+      Добавляйте или убирайте закрытые инструменты в <code>config.toml</code> в секции <code>[agent]</code>:
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">toml</span></div>
+      <pre><code set:html={`[agent]
+# По умолчанию: save_contacts и git_push требуют подтверждения
+approval_tools = ["save_contacts", "git_push"]
+
+# Добавить больше инструментов под защиту:
+approval_tools = ["save_contacts", "git_push", "send_email", "crm_push"]
+
+# Убрать все защиты (используйте осторожно):
+approval_tools = []`} /></pre>
+    </div>
+
+    <h3 id="tui-approval">Процесс подтверждения в TUI</h3>
+    <ul class="check-list">
+      <li>Агент приостанавливается и показывает сводку ожидающего действия в терминальном UI.</li>
+      <li>Вы видите: имя инструмента, параметры, ожидаемый результат и любые предупреждения.</li>
+      <li>Нажмите <code>y</code> для подтверждения, <code>n</code> для отказа или <code>e</code> для редактирования параметров перед подтверждением.</li>
+      <li>Редактирование открывает JSON параметров в вашем <code>$EDITOR</code> для встроенного изменения.</li>
+    </ul>
+
+    <h3 id="api-approval">Процесс подтверждения через API</h3>
+    <p>
+      При headless-запуске или интеграции в CI/CD подтверждайте через REST API:
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span></div>
+      <pre><code set:html={`# Подтвердить ожидающее действие
+curl -X POST http://localhost:8080/api/v1/sessions/sess_abc123/approve \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{"action_id": "act_789", "approved": true}'
+
+# Отклонить ожидающее действие
+curl -X POST http://localhost:8080/api/v1/sessions/sess_abc123/approve \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{"action_id": "act_789", "approved": false}'`} /></pre>
+    </div>
+
+    <h3 id="timeout-fallback">Поведение по таймауту и запасной вариант</h3>
+    <p>
+      Если подтверждение не пришло в настроенное окно, агент использует запасную стратегию:
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">toml</span></div>
+      <pre><code set:html={`[agent]
+# Что делать при истечении времени подтверждения:
+# "deny"  — пропустить действие, продолжить пайплайн
+# "allow" — автоматическое подтверждение (для полностью автоматизированных запусков)
+# "pause" — приостановить сессию, возобновить позже
+approval_fallback = "deny"
+
+# Таймаут в секундах (по умолчанию: 300 = 5 минут)
+approval_timeout_seconds = 300`} /></pre>
+    </div>
+    <div class="callout">
+      <div class="callout-icon">⚠️</div>
+      <div class="callout-content">
+        <strong>Никогда не устанавливайте <code>approval_fallback = "allow"</code> в проде</strong>,
+        если только вы не запускаете полностью автоматизированный пайплайн со строгой валидацией параметров.
+        Автоподтверждение обходит проверку человеком для записей в CRM и пушей кода.
+      </div>
+    </div>
+  </section>
+
+  {/* ============ РЕЖИМ WATCH И МОНИТОРИНГ ============ */}
+  <section id="watch-mode">
+    <h2>Режим watch и мониторинг</h2>
+    <p>
+      Режим watch превращает разовую задачу аутрича в повторяющийся монитор. Перезапускайте тот же запрос
+      по расписанию, сравнивайте результаты и получайте уведомления только при появлении новых контактов.
+    </p>
+
+    <h3 id="repeat-flag">Флаг --repeat</h3>
+    <p>
+      Добавьте <code>--repeat N</code> для перезапуска каждые <code>N</code> секунд. Агент выполняет полный
+      пайплайн на каждом цикле — но сохраняет только контакты, которые новы или изменились с последнего запуска.
+    </p>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span></div>
+      <pre><code set:html={`# Перезапуск каждые 24 часа (86400 секунд)
+fathom run "Find new VP Engineering hires at Series B startups in SF" \\\\
+  --repeat 86400`} /></pre>
+    </div>
+
+    <h3 id="diff-detection">Как работает обнаружение различий</h3>
+    <ul class="check-list">
+      <li>Каждый запуск делает снапшот состояния базы контактов (хэш email + phone + LinkedIn).</li>
+      <li>Перед сохранением новые записи сравниваются с предыдущим снапшотом.</li>
+      <li>Только по-настоящему новые или обновлённые контакты вызывают уведомления.</li>
+      <li>Удалённые контакты (присутствующие в снапшоте, отсутствующие в новом запуске) логируются, но не удаляются.</li>
+    </ul>
+
+    <h3 id="notification-channels">Каналы уведомлений</h3>
+    <div class="steps">
+      <div class="step">
+        <h3>Вебхук</h3>
+        <p>
+          POST JSON-полезной нагрузки на любой URL. Настраивается через переменную окружения
+          <code>NOTIFY_WEBHOOK_URL</code>. Полезная нагрузка включает число новых контактов, детали
+          контактов и метаданные запуска.
+        </p>
+      </div>
+      <div class="step">
+        <h3>Email</h3>
+        <p>
+          Отправка дайджест-письма через SMTP. Настройте <code>SMTP_HOST</code>, <code>SMTP_PORT</code>,
+          <code>SMTP_USER</code>, <code>SMTP_PASS</code> и <code>NOTIFY_EMAIL_TO</code>.
+        </p>
+      </div>
+      <div class="step">
+        <h3>Telegram</h3>
+        <p>
+          Отправка сообщения в чат Telegram через Bot API. Установите переменные окружения
+          <code>TELEGRAM_BOT_TOKEN</code> и <code>TELEGRAM_CHAT_ID</code>.
+        </p>
+      </div>
+    </div>
+
+    <h3 id="daily-monitoring-example">Пример: настройка ежедневного мониторинга лидов</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span></div>
+      <pre><code set:html={`# Полная настройка мониторинга
+export NOTIFY_WEBHOOK_URL="https://hooks.slack.com/services/T00/B00/xxx"
+export TELEGRAM_BOT_TOKEN="123456:ABC-..."
+export TELEGRAM_CHAT_ID="-1001234567890"
+
+fathom run \\\\
+  "Find newly funded startups in Berlin, extract CTO contacts, verify emails" \\\\
+  --repeat 86400`} /></pre>
+    </div>
+    <h4>Пример полезной нагрузки вебхука</h4>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">json</span></div>
+      <pre><code set:html={`{
+  "event": "watch_diff",
+  "run_id": "run_20250615_001",
+  "timestamp": "2025-06-15T08:00:00Z",
+  "new_contacts": 7,
+  "updated_contacts": 2,
+  "total_contacts": 156,
+  "contacts": [
+    {
+      "name": "New CTO at StartupX",
+      "email": "cto@startupx.io",
+      "title": "CTO",
+      "company": "StartupX",
+      "confidence": 0.94
+    }
+  ],
+  "query": "newly funded startups in Berlin"
+}`} /></pre>
+    </div>
+  </section>
+
+  {/* ============ РЕАЛЬНЫЕ ПРИМЕРЫ РАБОЧИХ ПРОЦЕССОВ ============ */}
+  <section id="workflow-examples">
+    <h2>Реальные примеры рабочих процессов</h2>
+    <p>
+      Эти сквозные примеры показывают, как пайплайн работает на практике — от цели обычным языком
+      до верифицированных, обогащённых лидов, готовых к аутричу.
+    </p>
+
+    <h3 id="example-1">Пример 1: построение целевого списка инженерного руководства</h3>
+    <div class="workflow-example">
+      <div class="workflow-goal">
+        <span class="workflow-goal-label">Цель</span>
+        <p>«Построить список VP of Engineering в B2B SaaS-компаниях в Bay Area с верифицированными email и профилями LinkedIn.»</p>
+      </div>
+      <h4>Команда</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">bash</span></div>
+        <pre><code set:html={`fathom run \\\\
+  "Find VP Engineering at B2B SaaS companies in the Bay Area. \\\\
+   Verify their emails and LinkedIn profiles. \\\\
+   Save enriched contacts with confidence >= 0.85."`} /></pre>
+      </div>
+      <h4>Что происходит по шагам</h4>
+      <table class="mini-table">
+        <thead><tr><th>Шаг</th><th>Инструмент</th><th>Что делает</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>find_leads</code></td><td>Ищет в 2GIS + Google Maps компании "B2B SaaS" в SF Bay Area. Парсит до 6 корпоративных сайтов на компанию. Ищет в LinkedIn титулы VP Engineering.</td></tr>
+          <tr><td>2</td><td><code>extract_contacts</code></td><td>Вытягивает email, телефоны и URL LinkedIn со всех обнаруженных страниц. Обрабатывает обфусцированные паттерны.</td></tr>
+          <tr><td>3</td><td><code>verify_email</code></td><td>5-стадийный пайплайн на каждом email. Отфильтровывает всё ниже 0.85 уверенности.</td></tr>
+          <tr><td>4</td><td><code>verify_social_profile</code></td><td>Валидирует каждый URL LinkedIn и извлекает метаданные профиля.</td></tr>
+          <tr><td>5</td><td><code>enrich_person</code></td><td>Добавляет био, подтверждение титула, профили Twitter/GitHub и недавние упоминания.</td></tr>
+          <tr><td>6</td><td><code>save_contacts</code></td><td>Сохраняет в contacts.db (дедупликация + слияние). Ждёт подтверждения перед записью.</td></tr>
+        </tbody>
+      </table>
+      <h4>Ожидаемая структура вывода</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json</span></div>
+        <pre><code set:html={`{
+  "session_id": "sess_abc123",
+  "query": "VP Engineering at B2B SaaS companies in the Bay Area",
+  "total_companies_found": 87,
+  "total_contacts_extracted": 134,
+  "verified_contacts": 92,
+  "filtered_contacts": 41,
+  "contacts": [
+    {
+      "name": "Jordan Lee",
+      "title": "VP Engineering",
+      "company": "Acme Analytics",
+      "email": "jordan.lee@acme-analytics.com",
+      "email_confidence": 0.97,
+      "linkedin": "https://linkedin.com/in/jordanlee",
+      "linkedin_verified": true,
+      "twitter": "https://twitter.com/jordanlee_eng",
+      "location": "San Francisco, CA",
+      "bio": "Engineering leader with 12 years in data infrastructure.",
+      "company_size": "80-120 employees",
+      "company_funding": "Series B ($40M)"
+    }
+  ]
+}`} /></pre>
+      </div>
+    </div>
+
+    <h3 id="example-2">Пример 2: мониторинг найма конкурентов</h3>
+    <div class="workflow-example">
+      <div class="workflow-goal">
+        <span class="workflow-goal-label">Цель</span>
+        <p>«Мониторить найм конкурентов и оповещать меня, когда они публикуют новые старшие инженерные роли.»</p>
+      </div>
+      <h4>Команда</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">bash</span></div>
+        <pre><code set:html={`fathom run \\\\
+  "Monitor career pages and job boards for senior engineering roles \\\\
+   at CompetitorA, CompetitorB, CompetitorC. \\\\
+   Alert on new VP/Director/Staff-level postings." \\\\
+  --repeat 43200`} /></pre>
+      </div>
+      <h4>Что происходит по шагам</h4>
+      <table class="mini-table">
+        <thead><tr><th>Шаг</th><th>Инструмент</th><th>Что делает</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>parse_corporate_site</code></td><td>Обходит страницы <code>/careers</code> и <code>/jobs</code> каждого конкурента. Извлекает титулы вакансий, локации и даты публикаций.</td></tr>
+          <tr><td>2</td><td><code>search_news</code></td><td>Ищет недавние объявления о найме и пресс-покрытие, упоминающее конкурентов.</td></tr>
+          <tr><td>3</td><td>Движок сравнения</td><td>Сравнивает текущие находки со снапшотом предыдущего запуска. Выявляет новые публикации.</td></tr>
+          <tr><td>4</td><td>Уведомление</td><td>Отправляет сообщение Telegram с каждой новой старшей ролью: титул, локация, URL публикации и дата.</td></tr>
+        </tbody>
+      </table>
+      <h4>Ожидаемая полезная нагрузка уведомления</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">json</span></div>
+        <pre><code set:html={`{
+  "event": "watch_diff",
+  "new_postings": [
+    {
+      "company": "CompetitorA",
+      "title": "Director of Platform Engineering",
+      "location": "San Francisco, CA",
+      "url": "https://competitora.com/careers/director-platform",
+      "posted_date": "2025-06-14",
+      "detected_at": "2025-06-15T08:00:00Z"
+    }
+  ],
+  "monitoring_since": "2025-06-01T00:00:00Z",
+  "total_runs": 30
+}`} /></pre>
+      </div>
+    </div>
+
+    <h3 id="example-3">Пример 3: обогащение существующего CSV контактов</h3>
+    <div class="workflow-example">
+      <div class="workflow-goal">
+        <span class="workflow-goal-label">Цель</span>
+        <p>«У меня есть CSV с 200 контактами с именами и компаниями. Обогатить их верифицированными email и профилями LinkedIn.»</p>
+      </div>
+      <h4>Команда</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">bash</span></div>
+        <pre><code set:html={`# Шаг 1: Импортируйте CSV
+fathom contacts list --limit 50
+
+# Шаг 2: Обогатите каждый контакт
+fathom run \\\\
+  "For each contact in the database that is missing an email, \\\\
+   find their professional email and LinkedIn profile. \\\\
+   Verify emails before saving." \\\\
+  --source-db contacts.db
+
+# Шаг 3: Экспортируйте обогащённые результаты
+fathom contacts export --format csv -o ./enriched_contacts`} /></pre>
+      </div>
+      <h4>Что происходит по шагам</h4>
+      <table class="mini-table">
+        <thead><tr><th>Шаг</th><th>Инструмент</th><th>Что делает</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Импорт</td><td>Парсит CSV, мапит колонки и вставляет в contacts.db с дедупликацией.</td></tr>
+          <tr><td>2</td><td><code>suggest_emails</code></td><td>Для каждого контакта без email генерирует 9 кандидатов паттернов по имени + домену компании.</td></tr>
+          <tr><td>3</td><td><code>verify_email</code></td><td>Запускает 5-стадийную верификацию на каждом кандидате. Оставляет совпадение с наивысшей уверенностью выше 0.8.</td></tr>
+          <tr><td>4</td><td><code>search_social</code></td><td>Ищет в LinkedIn имя + компанию человека. Валидирует и обогащает URL профиля.</td></tr>
+          <tr><td>5</td><td><code>enrich_person</code></td><td>Заполняет био, подтверждение титула, местоположение и дополнительные соцпрофили.</td></tr>
+          <tr><td>6</td><td><code>save_contacts</code></td><td>Сливает обогащённые данные в существующие записи контактов. Обновляет только изменённые поля.</td></tr>
+          <tr><td>7</td><td>Экспорт</td><td>Экспортирует обогащённую базу в CSV со всеми новыми полями.</td></tr>
+        </tbody>
+      </table>
+      <h4>Ожидаемая структура вывода</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">text — колонки enriched_contacts.csv</span></div>
+        <pre><code set:html={`name,email,email_confidence,title,company,linkedin,twitter,location,bio,source
+Jordan Lee,jordan.lee@acme-analytics.com,0.97,VP Engineering,Acme Analytics,https://linkedin.com/in/jordanlee,https://twitter.com/jordanlee_eng,"San Francisco, CA","Engineering leader with 12 years...",suggest_emails+verify
+Maria Chen,maria.chen@startupx.io,0.91,CTO,StartupX,https://linkedin.com/in/mariachen,,Berlin,"Former Google, building developer tools...",search_social+verify`} /></pre>
+      </div>
+      <div class="callout">
+        <div class="callout-icon">💡</div>
+        <div class="callout-content">
+          <strong>Обучение паттернов компаундится.</strong> После обогащения 200 контактов
+          <code>suggest_emails</code> выучил паттерны email для десятков доменов. Будущие
+          запуски обогащения для тех же компаний будут значительно быстрее и точнее.
+        </div>
+      </div>
+    </div>
+  </section>

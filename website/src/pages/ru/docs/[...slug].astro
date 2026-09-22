@@ -1,0 +1,31 @@
+---
+import { getCollection, render } from 'astro:content';
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+import '../../../styles/docs-content.css';
+
+// Renders the Russian twin of a docs entry (src/content/docs-ru/<slug>.mdx)
+// directly at /ru/docs/<slug>. The i18n post-generator skips stub generation
+// for these paths and only localizes layout chrome (nav, sidebar, pager).
+export async function getStaticPaths() {
+  const docs = await getCollection('docsRu');
+  return docs
+    .filter((d) => d.data.published !== false)
+    .map((d) => ({
+      params: { slug: d.id },
+      props: { doc: d },
+    }));
+}
+
+const { doc } = Astro.props;
+const { Content } = await render(doc);
+const activePage = doc.data.sidebarId || doc.id;
+const baseTitle = doc.data.title.replace(/ — Fathom(?: Research)?$/, '');
+const title = `${baseTitle} — Fathom`;
+const description = doc.data.description ?? `Документация Fathom: инструменты, сессии, HTTP API, MCP, безопасность и архитектура.`;
+---
+
+<DocsLayout title={title} description={description} activePage={activePage} ruTranslated>
+  <main class="doc-content">
+    <Content />
+  </main>
+</DocsLayout>

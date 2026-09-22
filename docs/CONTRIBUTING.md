@@ -723,7 +723,7 @@ This means:
 
 If you find yourself needing a circular dependency, extract the shared types into `core` instead.
 
-### Why 12 Crates (Not Fewer)
+### Why 13 Crates (Not Fewer)
 
 Each crate enforces a **compile-time boundary** that prevents accidental coupling:
 

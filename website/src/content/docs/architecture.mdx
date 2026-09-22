@@ -8,7 +8,7 @@ export const crates = [
   { name: 'core', d: 'The foundation — depends on nothing. IDs (UUID v7), VirtualUri VFS resolver (skill://, rule://, memory://, artifact://, local://, xd://), messages & events, findings, AppConfig, export (PDF/HTML/JSON/DOCX), notifications, CRM sync, exact token counting.' },
   { name: 'llm', d: 'Provider abstraction. LlmProvider trait with complete() and stream(), native Anthropic Messages API with prompt caching & extended thinking, CascadeProvider failover, retry with exponential backoff.' },
   { name: 'agent', d: 'The runtime itself: agent loop, coordinator, compaction, prompt builder, tool executor with parallel safety, result budgets, control plane, IPC, process manager, doom-loop detector, hooks, session resume.' },
-  { name: 'tools', d: '60 base tools plus up to 5 CDP browser tools, up to 6 computer tools, and optional LSP/MCP tools: high-precision hashline patching (edit), AST repo-mapping, git worktrees, compiler checks, DAP debugging, web, browser stealth, memory and coordination.' },
+  { name: 'tools', d: '63 base tools plus up to 5 CDP browser tools, up to 6 computer tools, and optional LSP/MCP tools: high-precision hashline patching (edit), AST repo-mapping, git worktrees, compiler checks, DAP debugging, web, browser stealth, memory and coordination.' },
   { name: 'memory', d: 'Long-term semantic memory + entity graph (mem0 / Memora model): SIMD-accelerated HNSW vector search, RDF Triples & GraphRAG traversal, facts, FTS5, embeddings, 5-outcome absorb pipeline, hybrid search, distillation, secret detection, and 2-way Obsidian vault sync.' },
   { name: 'mcp', d: 'Model Context Protocol client and server with bounded connection lifecycle, reconnect, circuit breaker, refresh, and stdio/HTTP transports.' },
   { name: 'persistence', d: 'SQLite in WAL mode with a 4-connection pool + PostgreSQL: sessions, agents, messages, findings, sub-tasks, contact DB, credentials vault, and durable jobs with self-healing retry.' },
@@ -67,7 +67,7 @@ export const contextStages = [
 │   ├── core/          # fundamental types & domain logic
 │   ├── llm/           # LLM provider abstraction
 │   ├── agent/         # agent runtime, coordination, control plane
-│   ├── tools/         # 48 base tools plus up to 5 CDP browser tools and up to 6 computer tools + MCP/LSP tools
+│   ├── tools/         # 63 base tools plus up to 5 CDP browser tools and up to 6 computer tools + MCP/LSP tools
 │   ├── memory/        # long-term semantic memory + entity graph
 │   ├── mcp/           # Model Context Protocol (client and server)
 │   ├── persistence/   # storage (SQLite, PostgreSQL, connection pool, jobs, vault)

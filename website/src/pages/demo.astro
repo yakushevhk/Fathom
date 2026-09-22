@@ -33,9 +33,9 @@ const ROUTINES = [
     <section class="demo-hero">
       <div class="container demo-hero__grid">
         <div class="demo-hero__main">
-          <p class="eyebrow"><span class="eyebrow__dot" aria-hidden="true"></span><span>Live worker demo</span></p>
-          <h1>Pick a worker.<br /><em class="it">Watch the swarm.</em></h1>
-          <p class="copy-lg">
+          <p class="eyebrow"><span class="eyebrow__dot" aria-hidden="true"></span><span data-i18n="demo.hero.badge">Live worker demo</span></p>
+          <h1 data-i18n-html data-i18n="demo.hero.title">Pick a worker.<br /><em class="it">Watch the swarm.</em></h1>
+          <p class="copy-lg" data-i18n-html data-i18n="demo.hero.sub">
             Every bot mirrors a real Fathom worker — the coordinator decomposes, researchers execute in
             parallel, the analyst synthesizes, the verifier gates, the writer delivers. Behind this page:
             <strong>kimi/k3</strong> via <strong>router.y7.hk/v1</strong>, prompted to act as the full Rust runtime.
@@ -43,24 +43,24 @@ const ROUTINES = [
           <div class="demo-hero__meta">
             <span class="dm chip">model: kimi/k3</span>
             <span class="dm chip">engine: router.y7.hk/v1</span>
-            <span class="dm chip">8 workers</span>
-            <span class="dm chip">multi-agent swarm</span>
-            <span class="dm chip">50+ tools</span>
+            <span class="dm chip" data-i18n="demo.chips.workers">8 workers</span>
+            <span class="dm chip" data-i18n="demo.chips.swarm">multi-agent swarm</span>
+            <span class="dm chip" data-i18n="demo.chips.tools">63+ tools</span>
           </div>
         </div>
         <div class="demo-hero__side">
           <div class="demo-status">
             <div class="demo-status__head">
               <span class="demo-status__pulse" aria-hidden="true"></span>
-              <span class="demo-status__label">runtime status</span>
+              <span class="demo-status__label" data-i18n="demo.status.label">runtime status</span>
             </div>
             <div class="demo-status__body">
-              <div class="ds-row"><span class="ds-k">provider</span><span class="ds-v" data-ds-provider>router.y7.hk/v1</span></div>
-              <div class="ds-row"><span class="ds-k">model</span><span class="ds-v">kimi/k3</span></div>
-              <div class="ds-row"><span class="ds-k">latency</span><span class="ds-v" data-ds-latency>00:00</span></div>
-              <div class="ds-row"><span class="ds-k">tokens</span><span class="ds-v" data-ds-tokens>0</span></div>
-              <div class="ds-row"><span class="ds-k">runs</span><span class="ds-v" data-ds-runs>0</span></div>
-              <div class="ds-row"><span class="ds-k">status</span><span class="ds-v ds-v--ok" data-ds-status>idle</span></div>
+              <div class="ds-row"><span class="ds-k" data-i18n="demo.status.provider">provider</span><span class="ds-v" data-ds-provider>router.y7.hk/v1</span></div>
+              <div class="ds-row"><span class="ds-k" data-i18n="demo.status.model">model</span><span class="ds-v">kimi/k3</span></div>
+              <div class="ds-row"><span class="ds-k" data-i18n="demo.status.latency">latency</span><span class="ds-v" data-ds-latency>00:00</span></div>
+              <div class="ds-row"><span class="ds-k" data-i18n="demo.status.tokens">tokens</span><span class="ds-v" data-ds-tokens>0</span></div>
+              <div class="ds-row"><span class="ds-k" data-i18n="demo.status.runs">runs</span><span class="ds-v" data-ds-runs>0</span></div>
+              <div class="ds-row"><span class="ds-k" data-i18n="demo.status.status">status</span><span class="ds-v ds-v--ok" data-ds-status>idle</span></div>
             </div>
           </div>
         </div>
@@ -76,15 +76,15 @@ const ROUTINES = [
             <aside class="product-demo__sidebar" id="demo-sidebar">
               <div class="product-demo__chrome">
                 <div class="product-demo__traffic"><span></span><span></span><span></span></div>
-                <span class="product-demo__drawer-title">Workers</span>
+                <span class="product-demo__drawer-title" data-i18n="demo.sidebar.workers">Workers</span>
                 <div class="product-demo__chrome-actions">
-                  <button type="button" class="product-demo__new" aria-label="Spawn new worker" title="Spawn new worker">+</button>
-                  <button type="button" class="product-demo__sidebar-close" aria-label="Hide sidebar" title="Close">&#x2715;</button>
+                  <button type="button" class="product-demo__new" aria-label="Spawn new worker" title="Spawn new worker" data-i18n-aria="demo.sidebar.spawnAria">+</button>
+                  <button type="button" class="product-demo__sidebar-close" aria-label="Hide sidebar" title="Close" data-i18n-aria="demo.sidebar.hideAria">&#x2715;</button>
                 </div>
               </div>
               <label class="product-demo__search">
                 <span class="pd-search-icon" aria-hidden="true">&#x2315;</span>
-                <input type="search" placeholder="Search workers" data-bot-search autocomplete="off" />
+                <input type="search" placeholder="Search workers" data-i18n-placeholder="demo.sidebar.searchPh" data-bot-search autocomplete="off" />
               </label>
               <div class="product-demo__bot-list" data-bot-list>
                 {BOTS.map((b) => (
@@ -110,7 +110,7 @@ const ROUTINES = [
             <main class="product-demo__main">
               <div class="product-demo__topbar">
                 <div class="product-demo__topbar-left">
-                  <button type="button" class="product-demo__menu-btn" aria-label="Show workers">
+                  <button type="button" class="product-demo__menu-btn" aria-label="Show workers" data-i18n-aria="demo.sidebar.showAria">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
                   </button>
                   <button type="button" class="product-demo__name-btn">
@@ -121,7 +121,7 @@ const ROUTINES = [
                   <span class="product-demo__run-state" data-run-state>idle</span>
                 </div>
                 <div class="product-demo__topbar-right">
-                  <button type="button" class="product-demo__panel-toggle" aria-pressed="true" data-panel-toggle aria-label="Toggle computer panel" title="Computer">
+                  <button type="button" class="product-demo__panel-toggle" aria-pressed="true" data-panel-toggle aria-label="Toggle computer panel" title="Computer" data-i18n-aria="demo.panel.toggleAria">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="4" width="20" height="13" rx="2"></rect><path d="M8 21h8M12 17v4"></path></svg>
                   </button>
                 </div>
@@ -130,7 +130,7 @@ const ROUTINES = [
               <div class="product-demo__thread" data-thread>
                 <div class="product-demo__thread-empty">
                   <div class="td-icon">&#x25C8;</div>
-                  <p>Pick a worker from the sidebar to start a conversation. Each worker is a Fathom autonomous agent with real tools, memory, and governance — dispatched live through the API.</p>
+                  <p data-i18n="demo.thread.empty">Pick a worker from the sidebar to start a conversation. Each worker is a Fathom autonomous agent with real tools, memory, and governance — dispatched live through the API.</p>
                   <div class="td-suggestions">
                     {BOTS.slice(0, 4).map((b) => (
                       <button type="button" class="td-suggestion" data-bot-id={b.id}>
@@ -145,11 +145,11 @@ const ROUTINES = [
               <div class="product-demo__composer">
                 <div class="product-demo__input-shell">
                   <span class="product-demo__composer-plus" aria-hidden="true">+</span>
-                  <input type="text" placeholder="Message worker…" aria-label="Message worker" data-composer />
-                  <button type="button" class="product-demo__send" aria-label="Send" data-send>&#x2191;</button>
+                  <input type="text" placeholder="Message worker…" aria-label="Message worker" data-i18n-placeholder="demo.thread.composerPh" data-i18n-aria="demo.thread.composerAria" data-composer />
+                  <button type="button" class="product-demo__send" aria-label="Send" data-i18n-aria="demo.thread.sendAria" data-send>&#x2191;</button>
                 </div>
                 <div class="product-demo__composer-hint">
-                  <span data-composer-bot>Orchestrator</span> — any message is dispatched as a task to this worker
+                  <span data-composer-bot>Orchestrator</span> <span data-i18n="demo.thread.hintSuffix">— any message is dispatched as a task to this worker</span>
                 </div>
               </div>
             </main>
@@ -159,13 +159,13 @@ const ROUTINES = [
               <div class="product-demo__panel-head">
                 <span class="pd-panel-title" data-computer-title>Orchestrator's computer</span>
                 <div class="product-demo__panel-actions">
-                  <button type="button" aria-label="Bot settings" title="Settings">
+                  <button type="button" aria-label="Bot settings" title="Settings" data-i18n-aria="demo.panel.settingsAria">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6h.09A1.65 1.65 0 0 0 10 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                   </button>
-                  <button type="button" aria-label="Close panel" title="Close" data-panel-close>&#x2715;</button>
+                  <button type="button" aria-label="Close panel" title="Close" data-panel-close data-i18n-aria="demo.panel.closeAria">&#x2715;</button>
                 </div>
               </div>
-              <button type="button" class="product-demo__screen" data-take-control aria-label="Take control of computer">
+              <button type="button" class="product-demo__screen" data-take-control aria-label="Take control of computer" data-i18n-aria="demo.panel.takeControlAria">
                 <div class="product-demo__desktop">
                   <div class="product-demo__window">
                     <div class="product-demo__window-bar">
@@ -175,17 +175,17 @@ const ROUTINES = [
                     <div class="product-demo__window-body" data-computer-body>
                       <div class="pd-window-empty">
                         <span class="pd-we-icon">&#x25C8;</span>
-                        <span>Worker idle — open a worker</span>
+                        <span data-i18n="demo.panel.windowEmpty">Worker idle — open a worker</span>
                       </div>
                     </div>
                   </div>
                 </div>
               </button>
               <div class="product-demo__screen-meta">
-                <span class="dsm-label" data-computer-status>screen idle</span>
-                <button type="button" class="pd-take-control" data-take-control-sm>Take control</button>
+                <span class="dsm-label" data-computer-status data-i18n="demo.panel.screenIdle">screen idle</span>
+                <button type="button" class="pd-take-control" data-take-control-sm data-i18n="demo.panel.takeControl">Take control</button>
               </div>
-              <div class="product-demo__panel-label">Routines</div>
+              <div class="product-demo__panel-label" data-i18n="demo.panel.routines">Routines</div>
               <div class="pd-routines" data-routines>
                 {ROUTINES.map((r) => (
                   <button type="button" class="product-demo__routine" data-routine>
@@ -194,11 +194,11 @@ const ROUTINES = [
                     <span class="product-demo__routine-when">{r.when}</span>
                   </button>
                 ))}
-                <button type="button" class="product-demo__quiet" data-new-routine>+ New routine</button>
+                <button type="button" class="product-demo__quiet" data-new-routine data-i18n="demo.panel.newRoutine">+ New routine</button>
               </div>
             </aside>
           </div>
-          <p class="product-demo__caption">
+          <p class="product-demo__caption" data-i18n-html data-i18n="demo.caption">
             Live demo — pick a worker, type a task, watch it plan, run tools, absorb memory, and deliver. Backed by <strong>kimi/k3</strong> via router.y7.hk/v1.
           </p>
         </div>
@@ -209,10 +209,10 @@ const ROUTINES = [
     <section class="arch-section">
       <div class="container">
         <div class="tabs">
-          <button class="tab tab--active" data-arch-tab="swarm" type="button">Swarm tree</button>
-          <button class="tab" data-arch-tab="memory" type="button">Memory graph</button>
-          <button class="tab" data-arch-tab="audit" type="button">Audit trail</button>
-          <button class="tab" data-arch-tab="stats" type="button">Runtime stats</button>
+          <button class="tab tab--active" data-arch-tab="swarm" type="button" data-i18n="demo.tabs.swarm">Swarm tree</button>
+          <button class="tab" data-arch-tab="memory" type="button" data-i18n="demo.tabs.memory">Memory graph</button>
+          <button class="tab" data-arch-tab="audit" type="button" data-i18n="demo.tabs.audit">Audit trail</button>
+          <button class="tab" data-arch-tab="stats" type="button" data-i18n="demo.tabs.stats">Runtime stats</button>
         </div>
 
         <div class="tab-pane tab-pane--active" data-arch-pane="swarm">
@@ -220,17 +220,17 @@ const ROUTINES = [
             <div class="swarm-tree" data-swarm-tree>
               <div class="swarm-empty">
                 <span class="te-glyph">&#x25C8;</span>
-                <p>Run a worker task first. The coordinator spawns sub-agents, visible here as a live tree.</p>
+                <p data-i18n="demo.swarm.empty">Run a worker task first. The coordinator spawns sub-agents, visible here as a live tree.</p>
               </div>
             </div>
             <div class="side-stats">
-              <div class="side-stats__head">Fleet metrics</div>
-              <div class="fs-row"><span class="fs-k">spawned</span><span class="fs-v" data-fleet-spawned>0</span></div>
-              <div class="fs-row"><span class="fs-k">running</span><span class="fs-v" data-fleet-running>0</span></div>
-              <div class="fs-row"><span class="fs-k">completed</span><span class="fs-v" data-fleet-completed>0</span></div>
-              <div class="fs-row"><span class="fs-k">failed</span><span class="fs-v" data-fleet-failed>0</span></div>
-              <div class="fs-row"><span class="fs-k">tool calls</span><span class="fs-v" data-fleet-tools>0</span></div>
-              <div class="fs-row"><span class="fs-k">fan-out</span><span class="fs-v">JoinSet · Tokio</span></div>
+              <div class="side-stats__head" data-i18n="demo.swarm.head">Fleet metrics</div>
+              <div class="fs-row"><span class="fs-k" data-i18n="demo.swarm.spawned">spawned</span><span class="fs-v" data-fleet-spawned>0</span></div>
+              <div class="fs-row"><span class="fs-k" data-i18n="demo.swarm.running">running</span><span class="fs-v" data-fleet-running>0</span></div>
+              <div class="fs-row"><span class="fs-k" data-i18n="demo.swarm.completed">completed</span><span class="fs-v" data-fleet-completed>0</span></div>
+              <div class="fs-row"><span class="fs-k" data-i18n="demo.swarm.failed">failed</span><span class="fs-v" data-fleet-failed>0</span></div>
+              <div class="fs-row"><span class="fs-k" data-i18n="demo.swarm.toolCalls">tool calls</span><span class="fs-v" data-fleet-tools>0</span></div>
+              <div class="fs-row"><span class="fs-k" data-i18n="demo.swarm.fanout">fan-out</span><span class="fs-v">JoinSet · Tokio</span></div>
             </div>
           </div>
         </div>
@@ -240,15 +240,15 @@ const ROUTINES = [
             <div class="memory-list" data-memory-list>
               <div class="memory-empty">
                 <span class="te-glyph">&#x25C8;</span>
-                <p>No facts absorbed yet. Run a scenario to populate the memory graph — companies, contacts, and findings persist across sessions.</p>
+                <p data-i18n="demo.memory.empty">No facts absorbed yet. Run a scenario to populate the memory graph — companies, contacts, and findings persist across sessions.</p>
               </div>
             </div>
             <div class="side-stats">
-              <div class="side-stats__head">Memory engine</div>
-              <div class="fs-row"><span class="fs-k">facts</span><span class="fs-v" data-mem-facts>0</span></div>
-              <div class="fs-row"><span class="fs-k">avg confidence</span><span class="fs-v" data-mem-confidence>—</span></div>
-              <div class="fs-row"><span class="fs-k">store</span><span class="fs-v">SQLite FTS5</span></div>
-              <div class="fs-row"><span class="fs-k">absorption</span><span class="fs-v">94&#x00B5;s</span></div>
+              <div class="side-stats__head" data-i18n="demo.memory.head">Memory engine</div>
+              <div class="fs-row"><span class="fs-k" data-i18n="demo.memory.facts">facts</span><span class="fs-v" data-mem-facts>0</span></div>
+              <div class="fs-row"><span class="fs-k" data-i18n="demo.memory.confidence">avg confidence</span><span class="fs-v" data-mem-confidence>—</span></div>
+              <div class="fs-row"><span class="fs-k" data-i18n="demo.memory.store">store</span><span class="fs-v">SQLite FTS5</span></div>
+              <div class="fs-row"><span class="fs-k" data-i18n="demo.memory.absorption">absorption</span><span class="fs-v">94&#x00B5;s</span></div>
               <div class="fs-row"><span class="fs-k">GC</span><span class="fs-v" data-mem-gc>—</span></div>
             </div>
           </div>
@@ -259,27 +259,27 @@ const ROUTINES = [
             <div class="audit-list" data-audit-list>
               <div class="audit-empty">
                 <span class="te-glyph">&#x25C8;</span>
-                <p>No events recorded. The fail-closed policy engine checks every tool call against role-based rules. All decisions are logged with AES-256-GCM vault sealing.</p>
+                <p data-i18n="demo.audit.empty">No events recorded. The fail-closed policy engine checks every tool call against role-based rules. All decisions are logged with AES-256-GCM vault sealing.</p>
               </div>
             </div>
             <div class="side-stats">
-              <div class="side-stats__head">Governance</div>
-              <div class="fs-row"><span class="fs-k">allowed</span><span class="fs-v" data-audit-allowed>0</span></div>
-              <div class="fs-row"><span class="fs-k">denied</span><span class="fs-v" data-audit-denied>0</span></div>
-              <div class="fs-row"><span class="fs-k">policy rules</span><span class="fs-v">12 active</span></div>
-              <div class="fs-row"><span class="fs-k">vault</span><span class="fs-v">AES-256-GCM</span></div>
+              <div class="side-stats__head" data-i18n="demo.audit.head">Governance</div>
+              <div class="fs-row"><span class="fs-k" data-i18n="demo.audit.allowed">allowed</span><span class="fs-v" data-audit-allowed>0</span></div>
+              <div class="fs-row"><span class="fs-k" data-i18n="demo.audit.denied">denied</span><span class="fs-v" data-audit-denied>0</span></div>
+              <div class="fs-row"><span class="fs-k" data-i18n="demo.audit.rules">policy rules</span><span class="fs-v">12 active</span></div>
+              <div class="fs-row"><span class="fs-k" data-i18n="demo.audit.vault">vault</span><span class="fs-v">AES-256-GCM</span></div>
             </div>
           </div>
         </div>
 
         <div class="tab-pane" data-arch-pane="stats">
           <div class="stats-grid">
-            <div class="stat-card"><div class="stat-card__value" data-stat-runs>0</div><div class="stat-card__label">tasks dispatched</div></div>
-            <div class="stat-card"><div class="stat-card__value" data-stat-tools>0</div><div class="stat-card__label">tool calls</div></div>
-            <div class="stat-card"><div class="stat-card__value" data-stat-agents>0</div><div class="stat-card__label">agents spawned</div></div>
-            <div class="stat-card"><div class="stat-card__value" data-stat-memory>0</div><div class="stat-card__label">memory facts</div></div>
-            <div class="stat-card"><div class="stat-card__value" data-stat-tokens>0</div><div class="stat-card__label">tokens used</div></div>
-            <div class="stat-card"><div class="stat-card__value" data-stat-latency>00:00</div><div class="stat-card__label">wall clock</div></div>
+            <div class="stat-card"><div class="stat-card__value" data-stat-runs>0</div><div class="stat-card__label" data-i18n="demo.stats.tasks">tasks dispatched</div></div>
+            <div class="stat-card"><div class="stat-card__value" data-stat-tools>0</div><div class="stat-card__label" data-i18n="demo.stats.tools">tool calls</div></div>
+            <div class="stat-card"><div class="stat-card__value" data-stat-agents>0</div><div class="stat-card__label" data-i18n="demo.stats.agents">agents spawned</div></div>
+            <div class="stat-card"><div class="stat-card__value" data-stat-memory>0</div><div class="stat-card__label" data-i18n="demo.stats.memory">memory facts</div></div>
+            <div class="stat-card"><div class="stat-card__value" data-stat-tokens>0</div><div class="stat-card__label" data-i18n="demo.stats.tokens">tokens used</div></div>
+            <div class="stat-card"><div class="stat-card__value" data-stat-latency>00:00</div><div class="stat-card__label" data-i18n="demo.stats.clock">wall clock</div></div>
           </div>
         </div>
       </div>
@@ -287,14 +287,14 @@ const ROUTINES = [
 
     <!-- ============ LIGHTBOX ============ -->
     <div class="lightbox" data-lightbox hidden>
-      <button type="button" class="lightbox__close" aria-label="Close" data-lightbox-close>&#x2715;</button>
+      <button type="button" class="lightbox__close" aria-label="Close" data-lightbox-close data-i18n-aria="demo.lightbox.closeAria">&#x2715;</button>
       <div class="lightbox__frame">
         <div class="lightbox__bar">
           <span class="lightbox__traffic"><i></i><i></i><i></i></span>
           <span class="lightbox__url" data-lightbox-url>fathom://screen</span>
         </div>
         <img class="lightbox__img" data-lightbox-img alt="Worker computer screen" />
-        <p class="lightbox__caption" data-lightbox-caption>Take control — real-time desktop view</p>
+        <p class="lightbox__caption" data-lightbox-caption data-i18n="demo.lightbox.caption">Take control — real-time desktop view</p>
       </div>
     </div>
 

@@ -20,11 +20,11 @@ const SCENARIOS = [
 ];
 
 const CATEGORIES = [
-  { id: 'all', label: 'All Scenarios' },
-  { id: 'growth', label: 'Sales & Growth' },
-  { id: 'research', label: 'Research & Intel' },
-  { id: 'ops', label: 'Dev & Operations' },
-  { id: 'security', label: 'Security & Governance' },
+  { id: 'all', label: 'All Scenarios', ik: 'video.catAll' },
+  { id: 'growth', label: 'Sales & Growth', ik: 'video.catGrowth' },
+  { id: 'research', label: 'Research & Intel', ik: 'video.catResearch' },
+  { id: 'ops', label: 'Dev & Operations', ik: 'video.catOps' },
+  { id: 'security', label: 'Security & Governance', ik: 'video.catSecurity' },
 ];
 ---
 
@@ -67,20 +67,20 @@ const CATEGORIES = [
         <!-- Live Now Banner -->
         <div class="video-now" data-video-now>
           <span class="vn-pulse"></span>
-          <span class="vn-label">Currently Playing:</span>
-          <span class="vn-title" data-now-title>Introduction</span>
+          <span class="vn-label" data-i18n="video.nowPlaying">Currently Playing:</span>
+          <span class="vn-title" data-now-title data-i18n="video.intro">Introduction</span>
           <span class="vn-time" data-now-time>00:00</span>
-          <a href="/demo" class="vn-action" data-now-demo>Run in Demo &#x2192;</a>
+          <a href="/demo" class="vn-action" data-now-demo data-i18n="video.runDemo">Run in Demo &#x2192;</a>
         </div>
 
         <div class="video-meta">
-          <span class="vm-chip">15 scenarios</span>
+          <span class="vm-chip" data-i18n="video.chipScenarios">15 scenarios</span>
           <span class="vm-chip">8 min</span>
           <span class="vm-chip">60fps</span>
           <span class="vm-chip">H.264</span>
           <span class="vm-chip">10 MB</span>
           <div class="speed-controls">
-            <span class="speed-label">Speed:</span>
+            <span class="speed-label" data-i18n="video.speed">Speed:</span>
             <button type="button" class="speed-btn is-active" data-speed="1">1x</button>
             <button type="button" class="speed-btn" data-speed="1.25">1.25x</button>
             <button type="button" class="speed-btn" data-speed="1.5">1.5x</button>
@@ -89,19 +89,19 @@ const CATEGORIES = [
         </div>
 
         <div class="video-links">
-          <a href="/demo" class="btn btn-primary">&#x25B6; Try the live demo</a>
-          <a href="/deck/index.html" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">Browse the slide deck</a>
+          <a href="/demo" class="btn btn-primary" data-i18n="video.tryDemo">&#x25B6; Try the live demo</a>
+          <a href="/deck/index.html" class="btn btn-secondary" target="_blank" rel="noopener noreferrer" data-i18n="video.browseDeck">Browse the slide deck</a>
         </div>
       </div>
 
       <!-- Interactive Timeline -->
       <div class="timeline" id="interactive-timeline">
         <div class="timeline__header">
-          <span class="tl-head-title">Interactive Timeline</span>
-          <span class="tl-head-hint">Click any segment to jump</span>
+          <span class="tl-head-title" data-i18n="video.tlTitle">Interactive Timeline</span>
+          <span class="tl-head-hint" data-i18n="video.tlHint">Click any segment to jump</span>
         </div>
         <div class="timeline__bar">
-          <button type="button" class="tl-seg tl-intro" data-start="0" data-scenario="intro" title="0:00 · Intro" style="width:2%"><span class="tl-label">Intro</span></button>
+          <button type="button" class="tl-seg tl-intro" data-start="0" data-scenario="intro" title="0:00 · Intro" style="width:2%"><span class="tl-label" data-i18n="video.segIntro">Intro</span></button>
           {SCENARIOS.map((sc) => (
             <button
               type="button"
@@ -114,7 +114,7 @@ const CATEGORIES = [
               <span class="tl-label">{sc.name.split(' ')[0]}</span>
             </button>
           ))}
-          <button type="button" class="tl-seg tl-outro" data-start="468" data-scenario="outro" title="7:48 · Outro" style="width:2.5%"><span class="tl-label">Outro</span></button>
+          <button type="button" class="tl-seg tl-outro" data-start="468" data-scenario="outro" title="7:48 · Outro" style="width:2.5%"><span class="tl-label" data-i18n="video.segOutro">Outro</span></button>
         </div>
         <p class="timeline__label">
           0:00 &nbsp;·&nbsp;
@@ -126,7 +126,7 @@ const CATEGORIES = [
               &nbsp;·&nbsp;
             </>
           ))}
-          <button type="button" class="tl-text-jump" data-start="468">Outro</button>
+          <button type="button" class="tl-text-jump" data-start="468" data-i18n="video.segOutro">Outro</button>
         </p>
       </div>
 
@@ -137,6 +137,7 @@ const CATEGORIES = [
             type="button"
             class={`category-tab ${i === 0 ? 'is-active' : ''}`}
             data-cat={c.id}
+            data-i18n={c.ik}
           >
             {c.label}
           </button>
@@ -145,7 +146,7 @@ const CATEGORIES = [
 
       <!-- Scenario gallery -->
       <div class="scenario-section">
-        <h2 class="scenario-section__title">All 15 workers <span class="scenario-count">in the showreel</span></h2>
+        <h2 class="scenario-section__title"><span data-i18n="video.allWorkers">All 15 workers</span> <span class="scenario-count" data-i18n="video.inShowreel">in the showreel</span></h2>
         <div class="scenario-grid">
           {SCENARIOS.map((sc) => (
             <div class="scenario-card" data-scenario={sc.id} data-cat={sc.category} data-start={sc.start}>
@@ -158,16 +159,16 @@ const CATEGORIES = [
                 <div class="sc-card__header">
                   <span class="sc-card__avatar" style={'background:' + sc.color}>{sc.icon}</span>
                   <div>
-                    <span class="sc-card__name">{sc.name}</span>
-                    <span class="sc-card__role">{sc.role}</span>
+                    <span class="sc-card__name" data-i18n={`video.sc_${sc.id}_name`}>{sc.name}</span>
+                    <span class="sc-card__role" data-i18n={`video.sc_${sc.id}_role`}>{sc.role}</span>
                   </div>
                 </div>
-                <span class="sc-card__desc">{sc.desc}</span>
+                <span class="sc-card__desc" data-i18n={`video.sc_${sc.id}_desc`}>{sc.desc}</span>
                 <div class="sc-card__actions">
-                  <button type="button" class="sc-btn sc-btn--play" data-action="play" data-start={sc.start}>
+                  <button type="button" class="sc-btn sc-btn--play" data-action="play" data-start={sc.start} data-i18n="video.jumpVideo">
                     &#x25B6; Jump to Video
                   </button>
-                  <a href={`/demo`} class="sc-btn sc-btn--demo">
+                  <a href={`/demo`} class="sc-btn sc-btn--demo" data-i18n="video.liveDemo">
                     ⚡ Live Demo
                   </a>
                   <a href={`/deck/${sc.deckPage}`} target="_blank" rel="noopener noreferrer" class="sc-btn sc-btn--deck" title="Slide deck">
@@ -182,7 +183,7 @@ const CATEGORIES = [
 
       <!-- Lightbox -->
       <div class="lightbox" data-lightbox hidden>
-        <button type="button" class="lightbox__close" aria-label="Close" data-lightbox-close>&#x2715;</button>
+        <button type="button" class="lightbox__close" aria-label="Close" data-lightbox-close data-i18n-aria="video.lbClose">&#x2715;</button>
         <div class="lightbox__frame">
           <div class="lightbox__bar">
             <span class="lightbox__traffic"><i></i><i></i><i></i></span>
@@ -192,8 +193,8 @@ const CATEGORIES = [
           <div class="lightbox__caption-bar">
             <p class="lightbox__caption" data-lightbox-caption></p>
             <div class="lightbox__actions">
-              <button type="button" class="btn btn-primary btn-sm" data-lightbox-play>&#x25B6; Jump in video</button>
-              <a href="/demo" class="btn btn-secondary btn-sm">Try in Demo</a>
+              <button type="button" class="btn btn-primary btn-sm" data-lightbox-play data-i18n="video.lbJump">&#x25B6; Jump in video</button>
+              <a href="/demo" class="btn btn-secondary btn-sm" data-i18n="video.lbTry">Try in Demo</a>
             </div>
           </div>
         </div>
@@ -202,11 +203,11 @@ const CATEGORIES = [
       <!-- Deck CTA -->
       <div class="deck-cta">
         <div class="deck-cta__content">
-          <h2>Interactive slide deck</h2>
-          <p>42 pages covering every scenario, architecture detail, and benchmark — rendered as an interactive HTML presentation.</p>
+          <h2 data-i18n="video.deckTitle">Interactive slide deck</h2>
+          <p data-i18n="video.deckDesc">42 pages covering every scenario, architecture detail, and benchmark — rendered as an interactive HTML presentation.</p>
           <p class="deck-cta__links">
-            <a href="/demo" class="btn btn-primary">&#x25B6; Live demo</a>
-            <a href="/deck/index.html" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">Browse the deck</a>
+            <a href="/demo" class="btn btn-primary" data-i18n="video.deckLive">&#x25B6; Live demo</a>
+            <a href="/deck/index.html" class="btn btn-secondary" target="_blank" rel="noopener noreferrer" data-i18n="video.deckBrowse">Browse the deck</a>
           </p>
         </div>
       </div>
@@ -223,6 +224,7 @@ const CATEGORIES = [
       const speedBtns = document.querySelectorAll('.speed-btn');
       
       const nowTitle = document.querySelector('[data-now-title]');
+      const introLabel = nowTitle ? nowTitle.textContent : '';
       const nowTime = document.querySelector('[data-now-time]');
       const nowDemo = document.querySelector('[data-now-demo]');
 
@@ -355,7 +357,7 @@ const CATEGORIES = [
             if (nowTitle) nowTitle.textContent = activeSc.name;
             if (nowDemo) nowDemo.href = '/demo';
           } else {
-            if (nowTitle) nowTitle.textContent = 'Introduction';
+            if (nowTitle) nowTitle.textContent = introLabel;
           }
 
           // Highlight Active Card & Timeline

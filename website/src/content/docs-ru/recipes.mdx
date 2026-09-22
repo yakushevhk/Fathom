@@ -1,0 +1,1286 @@
+---
+title: "Рецепты — Fathom"
+description: "Практические рецепты Fathom для задач автономных воркеров, аутрича, памяти, интеграций, мониторинга, планирования и восстановления."
+sidebarId: "recipes"
+---
+  
+export const recipes = [
+  {
+    t: 'Запустите первый проход исследования',
+    d: `fathom run "Find CTOs at 50-200 person fintech startups in London, verify emails"`,
+    notes: 'Начните с сфокусированного запроса и одного региона/сектора. Находки ложатся в ./research-output/ со встроенными источниками.',
+  },
+  {
+    t: 'Перезапускайте и получайте оповещения об изменениях',
+    d: `fathom run "..." --repeat 3600`,
+    notes: 'Опциональный режим watch перезапускает каждые 3600 с. Сравнение и уведомления по email / Telegram / вебхуку требуют настройки соответствующих интеграций.'
+  },
+  {
+    t: 'Отправьте верифицированный список в CRM',
+    d: `fathom contacts push-crm`,
+    notes: 'Синхронизирует contacts.db с amoCRM / Bitrix24 / HubSpot при настроенных интеграциях. Проверяйте получившиеся записи CRM согласно политике сопоставления вашего провайдера.',
+  },
+  {
+    t: 'Восстановите упавшую кампанию',
+    d: `fathom resume`,
+    notes: 'Найдите прерванные сессии, сохраните завершённых субагентов, перезапустите ожидающих и завершите синтез.',
+  },
+];
+
+export const osintRecipes = [
+  {
+    t: 'Найти CTO в финтех-стартапах Лондона',
+    d: `fathom run "Find all CTOs and VP Engineering at fintech startups in London with 10-200 employees. Verify each email address. Include company size, funding stage, and tech stack." -o ./leads/london-fintech-ctos`,
+    notes: 'Агент будет искать по LinkedIn, Crunchbase и сайтам компаний. Верификация email выполняется через MX-проверку и SMTP-пробу. Результаты включают скоры уверенности для каждого контакта.',
+  },
+  {
+    t: 'Директора по маркетингу в SaaS-компаниях Берлина',
+    d: `fathom run "Search for marketing directors and CMOs at SaaS companies headquartered in Berlin. Enrich each person with LinkedIn profile URL, current role tenure, and recent posts."`,
+    notes: 'Флаги обогащения подтягивают дополнительные данные из каждого источника. Обогащение LinkedIn забирает заголовок, резюме и недавнюю активность без скрапинга — использует данные публичного API.',
+  },
+  {
+    t: 'Мониторить новости о конкуренте',
+    d: `fathom run "Monitor all news, press releases, blog posts, and social mentions about Acme Corp. Alert me on funding announcements, executive changes, product launches, and partnership deals." --repeat 1800`,
+    notes: 'Режим watch держит сессию живой и перепроверяет источники каждые 30 минут. Движок сравнения сопоставляет новые результаты с прошлыми запусками и оповещает только о действительно новых элементах.',
+  },
+  {
+    t: 'Собрать список поставщиков из бизнес-каталогов',
+    d: `fathom run "Build a comprehensive list of industrial valve suppliers in the Gulf Cooperation Council region. Scrape business directories, trade association member lists, and exhibition exhibitor pages. De-duplicate by company name and website."`,
+    notes: 'Скрапинг каталогов автоматически соблюдает robots.txt и лимиты частоты. Проверяйте повторяющиеся названия компаний и URL перед использованием списка.',
+  },
+  {
+    t: 'Найти ЛПР в недавно профинансированных компаниях',
+    d: `fathom run "Find decision-makers (CEO, CTO, VP Sales, VP Engineering) at B2B SaaS companies that raised Series A or B in the past 90 days in the US. Include funding amount, lead investor, and hiring signals." -o ./leads/fresh-funded`,
+    notes: 'Перекрёстно проверяет данные финансирования Crunchbase с титулами LinkedIn. Сигналы найма определяются по страницам вакансий и публикациям на досках. Сортировка по дате финансирования по убыванию.',
+  },
+  {
+    t: 'Поиск упоминаний технологии в соцсетях',
+    d: `fathom run "Search Twitter/X, Reddit, Hacker News, and dev.to for people actively discussing Apache Kafka in production. Extract author profiles, engagement metrics, and company affiliations where available."`,
+    notes: 'Социальный поиск покрывает только публичные посты. Агент отличает технических практиков от маркетологов, анализируя содержимое постов и паттерны вовлечённости. Результаты включают постоянную ссылку на каждый источник.',
+  },
+  {
+    t: 'Спарсить список спикеров конференции и обогатить',
+    d: `fathom run "Parse the speaker list from https://kccnceu2025.sched.com. For each speaker, find their current company, title, LinkedIn, Twitter, email (if public), and recent publications or talks." -o ./speakers/kccn-eu-2025`,
+    notes: 'Агент обходит страницу расписания, извлекает имена и био спикеров, затем обогащает каждого параллельно. Лимитирование частоты обрабатывается автоматически по доменам.',
+  },
+  {
+    t: 'Найти компании, использующие конкретный стек',
+    d: `fathom run "Find companies in the EU that are using Rust in production. Cross-reference job postings mentioning Rust, GitHub organizations with active Rust repos, conference talks, and blog posts about Rust adoption. Identify CTOs and principal engineers."`,
+    notes: 'Определение технологического стека использует несколько сигналов: объявления о вакансиях, активность GitHub, блог-посты, вакансии Stack Overflow и выступления на конференциях. Скоринг уверенности взвешивает каждый сигнал независимо.',
+  },
+];
+
+export const researchRecipes = [
+  {
+    t: 'Глубокое погружение: стек и команда компании',
+    d: `fathom run "Perform a deep-dive analysis of Stripe's technology stack. Map all technologies, frameworks, and infrastructure used. Identify key engineers, their backgrounds, and open-source contributions. Include blog posts about architecture decisions." -o ./analysis/stripe-tech`,
+    notes: 'Глубокий режим использует больше субагентов и более длинные окна контекста. Агент триангулирует из множества источников: GitHub, инженерные блоги, объявления о вакансиях, выступления на конференциях и активность Stack Overflow.',
+  },
+  {
+    t: 'Сравнить 5 конкурентов по 20 измерениям',
+    d: `fathom run "Compare Datadog, New Relic, Dynatrace, Splunk, and Grafana Labs across these 20 dimensions: pricing model, free tier limits, APM capabilities, log management, infrastructure monitoring, alerting, dashboarding, API quality, SDK languages, cloud integrations, on-prem options, compliance certs, market share, revenue growth, employee count, engineering team size, open-source contributions, community size, documentation quality, and enterprise features." -o ./competitive/comparison`,
+    notes: 'Агент структурирует каждое измерение как отдельную подзадачу для параллельного выполнения. Табличный вывод форматирует находки в структурированную сравнительную сетку с индикаторами уверенности.',
+  },
+  {
+    t: 'Отслеживать регуляторные изменения в отрасли',
+    d: `fathom run "Track all regulatory changes, proposed rules, enforcement actions, and guidance documents in the US fintech/payments space over the past 30 days. Cover CFPB, OCC, FDIC, FinCEN, SEC, and state-level regulators. Classify each by impact level and affected business models." --repeat 86400`,
+    notes: 'Регуляторный мониторинг требует надёжного отслеживания источников. Агент мониторит RSS-фиды .gov, API Federal Register и регуляторные новостные издания. Ежедневные перезапуски обнаруживают новые документы и классифицируют их.',
+  },
+  {
+    t: 'Анализ контрибьюторов GitHub-репозитория',
+    d: `fathom run "Analyze the top 50 contributors to the vercel/next.js GitHub repository. For each contributor, find their current employer, LinkedIn profile, Twitter account, personal website, other notable open-source projects, and conference speaking history." -o ./oss/nextjs-contributors`,
+    notes: 'Данные контрибьюторов берутся из GitHub API; обогащение — из публичных профилей. Агент обрабатывает лимиты GitHub автоматической ротацией токена, если установлен GITHUB_TOKEN.',
+  },
+  {
+    t: 'Исследовать полный публичный след человека',
+    d: `fathom run "Research the full public footprint of Satya Nadella. Compile: career history, education, published articles, conference keynotes, podcast appearances, patent filings, board memberships, philanthropic activities, and social media presence. Cross-reference across LinkedIn, Wikipedia, news archives, and SEC filings." -o ./people/satya-nadella`,
+    notes: 'Исследование человека синтезирует данные из 15+ категорий источников. Агент соблюдает границы приватности — включается только публично доступная информация. Источники цитируются для каждого утверждения.',
+  },
+  {
+    t: 'Исследовать цепочку поставок',
+    d: `fathom run "Map the supply chain of Tesla's battery production. Identify primary cell suppliers (CATL, Panasonic, BYD), their raw material suppliers (lithium, cobalt, nickel miners), processing facilities, and logistics partners. Flag any single-source dependencies or geopolitical risks." -o ./supply-chain/tesla-battery`,
+    notes: 'Картирование цепочки поставок использует документы SEC (раскрытия поставщиков 10-K), базы торговли, записи о перевозках и отраслевые отчёты. Агент строит иерархическое дерево поставщиков с аннотациями рисков.',
+  },
+  {
+    t: 'Мониторить вакансии на стратегические сигналы',
+    d: `fathom run "Monitor job postings at Databricks, Snowflake, and dbt Labs over the past 60 days. Classify each posting by department, seniority, and technology. Detect hiring surges, new team formations, and technology adoption signals. Compare hiring velocity across the three companies." --repeat 86400 -o ./signals/hiring-trends`,
+    notes: 'Анализ вакансий раскрывает стратегические намерения до публичных объявлений. Агент классифицирует роли по команде/функции и отслеживает изменения скорости. Всплеск найма в новой области часто предшествует запуску продукта.',
+  },
+];
+
+export const memoryRecipes = [
+  {
+    t: 'Построить базу знаний из сессий исследования',
+    d: `fathom memory distill --session latest`,
+    notes: 'Дистиллирует факты из последней сессии в настроенный граф памяти. Команды памяти требуют включённой подсистемы памяти в конфигурации.',
+  },
+  {
+    t: 'Искать в памяти факты о компании',
+    d: `fathom memory search "Stripe"`,
+    notes: 'Ищет в графе памяти все факты, связанные со Stripe. Результаты включают факты из каждой прошлой сессии, ранжированные по давности и уверенности. Полезно для быстрого вспоминания прошлых исследований.',
+  },
+  {
+    t: 'Дистиллировать факты сессии в постоянные знания',
+    d: `fathom memory distill --session latest`,
+    notes: 'Дистилляция продвигает факты области run в структурированные знания области agent. Дистиллированные знания переживают очистку сессии; противоречивые находки проверяйте явно.',
+  },
+  {
+    t: 'Запустить сборку мусора на устаревших воспоминаниях',
+    d: `fathom memory gc --ttl-days 90 --dry-run`,
+    notes: 'Режим dry-run показывает, что было бы заархивировано, без реального удаления. Обслуживание памяти опционально и следует настроенным порогам TTL и уверенности.'
+  },
+  {
+    t: 'Использовать память для картирования связей',
+    d: `fathom memory list`,
+    notes: 'Показывает все факты, сущности и связи в графе памяти. Используйте grep или пайп в другие инструменты для фильтрации.',
+  },
+  {
+    t: 'Создать дайджест темы и внедрить в следующую сессию',
+    d: `fathom memory distill --session latest`,
+    notes: 'Используйте семантический дайджест памяти в контексте воркера, чтобы запустить продолжающуюся сессию с предшествующими знаниями. Тематический поиск обрабатывается инструментами памяти.',
+  },
+];
+
+export const workerRecipes = [
+  {
+    t: 'Создать постоянного сотрудника',
+    d: `curl -X POST http://localhost:8080/api/v1/coworkers \\
+  -H "Content-Type: application/json" \\
+  -d '{"name":"market-watch","title":"Market watcher","role":"analyst","prompt":"Monitor the assigned market and summarize changes.","active":true}'`,
+    notes: 'Сотрудники хранят идентичность, роль и промпт в базе данных сервера. Связывайте каналы и расписания через аутентифицированный API.',
+  },
+  {
+    t: 'Запланировать задачу сотрудника',
+    d: `curl -X POST http://localhost:8080/api/v1/schedules \\
+  -H "Content-Type: application/json" \\
+  -d '{"coworker_id":"<coworker-id>","cron_expression":"0 9 * * 1-5","timezone":"UTC","query":"Review new market signals","enabled":true}'`,
+    notes: 'Расписания опциональны и требуют сотрудника, валидное cron-выражение, часовой пояс и запрос. Планировщик атомарно захватывает подошедшие строки; внешний/операторский планировщик должен запустить захваченную работу.'
+  },
+];
+
+export const automationRecipes = [
+  {
+    t: 'Ежедневный цикл мониторинга новых лидов',
+    d: `fathom run "Find new VP-level executives at Series B+ fintech companies in EMEA who joined in the past 24 hours." --repeat 86400`,
+    notes: 'Сессия переживает перезапуски. Настройте уведомления и проверяйте находки каждого запуска перед действиями по изменениям.',
+  },
+  {
+    t: 'Проверить настроенный канал уведомлений',
+    d: `curl -X POST http://localhost:8080/api/v1/notifications/test \\
+  -H "Content-Type: application/json" \\
+  -d '{"channel":"webhook"}'`,
+    notes: 'Эндпоинт принимает только символическое имя канала (webhook, email или telegram) и использует серверную конфигурацию [notifications]. Адресаты и учётные данные никогда не передаются вызывающим.',
+  },
+  {
+    t: 'Telegram-оповещения о новых верифицированных контактах',
+    d: `fathom config set notifications.telegram_bot_token "123456:ABC..." && fathom config set notifications.telegram_chat_id "-1001234567890" && fathom run "..."`,
+    notes: 'Установите токен бота Telegram и ID чата один раз, затем любая сессия может отправлять оповещения в канал. Оповещения включают имя контакта, компанию, email и ссылку на полный результат в дашборде.',
+  },
+  {
+    t: 'Запустить несколько задач исследования',
+    d: `fathom run "Task 1: Research company A" -o ./results/task1\nfathom run "Task 2: Research company B" -o ./results/task2`,
+    notes: 'Запускайте несколько задач исследования последовательно или параллельно.',
+  },
+  {
+    t: 'Планировать повторяющееся исследование через cron',
+    d: `# Стандартное cron-планирование\n# Запускает пакетный файл в 09:00 в будние дни\n# Папки вывода помечены датой. Комбинируйте с вебхук-уведомлениями для получения Slack/email-оповещений при завершении пакета.`,
+    notes: 'Стандартное cron-планирование. Запускает пакетный файл в 09:00 в будние дни. Папки вывода помечены датой. Комбинируйте с вебхук-уведомлениями для получения Slack/email-оповещений при завершении пакета.',
+  },
+];
+
+export const apiRecipes = [
+  {
+    t: 'Создать сессию через REST API и стримить SSE',
+    d: `curl -sS -X POST http://localhost:8080/api/v1/sessions \\\n  -H "Content-Type: application/json" \\\n  -d '{"query":"Find CTOs at fintech startups in London"}' \\\n  | jq -r '.id' \\\n  | xargs -I{} curl -N http://localhost:8080/api/v1/sessions/{}/events`,
+    notes: 'Первый вызов создаёт сессию и возвращает session_id. Второй открывает SSE-поток, выдающий прогресс в реальном времени, результаты субагентов и финальный синтез. Каждое событие — JSON-объект.',
+  },
+  {
+    t: 'Ответить на вопрос агента программно',
+    d: `curl -X POST http://localhost:8080/api/v1/sessions/{session_id}/answer \\\n  -H "Content-Type: application/json" \\\n  -d '{"request_id":"ctrl_001","text":"Yes, proceed with verification."}'`,
+    notes: 'Когда агент упирается в шлюз подтверждения или ему нужен ввод, он приостанавливается и экспонирует вопрос через SSE-поток. Отправьте POST-ответ для возобновления. Полезно для построения собственных UI или автоматизированных потоков решений.',
+  },
+  {
+    t: 'Подтверждать вызовы инструментов через API',
+    d: `curl -X POST http://localhost:8080/api/v1/sessions/{session_id}/approve \\\n  -H "Content-Type: application/json" \\\n  -d '{"request_id":"ctrl_042","approved":true}'`,
+    notes: 'Подтверждение инструментов — опциональный шлюз безопасности. При включении агенты приостанавливаются перед выполнением инструментов с побочными эффектами (отправка в CRM, отправка email и т.д.). API позволяет строить очереди подтверждений и подтверждать или отклонять ожидающие операции по request_id.',
+  },
+  {
+    t: 'Экспорт контактов в CSV через CLI',
+    d: `fathom contacts export --format csv --output ./contacts-export/`,
+    notes: 'Экспортирует всю базу контактов в CSV. Используйте --output для выбора целевой директории.',
+  },
+  {
+    t: 'Подключить MCP-сервер к Claude Desktop',
+    d: `# Добавьте в claude_desktop_config.json:\n# {\n#   "mcpServers": {\n#     "fathom": {\n#       "command": "fathom",\n#       "args": ["mcp-serve"]\n#     }\n#   }\n# }\nfathom mcp-serve`,
+    notes: 'MCP-сервер экспонирует все инструменты исследования в Claude Desktop через stdio. После настройки Claude может создавать сессии, искать контакты, управлять памятью и запускать задачи исследования напрямую.',
+  },
+  {
+    t: 'Построить собственный дашборд по health/metrics',
+    d: `curl http://localhost:8080/health && echo "---" && curl http://localhost:8080/metrics`,
+    notes: '/health возвращает статус компонентов (база данных, агенты, память). /metrics возвращает совместимые с Prometheus метрики: активные сессии, найденные контакты, использование памяти, счётчики субагентов и гистограммы задержки API.',
+  },
+];
+
+export const advancedRecipes = [
+  {
+    t: 'Переключение между профилями hunter/analyst/validator',
+    d: `fathom run "..." --profile hunter\nfathom run "..." --profile analyst\nfathom run "..." --profile validator`,
+    notes: 'Профили — именованные пресеты, задающие модель, инструменты, температуру и политики подтверждения. Режим hunter максимизирует покрытие. Режим analyst приоритизирует глубину и синтез. Режим validator фокусируется на фактчекинге и верификации email.',
+  },
+  {
+    t: 'Ролевая маршрутизация моделей',
+    d: `fathom config set agent.role_models.writer "openai/gpt-4o"\nfathom config set agent.role_models.researcher "deepseek/deepseek-chat"\nfathom config set agent.role_models.verifier "openai/gpt-4o-mini"`,
+    notes: 'Направляйте разные роли агентов на разные модели. Writers используют GPT-4o для отточенного вывода. Researchers используют DeepSeek для экономичного исследования длинного контекста. Verifiers используют GPT-4o-mini для быстрых проверок.',
+  },
+  {
+    t: 'Настроить шлюзы подтверждения для чувствительных операций',
+    d: `fathom config set agent.approval_tools '["crm_push","email_send","webhook_post"]'\nfathom run "..."`,
+    notes: 'Шлюзы подтверждения приостанавливают агента перед выполнением чувствительных инструментов.',
+  },
+  {
+    t: 'Настроить многопроцессный режим для параллельных агентов',
+    d: `fathom config set agent.max_agents 8\nfathom run "Research 50 companies across 10 sectors..."`,
+    notes: 'Многопроцессный режим запускает независимые процессы агентов, общающиеся через общую базу контактов и граф памяти.',
+  },
+  {
+    t: 'Настроить окно контекста и пороги компактификации',
+    d: `fathom config set context.context_window 128000\nfathom config set context.compact_threshold 0.85`,
+    notes: 'Когда использование контекста достигает 85% от максимума, включается движок компактификации.',
+  },
+  {
+    t: 'Настроить хуки для собственной пред/пост-обработки',
+    d: `# .fathom/hooks.yaml\n# hooks:\n#   pre-session:\n#     - command: ./scripts/enrich-from-db.sh\n#       args: ["{{session_id}}"]\n#   post-session:\n#     - command: ./scripts/push-to-warehouse.sh\n#       args: ["{{session_id}}", "{{output_dir}}"]`,
+    notes: 'Хуки выполняют shell-команды в ключевых точках жизненного цикла. Пред-сессионные хуки могут внедрять данные в контекст агента. Пост-сессионные хуки могут отправлять результаты в хранилища данных, запускать уведомления или обновлять внешние системы.',
+  },
+];
+
+export const troubleshootingRecipes = [
+  {
+    t: 'Возобновить упавшую сессию',
+    d: `fathom resume  # picks up the most recent interrupted session`,
+    notes: 'Команда resume инспектирует журнал сессии, определяет, какие субагенты завершены, и перезапускает только ожидающих. Финальный синтез перезапускается автоматически. Данные не теряются.',
+  },
+  {
+    t: 'Отладить зависание агента через stall-обнаружение',
+    d: `RUST_LOG=debug fathom run "..."`,
+    notes: 'Отладочное логирование показывает каждый вызов инструмента, использование контекста и точку решения. Логи смотрите в ~/.fathom/logs/.',
+  },
+  {
+    t: 'Исправить повреждение базы памяти',
+    d: `fathom memory distill --session latest`,
+    notes: 'Дистиллируйте факты из сохранённой сессии в настроенный граф памяти; сначала включите память в конфигурации.'
+  },
+  {
+    t: 'Обработать лимитирование от поисковых бэкендов',
+    d: `fathom config set search.backend "hybrid"`,
+    notes: 'Лимиты частоты применяются по доменам. Гибридный бэкенд распределяет запросы по настроенным провайдерам, и агент переключается на альтернативные источники при стабильном лимитировании одного.',
+  },
+  {
+    t: 'Восстановиться после переполнения окна контекста',
+    d: `fathom config set context.compact_threshold 0.7`,
+    notes: 'Когда сессия превышает окно контекста, compact-and-retry сжимает историю и возобновляет. Более низкий порог компактирует раньше и оставляет больше запаса.',
+  },
+  {
+    t: 'Исправить застрявшую сессию, которая не завершается',
+    d: `fathom sessions list\nfathom resume`,
+    notes: 'Инспектируйте сохранённые сессии, затем возобновите самую недавнюю прерванную. Resume продолжает с последней контрольной точки и пропускает уже завершённых субагентов.',
+  },
+  {
+    t: 'Очистить повреждённую базу контактов',
+    d: `cp contacts.db contacts.db.bak`,
+    notes: 'Всегда делайте резервную копию перед починкой.',
+  },
+  {
+    t: 'Отладить ошибки аутентификации',
+    d: `fathom config show`,
+    notes: 'Показывает все настроенные API-ключи и токены (значения замаскированы).',
+  },
+  {
+    t: 'Исследовать высокое использование памяти',
+    d: `fathom memory stats\nfathom memory gc --ttl-days 30`,
+    notes: 'Memory stats отчитывается о счётчиках хранилища. GC архивирует устаревшие записи согласно настроенному TTL; обе команды требуют включённой памяти.'
+  },
+];
+
+export const exportRecipes = [
+  {
+    t: 'Экспорт контактов в формат HubSpot CSV',
+    d: `fathom contacts export --format csv --output ./hubspot-import/`,
+    notes: 'Экспортирует контакты в формат CSV.',
+  },
+  {
+    t: 'Сгенерировать Markdown-отчёт исследования',
+    d: `fathom run "Analyze the European EV charging market: size, growth, key vendors" -o ./report/`,
+    notes: 'Компилирует находки сессии в структурированный Markdown-отчёт с исполнительным резюме, находками, источниками и скорами уверенности.',
+  },
+  {
+    t: 'Экспорт в JSON для программной обработки',
+    d: `fathom config set export.format json\nfathom run "Your task" -o ./results/`,
+    notes: 'Экспорт JSON включает все поля, вложенные объекты для данных обогащения и массивы источников.',
+  },
+  {
+    t: 'Создать PDF-отчёт из результатов сессии',
+    d: `fathom config set export.format pdf\nfathom run "Your task" -o ./results/`,
+    notes: 'Генерация PDF отрисовывает ту же структуру отчёта; требует pandoc на хосте.',
+  },
+  {
+    t: 'Экспорт контактов как таблица',
+    d: `fathom contacts export --format xlsx -o ./exports/`,
+    notes: 'xlsx открывается напрямую в Google Sheets и Excel; csv работает везде.',
+  },
+  {
+    t: 'Массовый экспорт контактов для хранилища данных',
+    d: `fathom config set export.format json\nfathom contacts export --format json -o ./warehouse/`,
+    notes: 'Экспорт JSON включает каждое сохранённое поле для загрузки в ваше хранилище.',
+  },
+  {
+    t: 'Сгенерировать PDF конкурентного ландшафта',
+    d: `fathom config set export.format pdf\nfathom run "Compare Datadog, New Relic and Dynatrace side by side" -o ./landscape/`,
+    notes: 'PDF-отчёт отрисовывает бок о бок сравнение исследованных конкурентов.',
+  },
+  {
+    t: 'Экспорт фактов памяти для графовых инструментов',
+    d: `fathom memory list --scope all --status active -n 500 > ./memory-export.txt`,
+    notes: 'Текстовый экспорт активных фактов; адаптируйте строки под выбранный графовый инструмент.',
+  },
+];
+
+export const workflowRecipes = [
+  {
+    t: 'Пайплайн обогащения лидов (3 шага)',
+    d: `# Step 1: Find raw leads\nfathom run "Find marketing directors at Series A+ SaaS companies in DACH region" -o ./pipeline/raw\n\n# Step 2: Enrich with LinkedIn and verify emails\nfathom run "Enrich the contacts in ./pipeline/raw with LinkedIn profiles and verify all email addresses" -o ./pipeline/enriched\n\n# Step 3: Score and prioritize\nfathom run "Score the enriched contacts in ./pipeline/enriched by company size, funding stage, and role seniority. Output top 50 for outreach." -o ./pipeline/ready`,
+    notes: 'Этот трёхшаговый пайплайн разделяет обнаружение, обогащение и скоринг. Каждый шаг можно перезапускать независимо. Промежуточные выводы служат контрольными точками для отладки и проверки качества.',
+  },
+  {
+    t: 'Еженедельный дайджест разведки конкурентов',
+    d: `# Monday morning: gather all signals\nfathom run "Compile a weekly intelligence digest for competitors: Datadog, New Relic, Dynatrace. Include news, blog posts, job postings, social media activity, and any pricing changes." -o ./intel/weekly-\$(date +%Y%m%d)`,
+    notes: 'Запускайте это как еженедельную cron-задачу. Вывод каждой недели помечается датой и хранится отдельно.',
+  },
+  {
+    t: 'Событийное продолжающееся исследование',
+    d: `# When you get a new lead from a webhook:\nfathom run "For the company {company_name} that just signed up, find their CTO, VP Engineering, and Head of Product. Research their tech stack, recent hires, and any public statements about {your_product_category}." -o ./follow-up/{company_slug}`,
+    notes: 'Спроектирован для запуска вебхуком CRM или отправкой формы. Агент выполняет целевое исследование компании входящего лида, давая вашей команде продаж контекст перед первым звонком.',
+  },
+  {
+    t: 'Рабочий процесс подготовки к конференции',
+    d: `# 2 weeks before: research attendees\nfathom run "Parse the attendee/speaker list from KubeCon EU 2025. Find LinkedIn profiles, current roles, companies, and recent technical blog posts for each person." -o ./events/kccn-eu-2025/attendees\n\n# 1 week before: prioritize\nfathom run "From the attendees in ./events/kccn-eu-2025/attendees, identify the top 30 people to meet based on: company relevance to our product, role seniority, and mutual connections." -o ./events/kccn-eu-2025/priority`,
+    notes: 'Двухфазный процесс: сначала широкое исследование, затем сфокусированная приоритизация. Список приоритетов включает темы для разговора, выведенные из недавней активности каждого человека, делая беседы более продуктивными.',
+  },
+  {
+    t: 'Пайплайн обнаружения сигналов найма',
+    d: `# Daily: scrape new job postings\nfathom run "Scrape job postings from Datadog, Snowflake, Databricks, Confluent, and Grafana Labs career pages posted in the last 24 hours. Classify by department, seniority, and technology." --repeat 86400 -o ./hiring/daily\n\n# Weekly: trend analysis\nfathom run "Analyze the job postings in ./hiring/daily from the past 7 days. Identify hiring surges by department, new technology adoptions, and geographic expansion patterns." -o ./hiring/weekly-trends`,
+    notes: 'Ежедневный скрапинг питает базу вакансий. Еженедельный анализ обнаруживает тренды, сигнализирующие о стратегических сдвигах: всплеск найма ML предполагает AI-продукт, новые гео-офисы предполагают экспансию.',
+  },
+  {
+    t: 'Мониторинг рисков цепочки поставок',
+    d: `# Monthly: map the supply chain\nfathom run "Map the full supply chain for {product}. Identify all tier-1 and tier-2 suppliers, their geographic locations, financial health, and any recent news about disruptions, sanctions, or regulatory actions." -o ./supply-chain/{product}/monthly-$(date +%Y%m)\n\n# Compare with prior month\nfathom run "Compare the supply chain map in ./supply-chain/{product}/monthly-$(date +%Y%m) with the previous month. Highlight any new risks, removed suppliers, or geographic shifts."`,
+    notes: 'Ежемесячная периодичность балансирует свежесть со стоимостью. Шаг сравнения использует движок diff для выявления только изменений, делая отчёт о рисках действенным, а не повторяющимся.',
+  },
+  {
+    t: 'Рабочий процесс анализа контентных пробелов',
+    d: `fathom run "Analyze the top 10 blog posts, whitepapers, and webinars published by our competitors (list them) in the past quarter. For each piece of content, extract the topic, target persona, format, and estimated engagement. Identify content gaps where we have no competing content." -o ./content/gap-analysis`,
+    notes: 'Агент посещает контентный хаб каждого конкурента, классифицирует контент по теме и персоне и перекрёстно проверяет по вашему каталогу контента (если предоставлен). Отчёт о пробелах выделяет возможности, ранжированные по оценочному потенциалу трафика.',
+  },
+  {
+    t: 'Исследование инвесторов для подготовки к раунду',
+    d: `fathom run "Research the top 50 VCs that invest in B2B SaaS Series A in Europe. For each fund, find: investment thesis, portfolio companies in our space, key partners, check size, and recent deals. Identify warm introduction paths through our network." -o ./fundraising/vc-list`,
+    notes: 'Исследование инвесторов комбинирует данные Crunchbase с профилями партнёров в LinkedIn и анализом портфеля. Обнаружение тёплых путей перекрёстно проверяет LinkedIn-связи вашей команды по сетям партнёров VC.',
+  },
+];
+
+export const deploymentRecipes = [
+  {
+    t: 'Запустить HTTP-сервер с Docker',
+    d: `docker run -d --name fathom \\\n  -v ./data:/data \\\n  -v ~/.fathom:/home/researcher/.fathom \\\n  -e FATHOM_API_KEYS=$FATHOM_API_KEYS \\\n  -p 8080:8080 \\\n  fathom:latest serve --port 8080`,
+    notes: 'Монтируйте постоянное состояние и экспонируйте аутентифицированную HTTP плоскость управления. Настройте провайдера LLM в смонтированном файле конфигурации.',
+  },
+  {
+    t: 'Развёртывание на VPS с systemd',
+    d: `# Create /etc/systemd/system/fathom.service from your deployment settings\n# ExecStart=/usr/local/bin/fathom serve --port 8080\n# Restart=on-failure\n# Set FATHOM_API_KEYS in the unit environment\nsudo systemctl daemon-reload\nsudo systemctl enable --now fathom`,
+    notes: 'Репозиторий не поставляет unit-файл. Создайте его для вашего хоста, затем используйте systemd для запуска HTTP-сервера при загрузке и перезапуска после сбоев.',
+  },
+  {
+    t: 'Запуск за обратным прокси Nginx',
+    d: `# /etc/nginx/sites-available/fathom\n# server {\n#     listen 443 ssl http2;\n#     server_name research.example.com;\n#     ssl_certificate /etc/letsencrypt/live/research.example.com/fullchain.pem;\n#     ssl_certificate_key /etc/letsencrypt/live/research.example.com/privkey.pem;\n#     location / {\n#         proxy_pass http://127.0.0.1:8080;\n#         proxy_set_header Host $host;\n#         proxy_set_header X-Real-IP $remote_addr;\n#         proxy_buffering off;\n#         proxy_cache off;\n#     }\n# }`,
+    notes: 'Nginx обрабатывает TLS-терминацию и проксирует к локальному серверу Fathom. Прокси-буферизация должна быть отключена для работы SSE-потоков. Используйте certbot для бесплатных сертификатов Let\'s Encrypt.',
+  },
+  {
+    t: 'Настроить мониторинг проверки здоровья',
+    d: `# Add to your monitoring system (UptimeRobot, Healthchecks.io, etc.)\ncurl -f http://localhost:8080/health || exit 1\n\n# Prometheus scrape config\n# scrape_configs:\n#   - job_name: fathom\n#     static_configs:\n#       - targets: ['localhost:8080']\n#     metrics_path: /metrics`,
+    notes: 'Эндпоинт /health возвращает HTTP 200, когда все компоненты здоровы, 503 при деградации. Эндпоинт /metrics экспонирует совместимые с Prometheus счётчики и гистограммы. Настройте алерты на session_failure_total и agent_stall_total.',
+  },
+  {
+    t: 'Резервное копирование и восстановление данных',
+    d: `cp -r ~/.fathom ~/.fathom.bak\n# restore:\ncp -r ~/.fathom.bak ~/.fathom`,
+    notes: 'Всегда делайте резервную копию директории данных перед обновлениями или деструктивными командами вроде memory nuke.',
+  },
+  {
+    t: 'Запуск в сессии tmux для постоянства',
+    d: `tmux new-session -d -s research "fathom mcp-serve"\ntmux attach -t research\n\n# Or run a long research task\ntmux new-session -d -s research "fathom run 'Deep analysis of...' -o ./analysis"\ntmux ls`,
+    notes: 'tmux держит сессию живой при обрыве SSH-соединения. Переподключайтесь через tmux attach -t research. Полезно для долго работающих сессий режима watch или пакетных задач, занимающих часы.',
+  },
+  {
+    t: 'Масштабирование несколькими инстансами на разных портах',
+    d: `fathom mcp-serve &`,
+    notes: 'Используйте upstream Nginx для балансировки нагрузки.',
+  },
+  {
+    t: 'Настройка для пайплайна CI/CD',
+    d: `# .github/workflows/research.yml\n# name: Weekly Research\n# on:\n#   schedule:\n#     - cron: '0 9 * * 1'\n# jobs:\n#   research:\n#     runs-on: ubuntu-latest\n#     steps:\n#       - uses: actions/checkout@v4\n#       - name: Build Fathom\n#         run: cargo build --release\n#       - name: Run research\n#         env:\n#           FATHOM_API_KEYS: \${{ secrets.FATHOM_API_KEYS }}\n#           OPENAI_API_KEY: \${{ secrets.OPENAI_API_KEY }}\n#         run: fathom run "weekly tasks" -o ./results/\n#       - name: Upload results\n#         uses: actions/upload-artifact@v4\n#         with:\n#           name: research-results\n#           path: ./results/`,
+    notes: 'GitHub Actions запускает пакет по еженедельному расписанию. Секреты хранят API-ключи безопасно. Результаты загружаются как артефакты для скачивания. Добавьте шаг уведомления (вебхук Slack) для оповещения команды о завершении пакета.',
+  },
+];
+
+<div class="doc-header">
+    <span class="doc-badge">Рецепты</span>
+    <h1>Практические рецепты</h1>
+    <p class="doc-lead">
+      Рабочие команды для реальных задач автономных воркеров — копируйте, вставляйте, адаптируйте. Каждый рецепт начинается с типичного рабочего процесса
+      и показывает точную команду плюс чего ожидать.
+    </p>
+  </div>
+
+  <nav class="recipe-toc">
+    <h2>На этой странице</h2>
+    <ul>
+      <li><a href="#quick-start">Рецепты быстрого старта</a></li>
+      <li><a href="#osint">OSINT и лидогенерация</a></li>
+      <li><a href="#research">Исследование и анализ</a></li>
+      <li><a href="#memory">Память и знания</a></li>
+      <li><a href="#workers">Постоянные сотрудники и расписания</a></li>
+      <li><a href="#automation">Автоматизация и режим watch</a></li>
+      <li><a href="#exports">Экспорт и отчётность</a></li>
+      <li><a href="#workflows">Многошаговые процессы</a></li>
+      <li><a href="#api">API и интеграции</a></li>
+      <li><a href="#advanced">Продвинутая настройка</a></li>
+      <li><a href="#troubleshooting">Устранение неполадок</a></li>
+      <li><a href="#deployment">Docker и развёртывание</a></li>
+      <li><a href="#browsing">Запуск инструментов</a></li>
+      <li><a href="#env-vars">Переменные окружения</a></li>
+    </ul>
+  </nav>
+
+  <section id="quick-start">
+    <div class="section-header">
+      <span class="section-badge">Начало работы</span>
+      <h2>Рецепты быстрого старта</h2>
+      <p>Четыре команды для продуктивной работы менее чем за пять минут. Запустите поиск, наблюдайте за изменениями, отправьте в CRM и восстановитесь после сбоев.</p>
+    </div>
+    <div class="recipe-grid">
+      {recipes.map((r) => (
+        <div class="recipe-card">
+          <h3>{r.t}</h3>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span></div>
+            <pre><code set:html={r.d} /></pre>
+          </div>
+          <p class="recipe-notes">{r.notes}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section id="osint">
+    <div class="section-header">
+      <span class="section-badge">Лидогенерация</span>
+      <h2>Рецепты OSINT и лидогенерации</h2>
+      <p>Находите, обогащайте и верифицируйте контакты масштабно. Эти рецепты покрывают полный пайплайн от сырого поиска до верифицированных, обогащённых списков лидов, готовых к аутричу.</p>
+    </div>
+    <div class="recipe-grid">
+      {osintRecipes.map((r) => (
+        <div class="recipe-card">
+          <h3>{r.t}</h3>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span></div>
+            <pre><code set:html={r.d} /></pre>
+          </div>
+          <p class="recipe-notes">{r.notes}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section id="research">
+    <div class="section-header">
+      <span class="section-badge">Глубокое исследование</span>
+      <h2>Рецепты исследования и анализа</h2>
+      <p>Выйдите за рамки лидогенерации. Эти рецепты выполняют глубокие расследования компаний, людей, цепочек поставок и рынков — со структурированными, цитируемыми выводами.</p>
+    </div>
+    <div class="recipe-grid">
+      {researchRecipes.map((r) => (
+        <div class="recipe-card">
+          <h3>{r.t}</h3>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span></div>
+            <pre><code set:html={r.d} /></pre>
+          </div>
+          <p class="recipe-notes">{r.notes}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section id="memory">
+    <div class="section-header">
+      <span class="section-badge">Управление знаниями</span>
+      <h2>Рецепты памяти и знаний</h2>
+      <p>Стройте постоянные знания между сессиями. Граф памяти хранит сущности, факты и связи, которые компаундятся со временем — делая каждую новую сессию умнее предыдущей.</p>
+    </div>
+    <div class="recipe-grid">
+      {memoryRecipes.map((r) => (
+        <div class="recipe-card">
+          <h3>{r.t}</h3>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span></div>
+            <pre><code set:html={r.d} /></pre>
+          </div>
+          <p class="recipe-notes">{r.notes}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section id="workers">
+    <div class="section-header">
+      <span class="section-badge">Автономные воркеры</span>
+      <h2>Постоянные сотрудники и расписания</h2>
+      <p>Используйте аутентифицированную плоскость управления для создания долговечных профилей воркеров, подключения каналов и планирования повторяющихся операций. Эти маршруты обеспечены текущим API сервера.</p>
+    </div>
+    <div class="recipe-grid">
+      {workerRecipes.map((r) => (
+        <div class="recipe-card">
+          <h3>{r.t}</h3>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span></div>
+            <pre><code set:html={r.d} /></pre>
+          </div>
+          <p class="recipe-notes">{r.notes}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section id="automation">
+    <div class="section-header">
+      <span class="section-badge">Автоматизация</span>
+      <h2>Рецепты автоматизации и режима watch</h2>
+      <p>Настройте постоянный мониторинг и пакетные процессы. Режим watch перезапускает сессии по расписанию, сравнивает результаты и отправляет оповещения только при появлении чего-то нового.</p>
+    </div>
+    <div class="recipe-grid">
+      {automationRecipes.map((r) => (
+        <div class="recipe-card">
+          <h3>{r.t}</h3>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span></div>
+            <pre><code set:html={r.d} /></pre>
+          </div>
+          <p class="recipe-notes">{r.notes}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section id="api">
+    <div class="section-header">
+      <span class="section-badge">Интеграции</span>
+      <h2>Рецепты API и интеграций</h2>
+      <p>Интегрируйте Fathom в ваши существующие процессы. Создавайте сессии через REST, стримите результаты через SSE, подтверждайте операции и подключайте к внешним инструментам.</p>
+    </div>
+    <div class="recipe-grid">
+      {apiRecipes.map((r) => (
+        <div class="recipe-card">
+          <h3>{r.t}</h3>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span></div>
+            <pre><code set:html={r.d} /></pre>
+          </div>
+          <p class="recipe-notes">{r.notes}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section id="advanced">
+    <div class="section-header">
+      <span class="section-badge">Продвинутые пользователи</span>
+      <h2>Рецепты продвинутой настройки</h2>
+      <p>Точная настройка системы агентов под ваш точный процесс. Переключайте профили, маршрутизируйте модели по ролям, добавляйте шлюзы подтверждения, запускайте параллельных агентов и подключайтесь к жизненному циклу.</p>
+    </div>
+    <div class="recipe-grid">
+      {advancedRecipes.map((r) => (
+        <div class="recipe-card">
+          <h3>{r.t}</h3>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span></div>
+            <pre><code set:html={r.d} /></pre>
+          </div>
+          <p class="recipe-notes">{r.notes}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section id="troubleshooting">
+    <div class="section-header">
+      <span class="section-badge">Операции</span>
+      <h2>Рецепты устранения неполадок</h2>
+      <p>Когда что-то идёт не так. Эти рецепты покрывают восстановление сессий, отладку зависаний, починку памяти, обработку лимитов частоты и восстановление после переполнения контекста.</p>
+    </div>
+    <div class="recipe-grid">
+      {troubleshootingRecipes.map((r) => (
+        <div class="recipe-card">
+          <h3>{r.t}</h3>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span></div>
+            <pre><code set:html={r.d} /></pre>
+          </div>
+          <p class="recipe-notes">{r.notes}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section id="exports">
+    <div class="section-header">
+      <span class="section-badge">Данные и отчёты</span>
+      <h2>Рецепты экспорта и отчётности</h2>
+      <p>Превратите результаты исследования в действенные форматы. Экспортируйте контакты в CRM, генерируйте PDF-отчёты, передавайте данные в хранилища и создавайте визуализации из графа памяти.</p>
+    </div>
+    <div class="recipe-grid">
+      {exportRecipes.map((r) => (
+        <div class="recipe-card">
+          <h3>{r.t}</h3>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span></div>
+            <pre><code set:html={r.d} /></pre>
+          </div>
+          <p class="recipe-notes">{r.notes}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section id="workflows">
+    <div class="section-header">
+      <span class="section-badge">Плейбуки</span>
+      <h2>Рецепты многошаговых процессов</h2>
+      <p>Полные плейбуки, связывающие несколько сессий в сквозные процессы. Каждый рецепт — последовательность команд, спроектированная для совместного запуска или планирования как пайплайн.</p>
+    </div>
+    <div class="workflow-list">
+      {workflowRecipes.map((r) => (
+        <div class="workflow-card">
+          <h3>{r.t}</h3>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span></div>
+            <pre><code set:html={r.d} /></pre>
+          </div>
+          <p class="recipe-notes">{r.notes}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section id="browsing">
+    <div class="section-header">
+      <span class="section-badge">Настройка</span>
+      <h2>Запустите инструменты</h2>
+      <p>Три способа взаимодействия с Fathom: терминальный UI для практической работы, HTTP-сервер для дашбордов и API, и MCP для интеграции инструментов AI-нативно.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <h3>Терминальный UI</h3>
+        <p><code>fathom tui</code> — наблюдайте флот вживую, подтверждайте побочные эффекты, инспектируйте задачи и память.</p>
+      </div>
+      <div class="step">
+        <h3>HTTP + дашборд</h3>
+        <p><code>fathom serve --port 8080</code> — запустите Axum HTTP REST/SSE API и встроенный дашборд на порту 8080.</p>
+      </div>
+      <div class="step">
+        <h3>MCP для Claude/ZCode</h3>
+        <p><code>fathom mcp-serve</code> — экспонируйте 63 всегда зарегистрированных инструмента, плюс до 5 браузерных инструментов при доступном CDP и до 6 компьютерных инструментов при настроенном COMPUTER_URL любому MCP-клиенту через stdio.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="recipe-index">
+    <div class="section-header">
+      <h2>Полный индекс рецептов</h2>
+      <p>Все рецепты одним взглядом. Нажмите ссылку раздела для перехода к полному рецепту с командой и объяснением.</p>
+    </div>
+    <div class="index-grid">
+      <div class="index-card">
+        <h3>Быстрый старт (4)</h3>
+        <ul>
+          <li><a href="#quick-start">Запустите первый проход исследования</a></li>
+          <li><a href="#quick-start">Перезапускайте и оповещайте об изменениях</a></li>
+          <li><a href="#quick-start">Отправьте верифицированный список в CRM</a></li>
+          <li><a href="#quick-start">Восстановите упавшую кампанию</a></li>
+        </ul>
+      </div>
+      <div class="index-card">
+        <h3>OSINT и лидогенерация (8)</h3>
+        <ul>
+          <li><a href="#osint">CTO в финтех-стартапах Лондона</a></li>
+          <li><a href="#osint">Директора по маркетингу в SaaS Берлина</a></li>
+          <li><a href="#osint">Мониторинг новостей о конкуренте</a></li>
+          <li><a href="#osint">Список поставщиков из каталогов</a></li>
+          <li><a href="#osint">ЛПР в профинансированных компаниях</a></li>
+          <li><a href="#osint">Упоминания технологии в соцсетях</a></li>
+          <li><a href="#osint">Обогащение спикеров конференции</a></li>
+          <li><a href="#osint">Компании по технологическому стеку</a></li>
+        </ul>
+      </div>
+      <div class="index-card">
+        <h3>Исследование и анализ (7)</h3>
+        <ul>
+          <li><a href="#research">Глубокое погружение в стек компании</a></li>
+          <li><a href="#research">Сравнение 5 конкурентов</a></li>
+          <li><a href="#research">Отслеживание регуляторных изменений</a></li>
+          <li><a href="#research">Анализ контрибьюторов GitHub</a></li>
+          <li><a href="#research">Полный публичный след человека</a></li>
+          <li><a href="#research">Картирование цепочки поставок</a></li>
+          <li><a href="#research">Стратегические сигналы вакансий</a></li>
+        </ul>
+      </div>
+      <div class="index-card">
+        <h3>Память и знания (6)</h3>
+        <ul>
+          <li><a href="#memory">Построить базу знаний</a></li>
+          <li><a href="#memory">Поиск фактов о компании в памяти</a></li>
+          <li><a href="#memory">Дистилляция сессии в знания</a></li>
+          <li><a href="#memory">Сборка мусора устаревших воспоминаний</a></li>
+          <li><a href="#memory">Связи графа памяти</a></li>
+          <li><a href="#memory">Внедрение дайджеста темы</a></li>
+        </ul>
+      </div>
+      <div class="index-card">
+        <h3>Автоматизация и watch (5)</h3>
+        <ul>
+          <li><a href="#automation">Ежедневный цикл мониторинга</a></li>
+          <li><a href="#automation">Вебхук-уведомления</a></li>
+          <li><a href="#automation">Telegram-оповещения</a></li>
+          <li><a href="#automation">Пакетное исследование из файла</a></li>
+          <li><a href="#automation">Cron-планирование</a></li>
+        </ul>
+      </div>
+      <div class="index-card">
+        <h3>API и интеграции (6)</h3>
+        <ul>
+          <li><a href="#api">REST API + SSE-стриминг</a></li>
+          <li><a href="#api">Ответы на вопросы агента</a></li>
+          <li><a href="#api">Подтверждение вызовов инструментов</a></li>
+          <li><a href="#api">Экспорт контактов в CSV</a></li>
+          <li><a href="#api">MCP-сервер для Claude Desktop</a></li>
+          <li><a href="#api">Дашборд health и metrics</a></li>
+        </ul>
+      </div>
+      <div class="index-card">
+        <h3>Продвинутая настройка (6)</h3>
+        <ul>
+          <li><a href="#advanced">Профили hunter/analyst/validator</a></li>
+          <li><a href="#advanced">Ролевая маршрутизация моделей</a></li>
+          <li><a href="#advanced">Шлюзы подтверждения</a></li>
+          <li><a href="#advanced">Многопроцессные параллельные агенты</a></li>
+          <li><a href="#advanced">Настройка окна контекста</a></li>
+          <li><a href="#advanced">Хуки жизненного цикла</a></li>
+        </ul>
+      </div>
+      <div class="index-card">
+        <h3>Устранение неполадок (9)</h3>
+        <ul>
+          <li><a href="#troubleshooting">Возобновить упавшую сессию</a></li>
+          <li><a href="#troubleshooting">Отладить зависание агента</a></li>
+          <li><a href="#troubleshooting">Починить повреждение памяти</a></li>
+          <li><a href="#troubleshooting">Обработать лимитирование</a></li>
+          <li><a href="#troubleshooting">Переполнение окна контекста</a></li>
+          <li><a href="#troubleshooting">Исправить застрявшую сессию</a></li>
+          <li><a href="#troubleshooting">Очистить повреждённую базу контактов</a></li>
+          <li><a href="#troubleshooting">Отладить ошибки аутентификации</a></li>
+          <li><a href="#troubleshooting">Исследовать высокое использование памяти</a></li>
+        </ul>
+      </div>
+      <div class="index-card">
+        <h3>Экспорт и отчётность (8)</h3>
+        <ul>
+          <li><a href="#exports">Экспорт HubSpot CSV</a></li>
+          <li><a href="#exports">Markdown-отчёт исследования</a></li>
+          <li><a href="#exports">Программный экспорт JSON</a></li>
+          <li><a href="#exports">Генерация PDF-отчёта</a></li>
+          <li><a href="#exports">Экспорт Google Sheets</a></li>
+          <li><a href="#exports">Массовый экспорт в хранилище</a></li>
+          <li><a href="#exports">PDF конкурентного ландшафта</a></li>
+          <li><a href="#exports">Экспорт фактов памяти</a></li>
+        </ul>
+      </div>
+      <div class="index-card">
+        <h3>Многошаговые процессы (8)</h3>
+        <ul>
+          <li><a href="#workflows">Пайплайн обогащения лидов</a></li>
+          <li><a href="#workflows">Еженедельный дайджест конкурентов</a></li>
+          <li><a href="#workflows">Событийное продолжение</a></li>
+          <li><a href="#workflows">Подготовка к конференции</a></li>
+          <li><a href="#workflows">Обнаружение сигналов найма</a></li>
+          <li><a href="#workflows">Мониторинг рисков цепочки поставок</a></li>
+          <li><a href="#workflows">Анализ контентных пробелов</a></li>
+          <li><a href="#workflows">Исследование инвесторов для раунда</a></li>
+        </ul>
+      </div>
+      <div class="index-card">
+        <h3>Docker и развёртывание (8)</h3>
+        <ul>
+          <li><a href="#deployment">Запуск с Docker</a></li>
+          <li><a href="#deployment">Развёртывание на VPS с systemd</a></li>
+          <li><a href="#deployment">Обратный прокси Nginx</a></li>
+          <li><a href="#deployment">Мониторинг проверки здоровья</a></li>
+          <li><a href="#deployment">Резервное копирование и восстановление</a></li>
+          <li><a href="#deployment">Постоянство сессии tmux</a></li>
+          <li><a href="#deployment">Масштабирование несколькими инстансами</a></li>
+          <li><a href="#deployment">Интеграция пайплайна CI/CD</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="common-flags">
+    <div class="section-header">
+      <h2>Справочник общих флагов</h2>
+      <p>Флаги, работающие в большинстве рецептов. Комбинируйте их для настройки поведения без изменения файлов конфигурации.</p>
+    </div>
+    <div class="flags-table-wrap">
+      <table class="flags-table">
+        <thead>
+          <tr>
+            <th>Флаг</th>
+            <th>Описание</th>
+            <th>По умолчанию</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>-o &lt;dir&gt;</code></td>
+            <td>Выходная директория для результатов, базы контактов и логов сессий</td>
+            <td><code>./research-output/</code></td>
+          </tr>
+          <tr>
+            <td><code>--profile &lt;name&gt;</code></td>
+            <td>Загрузить именованный профиль (hunter, analyst, validator или пользовательский)</td>
+            <td>Профиль по умолчанию</td>
+          </tr>
+          <tr>
+            <td><code>--repeat &lt;seconds&gt;</code></td>
+            <td>Интервал перезапуска сессии</td>
+            <td><code>3600</code></td>
+          </tr>
+          <tr>
+            <td><code>--depth &lt;1-5&gt;</code></td>
+            <td>Глубина исследования (1-5)</td>
+            <td><code>3</code></td>
+          </tr>
+          <tr>
+            <td><code>--fast</code></td>
+            <td>Быстрый режим с уменьшенной глубиной</td>
+            <td>Выкл</td>
+          </tr>
+          <tr>
+            <td><code>RUST_LOG=debug</code></td>
+            <td>Включить отладочное логирование через переменную окружения</td>
+            <td><code>info</code></td>
+          </tr>
+          <tr>
+            <td><code>--approval-gate &lt;tool&gt;</code></td>
+            <td>Требовать подтверждения перед выполнением конкретного инструмента</td>
+            <td>Нет</td>
+          </tr>
+          <tr>
+            <td><code>&lt;session-id&gt;</code></td>
+            <td>Опциональный позиционный идентификатор сессии для resume</td>
+            <td>Последняя прерванная</td>
+          </tr>
+          <tr>
+            <td><code>--dry-run</code></td>
+            <td>Показать, что бы произошло, без выполнения побочных эффектов</td>
+            <td>Выкл</td>
+          </tr>
+          <tr>
+            <td><code>--confirm</code></td>
+            <td>Пропустить запросы подтверждения для деструктивных операций</td>
+            <td>Выкл</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="config-reference">
+    <div class="section-header">
+      <h2>Быстрый справочник конфигурации</h2>
+      <p>Общие команды конфигурации, используемые в рецептах. Запустите <code>fathom config show</code>, чтобы увидеть все опции.</p>
+    </div>
+    <div class="config-grid">
+      <div class="config-card">
+        <h3>Настройка модели</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">bash</span></div>
+          <pre><code set:html={`fathom config set agent.role_models.writer "openai/gpt-4o"
+fathom config set agent.role_models.researcher "deepseek/deepseek-chat"
+fathom config set agent.role_models.verifier "openai/gpt-4o-mini"
+fathom config set agent.role_models.default "openai/gpt-4o"`} /></pre>
+        </div>
+      </div>
+      <div class="config-card">
+        <h3>Настройка оповещений</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">bash</span></div>
+          <pre><code set:html={`fathom config set alerts.telegram.bot-token "123456:ABC..."
+fathom config set alerts.telegram.chat-id "-1001234567890"
+fathom config set alerts.email.to "you@example.com"
+fathom config set alerts.webhook.url "https://hooks.slack.com/..."`} /></pre>
+        </div>
+      </div>
+      <div class="config-card">
+        <h3>Настройка поиска</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">bash</span></div>
+          <pre><code set:html={`fathom config show`} /></pre>
+        </div>
+      </div>
+      <div class="config-card">
+        <h3>Контекст и память</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">bash</span></div>
+          <pre><code set:html={`fathom config set context.context_window 128000
+fathom config set context.compact_threshold 0.85`} /></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="getting-help">
+    <div class="section-header">
+      <h2>Получение помощи</h2>
+      <p>Застряли? Эти команды укажут вам верное направление.</p>
+    </div>
+    <div class="recipe-grid">
+      <div class="recipe-card">
+        <h3>Список всех доступных команд</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">bash</span></div>
+          <pre><code set:html={`fathom --help`} /></pre>
+        </div>
+        <p class="recipe-notes">Показывает все команды верхнего уровня с описаниями. Используйте --help на любой подкоманде для детальных флагов и примеров.</p>
+      </div>
+      <div class="recipe-card">
+        <h3>Показать текущую конфигурацию</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">bash</span></div>
+          <pre><code set:html={`fathom config show`} /></pre>
+        </div>
+        <p class="recipe-notes">Выгружает все значения конфигурации с их источниками (по умолчанию, файл, переменная окружения или флаг CLI). Полезно для отладки неожиданного поведения.</p>
+      </div>
+      <div class="recipe-card">
+        <h3>Проверить здоровье системы</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">bash</span></div>
+          <pre><code set:html={`fathom memory stats`} /></pre>
+        </div>
+        <p class="recipe-notes">Показывает статистику и здоровье графа памяти.</p>
+      </div>
+      <div class="recipe-card">
+        <h3>Просмотр логов сессий</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">bash</span></div>
+          <pre><code set:html={`RUST_LOG=debug fathom run "..."`} /></pre>
+        </div>
+        <p class="recipe-notes">Включите отладочное логирование, чтобы видеть каждый вызов инструмента, решение и ошибку с метками времени.</p>
+      </div>
+      <div class="recipe-card">
+        <h3>Список активных сессий</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">bash</span></div>
+          <pre><code set:html={`fathom memory list`} /></pre>
+        </div>
+        <p class="recipe-notes">Показывает все факты, сущности и связи в графе памяти.</p>
+      </div>
+      <div class="recipe-card">
+        <h3>Показать версию и информацию о сборке</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">bash</span></div>
+          <pre><code set:html={`fathom --version`} /></pre>
+        </div>
+        <p class="recipe-notes">Отображает версию бинарника и информацию о сборке. Полезно для отчётов об ошибках.</p>
+      </div>
+      <div class="recipe-card">
+        <h3>Сбросить на заводские настройки</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">bash</span></div>
+          <pre><code set:html={`rm ~/.fathom/config.toml`} /></pre>
+        </div>
+        <p class="recipe-notes">Удалите файл конфигурации для сброса к значениям по умолчанию.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="related-pages">
+    <div class="section-header">
+      <h2>Связанные страницы</h2>
+      <p>Углубитесь в конкретные темы, покрытые этими рецептами.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <h3>Справочник конфигурации</h3>
+        <p>Полная документация для каждого ключа конфигурации, его типа, значения по умолчанию и переопределения переменной окружения. Покрывает модели, поиск, память, оповещения и другое.</p>
+      </div>
+      <div class="step">
+        <h3>Справочник API</h3>
+        <p>Полная документация REST API со схемами запросов/ответов, аутентификацией, типами событий SSE и кодами ошибок. Включает интерактивные примеры.</p>
+      </div>
+      <div class="step">
+        <h3>Обзор архитектуры</h3>
+        <p>Как работает система агентов: жизненный цикл сессии, оркестрация субагентов, граф памяти, база контактов и пайплайн выполнения инструментов.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="tips">
+    <div class="section-header">
+      <span class="section-badge">Лучшие практики</span>
+      <h2>Советы и лучшие практики</h2>
+      <p>Ценные советы из продовых развёртываний. Эти советы помогают получать лучшие результаты, избегать типичных подводных камней и держать расходы под контролем.</p>
+    </div>
+    <div class="recipe-grid">
+      <div class="recipe-card">
+        <h3>Пишите конкретные, структурированные промпты</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">text</span></div>
+          <pre><code set:html={`# Расплывчато (низкое качество результатов):
+"Find leads in fintech"
+
+# Конкретно (высокое качество результатов):
+"Find CTOs and VP Engineering at B2B fintech
+startups in London with 50-200 employees that
+raised Series A or B in the past 18 months.
+Verify each email via SMTP probe. Include
+company size, last funding round, and tech
+stack from job postings."`} /></pre>
+        </div>
+        <p class="recipe-notes">Конкретность двигает качество. Включайте географию, размер компании, роль, метод верификации и поля обогащения. Агент работает лучше с чёткими критериями успеха.</p>
+      </div>
+      <div class="recipe-card">
+        <h3>Используйте -o для воспроизводимости</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">bash</span></div>
+          <pre><code set:html={`# Always specify output directory
+fathom run "..." -o ./leads/q1-2025
+
+# Re-run produces deterministic structure
+ls ./leads/q1-2025/
+# contacts.db  session.json  sources/  synthesis.md`} /></pre>
+        </div>
+        <p class="recipe-notes">Явные выходные директории делают результаты версионируемыми, сравнимыми и легко адресуемыми в продолжающихся сессиях. Детерминированная структура означает, что скрипты могут надёжно обрабатывать выводы.</p>
+      </div>
+      <div class="recipe-card">
+        <h3>Начните мелко, затем углубляйтесь</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">bash</span></div>
+          <pre><code set:html={`# First pass: broad, shallow (preset profile or config)
+fathom run "..." --profile hunter -o ./broad
+# Second pass: deep dive on top results
+fathom run "Analyze top 20 from ./broad"`} /></pre>
+        </div>
+        <p class="recipe-notes">Мелкая глубина быстрее и дешевле. Используйте её для выявления самых перспективных целей, затем инвестируйте глубокое исследование только в лучших кандидатов. Этот двухпроходный подход снижает расходы на 60-80%.</p>
+      </div>
+      <div class="recipe-card">
+        <h3>Связывайте сессии через память</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">bash</span></div>
+          <pre><code set:html={`# Session 1: research
+fathom run "..." -o ./research
+
+# Session 2: uses memory from session 1
+fathom memory distill --session latest
+fathom run "Using prior research, ..." -o ./follow-up`} /></pre>
+        </div>
+        <p class="recipe-notes">Дистилляция фактов сессии в память делает их доступными для будущих сессий. Граф памяти связывает сущности между сессиями, так что вторая сессия извлекает выгоду из всего предшествующего контекста.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="deployment">
+    <div class="section-header">
+      <span class="section-badge">Инфраструктура</span>
+      <h2>Рецепты Docker и развёртывания</h2>
+      <p>Запускайте Fathom в проде. Docker, systemd, обратные прокси, проверки здоровья, резервные копии и масштабирование — всё, что нужно для надёжного развёртывания.</p>
+    </div>
+    <div class="recipe-grid">
+      {deploymentRecipes.map((r) => (
+        <div class="recipe-card">
+          <h3>{r.t}</h3>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span></div>
+            <pre><code set:html={r.d} /></pre>
+          </div>
+          <p class="recipe-notes">{r.notes}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section id="docker-compose">
+    <div class="section-header">
+      <h2>Развёртывание Docker</h2>
+      <p>Репозиторий не поставляет файл Docker Compose. Соберите образ из чекаута и запустите напрямую, или предоставьте собственное определение Compose для вашего окружения.</p>
+    </div>
+  </section>
+
+  <section id="env-vars">
+    <div class="section-header">
+      <span class="section-badge">Конфигурация</span>
+      <h2>Переменные окружения</h2>
+      <p>Все переменные окружения, которые распознаёт Fathom. Устанавливайте их в вашем шелле, файле <code>.env</code> или контейнере Docker. Флаги CLI и значения конфигурации имеют приоритет над переменными окружения.</p>
+    </div>
+    <div class="flags-table-wrap">
+      <table class="flags-table">
+        <thead>
+          <tr>
+            <th>Переменная</th>
+            <th>Описание</th>
+            <th>Пример</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>FATHOM_API_KEYS</code></td>
+            <td>Основной API-ключ для сервиса Fathom</td>
+            <td><code>key-abc123...</code></td>
+          </tr>
+          <tr>
+            <td><code>OPENAI_API_KEY</code></td>
+            <td>API-ключ OpenAI для моделей GPT-4o и GPT-4o-mini</td>
+            <td><code>sk-proj-...</code></td>
+          </tr>
+          <tr>
+            <td><code>DEEPSEEK_API_KEY</code></td>
+            <td>API-ключ DeepSeek для совместимого с OpenAI эндпоинта по умолчанию</td>
+            <td><code>sk-...</code></td>
+          </tr>
+          <tr>
+            <td><code>GITHUB_TOKEN</code></td>
+            <td>Персональный токен доступа GitHub для повышенных лимитов API</td>
+            <td><code>ghp_...</code></td>
+          </tr>
+          <tr>
+            <td><code>GOOGLE_CSE_KEY</code></td>
+            <td>API-ключ Google Custom Search Engine</td>
+            <td><code>AIza...</code></td>
+          </tr>
+          <tr>
+            <td><code>GOOGLE_CSE_ID</code></td>
+            <td>ID Google Custom Search Engine</td>
+            <td><code>a1b2c3d4e5...</code></td>
+          </tr>
+          <tr>
+            <td><code>PR_OUTPUT_DIR</code></td>
+            <td>Переопределить настроенную выходную директорию</td>
+            <td><code>/data/fathom</code></td>
+          </tr>
+          <tr>
+            <td><code>PR_CONFIG</code></td>
+            <td>Переопределить путь к config.toml</td>
+            <td><code>/etc/fathom/config.toml</code></td>
+          </tr>
+          <tr>
+            <td><code>PR_MEMORY_DB</code></td>
+            <td>Переопределить путь к базе данных памяти SQLite</td>
+            <td><code>/data/fathom/memory.db</code></td>
+          </tr>
+          <tr>
+            <td><code>PARALLEL_CDP_ENDPOINT</code></td>
+            <td>Эндпоинт Chrome DevTools Protocol для браузерных инструментов</td>
+            <td><code>ws://127.0.0.1:9222</code></td>
+          </tr>
+          <tr>
+            <td><code>FATHOM_RATE_LIMIT</code></td>
+            <td>Лимит частоты HTTP-сервера на клиента (запросов в минуту)</td>
+            <td><code>120</code></td>
+          </tr>
+          <tr>
+            <td><code>HTTP_PROXY</code></td>
+            <td>HTTP-прокси для исходящих запросов</td>
+            <td><code>http://proxy:8080</code></td>
+          </tr>
+          <tr>
+            <td><code>HTTPS_PROXY</code></td>
+            <td>HTTPS-прокси для исходящих запросов</td>
+            <td><code>http://proxy:8080</code></td>
+          </tr>
+          <tr>
+            <td><code>NO_PROXY</code></td>
+            <td>Список хостов через запятую для обхода прокси</td>
+            <td><code>localhost,127.0.0.1</code></td>
+          </tr>
+          <tr>
+            <td><code>TELEGRAM_BOT_TOKEN</code></td>
+            <td>Токен бота Telegram (альтернатива конфигурации)</td>
+            <td><code>123456:ABC...</code></td>
+          </tr>
+          <tr>
+            <td><code>TELEGRAM_CHAT_ID</code></td>
+            <td>ID чата Telegram для оповещений (альтернатива конфигурации)</td>
+            <td><code>-1001234567890</code></td>
+          </tr>
+          <tr>
+            <td><code>WEBHOOK_URL</code></td>
+            <td>URL вебхука по умолчанию для событий сессий</td>
+            <td><code>https://hooks.slack.com/...</code></td>
+          </tr>
+          <tr>
+            <td><code>CRM_PROVIDER</code></td>
+            <td>Провайдер CRM для отправки контактов (amocrm, bitrix24, hubspot)</td>
+            <td><code>hubspot</code></td>
+          </tr>
+          <tr>
+            <td><code>CRM_API_KEY</code></td>
+            <td>API-ключ для настроенного провайдера CRM</td>
+            <td><code>pat-na1-...</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="env-example">
+    <div class="section-header">
+      <h2>Пример файла .env</h2>
+      <p>Скопируйте этот шаблон и заполните свои ключи. Агент автоматически загружает <code>.env</code> из текущей директории.</p>
+    </div>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">.env</span></div>
+      <pre><code set:html={`# Required
+FATHOM_API_KEYS=key-your_api_key_here
+
+# Model providers (at least one required)
+OPENAI_API_KEY=sk-proj-your_openai_key
+DEEPSEEK_API_KEY=sk-your_deepseek_key
+
+# Optional: higher rate limits for source scraping
+GITHUB_TOKEN=ghp_your_github_token
+GOOGLE_CSE_KEY=AIza_your_google_key
+GOOGLE_CSE_ID=your_search_engine_id
+
+# Optional: alerting
+TELEGRAM_BOT_TOKEN=123456:ABC-your_bot_token
+TELEGRAM_CHAT_ID=-1001234567890
+WEBHOOK_URL=https://hooks.slack.com/services/T.../B.../xxx
+
+# Optional: CRM integration
+CRM_PROVIDER=hubspot
+CRM_API_KEY=pat-na1-your_hubspot_key
+
+# Optional: local data paths
+PR_OUTPUT_DIR=./research-output
+PR_MEMORY_DB=~/.fathom/memory.db
+
+# Optional: logging
+RUST_LOG=info`} /></pre>
+    </div>
+  </section>
