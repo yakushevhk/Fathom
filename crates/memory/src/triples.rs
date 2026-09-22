@@ -100,3 +100,99 @@ impl TriplesGraph {
         self.triples.is_empty()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn t(s: &str, p: &str, o: &str) -> RdfTriple {
+        RdfTriple {
+            subject: s.into(),
+            predicate: p.into(),
+            object: o.into(),
+            confidence: 100,
+        }
+    }
+
+    #[test]
+    fn insert_and_len() {
+        let mut g = TriplesGraph::new();
+        assert!(g.is_empty());
+        g.insert(t("alice", "knows", "bob"));
+        assert_eq!(g.len(), 1);
+        assert!(!g.is_empty());
+    }
+
+    #[test]
+    fn insert_same_triple_twice_is_deduped() {
+        let mut g = TriplesGraph::new();
+        g.insert(t("a", "r", "b"));
+        g.insert(t("a", "r", "b"));
+        assert_eq!(g.len(), 1);
+    }
+
+    #[test]
+    fn insert_same_edge_different_confidence_dedupes_edge_list() {
+        let mut g = TriplesGraph::new();
+        g.insert(t("a", "r", "b"));
+        let mut t2 = t("a", "r", "b");
+        t2.confidence = 50;
+        g.insert(t2);
+        // Triple set grows (different confidence) but edge lists dedupe.
+        assert_eq!(g.len(), 2);
+        let out = g.traverse("a", 1);
+        assert_eq!(out.len(), 1); // one edge traversed, not two
+    }
+
+    #[test]
+    fn traverse_respects_max_depth() {
+        let mut g = TriplesGraph::new();
+        g.insert(t("a", "to", "b"));
+        g.insert(t("b", "to", "c"));
+        g.insert(t("c", "to", "d"));
+        assert_eq!(g.traverse("a", 1).len(), 1); // a→b only
+        assert_eq!(g.traverse("a", 2).len(), 2); // a→b, b→c
+        assert_eq!(g.traverse("a", 3).len(), 3);
+    }
+
+    #[test]
+    fn traverse_depth_zero_returns_nothing() {
+        let mut g = TriplesGraph::new();
+        g.insert(t("a", "to", "b"));
+        assert!(g.traverse("a", 0).is_empty());
+    }
+
+    #[test]
+    fn traverse_no_cycles() {
+        let mut g = TriplesGraph::new();
+        g.insert(t("a", "to", "b"));
+        g.insert(t("b", "to", "a"));
+        g.insert(t("b", "to", "c"));
+        let r = g.traverse("a", 10);
+        // Each edge reported once; no infinite loop on the a↔b cycle.
+        assert_eq!(r.len(), 3);
+    }
+
+    #[test]
+    fn traverse_unknown_start_empty() {
+        let g = TriplesGraph::new();
+        assert!(g.traverse("ghost", 5).is_empty());
+    }
+
+    #[test]
+    fn query_entity_case_insensitive_on_subject_and_object() {
+        let mut g = TriplesGraph::new();
+        g.insert(t("Alice", "knows", "Bob"));
+        g.insert(t("Carol", "likes", "alice"));
+        let hits = g.query_entity("ALICE");
+        assert_eq!(hits.len(), 2);
+        assert!(g.query_entity("dave").is_empty());
+    }
+
+    #[test]
+    fn confidence_defaults_to_100_on_deserialize() {
+        let t: RdfTriple =
+            serde_json::from_str(r#"{"subject":"a","predicate":"p","object":"b"}"#).unwrap();
+        assert_eq!(t.confidence, 100);
+    }
+}

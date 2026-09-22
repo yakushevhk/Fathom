@@ -181,3 +181,43 @@ impl Tool for DapTool {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn launch_defaults_adapter_and_args() {
+        let a: DapAction =
+            serde_json::from_str(r#"{"action":"launch","program":"./bin/x"}"#).unwrap();
+        match a {
+            DapAction::Launch {
+                program,
+                args,
+                adapter,
+            } => {
+                assert_eq!(program, "./bin/x");
+                assert!(args.is_empty());
+                assert_eq!(adapter, default_adapter());
+            }
+            _ => panic!("wrong variant"),
+        }
+    }
+
+    #[test]
+    fn stack_trace_defaults_levels() {
+        let a: DapAction = serde_json::from_str(r#"{"action":"stack_trace"}"#).unwrap();
+        match a {
+            DapAction::StackTrace { levels } => assert_eq!(levels, default_levels()),
+            _ => panic!("wrong variant"),
+        }
+    }
+
+    #[test]
+    fn simple_variants_deserialize() {
+        for v in ["continue", "step_over", "step_in", "step_out"] {
+            let json = format!("{{\"action\":\"{v}\"}}");
+            assert!(serde_json::from_str::<DapAction>(&json).is_ok(), "{v}");
+        }
+    }
+}

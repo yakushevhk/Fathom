@@ -94,3 +94,73 @@ fn extract_attr(line: &str, attr: &str) -> Option<String> {
     }
     None
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty_html_reports_no_elements() {
+        let out = distill_dom_to_aom_outline("");
+        assert!(out.contains("no interactive elements"));
+    }
+
+    #[test]
+    fn non_interactive_html_reports_no_elements() {
+        let out = distill_dom_to_aom_outline("<div><p>text</p></div>");
+        assert!(out.contains("no interactive elements"));
+    }
+
+    #[test]
+    fn button_extracted_with_label() {
+        let out = distill_dom_to_aom_outline("<button>Click me</button>");
+        assert!(out.contains("[ref=e1] button \"Click me\""));
+    }
+
+    #[test]
+    fn refs_increment_monotonically() {
+        let html = "<button>A</button>\n<button>B</button>\n<a href=\"#\">L</a>";
+        let out = distill_dom_to_aom_outline(html);
+        assert!(out.contains("[ref=e1] button \"A\""));
+        assert!(out.contains("[ref=e2] button \"B\""));
+        assert!(out.contains("[ref=e3] link \"L\""));
+    }
+
+    #[test]
+    fn link_without_label_skipped() {
+        let out = distill_dom_to_aom_outline("<a href=\"#\"></a>\n<button>X</button>");
+        assert!(!out.contains("link"));
+        assert!(out.contains("[ref=e1] button \"X\""));
+    }
+
+    #[test]
+    fn input_type_and_placeholder() {
+        let out = distill_dom_to_aom_outline(r#"<input type="email" placeholder="Your email">"#);
+        assert!(out.contains("[ref=e1] input:email \"Your email\""));
+    }
+
+    #[test]
+    fn input_default_type_is_text() {
+        let out = distill_dom_to_aom_outline(r#"<input name="q">"#);
+        assert!(out.contains("input:text \"q\""));
+    }
+
+    #[test]
+    fn textarea_and_select_extracted() {
+        let html = r#"<textarea placeholder="msg"></textarea>
+<select name="country"></select>"#;
+        let out = distill_dom_to_aom_outline(html);
+        assert!(out.contains("[ref=e1] textarea \"msg\""));
+        assert!(out.contains("[ref=e2] select \"country\""));
+    }
+
+    #[test]
+    fn extract_attr_missing_returns_none() {
+        assert_eq!(extract_attr("<div>", "href"), None);
+    }
+
+    #[test]
+    fn extract_tag_text_no_close_tag_is_empty() {
+        assert_eq!(extract_tag_text("<button>", "button"), "");
+    }
+}

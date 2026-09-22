@@ -599,3 +599,14 @@ impl ApiClient {
         reqwest_eventsource::EventSource::get(url)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn base_url_roundtrips() {
+        let c = ApiClient::new("http://127.0.0.1:8080".to_string());
+        assert_eq!(c.base_url(), "http://127.0.0.1:8080");
+    }
+}

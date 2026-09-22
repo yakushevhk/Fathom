@@ -91,3 +91,19 @@ impl Theme {
         rgb(0x27c93f)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn core_surfaces_are_distinct() {
+        assert_ne!(Theme::bg_window(), Theme::bg_elevated());
+        assert_ne!(Theme::bg_surface(), Theme::bg_card());
+    }
+
+    #[test]
+    fn text_colors_differ_by_emphasis() {
+        assert_ne!(Theme::text_primary(), Theme::text_muted());
+    }
+}

@@ -162,3 +162,41 @@ impl Tool for AstEditTool {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tool_name_is_ast_edit() {
+        let t = AstEditTool;
+        assert_eq!(t.name(), "ast_edit");
+    }
+
+    #[test]
+    fn params_default_action_is_apply() {
+        let p: AstEditParams =
+            serde_json::from_str(r#"{"paths":["x.rs"],"ops":[{"pat":"a","out":"b"}]}"#).unwrap();
+        assert_eq!(p.action, "apply");
+        assert_eq!(p.paths, vec!["x.rs".to_string()]);
+    }
+
+    #[test]
+    fn params_explicit_stage_action() {
+        let p: AstEditParams =
+            serde_json::from_str(r#"{"paths":[],"ops":[],"action":"stage"}"#).unwrap();
+        assert_eq!(p.action, "stage");
+    }
+
+    #[test]
+    fn rewrite_op_serde_roundtrip() {
+        let op = AstRewriteOp {
+            pat: "fn $N() {}".into(),
+            out: "fn $N() { log(); }".into(),
+        };
+        let back: AstRewriteOp =
+            serde_json::from_str(&serde_json::to_string(&op).unwrap()).unwrap();
+        assert_eq!(back.pat, op.pat);
+        assert_eq!(back.out, op.out);
+    }
+}

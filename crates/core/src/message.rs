@@ -158,3 +158,111 @@ impl Message {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tool_call_new_sets_function_type() {
+        let tc = ToolCall::new("id-1", "shell", "{\"cmd\":\"ls\"}");
+        assert_eq!(tc.call_type, "function");
+        assert_eq!(tc.name(), "shell");
+        assert_eq!(tc.function.arguments, "{\"cmd\":\"ls\"}");
+    }
+
+    #[test]
+    fn tool_call_arguments_parses_json() {
+        let tc = ToolCall::new("id", "t", "{\"a\":1}");
+        assert_eq!(tc.arguments(), serde_json::json!({"a": 1}));
+    }
+
+    #[test]
+    fn tool_call_arguments_invalid_json_is_empty_object() {
+        let tc = ToolCall::new("id", "t", "not json {{{");
+        assert_eq!(tc.arguments(), serde_json::json!({}));
+    }
+
+    #[test]
+    fn into_tool_args_variants() {
+        assert_eq!("s".into_string(), "s");
+        assert_eq!(String::from("owned").into_string(), "owned");
+        assert_eq!(serde_json::json!({"k": 2}).into_string(), "{\"k\":2}");
+        // Unserializable values fall back to "{}" — NaN is not a valid JSON literal.
+        assert_eq!(serde_json::json!(f64::NAN).into_string(), "null");
+    }
+
+    #[test]
+    fn message_constructors() {
+        assert!(matches!(Message::system("s"), Message::System { .. }));
+        assert!(matches!(Message::user("u"), Message::User { .. }));
+        assert!(matches!(Message::tool("id", "c"), Message::Tool { .. }));
+        if let Message::Assistant {
+            content,
+            tool_calls,
+            thinking_blocks,
+        } = Message::assistant("hi")
+        {
+            assert_eq!(content.as_deref(), Some("hi"));
+            assert!(tool_calls.is_empty());
+            assert!(thinking_blocks.is_empty());
+        } else {
+            panic!("assistant() produced wrong variant");
+        }
+    }
+
+    #[test]
+    fn assistant_with_tools_keeps_calls() {
+        let tc = ToolCall::new("id", "name", "{}");
+        let m = Message::assistant_with_tools(None, vec![tc.clone()]);
+        if let Message::Assistant {
+            tool_calls,
+            content,
+            ..
+        } = m
+        {
+            assert_eq!(tool_calls.len(), 1);
+            assert_eq!(tool_calls[0], tc);
+            assert!(content.is_none());
+        } else {
+            panic!("wrong variant");
+        }
+    }
+
+    #[test]
+    fn message_serde_roundtrip() {
+        let m = Message::assistant_full(
+            Some("out".into()),
+            vec![ThinkingBlock::Thinking {
+                thinking: "hmm".into(),
+                signature: None,
+            }],
+            vec![ToolCall::new("id", "tool", "{\"x\":1}")],
+        );
+        let json = serde_json::to_string(&m).unwrap();
+        let back: Message = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, m);
+        assert!(json.contains("\"role\":\"assistant\""));
+        assert!(json.contains("\"type\":\"thinking\""));
+    }
+
+    #[test]
+    fn tool_result_serde_default_is_error_false() {
+        let tr = ToolResult {
+            tool_call_id: "id".into(),
+            content: "ok".into(),
+            is_error: false,
+        };
+        let back: ToolResult = serde_json::from_str(&serde_json::to_string(&tr).unwrap()).unwrap();
+        assert!(!back.is_error);
+    }
+
+    #[test]
+    fn thinking_block_redacted_variant() {
+        let b = ThinkingBlock::RedactedThinking { data: "xyz".into() };
+        let json = serde_json::to_string(&b).unwrap();
+        assert!(json.contains("redacted_thinking"));
+        let back: ThinkingBlock = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, b);
+    }
+}

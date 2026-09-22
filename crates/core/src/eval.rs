@@ -63,3 +63,80 @@ impl EvalKernelManager {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn get_or_create_returns_new_state() {
+        let mgr = EvalKernelManager::new();
+        let s = mgr.get_or_create_state("sess-1", "python").await;
+        assert_eq!(s.session_id, "sess-1");
+        assert_eq!(s.language, "python");
+        assert!(s.variables.is_empty());
+    }
+
+    #[tokio::test]
+    async fn get_or_create_is_idempotent() {
+        let mgr = EvalKernelManager::new();
+        let a = mgr.get_or_create_state("sess-1", "python").await;
+        let b = mgr.get_or_create_state("sess-1", "nodejs").await;
+        // Second call returns the SAME state (original language kept).
+        assert_eq!(b.language, "python");
+        assert_eq!(a.session_id, b.session_id);
+    }
+
+    #[tokio::test]
+    async fn update_variable_persists_across_get() {
+        let mgr = EvalKernelManager::new();
+        mgr.get_or_create_state("s", "python").await;
+        mgr.update_variable("s", "x", serde_json::json!(42)).await;
+        mgr.update_variable("s", "y", serde_json::json!({"k": [1, 2]}))
+            .await;
+        let s = mgr.get_or_create_state("s", "python").await;
+        assert_eq!(s.variables["x"], serde_json::json!(42));
+        assert_eq!(s.variables["y"], serde_json::json!({"k": [1, 2]}));
+    }
+
+    #[tokio::test]
+    async fn update_variable_on_missing_session_is_noop() {
+        let mgr = EvalKernelManager::new();
+        mgr.update_variable("ghost", "x", serde_json::json!(1))
+            .await;
+        // No panic; the session simply does not exist.
+        let s = mgr.get_or_create_state("ghost", "python").await;
+        assert!(s.variables.is_empty());
+    }
+
+    #[tokio::test]
+    async fn independent_sessions_are_isolated() {
+        let mgr = EvalKernelManager::new();
+        mgr.get_or_create_state("a", "python").await;
+        mgr.get_or_create_state("b", "python").await;
+        mgr.update_variable("a", "k", serde_json::json!("only-a"))
+            .await;
+        let sa = mgr.get_or_create_state("a", "python").await;
+        let sb = mgr.get_or_create_state("b", "python").await;
+        assert_eq!(sa.variables.len(), 1);
+        assert!(sb.variables.is_empty());
+    }
+
+    #[test]
+    fn dag_types_serde_roundtrip() {
+        let stage = DagStage {
+            stage_name: "build".into(),
+            tasks: vec![DagTask {
+                task_id: "t1".into(),
+                prompt: "do x".into(),
+                agent_role: Some("coder".into()),
+                handle_output: true,
+            }],
+        };
+        let json = serde_json::to_string(&stage).unwrap();
+        let back: DagStage = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.stage_name, "build");
+        assert_eq!(back.tasks[0].task_id, "t1");
+        assert_eq!(back.tasks[0].agent_role.as_deref(), Some("coder"));
+    }
+}

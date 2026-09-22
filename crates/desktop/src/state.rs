@@ -452,3 +452,82 @@ impl Default for AppState {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn msg(id: &str, content: &str) -> ChatMessage {
+        ChatMessage {
+            id: id.into(),
+            role: "user".into(),
+            content: content.into(),
+            thinking: None,
+            tool_name: None,
+            tool_status: None,
+            tool_input: None,
+            tool_output: None,
+            question: None,
+            request_id: None,
+            timestamp: "12:00".into(),
+            expanded: false,
+        }
+    }
+
+    #[test]
+    fn new_state_defaults() {
+        let s = AppState::new();
+        assert!(matches!(s.active_tab(), NavigationTab::Channels));
+        assert!(!*s.is_engine_running.read());
+        assert!(s.sessions.read().is_empty());
+        assert!(s.messages.read().is_empty());
+        assert!(s.active_channel_id.read().is_none());
+    }
+
+    #[test]
+    fn set_active_tab_roundtrips() {
+        let s = AppState::new();
+        s.set_active_tab(NavigationTab::Vault);
+        assert!(matches!(s.active_tab(), NavigationTab::Vault));
+    }
+
+    #[test]
+    fn drawers_toggle() {
+        let s = AppState::new();
+        assert!(!*s.thinking_drawer_open.read());
+        s.toggle_thinking_drawer();
+        assert!(*s.thinking_drawer_open.read());
+        s.toggle_agent_hub();
+        assert!(*s.agent_hub_open.read());
+        s.toggle_thinking_drawer();
+        assert!(!*s.thinking_drawer_open.read());
+    }
+
+    #[test]
+    fn channel_switch_saves_and_restores_messages() {
+        let s = AppState::new();
+        s.set_active_channel(Some("ch-a".into()));
+        s.add_message(msg("m1", "hello-a"));
+        assert_eq!(s.messages.read().len(), 1);
+
+        // Switching away stashes ch-a's messages and shows empty list.
+        s.set_active_channel(Some("ch-b".into()));
+        assert!(s.messages.read().is_empty());
+        s.add_message(msg("m2", "hello-b"));
+
+        // Switching back restores ch-a's history.
+        s.set_active_channel(Some("ch-a".into()));
+        assert_eq!(s.messages.read().len(), 1);
+        assert_eq!(s.messages.read()[0].content, "hello-a");
+        assert_eq!(s.channel_messages.read()["ch-b"].len(), 1);
+    }
+
+    #[test]
+    fn add_message_fans_out_to_active_channel() {
+        let s = AppState::new();
+        s.set_active_channel(Some("ch-x".into()));
+        s.add_message(msg("m1", "one"));
+        s.add_message(msg("m2", "two"));
+        assert_eq!(s.channel_messages.read()["ch-x"].len(), 2);
+    }
+}

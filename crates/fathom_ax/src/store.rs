@@ -445,3 +445,22 @@ fn kind_static(kind: &str) -> &'static str {
         _ => "resource",
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn kind_static_recognizes_known_kinds() {
+        for k in ["task", "workspace", "gateway", "model"] {
+            assert_eq!(kind_static(k), k);
+        }
+        // Unknown kinds get a stable fallback name.
+        assert_eq!(kind_static("SomethingElse"), "resource");
+    }
+
+    #[test]
+    fn now_returns_nonempty_timestamp() {
+        assert!(!AxStore::now().is_empty());
+    }
+}

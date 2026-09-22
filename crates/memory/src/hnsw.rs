@@ -83,3 +83,57 @@ impl SimdVectorIndex {
         self.vectors.is_empty()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_index_is_empty() {
+        let idx = SimdVectorIndex::new(4);
+        assert_eq!(idx.len(), 0);
+        assert!(idx.is_empty());
+    }
+
+    #[test]
+    fn insert_grows_len() {
+        let mut idx = SimdVectorIndex::new(3);
+        idx.insert("a", vec![1.0, 0.0, 0.0]);
+        idx.insert("b", vec![0.0, 1.0, 0.0]);
+        assert_eq!(idx.len(), 2);
+    }
+
+    #[test]
+    fn search_returns_nearest_first() {
+        let mut idx = SimdVectorIndex::new(2);
+        idx.insert("x", vec![1.0, 0.0]);
+        idx.insert("y", vec![0.0, 1.0]);
+        idx.insert("z", vec![0.9, 0.1]);
+        let hits = idx.search(&[1.0, 0.0], 3);
+        assert_eq!(hits.len(), 3);
+        assert_eq!(hits[0].0, "x"); // exact match first
+        assert_eq!(hits[1].0, "z"); // then nearest neighbor
+    }
+
+    #[test]
+    fn search_top_k_bounds_result() {
+        let mut idx = SimdVectorIndex::new(2);
+        for i in 0..10 {
+            idx.insert(format!("v{i}"), vec![i as f32, 0.0]);
+        }
+        assert_eq!(idx.search(&[0.0, 0.0], 3).len(), 3);
+    }
+
+    #[test]
+    fn search_empty_index_returns_empty() {
+        let idx = SimdVectorIndex::new(2);
+        assert!(idx.search(&[1.0, 1.0], 5).is_empty());
+    }
+
+    #[test]
+    fn search_top_k_larger_than_index_is_safe() {
+        let mut idx = SimdVectorIndex::new(2);
+        idx.insert("only", vec![1.0, 1.0]);
+        assert_eq!(idx.search(&[1.0, 1.0], 100).len(), 1);
+    }
+}

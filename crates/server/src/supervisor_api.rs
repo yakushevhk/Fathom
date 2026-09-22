@@ -79,3 +79,30 @@ pub async fn reset(State(state): State<Arc<AppState>>, Path(agent_id): Path<Stri
             .into_response(),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::http::StatusCode;
+    use http_body_util::BodyExt;
+    use pr_core::AppConfig;
+    use pr_persistence::{JobsDb, Persistence};
+    use serde_json::Value;
+
+    fn test_state() -> Arc<AppState> {
+        let db = Arc::new(Persistence::in_memory().unwrap());
+        let jobs = Arc::new(JobsDb::in_memory().unwrap());
+        let mut config = AppConfig::default();
+        config.memory.enabled = false;
+        AppState::with_db_and_jobs(config, db, jobs)
+    }
+
+    #[tokio::test]
+    async fn list_without_supervisor_returns_503() {
+        let resp = list(State(test_state())).await;
+        assert_eq!(resp.status(), StatusCode::SERVICE_UNAVAILABLE);
+        let body = resp.into_body().collect().await.unwrap().to_bytes();
+        let v: Value = serde_json::from_slice(&body).unwrap();
+        assert!(v["error"].as_str().unwrap().contains("not configured"));
+    }
+}

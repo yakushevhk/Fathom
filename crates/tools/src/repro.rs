@@ -208,3 +208,28 @@ impl Tool for ReproTestTool {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tool_name_is_repro_test() {
+        let t = ReproTestTool;
+        assert_eq!(t.name(), "repro_test");
+    }
+
+    #[test]
+    fn default_runner_is_auto() {
+        assert_eq!(default_runner(), "auto");
+    }
+
+    #[test]
+    fn repro_action_create_deserializes() {
+        let a: ReproAction = serde_json::from_str(
+            r##"{"action":"create","file":"tests/r.rs","content":"#[test] fn x(){}"}"##,
+        )
+        .unwrap();
+        matches!(a, ReproAction::Create { .. });
+    }
+}

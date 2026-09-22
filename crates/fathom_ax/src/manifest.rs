@@ -603,3 +603,36 @@ fn check_rel_path(field: &str, value: &str) -> AxResult<()> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod internal_tests {
+    use super::*;
+
+    #[test]
+    fn check_name_accepts_valid() {
+        assert!(check_name("n", "task-1.a_b").is_ok());
+    }
+
+    #[test]
+    fn check_name_rejects_empty_and_bad_chars() {
+        assert!(check_name("n", "").is_err());
+        for bad in ["a b", "a/b", "a:b", "a;b", "☃", "a$b"] {
+            assert!(check_name("n", bad).is_err(), "{bad} accepted");
+        }
+    }
+
+    #[test]
+    fn check_rel_path_accepts() {
+        assert!(check_rel_path("p", "").is_ok());
+        assert!(check_rel_path("p", "dir/sub").is_ok());
+        assert!(check_rel_path("p", "file.txt").is_ok());
+    }
+
+    #[test]
+    fn check_rel_path_rejects_absolute_and_parent() {
+        assert!(check_rel_path("p", "/abs").is_err());
+        assert!(check_rel_path("p", "../up").is_err());
+        assert!(check_rel_path("p", "a/../../b").is_err());
+        assert!(check_rel_path("p", "a//../..").is_err());
+    }
+}

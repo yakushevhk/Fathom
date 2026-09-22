@@ -188,3 +188,22 @@ impl Tool for CookieVaultTool {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tool_name_is_cookie_vault() {
+        let t = CookieVaultTool;
+        assert_eq!(t.name(), "cookie_vault");
+    }
+
+    #[test]
+    fn schema_is_valid_object() {
+        let t = CookieVaultTool;
+        let s = t.schema();
+        assert_eq!(s.name, "cookie_vault");
+        assert!(s.parameters.is_object());
+    }
+}

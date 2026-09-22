@@ -142,3 +142,24 @@ pub async fn handle_inbound_webhook(
     )
         .into_response()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn payload_deserializes() {
+        let p: InboundWebhookPayload = serde_json::from_str(
+            r#"{"source":"github","event_type":"push","payload":{"ref":"main"}}"#,
+        )
+        .unwrap();
+        assert_eq!(p.source, "github");
+        assert_eq!(p.event_type, "push");
+        assert_eq!(p.payload["ref"], "main");
+    }
+
+    #[test]
+    fn payload_requires_all_fields() {
+        assert!(serde_json::from_str::<InboundWebhookPayload>(r#"{"source":"x"}"#).is_err());
+    }
+}

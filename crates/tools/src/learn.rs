@@ -172,3 +172,76 @@ impl Tool for ManageSkillTool {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pr_core::SearchConfig;
+    use std::path::PathBuf;
+
+    fn ctx() -> ToolContext {
+        ToolContext::new(PathBuf::from("/tmp"), SearchConfig::default())
+    }
+
+    #[test]
+    fn learn_tool_name_and_schema() {
+        let tool = LearnTool;
+        assert_eq!(tool.name(), "learn");
+        assert!(tool.schema().parameters.is_object());
+    }
+
+    #[tokio::test]
+    async fn learn_capture_without_skill() {
+        let tool = LearnTool;
+        let out = tool
+            .execute(
+                serde_json::json!({"memory": "always check X", "context": "debugging"}),
+                &ctx(),
+            )
+            .await
+            .unwrap();
+        assert!(out.success);
+        assert!(out.content.contains("always check X"));
+        assert!(out.content.contains("Context: debugging"));
+    }
+
+    #[tokio::test]
+    async fn learn_requires_memory_field() {
+        let tool = LearnTool;
+        assert!(tool.execute(serde_json::json!({}), &ctx()).await.is_err());
+    }
+
+    #[test]
+    fn manage_skill_tool_name() {
+        let tool = ManageSkillTool;
+        assert_eq!(tool.name(), "manage_skill");
+    }
+
+    #[tokio::test]
+    async fn manage_skill_unknown_action_errs() {
+        let tool = ManageSkillTool;
+        let out = tool
+            .execute(
+                serde_json::json!({"action": "teleport", "name": "x"}),
+                &ctx(),
+            )
+            .await
+            .unwrap();
+        assert!(!out.success);
+        assert!(out.content.contains("Unsupported action"));
+    }
+
+    #[tokio::test]
+    async fn manage_skill_delete_missing_reports_not_found() {
+        let tool = ManageSkillTool;
+        let out = tool
+            .execute(
+                serde_json::json!({"action": "delete", "name": "definitely-not-a-skill-xyz"}),
+                &ctx(),
+            )
+            .await
+            .unwrap();
+        assert!(!out.success);
+        assert!(out.content.contains("not found"));
+    }
+}

@@ -350,3 +350,73 @@ impl PtyBroker {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::VecDeque;
+    use std::sync::Arc;
+    use std::time::Instant;
+    use tokio::sync::broadcast;
+
+    fn session_with_chunks(n: usize) -> PtySession {
+        let (tx, _rx) = broadcast::channel(16);
+        let mut buf = VecDeque::new();
+        for i in 1..=n {
+            buf.push_back(PtyOutputChunk {
+                seq: i,
+                timestamp: Instant::now(),
+                text: format!("line{i}"),
+            });
+        }
+        PtySession {
+            id: "s1".into(),
+            name: "sh".into(),
+            app: "sh".into(),
+            args: vec![],
+            cwd: PathBuf::from("/tmp"),
+            started_at: Instant::now(),
+            pid: 1,
+            ring_buffer: Arc::new(Mutex::new(buf)),
+            seq_counter: Arc::new(Mutex::new(n)),
+            stdin_tx: Arc::new(Mutex::new(None)),
+            exit_rx: Arc::new(Mutex::new(None)),
+            exit_code: Arc::new(Mutex::new(None)),
+            notifier: tx,
+            child_killer: Arc::new(Mutex::new(None)),
+        }
+    }
+
+    #[test]
+    fn read_logs_returns_all_with_no_cursor() {
+        let s = session_with_chunks(3);
+        let (chunks, latest) = s.read_logs(None, 100);
+        assert_eq!(chunks.len(), 3);
+        assert_eq!(latest, 3);
+    }
+
+    #[test]
+    fn read_logs_respects_cursor() {
+        let s = session_with_chunks(3);
+        let (chunks, latest) = s.read_logs(Some(1), 100);
+        assert_eq!(chunks.len(), 2);
+        assert_eq!(chunks[0].seq, 2);
+        assert_eq!(latest, 3);
+    }
+
+    #[test]
+    fn read_logs_respects_limit() {
+        let s = session_with_chunks(5);
+        let (chunks, _) = s.read_logs(None, 2);
+        assert_eq!(chunks.len(), 2);
+        assert_eq!(chunks[0].text, "line1");
+    }
+
+    #[test]
+    fn read_logs_empty_buffer_keeps_cursor() {
+        let s = session_with_chunks(0);
+        let (chunks, latest) = s.read_logs(Some(7), 10);
+        assert!(chunks.is_empty());
+        assert_eq!(latest, 7);
+    }
+}

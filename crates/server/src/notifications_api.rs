@@ -101,3 +101,15 @@ pub async fn test(
         ),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn request_requires_channel() {
+        assert!(serde_json::from_str::<TestNotificationRequest>(r#"{}"#).is_err());
+        let r: TestNotificationRequest = serde_json::from_str(r#"{"channel":"telegram"}"#).unwrap();
+        assert_eq!(r.channel, "telegram");
+    }
+}

@@ -193,3 +193,68 @@ pub(crate) async fn claim_schedules(
         Err(e) => error(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bounded_trims_and_accepts() {
+        assert_eq!(bounded("  hello  ", 64, "f").unwrap(), "hello");
+    }
+
+    #[test]
+    fn bounded_empty_rejected() {
+        assert!(bounded("   ", 64, "f").is_err());
+        assert!(bounded("", 64, "f").is_err());
+    }
+
+    #[test]
+    fn bounded_overlong_rejected() {
+        let v = "x".repeat(65);
+        assert!(bounded(&v, 64, "f").is_err());
+    }
+
+    #[test]
+    fn bounded_counts_chars_not_bytes() {
+        // 10 multi-byte chars should pass a 64-char limit.
+        let v = "テスト".repeat(8); // 64 chars, >64 bytes
+        assert!(bounded(&v, 64, "f").is_ok());
+    }
+
+    #[test]
+    fn valid_id_accepts_alnum_dash_underscore_dot() {
+        assert!(valid_id("worker-1_a.b", "id").is_ok());
+    }
+
+    #[test]
+    fn valid_id_rejects_spaces_and_symbols() {
+        for bad in [
+            "has space",
+            "sl/ash",
+            "col:on",
+            "semi;colon",
+            "at@sign",
+            "uni☃",
+        ] {
+            assert!(valid_id(bad, "id").is_err(), "{bad} accepted");
+        }
+    }
+
+    #[test]
+    fn valid_id_rejects_empty() {
+        assert!(valid_id("", "id").is_err());
+    }
+
+    #[test]
+    fn valid_id_enforces_max_len() {
+        let v = "a".repeat(MAX_ID + 1);
+        assert!(valid_id(&v, "id").is_err());
+    }
+
+    #[test]
+    fn default_timezone_and_enabled() {
+        assert_eq!(default_timezone(), "UTC");
+        assert!(default_enabled());
+    }
+}

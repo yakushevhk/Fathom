@@ -51,3 +51,78 @@ impl VaultSyncEngine {
         Ok(written_files)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::triples::RdfTriple;
+
+    fn t(s: &str, p: &str, o: &str) -> RdfTriple {
+        RdfTriple {
+            subject: s.into(),
+            predicate: p.into(),
+            object: o.into(),
+            confidence: 100,
+        }
+    }
+
+    #[tokio::test]
+    async fn export_creates_markdown_files() {
+        let dir = tempfile::tempdir().unwrap();
+        let eng = VaultSyncEngine::new(dir.path());
+        let n = eng
+            .export_to_vault(&[t("alice", "knows", "bob")])
+            .await
+            .unwrap();
+        assert_eq!(n, 1);
+        let content = std::fs::read_to_string(dir.path().join("alice.md")).unwrap();
+        assert!(content.contains("# alice"));
+        assert!(content.contains("**knows** [[bob]]"));
+    }
+
+    #[tokio::test]
+    async fn export_appends_relations_to_existing_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let eng = VaultSyncEngine::new(dir.path());
+        eng.export_to_vault(&[t("alice", "knows", "bob")])
+            .await
+            .unwrap();
+        eng.export_to_vault(&[t("alice", "works_at", "acme")])
+            .await
+            .unwrap();
+        let content = std::fs::read_to_string(dir.path().join("alice.md")).unwrap();
+        assert!(content.contains("[[bob]]"));
+        assert!(content.contains("[[acme]]"));
+    }
+
+    #[tokio::test]
+    async fn export_dedupes_same_object() {
+        let dir = tempfile::tempdir().unwrap();
+        let eng = VaultSyncEngine::new(dir.path());
+        eng.export_to_vault(&[t("alice", "knows", "bob")])
+            .await
+            .unwrap();
+        eng.export_to_vault(&[t("alice", "knows", "bob")])
+            .await
+            .unwrap();
+        let content = std::fs::read_to_string(dir.path().join("alice.md")).unwrap();
+        assert_eq!(content.matches("[[bob]]").count(), 1);
+    }
+
+    #[tokio::test]
+    async fn export_sanitizes_unsafe_filename_chars() {
+        let dir = tempfile::tempdir().unwrap();
+        let eng = VaultSyncEngine::new(dir.path());
+        eng.export_to_vault(&[t("a/b\\c:d.e", "p", "o")])
+            .await
+            .unwrap();
+        assert!(dir.path().join("a_b_c_d_e.md").exists());
+    }
+
+    #[tokio::test]
+    async fn export_empty_list_writes_nothing() {
+        let dir = tempfile::tempdir().unwrap();
+        let eng = VaultSyncEngine::new(dir.path());
+        assert_eq!(eng.export_to_vault(&[]).await.unwrap(), 0);
+    }
+}

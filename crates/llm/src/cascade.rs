@@ -111,3 +111,68 @@ impl LlmProvider for CascadeProvider {
         }))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct StubProvider(&'static str, &'static str);
+
+    #[async_trait]
+    impl LlmProvider for StubProvider {
+        fn name(&self) -> &str {
+            self.0
+        }
+        fn model(&self) -> &str {
+            self.1
+        }
+        async fn complete(&self, _req: &CompletionRequest) -> PrResult<CompletionResponse> {
+            Err(pr_core::PrError::Llm(format!("{} failed", self.0)))
+        }
+        async fn stream(
+            &self,
+            _req: &CompletionRequest,
+        ) -> PrResult<
+            Box<dyn futures::Stream<Item = PrResult<crate::types::StreamChunk>> + Send + Unpin>,
+        > {
+            Err(pr_core::PrError::Llm(format!("{} failed", self.0)))
+        }
+    }
+
+    #[test]
+    fn cascade_name_is_stable() {
+        let c = CascadeProvider::new(vec![Arc::new(StubProvider("a", "m1"))]);
+        assert_eq!(c.name(), "cascade");
+    }
+
+    #[test]
+    fn model_delegates_to_first_provider() {
+        let c = CascadeProvider::new(vec![
+            Arc::new(StubProvider("a", "model-one")),
+            Arc::new(StubProvider("b", "model-two")),
+        ]);
+        assert_eq!(c.model(), "model-one");
+    }
+
+    #[test]
+    fn empty_cascade_model_is_unknown() {
+        let c = CascadeProvider::new(vec![]);
+        assert_eq!(c.model(), "unknown");
+    }
+
+    #[tokio::test]
+    async fn complete_fails_when_all_providers_fail() {
+        let c = CascadeProvider::new(vec![
+            Arc::new(StubProvider("p1", "m1")),
+            Arc::new(StubProvider("p2", "m2")),
+        ]);
+        let req = CompletionRequest {
+            messages: vec![],
+            tools: vec![],
+            temperature: None,
+            max_tokens: None,
+            stream: false,
+        };
+        assert!(c.complete(&req).await.is_err());
+    }
+}

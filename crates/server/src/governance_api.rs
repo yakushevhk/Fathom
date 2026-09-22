@@ -87,3 +87,24 @@ pub async fn audit(
 pub(crate) fn governance_from_policy(policy: PolicyConfig) -> Governance {
     Governance::new(PolicyEngine::new(policy))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn audit_query_deserializes() {
+        let q: AuditQuery =
+            serde_json::from_str(r#"{"limit":10,"decision":"allow","agent":"a1","session":"s1"}"#)
+                .unwrap();
+        assert_eq!(q.limit, Some(10));
+        assert_eq!(q.decision.as_deref(), Some("allow"));
+    }
+
+    #[test]
+    fn audit_query_all_optional() {
+        let q: AuditQuery = serde_json::from_str(r#"{}"#).unwrap();
+        assert!(q.limit.is_none());
+        assert!(q.agent.is_none());
+    }
+}

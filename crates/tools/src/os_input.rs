@@ -149,3 +149,40 @@ impl Tool for OsInputTool {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn mouse_click_defaults_left_button() {
+        let a: OsInputAction = serde_json::from_str(r#"{"action":"mouse_click"}"#).unwrap();
+        match a {
+            OsInputAction::MouseClick { button } => assert_eq!(button, "left"),
+            _ => panic!("wrong variant"),
+        }
+    }
+
+    #[test]
+    fn variants_deserialize() {
+        assert!(matches!(
+            serde_json::from_str::<OsInputAction>(r#"{"action":"mouse_move","x":1,"y":2}"#)
+                .unwrap(),
+            OsInputAction::MouseMove { x: 1, y: 2 }
+        ));
+        assert!(matches!(
+            serde_json::from_str::<OsInputAction>(r#"{"action":"key_type","text":"hi"}"#).unwrap(),
+            OsInputAction::KeyType { .. }
+        ));
+        assert!(matches!(
+            serde_json::from_str::<OsInputAction>(r#"{"action":"hotkey","keys":["Control","c"]}"#)
+                .unwrap(),
+            OsInputAction::Hotkey { .. }
+        ));
+        assert!(matches!(
+            serde_json::from_str::<OsInputAction>(r#"{"action":"focus_window","title":"Term"}"#)
+                .unwrap(),
+            OsInputAction::FocusWindow { .. }
+        ));
+    }
+}

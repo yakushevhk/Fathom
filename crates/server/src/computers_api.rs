@@ -753,3 +753,34 @@ async fn relay_screen(socket: WebSocket, root: String) {
     }
     let _ = timeout(WEBSOCKET_SEND_TIMEOUT, sender.send(Message::Close(None))).await;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn service_url_at_joins_cleanly() {
+        assert_eq!(service_url_at("http://x:1/", "/a"), "http://x:1/a");
+        assert_eq!(service_url_at("http://x:1", "/a"), "http://x:1/a");
+    }
+
+    #[test]
+    fn percent_encode_leaves_unreserved() {
+        assert_eq!(percent_encode("a-Z_0.~"), "a-Z_0.~");
+    }
+
+    #[test]
+    fn percent_encode_encodes_reserved() {
+        assert_eq!(percent_encode("a/b c:d"), "a%2Fb%20c%3Ad");
+        assert_eq!(percent_encode("☃"), "%E2%98%83");
+    }
+
+    #[test]
+    fn upstream_status_maps_known_codes() {
+        assert_eq!(upstream_status(reqwest::StatusCode::OK), StatusCode::OK);
+        assert_eq!(
+            upstream_status(reqwest::StatusCode::NOT_FOUND),
+            StatusCode::NOT_FOUND
+        );
+    }
+}

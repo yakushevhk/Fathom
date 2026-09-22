@@ -61,3 +61,50 @@ pub async fn summary(State(state): State<Arc<AppState>>) -> Response {
         }),
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{AppConfig, Persistence};
+    use axum::http::StatusCode;
+
+    fn state() -> Arc<AppState> {
+        let db = Arc::new(Persistence::in_memory().unwrap());
+        let jobs = Arc::new(crate::JobsDb::in_memory().unwrap());
+        let mut config = AppConfig::default();
+        config.memory.enabled = false;
+        AppState::with_db_and_jobs(config, db, jobs)
+    }
+
+    #[tokio::test]
+    async fn summary_returns_zeroed_metrics() {
+        let resp = summary(State(state())).await;
+        assert_eq!(resp.status(), StatusCode::OK);
+        let body = http_body_util::BodyExt::collect(resp.into_body())
+            .await
+            .unwrap()
+            .to_bytes();
+        let v: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert_eq!(v["active_sessions"], 0);
+        assert_eq!(v["audit_events"], 0);
+        assert_eq!(v["audit_counts_truncated"], false);
+        assert!(v["sessions_total"].is_number());
+    }
+
+    #[test]
+    fn summary_struct_serializes() {
+        let s = ObservabilitySummary {
+            active_sessions: 1,
+            sessions_total: 2,
+            agents_spawned: 3,
+            tool_calls: 4,
+            tokens_used: 5,
+            audit_events: 6,
+            audit_denials: 1,
+            audit_counts_truncated: false,
+        };
+        let v = serde_json::to_value(&s).unwrap();
+        assert_eq!(v["audit_denials"], 1);
+        assert_eq!(v["audit_counts_truncated"], false);
+    }
+}

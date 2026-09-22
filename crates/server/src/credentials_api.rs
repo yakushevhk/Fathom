@@ -69,3 +69,25 @@ pub async fn delete(State(state): State<Arc<AppState>>, Path(id): Path<String>) 
         Err(e) => error(StatusCode::BAD_REQUEST, e.to_string()),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn response_maps_row_without_extra_fields() {
+        let row = pr_persistence::CredentialRow {
+            id: "c1".into(),
+            name: "api-key".into(),
+            kind: "token".into(),
+            created_at: "t1".into(),
+            updated_at: "t2".into(),
+        };
+        let r = CredentialResponse::from(row);
+        let json = serde_json::to_value(&r).unwrap();
+        assert_eq!(json["id"], "c1");
+        assert_eq!(json["name"], "api-key");
+        assert!(json.get("value").is_none());
+        assert!(json.get("secret").is_none());
+    }
+}

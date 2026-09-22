@@ -56,3 +56,19 @@ pub const STEALTH_INJECTION_SCRIPT: &str = r#"
     });
 })();
 "#;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn defaults_enable_evasion_basics() {
+        let c = StealthConfig::default();
+        assert!(c.mask_webdriver);
+        assert!(c.spoof_user_agent);
+        assert!(c.user_agent.contains("Mozilla"));
+        assert!(!c.emulate_webgl_vendor.is_empty());
+        assert!(c.realistic_mouse_curves);
+        assert!(!c.solve_captchas);
+    }
+}

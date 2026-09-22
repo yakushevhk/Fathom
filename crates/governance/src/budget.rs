@@ -50,3 +50,66 @@ impl BudgetPolicy {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_policy_is_permissive() {
+        let p = BudgetPolicy::default();
+        assert!(p.max_usd.is_none());
+        assert!(p.max_total_tokens.is_none());
+        assert_eq!(p.on_exceeded, "pause");
+        assert!(p.check_limits(f64::MAX, u64::MAX).is_ok());
+    }
+
+    #[test]
+    fn usd_limit_enforced() {
+        let p = BudgetPolicy {
+            max_usd: Some(5.0),
+            ..Default::default()
+        };
+        assert!(p.check_limits(4.99, 0).is_ok());
+        assert!(p.check_limits(5.0, 0).is_err()); // >= boundary
+        assert!(p.check_limits(5.01, 0).is_err());
+    }
+
+    #[test]
+    fn token_limit_enforced() {
+        let p = BudgetPolicy {
+            max_total_tokens: Some(1000),
+            ..Default::default()
+        };
+        assert!(p.check_limits(0.0, 999).is_ok());
+        assert!(p.check_limits(0.0, 1000).is_err());
+    }
+
+    #[test]
+    fn usd_checked_before_tokens() {
+        let p = BudgetPolicy {
+            max_usd: Some(1.0),
+            max_total_tokens: Some(10),
+            ..Default::default()
+        };
+        let err = p.check_limits(2.0, 20).unwrap_err();
+        assert!(err.contains("Financial"), "{err}");
+    }
+
+    #[test]
+    fn error_messages_include_action() {
+        let p = BudgetPolicy {
+            max_usd: Some(1.0),
+            on_exceeded: "deny".into(),
+            ..Default::default()
+        };
+        let err = p.check_limits(9.0, 0).unwrap_err();
+        assert!(err.contains("deny"), "{err}");
+    }
+
+    #[test]
+    fn serde_default_action_is_pause() {
+        let p: BudgetPolicy = serde_json::from_str(r#"{"max_usd":1.0}"#).unwrap();
+        assert_eq!(p.on_exceeded, "pause");
+    }
+}

@@ -58,3 +58,38 @@ pub async fn list_replay(
         ),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn filter_none_passes() {
+        assert_eq!(filter(None, "session").unwrap(), None);
+    }
+
+    #[test]
+    fn filter_normal_value_passes() {
+        assert_eq!(
+            filter(Some("sess-1".into()), "session").unwrap(),
+            Some("sess-1".into())
+        );
+    }
+
+    #[test]
+    fn filter_empty_rejected() {
+        assert!(filter(Some("".into()), "session").is_err());
+    }
+
+    #[test]
+    fn filter_oversized_rejected() {
+        let big = "x".repeat(MAX_FILTER_BYTES + 1);
+        assert!(filter(Some(big), "agent").is_err());
+    }
+
+    #[test]
+    fn filter_at_max_boundary_passes() {
+        let v = "x".repeat(MAX_FILTER_BYTES);
+        assert!(filter(Some(v), "agent").is_ok());
+    }
+}

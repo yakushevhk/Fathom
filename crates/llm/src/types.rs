@@ -68,3 +68,106 @@ pub enum StreamChunk {
 }
 
 pub type ResponseStream = Pin<Box<dyn Stream<Item = anyhow::Result<StreamChunk>> + Send>>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn usage_simple_sets_fields() {
+        let u = Usage::simple(10, 5, 15);
+        assert_eq!(u.prompt_tokens, 10);
+        assert_eq!(u.completion_tokens, 5);
+        assert_eq!(u.total_tokens, 15);
+        assert!(u.cache_creation_input_tokens.is_none());
+        assert!(u.cache_read_input_tokens.is_none());
+    }
+
+    #[test]
+    fn usage_skips_none_cache_fields() {
+        let u = Usage::simple(1, 2, 3);
+        let json = serde_json::to_string(&u).unwrap();
+        assert!(!json.contains("cache_creation_input_tokens"));
+        assert!(!json.contains("cache_read_input_tokens"));
+    }
+
+    #[test]
+    fn usage_keeps_some_cache_fields() {
+        let mut u = Usage::simple(1, 2, 3);
+        u.cache_read_input_tokens = Some(7);
+        let json = serde_json::to_string(&u).unwrap();
+        assert!(json.contains("\"cache_read_input_tokens\":7"));
+    }
+
+    #[test]
+    fn stream_chunk_text_tag() {
+        let c = StreamChunk::Text { delta: "hi".into() };
+        let json = serde_json::to_string(&c).unwrap();
+        assert!(json.contains("\"type\":\"text\""));
+        let back: StreamChunk = serde_json::from_str(&json).unwrap();
+        matches!(back, StreamChunk::Text { delta } if delta == "hi");
+    }
+
+    #[test]
+    fn stream_chunk_tool_call_tag_and_default_index() {
+        let json = r#"{"type":"tool_call","id":"c1","name":"shell","arguments_delta":"{}"}"#;
+        let c: StreamChunk = serde_json::from_str(json).unwrap();
+        if let StreamChunk::ToolCallDelta {
+            index, id, name, ..
+        } = c
+        {
+            assert_eq!(index, 0); // default index
+            assert_eq!(id, "c1");
+            assert_eq!(name, "shell");
+        } else {
+            panic!("wrong variant");
+        }
+    }
+
+    #[test]
+    fn stream_chunk_done_roundtrip() {
+        let c = StreamChunk::Done {
+            message: Message::assistant("done"),
+            usage: Some(Usage::simple(1, 2, 3)),
+            finish_reason: Some("stop".into()),
+        };
+        let json = serde_json::to_string(&c).unwrap();
+        assert!(json.contains("\"type\":\"done\""));
+        let back: StreamChunk = serde_json::from_str(&json).unwrap();
+        matches!(back, StreamChunk::Done { .. });
+    }
+
+    #[test]
+    fn stream_chunk_error_variant() {
+        let c = StreamChunk::Error {
+            message: "boom".into(),
+        };
+        let json = serde_json::to_string(&c).unwrap();
+        assert!(json.contains("\"type\":\"error\""));
+    }
+
+    #[test]
+    fn stream_chunk_reasoning_variant() {
+        let c = StreamChunk::Reasoning {
+            delta: "thinking".into(),
+        };
+        let json = serde_json::to_string(&c).unwrap();
+        assert!(json.contains("\"type\":\"reasoning\""));
+    }
+
+    #[test]
+    fn completion_request_serde_roundtrip() {
+        let r = CompletionRequest {
+            messages: vec![Message::user("hi")],
+            tools: vec![],
+            temperature: Some(0.5),
+            max_tokens: Some(100),
+            stream: false,
+        };
+        let json = serde_json::to_string(&r).unwrap();
+        let back: CompletionRequest = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.messages.len(), 1);
+        assert_eq!(back.max_tokens, Some(100));
+        assert!(!back.stream);
+    }
+}

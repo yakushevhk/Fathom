@@ -75,3 +75,63 @@ pub fn describe_task(ctl: &AxController, atespace: &str, name: &str) -> AxResult
     }
     Ok(out)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::manifest::{ObjectMeta, TaskSpec, TaskStatus};
+    use std::io::Write;
+
+    fn task(name: &str, phase: &str) -> Task {
+        Task {
+            api_version: crate::manifest::API_VERSION.into(),
+            kind: crate::manifest::kind::TASK.into(),
+            metadata: ObjectMeta {
+                name: name.into(),
+                atespace: "ns".into(),
+                creation_timestamp: Some("2026-01-01".into()),
+            },
+            spec: TaskSpec::default(),
+            status: TaskStatus {
+                phase: phase.into(),
+                pid: 123,
+                actor: "shim".into(),
+                ..Default::default()
+            },
+        }
+    }
+
+    #[test]
+    fn task_rows_projects_fields() {
+        let rows = task_rows(vec![task("a", "Running"), task("b", "Failed")]);
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].name, "a");
+        assert_eq!(rows[0].phase, "Running");
+        assert_eq!(rows[0].pid, 123);
+        assert_eq!(rows[0].atespace, "ns");
+        assert_eq!(rows[1].phase, "Failed");
+    }
+
+    #[test]
+    fn read_task_log_reads_and_advances_offset() {
+        let mut f = tempfile::NamedTempFile::new().unwrap();
+        f.write_all(b"line1\nline2\n").unwrap();
+        f.flush().unwrap();
+        let path = f.path().to_str().unwrap().to_string();
+        let (off, chunk) = read_task_log(&path, 0).unwrap();
+        assert_eq!(chunk, b"line1\nline2\n");
+        assert_eq!(off, 12);
+        // Second read at EOF returns empty chunk.
+        let (off2, chunk2) = read_task_log(&path, off).unwrap();
+        assert!(chunk2.is_empty());
+        assert_eq!(off2, off);
+    }
+
+    #[test]
+    fn read_task_log_missing_file_returns_empty() {
+        // A not-yet-created actor log reads as empty, offset unchanged.
+        let (off, chunk) = read_task_log("/nonexistent/x.log", 5).unwrap();
+        assert_eq!(off, 5);
+        assert!(chunk.is_empty());
+    }
+}

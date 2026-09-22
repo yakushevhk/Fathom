@@ -82,3 +82,33 @@ impl FilesystemWatcher {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn config_defaults() {
+        let c = WatcherConfig::default();
+        assert_eq!(c.debounce_ms, 300);
+        assert!(c.auto_heal_on_compiler_error);
+        assert_eq!(c.root_dir, PathBuf::from("."));
+    }
+
+    #[test]
+    fn new_watcher_holds_config() {
+        let w = FilesystemWatcher::new(WatcherConfig {
+            root_dir: PathBuf::from("/tmp/x"),
+            debounce_ms: 10,
+            auto_heal_on_compiler_error: false,
+        });
+        assert_eq!(w.config.debounce_ms, 10);
+        assert!(!w.config.auto_heal_on_compiler_error);
+    }
+
+    #[tokio::test]
+    async fn sender_channel_is_live() {
+        let w = FilesystemWatcher::new(WatcherConfig::default());
+        assert!(w.sender().send(PathBuf::from("/tmp/f.rs")).await.is_ok());
+    }
+}

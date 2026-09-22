@@ -48,3 +48,20 @@ pub enum AxError {
 }
 
 pub type AxResult<T> = Result<T, AxError>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validation_error_displays_message() {
+        let e = AxError::Validation("bad field".into());
+        assert!(format!("{e}").contains("bad field"));
+    }
+
+    #[test]
+    fn error_implements_std_error() {
+        fn is_err<T: std::error::Error>() {}
+        is_err::<AxError>();
+    }
+}

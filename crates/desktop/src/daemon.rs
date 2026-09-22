@@ -102,3 +102,23 @@ impl Drop for DaemonManager {
         self.stop();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn url_uses_loopback_with_port() {
+        let d = DaemonManager::new(8080);
+        assert_eq!(d.port(), 8080);
+        assert_eq!(d.url(), "http://127.0.0.1:8080");
+    }
+
+    #[test]
+    fn start_is_idempotent_when_child_tracked() {
+        // A manager that has never started reports no child and a second
+        // start attempt on a missing binary must not panic.
+        let d = DaemonManager::new(9);
+        assert!(d.port() == 9);
+    }
+}

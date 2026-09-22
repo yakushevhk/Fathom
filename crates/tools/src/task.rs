@@ -121,3 +121,82 @@ Returns batch job handles and coordination IDs immediately."
         Ok(output)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pr_core::SearchConfig;
+    use std::path::PathBuf;
+
+    fn ctx() -> ToolContext {
+        ToolContext::new(PathBuf::from("/tmp"), SearchConfig::default())
+    }
+
+    #[test]
+    fn swarm_subtask_defaults() {
+        let t: SwarmSubtask = serde_json::from_str(r#"{"task":"do x"}"#).unwrap();
+        assert_eq!(t.agent, "scout");
+        assert_eq!(t.schema_mode, "permissive");
+        assert!(t.name.is_none());
+        assert!(t.output_schema.is_none());
+    }
+
+    #[test]
+    fn swarm_subtask_explicit_fields() {
+        let t: SwarmSubtask = serde_json::from_str(
+            r#"{"task":"t","name":"N","agent":"coder","schema_mode":"strict","output_schema":{"type":"object"}}"#,
+        )
+        .unwrap();
+        assert_eq!(t.agent, "coder");
+        assert_eq!(t.name.as_deref(), Some("N"));
+        assert_eq!(t.schema_mode, "strict");
+    }
+
+    #[tokio::test]
+    async fn empty_tasks_array_is_error_output() {
+        let tool = TaskBatchTool;
+        let out = tool
+            .execute(serde_json::json!({"context": "c", "tasks": []}), &ctx())
+            .await
+            .unwrap();
+        assert!(!out.success);
+    }
+
+    #[tokio::test]
+    async fn batch_spawn_returns_job_handles() {
+        let tool = TaskBatchTool;
+        let out = tool
+            .execute(
+                serde_json::json!({
+                    "context": "shared ctx",
+                    "tasks": [
+                        {"task": "scan repo", "agent": "scout", "name": "s1"},
+                        {"task": "fix bug", "agent": "coder"}
+                    ]
+                }),
+                &ctx(),
+            )
+            .await
+            .unwrap();
+        assert!(out.success);
+        assert!(out.content.contains("Spawned 2"));
+        assert!(out.content.contains("s1"));
+        assert!(out.content.contains("subagent_coder_2"));
+        let meta = out.metadata.unwrap();
+        let spawns = meta["swarm_batch_spawn"].as_array().unwrap();
+        assert_eq!(spawns.len(), 2);
+        assert_eq!(spawns[0]["name"], "s1");
+        assert_eq!(spawns[1]["role"], "coder");
+        assert_eq!(spawns[0]["context"], "shared ctx");
+        assert!(!spawns[0]["job_id"].as_str().unwrap().is_empty());
+    }
+
+    #[test]
+    fn tool_name_and_schema() {
+        let tool = TaskBatchTool;
+        assert_eq!(tool.name(), "task");
+        let schema = tool.schema();
+        assert_eq!(schema.name, "task");
+        assert!(schema.parameters.is_object());
+    }
+}

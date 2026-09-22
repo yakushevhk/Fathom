@@ -376,3 +376,15 @@ impl LlmProvider for AnthropicProvider {
         Ok(Box::new(stream))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn provider_name_is_anthropic() {
+        let p = AnthropicProvider::new("key", "claude-x", None, false, None);
+        assert_eq!(p.name(), "anthropic");
+        assert_eq!(p.model(), "claude-x");
+    }
+}

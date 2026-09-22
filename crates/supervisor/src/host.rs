@@ -138,3 +138,61 @@ impl HostSandbox {
         Ok((code, stdout, stderr))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn wrap_command_uses_bwrap_and_unshares() {
+        let sb = HostSandbox {
+            workspace_root: PathBuf::from("/ws"),
+            allow_network: false,
+            read_only_root: true,
+        };
+        let (prog, args) = sb.wrap_command("ls", &["-la".to_string()]);
+        assert_eq!(prog, "bwrap");
+        let a = args.join(" ");
+        assert!(a.contains("--unshare-pid"));
+        assert!(a.contains("--unshare-net"), "no network by default: {a}");
+        assert!(a.contains("--die-with-parent"));
+        assert!(a.ends_with("ls -la"));
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn wrap_command_with_network_skips_unshare_net() {
+        let sb = HostSandbox {
+            workspace_root: PathBuf::from("/ws"),
+            allow_network: true,
+            read_only_root: true,
+        }
+        .with_network(true);
+        let (_, args) = sb.wrap_command("curl", &[]);
+        assert!(!args.contains(&"--unshare-net".to_string()));
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn wrap_command_binds_workspace_writable() {
+        let sb = HostSandbox {
+            workspace_root: PathBuf::from("/my/ws"),
+            allow_network: false,
+            read_only_root: true,
+        };
+        let (_, args) = sb.wrap_command("true", &[]);
+        // workspace bind is rw (--bind) and chdir lands in it
+        let i = args.iter().position(|a| a == "--bind").unwrap();
+        assert_eq!(args[i + 1], "/my/ws");
+        let c = args.iter().position(|a| a == "--chdir").unwrap();
+        assert_eq!(args[c + 1], "/my/ws");
+    }
+
+    #[test]
+    fn builder_defaults() {
+        let sb = HostSandbox::new(PathBuf::from("/w"));
+        assert_eq!(sb.workspace_root, PathBuf::from("/w"));
+    }
+}

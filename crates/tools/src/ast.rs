@@ -372,3 +372,27 @@ async fn search_workspace_references(
 
     Ok(results)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn query_defaults() {
+        let q: AstQuery = serde_json::from_str(r#"{"pattern":"fn $F"}"#).unwrap();
+        assert_eq!(q.mode, default_mode());
+        assert_eq!(q.max_results, default_limit());
+        assert!(q.path.is_none());
+    }
+
+    #[test]
+    fn query_explicit_fields() {
+        let q: AstQuery = serde_json::from_str(
+            r#"{"pattern":"p","path":"src/","mode":"repomap","max_results":5}"#,
+        )
+        .unwrap();
+        assert_eq!(q.path.as_deref(), Some("src/"));
+        assert_eq!(q.mode, "repomap");
+        assert_eq!(q.max_results, 5);
+    }
+}
