@@ -76,6 +76,11 @@ export function initI18n() {
     toggle.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      document.querySelectorAll('.nav-dropdown.open').forEach((dd) => {
+        dd.classList.remove('open');
+        const b = dd.querySelector('.nav-dropdown-toggle');
+        if (b) b.setAttribute('aria-expanded', 'false');
+      });
       dropdown.classList.toggle('open');
     });
     document.addEventListener('click', (e) => {

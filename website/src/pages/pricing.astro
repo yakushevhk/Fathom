@@ -203,14 +203,14 @@ import PageHero from '../components/PageHero.astro';
 
   /* Calculator Styles */
   .calculator-card {
-    display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 36px;
+    display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 36px;
     background: var(--bg-card); border: 1px solid var(--border);
     border-radius: var(--radius-xl); padding: 40px; box-shadow: var(--shadow-lg);
   }
   .calc-inputs { display: flex; flex-direction: column; gap: 28px; justify-content: center; }
   .calc-group { display: flex; flex-direction: column; gap: 10px; }
-  .calc-label-row { display: flex; justify-content: space-between; align-items: center; }
-  .calc-label-row label { font-size: 0.92rem; font-weight: 600; color: var(--text-primary); }
+  .calc-label-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px 10px; }
+  .calc-label-row label { font-size: 0.92rem; font-weight: 600; color: var(--text-primary); flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; }
   .calc-val-badge { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; color: var(--accent); background: var(--bg-secondary); padding: 4px 10px; border-radius: var(--radius-sm); }
   .calc-slider { width: 100%; height: 6px; border-radius: 3px; background: var(--grey-200); accent-color: var(--accent); cursor: pointer; }
 
@@ -243,7 +243,7 @@ import PageHero from '../components/PageHero.astro';
   .cta-link { font-size: 0.9rem; color: var(--text-secondary); text-decoration: none; font-weight: 500; }
 
   @media (max-width: 900px) {
-    .calculator-card { grid-template-columns: 1fr; padding: 24px; }
+    .calculator-card { grid-template-columns: minmax(0, 1fr); padding: 24px; }
     .cta-strip { flex-direction: column; gap: 20px; text-align: center; }
   }
 </style>

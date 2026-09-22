@@ -139,6 +139,18 @@
   line-height: 1.6;
 }
 
+/* Callouts that carry bare text/code children (no icon/content wrappers)
+   must flow as a normal block card — as flex items each text segment and
+   <code> becomes an anonymous flex item and renders as a narrow column
+   that can spill far outside the card on narrow screens. */
+.doc-content .callout:not(:has(> .callout-content)) {
+  display: block;
+}
+
+.doc-content .callout:not(:has(> .callout-content)) code {
+  display: inline;
+}
+
 .doc-content .code-block {
   background: var(--bg-dark);
   border-radius: var(--radius-md);
@@ -260,6 +272,16 @@
   padding: 10px 14px;
   border-bottom: 1px solid var(--grey-100);
   color: var(--grey-800);
+}
+
+/* Tables written without a .table-wrap/.mini-table-wrap ancestor (plain
+   <table>, .mini-table, .flags-table) still must not overflow the page on
+   mobile — the table element itself becomes the horizontal scroller. */
+.doc-content table {
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
 }
 
 .doc-content .mini-table tr:last-child td {

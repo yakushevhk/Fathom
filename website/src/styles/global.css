@@ -217,6 +217,11 @@ button {
   min-width: 0;
 }
 
+.code-card pre {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
