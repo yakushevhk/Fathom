@@ -280,6 +280,19 @@ enum AxAction {
         #[arg(long, default_value = "100")]
         limit: i64,
     },
+    /// Run the AX benchmark suite: manifest parse, event-log append,
+    /// apply dispatch, concurrent actors and lifecycle latency.
+    Bench {
+        /// Concurrent tasks for the load scenarios
+        #[arg(long, default_value = "10")]
+        tasks: usize,
+        /// Emit JSON instead of a table
+        #[arg(long)]
+        json: bool,
+        /// Per-phase wait timeout (seconds) for actor scenarios
+        #[arg(long, default_value = "30")]
+        timeout_secs: u64,
+    },
 }
 
 #[derive(Subcommand)]
@@ -2815,6 +2828,21 @@ async fn cmd_ax(action: AxAction) -> anyhow::Result<()> {
                     e.action,
                     e.created_at
                 );
+            }
+        }
+        AxAction::Bench {
+            tasks,
+            json,
+            timeout_secs,
+        } => {
+            let dir = std::env::temp_dir().join(format!("fathom-ax-bench-{}", std::process::id()));
+            std::fs::create_dir_all(&dir)?;
+            let results = pr_ax::bench::run_suite(&dir, tasks, timeout_secs).await?;
+            let _ = std::fs::remove_dir_all(&dir);
+            if json {
+                println!("{}", serde_json::to_string_pretty(&results)?);
+            } else {
+                print!("{}", pr_ax::bench::render(&results));
             }
         }
     }

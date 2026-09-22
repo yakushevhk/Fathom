@@ -8,6 +8,7 @@
 //! See `crates/fathom_ax/README.md` for the architecture and CLI usage.
 
 pub mod actor;
+pub mod bench;
 pub mod controller;
 pub mod error;
 pub mod manifest;

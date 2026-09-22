@@ -431,7 +431,7 @@ fn event_from_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<Event> {
         name: r.get(3)?,
         action: r.get(4)?,
         payload: serde_json::from_str(&payload_str)
-            .unwrap_or_else(|_| serde_json::Value::String(payload_str)),
+            .unwrap_or(serde_json::Value::String(payload_str)),
         created_at: r.get(6)?,
     })
 }

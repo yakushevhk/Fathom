@@ -88,7 +88,33 @@ fathom ax suspend <name> / resume <name>
 fathom ax fork <name> --fork-name X [--at-seq N]
 fathom ax delete task <name>                # two-phase (Terminating → gone)
 fathom ax events [--from-seq N]             # raw event log
+fathom ax bench [--tasks N] [--json]        # benchmark suite
 ```
+
+## Benchmarks & chaos tests
+
+`fathom ax bench` runs the load suite (`src/bench.rs`) against an isolated
+state dir and prints a structured report (table or `--json`):
+
+| Scenario | Measures |
+|---|---|
+| `manifest-parse` | manifest decode+validate ops/sec |
+| `event-log-append` | durable event append throughput + full scan |
+| `apply-dispatch` | per-`apply` reconciler latency (single-writer) |
+| `concurrent-actors-N` | N parallel actors to terminal, tasks/sec, peak RSS (`VmHWM`) |
+| `lifecycle-N` | apply → Running → Suspend → Resume → terminal latencies |
+
+Every `BenchResult` carries ops, wall time, ops/sec, a p50/p95/p99 latency
+distribution, `peak_rss_kb` (process `VmHWM`) and a failure count.
+
+`tests/chaos_tests.rs` covers fault tolerance: abrupt `SIGKILL` of a
+running actor (→ `Failed` + phase event), controller crash while an actor
+is suspended (→ recovery marks Interrupted/Failed, durable `resume`
+respawns), delete-while-suspended two-phase ordering, a busy-loop actor
+staying controllable, rapid suspend/resume cycles, a 20-task mixed-ops
+storm ending consistent, event-log monotonicity under load, and malformed
+manifest rejection. `tests/bench_tests.rs` asserts every scenario
+completes with zero failures and sane metrics.
 
 ## Environment
 
@@ -128,4 +154,5 @@ src/store.rs       SQLite WAL: resources + append-only events + actor registry
 src/controller.rs  single-writer reconciler, suspend/resume/fork, recovery
 src/actor.rs       process actors: spawn, SIGSTOP/SIGCONT, kill, log tail
 src/ops.rs         CLI read paths (rows, describe, log read)
+src/bench.rs       benchmark suite: throughput, p50/p95/p99 latency, VmHWM
 ```
