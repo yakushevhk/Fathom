@@ -1,9 +1,9 @@
-use std::sync::Arc;
+use crate::provider::LlmProvider;
+use crate::types::{CompletionRequest, CompletionResponse, StreamChunk};
 use async_trait::async_trait;
 use futures::Stream;
 use pr_core::{PrError, PrResult};
-use crate::provider::LlmProvider;
-use crate::types::{CompletionRequest, CompletionResponse, StreamChunk};
+use std::sync::Arc;
 
 /// Cascade fallback provider that routes requests down a priority list
 /// of providers on transient failures, rate limits, or outage errors.
@@ -32,7 +32,9 @@ impl LlmProvider for CascadeProvider {
 
     async fn complete(&self, req: &CompletionRequest) -> PrResult<CompletionResponse> {
         if self.providers.is_empty() {
-            return Err(PrError::Llm("CascadeProvider has no registered child providers".into()));
+            return Err(PrError::Llm(
+                "CascadeProvider has no registered child providers".into(),
+            ));
         }
 
         let mut last_err = None;
@@ -63,7 +65,8 @@ impl LlmProvider for CascadeProvider {
             }
         }
 
-        Err(last_err.unwrap_or_else(|| PrError::Llm("All cascade fallback providers failed".into())))
+        Err(last_err
+            .unwrap_or_else(|| PrError::Llm("All cascade fallback providers failed".into())))
     }
 
     async fn stream(
@@ -71,7 +74,9 @@ impl LlmProvider for CascadeProvider {
         req: &CompletionRequest,
     ) -> PrResult<Box<dyn Stream<Item = PrResult<StreamChunk>> + Send + Unpin>> {
         if self.providers.is_empty() {
-            return Err(PrError::Llm("CascadeProvider has no registered child providers".into()));
+            return Err(PrError::Llm(
+                "CascadeProvider has no registered child providers".into(),
+            ));
         }
 
         let mut last_err = None;
@@ -101,6 +106,8 @@ impl LlmProvider for CascadeProvider {
             }
         }
 
-        Err(last_err.unwrap_or_else(|| PrError::Llm("All cascade fallback providers failed streaming".into())))
+        Err(last_err.unwrap_or_else(|| {
+            PrError::Llm("All cascade fallback providers failed streaming".into())
+        }))
     }
 }

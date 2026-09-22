@@ -139,17 +139,11 @@ impl BrowserTool {
         targets
             .into_iter()
             .find(|t| t.target_type == "page")
-            .ok_or_else(|| {
-                anyhow::anyhow!("no browser page is open; call browser_navigate first")
-            })
+            .ok_or_else(|| anyhow::anyhow!("no browser page is open; call browser_navigate first"))
     }
 
     /// Open a new page target via `/json/new` (PUT first, GET for older builds).
-    pub async fn new_page(
-        &self,
-        client: &reqwest::Client,
-        url: &str,
-    ) -> anyhow::Result<CdpTarget> {
+    pub async fn new_page(&self, client: &reqwest::Client, url: &str) -> anyhow::Result<CdpTarget> {
         let encoded: String = url::form_urlencoded::byte_serialize(url.as_bytes()).collect();
         let target_url = format!("{}/json/new?{}", self.endpoint(), encoded);
 
@@ -771,7 +765,11 @@ impl BrowserTypeTool {
             "Typed {} characters into <{tag}> matching '{}'{}",
             params.text.chars().count(),
             params.selector,
-            if params.submit { " and submitted the form" } else { "" }
+            if params.submit {
+                " and submitted the form"
+            } else {
+                ""
+            }
         )))
     }
 }
@@ -924,8 +922,8 @@ mod tests {
     #[test]
     fn test_cdp_endpoint_from_env_default() {
         // The default must always parse as a URL with a host.
-        let endpoint = std::env::var(CDP_ENDPOINT_ENV)
-            .unwrap_or_else(|_| DEFAULT_CDP_ENDPOINT.to_string());
+        let endpoint =
+            std::env::var(CDP_ENDPOINT_ENV).unwrap_or_else(|_| DEFAULT_CDP_ENDPOINT.to_string());
         let url = url::Url::parse(&endpoint).unwrap();
         assert!(url.host_str().is_some());
     }
@@ -1040,10 +1038,7 @@ mod tests {
     #[tokio::test]
     async fn test_navigate_without_browser_returns_err_output() {
         let tool = BrowserNavigateTool::new("http://127.0.0.1:1");
-        let ctx = ToolContext::new(
-            std::env::temp_dir(),
-            pr_core::SearchConfig::default(),
-        );
+        let ctx = ToolContext::new(std::env::temp_dir(), pr_core::SearchConfig::default());
         let out = tool
             .execute(serde_json::json!({"url": "https://example.com"}), &ctx)
             .await
@@ -1100,7 +1095,10 @@ mod tests {
             .unwrap();
         assert!(out.success, "click failed: {}", out.content);
 
-        let out = extract.execute(serde_json::json!({"selector": "#h"}), &ctx).await.unwrap();
+        let out = extract
+            .execute(serde_json::json!({"selector": "#h"}), &ctx)
+            .await
+            .unwrap();
         assert!(out.success);
         assert!(out.content.contains("clicked"));
 

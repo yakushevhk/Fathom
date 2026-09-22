@@ -1,6 +1,6 @@
+use pr_core::{PrError, PrResult};
 use std::path::PathBuf;
 use std::process::Stdio;
-use pr_core::{PrError, PrResult};
 
 /// Sub-millisecond host-level sandbox runner using Linux bubblewrap (`bwrap`)
 /// or macOS `sandbox-exec` with strict filesystem and network isolation.
@@ -29,16 +29,32 @@ impl HostSandbox {
         #[cfg(target_os = "linux")]
         {
             let mut bwrap_args = vec![
-                "--ro-bind".to_string(), "/usr".to_string(), "/usr".to_string(),
-                "--ro-bind".to_string(), "/bin".to_string(), "/bin".to_string(),
-                "--ro-bind".to_string(), "/lib".to_string(), "/lib".to_string(),
-                "--ro-bind".to_string(), "/lib64".to_string(), "/lib64".to_string(),
-                "--ro-bind".to_string(), "/etc".to_string(), "/etc".to_string(),
-                "--dev".to_string(), "/dev".to_string(),
-                "--proc".to_string(), "/proc".to_string(),
-                "--tmpfs".to_string(), "/tmp".to_string(),
-                "--bind".to_string(), self.workspace_root.display().to_string(), self.workspace_root.display().to_string(),
-                "--chdir".to_string(), self.workspace_root.display().to_string(),
+                "--ro-bind".to_string(),
+                "/usr".to_string(),
+                "/usr".to_string(),
+                "--ro-bind".to_string(),
+                "/bin".to_string(),
+                "/bin".to_string(),
+                "--ro-bind".to_string(),
+                "/lib".to_string(),
+                "/lib".to_string(),
+                "--ro-bind".to_string(),
+                "/lib64".to_string(),
+                "/lib64".to_string(),
+                "--ro-bind".to_string(),
+                "/etc".to_string(),
+                "/etc".to_string(),
+                "--dev".to_string(),
+                "/dev".to_string(),
+                "--proc".to_string(),
+                "/proc".to_string(),
+                "--tmpfs".to_string(),
+                "/tmp".to_string(),
+                "--bind".to_string(),
+                self.workspace_root.display().to_string(),
+                self.workspace_root.display().to_string(),
+                "--chdir".to_string(),
+                self.workspace_root.display().to_string(),
                 "--die-with-parent".to_string(),
                 "--unshare-pid".to_string(),
                 "--unshare-ipc".to_string(),
@@ -70,11 +86,7 @@ impl HostSandbox {
                 if self.allow_network { "(allow network*)" } else { "(deny network*)" }
             );
 
-            let mut sb_args = vec![
-                "-p".to_string(),
-                profile,
-                program.to_string(),
-            ];
+            let mut sb_args = vec!["-p".to_string(), profile, program.to_string()];
             sb_args.extend(args.iter().cloned());
 
             ("sandbox-exec".to_string(), sb_args)
@@ -106,8 +118,18 @@ impl HostSandbox {
         let future = cmd.output();
         let output = tokio::time::timeout(std::time::Duration::from_secs(timeout_secs), future)
             .await
-            .map_err(|_| PrError::Tool(format!("Sandboxed process '{}' timed out after {}s", program, timeout_secs)))?
-            .map_err(|e| PrError::Tool(format!("Failed to execute sandboxed command '{}': {}", exec_prog, e)))?;
+            .map_err(|_| {
+                PrError::Tool(format!(
+                    "Sandboxed process '{}' timed out after {}s",
+                    program, timeout_secs
+                ))
+            })?
+            .map_err(|e| {
+                PrError::Tool(format!(
+                    "Failed to execute sandboxed command '{}': {}",
+                    exec_prog, e
+                ))
+            })?;
 
         let code = output.status.code().unwrap_or(-1);
         let stdout = String::from_utf8_lossy(&output.stdout).to_string();

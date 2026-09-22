@@ -205,7 +205,10 @@ mod tests {
         let store: Arc<dyn ContactStore> = Arc::new(crate::ContactDb::in_memory().unwrap());
         assert_eq!(store.backend(), "sqlite");
 
-        let id = store.add_contact(&sample_contact("Alice@Example.com ", "Alice")).await.unwrap();
+        let id = store
+            .add_contact(&sample_contact("Alice@Example.com ", "Alice"))
+            .await
+            .unwrap();
         assert!(id > 0);
         assert_eq!(store.count().await.unwrap(), 1);
 

@@ -1,8 +1,8 @@
+use crate::registry::{Tool, ToolContext};
 use async_trait::async_trait;
 use pr_core::{ToolOutput, ToolSchema};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use crate::registry::{Tool, ToolContext};
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "action")]
@@ -60,11 +60,16 @@ impl Tool for OsInputTool {
         ToolSchema {
             name: self.name().to_string(),
             description: self.description().to_string(),
-            parameters: serde_json::to_value(&schemars::schema_for!(OsInputParams).schema).unwrap_or_default(),
+            parameters: serde_json::to_value(&schemars::schema_for!(OsInputParams).schema)
+                .unwrap_or_default(),
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, _ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        _ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: OsInputParams = serde_json::from_value(args)?;
 
         match params.action {
@@ -75,7 +80,8 @@ impl Tool for OsInputTool {
                     // Use clean integer formatting without shell escape risks
                     let script = format!(
                         "tell application \"System Events\" to set position of mouse to {{{}, {}}}",
-                        x.clamp(0, 10000), y.clamp(0, 10000)
+                        x.clamp(0, 10000),
+                        y.clamp(0, 10000)
                     );
                     let _ = tokio::process::Command::new("osascript")
                         .arg("-e")
@@ -87,9 +93,10 @@ impl Tool for OsInputTool {
                 Ok(ToolOutput::ok(format!("OS: Moved mouse to ({}, {})", x, y)))
             }
 
-            OsInputAction::MouseClick { button } => {
-                Ok(ToolOutput::ok(format!("OS: Clicked {} mouse button", button)))
-            }
+            OsInputAction::MouseClick { button } => Ok(ToolOutput::ok(format!(
+                "OS: Clicked {} mouse button",
+                button
+            ))),
 
             OsInputAction::KeyType { text } => {
                 #[cfg(target_os = "macos")]
@@ -111,21 +118,25 @@ impl Tool for OsInputTool {
                         .output()
                         .await;
                 }
-                Ok(ToolOutput::ok(format!("OS: Typed text ({} chars)", text.len())))
+                Ok(ToolOutput::ok(format!(
+                    "OS: Typed text ({} chars)",
+                    text.len()
+                )))
             }
 
-            OsInputAction::Hotkey { keys } => {
-                Ok(ToolOutput::ok(format!("OS: Triggered hotkey [{}]", keys.join(" + "))))
-            }
+            OsInputAction::Hotkey { keys } => Ok(ToolOutput::ok(format!(
+                "OS: Triggered hotkey [{}]",
+                keys.join(" + ")
+            ))),
 
             OsInputAction::FocusWindow { title } => {
                 #[cfg(target_os = "macos")]
                 {
-                    let sanitized = title.chars().filter(|c| c.is_alphanumeric() || *c == ' ' || *c == '-' || *c == '_').collect::<String>();
-                    let script = format!(
-                        "tell application \"{}\" to activate",
-                        sanitized
-                    );
+                    let sanitized = title
+                        .chars()
+                        .filter(|c| c.is_alphanumeric() || *c == ' ' || *c == '-' || *c == '_')
+                        .collect::<String>();
+                    let script = format!("tell application \"{}\" to activate", sanitized);
                     let _ = tokio::process::Command::new("osascript")
                         .arg("-e")
                         .arg(&script)

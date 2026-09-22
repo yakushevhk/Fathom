@@ -84,7 +84,9 @@ impl SearchEngine {
             }
         }
         if let Some(ref c) = self.config.parallel {
-            let results = self.search_parallel_with_key(query, limit, &c.api_key).await;
+            let results = self
+                .search_parallel_with_key(query, limit, &c.api_key)
+                .await;
             if !results.is_empty() {
                 return results;
             }
@@ -131,13 +133,21 @@ impl SearchEngine {
         };
         let parallel_fut = async {
             match self.config.parallel.as_ref() {
-                Some(c) => self.search_parallel_with_key(query, limit, &c.api_key).await,
+                Some(c) => {
+                    self.search_parallel_with_key(query, limit, &c.api_key)
+                        .await
+                }
                 None => Vec::new(),
             }
         };
 
         let (linkup_r, exa_r, tavily_r, serper_r, brave_r, parallel_r) = tokio::join!(
-            linkup_fut, exa_fut, tavily_fut, serper_fut, brave_fut, parallel_fut
+            linkup_fut,
+            exa_fut,
+            tavily_fut,
+            serper_fut,
+            brave_fut,
+            parallel_fut
         );
 
         let sources: Vec<(&str, Vec<SearchResult>)> = vec![
@@ -161,13 +171,19 @@ impl SearchEngine {
 
     async fn search_linkup(&self, query: &str, limit: u32) -> Vec<SearchResult> {
         if let Some(ref linkup) = self.config.linkup {
-            self.search_linkup_with_key(query, limit, &linkup.api_key).await
+            self.search_linkup_with_key(query, limit, &linkup.api_key)
+                .await
         } else {
             vec![]
         }
     }
 
-    async fn search_linkup_with_key(&self, query: &str, limit: u32, api_key: &str) -> Vec<SearchResult> {
+    async fn search_linkup_with_key(
+        &self,
+        query: &str,
+        limit: u32,
+        api_key: &str,
+    ) -> Vec<SearchResult> {
         let url = "https://api.linkup.so/v1/search";
 
         let body = serde_json::json!({
@@ -177,7 +193,8 @@ impl SearchEngine {
             "includeImages": false,
         });
 
-        let response = self.http
+        let response = self
+            .http
             .post(url)
             .header("Authorization", format!("Bearer {api_key}"))
             .header("Content-Type", "application/json")
@@ -186,15 +203,13 @@ impl SearchEngine {
             .await;
 
         match response {
-            Ok(resp) if resp.status().is_success() => {
-                match resp.json::<LinkupResponse>().await {
-                    Ok(linkup_resp) => parse_linkup_response(linkup_resp, limit),
-                    Err(e) => {
-                        tracing::warn!("Linkup response parse error: {e}");
-                        vec![]
-                    }
+            Ok(resp) if resp.status().is_success() => match resp.json::<LinkupResponse>().await {
+                Ok(linkup_resp) => parse_linkup_response(linkup_resp, limit),
+                Err(e) => {
+                    tracing::warn!("Linkup response parse error: {e}");
+                    vec![]
                 }
-            }
+            },
             Ok(resp) => {
                 tracing::warn!("Linkup search failed: HTTP {}", resp.status());
                 vec![]
@@ -216,14 +231,20 @@ impl SearchEngine {
         }
     }
 
-    async fn search_exa_with_key(&self, query: &str, limit: u32, api_key: &str) -> Vec<SearchResult> {
+    async fn search_exa_with_key(
+        &self,
+        query: &str,
+        limit: u32,
+        api_key: &str,
+    ) -> Vec<SearchResult> {
         let body = serde_json::json!({
             "query": query,
             "numResults": limit,
             "type": "auto",
         });
 
-        let response = self.http
+        let response = self
+            .http
             .post("https://api.exa.ai/search")
             .header("x-api-key", api_key)
             .json(&body)
@@ -255,20 +276,27 @@ impl SearchEngine {
 
     async fn search_tavily(&self, query: &str, limit: u32) -> Vec<SearchResult> {
         if let Some(ref tavily) = self.config.tavily {
-            self.search_tavily_with_key(query, limit, &tavily.api_key).await
+            self.search_tavily_with_key(query, limit, &tavily.api_key)
+                .await
         } else {
             vec![]
         }
     }
 
-    async fn search_tavily_with_key(&self, query: &str, limit: u32, api_key: &str) -> Vec<SearchResult> {
+    async fn search_tavily_with_key(
+        &self,
+        query: &str,
+        limit: u32,
+        api_key: &str,
+    ) -> Vec<SearchResult> {
         let body = serde_json::json!({
             "query": query,
             "max_results": limit,
             "include_answer": true,
         });
 
-        let response = self.http
+        let response = self
+            .http
             .post("https://api.tavily.com/search")
             .header("Authorization", format!("Bearer {api_key}"))
             .json(&body)
@@ -300,19 +328,26 @@ impl SearchEngine {
 
     async fn search_serper(&self, query: &str, limit: u32) -> Vec<SearchResult> {
         if let Some(ref serper) = self.config.serper {
-            self.search_serper_with_key(query, limit, &serper.api_key).await
+            self.search_serper_with_key(query, limit, &serper.api_key)
+                .await
         } else {
             vec![]
         }
     }
 
-    async fn search_serper_with_key(&self, query: &str, limit: u32, api_key: &str) -> Vec<SearchResult> {
+    async fn search_serper_with_key(
+        &self,
+        query: &str,
+        limit: u32,
+        api_key: &str,
+    ) -> Vec<SearchResult> {
         let body = serde_json::json!({
             "q": query,
             "num": limit,
         });
 
-        let response = self.http
+        let response = self
+            .http
             .post("https://google.serper.dev/search")
             .header("X-API-KEY", api_key)
             .json(&body)
@@ -344,20 +379,27 @@ impl SearchEngine {
 
     async fn search_brave(&self, query: &str, limit: u32) -> Vec<SearchResult> {
         if let Some(ref brave) = self.config.brave {
-            self.search_brave_with_key(query, limit, &brave.api_key).await
+            self.search_brave_with_key(query, limit, &brave.api_key)
+                .await
         } else {
             vec![]
         }
     }
 
-    async fn search_brave_with_key(&self, query: &str, limit: u32, api_key: &str) -> Vec<SearchResult> {
+    async fn search_brave_with_key(
+        &self,
+        query: &str,
+        limit: u32,
+        api_key: &str,
+    ) -> Vec<SearchResult> {
         let url = format!(
             "https://api.search.brave.com/res/v1/web/search?q={}&count={}",
             urlencoding::encode(query),
             limit
         );
 
-        let response = self.http
+        let response = self
+            .http
             .get(&url)
             .header("X-Subscription-Token", api_key)
             .header("Accept", "application/json")
@@ -389,13 +431,19 @@ impl SearchEngine {
 
     async fn search_parallel(&self, query: &str, limit: u32) -> Vec<SearchResult> {
         if let Some(ref parallel) = self.config.parallel {
-            self.search_parallel_with_key(query, limit, &parallel.api_key).await
+            self.search_parallel_with_key(query, limit, &parallel.api_key)
+                .await
         } else {
             vec![]
         }
     }
 
-    async fn search_parallel_with_key(&self, query: &str, limit: u32, api_key: &str) -> Vec<SearchResult> {
+    async fn search_parallel_with_key(
+        &self,
+        query: &str,
+        limit: u32,
+        api_key: &str,
+    ) -> Vec<SearchResult> {
         // Parallel.ai web search API
         let url = format!(
             "https://api.parallel.ai/v1/web/search?q={}&limit={}",
@@ -403,31 +451,31 @@ impl SearchEngine {
             limit
         );
 
-        let response = self.http
+        let response = self
+            .http
             .get(&url)
             .header("x-api-key", api_key)
             .send()
             .await;
 
         match response {
-            Ok(resp) if resp.status().is_success() => {
-                match resp.json::<ParallelResponse>().await {
-                    Ok(parallel_resp) => {
-                        parallel_resp.results.unwrap_or_default().into_iter()
-                            .take(limit as usize)
-                            .map(|r| SearchResult {
-                                title: r.title.unwrap_or_default(),
-                                url: r.url.unwrap_or_default(),
-                                snippet: r.snippet.unwrap_or_default(),
-                            })
-                            .collect()
-                    }
-                    Err(e) => {
-                        tracing::warn!("Parallel.ai response parse error: {e}");
-                        vec![]
-                    }
+            Ok(resp) if resp.status().is_success() => match resp.json::<ParallelResponse>().await {
+                Ok(parallel_resp) => parallel_resp
+                    .results
+                    .unwrap_or_default()
+                    .into_iter()
+                    .take(limit as usize)
+                    .map(|r| SearchResult {
+                        title: r.title.unwrap_or_default(),
+                        url: r.url.unwrap_or_default(),
+                        snippet: r.snippet.unwrap_or_default(),
+                    })
+                    .collect(),
+                Err(e) => {
+                    tracing::warn!("Parallel.ai response parse error: {e}");
+                    vec![]
                 }
-            }
+            },
             Ok(resp) => {
                 tracing::warn!("Parallel.ai search failed: HTTP {}", resp.status());
                 vec![]
@@ -447,19 +495,21 @@ impl SearchEngine {
             urlencoding::encode(query)
         );
 
-        let response = self.http
+        let response = self
+            .http
             .get(&url)
-            .header("User-Agent", "Mozilla/5.0 (compatible; ParallelResearch/0.1)")
+            .header(
+                "User-Agent",
+                "Mozilla/5.0 (compatible; ParallelResearch/0.1)",
+            )
             .send()
             .await;
 
         match response {
-            Ok(resp) => {
-                match resp.text().await {
-                    Ok(html) => parse_duckduckgo_results(&html, limit),
-                    Err(_) => vec![],
-                }
-            }
+            Ok(resp) => match resp.text().await {
+                Ok(html) => parse_duckduckgo_results(&html, limit),
+                Err(_) => vec![],
+            },
             Err(_) => vec![],
         }
     }
@@ -485,7 +535,8 @@ struct LinkupResult {
 }
 
 fn parse_linkup_response(resp: LinkupResponse, limit: u32) -> Vec<SearchResult> {
-    resp.results.into_iter()
+    resp.results
+        .into_iter()
         .take(limit as usize)
         .map(|r| SearchResult {
             title: r.title.unwrap_or_default(),
@@ -522,11 +573,19 @@ fn parse_exa_response(value: &serde_json::Value, limit: u32) -> Vec<SearchResult
         Ok(p) => p,
         Err(_) => return vec![],
     };
-    parsed.results.into_iter()
-        .filter(|r| r.url.as_deref().map(|u| !u.trim().is_empty()).unwrap_or(false))
+    parsed
+        .results
+        .into_iter()
+        .filter(|r| {
+            r.url
+                .as_deref()
+                .map(|u| !u.trim().is_empty())
+                .unwrap_or(false)
+        })
         .take(limit as usize)
         .map(|r| {
-            let snippet = r.snippet
+            let snippet = r
+                .snippet
                 .or_else(|| r.highlights.and_then(|h| h.into_iter().next()))
                 .or(r.text)
                 .unwrap_or_default();
@@ -563,8 +622,15 @@ fn parse_tavily_response(value: &serde_json::Value, limit: u32) -> Vec<SearchRes
         Ok(p) => p,
         Err(_) => return vec![],
     };
-    let mut results: Vec<SearchResult> = parsed.results.into_iter()
-        .filter(|r| r.url.as_deref().map(|u| !u.trim().is_empty()).unwrap_or(false))
+    let mut results: Vec<SearchResult> = parsed
+        .results
+        .into_iter()
+        .filter(|r| {
+            r.url
+                .as_deref()
+                .map(|u| !u.trim().is_empty())
+                .unwrap_or(false)
+        })
         .take(limit as usize)
         .map(|r| SearchResult {
             title: r.title.unwrap_or_default(),
@@ -578,11 +644,14 @@ fn parse_tavily_response(value: &serde_json::Value, limit: u32) -> Vec<SearchRes
         let answer = answer.trim().to_string();
         if !answer.is_empty() {
             let url = results.first().map(|r| r.url.clone()).unwrap_or_default();
-            results.insert(0, SearchResult {
-                title: "Tavily answer".to_string(),
-                url,
-                snippet: truncate_chars(&answer, MAX_SNIPPET_CHARS),
-            });
+            results.insert(
+                0,
+                SearchResult {
+                    title: "Tavily answer".to_string(),
+                    url,
+                    snippet: truncate_chars(&answer, MAX_SNIPPET_CHARS),
+                },
+            );
             results.truncate(limit as usize);
         }
     }
@@ -625,8 +694,15 @@ fn parse_serper_response(value: &serde_json::Value, limit: u32) -> Vec<SearchRes
         Ok(p) => p,
         Err(_) => return vec![],
     };
-    let mut results: Vec<SearchResult> = parsed.organic.into_iter()
-        .filter(|r| r.link.as_deref().map(|u| !u.trim().is_empty()).unwrap_or(false))
+    let mut results: Vec<SearchResult> = parsed
+        .organic
+        .into_iter()
+        .filter(|r| {
+            r.link
+                .as_deref()
+                .map(|u| !u.trim().is_empty())
+                .unwrap_or(false)
+        })
         .take(limit as usize)
         .map(|r| SearchResult {
             title: r.title.unwrap_or_default(),
@@ -639,11 +715,14 @@ fn parse_serper_response(value: &serde_json::Value, limit: u32) -> Vec<SearchRes
     if let Some(box_) = parsed.answer_box {
         let answer = box_.answer.or(box_.snippet).unwrap_or_default();
         if !answer.trim().is_empty() {
-            results.insert(0, SearchResult {
-                title: box_.title.unwrap_or_else(|| "Direct answer".to_string()),
-                url: box_.link.unwrap_or_default(),
-                snippet: truncate_chars(&answer, MAX_SNIPPET_CHARS),
-            });
+            results.insert(
+                0,
+                SearchResult {
+                    title: box_.title.unwrap_or_else(|| "Direct answer".to_string()),
+                    url: box_.link.unwrap_or_default(),
+                    snippet: truncate_chars(&answer, MAX_SNIPPET_CHARS),
+                },
+            );
             results.truncate(limit as usize);
         }
     }
@@ -678,11 +757,17 @@ fn parse_brave_response(value: &serde_json::Value, limit: u32) -> Vec<SearchResu
         Ok(p) => p,
         Err(_) => return vec![],
     };
-    parsed.web
+    parsed
+        .web
         .map(|w| w.results)
         .unwrap_or_default()
         .into_iter()
-        .filter(|r| r.url.as_deref().map(|u| !u.trim().is_empty()).unwrap_or(false))
+        .filter(|r| {
+            r.url
+                .as_deref()
+                .map(|u| !u.trim().is_empty())
+                .unwrap_or(false)
+        })
         .take(limit as usize)
         .map(|r| SearchResult {
             title: r.title.unwrap_or_default(),
@@ -715,18 +800,22 @@ fn parse_duckduckgo_results(html: &str, limit: u32) -> Vec<SearchResult> {
     let snippet_selector = scraper::Selector::parse(".result__snippet").unwrap();
 
     for element in document.select(&result_selector).take(limit as usize) {
-        let title = element.select(&title_selector)
+        let title = element
+            .select(&title_selector)
             .next()
             .map(|el| el.text().collect::<String>())
             .unwrap_or_default();
 
-        let url = element.select(&title_selector)
+        let url = element
+            .select(&title_selector)
             .next()
             .and_then(|el| el.value().attr("href"))
             .map(|href| {
                 if href.starts_with("//duckduckgo.com/l/?uddg=") {
                     let encoded = href.trim_start_matches("//duckduckgo.com/l/?uddg=");
-                    urlencoding::decode(encoded).map(|s| s.into_owned()).unwrap_or_else(|_| href.to_string())
+                    urlencoding::decode(encoded)
+                        .map(|s| s.into_owned())
+                        .unwrap_or_else(|_| href.to_string())
                 } else if href.starts_with("http") {
                     href.to_string()
                 } else {
@@ -735,13 +824,18 @@ fn parse_duckduckgo_results(html: &str, limit: u32) -> Vec<SearchResult> {
             })
             .unwrap_or_default();
 
-        let snippet = element.select(&snippet_selector)
+        let snippet = element
+            .select(&snippet_selector)
             .next()
             .map(|el| el.text().collect::<String>())
             .unwrap_or_default();
 
         if !title.is_empty() && !url.is_empty() {
-            results.push(SearchResult { title, url, snippet });
+            results.push(SearchResult {
+                title,
+                url,
+                snippet,
+            });
         }
     }
 
@@ -1037,7 +1131,9 @@ mod tests {
     #[test]
     fn test_parse_brave_response_empty_and_invalid() {
         assert!(parse_brave_response(&serde_json::json!({}), 10).is_empty());
-        assert!(parse_brave_response(&serde_json::json!({"web": {"results": "nope"}}), 10).is_empty());
+        assert!(
+            parse_brave_response(&serde_json::json!({"web": {"results": "nope"}}), 10).is_empty()
+        );
         assert!(parse_brave_response(&serde_json::json!({"web": {"results": []}}), 10).is_empty());
     }
 
@@ -1045,10 +1141,22 @@ mod tests {
 
     #[test]
     fn test_normalize_url() {
-        assert_eq!(normalize_url("https://Example.com/Path/"), "https://example.com/path");
-        assert_eq!(normalize_url("http://example.com/x"), "https://example.com/x");
-        assert_eq!(normalize_url("https://example.com/a#section"), "https://example.com/a");
-        assert_eq!(normalize_url("  https://example.com  "), "https://example.com");
+        assert_eq!(
+            normalize_url("https://Example.com/Path/"),
+            "https://example.com/path"
+        );
+        assert_eq!(
+            normalize_url("http://example.com/x"),
+            "https://example.com/x"
+        );
+        assert_eq!(
+            normalize_url("https://example.com/a#section"),
+            "https://example.com/a"
+        );
+        assert_eq!(
+            normalize_url("  https://example.com  "),
+            "https://example.com"
+        );
         assert_eq!(normalize_url(""), "");
         assert_eq!(normalize_url("   "), "");
     }
@@ -1072,7 +1180,10 @@ mod tests {
         // B appears in both sources, so RRF ranks it above single-source results.
         assert!(merged[0].url.starts_with("https://example.com/b"));
         assert_eq!(merged[0].title, "B", "first-seen title is kept");
-        assert_eq!(merged[0].snippet, "snippet b", "empty snippet is backfilled");
+        assert_eq!(
+            merged[0].snippet, "snippet b",
+            "empty snippet is backfilled"
+        );
     }
 
     #[test]

@@ -1,8 +1,8 @@
+use crate::registry::{Tool, ToolContext};
 use async_trait::async_trait;
 use pr_core::{ToolOutput, ToolSchema};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use crate::registry::{Tool, ToolContext};
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema, Clone)]
 pub struct DiagnosticItem {
@@ -53,22 +53,31 @@ Supported languages:
         ToolSchema {
             name: self.name().to_string(),
             description: self.description().to_string(),
-            parameters: serde_json::to_value(&schemars::schema_for!(CompilerCheckParams).schema).unwrap_or_default(),
+            parameters: serde_json::to_value(&schemars::schema_for!(CompilerCheckParams).schema)
+                .unwrap_or_default(),
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: CompilerCheckParams = serde_json::from_value(args)?;
         let working_dir = &ctx.working_dir;
 
         let lang = if params.language == "auto" {
             if working_dir.join("Cargo.toml").exists() {
                 "rust"
-            } else if working_dir.join("tsconfig.json").exists() || working_dir.join("package.json").exists() {
+            } else if working_dir.join("tsconfig.json").exists()
+                || working_dir.join("package.json").exists()
+            {
                 "typescript"
             } else if working_dir.join("go.mod").exists() {
                 "go"
-            } else if working_dir.join("pyproject.toml").exists() || working_dir.join("requirements.txt").exists() {
+            } else if working_dir.join("pyproject.toml").exists()
+                || working_dir.join("requirements.txt").exists()
+            {
                 "python"
             } else {
                 "rust"
@@ -82,25 +91,54 @@ Supported languages:
         match lang {
             "rust" => {
                 let mut cmd = tokio::process::Command::new("cargo");
-                cmd.arg("check").arg("--message-format=json").current_dir(working_dir).kill_on_drop(true);
-                let output = tokio::time::timeout(std::time::Duration::from_secs(120), cmd.output()).await
-                    .map_err(|_| anyhow::anyhow!("compiler check timed out after 120s"))??;
+                cmd.arg("check")
+                    .arg("--message-format=json")
+                    .current_dir(working_dir)
+                    .kill_on_drop(true);
+                let output =
+                    tokio::time::timeout(std::time::Duration::from_secs(120), cmd.output())
+                        .await
+                        .map_err(|_| anyhow::anyhow!("compiler check timed out after 120s"))??;
                 let stdout = String::from_utf8_lossy(&output.stdout);
                 for line in stdout.lines() {
                     if let Ok(val) = serde_json::from_str::<serde_json::Value>(line) {
                         if val.get("reason").and_then(|r| r.as_str()) == Some("compiler-message") {
                             if let Some(msg) = val.get("message") {
-                                let level = msg.get("level").and_then(|l| l.as_str()).unwrap_or("error");
-                                let rendered = msg.get("rendered").and_then(|r| r.as_str()).unwrap_or_default();
-                                let code = msg.get("code").and_then(|c| c.get("code")).and_then(|cd| cd.as_str()).map(String::from);
+                                let level =
+                                    msg.get("level").and_then(|l| l.as_str()).unwrap_or("error");
+                                let rendered = msg
+                                    .get("rendered")
+                                    .and_then(|r| r.as_str())
+                                    .unwrap_or_default();
+                                let code = msg
+                                    .get("code")
+                                    .and_then(|c| c.get("code"))
+                                    .and_then(|cd| cd.as_str())
+                                    .map(String::from);
 
                                 if let Some(spans) = msg.get("spans").and_then(|s| s.as_array()) {
                                     for span in spans {
-                                        if span.get("is_primary").and_then(|p| p.as_bool()) == Some(true) {
-                                            let file_name = span.get("file_name").and_then(|f| f.as_str()).unwrap_or("unknown");
-                                            let line_start = span.get("line_start").and_then(|l| l.as_u64()).unwrap_or(1) as u32;
-                                            let col_start = span.get("column_start").and_then(|c| c.as_u64()).unwrap_or(1) as u32;
-                                            let suggested = span.get("suggested_replacement").and_then(|s| s.as_str()).map(String::from);
+                                        if span.get("is_primary").and_then(|p| p.as_bool())
+                                            == Some(true)
+                                        {
+                                            let file_name = span
+                                                .get("file_name")
+                                                .and_then(|f| f.as_str())
+                                                .unwrap_or("unknown");
+                                            let line_start = span
+                                                .get("line_start")
+                                                .and_then(|l| l.as_u64())
+                                                .unwrap_or(1)
+                                                as u32;
+                                            let col_start = span
+                                                .get("column_start")
+                                                .and_then(|c| c.as_u64())
+                                                .unwrap_or(1)
+                                                as u32;
+                                            let suggested = span
+                                                .get("suggested_replacement")
+                                                .and_then(|s| s.as_str())
+                                                .map(String::from);
 
                                             diagnostics.push(DiagnosticItem {
                                                 file: file_name.to_string(),
@@ -121,9 +159,14 @@ Supported languages:
             }
             "typescript" => {
                 let mut cmd = tokio::process::Command::new("npx");
-                cmd.arg("tsc").arg("--noEmit").current_dir(working_dir).kill_on_drop(true);
-                let output = tokio::time::timeout(std::time::Duration::from_secs(120), cmd.output()).await
-                    .map_err(|_| anyhow::anyhow!("tsc check timed out after 120s"))??;
+                cmd.arg("tsc")
+                    .arg("--noEmit")
+                    .current_dir(working_dir)
+                    .kill_on_drop(true);
+                let output =
+                    tokio::time::timeout(std::time::Duration::from_secs(120), cmd.output())
+                        .await
+                        .map_err(|_| anyhow::anyhow!("tsc check timed out after 120s"))??;
 
                 let text = String::from_utf8_lossy(&output.stdout);
                 for line in text.lines() {
@@ -133,7 +176,9 @@ Supported languages:
                             let loc = parts[0];
                             let msg = parts[1];
                             if let Some((f, rest)) = loc.split_once('(') {
-                                if let Some((l_str, c_str)) = rest.trim_end_matches(')').split_once(',') {
+                                if let Some((l_str, c_str)) =
+                                    rest.trim_end_matches(')').split_once(',')
+                                {
                                     let l = l_str.parse::<u32>().unwrap_or(1);
                                     let c = c_str.parse::<u32>().unwrap_or(1);
                                     diagnostics.push(DiagnosticItem {
@@ -153,18 +198,36 @@ Supported languages:
             }
             "python" => {
                 let mut cmd = tokio::process::Command::new("ruff");
-                cmd.arg("check").arg("--output-format=json").current_dir(working_dir).kill_on_drop(true);
-                let output = tokio::time::timeout(std::time::Duration::from_secs(120), cmd.output()).await
-                    .map_err(|_| anyhow::anyhow!("ruff check timed out after 120s"))??;
+                cmd.arg("check")
+                    .arg("--output-format=json")
+                    .current_dir(working_dir)
+                    .kill_on_drop(true);
+                let output =
+                    tokio::time::timeout(std::time::Duration::from_secs(120), cmd.output())
+                        .await
+                        .map_err(|_| anyhow::anyhow!("ruff check timed out after 120s"))??;
 
-                if let Ok(items) = serde_json::from_slice::<Vec<serde_json::Value>>(&output.stdout) {
+                if let Ok(items) = serde_json::from_slice::<Vec<serde_json::Value>>(&output.stdout)
+                {
                     for item in items {
-                        let file = item.get("filename").and_then(|f| f.as_str()).unwrap_or("unknown");
-                        let msg = item.get("message").and_then(|m| m.as_str()).unwrap_or_default();
+                        let file = item
+                            .get("filename")
+                            .and_then(|f| f.as_str())
+                            .unwrap_or("unknown");
+                        let msg = item
+                            .get("message")
+                            .and_then(|m| m.as_str())
+                            .unwrap_or_default();
                         let code = item.get("code").and_then(|c| c.as_str()).map(String::from);
                         let location = item.get("location");
-                        let line = location.and_then(|l| l.get("row")).and_then(|r| r.as_u64()).unwrap_or(1) as u32;
-                        let col = location.and_then(|l| l.get("column")).and_then(|c| c.as_u64()).unwrap_or(1) as u32;
+                        let line = location
+                            .and_then(|l| l.get("row"))
+                            .and_then(|r| r.as_u64())
+                            .unwrap_or(1) as u32;
+                        let col = location
+                            .and_then(|l| l.get("column"))
+                            .and_then(|c| c.as_u64())
+                            .unwrap_or(1) as u32;
 
                         diagnostics.push(DiagnosticItem {
                             file: file.to_string(),
@@ -180,9 +243,14 @@ Supported languages:
             }
             "go" => {
                 let mut cmd = tokio::process::Command::new("go");
-                cmd.arg("build").arg("./...").current_dir(working_dir).kill_on_drop(true);
-                let output = tokio::time::timeout(std::time::Duration::from_secs(120), cmd.output()).await
-                    .map_err(|_| anyhow::anyhow!("go build timed out after 120s"))??;
+                cmd.arg("build")
+                    .arg("./...")
+                    .current_dir(working_dir)
+                    .kill_on_drop(true);
+                let output =
+                    tokio::time::timeout(std::time::Duration::from_secs(120), cmd.output())
+                        .await
+                        .map_err(|_| anyhow::anyhow!("go build timed out after 120s"))??;
 
                 let text = String::from_utf8_lossy(&output.stderr);
                 for line in text.lines() {
@@ -204,18 +272,41 @@ Supported languages:
                     }
                 }
             }
-            _ => return Ok(ToolOutput::err(format!("Unsupported compiler language: {}", lang))),
+            _ => {
+                return Ok(ToolOutput::err(format!(
+                    "Unsupported compiler language: {}",
+                    lang
+                )))
+            }
         }
 
         if diagnostics.is_empty() {
-            Ok(ToolOutput::ok(format!("Compiler diagnostics [{}]: 0 errors/warnings found. Codebase compiles cleanly.", lang)))
+            Ok(ToolOutput::ok(format!(
+                "Compiler diagnostics [{}]: 0 errors/warnings found. Codebase compiles cleanly.",
+                lang
+            )))
         } else {
             let count = diagnostics.len();
-            let formatted = diagnostics.iter().map(|d| {
-                format!("{}:{}:{} [{}] {}{}", d.file, d.line, d.column, d.severity, d.code.as_deref().unwrap_or(""), d.message)
-            }).collect::<Vec<_>>().join("\n---\n");
+            let formatted = diagnostics
+                .iter()
+                .map(|d| {
+                    format!(
+                        "{}:{}:{} [{}] {}{}",
+                        d.file,
+                        d.line,
+                        d.column,
+                        d.severity,
+                        d.code.as_deref().unwrap_or(""),
+                        d.message
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join("\n---\n");
 
-            Ok(ToolOutput::ok(format!("Compiler diagnostics [{}]: {} issue(s) detected:\n\n{}", lang, count, formatted)))
+            Ok(ToolOutput::ok(format!(
+                "Compiler diagnostics [{}]: {} issue(s) detected:\n\n{}",
+                lang, count, formatted
+            )))
         }
     }
 }
@@ -226,7 +317,10 @@ mod tests {
     use crate::registry::ToolContext;
 
     fn dummy_ctx() -> ToolContext {
-        ToolContext::new(std::path::PathBuf::from("."), pr_core::SearchConfig::default())
+        ToolContext::new(
+            std::path::PathBuf::from("."),
+            pr_core::SearchConfig::default(),
+        )
     }
 
     #[test]
@@ -241,7 +335,10 @@ mod tests {
     async fn unsupported_language_returns_error() {
         let tool = CompilerCheckTool;
         let ctx = dummy_ctx();
-        let res = tool.execute(serde_json::json!({ "language": "brainfuck" }), &ctx).await.unwrap();
+        let res = tool
+            .execute(serde_json::json!({ "language": "brainfuck" }), &ctx)
+            .await
+            .unwrap();
         assert!(!res.success);
         assert!(res.content.contains("Unsupported compiler language"));
     }

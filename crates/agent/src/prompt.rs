@@ -362,13 +362,7 @@ mod tests {
 
     #[test]
     fn test_prompt_builder_basic() {
-        let builder = PromptBuilder::new(
-            AgentRole::Researcher,
-            "What is Rust?",
-            1,
-            2,
-            "gpt-4o",
-        );
+        let builder = PromptBuilder::new(AgentRole::Researcher, "What is Rust?", 1, 2, "gpt-4o");
         let prompt = builder.build();
         assert!(prompt.contains("researcher"));
         assert!(prompt.contains("What is Rust?"));
@@ -522,19 +516,30 @@ mod tests {
     #[test]
     fn test_researcher_prompt_contains_citation() {
         let prompt = role_prompt_for(AgentRole::Researcher);
-        assert!(prompt.contains("cite") || prompt.contains("Cite") || prompt.contains("source") || prompt.contains("Source"));
+        assert!(
+            prompt.contains("cite")
+                || prompt.contains("Cite")
+                || prompt.contains("source")
+                || prompt.contains("Source")
+        );
     }
 
     #[test]
     fn test_verifier_prompt_contains_adversarial() {
         let prompt = role_prompt_for(AgentRole::Verifier);
-        assert!(prompt.contains("adversarial") || prompt.contains("Adversarial") || prompt.contains("VERIFIED"));
+        assert!(
+            prompt.contains("adversarial")
+                || prompt.contains("Adversarial")
+                || prompt.contains("VERIFIED")
+        );
     }
 
     #[test]
     fn test_writer_prompt_contains_markdown() {
         let prompt = role_prompt_for(AgentRole::Writer);
-        assert!(prompt.contains("markdown") || prompt.contains("Markdown") || prompt.contains("##"));
+        assert!(
+            prompt.contains("markdown") || prompt.contains("Markdown") || prompt.contains("##")
+        );
     }
 
     #[test]

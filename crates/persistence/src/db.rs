@@ -1,10 +1,10 @@
-use pr_core::{AgentRecord, AgentStatus, Finding, SessionId, AgentId};
-use rusqlite::{Connection, params};
+use pr_core::{AgentId, AgentRecord, AgentStatus, Finding, SessionId};
 use rusqlite::OptionalExtension;
+use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
-use std::sync::Mutex;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Mutex;
 
 /// Connections per file-backed database. In WAL mode readers never block
 /// the writer (and vice versa), so spreading concurrent calls across a few
@@ -321,7 +321,13 @@ impl Persistence {
         Ok(())
     }
 
-    pub fn complete_session(&self, id: &SessionId, output_dir: &str, total_tokens: u64, total_agents: u32) -> anyhow::Result<()> {
+    pub fn complete_session(
+        &self,
+        id: &SessionId,
+        output_dir: &str,
+        total_tokens: u64,
+        total_agents: u32,
+    ) -> anyhow::Result<()> {
         let conn = self.conn.lock();
         let now = chrono::Utc::now().to_rfc3339();
         conn.execute(
@@ -406,7 +412,13 @@ impl Persistence {
             "SELECT id, query, status, output_dir, total_tokens, total_agents, created_at, updated_at, error
              FROM sessions WHERE query LIKE ?1 ESCAPE '\\' ORDER BY updated_at DESC, created_at DESC"
         )?;
-        let pattern = format!("%{}%", needle.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_"));
+        let pattern = format!(
+            "%{}%",
+            needle
+                .replace('\\', "\\\\")
+                .replace('%', "\\%")
+                .replace('_', "\\_")
+        );
         let rows = stmt.query_map(params![pattern], session_row_from_stmt)?;
 
         let mut result = Vec::new();
@@ -437,10 +449,19 @@ impl Persistence {
         Ok(())
     }
 
-    pub fn update_agent_status(&self, id: &AgentId, status: AgentStatus, tokens_used: u64, summary: Option<&str>) -> anyhow::Result<()> {
+    pub fn update_agent_status(
+        &self,
+        id: &AgentId,
+        status: AgentStatus,
+        tokens_used: u64,
+        summary: Option<&str>,
+    ) -> anyhow::Result<()> {
         let conn = self.conn.lock();
         let now = chrono::Utc::now().to_rfc3339();
-        let completed = matches!(status, AgentStatus::Completed | AgentStatus::Failed | AgentStatus::Cancelled);
+        let completed = matches!(
+            status,
+            AgentStatus::Completed | AgentStatus::Failed | AgentStatus::Cancelled
+        );
         conn.execute(
             "UPDATE agents SET status=?2, tokens_used=?3, summary=?4, completed_at=CASE WHEN ?5 THEN ?6 ELSE completed_at END WHERE id=?1",
             params![
@@ -457,21 +478,32 @@ impl Persistence {
 
     // Messages
 
-    pub fn add_message(&self, agent_id: &AgentId, message: &pr_core::Message) -> anyhow::Result<()> {
+    pub fn add_message(
+        &self,
+        agent_id: &AgentId,
+        message: &pr_core::Message,
+    ) -> anyhow::Result<()> {
         let conn = self.conn.lock();
         let now = chrono::Utc::now().to_rfc3339();
         let (role, content, tool_calls) = match message {
             pr_core::Message::System { content } => ("system", content.clone(), None),
             pr_core::Message::User { content } => ("user", content.clone(), None),
-            pr_core::Message::Assistant { content, tool_calls, .. } => {
-                let tc = if tool_calls.is_empty() { None } else {
+            pr_core::Message::Assistant {
+                content,
+                tool_calls,
+                ..
+            } => {
+                let tc = if tool_calls.is_empty() {
+                    None
+                } else {
                     Some(serde_json::to_string(tool_calls)?)
                 };
                 ("assistant", content.clone().unwrap_or_default(), tc)
             }
-            pr_core::Message::Tool { tool_call_id: call_id, content } => {
-                ("tool", format!("[{call_id}] {content}"), None)
-            }
+            pr_core::Message::Tool {
+                tool_call_id: call_id,
+                content,
+            } => ("tool", format!("[{call_id}] {content}"), None),
         };
         conn.execute(
             "INSERT INTO messages (agent_id, role, content, tool_calls, created_at) VALUES (?1, ?2, ?3, ?4, ?5)",
@@ -483,7 +515,7 @@ impl Persistence {
     pub fn get_agent_messages(&self, agent_id: &AgentId) -> anyhow::Result<Vec<pr_core::Message>> {
         let conn = self.conn.lock();
         let mut stmt = conn.prepare(
-            "SELECT role, content, tool_calls FROM messages WHERE agent_id=?1 ORDER BY id"
+            "SELECT role, content, tool_calls FROM messages WHERE agent_id=?1 ORDER BY id",
         )?;
         let messages = stmt.query_map(params![agent_id.0], |row| {
             let role: String = row.get(0)?;
@@ -503,7 +535,11 @@ impl Persistence {
                         .map(|tc| serde_json::from_str(&tc).unwrap_or_default())
                         .unwrap_or_default();
                     pr_core::Message::assistant_with_tools(
-                        if content.is_empty() { None } else { Some(content) },
+                        if content.is_empty() {
+                            None
+                        } else {
+                            Some(content)
+                        },
                         tcs,
                     )
                 }
@@ -511,7 +547,7 @@ impl Persistence {
                     // Parse "[call_id] content"
                     if let Some(pos) = content.find(']') {
                         let call_id = content[1..pos].to_string();
-                        let rest = content[pos+2..].to_string();
+                        let rest = content[pos + 2..].to_string();
                         pr_core::Message::tool(call_id, rest)
                     } else {
                         pr_core::Message::tool("", content)
@@ -548,7 +584,7 @@ impl Persistence {
         let mut stmt = conn.prepare(
             "SELECT f.id, f.agent_id, f.title, f.content, f.sources, f.confidence, f.created_at
              FROM findings f JOIN agents a ON f.agent_id = a.id
-             WHERE a.session_id = ?1 ORDER BY f.created_at"
+             WHERE a.session_id = ?1 ORDER BY f.created_at",
         )?;
         let findings = stmt.query_map(params![session_id.0], |row| {
             let id: String = row.get(0)?;
@@ -623,11 +659,12 @@ impl Persistence {
         }
     }
 
-    pub fn get_session_agents(&self, session_id: &SessionId) -> anyhow::Result<Vec<(String, String)>> {
+    pub fn get_session_agents(
+        &self,
+        session_id: &SessionId,
+    ) -> anyhow::Result<Vec<(String, String)>> {
         let conn = self.conn.lock();
-        let mut stmt = conn.prepare(
-            "SELECT id, task FROM agents WHERE session_id = ?1"
-        )?;
+        let mut stmt = conn.prepare("SELECT id, task FROM agents WHERE session_id = ?1")?;
         let agents = stmt.query_map(params![session_id.0], |row| {
             let id: String = row.get(0)?;
             let task: String = row.get(1)?;
@@ -841,7 +878,11 @@ impl Persistence {
     /// Fork a session: create a new session that references the original via
     /// a `parent_session_id` column. Copies the original session's agents and
     /// findings into the new session. Returns the new session id.
-    pub fn fork_session(&self, original_id: &SessionId, new_query: &str) -> anyhow::Result<SessionId> {
+    pub fn fork_session(
+        &self,
+        original_id: &SessionId,
+        new_query: &str,
+    ) -> anyhow::Result<SessionId> {
         let conn = self.conn.lock();
         let now = chrono::Utc::now().to_rfc3339();
         let new_id = SessionId::new();
@@ -853,12 +894,13 @@ impl Persistence {
         )?;
 
         // Copy agents from the original session with new ids
-        let mut stmt = conn.prepare(
-            "SELECT parent_id, role, task, depth FROM agents WHERE session_id = ?1"
-        )?;
-        let agents: Vec<(Option<String>, String, String, i64)> = stmt.query_map(params![original_id.0], |row| {
-            Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?))
-        })?.collect::<rusqlite::Result<Vec<_>>>()?;
+        let mut stmt =
+            conn.prepare("SELECT parent_id, role, task, depth FROM agents WHERE session_id = ?1")?;
+        let agents: Vec<(Option<String>, String, String, i64)> = stmt
+            .query_map(params![original_id.0], |row| {
+                Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?))
+            })?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
 
         for (parent_id, role, task, depth) in agents {
             let new_agent_id = AgentId::new();
@@ -889,7 +931,11 @@ impl Persistence {
     }
 
     /// Record the parent session id for a forked session.
-    pub fn set_parent_session(&self, session_id: &SessionId, parent_id: &SessionId) -> anyhow::Result<()> {
+    pub fn set_parent_session(
+        &self,
+        session_id: &SessionId,
+        parent_id: &SessionId,
+    ) -> anyhow::Result<()> {
         let conn = self.conn.lock();
         let now = chrono::Utc::now().to_rfc3339();
         conn.execute(
@@ -939,7 +985,7 @@ impl Persistence {
         let conn = self.conn.lock();
         let mut stmt = conn.prepare(
             "SELECT id, session_id, file_path, operation, old_content, new_content, created_at
-             FROM file_changes WHERE session_id = ?1 ORDER BY id ASC"
+             FROM file_changes WHERE session_id = ?1 ORDER BY id ASC",
         )?;
         let rows = stmt.query_map(params![session_id.0], |row| {
             Ok(FileChangeRow {
@@ -957,23 +1003,30 @@ impl Persistence {
 
     /// Undo the last file change in a session. Returns the change that was
     /// undone, or `None` if there are no changes to undo.
-    pub fn undo_last_file_change(&self, session_id: &SessionId) -> anyhow::Result<Option<FileChangeRow>> {
+    pub fn undo_last_file_change(
+        &self,
+        session_id: &SessionId,
+    ) -> anyhow::Result<Option<FileChangeRow>> {
         let conn = self.conn.lock();
         // Find the last change
-        let last: Option<FileChangeRow> = conn.query_row(
-            "SELECT id, session_id, file_path, operation, old_content, new_content, created_at
+        let last: Option<FileChangeRow> = conn
+            .query_row(
+                "SELECT id, session_id, file_path, operation, old_content, new_content, created_at
              FROM file_changes WHERE session_id = ?1 ORDER BY id DESC LIMIT 1",
-            params![session_id.0],
-            |row| Ok(FileChangeRow {
-                id: row.get(0)?,
-                session_id: row.get(1)?,
-                file_path: row.get(2)?,
-                operation: row.get(3)?,
-                old_content: row.get(4)?,
-                new_content: row.get(5)?,
-                created_at: row.get(6)?,
-            }),
-        ).optional()?;
+                params![session_id.0],
+                |row| {
+                    Ok(FileChangeRow {
+                        id: row.get(0)?,
+                        session_id: row.get(1)?,
+                        file_path: row.get(2)?,
+                        operation: row.get(3)?,
+                        old_content: row.get(4)?,
+                        new_content: row.get(5)?,
+                        created_at: row.get(6)?,
+                    })
+                },
+            )
+            .optional()?;
 
         if let Some(ref change) = last {
             // Apply the undo: restore old content
@@ -1038,10 +1091,15 @@ impl Persistence {
     /// 8 characters of the session id, which is enough for unique lookup.
     pub fn share_link(&self, session_id: &SessionId, base_url: &str) -> anyhow::Result<String> {
         // Verify the session exists
-        let _ = self.get_session(session_id)?
+        let _ = self
+            .get_session(session_id)?
             .ok_or_else(|| anyhow::anyhow!("session not found"))?;
         let short_id = &session_id.0[..8.min(session_id.0.len())];
-        Ok(format!("{}/sessions/{}", base_url.trim_end_matches('/'), short_id))
+        Ok(format!(
+            "{}/sessions/{}",
+            base_url.trim_end_matches('/'),
+            short_id
+        ))
     }
 
     /// Resolve a short session id prefix to a full session id.
@@ -1084,7 +1142,10 @@ impl Persistence {
     }
 
     /// Return at most `limit` audit events when a limit is useful to callers.
-    pub fn list_audit_events_limited(&self, limit: Option<usize>) -> anyhow::Result<Vec<AuditEventRow>> {
+    pub fn list_audit_events_limited(
+        &self,
+        limit: Option<usize>,
+    ) -> anyhow::Result<Vec<AuditEventRow>> {
         let conn = self.conn.lock();
         let sql = match limit {
             Some(_) => "SELECT id, timestamp, agent, session, tool, args, url, element, file, intent, mcp_metadata, decision FROM audit_events ORDER BY timestamp ASC LIMIT ?1",
@@ -1093,14 +1154,27 @@ impl Persistence {
         let mut stmt = conn.prepare(sql)?;
         let map_row = |row: &rusqlite::Row<'_>| -> rusqlite::Result<AuditEventRow> {
             Ok(AuditEventRow {
-                id: row.get(0)?, timestamp: row.get(1)?, agent: row.get(2)?, session: row.get(3)?,
-                tool: row.get(4)?, args: row.get(5)?, url: row.get(6)?, element: row.get(7)?,
-                file: row.get(8)?, intent: row.get(9)?, mcp_metadata: row.get(10)?, decision: row.get(11)?,
+                id: row.get(0)?,
+                timestamp: row.get(1)?,
+                agent: row.get(2)?,
+                session: row.get(3)?,
+                tool: row.get(4)?,
+                args: row.get(5)?,
+                url: row.get(6)?,
+                element: row.get(7)?,
+                file: row.get(8)?,
+                intent: row.get(9)?,
+                mcp_metadata: row.get(10)?,
+                decision: row.get(11)?,
             })
         };
         let rows = match limit {
-            Some(n) => stmt.query_map(params![n as i64], map_row)?.collect::<rusqlite::Result<Vec<_>>>()?,
-            None => stmt.query_map([], map_row)?.collect::<rusqlite::Result<Vec<_>>>()?,
+            Some(n) => stmt
+                .query_map(params![n as i64], map_row)?
+                .collect::<rusqlite::Result<Vec<_>>>()?,
+            None => stmt
+                .query_map([], map_row)?
+                .collect::<rusqlite::Result<Vec<_>>>()?,
         };
         Ok(rows)
     }
@@ -1228,14 +1302,14 @@ pub struct AgentDetailRow {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pr_core::{SessionId, AgentId, AgentRole, AgentStatus};
+    use pr_core::{AgentId, AgentRole, AgentStatus, SessionId};
 
     #[test]
     fn test_in_memory_db() {
         let db = Persistence::in_memory().unwrap();
         let session_id = SessionId::new();
         db.create_session(&session_id, "test query").unwrap();
-        
+
         let found = db.find_session_by_query("test query").unwrap();
         assert!(found.is_some());
     }
@@ -1245,7 +1319,7 @@ mod tests {
         let db = Persistence::in_memory().unwrap();
         let session_id = SessionId::new();
         db.create_session(&session_id, "test").unwrap();
-        
+
         let agent_id = AgentId::new();
         let agent = AgentRecord {
             id: agent_id.clone(),
@@ -1260,8 +1334,9 @@ mod tests {
             completed_at: None,
         };
         db.create_agent(&agent).unwrap();
-        
-        db.update_agent_status(&agent_id, AgentStatus::Completed, 100, Some("done")).unwrap();
+
+        db.update_agent_status(&agent_id, AgentStatus::Completed, 100, Some("done"))
+            .unwrap();
     }
 
     #[test]
@@ -1269,7 +1344,7 @@ mod tests {
         let db = Persistence::in_memory().unwrap();
         let session_id = SessionId::new();
         db.create_session(&session_id, "test").unwrap();
-        
+
         let agent_id = AgentId::new();
         let agent = AgentRecord {
             id: agent_id.clone(),
@@ -1284,10 +1359,12 @@ mod tests {
             completed_at: None,
         };
         db.create_agent(&agent).unwrap();
-        
-        db.add_message(&agent_id, &pr_core::Message::user("hello")).unwrap();
-        db.add_message(&agent_id, &pr_core::Message::assistant("world")).unwrap();
-        
+
+        db.add_message(&agent_id, &pr_core::Message::user("hello"))
+            .unwrap();
+        db.add_message(&agent_id, &pr_core::Message::assistant("world"))
+            .unwrap();
+
         let messages = db.get_agent_messages(&agent_id).unwrap();
         assert_eq!(messages.len(), 2);
     }
@@ -1397,7 +1474,8 @@ mod tests {
             tokens_used: 100,
             created_at: chrono::Utc::now(),
             completed_at: Some(chrono::Utc::now()),
-        }).unwrap();
+        })
+        .unwrap();
 
         db.add_finding(&Finding {
             id: pr_core::FindingId::new(),
@@ -1407,7 +1485,8 @@ mod tests {
             sources: vec![],
             confidence: 0.9,
             created_at: chrono::Utc::now(),
-        }).unwrap();
+        })
+        .unwrap();
 
         // Fork
         let forked_id = db.fork_session(&session_id, "extended research").unwrap();
@@ -1457,7 +1536,8 @@ mod tests {
             "create",
             None,
             "hello world",
-        ).unwrap();
+        )
+        .unwrap();
 
         std::fs::write(&file_path, "hello world").unwrap();
         assert_eq!(db.undoable_change_count(&session_id).unwrap(), 1);
@@ -1469,7 +1549,8 @@ mod tests {
             "edit",
             Some("hello world"),
             "hello rust",
-        ).unwrap();
+        )
+        .unwrap();
         std::fs::write(&file_path, "hello rust").unwrap();
 
         assert_eq!(db.undoable_change_count(&session_id).unwrap(), 2);
@@ -1499,7 +1580,8 @@ mod tests {
         let session_id = SessionId::new();
         db.create_session(&session_id, "original query").unwrap();
 
-        db.set_session_title(&session_id, "Better Title: Research Summary").unwrap();
+        db.set_session_title(&session_id, "Better Title: Research Summary")
+            .unwrap();
 
         let session = db.get_session(&session_id).unwrap().unwrap();
         assert_eq!(session.query, "Better Title: Research Summary");
@@ -1511,7 +1593,9 @@ mod tests {
         let session_id = SessionId::new();
         db.create_session(&session_id, "test").unwrap();
 
-        let link = db.share_link(&session_id, "https://app.example.com").unwrap();
+        let link = db
+            .share_link(&session_id, "https://app.example.com")
+            .unwrap();
         assert!(link.starts_with("https://app.example.com/sessions/"));
         assert!(link.len() > 40);
 
@@ -1532,11 +1616,18 @@ mod tests {
     fn audit_event_roundtrip() {
         let db = Persistence::in_memory().unwrap();
         let event = AuditEventRow {
-            id: "evt-1".into(), timestamp: "2026-01-01T00:00:00Z".into(),
-            agent: "agent".into(), session: "session".into(), tool: "browser.click".into(),
-            args: r#"{"value":"[REDACTED]"}"#.into(), url: Some("https://example.com".into()),
-            element: Some("e1".into()), file: None, intent: Some("read".into()),
-            mcp_metadata: None, decision: "deny".into(),
+            id: "evt-1".into(),
+            timestamp: "2026-01-01T00:00:00Z".into(),
+            agent: "agent".into(),
+            session: "session".into(),
+            tool: "browser.click".into(),
+            args: r#"{"value":"[REDACTED]"}"#.into(),
+            url: Some("https://example.com".into()),
+            element: Some("e1".into()),
+            file: None,
+            intent: Some("read".into()),
+            mcp_metadata: None,
+            decision: "deny".into(),
         };
         db.record_audit_event(&event).unwrap();
         let rows = db.list_audit_events().unwrap();

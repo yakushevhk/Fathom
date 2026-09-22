@@ -17,6 +17,16 @@ use std::time::{Duration, Instant};
 /// empty, authentication is disabled (open access).
 pub const API_KEYS_ENV: &str = "FATHOM_API_KEYS";
 
+/// Constant-time byte-slice equality — does not leak length or content
+/// differences through timing.
+fn ct_eq(a: &[u8], b: &[u8]) -> bool {
+    a.len() == b.len()
+        && a.iter()
+            .zip(b.iter())
+            .fold(0u8, |acc, (x, y)| acc | (x ^ y))
+            == 0
+}
+
 /// Metadata about a registered API key.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ApiKeyInfo {
@@ -78,8 +88,7 @@ impl ApiKeyAuth {
         let mut matched_info = None;
         for (registered_key, info) in &self.keys {
             let reg_hash = digest(&SHA256, registered_key.as_bytes());
-            // ring::constant_time::verify_slices_are_equal does not leak length or content differences
-            if ring::constant_time::verify_slices_are_equal(input_hash.as_ref(), reg_hash.as_ref()).is_ok() {
+            if ct_eq(input_hash.as_ref(), reg_hash.as_ref()) {
                 matched_info = Some(info);
             }
         }
@@ -99,7 +108,10 @@ impl ApiKeyAuth {
 ///
 /// Supports `Authorization: Bearer <key>`, `X-Api-Key: <key>`, and query parameter `?api_key=<key>` or `?token=<key>`.
 pub fn extract_api_key(headers: &HeaderMap, query: Option<&str>) -> Option<String> {
-    if let Some(value) = headers.get(header::AUTHORIZATION).and_then(|v| v.to_str().ok()) {
+    if let Some(value) = headers
+        .get(header::AUTHORIZATION)
+        .and_then(|v| v.to_str().ok())
+    {
         let value = value.trim();
         if let Some(key) = value
             .strip_prefix("Bearer ")
@@ -281,10 +293,7 @@ mod tests {
 
     #[test]
     fn bearer_takes_precedence_over_x_api_key() {
-        let h = headers_with(&[
-            ("authorization", "Bearer first"),
-            ("x-api-key", "second"),
-        ]);
+        let h = headers_with(&[("authorization", "Bearer first"), ("x-api-key", "second")]);
         assert_eq!(extract_api_key(&h, None).as_deref(), Some("first"));
     }
 

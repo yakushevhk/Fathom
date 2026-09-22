@@ -144,7 +144,11 @@ impl SocialVerifier {
 
 // ─── GitHub API verification ───
 
-async fn verify_github(client: &reqwest::Client, original_url: &str, user: &str) -> SocialVerification {
+async fn verify_github(
+    client: &reqwest::Client,
+    original_url: &str,
+    user: &str,
+) -> SocialVerification {
     let api = format!("https://api.github.com/users/{user}");
     let resp = client
         .get(&api)
@@ -179,7 +183,10 @@ async fn verify_github(client: &reqwest::Client, original_url: &str, user: &str)
                         .and_then(|v| v.as_str())
                         .or_else(|| value.get("login").and_then(|v| v.as_str()))
                         .map(str::to_string),
-                    followers: value.get("followers").and_then(|v| v.as_u64()).map(|v| v as u32),
+                    followers: value
+                        .get("followers")
+                        .and_then(|v| v.as_u64())
+                        .map(|v| v as u32),
                     http_status: Some(status),
                     note: None,
                 }
@@ -228,13 +235,21 @@ fn normalize_url(url: &str) -> String {
 pub fn detect_platform(host: &str) -> &'static str {
     let host = host.trim().to_lowercase();
     let host = host.strip_prefix("www.").unwrap_or(&host);
-    if host == "twitter.com" || host == "x.com" || host.ends_with(".twitter.com") || host.ends_with(".x.com") {
+    if host == "twitter.com"
+        || host == "x.com"
+        || host.ends_with(".twitter.com")
+        || host.ends_with(".x.com")
+    {
         "x"
     } else if host == "instagram.com" || host.ends_with(".instagram.com") {
         "instagram"
     } else if host == "linkedin.com" || host.ends_with(".linkedin.com") {
         "linkedin"
-    } else if host == "facebook.com" || host == "fb.com" || host == "fb.me" || host.ends_with(".facebook.com") {
+    } else if host == "facebook.com"
+        || host == "fb.com"
+        || host == "fb.me"
+        || host.ends_with(".facebook.com")
+    {
         "facebook"
     } else if host == "github.com" || host.ends_with(".github.com") {
         "github"
@@ -263,15 +278,74 @@ pub fn detect_platform(host: &str) -> &'static str {
 
 /// Path segments that are site navigation, not usernames.
 const RESERVED_SEGMENTS: &[&str] = &[
-    "about", "account", "add", "apps", "blog", "business", "careers", "channel",
-    "collections", "company", "customers", "developers", "enterprise", "events",
-    "explore", "features", "groups", "h", "hashtag", "hashtags", "help", "home",
-    "i", "intents", "join", "legal", "lists", "login", "logout", "marketplace",
-    "messages", "news", "notifications", "orgs", "p", "pages", "people", "posts",
-    "pricing", "privacy", "profile", "pub", "reel", "reels", "s", "safety",
-    "search", "security", "settings", "share", "shop", "signup", "site", "sponsors",
-    "statuses", "stories", "t", "team", "terms", "topics", "tos", "trends", "tv",
-    "u", "user", "users", "watch", "wiki",
+    "about",
+    "account",
+    "add",
+    "apps",
+    "blog",
+    "business",
+    "careers",
+    "channel",
+    "collections",
+    "company",
+    "customers",
+    "developers",
+    "enterprise",
+    "events",
+    "explore",
+    "features",
+    "groups",
+    "h",
+    "hashtag",
+    "hashtags",
+    "help",
+    "home",
+    "i",
+    "intents",
+    "join",
+    "legal",
+    "lists",
+    "login",
+    "logout",
+    "marketplace",
+    "messages",
+    "news",
+    "notifications",
+    "orgs",
+    "p",
+    "pages",
+    "people",
+    "posts",
+    "pricing",
+    "privacy",
+    "profile",
+    "pub",
+    "reel",
+    "reels",
+    "s",
+    "safety",
+    "search",
+    "security",
+    "settings",
+    "share",
+    "shop",
+    "signup",
+    "site",
+    "sponsors",
+    "statuses",
+    "stories",
+    "t",
+    "team",
+    "terms",
+    "topics",
+    "tos",
+    "trends",
+    "tv",
+    "u",
+    "user",
+    "users",
+    "watch",
+    "wiki",
 ];
 
 /// Extract the profile handle from a parsed URL.
@@ -279,10 +353,7 @@ const RESERVED_SEGMENTS: &[&str] = &[
 /// `linkedin.com/in/<handle>`, `tiktok.com/@<handle>`, `youtube.com/@<handle>`,
 /// `reddit.com/user/<name>`, and generally the first non-reserved path segment.
 pub fn extract_username(platform: &str, url: &url::Url) -> Option<String> {
-    let segments: Vec<&str> = url
-        .path_segments()?
-        .filter(|s| !s.is_empty())
-        .collect();
+    let segments: Vec<&str> = url.path_segments()?.filter(|s| !s.is_empty()).collect();
     if segments.is_empty() {
         return None;
     }
@@ -290,7 +361,9 @@ pub fn extract_username(platform: &str, url: &url::Url) -> Option<String> {
     // Platform-specific shapes.
     match platform {
         "linkedin" => {
-            let pos = segments.iter().position(|s| matches!(*s, "in" | "company" | "school"))?;
+            let pos = segments
+                .iter()
+                .position(|s| matches!(*s, "in" | "company" | "school"))?;
             let handle = segments.get(pos + 1)?;
             return clean_handle(handle);
         }
@@ -316,11 +389,18 @@ pub fn extract_username(platform: &str, url: &url::Url) -> Option<String> {
 
 /// Lowercase-trim a handle, drop query remnants and validate basic charset.
 fn clean_handle(raw: &str) -> Option<String> {
-    let handle = raw.trim().trim_start_matches('@').trim_end_matches('/').to_string();
+    let handle = raw
+        .trim()
+        .trim_start_matches('@')
+        .trim_end_matches('/')
+        .to_string();
     if handle.is_empty() || handle.len() > 64 {
         return None;
     }
-    if handle.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '.')) {
+    if handle
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '.'))
+    {
         Some(handle)
     } else {
         None
@@ -356,7 +436,9 @@ const NOT_FOUND_INDICATORS: &[&str] = &[
 pub fn looks_like_not_found(html: &str) -> bool {
     // Scan only a window: indicators appear in <title>/headings near the top.
     let window: String = html.chars().take(20_000).collect::<String>().to_lowercase();
-    NOT_FOUND_INDICATORS.iter().any(|indicator| window.contains(indicator))
+    NOT_FOUND_INDICATORS
+        .iter()
+        .any(|indicator| window.contains(indicator))
 }
 
 /// Extract the `og:title` (or `<title>`) of a page as the display name.
@@ -386,7 +468,8 @@ pub fn extract_og_title(html: &str) -> Option<String> {
 /// Best-effort follower count extraction from page text or embedded JSON.
 pub fn extract_followers(html: &str) -> Option<u32> {
     // Embedded JSON first: "followers_count": 1234, follower_count=567.
-    let json_re = regex::Regex::new(r#"(?i)"?followers?_?(?:count)"?\s*[:=]\s*"?(\d[\d,]*)"#).ok()?;
+    let json_re =
+        regex::Regex::new(r#"(?i)"?followers?_?(?:count)"?\s*[:=]\s*"?(\d[\d,]*)"#).ok()?;
     if let Some(cap) = json_re.captures(html) {
         if let Some(n) = parse_count(&cap[1], "") {
             return Some(n);
@@ -394,7 +477,8 @@ pub fn extract_followers(html: &str) -> Option<u32> {
     }
 
     // Visible text: "1,234 followers", "1.2K followers", "3.4M followers".
-    let text_re = regex::Regex::new(r"(?i)(\d[\d.,]*)\s*(k|m|thousand|million)?\s*followers").ok()?;
+    let text_re =
+        regex::Regex::new(r"(?i)(\d[\d.,]*)\s*(k|m|thousand|million)?\s*followers").ok()?;
     let window: String = html.chars().take(200_000).collect();
     if let Some(cap) = text_re.captures(&window) {
         let suffix = cap.get(2).map(|m| m.as_str()).unwrap_or("");
@@ -542,7 +626,10 @@ mod tests {
             Some("jack".to_string())
         );
         assert_eq!(
-            extract_username("instagram", &parse("https://www.instagram.com/therock/?hl=en")),
+            extract_username(
+                "instagram",
+                &parse("https://www.instagram.com/therock/?hl=en")
+            ),
             Some("therock".to_string())
         );
         assert_eq!(
@@ -573,16 +660,24 @@ mod tests {
             Some("spez".to_string())
         );
         // Site root → no username.
-        assert_eq!(extract_username("github", &parse("https://github.com/")), None);
+        assert_eq!(
+            extract_username("github", &parse("https://github.com/")),
+            None
+        );
         // Reserved navigation segment.
-        assert_eq!(extract_username("github", &parse("https://github.com/about")), None);
+        assert_eq!(
+            extract_username("github", &parse("https://github.com/about")),
+            None
+        );
     }
 
     // ── Not-found detection ──
 
     #[test]
     fn test_looks_like_not_found() {
-        assert!(looks_like_not_found("<html><title>Page not found</title></html>"));
+        assert!(looks_like_not_found(
+            "<html><title>Page not found</title></html>"
+        ));
         assert!(looks_like_not_found("<p>This account doesn't exist.</p>"));
         assert!(looks_like_not_found("<div>Пользователь не найден</div>"));
         assert!(!looks_like_not_found(
@@ -599,7 +694,10 @@ mod tests {
             <meta property="og:title" content="John Doe - CEO at Acme">
             <title>Fallback title</title>
             </head><body></body></html>"#;
-        assert_eq!(extract_og_title(html), Some("John Doe - CEO at Acme".to_string()));
+        assert_eq!(
+            extract_og_title(html),
+            Some("John Doe - CEO at Acme".to_string())
+        );
 
         let no_og = "<html><head><title>Only title</title></head></html>";
         assert_eq!(extract_og_title(no_og), Some("Only title".to_string()));
@@ -611,19 +709,22 @@ mod tests {
 
     #[test]
     fn test_extract_followers_text() {
-        assert_eq!(extract_followers("<span>1,234 followers</span>"), Some(1234));
+        assert_eq!(
+            extract_followers("<span>1,234 followers</span>"),
+            Some(1234)
+        );
         assert_eq!(extract_followers("<span>1.2K followers</span>"), Some(1200));
-        assert_eq!(extract_followers("<span>3.4M followers</span>"), Some(3_400_000));
+        assert_eq!(
+            extract_followers("<span>3.4M followers</span>"),
+            Some(3_400_000)
+        );
         assert_eq!(extract_followers("<span>42 Followers</span>"), Some(42));
         assert_eq!(extract_followers("no counts here"), None);
     }
 
     #[test]
     fn test_extract_followers_json() {
-        assert_eq!(
-            extract_followers(r#"{"followers_count": 567}"#),
-            Some(567)
-        );
+        assert_eq!(extract_followers(r#"{"followers_count": 567}"#), Some(567));
         assert_eq!(extract_followers(r#"followers_count=89"#), Some(89));
     }
 
@@ -638,15 +739,15 @@ mod tests {
 
     #[test]
     fn test_normalize_url() {
-        assert_eq!(normalize_url("github.com/torvalds"), "https://github.com/torvalds");
+        assert_eq!(
+            normalize_url("github.com/torvalds"),
+            "https://github.com/torvalds"
+        );
         assert_eq!(
             normalize_url("https://github.com/torvalds"),
             "https://github.com/torvalds"
         );
-        assert_eq!(
-            normalize_url("http://x.com/jack"),
-            "http://x.com/jack"
-        );
+        assert_eq!(normalize_url("http://x.com/jack"), "http://x.com/jack");
     }
 
     // ── Tool plumbing ──

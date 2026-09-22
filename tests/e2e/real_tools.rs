@@ -143,16 +143,17 @@ async fn web_fetch_reads_local_mock_site() {
     let (url, server) = spawn_mock_site().await;
 
     let registry = ToolRegistry::with_builtins();
-    let ctx = pr_tools::ToolContext::new(
-        std::env::temp_dir(),
-        pr_core::SearchConfig::default(),
-    );
+    let ctx = pr_tools::ToolContext::new(std::env::temp_dir(), pr_core::SearchConfig::default());
     let out = registry
         .execute("web_fetch", serde_json::json!({ "url": url }), &ctx)
         .await
         .expect("web_fetch executes");
     assert!(out.success, "web_fetch failed: {}", out.content);
-    assert!(out.content.contains("Our Team"), "page text missing: {}", out.content);
+    assert!(
+        out.content.contains("Our Team"),
+        "page text missing: {}",
+        out.content
+    );
     assert!(out.content.contains("Ivan Petrov"));
 
     server.abort();
@@ -168,7 +169,9 @@ async fn full_pipeline_extract_save_memory() {
     let memory = Arc::new(Memory::in_memory(AppConfig::default().memory).unwrap());
     let session_db = Arc::new(Persistence::in_memory().unwrap());
     let session_id = SessionId::new();
-    session_db.create_session(&session_id, "harvest acme team").unwrap();
+    session_db
+        .create_session(&session_id, "harvest acme team")
+        .unwrap();
 
     let llm = Arc::new(ScriptedLlm {
         url: url.clone(),
@@ -221,8 +224,12 @@ async fn full_pipeline_extract_save_memory() {
         stored.len(),
         stored.iter().map(|c| c.email.clone()).collect::<Vec<_>>()
     );
-    assert!(stored.iter().any(|c| c.email.as_deref() == Some("ivan.petrov@acme-e2e.example")));
-    assert!(stored.iter().any(|c| c.email.as_deref() == Some("maria.sidorova@acme-e2e.example")));
+    assert!(stored
+        .iter()
+        .any(|c| c.email.as_deref() == Some("ivan.petrov@acme-e2e.example")));
+    assert!(stored
+        .iter()
+        .any(|c| c.email.as_deref() == Some("maria.sidorova@acme-e2e.example")));
 
     // ── Semantic memory absorbed the harvested contacts ──
     let memories = memory
@@ -234,13 +241,22 @@ async fn full_pipeline_extract_save_memory() {
         "autosave must absorb contacts into long-term memory"
     );
     assert!(
-        memories.iter().any(|m| m.content.contains("acme-e2e.example")),
+        memories
+            .iter()
+            .any(|m| m.content.contains("acme-e2e.example")),
         "memory facts should mention the harvested emails: {:?}",
-        memories.iter().map(|m| m.content.clone()).collect::<Vec<_>>()
+        memories
+            .iter()
+            .map(|m| m.content.clone())
+            .collect::<Vec<_>>()
     );
     // Hybrid search finds them.
     let hits = memory
-        .search("ivan petrov email acme", &pr_memory::ScopeFilter::persistent(), Some(5))
+        .search(
+            "ivan petrov email acme",
+            &pr_memory::ScopeFilter::persistent(),
+            Some(5),
+        )
         .await
         .unwrap();
     assert!(!hits.is_empty(), "search must find absorbed contacts");

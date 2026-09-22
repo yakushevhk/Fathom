@@ -3,9 +3,7 @@
 
 use crate::state::{AppState, NavigationTab};
 use crate::theme::Theme;
-use gpui::{
-    div, prelude::*, px, Context, IntoElement, Render, Window,
-};
+use gpui::{div, prelude::*, px, Context, IntoElement, Render, Window};
 use std::sync::Arc;
 
 pub struct Topbar {

@@ -1,10 +1,10 @@
+use parking_lot::Mutex;
+use pr_core::{PrError, PrResult};
 use std::collections::{HashMap, VecDeque};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use parking_lot::Mutex;
-use pr_core::{PrError, PrResult};
 use tokio::sync::broadcast;
 
 /// Output line chunk in the circular buffer with monotonic sequence ID.
@@ -44,14 +44,23 @@ impl PtySession {
                 payload.push('\n');
             }
             writer.write_all(payload.as_bytes()).map_err(|e| {
-                PrError::Tool(format!("Failed to write stdin to PTY '{}': {}", self.name, e))
+                PrError::Tool(format!(
+                    "Failed to write stdin to PTY '{}': {}",
+                    self.name, e
+                ))
             })?;
             writer.flush().map_err(|e| {
-                PrError::Tool(format!("Failed to flush stdin to PTY '{}': {}", self.name, e))
+                PrError::Tool(format!(
+                    "Failed to flush stdin to PTY '{}': {}",
+                    self.name, e
+                ))
             })?;
             Ok(())
         } else {
-            Err(PrError::Tool(format!("PTY stdin channel closed for '{}'", self.name)))
+            Err(PrError::Tool(format!(
+                "PTY stdin channel closed for '{}'",
+                self.name
+            )))
         }
     }
 
@@ -69,21 +78,33 @@ impl PtySession {
             "RIGHT" => b"\x1b[C",
             "LEFT" => b"\x1b[D",
             other => {
-                return Err(PrError::Tool(format!("Unsupported key identifier: '{}'", other)));
+                return Err(PrError::Tool(format!(
+                    "Unsupported key identifier: '{}'",
+                    other
+                )));
             }
         };
 
         let mut guard = self.stdin_tx.lock();
         if let Some(writer) = guard.as_mut() {
             writer.write_all(bytes).map_err(|e| {
-                PrError::Tool(format!("Failed to send key '{}' to PTY '{}': {}", key, self.name, e))
+                PrError::Tool(format!(
+                    "Failed to send key '{}' to PTY '{}': {}",
+                    key, self.name, e
+                ))
             })?;
             writer.flush().map_err(|e| {
-                PrError::Tool(format!("Failed to flush key '{}' to PTY '{}': {}", key, self.name, e))
+                PrError::Tool(format!(
+                    "Failed to flush key '{}' to PTY '{}': {}",
+                    key, self.name, e
+                ))
             })?;
             Ok(())
         } else {
-            Err(PrError::Tool(format!("PTY stdin channel closed for '{}'", self.name)))
+            Err(PrError::Tool(format!(
+                "PTY stdin channel closed for '{}'",
+                self.name
+            )))
         }
     }
 
@@ -106,7 +127,10 @@ impl PtySession {
     /// Wait for a log regex pattern or timeout.
     pub async fn wait_for_pattern(&self, regex_pattern: &str, timeout_secs: u64) -> PrResult<bool> {
         let re = regex::Regex::new(regex_pattern).map_err(|e| {
-            PrError::Tool(format!("Invalid readiness regex '{}': {}", regex_pattern, e))
+            PrError::Tool(format!(
+                "Invalid readiness regex '{}': {}",
+                regex_pattern, e
+            ))
         })?;
 
         let deadline = Instant::now() + Duration::from_secs(timeout_secs);
@@ -161,7 +185,10 @@ impl PtyBroker {
             cmd.process_group(0);
         }
         let mut child = cmd.spawn().map_err(|e| {
-            PrError::Tool(format!("Failed to spawn process '{}' ({}): {}", name, app, e))
+            PrError::Tool(format!(
+                "Failed to spawn process '{}' ({}): {}",
+                name, app, e
+            ))
         })?;
 
         let pid = child.id();
@@ -215,7 +242,9 @@ impl PtyBroker {
             let mut line = String::new();
             use std::io::BufRead;
             while let Ok(n) = reader.read_line(&mut line) {
-                if n == 0 { break; }
+                if n == 0 {
+                    break;
+                }
                 let mut s = seq_out.lock();
                 *s += 1;
                 let chunk = PtyOutputChunk {
@@ -242,7 +271,9 @@ impl PtyBroker {
             let mut line = String::new();
             use std::io::BufRead;
             while let Ok(n) = reader.read_line(&mut line) {
-                if n == 0 { break; }
+                if n == 0 {
+                    break;
+                }
                 let mut s = seq_err.lock();
                 *s += 1;
                 let chunk = PtyOutputChunk {
@@ -312,7 +343,10 @@ impl PtyBroker {
             }
             Ok(())
         } else {
-            Err(PrError::Tool(format!("No PTY session named '{}' found", name)))
+            Err(PrError::Tool(format!(
+                "No PTY session named '{}' found",
+                name
+            )))
         }
     }
 }

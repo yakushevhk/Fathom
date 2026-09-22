@@ -1,5 +1,5 @@
-use std::path::{Component, Path, PathBuf};
 use serde::{Deserialize, Serialize};
+use std::path::{Component, Path, PathBuf};
 
 /// Parsed virtual URI scheme used across Fathom for zero-copy routing,
 /// sandboxed scratchpads, agent coordination, and tool devices.
@@ -68,9 +68,13 @@ impl VirtualUri {
             };
             VirtualUri::Skill { name, path }
         } else if let Some(rest) = trimmed.strip_prefix("rule://") {
-            VirtualUri::Rule { name: rest.trim_matches('/').to_string() }
+            VirtualUri::Rule {
+                name: rest.trim_matches('/').to_string(),
+            }
         } else if let Some(rest) = trimmed.strip_prefix("memory://") {
-            VirtualUri::Memory { section: rest.trim_matches('/').to_string() }
+            VirtualUri::Memory {
+                section: rest.trim_matches('/').to_string(),
+            }
         } else if let Some(rest) = trimmed.strip_prefix("agent://") {
             let parts: Vec<&str> = rest.splitn(2, '/').collect();
             let id = parts[0].to_string();
@@ -83,23 +87,44 @@ impl VirtualUri {
         } else if let Some(rest) = trimmed.strip_prefix("history://") {
             let id = rest.trim_matches('/');
             VirtualUri::History {
-                id: if id.is_empty() { None } else { Some(id.to_string()) },
+                id: if id.is_empty() {
+                    None
+                } else {
+                    Some(id.to_string())
+                },
             }
         } else if let Some(rest) = trimmed.strip_prefix("artifact://") {
-            VirtualUri::Artifact { id: rest.trim_matches('/').to_string() }
+            VirtualUri::Artifact {
+                id: rest.trim_matches('/').to_string(),
+            }
         } else if let Some(rest) = trimmed.strip_prefix("local://") {
-            VirtualUri::Local { name: rest.trim_matches('/').to_string() }
+            VirtualUri::Local {
+                name: rest.trim_matches('/').to_string(),
+            }
         } else if let Some(rest) = trimmed.strip_prefix("xd://") {
-            VirtualUri::Device { name: rest.trim_matches('/').to_string() }
-        } else if (trimmed.ends_with(".sqlite") || trimmed.ends_with(".db") || trimmed.contains(".sqlite:") || trimmed.contains(".db:"))
+            VirtualUri::Device {
+                name: rest.trim_matches('/').to_string(),
+            }
+        } else if (trimmed.ends_with(".sqlite")
+            || trimmed.ends_with(".db")
+            || trimmed.contains(".sqlite:")
+            || trimmed.contains(".db:"))
             && trimmed.contains(':')
         {
             let parts: Vec<&str> = trimmed.split(':').collect();
             let db_path = PathBuf::from(parts[0]);
             let table = parts.get(1).unwrap_or(&"").to_string();
             let pk = parts.get(2).map(|s| s.to_string());
-            VirtualUri::Sqlite { db_path, table, pk, query: None }
-        } else if trimmed.contains(".zip:") || trimmed.contains(".tar.gz:") || trimmed.contains(".asar:") {
+            VirtualUri::Sqlite {
+                db_path,
+                table,
+                pk,
+                query: None,
+            }
+        } else if trimmed.contains(".zip:")
+            || trimmed.contains(".tar.gz:")
+            || trimmed.contains(".asar:")
+        {
             let (arch, member) = if let Some(pos) = trimmed.find(".zip:") {
                 (&trimmed[..pos + 4], &trimmed[pos + 5..])
             } else if let Some(pos) = trimmed.find(".tar.gz:") {
@@ -126,7 +151,9 @@ impl VirtualUri {
     /// Resolve virtual URI to a canonical host filesystem path if backed by disk.
     /// Hardened against directory traversal (`..`).
     pub fn resolve_to_path(&self, workspace_root: &Path) -> Option<PathBuf> {
-        let fathom_home = dirs::home_dir().map(|h| h.join(".fathom")).unwrap_or_else(|| PathBuf::from(".fathom"));
+        let fathom_home = dirs::home_dir()
+            .map(|h| h.join(".fathom"))
+            .unwrap_or_else(|| PathBuf::from(".fathom"));
         match self {
             VirtualUri::Skill { name, path } => {
                 let safe_name = sanitize_relative_path(name)?;
@@ -140,19 +167,31 @@ impl VirtualUri {
             }
             VirtualUri::Rule { name } => {
                 let safe_name = sanitize_relative_path(name)?;
-                Some(fathom_home.join("rules").join(format!("{}.md", safe_name.display())))
+                Some(
+                    fathom_home
+                        .join("rules")
+                        .join(format!("{}.md", safe_name.display())),
+                )
             }
             VirtualUri::Memory { section } => {
                 if section == "root" || section.is_empty() {
                     Some(fathom_home.join("memory").join("MEMORY.md"))
                 } else {
                     let safe_sec = sanitize_relative_path(section)?;
-                    Some(fathom_home.join("memory").join(format!("{}.md", safe_sec.display())))
+                    Some(
+                        fathom_home
+                            .join("memory")
+                            .join(format!("{}.md", safe_sec.display())),
+                    )
                 }
             }
             VirtualUri::Artifact { id } => {
                 let safe_id = sanitize_relative_path(id)?;
-                Some(workspace_root.join(".pr-context").join(format!("{}.txt", safe_id.display())))
+                Some(
+                    workspace_root
+                        .join(".pr-context")
+                        .join(format!("{}.txt", safe_id.display())),
+                )
             }
             VirtualUri::Local { name } => {
                 let safe_name = sanitize_relative_path(name)?;
@@ -182,7 +221,10 @@ mod tests {
     fn test_parse_virtual_uris() {
         assert_eq!(
             VirtualUri::parse("skill://git-flow"),
-            VirtualUri::Skill { name: "git-flow".into(), path: None }
+            VirtualUri::Skill {
+                name: "git-flow".into(),
+                path: None
+            }
         );
         assert_eq!(
             VirtualUri::parse("skill://git-flow/scripts/test.sh"),
@@ -193,19 +235,28 @@ mod tests {
         );
         assert_eq!(
             VirtualUri::parse("memory://root"),
-            VirtualUri::Memory { section: "root".into() }
+            VirtualUri::Memory {
+                section: "root".into()
+            }
         );
         assert_eq!(
             VirtualUri::parse("agent://coder_123/output"),
-            VirtualUri::Agent { id: "coder_123".into(), path: Some("output".into()) }
+            VirtualUri::Agent {
+                id: "coder_123".into(),
+                path: Some("output".into())
+            }
         );
         assert_eq!(
             VirtualUri::parse("local://plan.md"),
-            VirtualUri::Local { name: "plan.md".into() }
+            VirtualUri::Local {
+                name: "plan.md".into()
+            }
         );
         assert_eq!(
             VirtualUri::parse("xd://ast_edit"),
-            VirtualUri::Device { name: "ast_edit".into() }
+            VirtualUri::Device {
+                name: "ast_edit".into()
+            }
         );
     }
 
@@ -216,6 +267,9 @@ mod tests {
         assert_eq!(malicious.resolve_to_path(ws), None);
 
         let safe = VirtualUri::parse("local://plan.md");
-        assert_eq!(safe.resolve_to_path(ws), Some(PathBuf::from("/workspace/.fathom-local/plan.md")));
+        assert_eq!(
+            safe.resolve_to_path(ws),
+            Some(PathBuf::from("/workspace/.fathom-local/plan.md"))
+        );
     }
 }

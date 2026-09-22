@@ -94,10 +94,7 @@ fn escape_yaml_value(s: &str) -> String {
         || s.starts_with(' ')
         || s.ends_with(' ')
     {
-        format!(
-            "\"{}\"",
-            s.replace('\\', "\\\\").replace('"', "\\\"")
-        )
+        format!("\"{}\"", s.replace('\\', "\\\\").replace('"', "\\\""))
     } else {
         s.to_string()
     }
@@ -150,9 +147,7 @@ pub fn parse_frontmatter(input: &str) -> Option<(Frontmatter, &str)> {
 
 /// Remove surrounding quotes from a YAML value if present.
 fn unquote_yaml(s: &str) -> String {
-    if (s.starts_with('"') && s.ends_with('"'))
-        || (s.starts_with('\'') && s.ends_with('\''))
-    {
+    if (s.starts_with('"') && s.ends_with('"')) || (s.starts_with('\'') && s.ends_with('\'')) {
         s[1..s.len() - 1].to_string()
     } else {
         s.to_string()
@@ -259,11 +254,7 @@ impl MemoryStore {
     }
 
     /// Create with custom budgets (for testing).
-    pub fn with_budgets(
-        home_dir: &Path,
-        max_memory_chars: usize,
-        max_user_chars: usize,
-    ) -> Self {
+    pub fn with_budgets(home_dir: &Path, max_memory_chars: usize, max_user_chars: usize) -> Self {
         let base = home_dir.join(".fathom").join("memory");
         Self {
             memory_path: base.join(MEMORY_FILENAME),
@@ -592,7 +583,10 @@ mod tests {
     use super::*;
 
     fn test_dir() -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("pr-memory-test-{}", uuid::Uuid::new_v7(uuid::Timestamp::now(uuid::NoContext))));
+        let dir = std::env::temp_dir().join(format!(
+            "pr-memory-test-{}",
+            uuid::Uuid::new_v7(uuid::Timestamp::now(uuid::NoContext))
+        ));
         fs::create_dir_all(&dir).unwrap();
         dir
     }

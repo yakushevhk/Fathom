@@ -26,8 +26,14 @@ pub const TOOLS_LIST_CHANGED: &str = "notifications/tools/list_changed";
 /// Transport selection for connecting to an MCP server.
 #[derive(Debug, Clone, PartialEq)]
 pub enum McpTransport {
-    Stdio { command: String, args: Vec<String> },
-    Http { url: String, auth: Option<OAuthConfig> },
+    Stdio {
+        command: String,
+        args: Vec<String>,
+    },
+    Http {
+        url: String,
+        auth: Option<OAuthConfig>,
+    },
 }
 
 impl McpTransport {
@@ -231,9 +237,7 @@ impl McpConnection {
                         c.stdout.read_line(&mut buf),
                     )
                     .await
-                    .map_err(|_| {
-                        anyhow::anyhow!("timed out waiting for MCP server response")
-                    })??;
+                    .map_err(|_| anyhow::anyhow!("timed out waiting for MCP server response"))??;
                     if n == 0 {
                         anyhow::bail!("MCP server closed the connection");
                     }
@@ -424,9 +428,7 @@ impl McpClient {
         }
         match McpTransport::from_config(config)? {
             McpTransport::Stdio { .. } => self.connect_stdio(config).await?,
-            McpTransport::Http { url, auth } => {
-                self.connect_http(&config.name, url, auth).await?
-            }
+            McpTransport::Http { url, auth } => self.connect_http(&config.name, url, auth).await?,
         }
         self.configs.insert(config.name.clone(), config.clone());
         Ok(())
@@ -558,7 +560,10 @@ impl McpClient {
             .ok_or_else(|| anyhow::anyhow!("no result in response"))?;
 
         let tools: Vec<McpToolDef> = serde_json::from_value(
-            result.get("tools").cloned().unwrap_or(serde_json::json!([])),
+            result
+                .get("tools")
+                .cloned()
+                .unwrap_or(serde_json::json!([])),
         )?;
 
         let schemas: Vec<ToolSchema> = tools
@@ -566,13 +571,16 @@ impl McpClient {
             .map(|t| ToolSchema {
                 name: t.name,
                 description: t.description.unwrap_or_default(),
-                parameters: t.input_schema.unwrap_or(serde_json::json!({"type": "object"})),
+                parameters: t
+                    .input_schema
+                    .unwrap_or(serde_json::json!({"type": "object"})),
             })
             .collect();
 
         // We just fetched a fresh list, so it becomes the new cache and the
         // staleness flag is cleared.
-        self.tool_cache.insert(server_name.to_string(), schemas.clone());
+        self.tool_cache
+            .insert(server_name.to_string(), schemas.clone());
         self.tools_dirty.remove(server_name);
         Ok(schemas)
     }
@@ -696,10 +704,12 @@ mod tests {
         let resp = serde_json::json!({"jsonrpc": "2.0", "id": 1, "result": {}});
         assert_eq!(classify(&resp), IncomingKind::Response);
 
-        let notif = serde_json::json!({"jsonrpc": "2.0", "method": "notifications/tools/list_changed"});
+        let notif =
+            serde_json::json!({"jsonrpc": "2.0", "method": "notifications/tools/list_changed"});
         assert_eq!(classify(&notif), IncomingKind::Notification);
 
-        let server_req = serde_json::json!({"jsonrpc": "2.0", "id": 9, "method": "sampling/createMessage"});
+        let server_req =
+            serde_json::json!({"jsonrpc": "2.0", "id": 9, "method": "sampling/createMessage"});
         assert_eq!(classify(&server_req), IncomingKind::ServerRequest);
     }
 
@@ -869,11 +879,9 @@ token_url = "https://auth.example.com/token"
         let handle = tokio::spawn(async move {
             let mut requests = Vec::new();
             while requests.len() < max_requests {
-                let accept = tokio::time::timeout(
-                    std::time::Duration::from_secs(5),
-                    listener.accept(),
-                )
-                .await;
+                let accept =
+                    tokio::time::timeout(std::time::Duration::from_secs(5), listener.accept())
+                        .await;
                 let Ok(Ok((mut socket, _))) = accept else {
                     break;
                 };
@@ -924,12 +932,14 @@ token_url = "https://auth.example.com/token"
                     .to_string();
 
                 let response_body = if path.starts_with("/token") {
-                    Some(serde_json::to_string(&serde_json::json!({
-                        "access_token": "test-token",
-                        "token_type": "Bearer",
-                        "expires_in": 3600
-                    }))
-                    .unwrap())
+                    Some(
+                        serde_json::to_string(&serde_json::json!({
+                            "access_token": "test-token",
+                            "token_type": "Bearer",
+                            "expires_in": 3600
+                        }))
+                        .unwrap(),
+                    )
                 } else if !body_str.contains("\"id\":") {
                     // JSON-RPC notification (no id): acknowledge, consume nothing.
                     None
@@ -1133,7 +1143,8 @@ done
     }
 
     #[tokio::test]
-    async fn test_http_transport_error_status() {        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    async fn test_http_transport_error_status() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap();
         let server = tokio::spawn(async move {
             if let Ok((mut socket, _)) = listener.accept().await {

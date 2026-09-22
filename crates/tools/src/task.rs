@@ -1,8 +1,8 @@
+use crate::registry::{Tool, ToolContext};
 use async_trait::async_trait;
 use pr_core::{ToolOutput, ToolSchema};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use crate::registry::{Tool, ToolContext};
 
 /// Subagent specification within a batch swarm task.
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -65,11 +65,16 @@ Returns batch job handles and coordination IDs immediately."
         ToolSchema {
             name: self.name().to_string(),
             description: self.description().to_string(),
-            parameters: serde_json::to_value(&schemars::schema_for!(TaskBatchParams).schema).unwrap_or_default(),
+            parameters: serde_json::to_value(&schemars::schema_for!(TaskBatchParams).schema)
+                .unwrap_or_default(),
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, _ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        _ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: TaskBatchParams = serde_json::from_value(args)?;
 
         if params.tasks.is_empty() {
@@ -80,7 +85,10 @@ Returns batch job handles and coordination IDs immediately."
         let mut spawn_metadata = Vec::new();
 
         for (i, item) in params.tasks.iter().enumerate() {
-            let subagent_name = item.name.clone().unwrap_or_else(|| format!("subagent_{}_{}", item.agent, i + 1));
+            let subagent_name = item
+                .name
+                .clone()
+                .unwrap_or_else(|| format!("subagent_{}_{}", item.agent, i + 1));
             let job_id = uuid::Uuid::now_v7().to_string();
 
             job_entries.push(format!(

@@ -80,7 +80,15 @@ fn channel_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<ChannelRow> {
 }
 
 impl Persistence {
-    pub fn create_coworker(&self, name: &str, title: &str, role: &str, prompt: &str, visibility: &str, active: bool) -> anyhow::Result<CoworkerRow> {
+    pub fn create_coworker(
+        &self,
+        name: &str,
+        title: &str,
+        role: &str,
+        prompt: &str,
+        visibility: &str,
+        active: bool,
+    ) -> anyhow::Result<CoworkerRow> {
         let name = required(name, MAX_NAME, "name")?;
         let title = bounded(title, MAX_TITLE, "title")?;
         let role = bounded(role, MAX_ROLE, "role")?;
@@ -90,7 +98,17 @@ impl Persistence {
         let now = chrono::Utc::now().to_rfc3339();
         let conn = self.conn.lock();
         conn.execute("INSERT INTO coworkers (id,name,title,role,prompt,visibility,active,created_at,updated_at) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?8)", params![id, name, title, role, prompt, visibility, active as i64, now])?;
-        Ok(CoworkerRow { id, name, title, role, prompt, visibility, active, created_at: now.clone(), updated_at: now })
+        Ok(CoworkerRow {
+            id,
+            name,
+            title,
+            role,
+            prompt,
+            visibility,
+            active,
+            created_at: now.clone(),
+            updated_at: now,
+        })
     }
 
     pub fn get_coworker(&self, coworker_id: &str) -> anyhow::Result<Option<CoworkerRow>> {
@@ -102,12 +120,23 @@ impl Persistence {
     pub fn list_coworkers(&self) -> anyhow::Result<Vec<CoworkerRow>> {
         let conn = self.conn.lock();
         let mut stmt = conn.prepare("SELECT id,name,title,role,prompt,visibility,active,created_at,updated_at FROM coworkers ORDER BY updated_at DESC, id")?;
-        let rows = stmt.query_map([], coworker_from_row)?.collect::<Result<Vec<_>, _>>()?;
+        let rows = stmt
+            .query_map([], coworker_from_row)?
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(rows)
     }
 
     #[allow(clippy::too_many_arguments)]
-    pub fn update_coworker(&self, coworker_id: &str, name: &str, title: &str, role: &str, prompt: &str, visibility: &str, active: bool) -> anyhow::Result<Option<CoworkerRow>> {
+    pub fn update_coworker(
+        &self,
+        coworker_id: &str,
+        name: &str,
+        title: &str,
+        role: &str,
+        prompt: &str,
+        visibility: &str,
+        active: bool,
+    ) -> anyhow::Result<Option<CoworkerRow>> {
         let coworker_id = id(coworker_id)?;
         let name = required(name, MAX_NAME, "name")?;
         let title = bounded(title, MAX_TITLE, "title")?;
@@ -117,7 +146,9 @@ impl Persistence {
         let now = chrono::Utc::now().to_rfc3339();
         let conn = self.conn.lock();
         let changed = conn.execute("UPDATE coworkers SET name=?1,title=?2,role=?3,prompt=?4,visibility=?5,active=?6,updated_at=?7 WHERE id=?8", params![name,title,role,prompt,visibility,active as i64,now,coworker_id])?;
-        if changed == 0 { return Ok(None); }
+        if changed == 0 {
+            return Ok(None);
+        }
         Ok(Some(conn.query_row("SELECT id,name,title,role,prompt,visibility,active,created_at,updated_at FROM coworkers WHERE id=?1", params![coworker_id], coworker_from_row)?))
     }
 
@@ -125,27 +156,56 @@ impl Persistence {
         let coworker_id = id(coworker_id)?;
         let conn = self.conn.lock();
         let tx = conn.unchecked_transaction()?;
-        tx.execute("DELETE FROM channels WHERE coworker_id=?1", params![coworker_id])?;
+        tx.execute(
+            "DELETE FROM channels WHERE coworker_id=?1",
+            params![coworker_id],
+        )?;
         let deleted = tx.execute("DELETE FROM coworkers WHERE id=?1", params![coworker_id])? != 0;
         tx.commit()?;
         Ok(deleted)
     }
 
-    pub fn create_channel(&self, coworker_id: &str, title: &str, session_id: Option<&str>) -> anyhow::Result<ChannelRow> {
+    pub fn create_channel(
+        &self,
+        coworker_id: &str,
+        title: &str,
+        session_id: Option<&str>,
+    ) -> anyhow::Result<ChannelRow> {
         let coworker_id = id(coworker_id)?;
         let title = required(title, MAX_TITLE, "title")?;
-        let session_id = session_id.map(|v| required(v, MAX_ID, "session_id")).transpose()?;
+        let session_id = session_id
+            .map(|v| required(v, MAX_ID, "session_id"))
+            .transpose()?;
         let channel_id = Uuid::now_v7().to_string();
         let now = chrono::Utc::now().to_rfc3339();
         let conn = self.conn.lock();
-        let exists: bool = conn.query_row("SELECT EXISTS(SELECT 1 FROM coworkers WHERE id=?1)", params![coworker_id], |row| row.get(0))?;
-        if !exists { anyhow::bail!("coworker not found"); }
+        let exists: bool = conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM coworkers WHERE id=?1)",
+            params![coworker_id],
+            |row| row.get(0),
+        )?;
+        if !exists {
+            anyhow::bail!("coworker not found");
+        }
         if let Some(session_id) = &session_id {
-            let exists: bool = conn.query_row("SELECT EXISTS(SELECT 1 FROM sessions WHERE id=?1)", params![session_id], |row| row.get(0))?;
-            if !exists { anyhow::bail!("session not found"); }
+            let exists: bool = conn.query_row(
+                "SELECT EXISTS(SELECT 1 FROM sessions WHERE id=?1)",
+                params![session_id],
+                |row| row.get(0),
+            )?;
+            if !exists {
+                anyhow::bail!("session not found");
+            }
         }
         conn.execute("INSERT INTO channels (id,coworker_id,title,session_id,created_at,updated_at) VALUES (?1,?2,?3,?4,?5,?5)", params![channel_id,coworker_id,title,session_id,now])?;
-        Ok(ChannelRow { id: channel_id, coworker_id, title, session_id, created_at: now.clone(), updated_at: now })
+        Ok(ChannelRow {
+            id: channel_id,
+            coworker_id,
+            title,
+            session_id,
+            created_at: now.clone(),
+            updated_at: now,
+        })
     }
 
     pub fn get_channel(&self, channel_id: &str) -> anyhow::Result<Option<ChannelRow>> {
@@ -158,28 +218,52 @@ impl Persistence {
         let coworker_id = id(coworker_id)?;
         let conn = self.conn.lock();
         let mut stmt = conn.prepare("SELECT id,coworker_id,title,session_id,created_at,updated_at FROM channels WHERE coworker_id=?1 ORDER BY updated_at DESC,id")?;
-        let rows = stmt.query_map(params![coworker_id], channel_from_row)?.collect::<Result<Vec<_>, _>>()?;
+        let rows = stmt
+            .query_map(params![coworker_id], channel_from_row)?
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(rows)
     }
 
-    pub fn update_channel(&self, channel_id: &str, title: &str, session_id: Option<&str>) -> anyhow::Result<Option<ChannelRow>> {
+    pub fn update_channel(
+        &self,
+        channel_id: &str,
+        title: &str,
+        session_id: Option<&str>,
+    ) -> anyhow::Result<Option<ChannelRow>> {
         let channel_id = id(channel_id)?;
         let title = required(title, MAX_TITLE, "title")?;
-        let session_id = session_id.map(|v| required(v, MAX_ID, "session_id")).transpose()?;
+        let session_id = session_id
+            .map(|v| required(v, MAX_ID, "session_id"))
+            .transpose()?;
         let now = chrono::Utc::now().to_rfc3339();
         let conn = self.conn.lock();
         if let Some(session_id) = &session_id {
-            let exists: bool = conn.query_row("SELECT EXISTS(SELECT 1 FROM sessions WHERE id=?1)", params![session_id], |row| row.get(0))?;
-            if !exists { anyhow::bail!("session not found"); }
+            let exists: bool = conn.query_row(
+                "SELECT EXISTS(SELECT 1 FROM sessions WHERE id=?1)",
+                params![session_id],
+                |row| row.get(0),
+            )?;
+            if !exists {
+                anyhow::bail!("session not found");
+            }
         }
-        let changed = conn.execute("UPDATE channels SET title=?1,session_id=?2,updated_at=?3 WHERE id=?4", params![title,session_id,now,channel_id])?;
-        if changed == 0 { return Ok(None); }
+        let changed = conn.execute(
+            "UPDATE channels SET title=?1,session_id=?2,updated_at=?3 WHERE id=?4",
+            params![title, session_id, now, channel_id],
+        )?;
+        if changed == 0 {
+            return Ok(None);
+        }
         Ok(Some(conn.query_row("SELECT id,coworker_id,title,session_id,created_at,updated_at FROM channels WHERE id=?1", params![channel_id], channel_from_row)?))
     }
 
     pub fn delete_channel(&self, channel_id: &str) -> anyhow::Result<bool> {
         let channel_id = id(channel_id)?;
-        Ok(self.conn.lock().execute("DELETE FROM channels WHERE id=?1", params![channel_id])? != 0)
+        Ok(self
+            .conn
+            .lock()
+            .execute("DELETE FROM channels WHERE id=?1", params![channel_id])?
+            != 0)
     }
 }
 
@@ -189,16 +273,32 @@ mod tests {
     #[test]
     fn coworker_channel_crud_and_linkage() {
         let db = Persistence::in_memory().unwrap();
-        let c = db.create_coworker("Alice", "Title", "assistant", "Prompt", "private", true).unwrap();
+        let c = db
+            .create_coworker("Alice", "Title", "assistant", "Prompt", "private", true)
+            .unwrap();
         assert_eq!(db.list_coworkers().unwrap().len(), 1);
-        let c = db.update_coworker(&c.id, "Alicia", "Lead", "assistant", "Updated prompt", "team", false).unwrap().unwrap();
+        let c = db
+            .update_coworker(
+                &c.id,
+                "Alicia",
+                "Lead",
+                "assistant",
+                "Updated prompt",
+                "team",
+                false,
+            )
+            .unwrap()
+            .unwrap();
         assert_eq!(c.name, "Alicia");
         assert!(!c.active);
         let ch = db.create_channel(&c.id, "General", None).unwrap();
         assert_eq!(db.list_channels(&c.id).unwrap()[0].id, ch.id);
         let session = pr_core::SessionId::new();
         db.create_session(&session, "channel session").unwrap();
-        let updated = db.update_channel(&ch.id, "Renamed", Some(&session.0)).unwrap().unwrap();
+        let updated = db
+            .update_channel(&ch.id, "Renamed", Some(&session.0))
+            .unwrap()
+            .unwrap();
         assert_eq!(updated.title, "Renamed");
         assert!(db.delete_channel(&ch.id).unwrap());
         assert!(db.delete_coworker(&c.id).unwrap());

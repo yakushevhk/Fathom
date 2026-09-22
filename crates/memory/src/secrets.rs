@@ -127,9 +127,15 @@ pub fn redact_secrets(text: &str) -> String {
     let p = patterns();
     let mut out = text.to_string();
     for re in [
-        &p.private_key, &p.anthropic, &p.openai, &p.aws, &p.github, &p.slack,
+        &p.private_key,
+        &p.anthropic,
+        &p.openai,
+        &p.aws,
+        &p.github,
+        &p.slack,
         // bearer + generic assignments: keep the key name, mask the value.
-        &p.generic, &p.bearer,
+        &p.generic,
+        &p.bearer,
     ] {
         out = re.replace_all(&out, "[REDACTED]").into_owned();
     }
@@ -177,7 +183,8 @@ mod tests {
 
     #[test]
     fn redact_removes_keys_but_keeps_context() {
-        let input = "endpoint https://api.example.com, credentials sk-proj-abcdefghijklmnopqrstuvwx, done";
+        let input =
+            "endpoint https://api.example.com, credentials sk-proj-abcdefghijklmnopqrstuvwx, done";
         let out = redact_secrets(input);
         assert!(!out.contains("sk-proj"), "key must be redacted: {out}");
         assert!(out.contains("https://api.example.com"));
@@ -204,14 +211,15 @@ mod tests {
         assert!(detect_secrets("AKIAIOSFODNN7EXAMPLE").contains(&SecretKind::AwsAccessKey));
         assert!(detect_secrets("ghp_abcdefghijklmnopqrstuvwxyz0123456789")
             .contains(&SecretKind::GitHubToken));
-        assert!(detect_secrets("xoxb-1234567890-abcdef")
-            .contains(&SecretKind::SlackToken));
+        assert!(detect_secrets("xoxb-1234567890-abcdef").contains(&SecretKind::SlackToken));
     }
 
     #[test]
     fn bearer_and_private_key_detected() {
-        assert!(detect_secrets("Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.sig")
-            .contains(&SecretKind::BearerToken));
+        assert!(detect_secrets(
+            "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.sig"
+        )
+        .contains(&SecretKind::BearerToken));
         assert!(detect_secrets("-----BEGIN RSA PRIVATE KEY-----\nMIIE...")
             .contains(&SecretKind::PrivateKey));
     }

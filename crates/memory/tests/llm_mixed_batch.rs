@@ -40,7 +40,9 @@ fn make_llm() -> Arc<DeepSeekProvider> {
 
 fn msg_text(m: &pr_core::Message) -> String {
     match m {
-        pr_core::Message::System { content } | pr_core::Message::User { content } => content.clone(),
+        pr_core::Message::System { content } | pr_core::Message::User { content } => {
+            content.clone()
+        }
         pr_core::Message::Assistant { content, .. } => content.clone().unwrap_or_default(),
         pr_core::Message::Tool { content, .. } => content.clone(),
     }
@@ -85,7 +87,10 @@ async fn mixed_batch_verdicts_with_llm() {
         context: None,
         dry_run: false,
     };
-    mem.pipeline_with_llm(llm.clone()).absorb(seed).await.unwrap();
+    mem.pipeline_with_llm(llm.clone())
+        .absorb(seed)
+        .await
+        .unwrap();
 
     // Batch: [точный дубль, supersede-кандидат, совсем новое].
     let req = AbsorbRequest {
@@ -100,11 +105,21 @@ async fn mixed_batch_verdicts_with_llm() {
         context: None,
         dry_run: false,
     };
-    let report = mem.pipeline_with_llm(llm.clone()).absorb(req).await.unwrap();
+    let report = mem
+        .pipeline_with_llm(llm.clone())
+        .absorb(req)
+        .await
+        .unwrap();
     println!("{}", report.summary_line());
-    println!("created={} skipped={} superseded={}", report.created, report.skipped, report.superseded);
+    println!(
+        "created={} skipped={} superseded={}",
+        report.created, report.skipped, report.superseded
+    );
 
-    assert_eq!(report.skipped, 1, "точный дубль должен быть пропущен (hash-дедуп)");
+    assert_eq!(
+        report.skipped, 1,
+        "точный дубль должен быть пропущен (hash-дедуп)"
+    );
     assert_eq!(report.superseded, 1, "смена CEO должна быть supersede");
     assert_eq!(report.created, 1, "новый факт Kubernetes создан");
     println!("✓ batch: три разных вердикта в одном вызове");
@@ -121,7 +136,11 @@ async fn parallel_searches_on_shared_store() {
 
     let req = AbsorbRequest {
         facts: (0..30)
-            .map(|i| p_fact(&format!("Technology fact number {i} about distributed systems and caching")))
+            .map(|i| {
+                p_fact(&format!(
+                    "Technology fact number {i} about distributed systems and caching"
+                ))
+            })
             .collect(),
         source: "par".into(),
         scope: Scope::Agent,
@@ -155,7 +174,10 @@ async fn parallel_searches_on_shared_store() {
             Err(e) => println!("   ошибка: {e}"),
         }
     }
-    println!("успешно: {ok}/12, суммарно хитов: {total_hits}, время: {:?}", start.elapsed());
+    println!(
+        "успешно: {ok}/12, суммарно хитов: {total_hits}, время: {:?}",
+        start.elapsed()
+    );
     assert_eq!(ok, 12, "все параллельные поиски должны пройти");
     println!("✓ параллельный поиск: гонок нет, SQLite в Mutex держит нагрузку");
 }
@@ -175,7 +197,11 @@ Respond with ONLY JSON: {"candidate":"c0","verdict":"...","reason":"short"}"#;
 
     let mut seen = Vec::new();
     for model in ["deepseek-v4-flash", "deepseek-v4-pro"] {
-        let llm = Arc::new(DeepSeekProvider::new("https://api.deepseek.com", &key, model));
+        let llm = Arc::new(DeepSeekProvider::new(
+            "https://api.deepseek.com",
+            &key,
+            model,
+        ));
         let start = std::time::Instant::now();
         let req = CompletionRequest {
             messages: vec![pr_core::Message::user(classify_task)],
@@ -184,15 +210,30 @@ Respond with ONLY JSON: {"candidate":"c0","verdict":"...","reason":"short"}"#;
             max_tokens: Some(2048), // запас для reasoning-моделей (v4-pro)
             stream: false,
         };
-        let resp = llm.complete(&req).await.unwrap_or_else(|_| panic!("{model} failed"));
+        let resp = llm
+            .complete(&req)
+            .await
+            .unwrap_or_else(|_| panic!("{model} failed"));
         let text = msg_text(&resp.message);
-        let verdict: serde_json::Value = serde_json::from_str(text.trim()).unwrap_or(serde_json::json!({}));
-        let v = verdict.get("verdict").and_then(|v| v.as_str()).unwrap_or("?");
+        let verdict: serde_json::Value =
+            serde_json::from_str(text.trim()).unwrap_or(serde_json::json!({}));
+        let v = verdict
+            .get("verdict")
+            .and_then(|v| v.as_str())
+            .unwrap_or("?");
         println!("{model}: {v} за {:?}", start.elapsed());
         // Валидный вердикт обязателен; конкретный выбор у reasoning-модели
         // может зависеть от формата промпта (см. бенчмарк-документ).
         assert!(
-            ["duplicate", "supersede", "contradict", "coexist", "related", "new"].contains(&v),
+            [
+                "duplicate",
+                "supersede",
+                "contradict",
+                "coexist",
+                "related",
+                "new"
+            ]
+            .contains(&v),
             "{model} вернул невалидный вердикт: {text}"
         );
         seen.push((model, v.to_string()));
@@ -235,13 +276,27 @@ Do NOT include any explanation, just the JSON array."#;
             let e = text.rfind(']').unwrap();
             serde_json::from_str(&text[s..=e]).expect("plan JSON unparsable")
         });
-        println!("round {round}: {} задач — {}", tasks.len(), tasks.first().map(|t| head(t, 70)).unwrap_or_default());
-        assert!((2..=5).contains(&tasks.len()), "план должен содержать 2-5 задач");
+        println!(
+            "round {round}: {} задач — {}",
+            tasks.len(),
+            tasks.first().map(|t| head(t, 70)).unwrap_or_default()
+        );
+        assert!(
+            (2..=5).contains(&tasks.len()),
+            "план должен содержать 2-5 задач"
+        );
         plans.push(tasks);
     }
     let same = plans[0] == plans[1];
     println!("планы идентичны: {same}");
-    println!("✓ оба плана парсятся{}", if same { " (детерминированно)" } else { " (с вариативностью)" });
+    println!(
+        "✓ оба плана парсятся{}",
+        if same {
+            " (детерминированно)"
+        } else {
+            " (с вариативностью)"
+        }
+    );
 }
 
 fn head(s: &str, n: usize) -> &str {

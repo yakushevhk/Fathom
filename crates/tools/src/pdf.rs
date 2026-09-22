@@ -123,7 +123,10 @@ Parses the PDF locally (no network) and returns the concatenated text of all pag
                         page_count
                     )
                 } else {
-                    format!("Source: {}\nPages: {}\n\n{}", display, page_count, truncated)
+                    format!(
+                        "Source: {}\nPages: {}\n\n{}",
+                        display, page_count, truncated
+                    )
                 };
                 Ok(ToolOutput::ok_with_meta(
                     content,
@@ -151,12 +154,13 @@ fn resolve_pdf_path(path: &str, working_dir: &Path) -> PathBuf {
 /// Extract text from every page of the PDF at `path`.
 /// Returns `(text, page_count)`.
 pub fn extract_pdf_text(path: &Path) -> anyhow::Result<(String, usize)> {
-    let mut doc = Document::load(path)
-        .map_err(|e| anyhow::anyhow!("could not parse PDF: {e}"))?;
+    let mut doc = Document::load(path).map_err(|e| anyhow::anyhow!("could not parse PDF: {e}"))?;
 
     if doc.is_encrypted() {
         doc.decrypt("").map_err(|_| {
-            anyhow::anyhow!("PDF is password-protected and could not be opened with an empty password")
+            anyhow::anyhow!(
+                "PDF is password-protected and could not be opened with an empty password"
+            )
         })?;
     }
 
@@ -548,7 +552,10 @@ mod tests {
     /// stream showing `text` in Helvetica (WinAnsiEncoding). Xref offsets are
     /// computed programmatically so the file is structurally valid.
     fn build_minimal_pdf(text: &str) -> Vec<u8> {
-        let escaped = text.replace('\\', "\\\\").replace('(', "\\(").replace(')', "\\)");
+        let escaped = text
+            .replace('\\', "\\\\")
+            .replace('(', "\\(")
+            .replace(')', "\\)");
         let objects = [
             "<< /Type /Catalog /Pages 2 0 R >>".to_string(),
             "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
@@ -574,8 +581,12 @@ mod tests {
             pdf.extend_from_slice(format!("{:010} 00000 n \n", off).as_bytes());
         }
         pdf.extend_from_slice(
-            format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{}\n%%EOF\n", objects.len() + 1, xref_pos)
-                .as_bytes(),
+            format!(
+                "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{}\n%%EOF\n",
+                objects.len() + 1,
+                xref_pos
+            )
+            .as_bytes(),
         );
         pdf
     }
@@ -672,10 +683,7 @@ endbfrange
         let mut map = HashMap::new();
         map.insert(0x0041u32, "H".to_string());
         map.insert(0x0042u32, "i".to_string());
-        let cmap = CMap {
-            map,
-            code_len: 2,
-        };
+        let cmap = CMap { map, code_len: 2 };
         assert_eq!(decode_with_cmap(&[0x00, 0x41, 0x00, 0x42], &cmap), "Hi");
         // Unknown code falls back to CID-as-Unicode ('C' = 0x43).
         assert_eq!(decode_with_cmap(&[0x00, 0x43], &cmap), "C");

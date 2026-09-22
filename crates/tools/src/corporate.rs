@@ -164,7 +164,11 @@ impl CorporateParser {
     /// Locate the team page. `team_link` is the result of scanning homepage
     /// links for team-like paths; when no link exists, common team page paths
     /// are probed concurrently (first success wins).
-    pub async fn find_team_page(&self, base_url: &str, team_link: Option<String>) -> Option<String> {
+    pub async fn find_team_page(
+        &self,
+        base_url: &str,
+        team_link: Option<String>,
+    ) -> Option<String> {
         if let Some(url) = team_link {
             return Some(url);
         }
@@ -212,7 +216,10 @@ impl CorporateParser {
             .and_then(|v| v.to_str().ok())
             .unwrap_or("")
             .to_lowercase();
-        if !content_type.is_empty() && !content_type.contains("html") && !content_type.contains("text") {
+        if !content_type.is_empty()
+            && !content_type.contains("html")
+            && !content_type.contains("text")
+        {
             return None;
         }
         let bytes = resp.bytes().await.ok()?;
@@ -311,7 +318,10 @@ cached_selector!(og_site_name_selector, r#"meta[property="og:site_name"]"#);
 cached_selector!(h1_selector, "h1");
 cached_selector!(title_selector, "title");
 cached_selector!(meta_description_selector, r#"meta[name="description"]"#);
-cached_selector!(og_description_selector, r#"meta[property="og:description"]"#);
+cached_selector!(
+    og_description_selector,
+    r#"meta[property="og:description"]"#
+);
 cached_selector!(jsonld_selector, r#"script[type="application/ld+json"]"#);
 cached_selector!(anchor_selector, "a[href]");
 cached_selector!(
@@ -323,10 +333,20 @@ cached_selector!(
 fn member_name_selectors() -> &'static [scraper::Selector] {
     static SELS: OnceLock<Vec<scraper::Selector>> = OnceLock::new();
     SELS.get_or_init(|| {
-        ["h1", "h2", "h3", "h4", "h5", "strong", "b", ".name", "[class*='name']"]
-            .into_iter()
-            .filter_map(|s| scraper::Selector::parse(s).ok())
-            .collect()
+        [
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "strong",
+            "b",
+            ".name",
+            "[class*='name']",
+        ]
+        .into_iter()
+        .filter_map(|s| scraper::Selector::parse(s).ok())
+        .collect()
     })
 }
 
@@ -374,7 +394,10 @@ fn normalize_base_url(url: &str) -> String {
 /// Join a relative path onto a base URL.
 fn join_url(base: &str, path: &str) -> String {
     match url::Url::parse(base) {
-        Ok(parsed) => parsed.join(path).map(|u| u.to_string()).unwrap_or_else(|_| format!("{base}{path}")),
+        Ok(parsed) => parsed
+            .join(path)
+            .map(|u| u.to_string())
+            .unwrap_or_else(|_| format!("{base}{path}")),
         Err(_) => format!("{base}{path}"),
     }
 }
@@ -406,7 +429,11 @@ fn collect_visible_text_nodes(el: &scraper::ElementRef, parts: &mut Vec<String>)
 
 /// Company name precedence: JSON-LD `Organization.name` → og:site_name →
 /// first `<h1>` → `<title>` stripped of suffixes → host name.
-fn extract_company_name(document: &scraper::Html, jsonld: &[serde_json::Value], base_url: &str) -> String {
+fn extract_company_name(
+    document: &scraper::Html,
+    jsonld: &[serde_json::Value],
+    base_url: &str,
+) -> String {
     // JSON-LD Organization.
     if let Some(name) = jsonld_field(jsonld, "Organization", "name") {
         if !name.is_empty() {
@@ -445,7 +472,10 @@ fn extract_company_name(document: &scraper::Html, jsonld: &[serde_json::Value], 
     // Last resort: host name.
     url::Url::parse(base_url)
         .ok()
-        .and_then(|u| u.host_str().map(|h| h.trim_start_matches("www.").to_string()))
+        .and_then(|u| {
+            u.host_str()
+                .map(|h| h.trim_start_matches("www.").to_string())
+        })
         .unwrap_or_default()
 }
 
@@ -467,14 +497,21 @@ fn clean_title_as_name(title: &str) -> String {
 }
 
 /// Description precedence: JSON-LD → meta description → og:description.
-fn extract_meta_description(document: &scraper::Html, jsonld: &[serde_json::Value]) -> Option<String> {
+fn extract_meta_description(
+    document: &scraper::Html,
+    jsonld: &[serde_json::Value],
+) -> Option<String> {
     if let Some(desc) = jsonld_field(jsonld, "Organization", "description") {
         if !desc.is_empty() {
             return Some(desc);
         }
     }
     for sel in [meta_description_selector(), og_description_selector()] {
-        if let Some(content) = document.select(sel).next().and_then(|el| el.value().attr("content")) {
+        if let Some(content) = document
+            .select(sel)
+            .next()
+            .and_then(|el| el.value().attr("content"))
+        {
             let content = content.trim();
             if !content.is_empty() {
                 return Some(content.to_string());
@@ -514,9 +551,11 @@ fn find_jsonld_value(value: &serde_json::Value, schema_type: &str, field: &str) 
         serde_json::Value::Object(map) => {
             let type_matches = map.get("@type").map(|t| match t {
                 serde_json::Value::String(s) => s.eq_ignore_ascii_case(schema_type),
-                serde_json::Value::Array(items) => items
-                    .iter()
-                    .any(|i| i.as_str().map(|s| s.eq_ignore_ascii_case(schema_type)).unwrap_or(false)),
+                serde_json::Value::Array(items) => items.iter().any(|i| {
+                    i.as_str()
+                        .map(|s| s.eq_ignore_ascii_case(schema_type))
+                        .unwrap_or(false)
+                }),
                 _ => false,
             });
             if type_matches == Some(true) {
@@ -588,15 +627,18 @@ fn extract_industry(jsonld: &[serde_json::Value], visible_text: &str) -> Option<
 
 /// Detect employee-count mentions like "250+ employees" / "1,000 employees".
 fn extract_company_size(text: &str) -> Option<String> {
-    let re = Regex::new(r"(?i)(\d[\d\s,\.]*)\s*\+?\s*(?:employees|staff members|people|team members|сотрудников)")
-        .ok()?;
+    let re = Regex::new(
+        r"(?i)(\d[\d\s,\.]*)\s*\+?\s*(?:employees|staff members|people|team members|сотрудников)",
+    )
+    .ok()?;
     re.captures(text).map(|caps| caps[0].trim().to_string())
 }
 
 /// Detect headquarters mentions like "headquartered in London".
 fn extract_headquarters(text: &str) -> Option<String> {
     // Capture a run of capitalized words (city name), stopping at commas etc.
-    let re = Regex::new(r"(?i)headquartered\s+in\s+([A-Z][A-Za-z\-]+(?:\s+[A-Z][A-Za-z\-]+)*)").ok()?;
+    let re =
+        Regex::new(r"(?i)headquartered\s+in\s+([A-Z][A-Za-z\-]+(?:\s+[A-Z][A-Za-z\-]+)*)").ok()?;
     re.captures(text).map(|caps| caps[1].trim().to_string())
 }
 
@@ -702,17 +744,29 @@ fn extract_social_links(document: &scraper::Html) -> Vec<SocialProfile> {
     let mut seen = HashSet::new();
     let mut out = Vec::new();
     for el in document.select(anchor_selector()) {
-        let Some(href) = el.value().attr("href") else { continue };
-        let Ok(parsed) = url::Url::parse(href) else { continue };
+        let Some(href) = el.value().attr("href") else {
+            continue;
+        };
+        let Ok(parsed) = url::Url::parse(href) else {
+            continue;
+        };
         let scheme = parsed.scheme().to_string();
         if scheme != "http" && scheme != "https" {
             continue;
         }
-        let Some(host) = parsed.host_str() else { continue };
-        let Some(platform) = social_platform_for(host) else { continue };
+        let Some(host) = parsed.host_str() else {
+            continue;
+        };
+        let Some(platform) = social_platform_for(host) else {
+            continue;
+        };
         // Skip share/empty links.
         let path = parsed.path();
-        if path.is_empty() || path == "/" || path.starts_with("/share") || path.starts_with("/intent") {
+        if path.is_empty()
+            || path == "/"
+            || path.starts_with("/share")
+            || path.starts_with("/intent")
+        {
             continue;
         }
         let normalized = format!("{scheme}://{host}{path}");
@@ -743,7 +797,9 @@ fn find_linked_page(document: &scraper::Html, base_url: &str, hints: &[&str]) ->
         let href_lower = href.to_lowercase();
 
         let href_match = hints.iter().any(|h| href_lower.contains(h));
-        let text_match = hints.iter().any(|h| text_lower.trim() == h.trim_start_matches('/'));
+        let text_match = hints
+            .iter()
+            .any(|h| text_lower.trim() == h.trim_start_matches('/'));
 
         if href_match || text_match {
             let absolute = resolve_url(base_url, href);
@@ -767,7 +823,14 @@ fn resolve_url(base_url: &str, href: &str) -> String {
             return joined.to_string();
         }
     }
-    format!("{base_url}{}", if href.starts_with('/') { href.to_string() } else { format!("/{href}") })
+    format!(
+        "{base_url}{}",
+        if href.starts_with('/') {
+            href.to_string()
+        } else {
+            format!("/{href}")
+        }
+    )
 }
 
 /// Parse team members from a parsed team/about page document.
@@ -807,21 +870,30 @@ fn parse_team_members(document: &scraper::Html) -> Vec<TeamMember> {
     members
 }
 
-fn collect_jsonld_persons(value: &serde_json::Value, members: &mut Vec<TeamMember>, seen: &mut HashSet<String>) {
+fn collect_jsonld_persons(
+    value: &serde_json::Value,
+    members: &mut Vec<TeamMember>,
+    seen: &mut HashSet<String>,
+) {
     match value {
         serde_json::Value::Object(map) => {
             let is_person = map.get("@type").map(|t| match t {
                 serde_json::Value::String(s) => s.eq_ignore_ascii_case("Person"),
-                serde_json::Value::Array(items) => items
-                    .iter()
-                    .any(|i| i.as_str().map(|s| s.eq_ignore_ascii_case("Person")).unwrap_or(false)),
+                serde_json::Value::Array(items) => items.iter().any(|i| {
+                    i.as_str()
+                        .map(|s| s.eq_ignore_ascii_case("Person"))
+                        .unwrap_or(false)
+                }),
                 _ => false,
             });
             if is_person == Some(true) {
                 if let Some(name) = map.get("name").and_then(|n| n.as_str()) {
                     let name = normalize_whitespace(name);
                     if looks_like_person_name(&name) && seen.insert(name.clone()) {
-                        let role = map.get("jobTitle").and_then(|r| r.as_str()).map(|s| s.to_string());
+                        let role = map
+                            .get("jobTitle")
+                            .and_then(|r| r.as_str())
+                            .map(|s| s.to_string());
                         members.push(TeamMember { name, role });
                     }
                 }
@@ -869,16 +941,36 @@ fn find_member_role(card: &scraper::ElementRef) -> Option<String> {
 /// and no common UI/navigation words.
 fn looks_like_person_name(name: &str) -> bool {
     const STOPWORDS: &[&str] = &[
-        "read", "more", "about", "our", "view", "see", "profile", "contact",
-        "join", "team", "meet", "the", "and", "all", "staff", "people",
-        "home", "learn", "details", "download", "subscribe",
+        "read",
+        "more",
+        "about",
+        "our",
+        "view",
+        "see",
+        "profile",
+        "contact",
+        "join",
+        "team",
+        "meet",
+        "the",
+        "and",
+        "all",
+        "staff",
+        "people",
+        "home",
+        "learn",
+        "details",
+        "download",
+        "subscribe",
     ];
     let words: Vec<&str> = name.split_whitespace().collect();
     if words.len() < 2 || words.len() > 4 {
         return false;
     }
     if words.iter().any(|w| {
-        let cleaned = w.trim_matches(|c: char| !c.is_alphanumeric()).to_lowercase();
+        let cleaned = w
+            .trim_matches(|c: char| !c.is_alphanumeric())
+            .to_lowercase();
         STOPWORDS.contains(&cleaned.as_str())
     }) {
         return false;
@@ -886,8 +978,14 @@ fn looks_like_person_name(name: &str) -> bool {
     words.iter().all(|w| {
         let clean = w.trim_matches(|c: char| !c.is_alphanumeric());
         !clean.is_empty()
-            && clean.chars().next().map(|c| c.is_uppercase() || c.is_ascii_digit()).unwrap_or(false)
-    }) && words[0].chars().all(|c| c.is_alphabetic() || c == '-' || c == '.')
+            && clean
+                .chars()
+                .next()
+                .map(|c| c.is_uppercase() || c.is_ascii_digit())
+                .unwrap_or(false)
+    }) && words[0]
+        .chars()
+        .all(|c| c.is_alphabetic() || c == '-' || c == '.')
 }
 
 fn normalize_whitespace(s: &str) -> String {
@@ -955,7 +1053,11 @@ Fetches the homepage, reads schema.org JSON-LD / OpenGraph / meta tags and visib
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, _ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        _ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: CorporateParseParams = serde_json::from_value(args)?;
         if params.url.trim().is_empty() {
             return Ok(ToolOutput::err("Parameter `url` must not be empty."));
@@ -964,7 +1066,10 @@ Fetches the homepage, reads schema.org JSON-LD / OpenGraph / meta tags and visib
         let parser = CorporateParser::new();
         let data = parser.parse_website(params.url.trim()).await;
 
-        if data.company_name.is_empty() && data.contacts.emails.is_empty() && data.contacts.phones.is_empty() {
+        if data.company_name.is_empty()
+            && data.contacts.emails.is_empty()
+            && data.contacts.phones.is_empty()
+        {
             return Ok(ToolOutput::ok(format!(
                 "Could not extract company data from {} (site unreachable or blocks automated access).",
                 params.url
@@ -972,10 +1077,20 @@ Fetches the homepage, reads schema.org JSON-LD / OpenGraph / meta tags and visib
         }
 
         let mut output = String::new();
-        output.push_str(&format!("Company: {}\n", if data.company_name.is_empty() { "(unknown)" } else { &data.company_name }));
+        output.push_str(&format!(
+            "Company: {}\n",
+            if data.company_name.is_empty() {
+                "(unknown)"
+            } else {
+                &data.company_name
+            }
+        ));
         output.push_str(&format!("Website: {}\n", data.website));
         if let Some(ref d) = data.description {
-            output.push_str(&format!("Description: {}\n", d.chars().take(500).collect::<String>()));
+            output.push_str(&format!(
+                "Description: {}\n",
+                d.chars().take(500).collect::<String>()
+            ));
         }
         if let Some(ref i) = data.industry {
             output.push_str(&format!("Industry: {i}\n"));
@@ -1007,7 +1122,11 @@ Fetches the homepage, reads schema.org JSON-LD / OpenGraph / meta tags and visib
                 output.push_str(&format!(
                     "  - {}{}\n",
                     member.name,
-                    member.role.as_ref().map(|r| format!(" — {r}")).unwrap_or_default()
+                    member
+                        .role
+                        .as_ref()
+                        .map(|r| format!(" — {r}"))
+                        .unwrap_or_default()
                 ));
             }
         }
@@ -1033,21 +1152,39 @@ mod tests {
     #[test]
     fn test_normalize_base_url() {
         assert_eq!(normalize_base_url("example.com"), "https://example.com");
-        assert_eq!(normalize_base_url("https://example.com/about/team"), "https://example.com");
-        assert_eq!(normalize_base_url("http://example.com/x"), "http://example.com");
+        assert_eq!(
+            normalize_base_url("https://example.com/about/team"),
+            "https://example.com"
+        );
+        assert_eq!(
+            normalize_base_url("http://example.com/x"),
+            "http://example.com"
+        );
     }
 
     #[test]
     fn test_join_url() {
-        assert_eq!(join_url("https://example.com", "/team"), "https://example.com/team");
-        assert_eq!(join_url("https://example.com/", "/team"), "https://example.com/team");
+        assert_eq!(
+            join_url("https://example.com", "/team"),
+            "https://example.com/team"
+        );
+        assert_eq!(
+            join_url("https://example.com/", "/team"),
+            "https://example.com/team"
+        );
     }
 
     #[test]
     fn test_resolve_url() {
         assert_eq!(resolve_url("https://a.com", "/team"), "https://a.com/team");
-        assert_eq!(resolve_url("https://a.com", "https://b.com/x"), "https://b.com/x");
-        assert_eq!(resolve_url("https://a.com/dir/page", "team"), "https://a.com/dir/team");
+        assert_eq!(
+            resolve_url("https://a.com", "https://b.com/x"),
+            "https://b.com/x"
+        );
+        assert_eq!(
+            resolve_url("https://a.com/dir/page", "team"),
+            "https://a.com/dir/team"
+        );
     }
 
     // ─── Company name ───
@@ -1059,7 +1196,10 @@ mod tests {
             <title>Something else | Site</title>
         </head><body></body></html>"#;
         let (doc, jsonld) = parsed(html);
-        assert_eq!(extract_company_name(&doc, &jsonld, "https://acme.com"), "Acme Corp");
+        assert_eq!(
+            extract_company_name(&doc, &jsonld, "https://acme.com"),
+            "Acme Corp"
+        );
     }
 
     #[test]
@@ -1069,17 +1209,27 @@ mod tests {
             <title>Beta Labs — Home</title>
         </head><body></body></html>"#;
         let (doc, jsonld) = parsed(html);
-        assert_eq!(extract_company_name(&doc, &jsonld, "https://beta.dev"), "Beta Labs");
+        assert_eq!(
+            extract_company_name(&doc, &jsonld, "https://beta.dev"),
+            "Beta Labs"
+        );
 
-        let html2 = r#"<html><head><title>Gamma GmbH | Official Site</title></head><body></body></html>"#;
+        let html2 =
+            r#"<html><head><title>Gamma GmbH | Official Site</title></head><body></body></html>"#;
         let (doc2, jsonld2) = parsed(html2);
-        assert_eq!(extract_company_name(&doc2, &jsonld2, "https://gamma.de"), "Gamma GmbH");
+        assert_eq!(
+            extract_company_name(&doc2, &jsonld2, "https://gamma.de"),
+            "Gamma GmbH"
+        );
     }
 
     #[test]
     fn test_extract_company_name_falls_back_to_host() {
         let (doc, jsonld) = parsed("<html></html>");
-        assert_eq!(extract_company_name(&doc, &jsonld, "https://www.delta.io"), "delta.io");
+        assert_eq!(
+            extract_company_name(&doc, &jsonld, "https://www.delta.io"),
+            "delta.io"
+        );
     }
 
     #[test]
@@ -1094,7 +1244,8 @@ mod tests {
 
     #[test]
     fn test_extract_meta_description() {
-        let html = r#"<html><head><meta name="description" content="We build widgets."></head></html>"#;
+        let html =
+            r#"<html><head><meta name="description" content="We build widgets."></head></html>"#;
         let (doc, jsonld) = parsed(html);
         assert_eq!(
             extract_meta_description(&doc, &jsonld).as_deref(),
@@ -1125,7 +1276,8 @@ mod tests {
     #[test]
     fn test_extract_headquarters() {
         assert_eq!(
-            extract_headquarters("Acme is headquartered in London, UK and has offices...").as_deref(),
+            extract_headquarters("Acme is headquartered in London, UK and has offices...")
+                .as_deref(),
             Some("London")
         );
         assert!(extract_headquarters("no hq info").is_none());
@@ -1178,7 +1330,11 @@ mod tests {
         assert!(platforms.contains(&"twitter"));
         assert!(platforms.contains(&"linkedin"));
         assert!(platforms.contains(&"telegram"));
-        assert_eq!(links.len(), 3, "share links and non-social links are skipped");
+        assert_eq!(
+            links.len(),
+            3,
+            "share links and non-social links are skipped"
+        );
     }
 
     #[test]
@@ -1257,7 +1413,10 @@ mod tests {
         </body></html>"#;
         let (doc, _) = parsed(html);
         let members = parse_team_members(&doc);
-        assert!(members.is_empty(), "headings that are not person names are skipped");
+        assert!(
+            members.is_empty(),
+            "headings that are not person names are skipped"
+        );
     }
 
     // ─── Name heuristics ───
@@ -1268,7 +1427,9 @@ mod tests {
         assert!(looks_like_person_name("Jean-Claude Van Damme"));
         assert!(!looks_like_person_name("Jane"));
         assert!(!looks_like_person_name("read more about us"));
-        assert!(!looks_like_person_name("Our Great Company International Group"));
+        assert!(!looks_like_person_name(
+            "Our Great Company International Group"
+        ));
     }
 
     #[test]

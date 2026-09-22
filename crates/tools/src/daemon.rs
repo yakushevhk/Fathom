@@ -202,13 +202,16 @@ impl Tool for DaemonTool {
                             let _ = child.start_kill();
                             let _ = child.wait().await;
                             reg.update_status(&name, DaemonStatus::Failed);
-                            return Ok(ToolOutput::err("Daemon stdout unavailable for ready_pattern"));
+                            return Ok(ToolOutput::err(
+                                "Daemon stdout unavailable for ready_pattern",
+                            ));
                         };
                         use tokio::io::AsyncBufReadExt;
                         let mut lines = tokio::io::BufReader::new(stdout).lines();
                         let mut matched = false;
                         while std::time::Instant::now() < deadline {
-                            let remaining = deadline.saturating_duration_since(std::time::Instant::now());
+                            let remaining =
+                                deadline.saturating_duration_since(std::time::Instant::now());
                             match tokio::time::timeout(remaining, lines.next_line()).await {
                                 Ok(Ok(Some(line))) if regex.is_match(&line) => {
                                     matched = true;
@@ -278,7 +281,9 @@ impl Tool for DaemonTool {
                         )))
                     } else {
                         reg.update_status(&name, DaemonStatus::Stopped);
-                        Ok(ToolOutput::ok(format!("Daemon '{name}' cleaned up (no pid).")))
+                        Ok(ToolOutput::ok(format!(
+                            "Daemon '{name}' cleaned up (no pid)."
+                        )))
                     }
                 } else {
                     Ok(ToolOutput::err(format!("Daemon '{name}' not found.")))
@@ -411,7 +416,7 @@ impl Tool for DaemonTool {
 mod tests {
     use super::*;
     use crate::registry::ToolContext;
-    use pr_core::{SearchConfig, AgentId};
+    use pr_core::{AgentId, SearchConfig};
     use std::path::PathBuf;
 
     #[test]

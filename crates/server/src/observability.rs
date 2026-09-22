@@ -27,21 +27,37 @@ pub struct ObservabilitySummary {
 pub async fn summary(State(state): State<Arc<AppState>>) -> Response {
     let active_sessions = match state.active_sessions.lock() {
         Ok(sessions) => sessions.len(),
-        Err(_) => return error(StatusCode::INTERNAL_SERVER_ERROR, "active session state unavailable"),
+        Err(_) => {
+            return error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "active session state unavailable",
+            )
+        }
     };
     let rows = match state.db.list_audit_events_limited(Some(MAX_AUDIT_ROWS)) {
         Ok(rows) => rows,
-        Err(e) => return error(StatusCode::INTERNAL_SERVER_ERROR, format!("failed to read audit counts: {e}")),
+        Err(e) => {
+            return error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to read audit counts: {e}"),
+            )
+        }
     };
-    let audit_denials = rows.iter().filter(|row| row.decision.eq_ignore_ascii_case("deny")).count();
-    json(StatusCode::OK, serde_json::json!(ObservabilitySummary {
-        active_sessions,
-        sessions_total: state.metrics.sessions_total.get(),
-        agents_spawned: state.metrics.agents_spawned.get(),
-        tool_calls: state.metrics.tool_calls.get(),
-        tokens_used: state.metrics.tokens_used.get(),
-        audit_events: rows.len(),
-        audit_denials,
-        audit_counts_truncated: rows.len() == MAX_AUDIT_ROWS,
-    }))
+    let audit_denials = rows
+        .iter()
+        .filter(|row| row.decision.eq_ignore_ascii_case("deny"))
+        .count();
+    json(
+        StatusCode::OK,
+        serde_json::json!(ObservabilitySummary {
+            active_sessions,
+            sessions_total: state.metrics.sessions_total.get(),
+            agents_spawned: state.metrics.agents_spawned.get(),
+            tool_calls: state.metrics.tool_calls.get(),
+            tokens_used: state.metrics.tokens_used.get(),
+            audit_events: rows.len(),
+            audit_denials,
+            audit_counts_truncated: rows.len() == MAX_AUDIT_ROWS,
+        }),
+    )
 }

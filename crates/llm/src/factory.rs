@@ -43,15 +43,13 @@ pub fn build_provider(cfg: &LlmConfig) -> anyhow::Result<Arc<dyn LlmProvider>> {
 
     let provider_lower = cfg.provider.to_lowercase();
     if provider_lower == "anthropic" || provider_lower == "claude" {
-        return Ok(Arc::new(
-            AnthropicProvider::new(
-                &cfg.api_key,
-                &cfg.model,
-                Some(cfg.base_url.clone()),
-                true,
-                None,
-            )
-        ));
+        return Ok(Arc::new(AnthropicProvider::new(
+            &cfg.api_key,
+            &cfg.model,
+            Some(cfg.base_url.clone()),
+            true,
+            None,
+        )));
     }
 
     if !OPENAI_COMPATIBLE.contains(&provider_lower.as_str()) {
@@ -132,7 +130,9 @@ mod tests {
 
     #[test]
     fn test_build_fast_provider_unset_is_none() {
-        assert!(build_fast_provider(&cfg("deepseek", "sk-x")).unwrap().is_none());
+        assert!(build_fast_provider(&cfg("deepseek", "sk-x"))
+            .unwrap()
+            .is_none());
     }
 
     #[test]

@@ -9,9 +9,9 @@
 //! the limit are queued and start when a slot opens.
 
 use crate::ids::AgentId;
+use parking_lot::Mutex;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
-use parking_lot::Mutex;
 use tokio::sync::mpsc;
 
 /// Unique job id within the process.
@@ -114,7 +114,10 @@ impl AsyncJobManager {
     /// leave the job registered or queue it rather than exceeding the cap.
     pub fn mark_running(&self, id: JobId) -> bool {
         let mut jobs = self.jobs.lock();
-        let running = jobs.values().filter(|j| j.status == JobStatus::Running).count() as u64;
+        let running = jobs
+            .values()
+            .filter(|j| j.status == JobStatus::Running)
+            .count() as u64;
         if running >= self.max_running.load(Ordering::Relaxed) {
             return false;
         }
@@ -153,7 +156,11 @@ impl AsyncJobManager {
 
         // Deliver to the owner's sink.
         if let Some(tx) = self.sinks.lock().get(&owner.0).cloned() {
-            let _ = tx.send(JobResult { label, result, tokens });
+            let _ = tx.send(JobResult {
+                label,
+                result,
+                tokens,
+            });
         }
     }
 

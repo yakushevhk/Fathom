@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 /// Prunes invisible DOM elements and assigns short [ref=eN] selectors to interactive nodes.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AomNode {
-    pub id: String, // e.g. "e1", "e2"
+    pub id: String,   // e.g. "e1", "e2"
     pub role: String, // "button", "link", "textbox", "checkbox", "heading"
     pub name: String, // accessible label / inner text
     #[serde(default)]
@@ -40,12 +40,20 @@ pub fn distill_dom_to_aom_outline(raw_html: &str) -> String {
             }
         } else if trimmed.contains("<input") {
             let input_type = extract_attr(trimmed, "type").unwrap_or_else(|| "text".to_string());
-            let placeholder = extract_attr(trimmed, "placeholder").or_else(|| extract_attr(trimmed, "name")).unwrap_or_default();
-            lines.push(format!("  - [ref=e{}] input:{} \"{}\"", ref_counter, input_type, placeholder));
+            let placeholder = extract_attr(trimmed, "placeholder")
+                .or_else(|| extract_attr(trimmed, "name"))
+                .unwrap_or_default();
+            lines.push(format!(
+                "  - [ref=e{}] input:{} \"{}\"",
+                ref_counter, input_type, placeholder
+            ));
             ref_counter += 1;
         } else if trimmed.contains("<textarea") {
             let placeholder = extract_attr(trimmed, "placeholder").unwrap_or_default();
-            lines.push(format!("  - [ref=e{}] textarea \"{}\"", ref_counter, placeholder));
+            lines.push(format!(
+                "  - [ref=e{}] textarea \"{}\"",
+                ref_counter, placeholder
+            ));
             ref_counter += 1;
         } else if trimmed.contains("<select") {
             let name = extract_attr(trimmed, "name").unwrap_or_default();
@@ -57,7 +65,10 @@ pub fn distill_dom_to_aom_outline(raw_html: &str) -> String {
     if lines.is_empty() {
         "AOM: (no interactive elements detected)".to_string()
     } else {
-        format!("AOM Accessibility Snapshot (Interactive Elements):\n{}", lines.join("\n"))
+        format!(
+            "AOM Accessibility Snapshot (Interactive Elements):\n{}",
+            lines.join("\n")
+        )
     }
 }
 

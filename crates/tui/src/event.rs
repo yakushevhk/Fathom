@@ -94,7 +94,9 @@ mod tests {
         tx.send(AppEvent::Agent(agent_event)).unwrap();
         let event = handler.next().await.unwrap();
         match event {
-            AppEvent::Agent(AgentEvent::AgentFailed { error, .. }) => assert_eq!(error, "test error"),
+            AppEvent::Agent(AgentEvent::AgentFailed { error, .. }) => {
+                assert_eq!(error, "test error")
+            }
             _ => panic!("expected Agent event"),
         }
     }
@@ -141,7 +143,9 @@ mod tests {
 
         let received = handler_rx.recv().await.unwrap();
         match received {
-            AppEvent::Agent(AgentEvent::AgentCompleted { tokens_used, .. }) => assert_eq!(tokens_used, 42),
+            AppEvent::Agent(AgentEvent::AgentCompleted { tokens_used, .. }) => {
+                assert_eq!(tokens_used, 42)
+            }
             _ => panic!("expected AgentCompleted"),
         }
     }

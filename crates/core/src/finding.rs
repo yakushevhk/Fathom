@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::ids::{AgentId, FindingId};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Source {

@@ -1,12 +1,12 @@
-use pr_core::*;
-use pr_core::memory::MemoryStore;
-use pr_core::skill::SkillRegistry;
-use pr_llm::{CompletionRequest, CompletionResponse, LlmProvider, StreamChunk, Usage};
-use pr_tools::{ToolRegistry, ToolContext, Truncated, TurnBudget, apply_turn_budget};
-use pr_persistence::Persistence;
 use crate::compaction::CompactionEngine;
 use crate::doom_loop::DoomLoopDetector;
 use crate::prompt::PromptBuilder;
+use pr_core::memory::MemoryStore;
+use pr_core::skill::SkillRegistry;
+use pr_core::*;
+use pr_llm::{CompletionRequest, CompletionResponse, LlmProvider, StreamChunk, Usage};
+use pr_persistence::Persistence;
+use pr_tools::{apply_turn_budget, ToolContext, ToolRegistry, Truncated, TurnBudget};
 use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::sync::broadcast;
@@ -172,9 +172,19 @@ impl AgentRuntime {
         }
 
         Self {
-            id, session_id, parent_id, role, task, depth,
-            llm, tools, event_tx, db, working_dir,
-            max_iterations, config,
+            id,
+            session_id,
+            parent_id,
+            role,
+            task,
+            depth,
+            llm,
+            tools,
+            event_tx,
+            db,
+            working_dir,
+            max_iterations,
+            config,
             messages: Vec::new(),
             tokens_used: 0,
             descendant_tokens: 0,
@@ -348,7 +358,11 @@ impl AgentRuntime {
         tracing::warn!("tool {tool} denied by PreToolUse hook (agent {})", self.id);
     }
 
-    fn governance_context(&self, tool: &str, args: &serde_json::Value) -> pr_governance::ActionContext {
+    fn governance_context(
+        &self,
+        tool: &str,
+        args: &serde_json::Value,
+    ) -> pr_governance::ActionContext {
         let mut ctx = pr_governance::ActionContext::new(
             self.id.0.clone(),
             self.session_id.0.clone(),
@@ -356,13 +370,25 @@ impl AgentRuntime {
             args.clone(),
         );
         if let Some(obj) = args.as_object() {
-            if let Some(url) = obj.get("url").or_else(|| obj.get("uri")).and_then(|v| v.as_str()) {
+            if let Some(url) = obj
+                .get("url")
+                .or_else(|| obj.get("uri"))
+                .and_then(|v| v.as_str())
+            {
                 ctx.url = Some(url.to_string());
             }
-            if let Some(file) = obj.get("path").or_else(|| obj.get("file")).and_then(|v| v.as_str()) {
+            if let Some(file) = obj
+                .get("path")
+                .or_else(|| obj.get("file"))
+                .and_then(|v| v.as_str())
+            {
                 ctx.file = Some(file.to_string());
             }
-            if let Some(intent) = obj.get("intent").or_else(|| obj.get("reason")).and_then(|v| v.as_str()) {
+            if let Some(intent) = obj
+                .get("intent")
+                .or_else(|| obj.get("reason"))
+                .and_then(|v| v.as_str())
+            {
                 ctx.intent = Some(intent.to_string());
             }
         }
@@ -394,7 +420,12 @@ impl AgentRuntime {
                 tracing::warn!("governance audit sink failed: {error}");
             }
         }
-        let pr_governance::AuditEvent { id, timestamp, context, decision } = event;
+        let pr_governance::AuditEvent {
+            id,
+            timestamp,
+            context,
+            decision,
+        } = event;
         let row = pr_persistence::AuditEventRow {
             id,
             timestamp: timestamp.to_rfc3339(),
@@ -607,10 +638,7 @@ impl AgentRuntime {
         };
         match mem.pipeline().absorb(req).await {
             Ok(report) => {
-                tracing::debug!(
-                    "memory: auto-absorbed contacts ({})",
-                    report.summary_line()
-                );
+                tracing::debug!("memory: auto-absorbed contacts ({})", report.summary_line());
             }
             Err(e) => tracing::warn!("memory: contact absorb failed: {e}"),
         }
@@ -635,7 +663,12 @@ impl AgentRuntime {
     ) -> crate::control::ApprovalVerdict {
         use crate::control::ApprovalVerdict;
 
-        let fallback = if self.config.agent.approval_fallback.eq_ignore_ascii_case("deny") {
+        let fallback = if self
+            .config
+            .agent
+            .approval_fallback
+            .eq_ignore_ascii_case("deny")
+        {
             ApprovalVerdict::Denied
         } else {
             ApprovalVerdict::Allowed
@@ -668,7 +701,10 @@ impl AgentRuntime {
             })
             .is_err()
         {
-            tracing::warn!("approval[{tool_name}]: control channel closed -> {:?}", fallback);
+            tracing::warn!(
+                "approval[{tool_name}]: control channel closed -> {:?}",
+                fallback
+            );
             return fallback;
         }
         self.emit(AgentEvent::ApprovalRequested {
@@ -683,7 +719,10 @@ impl AgentRuntime {
             Ok(Ok(true)) => ApprovalVerdict::Allowed,
             Ok(Ok(false)) => ApprovalVerdict::Denied,
             Ok(Err(_)) => {
-                tracing::warn!("approval[{tool_name}]: operator went away -> {:?}", fallback);
+                tracing::warn!(
+                    "approval[{tool_name}]: operator went away -> {:?}",
+                    fallback
+                );
                 fallback
             }
             Err(_) => {
@@ -712,8 +751,7 @@ impl AgentRuntime {
             })
             .is_err()
         {
-            return "The operator channel is closed. Proceed using your best judgment."
-                .to_string();
+            return "The operator channel is closed. Proceed using your best judgment.".to_string();
         }
         self.emit(AgentEvent::QuestionAsked {
             agent_id: self.id.clone(),
@@ -723,8 +761,9 @@ impl AgentRuntime {
         match tokio::time::timeout(std::time::Duration::from_secs(600), reply_rx).await {
             Ok(Ok(answer)) if !answer.trim().is_empty() => answer,
             Ok(_) => "The operator did not answer. Proceed using your best judgment.".to_string(),
-            Err(_) => "The operator did not answer in time. Proceed using your best judgment."
-                .to_string(),
+            Err(_) => {
+                "The operator did not answer in time. Proceed using your best judgment.".to_string()
+            }
         }
     }
 
@@ -763,7 +802,9 @@ impl AgentRuntime {
                     };
                     let resp = llm.complete(&req).await?;
                     if let Message::Assistant { content, .. } = &resp.message {
-                        Ok(content.clone().unwrap_or_else(|| "[No summary produced]".to_string()))
+                        Ok(content
+                            .clone()
+                            .unwrap_or_else(|| "[No summary produced]".to_string()))
                     } else {
                         Ok("[Summarization returned non-assistant message]".to_string())
                     }
@@ -926,7 +967,11 @@ impl AgentRuntime {
 
         Ok(CompletionResponse {
             message: Message::assistant_with_tools(
-                if content.is_empty() { None } else { Some(content) },
+                if content.is_empty() {
+                    None
+                } else {
+                    Some(content)
+                },
                 tool_calls,
             ),
             usage,
@@ -941,7 +986,8 @@ impl AgentRuntime {
 
         // Initialize messages
         let digest = self.memory_digest_block().await;
-        self.messages.push(Message::system(self.build_system_prompt(&digest)));
+        self.messages
+            .push(Message::system(self.build_system_prompt(&digest)));
         self.messages.push(Message::user(&self.task));
 
         // Update token estimate after initial messages.
@@ -1022,25 +1068,22 @@ impl AgentRuntime {
                     })
                     .unwrap_or_default();
                 for msg in msgs {
-                    tracing::info!(
-                        "Agent {} received peer message from {}",
-                        self.id,
-                        msg.from
-                    );
+                    tracing::info!("Agent {} received peer message from {}", self.id, msg.from);
                     if msg.expects_reply {
                         let _ = pr_core::IrcBus::global().send(pr_core::IrcMessage {
                             from: self.id.clone(),
                             to: Some(msg.from.clone()),
-                            content: format!("Received your message: {}", msg.content.chars().take(200).collect::<String>()),
+                            content: format!(
+                                "Received your message: {}",
+                                msg.content.chars().take(200).collect::<String>()
+                            ),
                             id: pr_core::IrcBus::global().next_msg_id(),
                             expects_reply: false,
                             reply_to: Some(msg.id.clone()),
                         });
                     }
-                    let note = Message::user(format!(
-                        "[INBOX from agent {}] {}",
-                        msg.from, msg.content
-                    ));
+                    let note =
+                        Message::user(format!("[INBOX from agent {}] {}", msg.from, msg.content));
                     self.messages.push(note.clone());
                     self.db.add_message(&self.id, &note)?;
                     self.track_message_tokens(&note);
@@ -1108,7 +1151,8 @@ impl AgentRuntime {
             self.turn_budget = TurnBudget::new(self.config.context.turn_budget_bytes);
 
             // ── Context compaction check ──
-            self.compaction_engine.set_estimated_tokens(self.estimated_tokens);
+            self.compaction_engine
+                .set_estimated_tokens(self.estimated_tokens);
             if self.compaction_engine.should_compact() {
                 self.run_compaction().await;
             }
@@ -1161,7 +1205,12 @@ impl AgentRuntime {
 
             // Extract content and tool calls. Note: text already reached the
             // UI incrementally via complete_streaming — no re-emit here.
-            if let Message::Assistant { content, tool_calls, .. } = &response.message {
+            if let Message::Assistant {
+                content,
+                tool_calls,
+                ..
+            } = &response.message
+            {
                 if let Some(text) = content {
                     if !text.is_empty() {
                         final_content = text.clone();
@@ -1206,8 +1255,7 @@ impl AgentRuntime {
                     }
 
                     let summary_so_far = final_content.clone();
-                    let verdict = if self.stop_continuations
-                        < crate::hooks::MAX_STOP_CONTINUATIONS
+                    let verdict = if self.stop_continuations < crate::hooks::MAX_STOP_CONTINUATIONS
                     {
                         crate::hooks::run_stop_hooks(&self.config.hooks, &summary_so_far).await
                     } else {
@@ -1222,9 +1270,7 @@ impl AgentRuntime {
                                 self.stop_continuations,
                                 crate::hooks::MAX_STOP_CONTINUATIONS
                             );
-                            let cont = Message::user(format!(
-                                "[hook] Do not stop yet: {reason}"
-                            ));
+                            let cont = Message::user(format!("[hook] Do not stop yet: {reason}"));
                             self.messages.push(cont.clone());
                             self.db.add_message(&self.id, &cont)?;
                             self.track_message_tokens(&cont);
@@ -1257,10 +1303,8 @@ impl AgentRuntime {
                     // First offense: tell the model to change strategy and let
                     // it keep its accumulated findings. Second offense: stop.
                     if self.doom_loop.record_and_check(tool_name, &tool_args) {
-                        let remaining: Vec<String> = tool_calls[idx..]
-                            .iter()
-                            .map(|tc| tc.id.clone())
-                            .collect();
+                        let remaining: Vec<String> =
+                            tool_calls[idx..].iter().map(|tc| tc.id.clone()).collect();
 
                         if !self.doom_nudged {
                             self.doom_nudged = true;
@@ -1269,7 +1313,10 @@ impl AgentRuntime {
                                  it — try different arguments, a different tool/source, or finish \
                                  with the results you already have."
                             );
-                            tracing::warn!("Agent {} nudged after repeated call: {tool_name}", self.id);
+                            tracing::warn!(
+                                "Agent {} nudged after repeated call: {tool_name}",
+                                self.id
+                            );
                             for (i, call_id) in remaining.iter().enumerate() {
                                 let msg = if i == 0 {
                                     nudge.clone()
@@ -1445,10 +1492,8 @@ impl AgentRuntime {
 
                     let mut cascaded = false;
                     if let Some(ref shell_err) = shell_failed {
-                        let err_msg = format!(
-                            "Cancelled: sibling shell tool failed with: {}",
-                            shell_err
-                        );
+                        let err_msg =
+                            format!("Cancelled: sibling shell tool failed with: {}", shell_err);
                         let mut output = ToolOutput::err(&err_msg);
                         output.metadata = Some(serde_json::json!({
                             "is_error": true,
@@ -1475,18 +1520,26 @@ impl AgentRuntime {
                     // Batch spawn from TaskBatchTool (`task`)
                     if tool_name == "task" {
                         if let Some(meta) = result.metadata.as_ref() {
-                            if let Some(batch) = meta.get("swarm_batch_spawn").and_then(|v| v.as_array()) {
+                            if let Some(batch) =
+                                meta.get("swarm_batch_spawn").and_then(|v| v.as_array())
+                            {
                                 if !batch.is_empty() {
                                     for (i, item) in batch.iter().enumerate() {
                                         let mut item_meta = serde_json::Map::new();
-                                        item_meta.insert("spawn_request".to_string(), serde_json::Value::Bool(true));
+                                        item_meta.insert(
+                                            "spawn_request".to_string(),
+                                            serde_json::Value::Bool(true),
+                                        );
                                         if let Some(obj) = item.as_object() {
                                             for (k, v) in obj {
                                                 item_meta.insert(k.clone(), v.clone());
                                             }
                                         }
                                         let batch_call_id = format!("{}_{}", tool_call.id, i);
-                                        pending_spawns.push((batch_call_id, serde_json::Value::Object(item_meta)));
+                                        pending_spawns.push((
+                                            batch_call_id,
+                                            serde_json::Value::Object(item_meta),
+                                        ));
                                     }
                                     continue;
                                 }
@@ -1607,9 +1660,7 @@ impl AgentRuntime {
                     // Harvested contacts must reach the database even if the
                     // model forgets to call save_contacts.
                     let mut result = result;
-                    if result.success
-                        && matches!(tool_name, "extract_contacts" | "find_leads")
-                    {
+                    if result.success && matches!(tool_name, "extract_contacts" | "find_leads") {
                         if let Some(db) = tool_ctx.contact_db.clone() {
                             let meta = result.metadata.clone().unwrap_or_default();
                             let auto = match (tool_name, meta.get("contacts"), meta.get("leads")) {
@@ -1652,9 +1703,7 @@ impl AgentRuntime {
                     // ── Long-term memory absorb of harvested contacts ──
                     // Persisted contacts also flow into semantic memory so
                     // future sessions know them without re-harvesting.
-                    if result.success
-                        && matches!(tool_name, "extract_contacts" | "find_leads")
-                    {
+                    if result.success && matches!(tool_name, "extract_contacts" | "find_leads") {
                         let meta = result.metadata.clone().unwrap_or_default();
                         let origin = tool_args
                             .get("url")
@@ -1665,9 +1714,7 @@ impl AgentRuntime {
                     }
 
                     // ── Structured findings (fleet C4) ──
-                    if let Some(finding) =
-                        self.harvest_finding(tool_name, &tool_args, &result)
-                    {
+                    if let Some(finding) = self.harvest_finding(tool_name, &tool_args, &result) {
                         self.harvested_findings.push(finding);
                     }
 
@@ -1679,9 +1726,9 @@ impl AgentRuntime {
                     });
 
                     // Save tool result (full, before truncation).
-                    let _ = self.db.add_tool_result(
-                        &self.id, tool_name, &tool_args, &result, duration,
-                    );
+                    let _ = self
+                        .db
+                        .add_tool_result(&self.id, tool_name, &tool_args, &result, duration);
 
                     // ── Apply truncation + turn budget ──
                     let truncated = apply_turn_budget(
@@ -1715,7 +1762,11 @@ impl AgentRuntime {
         }
 
         if iterations >= self.max_iterations && doom_warning.is_none() {
-            tracing::warn!("Agent {} hit max iterations ({})", self.id, self.max_iterations);
+            tracing::warn!(
+                "Agent {} hit max iterations ({})",
+                self.id,
+                self.max_iterations
+            );
         }
 
         if doom_warning.is_none() {
@@ -1871,7 +1922,9 @@ impl AgentRuntime {
         child.profile_prompt = self.profile_prompt.clone();
         child.governance = self.governance.clone();
         // Children inherit what is left of the parent's token cap.
-        child.token_cap = self.token_cap.map(|cap| cap.saturating_sub(self.tokens_used));
+        child.token_cap = self
+            .token_cap
+            .map(|cap| cap.saturating_sub(self.tokens_used));
         child.question_tx = self.question_tx.clone();
         child.approval_tx = self.approval_tx.clone();
         // Cancelling the parent cancels the child (and its subtree).
@@ -1922,7 +1975,8 @@ impl AgentRuntime {
                         let job_id = mgr.create_job(&self.id, &label);
                         if !mgr.mark_running(job_id) {
                             mgr.cancel(job_id);
-                            let out = ToolOutput::err("Async job concurrency limit reached; retry later");
+                            let out =
+                                ToolOutput::err("Async job concurrency limit reached; retry later");
                             self.record_spawn_result(&call_id, &out)?;
                             continue;
                         }
@@ -2003,13 +2057,9 @@ impl AgentRuntime {
 
     /// Persist + inject one child result as the spawn_agent tool message.
     fn record_spawn_result(&mut self, call_id: &str, output: &ToolOutput) -> anyhow::Result<()> {
-        let _ = self.db.add_tool_result(
-            &self.id,
-            "spawn_agent",
-            &serde_json::json!({}),
-            output,
-            0,
-        );
+        let _ = self
+            .db
+            .add_tool_result(&self.id, "spawn_agent", &serde_json::json!({}), output, 0);
         let truncated = apply_turn_budget(
             "spawn_agent",
             output,
@@ -2043,20 +2093,14 @@ fn child_wait_future(
     headroom_chars: usize,
     batch_len: usize,
     spill_dir: std::path::PathBuf,
-) -> std::pin::Pin<Box<dyn std::future::Future<Output = anyhow::Result<(String, u64)>> + Send>>
-{
+) -> std::pin::Pin<Box<dyn std::future::Future<Output = anyhow::Result<(String, u64)>> + Send>> {
     Box::pin(async move {
         let run_res = if timeout_secs > 0 {
-            match tokio::time::timeout(
-                std::time::Duration::from_secs(timeout_secs),
-                child.run(),
-            )
-            .await
+            match tokio::time::timeout(std::time::Duration::from_secs(timeout_secs), child.run())
+                .await
             {
                 Ok(res) => res,
-                Err(_) => Err(anyhow::anyhow!(
-                    "sub-agent timed out after {timeout_secs}s"
-                )),
+                Err(_) => Err(anyhow::anyhow!("sub-agent timed out after {timeout_secs}s")),
             }
         } else {
             child.run().await
@@ -2088,17 +2132,12 @@ fn child_wait_future(
                     summary: output.summary.chars().take(200).collect(),
                     tokens_used: output.tokens_used,
                 });
-                let budget =
-                    crate::budget::ResultBudget::new(headroom_chars, batch_len, spill_dir);
+                let budget = crate::budget::ResultBudget::new(headroom_chars, batch_len, spill_dir);
                 Ok((budget.cap_result(&output.summary).summary, total))
             }
             Err(e) => {
-                let _ = db.update_agent_status(
-                    &agent_id,
-                    AgentStatus::Failed,
-                    0,
-                    Some(&e.to_string()),
-                );
+                let _ =
+                    db.update_agent_status(&agent_id, AgentStatus::Failed, 0, Some(&e.to_string()));
                 let _ = tx.send(AgentEvent::AgentFailed {
                     id: agent_id,
                     error: e.to_string(),
@@ -2147,9 +2186,15 @@ impl AgentRuntime {
                         "emails: {}, phones: {}, social profiles: {}, persons: {}, companies: {}",
                         counts.get("emails").and_then(|v| v.as_u64()).unwrap_or(0),
                         counts.get("phones").and_then(|v| v.as_u64()).unwrap_or(0),
-                        counts.get("social_profiles").and_then(|v| v.as_u64()).unwrap_or(0),
+                        counts
+                            .get("social_profiles")
+                            .and_then(|v| v.as_u64())
+                            .unwrap_or(0),
                         counts.get("persons").and_then(|v| v.as_u64()).unwrap_or(0),
-                        counts.get("companies").and_then(|v| v.as_u64()).unwrap_or(0),
+                        counts
+                            .get("companies")
+                            .and_then(|v| v.as_u64())
+                            .unwrap_or(0),
                     ),
                     sources,
                     confidence: 0.7,
@@ -2190,10 +2235,7 @@ impl AgentRuntime {
                 if sources_meta.is_empty() {
                     return None;
                 }
-                let query = meta
-                    .get("query")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("?");
+                let query = meta.get("query").and_then(|v| v.as_str()).unwrap_or("?");
                 let sources: Vec<pr_core::Source> = sources_meta
                     .iter()
                     .take(10)
@@ -2230,10 +2272,7 @@ impl AgentRuntime {
             }
             "web_fetch" => {
                 let url = meta.get("url")?.as_str()?.to_string();
-                let title_raw = meta
-                    .get("title")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("");
+                let title_raw = meta.get("title").and_then(|v| v.as_str()).unwrap_or("");
                 let title = if title_raw.trim().is_empty() {
                     url.clone()
                 } else {
@@ -2258,10 +2297,7 @@ impl AgentRuntime {
                 if !source.starts_with("http://") && !source.starts_with("https://") {
                     return None;
                 }
-                let title_raw = meta
-                    .get("title")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("");
+                let title_raw = meta.get("title").and_then(|v| v.as_str()).unwrap_or("");
                 let title = if title_raw.trim().is_empty() {
                     source.clone()
                 } else {
@@ -2447,7 +2483,6 @@ mod tests {
         )
     }
 
-
     /// Register the parent agent row the coordinator would normally create
     /// (messages have a FK to agents).
     fn register_parent(db: &Persistence, agent: &AgentRuntime) {
@@ -2493,9 +2528,9 @@ mod tests {
         assert_eq!(output.summary, "final answer");
 
         // The child's summary was injected as the spawn_agent tool result.
-        let has_child_summary = agent.messages.iter().any(|m| {
-            matches!(m, Message::Tool { content, .. } if content.contains("child findings"))
-        });
+        let has_child_summary = agent.messages.iter().any(
+            |m| matches!(m, Message::Tool { content, .. } if content.contains("child findings")),
+        );
         assert!(has_child_summary, "child summary must reach the parent");
 
         // Agent tree: parent + child with parent_id and depth set.
@@ -2533,9 +2568,10 @@ mod tests {
         assert_eq!(output.summary, "done anyway");
 
         // The spawn was refused: the tool result is an error, no child agent.
-        let refused = agent.messages.iter().any(|m| {
-            matches!(m, Message::Tool { content, .. } if content.contains("max depth"))
-        });
+        let refused = agent
+            .messages
+            .iter()
+            .any(|m| matches!(m, Message::Tool { content, .. } if content.contains("max depth")));
         assert!(refused, "depth refusal must be reported to the model");
 
         let agents = db.get_session_agents_detail(&session_id).unwrap();
@@ -2626,7 +2662,11 @@ mod tests {
                 message: Message::assistant_with_tools(
                     None,
                     vec![
-                        pr_core::ToolCall::new("s1", "shell", serde_json::json!({"command": "exit 1"})),
+                        pr_core::ToolCall::new(
+                            "s1",
+                            "shell",
+                            serde_json::json!({"command": "exit 1"}),
+                        ),
                         pr_core::ToolCall::new(
                             "f1",
                             "file_read",
@@ -2699,14 +2739,17 @@ mod tests {
         let schemas = agent.tools.list_schemas();
         assert!(schemas.iter().any(|t| t.name == "shell")); // registry has it
         let prompt = agent.build_system_prompt("");
-        assert!(!prompt.contains("Execute a shell command"), "denied tool must be hidden");
+        assert!(
+            !prompt.contains("Execute a shell command"),
+            "denied tool must be hidden"
+        );
 
         let output = agent.run().await.unwrap();
         assert_eq!(output.summary, "done");
         // Execution was refused with a permission error.
-        let denied = agent.messages.iter().any(|m| {
-            matches!(m, Message::Tool { content, .. } if content.contains("Permission denied"))
-        });
+        let denied = agent.messages.iter().any(
+            |m| matches!(m, Message::Tool { content, .. } if content.contains("Permission denied")),
+        );
         assert!(denied);
     }
 
@@ -2746,17 +2789,20 @@ mod tests {
             },
             MockProvider::text("done"),
         ]));
-        let mut agent = make_runtime(llm, db.clone(), AppConfig::default(), 0)
-            .with_governance(governance);
+        let mut agent =
+            make_runtime(llm, db.clone(), AppConfig::default(), 0).with_governance(governance);
         agent.session_id = session_id;
         register_parent(&db, &agent);
 
         let output = agent.run().await.unwrap();
         assert_eq!(output.summary, "done");
-        assert!(!marker.path().exists(), "governance-denied shell must not execute");
-        let denied = agent.messages.iter().any(|m| {
-            matches!(m, Message::Tool { content, .. } if content.contains("Governance denied"))
-        });
+        assert!(
+            !marker.path().exists(),
+            "governance-denied shell must not execute"
+        );
+        let denied = agent.messages.iter().any(
+            |m| matches!(m, Message::Tool { content, .. } if content.contains("Governance denied")),
+        );
         assert!(denied);
         let events = db.list_audit_events().unwrap();
         assert_eq!(events.len(), 1);
@@ -2938,8 +2984,10 @@ mod tests {
         let nudges = agent
             .messages
             .iter()
-            .filter(|m| matches!(m, Message::User { content }
-                if content.contains("output budget exhausted")))
+            .filter(|m| {
+                matches!(m, Message::User { content }
+                if content.contains("output budget exhausted"))
+            })
             .count();
         assert_eq!(nudges, MAX_TRUNCATION_RETRIES as usize);
     }
@@ -2968,7 +3016,11 @@ mod tests {
             }),
         );
         let finding = agent
-            .harvest_finding("web_search", &serde_json::json!({"query": "rust async runtime"}), &output)
+            .harvest_finding(
+                "web_search",
+                &serde_json::json!({"query": "rust async runtime"}),
+                &output,
+            )
             .expect("web_search with sources must produce a finding");
         assert_eq!(finding.title, "Web search: rust async runtime");
         assert_eq!(finding.sources.len(), 2);
@@ -2984,7 +3036,11 @@ mod tests {
             serde_json::json!({"url": "https://example.com/page", "title": "Example Page"}),
         );
         let finding = agent
-            .harvest_finding("web_fetch", &serde_json::json!({"url": "https://example.com/page"}), &output)
+            .harvest_finding(
+                "web_fetch",
+                &serde_json::json!({"url": "https://example.com/page"}),
+                &output,
+            )
             .expect("web_fetch must produce a finding");
         assert_eq!(finding.title, "Page fetched: Example Page");
         assert_eq!(finding.sources.len(), 1);
@@ -3004,7 +3060,11 @@ mod tests {
             }),
         );
         let finding = agent
-            .harvest_finding("search_news", &serde_json::json!({"query": "news"}), &output)
+            .harvest_finding(
+                "search_news",
+                &serde_json::json!({"query": "news"}),
+                &output,
+            )
             .expect("search_news results must produce a finding");
         assert_eq!(finding.sources.len(), 1);
         assert_eq!(finding.sources[0].title, "Big news");
@@ -3019,10 +3079,8 @@ mod tests {
             .harvest_finding("web_search", &serde_json::json!({}), &no_meta)
             .is_none());
 
-        let empty_sources = ToolOutput::ok_with_meta(
-            "none",
-            serde_json::json!({"query": "q", "sources": []}),
-        );
+        let empty_sources =
+            ToolOutput::ok_with_meta("none", serde_json::json!({"query": "q", "sources": []}));
         assert!(agent
             .harvest_finding("web_search", &serde_json::json!({}), &empty_sources)
             .is_none());
@@ -3069,7 +3127,9 @@ mod tests {
     fn text_chunks(parts: &[&str]) -> Vec<StreamChunk> {
         let mut v: Vec<StreamChunk> = parts
             .iter()
-            .map(|p| StreamChunk::Text { delta: p.to_string() })
+            .map(|p| StreamChunk::Text {
+                delta: p.to_string(),
+            })
             .collect();
         v.push(StreamChunk::Done {
             message: Message::assistant(""),
@@ -3099,7 +3159,11 @@ mod tests {
 
         // Final message is the assembled text.
         match &resp.message {
-            Message::Assistant { content, tool_calls, .. } => {
+            Message::Assistant {
+                content,
+                tool_calls,
+                ..
+            } => {
                 assert_eq!(content.as_deref(), Some("Hello streaming world"));
                 assert!(tool_calls.is_empty());
             }
@@ -3157,12 +3221,19 @@ mod tests {
         };
         let resp = agent.complete_streaming(&req).await.unwrap();
         match &resp.message {
-            Message::Assistant { content, tool_calls, .. } => {
+            Message::Assistant {
+                content,
+                tool_calls,
+                ..
+            } => {
                 assert!(content.is_none());
                 assert_eq!(tool_calls.len(), 1);
                 assert_eq!(tool_calls[0].name(), "web_search");
                 assert_eq!(tool_calls[0].id, "call_9");
-                assert_eq!(tool_calls[0].arguments(), serde_json::json!({"query": "rust"}));
+                assert_eq!(
+                    tool_calls[0].arguments(),
+                    serde_json::json!({"query": "rust"})
+                );
             }
             other => panic!("expected Assistant, got {:?}", other),
         }
@@ -3274,7 +3345,9 @@ mod tests {
         // Default fallback is fail-safe "deny".
         let agent = make_runtime(llm.clone(), db.clone(), AppConfig::default(), 0);
         assert_eq!(
-            agent.request_approval("save_contacts", &serde_json::json!({})).await,
+            agent
+                .request_approval("save_contacts", &serde_json::json!({}))
+                .await,
             crate::control::ApprovalVerdict::Denied
         );
 
@@ -3283,7 +3356,9 @@ mod tests {
         config.agent.approval_fallback = "allow".to_string();
         let agent = make_runtime(llm, db, config, 0);
         assert_eq!(
-            agent.request_approval("save_contacts", &serde_json::json!({})).await,
+            agent
+                .request_approval("save_contacts", &serde_json::json!({}))
+                .await,
             crate::control::ApprovalVerdict::Allowed
         );
     }

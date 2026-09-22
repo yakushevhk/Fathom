@@ -243,7 +243,9 @@ impl DirectorySearch {
             return None;
         }
         let value: serde_json::Value = resp.json().await.ok()?;
-        value["result"]["items"][0]["id"].as_str().map(|s| s.to_string())
+        value["result"]["items"][0]["id"]
+            .as_str()
+            .map(|s| s.to_string())
     }
 
     // ─── Google Maps (Places API) ───
@@ -283,13 +285,15 @@ impl DirectorySearch {
             .await;
 
         match response {
-            Ok(resp) if resp.status().is_success() => match resp.json::<serde_json::Value>().await {
-                Ok(value) => parse_google_places_response(&value),
-                Err(e) => {
-                    tracing::warn!("Google Places response parse error: {e}");
-                    vec![]
+            Ok(resp) if resp.status().is_success() => {
+                match resp.json::<serde_json::Value>().await {
+                    Ok(value) => parse_google_places_response(&value),
+                    Err(e) => {
+                        tracing::warn!("Google Places response parse error: {e}");
+                        vec![]
+                    }
                 }
-            },
+            }
             Ok(resp) => {
                 tracing::warn!("Google Places search failed: HTTP {}", resp.status());
                 vec![]
@@ -333,13 +337,15 @@ impl DirectorySearch {
             .await;
 
         match response {
-            Ok(resp) if resp.status().is_success() => match resp.json::<serde_json::Value>().await {
-                Ok(value) => parse_yandex_maps_response(&value),
-                Err(e) => {
-                    tracing::warn!("Yandex Maps response parse error: {e}");
-                    vec![]
+            Ok(resp) if resp.status().is_success() => {
+                match resp.json::<serde_json::Value>().await {
+                    Ok(value) => parse_yandex_maps_response(&value),
+                    Err(e) => {
+                        tracing::warn!("Yandex Maps response parse error: {e}");
+                        vec![]
+                    }
                 }
-            },
+            }
             Ok(resp) => {
                 tracing::warn!("Yandex Maps search failed: HTTP {}", resp.status());
                 vec![]
@@ -358,7 +364,11 @@ impl DirectorySearch {
         let url = format!(
             "https://www.yellowpages.com/search?search_terms={}&geo_location_terms={}",
             urlencoding::encode(query),
-            urlencoding::encode(if city.trim().is_empty() { "United States" } else { city })
+            urlencoding::encode(if city.trim().is_empty() {
+                "United States"
+            } else {
+                city
+            })
         );
 
         let response = self
@@ -393,7 +403,10 @@ impl DirectorySearch {
 
 /// Parse a 2GIS Catalog API 3.0 items response.
 fn parse_2gis_response(value: &serde_json::Value) -> Vec<BusinessResult> {
-    let items = value["result"]["items"].as_array().cloned().unwrap_or_default();
+    let items = value["result"]["items"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
     items
         .into_iter()
         .filter_map(|item| {
@@ -403,7 +416,10 @@ fn parse_2gis_response(value: &serde_json::Value) -> Vec<BusinessResult> {
                 .or_else(|| item["full_name"].as_str())
                 .unwrap_or_default()
                 .to_string();
-            let address = item["address_name"].as_str().unwrap_or_default().to_string();
+            let address = item["address_name"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string();
 
             let mut phone = None;
             let mut website = None;
@@ -429,7 +445,9 @@ fn parse_2gis_response(value: &serde_json::Value) -> Vec<BusinessResult> {
                 }
             }
             if website.is_none() {
-                website = item["external_content"][0]["url"].as_str().map(|s| s.to_string());
+                website = item["external_content"][0]["url"]
+                    .as_str()
+                    .map(|s| s.to_string());
             }
 
             let rating = item["reviews"]["rating"].as_f64().map(|v| v as f32);
@@ -500,7 +518,10 @@ fn parse_yandex_maps_response(value: &serde_json::Value) -> Vec<BusinessResult> 
                 return None;
             }
             let name = props["name"].as_str()?.to_string();
-            let category = props["description"].as_str().unwrap_or_default().to_string();
+            let category = props["description"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string();
             let address = props["address"].as_str().unwrap_or_default().to_string();
 
             let meta = &props["CompanyMetaData"];
@@ -706,7 +727,11 @@ Queries up to four business directories in parallel and merges the results. Dire
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: DirectorySearchParams = serde_json::from_value(args)?;
         if params.query.trim().is_empty() {
             return Ok(ToolOutput::err("Parameter `query` must not be empty."));
@@ -835,7 +860,10 @@ mod tests {
         assert_eq!(results[0].category, "Coffee shop");
         assert_eq!(results[0].phone.as_deref(), Some("+7 495 123-45-67"));
         assert_eq!(results[0].email.as_deref(), Some("info@coffeehouse.ru"));
-        assert_eq!(results[0].website.as_deref(), Some("https://coffeehouse.ru"));
+        assert_eq!(
+            results[0].website.as_deref(),
+            Some("https://coffeehouse.ru")
+        );
         assert_eq!(results[0].rating, Some(4.5));
         assert_eq!(results[0].reviews_count, Some(120));
         assert_eq!(results[0].source, "2gis");
@@ -871,7 +899,10 @@ mod tests {
         assert_eq!(results[0].name, "Cafe Berlin");
         assert_eq!(results[0].category, "Cafe");
         assert_eq!(results[0].phone.as_deref(), Some("030 123456"));
-        assert_eq!(results[0].website.as_deref(), Some("https://cafe-berlin.de"));
+        assert_eq!(
+            results[0].website.as_deref(),
+            Some("https://cafe-berlin.de")
+        );
         assert_eq!(results[0].rating, Some(4.7));
         assert_eq!(results[0].reviews_count, Some(89));
         assert_eq!(results[0].source, "google_maps");
@@ -917,7 +948,10 @@ mod tests {
         assert_eq!(results[0].name, "Barbershop Borodach");
         assert_eq!(results[0].category, "Barbershop");
         assert_eq!(results[0].phone.as_deref(), Some("+7 812 000-00-00"));
-        assert_eq!(results[0].website.as_deref(), Some("https://borodach.spb.ru"));
+        assert_eq!(
+            results[0].website.as_deref(),
+            Some("https://borodach.spb.ru")
+        );
         assert_eq!(results[0].rating, Some(4.9));
         assert_eq!(results[0].reviews_count, Some(33));
         assert_eq!(results[0].source, "yandex_maps");
@@ -950,7 +984,10 @@ mod tests {
         let results = parse_yellow_pages_html(html);
         assert_eq!(results.len(), 2);
         assert_eq!(results[0].name, "Ace Plumbing");
-        assert_eq!(results[0].website.as_deref(), Some("https://plumber.example.com"));
+        assert_eq!(
+            results[0].website.as_deref(),
+            Some("https://plumber.example.com")
+        );
         assert_eq!(results[0].phone.as_deref(), Some("555-1234"));
         assert_eq!(results[0].source, "yellow_pages");
     }
@@ -994,7 +1031,10 @@ mod tests {
         assert_eq!(results.len(), 2);
         assert_eq!(results[0].name, "Coffee House");
         assert_eq!(results[0].phone.as_deref(), Some("111"));
-        assert_eq!(results[0].website.as_deref(), Some("https://coffeehouse.ru"));
+        assert_eq!(
+            results[0].website.as_deref(),
+            Some("https://coffeehouse.ru")
+        );
         assert_eq!(results[0].rating, Some(4.5));
         assert_eq!(results[1].name, "Other Place");
     }

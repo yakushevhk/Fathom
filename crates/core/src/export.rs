@@ -66,9 +66,7 @@ impl FromStr for ExportFormat {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::parse(s).ok_or_else(|| {
-            anyhow::anyhow!(
-                "unknown export format '{s}' (expected one of: pdf, html, json, docx)"
-            )
+            anyhow::anyhow!("unknown export format '{s}' (expected one of: pdf, html, json, docx)")
         })
     }
 }
@@ -172,7 +170,8 @@ impl Exporter {
 
     /// Target path for a given format.
     pub fn target_path(&self, format: ExportFormat) -> PathBuf {
-        self.output_dir.join(format!("report.{}", format.extension()))
+        self.output_dir
+            .join(format!("report.{}", format.extension()))
     }
 
     /// Target path for a contact export file.
@@ -333,7 +332,9 @@ impl Exporter {
 
     async fn export_docx(&self, session: &SessionOutput) -> anyhow::Result<PathBuf> {
         if !pandoc_available().await {
-            anyhow::bail!("DOCX export requires 'pandoc' to be installed; it was not found in PATH");
+            anyhow::bail!(
+                "DOCX export requires 'pandoc' to be installed; it was not found in PATH"
+            );
         }
         let markdown_path = self.write_report_markdown(session).await?;
         let target = self.target_path(ExportFormat::Docx);
@@ -363,7 +364,10 @@ pub fn build_report_markdown(session: &SessionOutput) -> String {
     let mut md = String::new();
     md.push_str("# Research Report\n\n");
     md.push_str(&format!("- **Session**: {}\n", session.session_id));
-    md.push_str(&format!("- **Generated**: {}\n", chrono::Utc::now().to_rfc3339()));
+    md.push_str(&format!(
+        "- **Generated**: {}\n",
+        chrono::Utc::now().to_rfc3339()
+    ));
     md.push_str(&format!("- **Agents**: {}\n", session.total_agents));
     md.push_str(&format!("- **Tokens used**: {}\n\n", session.total_tokens));
     md.push_str("---\n\n");
@@ -422,7 +426,9 @@ pub fn extract_urls(text: &str) -> Vec<String> {
         let start = search_from + offset;
         let tail = &text[start..];
         let end = tail
-            .find(|c: char| c.is_whitespace() || matches!(c, '<' | '>' | '"' | '\'' | ')' | ']' | '`'))
+            .find(|c: char| {
+                c.is_whitespace() || matches!(c, '<' | '>' | '"' | '\'' | ')' | ']' | '`')
+            })
             .unwrap_or(tail.len());
         let url = tail[..end].trim_end_matches(['.', ',', ';', ':']);
         if !url.is_empty() && !urls.contains(&url.to_string()) {
@@ -502,7 +508,11 @@ pub fn contacts_to_vcard(contacts: &[Contact]) -> String {
 
         let name = contact.name.clone().unwrap_or_default();
         let (given, family) = vcard_name_parts(&name);
-        out.push_str(&format!("N:{};{};;;\r\n", vcard_escape(&family), vcard_escape(&given)));
+        out.push_str(&format!(
+            "N:{};{};;;\r\n",
+            vcard_escape(&family),
+            vcard_escape(&given)
+        ));
         out.push_str(&format!("FN:{}\r\n", vcard_escape(&name)));
 
         if let Some(company) = contact.company.as_deref().filter(|s| !s.trim().is_empty()) {
@@ -527,13 +537,15 @@ pub fn contacts_to_vcard(contacts: &[Contact]) -> String {
             }
         }
         if !contact.notes.is_empty() {
-            out.push_str(&format!("NOTE:{}\r\n", vcard_escape(&contact.notes.join("\n"))));
+            out.push_str(&format!(
+                "NOTE:{}\r\n",
+                vcard_escape(&contact.notes.join("\n"))
+            ));
         }
         if !contact.tags.is_empty() {
             // CATEGORIES is a comma-separated list: escape each tag but keep
             // the commas as separators.
-            let categories: Vec<String> =
-                contact.tags.iter().map(|t| vcard_escape(t)).collect();
+            let categories: Vec<String> = contact.tags.iter().map(|t| vcard_escape(t)).collect();
             out.push_str(&format!("CATEGORIES:{}\r\n", categories.join(",")));
         }
 
@@ -583,7 +595,17 @@ pub fn contacts_to_xlsx(contacts: &[Contact]) -> anyhow::Result<Vec<u8>> {
         let socials: Vec<String> = contact
             .social_profiles
             .iter()
-            .map(|sp| format!("{}:{}", sp.platform, if sp.url.is_empty() { &sp.username } else { &sp.url }))
+            .map(|sp| {
+                format!(
+                    "{}:{}",
+                    sp.platform,
+                    if sp.url.is_empty() {
+                        &sp.username
+                    } else {
+                        &sp.url
+                    }
+                )
+            })
             .collect();
         worksheet.write_string(row, 7, socials.join("; "))?;
         worksheet.write_string(row, 8, &contact.source)?;
@@ -743,7 +765,9 @@ mod tests {
         SessionOutput {
             session_id: SessionId("sess-export-test".to_string()),
             output_dir: dir,
-            synthesis: "# Answer\n\nRust is fast. See https://example.com/rust and https://rust-lang.org.".to_string(),
+            synthesis:
+                "# Answer\n\nRust is fast. See https://example.com/rust and https://rust-lang.org."
+                    .to_string(),
             total_tokens: 500,
             total_agents: 2,
         }
@@ -859,11 +883,11 @@ mod tests {
         assert_eq!(value["session_id"], "sess-export-test");
         assert_eq!(value["total_tokens"], 500);
         assert_eq!(value["total_agents"], 2);
-        assert!(value["synthesis"]["markdown"].as_str().unwrap().contains("Rust is fast"));
-        assert_eq!(
-            value["synthesis"]["sources"][0],
-            "https://example.com/rust"
-        );
+        assert!(value["synthesis"]["markdown"]
+            .as_str()
+            .unwrap()
+            .contains("Rust is fast"));
+        assert_eq!(value["synthesis"]["sources"][0], "https://example.com/rust");
         assert_eq!(value["findings"].as_array().unwrap().len(), 1);
         assert_eq!(
             value["findings"][0]["sources"][0],
@@ -896,11 +920,13 @@ mod tests {
         first.email = Some("jane@example.com".into());
         first.phone = Some("+1 555 0100".into());
         first.tags = vec!["lead".into(), "vip".into()];
-        first.social_profiles.push(crate::contact::SocialProfile::new(
-            "linkedin",
-            "https://linkedin.com/in/jdoe",
-            "jdoe",
-        ));
+        first
+            .social_profiles
+            .push(crate::contact::SocialProfile::new(
+                "linkedin",
+                "https://linkedin.com/in/jdoe",
+                "jdoe",
+            ));
         first.notes.push("Met at RustConf".into());
 
         let mut second = Contact::new().with_source("test");
@@ -916,8 +942,14 @@ mod tests {
         for fmt in ContactExportFormat::all() {
             assert_eq!(ContactExportFormat::parse(fmt.as_str()), Some(fmt));
         }
-        assert_eq!(ContactExportFormat::parse("VCF"), Some(ContactExportFormat::VCard));
-        assert_eq!(ContactExportFormat::parse(" xlsx "), Some(ContactExportFormat::Excel));
+        assert_eq!(
+            ContactExportFormat::parse("VCF"),
+            Some(ContactExportFormat::VCard)
+        );
+        assert_eq!(
+            ContactExportFormat::parse(" xlsx "),
+            Some(ContactExportFormat::Excel)
+        );
         assert_eq!(ContactExportFormat::parse("yaml"), None);
         assert!("yaml".parse::<ContactExportFormat>().is_err());
     }
@@ -967,7 +999,10 @@ mod tests {
     fn test_contacts_to_csv_quotes_and_escapes() {
         let csv = contacts_to_csv(&sample_contacts());
         let mut lines = csv.lines();
-        assert_eq!(lines.next().unwrap(), "id,name,title,company,email,phone,tags,social_profiles,source,created_at");
+        assert_eq!(
+            lines.next().unwrap(),
+            "id,name,title,company,email,phone,tags,social_profiles,source,created_at"
+        );
 
         let first = lines.next().unwrap();
         assert!(first.starts_with("1,Jane Doe,CTO,\"Acme, Inc.\",jane@example.com"));
@@ -1029,14 +1064,18 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(csv, tmp.path().join("contacts.csv"));
-        assert!(std::fs::read_to_string(&csv).unwrap().contains("jane@example.com"));
+        assert!(std::fs::read_to_string(&csv)
+            .unwrap()
+            .contains("jane@example.com"));
 
         let vcf = exporter
             .export_contacts(&contacts, ContactExportFormat::VCard)
             .await
             .unwrap();
         assert_eq!(vcf, tmp.path().join("contacts.vcf"));
-        assert!(std::fs::read_to_string(&vcf).unwrap().contains("BEGIN:VCARD"));
+        assert!(std::fs::read_to_string(&vcf)
+            .unwrap()
+            .contains("BEGIN:VCARD"));
 
         let json = exporter
             .export_contacts(&contacts, ContactExportFormat::Json)

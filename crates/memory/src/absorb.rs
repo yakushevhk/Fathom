@@ -278,13 +278,13 @@ impl AbsorbPipeline {
             .load_embeddings(&scope_filter, self.embedder.model_name())?;
 
         for (i, fact) in clean.into_iter().enumerate() {
-            let Some(vec) = vectors.get(i).cloned() else { continue };
+            let Some(vec) = vectors.get(i).cloned() else {
+                continue;
+            };
 
             // Cheap exact-dedup before anything else.
             let hash = content_hash(&fact.content);
-            if let Some(existing_row) =
-                self.db.find_by_hash(&hash, scope.as_str(), &scope_key)?
-            {
+            if let Some(existing_row) = self.db.find_by_hash(&hash, scope.as_str(), &scope_key)? {
                 report.skipped += 1;
                 report.details.push(AbsorbDetail {
                     fact: truncate(&fact.content, 80),
@@ -309,10 +309,7 @@ impl AbsorbPipeline {
             // Classify.
             let (verdict, target_id, reason) = if candidates.is_empty() {
                 (AbsorbVerdict::New, None, "no similar memories".to_string())
-            } else if let Some((tid, verdict, reason)) = self
-                .classify(&fact, &candidates)
-                .await
-            {
+            } else if let Some((tid, verdict, reason)) = self.classify(&fact, &candidates).await {
                 (verdict, Some(tid), reason)
             } else {
                 // Heuristic fallback: confident near-duplicates → skip,
@@ -326,12 +323,21 @@ impl AbsorbPipeline {
                         format!("similarity {sim:.2} ≥ {HEURISTIC_DUPLICATE}"),
                     )
                 } else if *sim >= CONSOLIDATION_SIMILARITY
-                    && self.db.get(tid)?.is_some_and(|r| shares_subject(&fact.content, &r.content))
+                    && self
+                        .db
+                        .get(tid)?
+                        .is_some_and(|r| shares_subject(&fact.content, &r.content))
                 {
                     // Cross-call consolidation: merge into existing row.
                     if !dry_run {
-                        self.db.merge_into(tid, &fact.content, &fact.tags, fact.confidence.unwrap_or(0.8))?;
-                        self.db.log_history(tid, "merged", None, Some(&fact.content));
+                        self.db.merge_into(
+                            tid,
+                            &fact.content,
+                            &fact.tags,
+                            fact.confidence.unwrap_or(0.8),
+                        )?;
+                        self.db
+                            .log_history(tid, "merged", None, Some(&fact.content));
                     }
                     report.consolidated += 1;
                     report.details.push(AbsorbDetail {
@@ -344,7 +350,11 @@ impl AbsorbPipeline {
                     });
                     continue;
                 } else {
-                    (AbsorbVerdict::New, None, "heuristic: below duplicate threshold".into())
+                    (
+                        AbsorbVerdict::New,
+                        None,
+                        "heuristic: below duplicate threshold".into(),
+                    )
                 }
             };
 
@@ -366,17 +376,22 @@ impl AbsorbPipeline {
                     let row = self.make_row(&source, scope, &scope_key, &fact, &hash);
                     if !dry_run {
                         self.db.insert(&row)?;
-                        self.db.put_embedding(&row.id, self.embedder.model_name(), &vec)?;
+                        self.db
+                            .put_embedding(&row.id, self.embedder.model_name(), &vec)?;
                         self.db.fts_insert(&row.id, &row.content, &row.tags);
-                        self.db.log_history(&row.id, "add", None, Some(&row.content));
+                        self.db
+                            .log_history(&row.id, "add", None, Some(&row.content));
                         // Entity graph ingestion (mem0): facts may carry
                         // declared entities/relations in their metadata.
                         if fact.metadata.get("entities").is_some()
                             || fact.metadata.get("relations").is_some()
                         {
-                            if let Err(e) =
-                                crate::graph::ingest_entities(&self.db, &fact.metadata, &row.id, &source)
-                            {
+                            if let Err(e) = crate::graph::ingest_entities(
+                                &self.db,
+                                &fact.metadata,
+                                &row.id,
+                                &source,
+                            ) {
                                 tracing::warn!("entity ingestion failed: {e}");
                             }
                         }
@@ -384,7 +399,8 @@ impl AbsorbPipeline {
                     let action = other.as_str().to_string();
                     if let Some(tid) = &target_id {
                         if !dry_run {
-                            self.db.add_edge(&row.id, tid, edge_type_for(other), Some(&reason))?;
+                            self.db
+                                .add_edge(&row.id, tid, edge_type_for(other), Some(&reason))?;
                             if other == AbsorbVerdict::Supersede {
                                 self.db.set_status(tid, "superseded")?;
                                 if let Some(old) = self.db.get(tid)? {
@@ -486,7 +502,11 @@ impl AbsorbPipeline {
                 content,
                 metadata: serde_json::Value::Object(metadata),
                 tags,
-                confidence: if any_confidence { Some(confidence) } else { None },
+                confidence: if any_confidence {
+                    Some(confidence)
+                } else {
+                    None
+                },
                 memory_class: None,
             });
         }
@@ -510,13 +530,18 @@ impl AbsorbPipeline {
             Some("ephemeral") => Scope::Run,
             _ => scope,
         };
-        let expires_at = fact.metadata.get("expires_at").and_then(|v| v.as_str()).map(String::from).or_else(|| {
-            if fact.memory_class.as_deref() == Some("expiring") {
-                Some((now + chrono::Duration::days(90)).to_rfc3339())
-            } else {
-                None
-            }
-        });
+        let expires_at = fact
+            .metadata
+            .get("expires_at")
+            .and_then(|v| v.as_str())
+            .map(String::from)
+            .or_else(|| {
+                if fact.memory_class.as_deref() == Some("expiring") {
+                    Some((now + chrono::Duration::days(90)).to_rfc3339())
+                } else {
+                    None
+                }
+            });
 
         let now_str = now.to_rfc3339();
         MemoryRow {
@@ -555,7 +580,11 @@ impl AbsorbPipeline {
             cand_block.push_str(&format!(
                 "[c{idx}] (similarity {sim:.2}, created {}, source: {}) {}\n",
                 row.created_at,
-                if row.source.is_empty() { "unknown" } else { &row.source },
+                if row.source.is_empty() {
+                    "unknown"
+                } else {
+                    &row.source
+                },
                 row.content
             ));
         }
@@ -590,7 +619,9 @@ impl AbsorbPipeline {
         };
         let resp = llm.complete(&req).await.ok()?;
         let text = match &resp.message {
-            Message::Assistant { content: Some(c), .. } => c.clone(),
+            Message::Assistant {
+                content: Some(c), ..
+            } => c.clone(),
             _ => return None,
         };
         parse_classify_json(&text).and_then(|(cand_idx, verdict, reason)| {
@@ -647,7 +678,11 @@ fn embed_text(fact: &AbsorbFact) -> String {
             let pairs: Vec<String> = keys
                 .iter()
                 .filter(|k| k.as_str() != "context")
-                .filter_map(|k| obj.get(*k).and_then(|v| v.as_str()).map(|v| format!("{k}:{v}")))
+                .filter_map(|k| {
+                    obj.get(*k)
+                        .and_then(|v| v.as_str())
+                        .map(|v| format!("{k}:{v}"))
+                })
                 .collect();
             if !pairs.is_empty() {
                 text.push_str(" \n ");
@@ -728,16 +763,29 @@ mod tests {
     async fn absorb_creates_memories() {
         let p = pipeline();
         let report = p
-            .absorb(req(&["Acme LLC revenue grew 40% in 2025 according to Forbes"]))
+            .absorb(req(&[
+                "Acme LLC revenue grew 40% in 2025 according to Forbes",
+            ]))
             .await
             .unwrap();
         assert_eq!(report.created, 1);
-        let rows = p.db.list(&ScopeFilter::persistent(), Some("active"), 10).unwrap();
+        let rows =
+            p.db.list(&ScopeFilter::persistent(), Some("active"), 10)
+                .unwrap();
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].source, "test");
         // FTS + embedding were written.
-        assert!(!p.db.keyword_search("acme revenue", &ScopeFilter::persistent(), 5).unwrap().is_empty());
-        assert_eq!(p.db.load_embeddings(&ScopeFilter::persistent(), p.embedder.model_name()).unwrap().len(), 1);
+        assert!(!p
+            .db
+            .keyword_search("acme revenue", &ScopeFilter::persistent(), 5)
+            .unwrap()
+            .is_empty());
+        assert_eq!(
+            p.db.load_embeddings(&ScopeFilter::persistent(), p.embedder.model_name())
+                .unwrap()
+                .len(),
+            1
+        );
         // History got an add event.
         assert_eq!(p.db.history(&rows[0].id).unwrap().len(), 1);
     }
@@ -745,25 +793,36 @@ mod tests {
     #[tokio::test]
     async fn exact_duplicate_skipped_by_hash() {
         let p = pipeline();
-        p.absorb(req(&["the CEO of Acme announced layoffs in March"])).await.unwrap();
+        p.absorb(req(&["the CEO of Acme announced layoffs in March"]))
+            .await
+            .unwrap();
         let report = p
             .absorb(req(&["The CEO of Acme announced layoffs in March"]))
             .await
             .unwrap();
         assert_eq!(report.skipped, 1);
         assert_eq!(report.created, 0);
-        assert_eq!(p.db.list(&ScopeFilter::persistent(), None, 10).unwrap().len(), 1);
+        assert_eq!(
+            p.db.list(&ScopeFilter::persistent(), None, 10)
+                .unwrap()
+                .len(),
+            1
+        );
     }
 
     #[tokio::test]
     async fn near_duplicate_skipped_by_heuristic() {
         let p = pipeline();
-        p.absorb(req(&["PostgreSQL 16 runs billing service production environment"]))
-            .await
-            .unwrap();
+        p.absorb(req(&[
+            "PostgreSQL 16 runs billing service production environment",
+        ]))
+        .await
+        .unwrap();
         // Identical token set in a different order => cosine ~1.0 for TF-IDF.
         let report = p
-            .absorb(req(&["production environment billing service runs PostgreSQL 16"]))
+            .absorb(req(&[
+                "production environment billing service runs PostgreSQL 16",
+            ]))
             .await
             .unwrap();
         assert_eq!(report.skipped, 1, "heuristic should flag near-duplicate");
@@ -773,12 +832,18 @@ mod tests {
     async fn secrets_rejected() {
         let p = pipeline();
         let report = p
-            .absorb(req(&["the api key is sk-proj-abcdefghijklmnopqrstuvwxyz1234"]))
+            .absorb(req(&[
+                "the api key is sk-proj-abcdefghijklmnopqrstuvwxyz1234",
+            ]))
             .await
             .unwrap();
         assert_eq!(report.rejected, 1);
         assert!(report.details[0].reason.contains("secret"));
-        assert!(p.db.list(&ScopeFilter::persistent(), None, 10).unwrap().is_empty());
+        assert!(p
+            .db
+            .list(&ScopeFilter::persistent(), None, 10)
+            .unwrap()
+            .is_empty());
     }
 
     #[tokio::test]
@@ -801,9 +866,17 @@ mod tests {
             ]))
             .await
             .unwrap();
-        assert_eq!(report.consolidated, 1, "second variant merges into the first");
+        assert_eq!(
+            report.consolidated, 1,
+            "second variant merges into the first"
+        );
         assert_eq!(report.created, 1);
-        assert_eq!(p.db.list(&ScopeFilter::persistent(), None, 10).unwrap().len(), 1);
+        assert_eq!(
+            p.db.list(&ScopeFilter::persistent(), None, 10)
+                .unwrap()
+                .len(),
+            1
+        );
     }
 
     #[tokio::test]
@@ -813,13 +886,19 @@ mod tests {
         r.dry_run = true;
         let report = p.absorb(r).await.unwrap();
         assert_eq!(report.created, 1);
-        assert!(p.db.list(&ScopeFilter::persistent(), None, 10).unwrap().is_empty());
+        assert!(p
+            .db
+            .list(&ScopeFilter::persistent(), None, 10)
+            .unwrap()
+            .is_empty());
     }
 
     #[tokio::test]
     async fn scopes_isolate_memories() {
         let p = pipeline();
-        p.absorb(req(&["user prefers reports in Russian language"])).await.unwrap();
+        p.absorb(req(&["user prefers reports in Russian language"]))
+            .await
+            .unwrap();
         let mut run_req = req(&["session found three emails for acme.com domain"]);
         run_req.scope = Scope::Run;
         run_req.scope_key = "sess-1".into();
@@ -827,7 +906,9 @@ mod tests {
 
         let persistent = p.db.list(&ScopeFilter::persistent(), None, 10).unwrap();
         assert_eq!(persistent.len(), 1);
-        let run_rows = p.db.list(&ScopeFilter::new().add(Scope::Run, "sess-1"), None, 10).unwrap();
+        let run_rows =
+            p.db.list(&ScopeFilter::new().add(Scope::Run, "sess-1"), None, 10)
+                .unwrap();
         assert_eq!(run_rows.len(), 1);
     }
 
@@ -845,11 +926,17 @@ mod tests {
 
     #[test]
     fn parse_classify_json_variants() {
-        let (cand, v, _) = parse_classify_json(r#"{"candidate": "c1", "verdict": "supersede", "reason": "newer"}"#).unwrap();
+        let (cand, v, _) = parse_classify_json(
+            r#"{"candidate": "c1", "verdict": "supersede", "reason": "newer"}"#,
+        )
+        .unwrap();
         assert_eq!(cand, Some(1));
         assert_eq!(v, AbsorbVerdict::Supersede);
 
-        let (cand, v, _) = parse_classify_json(r#"Sure! {"candidate": null, "verdict": "new", "reason": ""} hope that helps""#).unwrap();
+        let (cand, v, _) = parse_classify_json(
+            r#"Sure! {"candidate": null, "verdict": "new", "reason": ""} hope that helps""#,
+        )
+        .unwrap();
         assert_eq!(cand, None);
         assert_eq!(v, AbsorbVerdict::New);
 
@@ -859,8 +946,14 @@ mod tests {
 
     #[test]
     fn verdict_parsing_aliases() {
-        assert_eq!(AbsorbVerdict::parse("UPDATE"), Some(AbsorbVerdict::Supersede));
-        assert_eq!(AbsorbVerdict::parse("conflict"), Some(AbsorbVerdict::Contradict));
+        assert_eq!(
+            AbsorbVerdict::parse("UPDATE"),
+            Some(AbsorbVerdict::Supersede)
+        );
+        assert_eq!(
+            AbsorbVerdict::parse("conflict"),
+            Some(AbsorbVerdict::Contradict)
+        );
         assert_eq!(AbsorbVerdict::parse("add"), Some(AbsorbVerdict::New));
         assert_eq!(AbsorbVerdict::parse("???"), None);
     }
@@ -878,6 +971,9 @@ mod tests {
         assert!(text.contains("fact body"));
         assert!(text.contains("contact"));
         assert!(text.contains("company:Acme"));
-        assert!(!text.contains("hidden"), "context hint must not be embedded");
+        assert!(
+            !text.contains("hidden"),
+            "context hint must not be embedded"
+        );
     }
 }

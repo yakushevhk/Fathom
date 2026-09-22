@@ -196,7 +196,9 @@ impl Tool for WebCrawlTool {
             let a_sel = scraper::Selector::parse("a").unwrap();
             let mut links: Vec<String> = Vec::new();
             for a in scope.select(&a_sel) {
-                let Some(href) = a.value().attr("href") else { continue };
+                let Some(href) = a.value().attr("href") else {
+                    continue;
+                };
                 if !is_followable(href) {
                     continue;
                 }
@@ -387,8 +389,7 @@ fn parse_feed_xml(xml: &str) -> anyhow::Result<(FeedKind, Vec<FeedItem>)> {
                 if in_text {
                     if let Some(target) = text_target {
                         let raw = String::from_utf8_lossy(e.as_ref()).to_string();
-                        let clean: String =
-                            raw.split_whitespace().collect::<Vec<_>>().join(" ");
+                        let clean: String = raw.split_whitespace().collect::<Vec<_>>().join(" ");
                         if let Some(cur) = current.as_mut() {
                             target(cur, clean);
                         }
@@ -466,11 +467,15 @@ impl Tool for WebFeedTool {
         }
         let limit = params.limit.clamp(1, 200);
 
-        let xml = if params.source.starts_with("http://") || params.source.starts_with("https://")
-        {
+        let xml = if params.source.starts_with("http://") || params.source.starts_with("https://") {
             match crate::web::fetch_url_cached(ctx, params.source.trim()).await {
                 Ok((body, _ct)) => body,
-                Err(e) => return Ok(ToolOutput::err(format!("fetch failed: {} ({})", e.message, e.code))),
+                Err(e) => {
+                    return Ok(ToolOutput::err(format!(
+                        "fetch failed: {} ({})",
+                        e.message, e.code
+                    )))
+                }
             }
         } else {
             match tokio::fs::read_to_string(&params.source).await {
@@ -538,7 +543,10 @@ mod tests {
             normalize_url("https://example.com/docs/"),
             "https://example.com/docs"
         );
-        assert_eq!(normalize_url("https://example.com/"), "https://example.com/");
+        assert_eq!(
+            normalize_url("https://example.com/"),
+            "https://example.com/"
+        );
     }
 
     #[test]

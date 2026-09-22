@@ -7,7 +7,7 @@
 //! that carries the previous error, so the agent can diagnose and fix its
 //! own failure.
 
-use rusqlite::{Connection, OptionalExtension, params};
+use rusqlite::{params, Connection, OptionalExtension};
 use std::path::Path;
 use std::sync::Mutex;
 
@@ -35,9 +35,7 @@ pub fn default_jobs_root() -> std::path::PathBuf {
         return std::path::PathBuf::from(p);
     }
     let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-    std::path::PathBuf::from(home)
-        .join(".fathom")
-        .join("jobs")
+    std::path::PathBuf::from(home).join(".fathom").join("jobs")
 }
 
 /// Check whether a process is alive (`kill -0`).
@@ -70,7 +68,9 @@ pub fn spawn_detached_runner(
     log_path: Option<&Path>,
 ) -> std::io::Result<u32> {
     let mut cmd = std::process::Command::new(exe);
-    cmd.arg("job-run").arg(job_id).stdin(std::process::Stdio::null());
+    cmd.arg("job-run")
+        .arg(job_id)
+        .stdin(std::process::Stdio::null());
     if let Some(log) = log_path {
         let file = std::fs::OpenOptions::new()
             .create(true)
@@ -147,14 +147,18 @@ impl JobsDb {
              PRAGMA synchronous=NORMAL;
              PRAGMA busy_timeout=5000;",
         )?;
-        let db = Self { conn: Mutex::new(conn) };
+        let db = Self {
+            conn: Mutex::new(conn),
+        };
         db.init_schema()?;
         Ok(db)
     }
 
     pub fn in_memory() -> anyhow::Result<Self> {
         let conn = Connection::open_in_memory()?;
-        let db = Self { conn: Mutex::new(conn) };
+        let db = Self {
+            conn: Mutex::new(conn),
+        };
         db.init_schema()?;
         Ok(db)
     }
@@ -178,14 +182,22 @@ impl JobsDb {
             )",
             [],
         )?;
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs (status)", [])?;
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs (status)",
+            [],
+        )?;
         Ok(())
     }
 
     const SELECT_COLS: &'static str = "SELECT id, task, status, attempt, max_attempts, \
         output_dir, error, pid, created_at, updated_at, started_at, completed_at FROM jobs";
 
-    pub fn create(&self, task: &str, max_attempts: i64, output_dir: &str) -> anyhow::Result<JobRow> {
+    pub fn create(
+        &self,
+        task: &str,
+        max_attempts: i64,
+        output_dir: &str,
+    ) -> anyhow::Result<JobRow> {
         let id = uuid::Uuid::now_v7().to_string();
         let now = chrono::Utc::now().to_rfc3339();
         let conn = self.conn.lock().unwrap();

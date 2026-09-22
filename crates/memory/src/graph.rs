@@ -107,7 +107,11 @@ impl MemoryDb {
         let name = normalize_name(name);
         anyhow::ensure!(!name.is_empty(), "entity name is empty");
         let etype = entity_type.trim().to_lowercase();
-        let etype = if etype.is_empty() { "other".to_string() } else { etype };
+        let etype = if etype.is_empty() {
+            "other".to_string()
+        } else {
+            etype
+        };
         let now = chrono::Utc::now().to_rfc3339();
         let id = uuid::Uuid::now_v7().to_string();
         let meta = metadata
@@ -121,7 +125,9 @@ impl MemoryDb {
         )?;
         // Fetch the surviving row (ours if inserted, existing one otherwise).
         let existing: String = conn
-            .prepare("SELECT id FROM entity_nodes WHERE name = ?1 COLLATE NOCASE AND entity_type = ?2")?
+            .prepare(
+                "SELECT id FROM entity_nodes WHERE name = ?1 COLLATE NOCASE AND entity_type = ?2",
+            )?
             .query_row(params![name, etype], |r| r.get(0))?;
         Ok(existing)
     }
@@ -169,7 +175,11 @@ impl MemoryDb {
 
     /// Look up a node by (case-insensitive) name and type; `entity_type`
     /// empty matches any type but requires a unique name.
-    pub fn entity_by_name(&self, name: &str, entity_type: &str) -> anyhow::Result<Option<EntityNode>> {
+    pub fn entity_by_name(
+        &self,
+        name: &str,
+        entity_type: &str,
+    ) -> anyhow::Result<Option<EntityNode>> {
         let name = normalize_name(name);
         let conn = self.conn_lock();
         let etype = entity_type.trim().to_lowercase();
@@ -210,12 +220,14 @@ impl MemoryDb {
              FROM entity_edges e JOIN entity_nodes n ON n.id = e.to_node
              WHERE e.from_node = ?1",
         )?;
-        let rows = stmt.query_map(params![id], |r| {
-            Ok((map_edge(r)?, map_node_offset(r)?))
-        })?;
+        let rows = stmt.query_map(params![id], |r| Ok((map_edge(r)?, map_node_offset(r)?)))?;
         for pair in rows {
             let (edge, node) = pair?;
-            out.push(NeighborHit { edge, node, outgoing: true });
+            out.push(NeighborHit {
+                edge,
+                node,
+                outgoing: true,
+            });
         }
         // Incoming edges.
         let mut stmt = conn.prepare(
@@ -224,20 +236,28 @@ impl MemoryDb {
              FROM entity_edges e JOIN entity_nodes n ON n.id = e.from_node
              WHERE e.to_node = ?1",
         )?;
-        let rows = stmt.query_map(params![id], |r| {
-            Ok((map_edge(r)?, map_node_offset(r)?))
-        })?;
+        let rows = stmt.query_map(params![id], |r| Ok((map_edge(r)?, map_node_offset(r)?)))?;
         for pair in rows {
             let (edge, node) = pair?;
-            out.push(NeighborHit { edge, node, outgoing: false });
+            out.push(NeighborHit {
+                edge,
+                node,
+                outgoing: false,
+            });
         }
         Ok(out)
     }
 
     /// All nodes, optionally filtered by type (for listing/stats).
-    pub fn list_entities(&self, entity_type: Option<&str>, limit: usize) -> anyhow::Result<Vec<EntityNode>> {
+    pub fn list_entities(
+        &self,
+        entity_type: Option<&str>,
+        limit: usize,
+    ) -> anyhow::Result<Vec<EntityNode>> {
         let conn = self.conn_lock();
-        let etype = entity_type.map(|t| t.trim().to_lowercase()).unwrap_or_default();
+        let etype = entity_type
+            .map(|t| t.trim().to_lowercase())
+            .unwrap_or_default();
         if !etype.is_empty() {
             let mut stmt = conn.prepare(
                 "SELECT id, name, entity_type, metadata, created_at FROM entity_nodes
@@ -281,7 +301,11 @@ impl MemoryDb {
 /// BFS over the entity graph from `start`, up to `max_depth` hops
 /// (mem0 multi-hop retrieval, 1-2 hops recommended). Returns all simple
 /// paths found, each as an alternating node/relation chain.
-pub fn multi_hop(db: &MemoryDb, start: &EntityNode, max_depth: usize) -> anyhow::Result<Vec<GraphPath>> {
+pub fn multi_hop(
+    db: &MemoryDb,
+    start: &EntityNode,
+    max_depth: usize,
+) -> anyhow::Result<Vec<GraphPath>> {
     let mut paths: Vec<GraphPath> = Vec::new();
     let mut frontier: Vec<(EntityNode, GraphPath)> = vec![(
         start.clone(),
@@ -358,9 +382,8 @@ pub fn ingest_entities(
 ) -> anyhow::Result<usize> {
     let mut count = 0usize;
 
-    let entity_id = |name: &str, etype: &str| -> anyhow::Result<String> {
-        db.upsert_entity(name, etype, None)
-    };
+    let entity_id =
+        |name: &str, etype: &str| -> anyhow::Result<String> { db.upsert_entity(name, etype, None) };
     let type_of = |entities: &serde_json::Value, name: &str| -> String {
         entities
             .as_array()
@@ -378,10 +401,15 @@ pub fn ingest_entities(
     };
 
     // Ensure all declared entities exist.
-    let entities = metadata.get("entities").cloned().unwrap_or(serde_json::json!([]));
+    let entities = metadata
+        .get("entities")
+        .cloned()
+        .unwrap_or(serde_json::json!([]));
     if let Some(arr) = entities.as_array() {
         for e in arr {
-            let Some(name) = e.get("name").and_then(|n| n.as_str()) else { continue };
+            let Some(name) = e.get("name").and_then(|n| n.as_str()) else {
+                continue;
+            };
             let etype = e.get("type").and_then(|t| t.as_str()).unwrap_or("other");
             let meta = e.get("metadata");
             db.upsert_entity(name, etype, meta)?;
@@ -402,11 +430,21 @@ pub fn ingest_entities(
                 .get("relation")
                 .and_then(|v| v.as_str())
                 .unwrap_or("related_to");
-            let confidence = rel.get("confidence").and_then(|v| v.as_f64()).unwrap_or(0.8);
+            let confidence = rel
+                .get("confidence")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.8);
             let from_id = entity_id(from, &type_of(&entities, from))?;
             let to_id = entity_id(to, &type_of(&entities, to))?;
-            db.add_entity_edge(&from_id, &to_id, relation, Some(memory_id), source, confidence)
-                .with_context(|| format!("edge {from} --{relation}--> {to}"))?;
+            db.add_entity_edge(
+                &from_id,
+                &to_id,
+                relation,
+                Some(memory_id),
+                source,
+                confidence,
+            )
+            .with_context(|| format!("edge {from} --{relation}--> {to}"))?;
             count += 1;
         }
     }
@@ -473,7 +511,9 @@ mod tests {
         assert_ne!(a, c, "different type is a different node");
 
         // Whitespace normalization.
-        let d = db.upsert_entity("  Ivan   Petrov ", "person", None).unwrap();
+        let d = db
+            .upsert_entity("  Ivan   Petrov ", "person", None)
+            .unwrap();
         assert_eq!(a, d);
     }
 
@@ -492,7 +532,8 @@ mod tests {
         let db = db();
         let ivan = db.upsert_entity("Ivan Petrov", "person", None).unwrap();
         let acme = db.upsert_entity("Acme LLC", "company", None).unwrap();
-        db.add_entity_edge(&ivan, &acme, "works_at", None, "test", 0.9).unwrap();
+        db.add_entity_edge(&ivan, &acme, "works_at", None, "test", 0.9)
+            .unwrap();
 
         let out = db.entity_neighbors(&ivan).unwrap();
         assert_eq!(out.len(), 1);
@@ -513,8 +554,10 @@ mod tests {
         let ivan = db.upsert_entity("Ivan Petrov", "person", None).unwrap();
         let acme = db.upsert_entity("Acme LLC", "company", None).unwrap();
         let kazan = db.upsert_entity("Kazan", "location", None).unwrap();
-        db.add_entity_edge(&ivan, &acme, "works_at", None, "s", 0.9).unwrap();
-        db.add_entity_edge(&acme, &kazan, "located_in", None, "s", 0.9).unwrap();
+        db.add_entity_edge(&ivan, &acme, "works_at", None, "s", 0.9)
+            .unwrap();
+        db.add_entity_edge(&acme, &kazan, "located_in", None, "s", 0.9)
+            .unwrap();
 
         let start = db.entity(&ivan).unwrap().unwrap();
         let paths = multi_hop(&db, &start, 2).unwrap();
@@ -531,8 +574,10 @@ mod tests {
         // A --related_to--> B --related_to--> A must not produce infinite paths.
         let a = db.upsert_entity("Node A", "other", None).unwrap();
         let b = db.upsert_entity("Node B", "other", None).unwrap();
-        db.add_entity_edge(&a, &b, "related_to", None, "s", 0.5).unwrap();
-        db.add_entity_edge(&b, &a, "related_to", None, "s", 0.5).unwrap();
+        db.add_entity_edge(&a, &b, "related_to", None, "s", 0.5)
+            .unwrap();
+        db.add_entity_edge(&b, &a, "related_to", None, "s", 0.5)
+            .unwrap();
 
         let start = db.entity(&a).unwrap().unwrap();
         let paths = multi_hop(&db, &start, 3).unwrap();
@@ -555,7 +600,10 @@ mod tests {
         let n = ingest_entities(&db, &meta, "mem-1", "session:x").unwrap();
         assert_eq!(n, 3, "2 entities + 1 relation");
 
-        let maria = db.entity_by_name("Maria Ivanova", "person").unwrap().unwrap();
+        let maria = db
+            .entity_by_name("Maria Ivanova", "person")
+            .unwrap()
+            .unwrap();
         let neighbors = db.entity_neighbors(&maria.id).unwrap();
         assert_eq!(neighbors.len(), 1);
         assert_eq!(neighbors[0].edge.relation, "leads");
@@ -580,7 +628,8 @@ mod tests {
         let db = db();
         let a = db.upsert_entity("A", "other", None).unwrap();
         let b = db.upsert_entity("B", "other", None).unwrap();
-        db.add_entity_edge(&a, &b, "related_to", None, "s", 0.5).unwrap();
+        db.add_entity_edge(&a, &b, "related_to", None, "s", 0.5)
+            .unwrap();
         assert!(db.delete_entity(&a).unwrap());
         assert!(db.entity(&a).unwrap().is_none());
         assert!(db.entity_neighbors(&b).unwrap().is_empty());
@@ -607,7 +656,9 @@ mod tests {
     fn self_edge_rejected() {
         let db = db();
         let a = db.upsert_entity("Solo", "other", None).unwrap();
-        assert!(db.add_entity_edge(&a, &a, "related_to", None, "s", 0.5).is_err());
+        assert!(db
+            .add_entity_edge(&a, &a, "related_to", None, "s", 0.5)
+            .is_err());
     }
 
     #[test]

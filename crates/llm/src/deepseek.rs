@@ -1,10 +1,10 @@
-use async_trait::async_trait;
-use pr_core::{Message, ToolCall, PrResult, PrError};
 use crate::provider::LlmProvider;
-use crate::types::{CompletionRequest, CompletionResponse, StreamChunk, Usage};
 use crate::retry::with_retry;
-use serde::Deserialize;
+use crate::types::{CompletionRequest, CompletionResponse, StreamChunk, Usage};
+use async_trait::async_trait;
 use futures::StreamExt;
+use pr_core::{Message, PrError, PrResult, ToolCall};
+use serde::Deserialize;
 use std::time::Duration;
 
 /// Maximum response body size in bytes (50 MB). Responses larger than this
@@ -80,16 +80,20 @@ impl DeepSeekProvider {
         }
 
         if !req.tools.is_empty() {
-            let tools: Vec<serde_json::Value> = req.tools.iter().map(|t| {
-                serde_json::json!({
-                    "type": "function",
-                    "function": {
-                        "name": t.name,
-                        "description": t.description,
-                        "parameters": t.parameters,
-                    }
+            let tools: Vec<serde_json::Value> = req
+                .tools
+                .iter()
+                .map(|t| {
+                    serde_json::json!({
+                        "type": "function",
+                        "function": {
+                            "name": t.name,
+                            "description": t.description,
+                            "parameters": t.parameters,
+                        }
+                    })
                 })
-            }).collect();
+                .collect();
             body["tools"] = serde_json::json!(tools);
         }
 
@@ -232,9 +236,13 @@ impl DeepSeekProvider {
         &self,
         req: &CompletionRequest,
     ) -> PrResult<CompletionResponse> {
-        let mut stream = self.stream(req).await.map_err(|e| PrError::Llm(e.to_string()))?;
+        let mut stream = self
+            .stream(req)
+            .await
+            .map_err(|e| PrError::Llm(e.to_string()))?;
         let mut content = String::new();
-        let mut tool_calls_map: std::collections::BTreeMap<usize, (String, String, String)> = std::collections::BTreeMap::new();
+        let mut tool_calls_map: std::collections::BTreeMap<usize, (String, String, String)> =
+            std::collections::BTreeMap::new();
         let mut usage: Option<Usage> = None;
         let mut finish_reason: Option<String> = None;
 
@@ -244,8 +252,15 @@ impl DeepSeekProvider {
                     content.push_str(&delta);
                 }
                 StreamChunk::Reasoning { .. } => {}
-                StreamChunk::ToolCallDelta { index, id, name, arguments_delta } => {
-                    let entry = tool_calls_map.entry(index).or_insert_with(|| (String::new(), String::new(), String::new()));
+                StreamChunk::ToolCallDelta {
+                    index,
+                    id,
+                    name,
+                    arguments_delta,
+                } => {
+                    let entry = tool_calls_map
+                        .entry(index)
+                        .or_insert_with(|| (String::new(), String::new(), String::new()));
                     if !id.is_empty() {
                         entry.0 = id;
                     }
@@ -254,7 +269,11 @@ impl DeepSeekProvider {
                     }
                     entry.2.push_str(&arguments_delta);
                 }
-                StreamChunk::Done { usage: u, finish_reason: fr, .. } => {
+                StreamChunk::Done {
+                    usage: u,
+                    finish_reason: fr,
+                    ..
+                } => {
                     usage = u;
                     finish_reason = fr;
                 }
@@ -298,7 +317,10 @@ impl LlmProvider for DeepSeekProvider {
         // the window before trying again so a swarm does not re-hammer it.
         if self.cooldown.is_cooldown(&self.model).await {
             if let Some(wait) = self.cooldown.wait_hint(&self.model).await {
-                tracing::warn!("model {} in rate-limit cooldown; waiting {wait:?}", self.model);
+                tracing::warn!(
+                    "model {} in rate-limit cooldown; waiting {wait:?}",
+                    self.model
+                );
                 tokio::time::sleep(wait).await;
             }
         }
@@ -309,8 +331,8 @@ impl LlmProvider for DeepSeekProvider {
         // Serialize ONCE and reuse across retries — previously the whole
         // history was re-cloned into a Value per attempt and re-serialized
         // by `.json()` every time (fleet B10).
-        let body_str = serde_json::to_string(&body)
-            .map_err(|e| PrError::Llm(format!("serialize: {e}")))?;
+        let body_str =
+            serde_json::to_string(&body).map_err(|e| PrError::Llm(format!("serialize: {e}")))?;
 
         // First attempt: try non-streaming with retries
         let result = with_retry(
@@ -335,9 +357,7 @@ impl LlmProvider for DeepSeekProvider {
                             } else {
                                 "connect"
                             };
-                            PrError::Llm(format!(
-                                "request failed ({kind}): {e}"
-                            ))
+                            PrError::Llm(format!("request failed ({kind}): {e}"))
                         })?;
 
                     let status = response.status();
@@ -368,9 +388,7 @@ impl LlmProvider for DeepSeekProvider {
                         } else {
                             "body read"
                         };
-                        PrError::Llm(format!(
-                            "read body failed ({kind}): {e}"
-                        ))
+                        PrError::Llm(format!("read body failed ({kind}): {e}"))
                     })?;
 
                     // Post-buffer size guard
@@ -432,7 +450,8 @@ impl LlmProvider for DeepSeekProvider {
         let body = self.build_request_body(req, true);
         let url = format!("{}/chat/completions", self.base_url);
 
-        let response = self.http
+        let response = self
+            .http
             .post(&url)
             .bearer_auth(&self.api_key)
             .json(&body)
@@ -455,44 +474,47 @@ impl LlmProvider for DeepSeekProvider {
         // corrupted (fleet bug round 2).
         let stream: Box<dyn futures::Stream<Item = PrResult<StreamChunk>> + Send + Unpin> =
             Box::new(futures::stream::try_unfold(
-            (byte_stream, Vec::<u8>::new()),
-            |(mut byte_stream, mut remainder)| Box::pin(async move {
-                use futures::StreamExt;
-                loop {
-                    if let Some(pos) = remainder.iter().position(|b| *b == b'\n') {
-                        let line_bytes: Vec<u8> = remainder.drain(..=pos).collect();
-                        let line = String::from_utf8_lossy(&line_bytes);
-                        let line = line.trim();
-                        if line.is_empty() {
-                            continue;
-                        }
-                        if let Some(chunk) = parse_sse_line(line) {
-                            return Ok(Some((chunk, (byte_stream, remainder))));
-                        }
-                        continue;
-                    }
-                    match byte_stream.next().await {
-                        Some(Ok(bytes)) => {
-                            remainder.extend_from_slice(&bytes);
-                        }
-                        Some(Err(e)) => {
-                            return Err(PrError::Llm(format!("stream error: {e}")));
-                        }
-                        None => {
-                            // Stream ended: flush a trailing partial line.
-                            if !remainder.is_empty() {
-                                let tail = std::mem::take(&mut remainder);
-                                let line = String::from_utf8_lossy(&tail).trim().to_string();
-                                if let Some(chunk) = parse_sse_line(&line) {
+                (byte_stream, Vec::<u8>::new()),
+                |(mut byte_stream, mut remainder)| {
+                    Box::pin(async move {
+                        use futures::StreamExt;
+                        loop {
+                            if let Some(pos) = remainder.iter().position(|b| *b == b'\n') {
+                                let line_bytes: Vec<u8> = remainder.drain(..=pos).collect();
+                                let line = String::from_utf8_lossy(&line_bytes);
+                                let line = line.trim();
+                                if line.is_empty() {
+                                    continue;
+                                }
+                                if let Some(chunk) = parse_sse_line(line) {
                                     return Ok(Some((chunk, (byte_stream, remainder))));
                                 }
+                                continue;
                             }
-                            return Ok(None);
+                            match byte_stream.next().await {
+                                Some(Ok(bytes)) => {
+                                    remainder.extend_from_slice(&bytes);
+                                }
+                                Some(Err(e)) => {
+                                    return Err(PrError::Llm(format!("stream error: {e}")));
+                                }
+                                None => {
+                                    // Stream ended: flush a trailing partial line.
+                                    if !remainder.is_empty() {
+                                        let tail = std::mem::take(&mut remainder);
+                                        let line =
+                                            String::from_utf8_lossy(&tail).trim().to_string();
+                                        if let Some(chunk) = parse_sse_line(&line) {
+                                            return Ok(Some((chunk, (byte_stream, remainder))));
+                                        }
+                                    }
+                                    return Ok(None);
+                                }
+                            }
                         }
-                    }
-                }
-            }),
-        ));
+                    })
+                },
+            ));
 
         Ok(stream)
     }
@@ -583,7 +605,11 @@ mod tests {
 
         let resp = DeepSeekProvider::parse_response(json).unwrap();
         match &resp.message {
-            Message::Assistant { content, tool_calls, .. } => {
+            Message::Assistant {
+                content,
+                tool_calls,
+                ..
+            } => {
                 assert_eq!(content.as_deref(), Some("Hello world"));
                 assert!(tool_calls.is_empty());
             }
@@ -626,7 +652,11 @@ mod tests {
 
         let resp = DeepSeekProvider::parse_response(json).unwrap();
         match &resp.message {
-            Message::Assistant { content, tool_calls, .. } => {
+            Message::Assistant {
+                content,
+                tool_calls,
+                ..
+            } => {
                 assert!(content.is_none());
                 assert_eq!(tool_calls.len(), 1);
                 assert_eq!(tool_calls[0].name(), "search");
@@ -655,7 +685,11 @@ mod tests {
 
         let resp = DeepSeekProvider::parse_response(json).unwrap();
         match &resp.message {
-            Message::Assistant { content, tool_calls, .. } => {
+            Message::Assistant {
+                content,
+                tool_calls,
+                ..
+            } => {
                 assert_eq!(content.as_deref(), Some("The answer is 4."));
                 assert!(tool_calls.is_empty());
             }
@@ -696,11 +730,8 @@ mod tests {
     #[tokio::test]
     async fn new_builds_client_with_timeout() {
         // Just verify constructor does not panic
-        let provider = DeepSeekProvider::new(
-            "https://api.deepseek.com/v1",
-            "test-key",
-            "deepseek-chat",
-        );
+        let provider =
+            DeepSeekProvider::new("https://api.deepseek.com/v1", "test-key", "deepseek-chat");
         assert_eq!(provider.name(), "deepseek");
         assert_eq!(provider.model(), "deepseek-chat");
     }
@@ -720,7 +751,12 @@ mod tests {
     fn parse_sse_tool_call_first_delta_has_id_and_name() {
         let line = r#"data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_1","function":{"name":"web_search","arguments":""}}]}}]}"#;
         match parse_sse_line(line).unwrap() {
-            StreamChunk::ToolCallDelta { index, id, name, arguments_delta } => {
+            StreamChunk::ToolCallDelta {
+                index,
+                id,
+                name,
+                arguments_delta,
+            } => {
                 assert_eq!(index, 0);
                 assert_eq!(id, "call_1");
                 assert_eq!(name, "web_search");
@@ -735,7 +771,12 @@ mod tests {
         // Subsequent fragments carry only index + argument pieces.
         let line = r#"data: {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":"{\"q\":"}}]}}]}"#;
         match parse_sse_line(line).unwrap() {
-            StreamChunk::ToolCallDelta { index, id, name, arguments_delta } => {
+            StreamChunk::ToolCallDelta {
+                index,
+                id,
+                name,
+                arguments_delta,
+            } => {
                 assert_eq!(index, 0);
                 assert!(id.is_empty());
                 assert!(name.is_empty());
@@ -749,7 +790,11 @@ mod tests {
     fn parse_sse_done_with_usage() {
         let line = r#"data: {"choices":[{"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":3,"completion_tokens":4,"total_tokens":7}}"#;
         match parse_sse_line(line).unwrap() {
-            StreamChunk::Done { usage, finish_reason, .. } => {
+            StreamChunk::Done {
+                usage,
+                finish_reason,
+                ..
+            } => {
                 assert_eq!(usage.unwrap().total_tokens, 7);
                 assert_eq!(finish_reason.as_deref(), Some("stop"));
             }

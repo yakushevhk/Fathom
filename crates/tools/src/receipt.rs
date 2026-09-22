@@ -297,24 +297,54 @@ mod tests {
         let ledger = ReceiptLedger::new(tmp.path().join("r.jsonl"));
 
         ledger
-            .record(ReceiptKind::of(ReceiptKind::EMAIL_SMTP), "a@b.co", Verdict::Fail, None, Some("test".to_string()))
+            .record(
+                ReceiptKind::of(ReceiptKind::EMAIL_SMTP),
+                "a@b.co",
+                Verdict::Fail,
+                None,
+                Some("test".to_string()),
+            )
             .await
             .unwrap();
         // A later PASS for the same typed key wins.
         ledger
-            .record(ReceiptKind::of(ReceiptKind::EMAIL_SMTP), "a@b.co", Verdict::Pass, None, Some("test".to_string()))
+            .record(
+                ReceiptKind::of(ReceiptKind::EMAIL_SMTP),
+                "a@b.co",
+                Verdict::Pass,
+                None,
+                Some("test".to_string()),
+            )
             .await
             .unwrap();
-        assert!(ledger.is_passing(ReceiptKind::of(ReceiptKind::EMAIL_SMTP), "a@b.co").await);
+        assert!(
+            ledger
+                .is_passing(ReceiptKind::of(ReceiptKind::EMAIL_SMTP), "a@b.co")
+                .await
+        );
 
         // A DIFFERENT kind on the same value is NOT silenced by the SMTP pass.
         // The domain-MX Fact is recorded independently.
         ledger
-            .record(ReceiptKind::of(ReceiptKind::EMAIL_DOMAIN_MX), "b.co", Verdict::Fail, None, Some("test".to_string()))
+            .record(
+                ReceiptKind::of(ReceiptKind::EMAIL_DOMAIN_MX),
+                "b.co",
+                Verdict::Fail,
+                None,
+                Some("test".to_string()),
+            )
             .await
             .unwrap();
-        assert!(!ledger.is_passing(ReceiptKind::of(ReceiptKind::EMAIL_DOMAIN_MX), "b.co").await);
-        assert!(ledger.is_passing(ReceiptKind::of(ReceiptKind::EMAIL_SMTP), "a@b.co").await);
+        assert!(
+            !ledger
+                .is_passing(ReceiptKind::of(ReceiptKind::EMAIL_DOMAIN_MX), "b.co")
+                .await
+        );
+        assert!(
+            ledger
+                .is_passing(ReceiptKind::of(ReceiptKind::EMAIL_SMTP), "a@b.co")
+                .await
+        );
     }
 
     #[tokio::test]
@@ -322,11 +352,25 @@ mod tests {
         let tmp = tempfile::TempDir::new().unwrap();
         let ledger = ReceiptLedger::new(tmp.path().join("r.jsonl"));
         ledger
-            .record(ReceiptKind::of(ReceiptKind::EMAIL_SMTP), "A@B.Co", Verdict::Pass, None, None)
+            .record(
+                ReceiptKind::of(ReceiptKind::EMAIL_SMTP),
+                "A@B.Co",
+                Verdict::Pass,
+                None,
+                None,
+            )
             .await
             .unwrap();
-        assert!(ledger.is_passing(ReceiptKind::of(ReceiptKind::EMAIL_SMTP), "a@b.co").await);
-        assert!(ledger.is_passing(ReceiptKind::of(ReceiptKind::EMAIL_SMTP), "A@B.CO").await);
+        assert!(
+            ledger
+                .is_passing(ReceiptKind::of(ReceiptKind::EMAIL_SMTP), "a@b.co")
+                .await
+        );
+        assert!(
+            ledger
+                .is_passing(ReceiptKind::of(ReceiptKind::EMAIL_SMTP), "A@B.CO")
+                .await
+        );
     }
 
     #[tokio::test]
@@ -334,10 +378,16 @@ mod tests {
         let tmp = tempfile::TempDir::new().unwrap();
         let ledger = ReceiptLedger::new(tmp.path().join("r.jsonl"));
         assert_eq!(
-            ledger.verdict(ReceiptKind::of(ReceiptKind::EMAIL_SMTP), "x@y.z").await,
+            ledger
+                .verdict(ReceiptKind::of(ReceiptKind::EMAIL_SMTP), "x@y.z")
+                .await,
             None
         );
-        assert!(!ledger.is_passing(ReceiptKind::of(ReceiptKind::EMAIL_SMTP), "x@y.z").await);
+        assert!(
+            !ledger
+                .is_passing(ReceiptKind::of(ReceiptKind::EMAIL_SMTP), "x@y.z")
+                .await
+        );
     }
 
     #[tokio::test]
@@ -347,14 +397,23 @@ mod tests {
         {
             let ledger = ReceiptLedger::new(&path);
             ledger
-                .record(ReceiptKind::of(ReceiptKind::EMAIL_SMTP), "a@b.co", Verdict::Pass, Some("250 OK".to_string()), Some("t".to_string()))
+                .record(
+                    ReceiptKind::of(ReceiptKind::EMAIL_SMTP),
+                    "a@b.co",
+                    Verdict::Pass,
+                    Some("250 OK".to_string()),
+                    Some("t".to_string()),
+                )
                 .await
                 .unwrap();
         }
         // Fresh handle loads from disk.
         let reloaded = ReceiptLedger::new(&path);
         reloaded.load().await.unwrap();
-        let rec = reloaded.get(ReceiptKind::of(ReceiptKind::EMAIL_SMTP), "a@b.co").await.unwrap();
+        let rec = reloaded
+            .get(ReceiptKind::of(ReceiptKind::EMAIL_SMTP), "a@b.co")
+            .await
+            .unwrap();
         assert_eq!(rec.verdict, Verdict::Pass);
         assert_eq!(rec.detail.as_deref(), Some("250 OK"));
         assert_eq!(rec.kind, ReceiptKind::of(ReceiptKind::EMAIL_SMTP));
@@ -364,12 +423,9 @@ mod tests {
     async fn torn_tail_is_skipped_on_load() {
         let tmp = tempfile::TempDir::new().unwrap();
         let path = tmp.path().join("r.jsonl");
-        tokio::fs::write(
-            &path,
-            "{}\n{\"broken\": true\n",
-        )
-        .await
-        .unwrap();
+        tokio::fs::write(&path, "{}\n{\"broken\": true\n")
+            .await
+            .unwrap();
         let ledger = ReceiptLedger::new(&path);
         ledger.load().await.unwrap(); // must not error
     }

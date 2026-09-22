@@ -41,7 +41,10 @@ async fn run_code(
     let id = uuid::Uuid::now_v7();
     let file = std::env::temp_dir().join(format!("pr_repl_{id}.{extension}"));
     if let Err(e) = tokio::fs::write(&file, code).await {
-        return ToolOutput::err(format!("failed to write temp script {}: {e}", file.display()));
+        return ToolOutput::err(format!(
+            "failed to write temp script {}: {e}",
+            file.display()
+        ));
     }
 
     let timeout = Duration::from_secs(timeout_secs.clamp(1, 600));
@@ -167,7 +170,14 @@ Runs the given Python source with the system interpreter (`python3`, falling bac
         if params.code.trim().is_empty() {
             return Ok(ToolOutput::err("python_exec requires non-empty code"));
         }
-        Ok(run_code(ctx, &params.code, params.timeout, &["python3", "python"], "py").await)
+        Ok(run_code(
+            ctx,
+            &params.code,
+            params.timeout,
+            &["python3", "python"],
+            "py",
+        )
+        .await)
     }
 }
 

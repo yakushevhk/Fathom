@@ -8,9 +8,7 @@
 //!   - теги и metadata сохраняются при absorb
 //!   - keyword_search: подстрока/терм
 
-use pr_memory::{
-    content_hash, AbsorbFact, AbsorbRequest, Memory, MemoryRow, Scope, ScopeFilter,
-};
+use pr_memory::{content_hash, AbsorbFact, AbsorbRequest, Memory, MemoryRow, Scope, ScopeFilter};
 use serde_json::json;
 fn in_memory() -> Memory {
     Memory::in_memory(pr_core::MemoryConfig::default()).unwrap()
@@ -65,8 +63,14 @@ async fn concurrent_absorbs_all_land() {
     for h in handles {
         created += h.await.unwrap().unwrap().created;
     }
-    let active = mem.db.list(&ScopeFilter::persistent(), Some("active"), 100).unwrap();
-    assert_eq!(created, 16, "все 16 конкурентных absorb должны создать факт");
+    let active = mem
+        .db
+        .list(&ScopeFilter::persistent(), Some("active"), 100)
+        .unwrap();
+    assert_eq!(
+        created, 16,
+        "все 16 конкурентных absorb должны создать факт"
+    );
     assert_eq!(active.len(), 16, "в сторе 16 активных строк");
 }
 
@@ -93,14 +97,19 @@ async fn concurrent_mixed_reads_and_writes() {
         let m = clone_mem(&mem);
         handles.push(tokio::spawn(async move {
             for _ in 0..20 {
-                let _ = m.search("unique padding", &ScopeFilter::persistent(), Some(3)).await;
+                let _ = m
+                    .search("unique padding", &ScopeFilter::persistent(), Some(3))
+                    .await;
             }
         }));
     }
     for h in handles {
         h.await.unwrap();
     }
-    let active = mem.db.list(&ScopeFilter::persistent(), Some("active"), 100).unwrap();
+    let active = mem
+        .db
+        .list(&ScopeFilter::persistent(), Some("active"), 100)
+        .unwrap();
     assert_eq!(active.len(), 40, "8×5 фактов, без потерь и повреждений");
 }
 
@@ -111,13 +120,23 @@ async fn large_batch_of_50_facts_all_inserted() {
     let mem = in_memory();
     // Уникальные токены на каждый факт, чтобы консолидация их не схлопнула.
     let facts: Vec<AbsorbFact> = (0..50)
-        .map(|i| fact(&format!(
-            "Observation {i}: zz{i}qw{i}er{i}ty{i} unique padding token"
-        )))
+        .map(|i| {
+            fact(&format!(
+                "Observation {i}: zz{i}qw{i}er{i}ty{i} unique padding token"
+            ))
+        })
         .collect();
     let report = mem.pipeline().absorb(req_facts(facts)).await.unwrap();
-    assert_eq!(report.created, 50, "все 50 фактов созданы: {}", report.summary_line());
-    let active = mem.db.list(&ScopeFilter::persistent(), Some("active"), 200).unwrap();
+    assert_eq!(
+        report.created,
+        50,
+        "все 50 фактов созданы: {}",
+        report.summary_line()
+    );
+    let active = mem
+        .db
+        .list(&ScopeFilter::persistent(), Some("active"), 200)
+        .unwrap();
     assert_eq!(active.len(), 50);
 }
 
@@ -170,7 +189,9 @@ async fn supersede_chain_of_three_search_finds_only_latest() {
     let mem = in_memory();
     // v3 идёт через pipeline (получает embedding + FTS); v1/v2 вставляем
     // напрямую как superseded — они не должны попадать в поиск.
-    let v3_req = req_facts(vec![fact("The office moved again to 30 Leninsky prospect in Moscow")]);
+    let v3_req = req_facts(vec![fact(
+        "The office moved again to 30 Leninsky prospect in Moscow",
+    )]);
     mem.pipeline().absorb(v3_req).await.unwrap();
 
     let now = chrono::Utc::now().to_rfc3339();
@@ -204,15 +225,20 @@ async fn supersede_chain_of_three_search_finds_only_latest() {
     mem.db.add_edge(&v2.id, &v1.id, "supersedes", None).unwrap();
     mem.db.add_edge(&v3.id, &v2.id, "supersedes", None).unwrap();
 
-    let hits = mem.search("office moscow street", &ScopeFilter::persistent(), Some(10)).await.unwrap();
+    let hits = mem
+        .search("office moscow street", &ScopeFilter::persistent(), Some(10))
+        .await
+        .unwrap();
     println!("хитов: {}", hits.len());
     for h in &hits {
         println!("   [{:.3}] {}", h.score, h.memory.content);
     }
     // Активный поиск исключает superseded — виден только v3.
     assert!(!hits.is_empty(), "последняя версия должна находиться");
-    assert!(hits.iter().all(|h| h.memory.content.contains("Leninsky")),
-        "поиск должен возвращать только последнюю версию офиса");
+    assert!(
+        hits.iter().all(|h| h.memory.content.contains("Leninsky")),
+        "поиск должен возвращать только последнюю версию офиса"
+    );
 }
 
 // ── 7. Теги и metadata сохраняются при absorb ─────────────────────────────
@@ -227,7 +253,10 @@ async fn absorb_preserves_tags_and_metadata() {
     let report = mem.pipeline().absorb(req).await.unwrap();
     assert_eq!(report.created, 1);
 
-    let rows = mem.db.list(&ScopeFilter::persistent(), Some("active"), 10).unwrap();
+    let rows = mem
+        .db
+        .list(&ScopeFilter::persistent(), Some("active"), 10)
+        .unwrap();
     assert_eq!(rows.len(), 1);
     assert!(rows[0].tags.contains(&"architecture".to_string()));
     assert!(rows[0].tags.contains(&"kafka".to_string()));
@@ -250,9 +279,16 @@ async fn keyword_search_finds_terms_and_substrings() {
         .db
         .keyword_search("postgresql replication", &ScopeFilter::persistent(), 10)
         .unwrap();
-    assert!(!hits.is_empty(), "keyword_search должен найти postgresql факт");
+    assert!(
+        !hits.is_empty(),
+        "keyword_search должен найти postgresql факт"
+    );
     assert!(hits.iter().any(|(id, _)| {
-        mem.db.get(id).unwrap().map(|r| r.content.contains("PostgreSQL")).unwrap_or(false)
+        mem.db
+            .get(id)
+            .unwrap()
+            .map(|r| r.content.contains("PostgreSQL"))
+            .unwrap_or(false)
     }));
 }
 
@@ -261,11 +297,15 @@ async fn keyword_search_finds_terms_and_substrings() {
 #[tokio::test]
 async fn absorb_rejects_extreme_lengths() {
     let mem = in_memory();
-    let report = mem.pipeline().absorb(req_facts(vec![
-        fact("ab"),
-        fact(&"x".repeat(6000)),
-        fact("нормальный факт про PostgreSQL"),
-    ])).await.unwrap();
+    let report = mem
+        .pipeline()
+        .absorb(req_facts(vec![
+            fact("ab"),
+            fact(&"x".repeat(6000)),
+            fact("нормальный факт про PostgreSQL"),
+        ]))
+        .await
+        .unwrap();
     assert_eq!(report.rejected, 2, "короткий и слишком длинный отклонены");
     assert_eq!(report.created, 1, "нормальный создан");
 }

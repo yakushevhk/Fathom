@@ -8,10 +8,7 @@ pub mod daemon;
 pub mod state;
 pub mod theme;
 
-use gpui::{
-    App, Application, Bounds, WindowBounds, WindowOptions,
-    prelude::*, px, size,
-};
+use gpui::{prelude::*, px, size, App, Application, Bounds, WindowBounds, WindowOptions};
 use std::sync::Arc;
 
 fn main() {
@@ -33,9 +30,7 @@ fn main() {
                 window_bounds: Some(WindowBounds::Windowed(bounds)),
                 ..Default::default()
             },
-            |_, cx| {
-                cx.new(|cx| app::DesktopApp::new(app_state, cx))
-            },
+            |_, cx| cx.new(|cx| app::DesktopApp::new(app_state, cx)),
         )
         .unwrap();
 
@@ -107,7 +102,8 @@ mod tests {
             "risk_level": "medium"
         }"#;
 
-        let res: Result<components::gallery::ConfirmActionCardData, _> = serde_json::from_str(json_data);
+        let res: Result<components::gallery::ConfirmActionCardData, _> =
+            serde_json::from_str(json_data);
         assert!(res.is_ok());
         let card = res.unwrap();
         assert_eq!(card.request_id, "req-99");
@@ -124,7 +120,8 @@ mod tests {
             "instructions": "Follow zero-trust review standards"
         }"#;
 
-        let res: Result<components::gallery::SkillDraftCardData, _> = serde_json::from_str(json_data);
+        let res: Result<components::gallery::SkillDraftCardData, _> =
+            serde_json::from_str(json_data);
         assert!(res.is_ok());
         let card = res.unwrap();
         assert_eq!(card.slug, "review-pr");
@@ -143,7 +140,8 @@ mod tests {
             "status": "delegated"
         }"#;
 
-        let res: Result<components::gallery::AgentHandoffCardData, _> = serde_json::from_str(json_data);
+        let res: Result<components::gallery::AgentHandoffCardData, _> =
+            serde_json::from_str(json_data);
         assert!(res.is_ok());
         let card = res.unwrap();
         assert_eq!(card.from_agent, "general_assistant");
@@ -162,7 +160,8 @@ mod tests {
             "suggestion": "Use bounded LRU cache or ring buffer"
         }"#;
 
-        let res: Result<components::gallery::AdvisorNoteCardData, _> = serde_json::from_str(json_data);
+        let res: Result<components::gallery::AdvisorNoteCardData, _> =
+            serde_json::from_str(json_data);
         assert!(res.is_ok());
         let card = res.unwrap();
         assert_eq!(card.reviewer_model, "gpt-5.5-preview");
@@ -179,7 +178,8 @@ mod tests {
             "is_active": true
         }"#;
 
-        let res: Result<components::gallery::CollabSessionCardData, _> = serde_json::from_str(json_data);
+        let res: Result<components::gallery::CollabSessionCardData, _> =
+            serde_json::from_str(json_data);
         assert!(res.is_ok());
         let card = res.unwrap();
         assert_eq!(card.session_id, "sess-404");
@@ -211,7 +211,8 @@ mod tests {
             ]
         }"#;
 
-        let res: Result<components::gallery::ReviewSummaryCardData, _> = serde_json::from_str(json_data);
+        let res: Result<components::gallery::ReviewSummaryCardData, _> =
+            serde_json::from_str(json_data);
         assert!(res.is_ok());
         let card = res.unwrap();
         assert_eq!(card.verdict, "SHIP");
@@ -247,4 +248,3 @@ mod tests {
         assert_eq!(state.subagents.read().len(), 3);
     }
 }
-

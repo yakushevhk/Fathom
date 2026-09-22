@@ -114,25 +114,31 @@ impl LeadFinder {
                     (company, data)
                 })
                 .collect();
-            let results: Vec<(&&BusinessResult, CorporateData)> = futures::future::join_all(futures).await;
+            let results: Vec<(&&BusinessResult, CorporateData)> =
+                futures::future::join_all(futures).await;
             results.into_iter().map(|(c, d)| (*c, d)).collect()
         };
 
         for (company, data) in &parsed {
             let company_info = build_company_info(company, data, &query);
-            leads.extend(leads_from_corporate_data(&company_info, data, &query.role_titles));
+            leads.extend(leads_from_corporate_data(
+                &company_info,
+                data,
+                &query.role_titles,
+            ));
         }
 
         // 3. Company-level contact leads for companies with public contacts
         //    but no team members found.
         for company in &companies {
-            let already_covered = leads
-                .iter()
-                .any(|l| !l.person.name.is_empty() && l.company.name.eq_ignore_ascii_case(&company.name));
+            let already_covered = leads.iter().any(|l| {
+                !l.person.name.is_empty() && l.company.name.eq_ignore_ascii_case(&company.name)
+            });
             if already_covered {
                 continue;
             }
-            let has_contacts = company.phone.is_some() || company.email.is_some() || company.website.is_some();
+            let has_contacts =
+                company.phone.is_some() || company.email.is_some() || company.website.is_some();
             if has_contacts {
                 leads.push(Lead {
                     person: PersonInfo {
@@ -158,7 +164,12 @@ impl LeadFinder {
                         description: None,
                     },
                     source: format!("directory:{}", company.source),
-                    confidence: score_lead(company.email.is_some(), company.phone.is_some(), false, false),
+                    confidence: score_lead(
+                        company.email.is_some(),
+                        company.phone.is_some(),
+                        false,
+                        false,
+                    ),
                 });
             }
         }
@@ -233,7 +244,11 @@ impl LeadFinder {
 // ─── Pure helpers (unit-testable) ───
 
 /// Combine a directory business with parsed website data.
-fn build_company_info(business: &BusinessResult, data: &CorporateData, query: &LeadQuery) -> CompanyInfo {
+fn build_company_info(
+    business: &BusinessResult,
+    data: &CorporateData,
+    query: &LeadQuery,
+) -> CompanyInfo {
     CompanyInfo {
         name: if data.company_name.is_empty() {
             business.name.clone()
@@ -277,7 +292,11 @@ impl IntoOption for String {
 }
 
 /// Create person leads from a parsed team page.
-fn leads_from_corporate_data(company: &CompanyInfo, data: &CorporateData, role_titles: &[String]) -> Vec<Lead> {
+fn leads_from_corporate_data(
+    company: &CompanyInfo,
+    data: &CorporateData,
+    role_titles: &[String],
+) -> Vec<Lead> {
     let mut leads = Vec::new();
     for member in &data.team {
         let matched = role_matches(member.role.as_deref(), role_titles);
@@ -335,8 +354,16 @@ fn lead_from_social(result: &SocialSearchResult, role: &str, companies: &[Busine
             Some(c) => CompanyInfo {
                 name: c.name.clone(),
                 website: c.website.clone(),
-                industry: if c.category.is_empty() { None } else { Some(c.category.clone()) },
-                location: if c.address.is_empty() { None } else { Some(c.address.clone()) },
+                industry: if c.category.is_empty() {
+                    None
+                } else {
+                    Some(c.category.clone())
+                },
+                location: if c.address.is_empty() {
+                    None
+                } else {
+                    Some(c.address.clone())
+                },
                 size: None,
                 description: None,
             },
@@ -363,7 +390,9 @@ fn role_matches(role: Option<&str>, role_titles: &[String]) -> bool {
         if title_words.is_empty() {
             return false;
         }
-        role_words.windows(title_words.len()).any(|w| w == title_words.as_slice())
+        role_words
+            .windows(title_words.len())
+            .any(|w| w == title_words.as_slice())
     })
 }
 
@@ -392,8 +421,14 @@ fn email_matches_name(email: &str, name: &str) -> bool {
     }
     let hits = parts.iter().filter(|p| local.contains(p.as_str())).count();
     // Require the first-name or last-name hit; both is even better.
-    parts.first().map(|p| local.contains(p.as_str())).unwrap_or(false)
-        || parts.last().map(|p| local.contains(p.as_str())).unwrap_or(false)
+    parts
+        .first()
+        .map(|p| local.contains(p.as_str()))
+        .unwrap_or(false)
+        || parts
+            .last()
+            .map(|p| local.contains(p.as_str()))
+            .unwrap_or(false)
         || hits >= 2
 }
 
@@ -527,7 +562,11 @@ Each lead includes the person (name, role, email, phone, profile URL), the compa
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: FindLeadsParams = serde_json::from_value(args)?;
 
         let query = LeadQuery {
@@ -557,13 +596,24 @@ Each lead includes the person (name, role, email, phone, profile URL), the compa
         let mut output = format!("Found {} leads:\n\n", leads.len());
         for (i, lead) in leads.iter().enumerate() {
             if lead.person.name.is_empty() {
-                output.push_str(&format!("{}. [Company contact] **{}**\n", i + 1, lead.company.name));
+                output.push_str(&format!(
+                    "{}. [Company contact] **{}**\n",
+                    i + 1,
+                    lead.company.name
+                ));
             } else {
                 output.push_str(&format!("{}. **{}**", i + 1, lead.person.name));
                 if let Some(ref role) = lead.person.role {
                     output.push_str(&format!(" — {role}"));
                 }
-                output.push_str(&format!(" @ {}\n", if lead.company.name.is_empty() { "(unknown company)" } else { &lead.company.name }));
+                output.push_str(&format!(
+                    " @ {}\n",
+                    if lead.company.name.is_empty() {
+                        "(unknown company)"
+                    } else {
+                        &lead.company.name
+                    }
+                ));
             }
             if let Some(ref email) = lead.person.email {
                 output.push_str(&format!("   Email: {email}\n"));
@@ -702,7 +752,10 @@ mod tests {
         assert_eq!(leads.len(), 2);
         let jane = &leads[0];
         assert_eq!(jane.person.email.as_deref(), Some("jane@acme.com"));
-        assert_eq!(jane.person.profile_url.as_deref(), Some("https://x.com/janedoe"));
+        assert_eq!(
+            jane.person.profile_url.as_deref(),
+            Some("https://x.com/janedoe")
+        );
         assert_eq!(jane.company.website.as_deref(), Some("https://acme.com"));
         assert_eq!(jane.confidence, 0.6, "keeps the higher confidence");
         assert!(jane.source.contains("corporate_site"));
@@ -808,21 +861,29 @@ mod tests {
         assert_eq!(leads.len(), 2);
         let jane = leads.iter().find(|l| l.person.name == "Jane Doe").unwrap();
         assert_eq!(jane.person.email.as_deref(), Some("jane.doe@acme.com"));
-        assert!(jane.confidence > leads.iter().find(|l| l.person.name == "Bob Stone").unwrap().confidence);
+        assert!(
+            jane.confidence
+                > leads
+                    .iter()
+                    .find(|l| l.person.name == "Bob Stone")
+                    .unwrap()
+                    .confidence
+        );
         let bob = leads.iter().find(|l| l.person.name == "Bob Stone").unwrap();
-        assert!(bob.person.email.is_none(), "generic emails are not assigned to people");
+        assert!(
+            bob.person.email.is_none(),
+            "generic emails are not assigned to people"
+        );
     }
 
     // ─── Social → leads ───
 
     #[test]
     fn test_lead_from_social_matches_company_in_bio() {
-        let companies = vec![
-            BusinessResult {
-                website: Some("https://acme.com".to_string()),
-                ..business("Acme Corp", "Software")
-            },
-        ];
+        let companies = vec![BusinessResult {
+            website: Some("https://acme.com".to_string()),
+            ..business("Acme Corp", "Software")
+        }];
         let profile = SocialSearchResult {
             platform: "linkedin".to_string(),
             profile_url: "https://linkedin.com/in/janedoe".to_string(),

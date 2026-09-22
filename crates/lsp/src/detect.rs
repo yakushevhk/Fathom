@@ -22,272 +22,368 @@ fn extension_map() -> HashMap<&'static str, LanguageInfo> {
     let mut m = HashMap::new();
 
     // Rust
-    m.insert("rs", LanguageInfo {
-        language: "rust".into(),
-        extension: "rs".into(),
-        lsp_command: "rust-analyzer".into(),
-        lsp_args: vec![],
-        needs_install: false,
-    });
+    m.insert(
+        "rs",
+        LanguageInfo {
+            language: "rust".into(),
+            extension: "rs".into(),
+            lsp_command: "rust-analyzer".into(),
+            lsp_args: vec![],
+            needs_install: false,
+        },
+    );
 
     // Python
-    m.insert("py", LanguageInfo {
-        language: "python".into(),
-        extension: "py".into(),
-        lsp_command: "pyright-langserver".into(),
-        lsp_args: vec!["--stdio".into()],
-        needs_install: false,
-    });
-    m.insert("pyi", LanguageInfo {
-        language: "python".into(),
-        extension: "pyi".into(),
-        lsp_command: "pyright-langserver".into(),
-        lsp_args: vec!["--stdio".into()],
-        needs_install: false,
-    });
+    m.insert(
+        "py",
+        LanguageInfo {
+            language: "python".into(),
+            extension: "py".into(),
+            lsp_command: "pyright-langserver".into(),
+            lsp_args: vec!["--stdio".into()],
+            needs_install: false,
+        },
+    );
+    m.insert(
+        "pyi",
+        LanguageInfo {
+            language: "python".into(),
+            extension: "pyi".into(),
+            lsp_command: "pyright-langserver".into(),
+            lsp_args: vec!["--stdio".into()],
+            needs_install: false,
+        },
+    );
 
     // TypeScript / JavaScript
-    m.insert("ts", LanguageInfo {
-        language: "typescript".into(),
-        extension: "ts".into(),
-        lsp_command: "typescript-language-server".into(),
-        lsp_args: vec!["--stdio".into()],
-        needs_install: false,
-    });
-    m.insert("tsx", LanguageInfo {
-        language: "typescript".into(),
-        extension: "tsx".into(),
-        lsp_command: "typescript-language-server".into(),
-        lsp_args: vec!["--stdio".into()],
-        needs_install: false,
-    });
-    m.insert("js", LanguageInfo {
-        language: "javascript".into(),
-        extension: "js".into(),
-        lsp_command: "typescript-language-server".into(),
-        lsp_args: vec!["--stdio".into()],
-        needs_install: false,
-    });
-    m.insert("jsx", LanguageInfo {
-        language: "javascript".into(),
-        extension: "jsx".into(),
-        lsp_command: "typescript-language-server".into(),
-        lsp_args: vec!["--stdio".into()],
-        needs_install: false,
-    });
+    m.insert(
+        "ts",
+        LanguageInfo {
+            language: "typescript".into(),
+            extension: "ts".into(),
+            lsp_command: "typescript-language-server".into(),
+            lsp_args: vec!["--stdio".into()],
+            needs_install: false,
+        },
+    );
+    m.insert(
+        "tsx",
+        LanguageInfo {
+            language: "typescript".into(),
+            extension: "tsx".into(),
+            lsp_command: "typescript-language-server".into(),
+            lsp_args: vec!["--stdio".into()],
+            needs_install: false,
+        },
+    );
+    m.insert(
+        "js",
+        LanguageInfo {
+            language: "javascript".into(),
+            extension: "js".into(),
+            lsp_command: "typescript-language-server".into(),
+            lsp_args: vec!["--stdio".into()],
+            needs_install: false,
+        },
+    );
+    m.insert(
+        "jsx",
+        LanguageInfo {
+            language: "javascript".into(),
+            extension: "jsx".into(),
+            lsp_command: "typescript-language-server".into(),
+            lsp_args: vec!["--stdio".into()],
+            needs_install: false,
+        },
+    );
 
     // Go
-    m.insert("go", LanguageInfo {
-        language: "go".into(),
-        extension: "go".into(),
-        lsp_command: "gopls".into(),
-        lsp_args: vec![],
-        needs_install: false,
-    });
+    m.insert(
+        "go",
+        LanguageInfo {
+            language: "go".into(),
+            extension: "go".into(),
+            lsp_command: "gopls".into(),
+            lsp_args: vec![],
+            needs_install: false,
+        },
+    );
 
     // C/C++
-    m.insert("c", LanguageInfo {
-        language: "c".into(),
-        extension: "c".into(),
-        lsp_command: "clangd".into(),
-        lsp_args: vec![],
-        needs_install: false,
-    });
-    m.insert("cpp", LanguageInfo {
-        language: "cpp".into(),
-        extension: "cpp".into(),
-        lsp_command: "clangd".into(),
-        lsp_args: vec![],
-        needs_install: false,
-    });
-    m.insert("h", LanguageInfo {
-        language: "c".into(),
-        extension: "h".into(),
-        lsp_command: "clangd".into(),
-        lsp_args: vec![],
-        needs_install: false,
-    });
-    m.insert("hpp", LanguageInfo {
-        language: "cpp".into(),
-        extension: "hpp".into(),
-        lsp_command: "clangd".into(),
-        lsp_args: vec![],
-        needs_install: false,
-    });
+    m.insert(
+        "c",
+        LanguageInfo {
+            language: "c".into(),
+            extension: "c".into(),
+            lsp_command: "clangd".into(),
+            lsp_args: vec![],
+            needs_install: false,
+        },
+    );
+    m.insert(
+        "cpp",
+        LanguageInfo {
+            language: "cpp".into(),
+            extension: "cpp".into(),
+            lsp_command: "clangd".into(),
+            lsp_args: vec![],
+            needs_install: false,
+        },
+    );
+    m.insert(
+        "h",
+        LanguageInfo {
+            language: "c".into(),
+            extension: "h".into(),
+            lsp_command: "clangd".into(),
+            lsp_args: vec![],
+            needs_install: false,
+        },
+    );
+    m.insert(
+        "hpp",
+        LanguageInfo {
+            language: "cpp".into(),
+            extension: "hpp".into(),
+            lsp_command: "clangd".into(),
+            lsp_args: vec![],
+            needs_install: false,
+        },
+    );
 
     // Java
-    m.insert("java", LanguageInfo {
-        language: "java".into(),
-        extension: "java".into(),
-        lsp_command: "jdtls".into(),
-        lsp_args: vec![],
-        needs_install: false,
-    });
+    m.insert(
+        "java",
+        LanguageInfo {
+            language: "java".into(),
+            extension: "java".into(),
+            lsp_command: "jdtls".into(),
+            lsp_args: vec![],
+            needs_install: false,
+        },
+    );
 
     // Ruby
-    m.insert("rb", LanguageInfo {
-        language: "ruby".into(),
-        extension: "rb".into(),
-        lsp_command: "solargraph".into(),
-        lsp_args: vec!["stdio".into()],
-        needs_install: false,
-    });
+    m.insert(
+        "rb",
+        LanguageInfo {
+            language: "ruby".into(),
+            extension: "rb".into(),
+            lsp_command: "solargraph".into(),
+            lsp_args: vec!["stdio".into()],
+            needs_install: false,
+        },
+    );
 
     // PHP
-    m.insert("php", LanguageInfo {
-        language: "php".into(),
-        extension: "php".into(),
-        lsp_command: "intelephense".into(),
-        lsp_args: vec!["--stdio".into()],
-        needs_install: false,
-    });
+    m.insert(
+        "php",
+        LanguageInfo {
+            language: "php".into(),
+            extension: "php".into(),
+            lsp_command: "intelephense".into(),
+            lsp_args: vec!["--stdio".into()],
+            needs_install: false,
+        },
+    );
 
     // Lua
-    m.insert("lua", LanguageInfo {
-        language: "lua".into(),
-        extension: "lua".into(),
-        lsp_command: "lua-language-server".into(),
-        lsp_args: vec![],
-        needs_install: false,
-    });
+    m.insert(
+        "lua",
+        LanguageInfo {
+            language: "lua".into(),
+            extension: "lua".into(),
+            lsp_command: "lua-language-server".into(),
+            lsp_args: vec![],
+            needs_install: false,
+        },
+    );
 
     // Zig
-    m.insert("zig", LanguageInfo {
-        language: "zig".into(),
-        extension: "zig".into(),
-        lsp_command: "zls".into(),
-        lsp_args: vec![],
-        needs_install: false,
-    });
+    m.insert(
+        "zig",
+        LanguageInfo {
+            language: "zig".into(),
+            extension: "zig".into(),
+            lsp_command: "zls".into(),
+            lsp_args: vec![],
+            needs_install: false,
+        },
+    );
 
     // Haskell
-    m.insert("hs", LanguageInfo {
-        language: "haskell".into(),
-        extension: "hs".into(),
-        lsp_command: "haskell-language-server-wrapper".into(),
-        lsp_args: vec!["--lsp".into()],
-        needs_install: false,
-    });
+    m.insert(
+        "hs",
+        LanguageInfo {
+            language: "haskell".into(),
+            extension: "hs".into(),
+            lsp_command: "haskell-language-server-wrapper".into(),
+            lsp_args: vec!["--lsp".into()],
+            needs_install: false,
+        },
+    );
 
     // Elixir
-    m.insert("ex", LanguageInfo {
-        language: "elixir".into(),
-        extension: "ex".into(),
-        lsp_command: "elixir-ls".into(),
-        lsp_args: vec![],
-        needs_install: false,
-    });
-    m.insert("exs", LanguageInfo {
-        language: "elixir".into(),
-        extension: "exs".into(),
-        lsp_command: "elixir-ls".into(),
-        lsp_args: vec![],
-        needs_install: false,
-    });
+    m.insert(
+        "ex",
+        LanguageInfo {
+            language: "elixir".into(),
+            extension: "ex".into(),
+            lsp_command: "elixir-ls".into(),
+            lsp_args: vec![],
+            needs_install: false,
+        },
+    );
+    m.insert(
+        "exs",
+        LanguageInfo {
+            language: "elixir".into(),
+            extension: "exs".into(),
+            lsp_command: "elixir-ls".into(),
+            lsp_args: vec![],
+            needs_install: false,
+        },
+    );
 
     // Kotlin
-    m.insert("kt", LanguageInfo {
-        language: "kotlin".into(),
-        extension: "kt".into(),
-        lsp_command: "kotlin-language-server".into(),
-        lsp_args: vec![],
-        needs_install: false,
-    });
+    m.insert(
+        "kt",
+        LanguageInfo {
+            language: "kotlin".into(),
+            extension: "kt".into(),
+            lsp_command: "kotlin-language-server".into(),
+            lsp_args: vec![],
+            needs_install: false,
+        },
+    );
 
     // Swift
-    m.insert("swift", LanguageInfo {
-        language: "swift".into(),
-        extension: "swift".into(),
-        lsp_command: "sourcekit-lsp".into(),
-        lsp_args: vec![],
-        needs_install: false,
-    });
+    m.insert(
+        "swift",
+        LanguageInfo {
+            language: "swift".into(),
+            extension: "swift".into(),
+            lsp_command: "sourcekit-lsp".into(),
+            lsp_args: vec![],
+            needs_install: false,
+        },
+    );
 
     // Dart
-    m.insert("dart", LanguageInfo {
-        language: "dart".into(),
-        extension: "dart".into(),
-        lsp_command: "dart".into(),
-        lsp_args: vec!["language-server".into()],
-        needs_install: false,
-    });
+    m.insert(
+        "dart",
+        LanguageInfo {
+            language: "dart".into(),
+            extension: "dart".into(),
+            lsp_command: "dart".into(),
+            lsp_args: vec!["language-server".into()],
+            needs_install: false,
+        },
+    );
 
     // OCaml
-    m.insert("ml", LanguageInfo {
-        language: "ocaml".into(),
-        extension: "ml".into(),
-        lsp_command: "ocamllsp".into(),
-        lsp_args: vec![],
-        needs_install: false,
-    });
-    m.insert("mli", LanguageInfo {
-        language: "ocaml".into(),
-        extension: "mli".into(),
-        lsp_command: "ocamllsp".into(),
-        lsp_args: vec![],
-        needs_install: false,
-    });
+    m.insert(
+        "ml",
+        LanguageInfo {
+            language: "ocaml".into(),
+            extension: "ml".into(),
+            lsp_command: "ocamllsp".into(),
+            lsp_args: vec![],
+            needs_install: false,
+        },
+    );
+    m.insert(
+        "mli",
+        LanguageInfo {
+            language: "ocaml".into(),
+            extension: "mli".into(),
+            lsp_command: "ocamllsp".into(),
+            lsp_args: vec![],
+            needs_install: false,
+        },
+    );
 
     // Nix
-    m.insert("nix", LanguageInfo {
-        language: "nix".into(),
-        extension: "nix".into(),
-        lsp_command: "nil".into(),
-        lsp_args: vec![],
-        needs_install: false,
-    });
+    m.insert(
+        "nix",
+        LanguageInfo {
+            language: "nix".into(),
+            extension: "nix".into(),
+            lsp_command: "nil".into(),
+            lsp_args: vec![],
+            needs_install: false,
+        },
+    );
 
     // Terraform
-    m.insert("tf", LanguageInfo {
-        language: "terraform".into(),
-        extension: "tf".into(),
-        lsp_command: "terraform-ls".into(),
-        lsp_args: vec!["serve".into()],
-        needs_install: false,
-    });
+    m.insert(
+        "tf",
+        LanguageInfo {
+            language: "terraform".into(),
+            extension: "tf".into(),
+            lsp_command: "terraform-ls".into(),
+            lsp_args: vec!["serve".into()],
+            needs_install: false,
+        },
+    );
 
     // YAML
-    m.insert("yaml", LanguageInfo {
-        language: "yaml".into(),
-        extension: "yaml".into(),
-        lsp_command: "yaml-language-server".into(),
-        lsp_args: vec!["--stdio".into()],
-        needs_install: false,
-    });
-    m.insert("yml", LanguageInfo {
-        language: "yaml".into(),
-        extension: "yml".into(),
-        lsp_command: "yaml-language-server".into(),
-        lsp_args: vec!["--stdio".into()],
-        needs_install: false,
-    });
+    m.insert(
+        "yaml",
+        LanguageInfo {
+            language: "yaml".into(),
+            extension: "yaml".into(),
+            lsp_command: "yaml-language-server".into(),
+            lsp_args: vec!["--stdio".into()],
+            needs_install: false,
+        },
+    );
+    m.insert(
+        "yml",
+        LanguageInfo {
+            language: "yaml".into(),
+            extension: "yml".into(),
+            lsp_command: "yaml-language-server".into(),
+            lsp_args: vec!["--stdio".into()],
+            needs_install: false,
+        },
+    );
 
     // JSON
-    m.insert("json", LanguageInfo {
-        language: "json".into(),
-        extension: "json".into(),
-        lsp_command: "vscode-json-language-server".into(),
-        lsp_args: vec!["--stdio".into()],
-        needs_install: false,
-    });
+    m.insert(
+        "json",
+        LanguageInfo {
+            language: "json".into(),
+            extension: "json".into(),
+            lsp_command: "vscode-json-language-server".into(),
+            lsp_args: vec!["--stdio".into()],
+            needs_install: false,
+        },
+    );
 
     // CSS
-    m.insert("css", LanguageInfo {
-        language: "css".into(),
-        extension: "css".into(),
-        lsp_command: "vscode-css-language-server".into(),
-        lsp_args: vec!["--stdio".into()],
-        needs_install: false,
-    });
+    m.insert(
+        "css",
+        LanguageInfo {
+            language: "css".into(),
+            extension: "css".into(),
+            lsp_command: "vscode-css-language-server".into(),
+            lsp_args: vec!["--stdio".into()],
+            needs_install: false,
+        },
+    );
 
     // HTML
-    m.insert("html", LanguageInfo {
-        language: "html".into(),
-        extension: "html".into(),
-        lsp_command: "vscode-html-language-server".into(),
-        lsp_args: vec!["--stdio".into()],
-        needs_install: false,
-    });
+    m.insert(
+        "html",
+        LanguageInfo {
+            language: "html".into(),
+            extension: "html".into(),
+            lsp_command: "vscode-html-language-server".into(),
+            lsp_args: vec!["--stdio".into()],
+            needs_install: false,
+        },
+    );
 
     m
 }

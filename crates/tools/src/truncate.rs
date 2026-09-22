@@ -242,8 +242,7 @@ mod tests {
     fn test_no_truncation_when_within_limits() {
         let tmp = TempDir::new().unwrap();
         let output = ToolOutput::ok("small output");
-        let result =
-            truncate_tool_output("web_search", &output, 50_000, 2000, tmp.path()).unwrap();
+        let result = truncate_tool_output("web_search", &output, 50_000, 2000, tmp.path()).unwrap();
         match result {
             Truncated::Unchanged(o) => assert_eq!(o.content, "small output"),
             _ => panic!("expected Unchanged"),
@@ -255,8 +254,7 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let big = "x".repeat(100_000);
         let output = ToolOutput::ok(&big);
-        let result =
-            truncate_tool_output("file_read", &output, 50_000, 2000, tmp.path()).unwrap();
+        let result = truncate_tool_output("file_read", &output, 50_000, 2000, tmp.path()).unwrap();
         match result {
             Truncated::Unchanged(o) => assert_eq!(o.content.len(), 100_000),
             _ => panic!("file_read should never be truncated"),
@@ -268,8 +266,7 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let big = "x".repeat(100_000);
         let output = ToolOutput::ok(&big);
-        let result =
-            truncate_tool_output("shell", &output, 50_000, 10_000, tmp.path()).unwrap();
+        let result = truncate_tool_output("shell", &output, 50_000, 10_000, tmp.path()).unwrap();
         match result {
             Truncated::Truncated {
                 replacement,
@@ -290,8 +287,7 @@ mod tests {
         let lines: Vec<String> = (0..5000).map(|i| format!("line {i}")).collect();
         let content = lines.join("\n");
         let output = ToolOutput::ok(&content);
-        let result =
-            truncate_tool_output("shell", &output, 1_000_000, 2000, tmp.path()).unwrap();
+        let result = truncate_tool_output("shell", &output, 1_000_000, 2000, tmp.path()).unwrap();
         match result {
             Truncated::Truncated { original_bytes, .. } => {
                 assert!(original_bytes > 0);
@@ -348,8 +344,7 @@ mod tests {
         // One byte over the spill guard: must NOT be written to disk.
         let huge = "x".repeat(MAX_SPILL_BYTES + 1);
         let output = ToolOutput::ok(&huge);
-        let result =
-            truncate_tool_output("shell", &output, 50_000, 10_000, tmp.path()).unwrap();
+        let result = truncate_tool_output("shell", &output, 50_000, 10_000, tmp.path()).unwrap();
         match result {
             Truncated::Truncated {
                 replacement,
@@ -376,8 +371,7 @@ mod tests {
         // Over the per-tool byte cap but well under MAX_SPILL_BYTES.
         let big = "y".repeat(100_000);
         let output = ToolOutput::ok(&big);
-        let result =
-            truncate_tool_output("shell", &output, 50_000, 10_000, tmp.path()).unwrap();
+        let result = truncate_tool_output("shell", &output, 50_000, 10_000, tmp.path()).unwrap();
         match result {
             Truncated::Truncated {
                 replacement,
@@ -386,7 +380,10 @@ mod tests {
             } => {
                 assert!(replacement.content.contains("Full result saved to"));
                 assert!(persisted_path.exists(), "spill file should exist on disk");
-                assert_eq!(persisted_path.parent().unwrap().file_name().unwrap(), ".pr-context");
+                assert_eq!(
+                    persisted_path.parent().unwrap().file_name().unwrap(),
+                    ".pr-context"
+                );
             }
             _ => panic!("expected Truncated"),
         }

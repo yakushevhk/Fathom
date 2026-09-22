@@ -35,11 +35,7 @@ impl StreamingBuffer {
 
         // Split accumulated buffer into lines; the last element is the
         // incomplete partial line (even if empty).
-        let mut parts: Vec<String> = self
-            .buffer
-            .split('\n')
-            .map(|s| s.to_string())
-            .collect();
+        let mut parts: Vec<String> = self.buffer.split('\n').map(|s| s.to_string()).collect();
 
         // The last element is always the partial (incomplete) line
         if let Some(partial) = parts.pop() {

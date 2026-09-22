@@ -1,7 +1,7 @@
-use async_trait::async_trait;
-use pr_core::PrResult;
 use crate::types::{CompletionRequest, CompletionResponse, StreamChunk};
+use async_trait::async_trait;
 use futures::Stream;
+use pr_core::PrResult;
 
 #[async_trait]
 pub trait LlmProvider: Send + Sync {
@@ -90,7 +90,11 @@ mod tests {
                     PrError::MaxAgentsReached(n) => PrError::MaxAgentsReached(*n),
                     PrError::MaxIterationsReached(n) => PrError::MaxIterationsReached(*n),
                     PrError::Cancelled => PrError::Cancelled,
-                    PrError::Http { status, message, retry_after } => PrError::Http {
+                    PrError::Http {
+                        status,
+                        message,
+                        retry_after,
+                    } => PrError::Http {
                         status: *status,
                         message: message.clone(),
                         retry_after: *retry_after,
@@ -108,42 +112,57 @@ mod tests {
                 .stream_chunks
                 .iter()
                 .map(|c| match c {
-                    Ok(StreamChunk::Text { delta }) => Ok(StreamChunk::Text { delta: delta.clone() }),
-                    Ok(StreamChunk::Reasoning { delta }) => Ok(StreamChunk::Reasoning { delta: delta.clone() }),
-                    Ok(StreamChunk::ToolCallDelta { index, id, name, arguments_delta }) => {
-                        Ok(StreamChunk::ToolCallDelta {
-                            index: *index,
-                            id: id.clone(),
-                            name: name.clone(),
-                            arguments_delta: arguments_delta.clone(),
-                        })
-                    }
-                    Ok(StreamChunk::Done { message, usage, finish_reason }) => {
-                        Ok(StreamChunk::Done {
-                            message: message.clone(),
-                            usage: usage.clone(),
-                            finish_reason: finish_reason.clone(),
-                        })
-                    }
-                    Ok(StreamChunk::Error { message }) => Ok(StreamChunk::Error { message: message.clone() }),
-Err(e) => Err(match e {
-                    PrError::Llm(m) => PrError::Llm(m.clone()),
-                    PrError::Tool(m) => PrError::Tool(m.clone()),
-                    PrError::Agent(m) => PrError::Agent(m.clone()),
-                    PrError::Persistence(m) => PrError::Persistence(m.clone()),
-                    PrError::Config(m) => PrError::Config(m.clone()),
-                    PrError::Timeout(s) => PrError::Timeout(*s),
-                    PrError::MaxDepthReached(n) => PrError::MaxDepthReached(*n),
-                    PrError::MaxAgentsReached(n) => PrError::MaxAgentsReached(*n),
-                    PrError::MaxIterationsReached(n) => PrError::MaxIterationsReached(*n),
-                    PrError::Cancelled => PrError::Cancelled,
-                    PrError::Http { status, message, retry_after } => PrError::Http {
-                        status: *status,
+                    Ok(StreamChunk::Text { delta }) => Ok(StreamChunk::Text {
+                        delta: delta.clone(),
+                    }),
+                    Ok(StreamChunk::Reasoning { delta }) => Ok(StreamChunk::Reasoning {
+                        delta: delta.clone(),
+                    }),
+                    Ok(StreamChunk::ToolCallDelta {
+                        index,
+                        id,
+                        name,
+                        arguments_delta,
+                    }) => Ok(StreamChunk::ToolCallDelta {
+                        index: *index,
+                        id: id.clone(),
+                        name: name.clone(),
+                        arguments_delta: arguments_delta.clone(),
+                    }),
+                    Ok(StreamChunk::Done {
+                        message,
+                        usage,
+                        finish_reason,
+                    }) => Ok(StreamChunk::Done {
                         message: message.clone(),
-                        retry_after: *retry_after,
-                    },
-                    PrError::ResponseTooLarge(m) => PrError::ResponseTooLarge(m.clone()),
-                }),
+                        usage: usage.clone(),
+                        finish_reason: finish_reason.clone(),
+                    }),
+                    Ok(StreamChunk::Error { message }) => Ok(StreamChunk::Error {
+                        message: message.clone(),
+                    }),
+                    Err(e) => Err(match e {
+                        PrError::Llm(m) => PrError::Llm(m.clone()),
+                        PrError::Tool(m) => PrError::Tool(m.clone()),
+                        PrError::Agent(m) => PrError::Agent(m.clone()),
+                        PrError::Persistence(m) => PrError::Persistence(m.clone()),
+                        PrError::Config(m) => PrError::Config(m.clone()),
+                        PrError::Timeout(s) => PrError::Timeout(*s),
+                        PrError::MaxDepthReached(n) => PrError::MaxDepthReached(*n),
+                        PrError::MaxAgentsReached(n) => PrError::MaxAgentsReached(*n),
+                        PrError::MaxIterationsReached(n) => PrError::MaxIterationsReached(*n),
+                        PrError::Cancelled => PrError::Cancelled,
+                        PrError::Http {
+                            status,
+                            message,
+                            retry_after,
+                        } => PrError::Http {
+                            status: *status,
+                            message: message.clone(),
+                            retry_after: *retry_after,
+                        },
+                        PrError::ResponseTooLarge(m) => PrError::ResponseTooLarge(m.clone()),
+                    }),
                 })
                 .collect();
             Ok(Box::new(futures::stream::iter(chunks)))
@@ -190,7 +209,10 @@ Err(e) => Err(match e {
     #[tokio::test]
     async fn provider_complete_error() {
         let p = MockProvider::failing("mock", "m-2");
-        let err = p.complete(&sample_request()).await.expect_err("should fail");
+        let err = p
+            .complete(&sample_request())
+            .await
+            .expect_err("should fail");
         match err {
             PrError::Llm(m) => assert_eq!(m, "mock failure"),
             other => panic!("expected Llm error, got {:?}", other),
@@ -201,7 +223,9 @@ Err(e) => Err(match e {
     async fn provider_stream_text_chunks() {
         let mut p = MockProvider::ok("mock", "m-3");
         p.stream_chunks = vec![
-            Ok(StreamChunk::Text { delta: "Hel".into() }),
+            Ok(StreamChunk::Text {
+                delta: "Hel".into(),
+            }),
             Ok(StreamChunk::Text { delta: "lo".into() }),
         ];
         let stream = p.stream(&sample_request()).await.expect("stream ok");
@@ -277,7 +301,8 @@ Err(e) => Err(match e {
         use std::future::Future;
         let p = MockProvider::ok("mock", "m-7");
         let stream = p.stream(&sample_request()).await.expect("ok");
-        let _pin: Pin<Box<dyn Stream<Item = PrResult<StreamChunk>> + Send + Unpin>> = Box::pin(stream);
+        let _pin: Pin<Box<dyn Stream<Item = PrResult<StreamChunk>> + Send + Unpin>> =
+            Box::pin(stream);
         // Compile-time assertion that the future chain is Send
         fn assert_future_send<T: Future + Send>(_: T) {}
         assert_future_send(p.complete(&sample_request()));

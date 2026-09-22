@@ -95,7 +95,10 @@ impl FetchCache {
                 }
             }
         }
-        map.insert(url.to_string(), (Arc::new((body, content_type)), Instant::now()));
+        map.insert(
+            url.to_string(),
+            (Arc::new((body, content_type)), Instant::now()),
+        );
     }
 
     /// Number of entries currently stored (including any expired-but-unpurged ones).
@@ -146,9 +149,7 @@ impl MxCache {
     pub fn get(&self, domain: &str) -> Option<Arc<Vec<String>>> {
         let mut map = self.inner.lock().unwrap_or_else(|e| e.into_inner());
         match map.get(domain) {
-            Some((records, inserted)) if inserted.elapsed() < self.ttl => {
-                Some(Arc::clone(records))
-            }
+            Some((records, inserted)) if inserted.elapsed() < self.ttl => Some(Arc::clone(records)),
             Some(_) => {
                 map.remove(domain);
                 None
@@ -221,7 +222,11 @@ mod tests {
     #[test]
     fn test_fetch_cache_ttl_expiry() {
         let cache = FetchCache::with_limits(FETCH_CACHE_CAP, Duration::from_millis(20));
-        cache.insert("https://example.com", "body".to_string(), "text/plain".to_string());
+        cache.insert(
+            "https://example.com",
+            "body".to_string(),
+            "text/plain".to_string(),
+        );
         assert!(cache.get("https://example.com").is_some());
 
         std::thread::sleep(Duration::from_millis(40));
@@ -245,7 +250,10 @@ mod tests {
         // Inserting a 4th entry evicts the oldest ("a").
         cache.insert("https://d.test", "d".to_string(), "text/plain".to_string());
         assert_eq!(cache.len(), 3);
-        assert!(cache.get("https://a.test").is_none(), "oldest entry evicted");
+        assert!(
+            cache.get("https://a.test").is_none(),
+            "oldest entry evicted"
+        );
         assert!(cache.get("https://b.test").is_some());
         assert!(cache.get("https://c.test").is_some());
         assert!(cache.get("https://d.test").is_some());
@@ -258,7 +266,10 @@ mod tests {
 
         cache.insert(
             "example.com",
-            vec!["mail.example.com".to_string(), "backup.example.com".to_string()],
+            vec![
+                "mail.example.com".to_string(),
+                "backup.example.com".to_string(),
+            ],
         );
         let hit = cache.get("example.com").expect("cache hit");
         assert_eq!(&**hit, &["mail.example.com", "backup.example.com"]);
@@ -266,7 +277,9 @@ mod tests {
 
         // A definitive "no MX" answer is cached as an empty list.
         cache.insert("nomx.example", Vec::new());
-        let empty = cache.get("nomx.example").expect("negative results are cached too");
+        let empty = cache
+            .get("nomx.example")
+            .expect("negative results are cached too");
         assert!(empty.is_empty());
     }
 

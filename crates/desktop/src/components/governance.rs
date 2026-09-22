@@ -41,14 +41,33 @@ impl GovernanceView {
             .px_3()
             .py_1p5()
             .rounded_md()
-            .bg(if is_active { Theme::bg_elevated() } else { Theme::bg_surface() })
+            .bg(if is_active {
+                Theme::bg_elevated()
+            } else {
+                Theme::bg_surface()
+            })
             .border_1()
-            .border_color(if is_active { Theme::border_focus() } else { Theme::border_subtle() })
+            .border_color(if is_active {
+                Theme::border_focus()
+            } else {
+                Theme::border_subtle()
+            })
             .text_xs()
-            .font_weight(if is_active { gpui::FontWeight::SEMIBOLD } else { gpui::FontWeight::NORMAL })
-            .text_color(if is_active { Theme::text_primary() } else { Theme::text_secondary() })
+            .font_weight(if is_active {
+                gpui::FontWeight::SEMIBOLD
+            } else {
+                gpui::FontWeight::NORMAL
+            })
+            .text_color(if is_active {
+                Theme::text_primary()
+            } else {
+                Theme::text_secondary()
+            })
             .cursor_pointer()
-            .hover(|s| s.bg(Theme::bg_elevated_hover()).text_color(Theme::text_primary()))
+            .hover(|s| {
+                s.bg(Theme::bg_elevated_hover())
+                    .text_color(Theme::text_primary())
+            })
             .child(label)
             .on_click(cx.listener(move |this, _event: &ClickEvent, _window, cx| {
                 this.selected_subtab = id.to_string();
@@ -112,7 +131,14 @@ impl GovernanceView {
             )
     }
 
-    fn render_audit_row(&self, time: &str, tool: &str, bot: &str, decision: &str, reason: &str) -> Div {
+    fn render_audit_row(
+        &self,
+        time: &str,
+        tool: &str,
+        bot: &str,
+        decision: &str,
+        reason: &str,
+    ) -> Div {
         let is_allowed = decision == "allowed";
         div()
             .flex()
@@ -165,7 +191,11 @@ impl GovernanceView {
                     .px_2()
                     .py_0p5()
                     .rounded_md()
-                    .bg(if is_allowed { Theme::success_green() } else { Theme::danger_red() })
+                    .bg(if is_allowed {
+                        Theme::success_green()
+                    } else {
+                        Theme::danger_red()
+                    })
                     .text_xs()
                     .font_weight(gpui::FontWeight::BOLD)
                     .text_color(Theme::bg_window())
@@ -191,12 +221,9 @@ impl GovernanceView {
                             .text_color(Theme::text_primary())
                             .child("Active CEL Decision Rules"),
                     )
-                    .child(
-                        div()
-                            .text_xs()
-                            .text_color(Theme::text_muted())
-                            .child("Fail-Closed architecture: Unmatched actions are denied by default"),
-                    ),
+                    .child(div().text_xs().text_color(Theme::text_muted()).child(
+                        "Fail-Closed architecture: Unmatched actions are denied by default",
+                    )),
             )
             .child(
                 div()
@@ -229,7 +256,7 @@ impl GovernanceView {
                                     .text_color(Theme::danger_red())
                                     .cursor_pointer()
                                     .hover(|s| s.bg(Theme::bg_elevated_hover()))
-                                    .child("+ Deny Financial Portals")
+                                    .child("+ Deny Financial Portals"),
                             )
                             .child(
                                 div()
@@ -242,7 +269,7 @@ impl GovernanceView {
                                     .text_color(Theme::success_green())
                                     .cursor_pointer()
                                     .hover(|s| s.bg(Theme::bg_elevated_hover()))
-                                    .child("+ Allow Developer Docs")
+                                    .child("+ Allow Developer Docs"),
                             )
                             .child(
                                 div()
@@ -255,17 +282,48 @@ impl GovernanceView {
                                     .text_color(Theme::warning_yellow())
                                     .cursor_pointer()
                                     .hover(|s| s.bg(Theme::bg_elevated_hover()))
-                                    .child("+ Deny Destructive rm/dd")
-                            )
+                                    .child("+ Deny Destructive rm/dd"),
+                            ),
                     )
-                    .child(self.render_rule_card("DenyPrivateNetworks", "deny", "100", "request.host.matches('^(10\\\\.|192\\\\.168\\\\.|127\\\\.|localhost)')", "Block SSRF targeting cloud metadata or private hosts"))
-                    .child(self.render_rule_card("AllowPublicWebBrowsing", "allow", "50", "tool == 'computer_navigate' && request.url.startsWith('https://')", "Permit external research on public HTTPS domains"))
-                    .child(self.render_rule_card("RequireApprovalForCredentialExport", "ask", "90", "tool.startsWith('vault_') && action == 'export'", "Human operator approval mandatory for raw secret disclosure"))
-                    .child(self.render_rule_card("DenyDestructiveShell", "deny", "80", "tool == 'shell_exec' && args.command.matches('(rm -rf|drop table|mkfs)')", "Prevent accidental or unprompted host disk mutation")),
+                    .child(self.render_rule_card(
+                        "DenyPrivateNetworks",
+                        "deny",
+                        "100",
+                        "request.host.matches('^(10\\\\.|192\\\\.168\\\\.|127\\\\.|localhost)')",
+                        "Block SSRF targeting cloud metadata or private hosts",
+                    ))
+                    .child(self.render_rule_card(
+                        "AllowPublicWebBrowsing",
+                        "allow",
+                        "50",
+                        "tool == 'computer_navigate' && request.url.startsWith('https://')",
+                        "Permit external research on public HTTPS domains",
+                    ))
+                    .child(self.render_rule_card(
+                        "RequireApprovalForCredentialExport",
+                        "ask",
+                        "90",
+                        "tool.startsWith('vault_') && action == 'export'",
+                        "Human operator approval mandatory for raw secret disclosure",
+                    ))
+                    .child(self.render_rule_card(
+                        "DenyDestructiveShell",
+                        "deny",
+                        "80",
+                        "tool == 'shell_exec' && args.command.matches('(rm -rf|drop table|mkfs)')",
+                        "Prevent accidental or unprompted host disk mutation",
+                    )),
             )
     }
 
-    fn render_rule_card(&self, name: &str, effect: &str, priority: &str, cel: &str, desc: &str) -> Div {
+    fn render_rule_card(
+        &self,
+        name: &str,
+        effect: &str,
+        priority: &str,
+        cel: &str,
+        desc: &str,
+    ) -> Div {
         let effect_color = match effect {
             "allow" => Theme::success_green(),
             "ask" => Theme::warning_yellow(),
@@ -493,7 +551,9 @@ impl GovernanceView {
                             .text_sm()
                             .font_weight(gpui::FontWeight::BOLD)
                             .text_color(Theme::text_primary())
-                            .child("MCP Plugins & Connector Catalogue (OpenBot admin/plugins parity)"),
+                            .child(
+                                "MCP Plugins & Connector Catalogue (OpenBot admin/plugins parity)",
+                            ),
                     )
                     .child(
                         div()
@@ -507,14 +567,46 @@ impl GovernanceView {
                     .flex()
                     .flex_col()
                     .gap_2()
-                    .child(self.render_plugin_card("Playwright Computer", "Built-in Browser", "Active", vec!["computer_navigate", "computer_click", "computer_type", "computer_snapshot", "computer_read"]))
-                    .child(self.render_plugin_card("Filesystem Workspace", "Sandboxed Disk", "Active", vec!["file_read", "file_write", "file_list", "file_search"]))
-                    .child(self.render_plugin_card("Web Search & Extraction", "Tavily & Firecrawl", "Active", vec!["web_search", "web_scrape", "web_map"]))
-                    .child(self.render_plugin_card("Postgres & SQLite", "Database Connectors", "Idle", vec!["db_query", "db_schema", "db_execute"])),
+                    .child(self.render_plugin_card(
+                        "Playwright Computer",
+                        "Built-in Browser",
+                        "Active",
+                        vec![
+                            "computer_navigate",
+                            "computer_click",
+                            "computer_type",
+                            "computer_snapshot",
+                            "computer_read",
+                        ],
+                    ))
+                    .child(self.render_plugin_card(
+                        "Filesystem Workspace",
+                        "Sandboxed Disk",
+                        "Active",
+                        vec!["file_read", "file_write", "file_list", "file_search"],
+                    ))
+                    .child(self.render_plugin_card(
+                        "Web Search & Extraction",
+                        "Tavily & Firecrawl",
+                        "Active",
+                        vec!["web_search", "web_scrape", "web_map"],
+                    ))
+                    .child(self.render_plugin_card(
+                        "Postgres & SQLite",
+                        "Database Connectors",
+                        "Idle",
+                        vec!["db_query", "db_schema", "db_execute"],
+                    )),
             )
     }
 
-    fn render_plugin_card(&self, name: &str, category: &str, status: &str, tools: Vec<&str>) -> Div {
+    fn render_plugin_card(
+        &self,
+        name: &str,
+        category: &str,
+        status: &str,
+        tools: Vec<&str>,
+    ) -> Div {
         div()
             .flex()
             .flex_col()
@@ -610,9 +702,27 @@ impl GovernanceView {
                     .flex()
                     .flex_col()
                     .gap_2()
-                    .child(self.render_audit_row("14:33:12", "shell_exec", "General Assistant", "refused", "Rule Matched: DenyUnsanitizedShell"))
-                    .child(self.render_audit_row("13:14:02", "vault_export_all", "SDR Agent", "refused", "Rule Matched: RequireApprovalForCredentialExport"))
-                    .child(self.render_audit_row("11:05:49", "computer_navigate", "Risk Analyst", "refused", "Rule Matched: DenyPrivateNetworks (http://169.254.169.254)")),
+                    .child(self.render_audit_row(
+                        "14:33:12",
+                        "shell_exec",
+                        "General Assistant",
+                        "refused",
+                        "Rule Matched: DenyUnsanitizedShell",
+                    ))
+                    .child(self.render_audit_row(
+                        "13:14:02",
+                        "vault_export_all",
+                        "SDR Agent",
+                        "refused",
+                        "Rule Matched: RequireApprovalForCredentialExport",
+                    ))
+                    .child(self.render_audit_row(
+                        "11:05:49",
+                        "computer_navigate",
+                        "Risk Analyst",
+                        "refused",
+                        "Rule Matched: DenyPrivateNetworks (http://169.254.169.254)",
+                    )),
             )
     }
 }
@@ -643,11 +753,36 @@ impl Render for GovernanceView {
                             .flex()
                             .items_center()
                             .gap_2()
-                            .child(self.render_subtab_button("Audit Ledger", "audit", &current_subtab, cx))
-                            .child(self.render_subtab_button("CEL Decision Rules", "policy", &current_subtab, cx))
-                            .child(self.render_subtab_button("🎮 Decision Playground", "playground", &current_subtab, cx))
-                            .child(self.render_subtab_button("🧩 MCP Plugins", "plugins", &current_subtab, cx))
-                            .child(self.render_subtab_button("Refusals & Blocks", "refusals", &current_subtab, cx)),
+                            .child(self.render_subtab_button(
+                                "Audit Ledger",
+                                "audit",
+                                &current_subtab,
+                                cx,
+                            ))
+                            .child(self.render_subtab_button(
+                                "CEL Decision Rules",
+                                "policy",
+                                &current_subtab,
+                                cx,
+                            ))
+                            .child(self.render_subtab_button(
+                                "🎮 Decision Playground",
+                                "playground",
+                                &current_subtab,
+                                cx,
+                            ))
+                            .child(self.render_subtab_button(
+                                "🧩 MCP Plugins",
+                                "plugins",
+                                &current_subtab,
+                                cx,
+                            ))
+                            .child(self.render_subtab_button(
+                                "Refusals & Blocks",
+                                "refusals",
+                                &current_subtab,
+                                cx,
+                            )),
                     ),
             )
             // Content view

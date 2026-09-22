@@ -8,6 +8,8 @@
 //! timeouts so a disconnected or wedged computer service cannot retain a
 //! request task indefinitely.
 
+use crate::{auth::AuthPrincipal, AppState};
+use axum::extract::ws::{Message, WebSocket};
 use axum::{
     body::{Body, Bytes},
     extract::{Extension, Path, Query, State, WebSocketUpgrade},
@@ -15,10 +17,8 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use axum::extract::ws::{Message, WebSocket};
 use base64::Engine;
 use futures::{SinkExt, StreamExt};
-use crate::{auth::AuthPrincipal, AppState};
 use serde::Deserialize;
 use serde_json::Value;
 use std::sync::Arc;
@@ -52,7 +52,11 @@ fn service_root() -> String {
     std::env::var(SERVICE_URL_ENV)
         .ok()
         .filter(|v| !v.trim().is_empty())
-        .or_else(|| std::env::var(LEGACY_SERVICE_URL_ENV).ok().filter(|v| !v.trim().is_empty()))
+        .or_else(|| {
+            std::env::var(LEGACY_SERVICE_URL_ENV)
+                .ok()
+                .filter(|v| !v.trim().is_empty())
+        })
         .unwrap_or_else(|| DEFAULT_SERVICE_URL.to_string())
         .trim_end_matches('/')
         .to_string()
@@ -77,7 +81,10 @@ async fn agent_service_root(state: &Arc<AppState>, agent_id: &str) -> anyhow::Re
     let Some(supervisor) = state.supervisor.as_ref() else {
         anyhow::bail!("per-agent computer supervisor is not configured");
     };
-    let container = supervisor.ensure(agent_id).await.map_err(|e| anyhow::anyhow!(e.to_string()))?;
+    let container = supervisor
+        .ensure(agent_id)
+        .await
+        .map_err(|e| anyhow::anyhow!(e.to_string()))?;
     Ok(format!("http://127.0.0.1:{}", container.port))
 }
 
@@ -119,7 +126,9 @@ fn proxy_body(status: reqwest::StatusCode, content_type: Option<&str>, body: Vec
     let mut response = Response::new(Body::from(body));
     *response.status_mut() = upstream_status(status);
     if let Some(content_type) = content_type.and_then(|value| HeaderValue::from_str(value).ok()) {
-        response.headers_mut().insert(header::CONTENT_TYPE, content_type);
+        response
+            .headers_mut()
+            .insert(header::CONTENT_TYPE, content_type);
     }
     response
 }
@@ -129,8 +138,20 @@ async fn upstream_json_get_at(root: &str, path: &str) -> Response {
     let request = service_request(client.get(service_url_at(root, path)));
     let response = match timeout(UPSTREAM_TIMEOUT, request.send()).await {
         Ok(Ok(response)) => response,
-        Ok(Err(error)) => return (StatusCode::BAD_GATEWAY, format!("computer service unavailable: {error}")).into_response(),
-        Err(_) => return (StatusCode::GATEWAY_TIMEOUT, "computer service request timed out").into_response(),
+        Ok(Err(error)) => {
+            return (
+                StatusCode::BAD_GATEWAY,
+                format!("computer service unavailable: {error}"),
+            )
+                .into_response()
+        }
+        Err(_) => {
+            return (
+                StatusCode::GATEWAY_TIMEOUT,
+                "computer service request timed out",
+            )
+                .into_response()
+        }
     };
     let status = response.status();
     let content_type = response
@@ -141,7 +162,11 @@ async fn upstream_json_get_at(root: &str, path: &str) -> Response {
     match timeout(UPSTREAM_TIMEOUT, bounded_bytes(response, MAX_JSON_BYTES)).await {
         Ok(Ok(body)) => proxy_body(status, content_type.as_deref(), body),
         Ok(Err(error)) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
-        Err(_) => (StatusCode::GATEWAY_TIMEOUT, "computer service response timed out").into_response(),
+        Err(_) => (
+            StatusCode::GATEWAY_TIMEOUT,
+            "computer service response timed out",
+        )
+            .into_response(),
     }
 }
 
@@ -159,11 +184,27 @@ async fn upstream_json_post_operator(root: &str, path: &str, body: Value) -> Res
 
 async fn upstream_json_post_with(root: &str, path: &str, body: Value, operator: bool) -> Response {
     let client = pr_core::http_client();
-    let request = if operator { operator_request(client.post(service_url_at(root, path)).json(&body)) } else { service_request(client.post(service_url_at(root, path)).json(&body)) };
+    let request = if operator {
+        operator_request(client.post(service_url_at(root, path)).json(&body))
+    } else {
+        service_request(client.post(service_url_at(root, path)).json(&body))
+    };
     let response = match timeout(UPSTREAM_TIMEOUT, request.send()).await {
         Ok(Ok(response)) => response,
-        Ok(Err(error)) => return (StatusCode::BAD_GATEWAY, format!("computer service unavailable: {error}")).into_response(),
-        Err(_) => return (StatusCode::GATEWAY_TIMEOUT, "computer service request timed out").into_response(),
+        Ok(Err(error)) => {
+            return (
+                StatusCode::BAD_GATEWAY,
+                format!("computer service unavailable: {error}"),
+            )
+                .into_response()
+        }
+        Err(_) => {
+            return (
+                StatusCode::GATEWAY_TIMEOUT,
+                "computer service request timed out",
+            )
+                .into_response()
+        }
     };
     let status = response.status();
     let content_type = response
@@ -174,7 +215,11 @@ async fn upstream_json_post_with(root: &str, path: &str, body: Value, operator: 
     match timeout(UPSTREAM_TIMEOUT, bounded_bytes(response, MAX_JSON_BYTES)).await {
         Ok(Ok(bytes)) => proxy_body(status, content_type.as_deref(), bytes),
         Ok(Err(error)) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
-        Err(_) => (StatusCode::GATEWAY_TIMEOUT, "computer service response timed out").into_response(),
+        Err(_) => (
+            StatusCode::GATEWAY_TIMEOUT,
+            "computer service response timed out",
+        )
+            .into_response(),
     }
 }
 
@@ -187,18 +232,43 @@ async fn upstream_json_put_at(root: &str, path: &str, body: Bytes) -> Response {
         return (StatusCode::PAYLOAD_TOO_LARGE, "request body too large").into_response();
     }
     let client = pr_core::http_client();
-    let request = service_request(client.put(service_url_at(root, path)).header(header::CONTENT_TYPE, "application/json").body(body));
+    let request = service_request(
+        client
+            .put(service_url_at(root, path))
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(body),
+    );
     let response = match timeout(UPSTREAM_TIMEOUT, request.send()).await {
         Ok(Ok(response)) => response,
-        Ok(Err(error)) => return (StatusCode::BAD_GATEWAY, format!("computer service unavailable: {error}")).into_response(),
-        Err(_) => return (StatusCode::GATEWAY_TIMEOUT, "computer service request timed out").into_response(),
+        Ok(Err(error)) => {
+            return (
+                StatusCode::BAD_GATEWAY,
+                format!("computer service unavailable: {error}"),
+            )
+                .into_response()
+        }
+        Err(_) => {
+            return (
+                StatusCode::GATEWAY_TIMEOUT,
+                "computer service request timed out",
+            )
+                .into_response()
+        }
     };
     let status = response.status();
-    let content_type = response.headers().get(header::CONTENT_TYPE).and_then(|value| value.to_str().ok()).map(str::to_owned);
+    let content_type = response
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .map(str::to_owned);
     match timeout(UPSTREAM_TIMEOUT, bounded_bytes(response, MAX_JSON_BYTES)).await {
         Ok(Ok(bytes)) => proxy_body(status, content_type.as_deref(), bytes),
         Ok(Err(error)) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
-        Err(_) => (StatusCode::GATEWAY_TIMEOUT, "computer service response timed out").into_response(),
+        Err(_) => (
+            StatusCode::GATEWAY_TIMEOUT,
+            "computer service response timed out",
+        )
+            .into_response(),
     }
 }
 
@@ -207,15 +277,35 @@ async fn upstream_delete_at(root: &str, path: &str) -> Response {
     let request = service_request(client.delete(service_url_at(root, path)));
     let response = match timeout(UPSTREAM_TIMEOUT, request.send()).await {
         Ok(Ok(response)) => response,
-        Ok(Err(error)) => return (StatusCode::BAD_GATEWAY, format!("computer service unavailable: {error}")).into_response(),
-        Err(_) => return (StatusCode::GATEWAY_TIMEOUT, "computer service request timed out").into_response(),
+        Ok(Err(error)) => {
+            return (
+                StatusCode::BAD_GATEWAY,
+                format!("computer service unavailable: {error}"),
+            )
+                .into_response()
+        }
+        Err(_) => {
+            return (
+                StatusCode::GATEWAY_TIMEOUT,
+                "computer service request timed out",
+            )
+                .into_response()
+        }
     };
     let status = response.status();
-    let content_type = response.headers().get(header::CONTENT_TYPE).and_then(|value| value.to_str().ok()).map(str::to_owned);
+    let content_type = response
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .map(str::to_owned);
     match timeout(UPSTREAM_TIMEOUT, bounded_bytes(response, MAX_JSON_BYTES)).await {
         Ok(Ok(bytes)) => proxy_body(status, content_type.as_deref(), bytes),
         Ok(Err(error)) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
-        Err(_) => (StatusCode::GATEWAY_TIMEOUT, "computer service response timed out").into_response(),
+        Err(_) => (
+            StatusCode::GATEWAY_TIMEOUT,
+            "computer service response timed out",
+        )
+            .into_response(),
     }
 }
 
@@ -230,7 +320,11 @@ async fn screenshot_bytes_at(root: &str) -> anyhow::Result<(String, Vec<u8>)> {
         .and_then(|value| value.to_str().ok())
         .unwrap_or("")
         .to_owned();
-    let body = timeout(UPSTREAM_TIMEOUT, bounded_bytes(response, MAX_SCREENSHOT_BYTES)).await??;
+    let body = timeout(
+        UPSTREAM_TIMEOUT,
+        bounded_bytes(response, MAX_SCREENSHOT_BYTES),
+    )
+    .await??;
     if !status.is_success() {
         anyhow::bail!("computer service returned HTTP {status}");
     }
@@ -257,12 +351,12 @@ async fn screenshot_bytes_at(root: &str) -> anyhow::Result<(String, Vec<u8>)> {
 
 async fn screenshot_response_at(root: &str) -> Response {
     match screenshot_bytes_at(root).await {
-        Ok((mime, bytes)) => proxy_body(
-            reqwest::StatusCode::OK,
-            Some(&mime),
-            bytes,
-        ),
-        Err(error) => (StatusCode::BAD_GATEWAY, format!("computer screenshot unavailable: {error}")).into_response(),
+        Ok((mime, bytes)) => proxy_body(reqwest::StatusCode::OK, Some(&mime), bytes),
+        Err(error) => (
+            StatusCode::BAD_GATEWAY,
+            format!("computer screenshot unavailable: {error}"),
+        )
+            .into_response(),
     }
 }
 
@@ -271,7 +365,10 @@ async fn screenshot_response() -> Response {
 }
 
 /// Proxy screenshot for an explicitly named agent, resolving its supervisor port.
-pub async fn screenshot(State(state): State<Arc<AppState>>, Path(agent_id): Path<String>) -> Response {
+pub async fn screenshot(
+    State(state): State<Arc<AppState>>,
+    Path(agent_id): Path<String>,
+) -> Response {
     match agent_service_root(&state, &agent_id).await {
         Ok(root) => screenshot_response_at(&root).await,
         Err(error) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
@@ -303,10 +400,26 @@ pub async fn snapshot_default() -> Response {
     snapshot().await
 }
 
-pub async fn tabs() -> Response { upstream_json_get("/tabs").await }
-pub async fn tabs_open(Json(body): Json<Value>) -> Response { upstream_json_post("/tabs/open", body).await }
-pub async fn tab_activate(Path(tab_id): Path<String>) -> Response { upstream_json_post(&format!("/tabs/{}/activate", percent_encode(&tab_id)), Value::Object(Default::default())).await }
-pub async fn tab_close(Path(tab_id): Path<String>) -> Response { upstream_json_post(&format!("/tabs/{}/close", percent_encode(&tab_id)), Value::Object(Default::default())).await }
+pub async fn tabs() -> Response {
+    upstream_json_get("/tabs").await
+}
+pub async fn tabs_open(Json(body): Json<Value>) -> Response {
+    upstream_json_post("/tabs/open", body).await
+}
+pub async fn tab_activate(Path(tab_id): Path<String>) -> Response {
+    upstream_json_post(
+        &format!("/tabs/{}/activate", percent_encode(&tab_id)),
+        Value::Object(Default::default()),
+    )
+    .await
+}
+pub async fn tab_close(Path(tab_id): Path<String>) -> Response {
+    upstream_json_post(
+        &format!("/tabs/{}/close", percent_encode(&tab_id)),
+        Value::Object(Default::default()),
+    )
+    .await
+}
 
 pub async fn files() -> Response {
     upstream_json_get("/files").await
@@ -321,45 +434,82 @@ pub async fn files_write(body: Bytes) -> Response {
 }
 
 pub async fn files_delete(Query(query): Query<FilePathQuery>) -> Response {
-    upstream_delete_at(&service_root(), &format!("/files?path={}", percent_encode(&query.path))).await
+    upstream_delete_at(
+        &service_root(),
+        &format!("/files?path={}", percent_encode(&query.path)),
+    )
+    .await
 }
 
-pub async fn files_for_agent(State(state): State<Arc<AppState>>, Path(agent_id): Path<String>) -> Response {
+pub async fn files_for_agent(
+    State(state): State<Arc<AppState>>,
+    Path(agent_id): Path<String>,
+) -> Response {
     match agent_service_root(&state, &agent_id).await {
         Ok(root) => upstream_json_get_at(&root, "/files").await,
         Err(error) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
     }
 }
 
-pub async fn files_read_for_agent(State(state): State<Arc<AppState>>, Path(agent_id): Path<String>, Query(query): Query<FilePathQuery>) -> Response {
+pub async fn files_read_for_agent(
+    State(state): State<Arc<AppState>>,
+    Path(agent_id): Path<String>,
+    Query(query): Query<FilePathQuery>,
+) -> Response {
     match agent_service_root(&state, &agent_id).await {
-        Ok(root) => upstream_json_get_at(&root, &format!("/files/read?path={}", percent_encode(&query.path))).await,
+        Ok(root) => {
+            upstream_json_get_at(
+                &root,
+                &format!("/files/read?path={}", percent_encode(&query.path)),
+            )
+            .await
+        }
         Err(error) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
     }
 }
 
-pub async fn files_write_for_agent(State(state): State<Arc<AppState>>, Path(agent_id): Path<String>, body: Bytes) -> Response {
+pub async fn files_write_for_agent(
+    State(state): State<Arc<AppState>>,
+    Path(agent_id): Path<String>,
+    body: Bytes,
+) -> Response {
     match agent_service_root(&state, &agent_id).await {
         Ok(root) => upstream_json_put_at(&root, "/files/write", body).await,
         Err(error) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
     }
 }
 
-pub async fn files_delete_for_agent(State(state): State<Arc<AppState>>, Path(agent_id): Path<String>, Query(query): Query<FilePathQuery>) -> Response {
+pub async fn files_delete_for_agent(
+    State(state): State<Arc<AppState>>,
+    Path(agent_id): Path<String>,
+    Query(query): Query<FilePathQuery>,
+) -> Response {
     match agent_service_root(&state, &agent_id).await {
-        Ok(root) => upstream_delete_at(&root, &format!("/files?path={}", percent_encode(&query.path))).await,
+        Ok(root) => {
+            upstream_delete_at(
+                &root,
+                &format!("/files?path={}", percent_encode(&query.path)),
+            )
+            .await
+        }
         Err(error) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
     }
 }
 
-pub async fn health_for_agent(State(state): State<Arc<AppState>>, Path(agent_id): Path<String>) -> Response {
+pub async fn health_for_agent(
+    State(state): State<Arc<AppState>>,
+    Path(agent_id): Path<String>,
+) -> Response {
     match agent_service_root(&state, &agent_id).await {
         Ok(root) => upstream_json_get_at(&root, "/health").await,
         Err(error) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
     }
 }
 
-pub async fn snapshot_for_agent(State(state): State<Arc<AppState>>, Path(agent_id): Path<String>) -> Response {
+pub async fn snapshot_for_agent(
+    State(state): State<Arc<AppState>>,
+    Path(agent_id): Path<String>,
+) -> Response {
     match agent_service_root(&state, &agent_id).await {
         Ok(root) => upstream_json_get_at(&root, "/snapshot").await,
         Err(error) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
@@ -378,16 +528,27 @@ pub async fn release_control() -> Response {
     control("/control/release").await
 }
 
-pub async fn take_control_for_agent(State(state): State<Arc<AppState>>, Path(agent_id): Path<String>) -> Response {
+pub async fn take_control_for_agent(
+    State(state): State<Arc<AppState>>,
+    Path(agent_id): Path<String>,
+) -> Response {
     match agent_service_root(&state, &agent_id).await {
-        Ok(root) => upstream_json_post_at(&root, "/control/take", Value::Object(Default::default())).await,
+        Ok(root) => {
+            upstream_json_post_at(&root, "/control/take", Value::Object(Default::default())).await
+        }
         Err(error) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
     }
 }
 
-pub async fn release_control_for_agent(State(state): State<Arc<AppState>>, Path(agent_id): Path<String>) -> Response {
+pub async fn release_control_for_agent(
+    State(state): State<Arc<AppState>>,
+    Path(agent_id): Path<String>,
+) -> Response {
     match agent_service_root(&state, &agent_id).await {
-        Ok(root) => upstream_json_post_at(&root, "/control/release", Value::Object(Default::default())).await,
+        Ok(root) => {
+            upstream_json_post_at(&root, "/control/release", Value::Object(Default::default()))
+                .await
+        }
         Err(error) => (StatusCode::BAD_GATEWAY, error.to_string()).into_response(),
     }
 }
@@ -410,7 +571,11 @@ pub async fn navigate(State(state): State<Arc<AppState>>, Json(body): Json<Value
     upstream_json_post("/navigate", body).await
 }
 
-pub async fn navigate_for_agent(State(state): State<Arc<AppState>>, Path(agent_id): Path<String>, Json(body): Json<Value>) -> Response {
+pub async fn navigate_for_agent(
+    State(state): State<Arc<AppState>>,
+    Path(agent_id): Path<String>,
+    Json(body): Json<Value>,
+) -> Response {
     let mut ctx = pr_governance::ActionContext::new(
         agent_id.clone(),
         "direct-control".to_string(),
@@ -461,7 +626,10 @@ pub async fn type_text(State(state): State<Arc<AppState>>, Json(body): Json<Valu
     upstream_json_post("/type", body).await
 }
 /// The upstream service returns only the refreshed page metadata/snapshot.
-pub async fn secret(Extension(principal): Extension<AuthPrincipal>, Json(body): Json<Value>) -> Response {
+pub async fn secret(
+    Extension(principal): Extension<AuthPrincipal>,
+    Json(body): Json<Value>,
+) -> Response {
     if principal.0 == "anonymous" {
         return (StatusCode::FORBIDDEN, "operator authentication required").into_response();
     }
@@ -486,7 +654,11 @@ async fn scoped_post(state: &Arc<AppState>, agent_id: &str, path: &str, body: Va
     }
 }
 
-pub async fn click_for_agent(State(state): State<Arc<AppState>>, Path(agent_id): Path<String>, Json(body): Json<Value>) -> Response {
+pub async fn click_for_agent(
+    State(state): State<Arc<AppState>>,
+    Path(agent_id): Path<String>,
+    Json(body): Json<Value>,
+) -> Response {
     let ctx = pr_governance::ActionContext::new(
         agent_id.clone(),
         "direct-control".to_string(),
@@ -501,7 +673,11 @@ pub async fn click_for_agent(State(state): State<Arc<AppState>>, Path(agent_id):
     scoped_post(&state, &agent_id, "/click", body).await
 }
 
-pub async fn type_for_agent(State(state): State<Arc<AppState>>, Path(agent_id): Path<String>, Json(body): Json<Value>) -> Response {
+pub async fn type_for_agent(
+    State(state): State<Arc<AppState>>,
+    Path(agent_id): Path<String>,
+    Json(body): Json<Value>,
+) -> Response {
     let ctx = pr_governance::ActionContext::new(
         agent_id.clone(),
         "direct-control".to_string(),
@@ -516,7 +692,11 @@ pub async fn type_for_agent(State(state): State<Arc<AppState>>, Path(agent_id): 
     scoped_post(&state, &agent_id, "/type", body).await
 }
 
-pub async fn key_for_agent(State(state): State<Arc<AppState>>, Path(agent_id): Path<String>, Json(body): Json<Value>) -> Response {
+pub async fn key_for_agent(
+    State(state): State<Arc<AppState>>,
+    Path(agent_id): Path<String>,
+    Json(body): Json<Value>,
+) -> Response {
     let ctx = pr_governance::ActionContext::new(
         agent_id.clone(),
         "direct-control".to_string(),

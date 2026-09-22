@@ -31,7 +31,10 @@ fn memory_disabled() -> impl IntoResponse {
     )
 }
 
-fn scope_filter(scope: &str, scope_key: &str) -> Result<ScopeFilter, (StatusCode, Json<serde_json::Value>)> {
+fn scope_filter(
+    scope: &str,
+    scope_key: &str,
+) -> Result<ScopeFilter, (StatusCode, Json<serde_json::Value>)> {
     match scope {
         "" | "persistent" => Ok(ScopeFilter::persistent()),
         "all" => Ok(ScopeFilter::new()),
@@ -286,7 +289,12 @@ pub async fn memory_stats(State(state): State<Arc<AppState>>) -> impl IntoRespon
         ("run", pr_memory::Scope::Run),
     ] {
         let filter = ScopeFilter::new().add(scope, "");
-        let count = |status: &str| mem.db.list(&filter, Some(status), usize::MAX).map(|v| v.len()).unwrap_or(0);
+        let count = |status: &str| {
+            mem.db
+                .list(&filter, Some(status), usize::MAX)
+                .map(|v| v.len())
+                .unwrap_or(0)
+        };
         by_scope.insert(
             label.to_string(),
             serde_json::json!({
@@ -327,7 +335,10 @@ pub async fn get_memory(
     let follow: pr_memory::Follow = match params.follow.parse() {
         Ok(f) => f,
         Err(e) => {
-            return (StatusCode::BAD_REQUEST, Json(serde_json::json!({"error": e.to_string()})))
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({"error": e.to_string()})),
+            )
                 .into_response()
         }
     };
@@ -371,7 +382,8 @@ pub async fn archive_memory(
         )
             .into_response();
     }
-    mem.db.log_history(&row.id, "archive", Some(&row.status), Some("archived"));
+    mem.db
+        .log_history(&row.id, "archive", Some(&row.status), Some("archived"));
     Json(serde_json::json!({"archived": row.id})).into_response()
 }
 
@@ -401,7 +413,10 @@ mod tests {
         state
     }
 
-    async fn send(app: axum::Router, req: Request<axum::body::Body>) -> (StatusCode, serde_json::Value) {
+    async fn send(
+        app: axum::Router,
+        req: Request<axum::body::Body>,
+    ) -> (StatusCode, serde_json::Value) {
         let resp = app.oneshot(req).await.unwrap();
         let status = resp.status();
         let bytes = resp.into_body().collect().await.unwrap().to_bytes();
@@ -410,7 +425,10 @@ mod tests {
     }
 
     fn get_req(uri: &str) -> Request<axum::body::Body> {
-        Request::builder().uri(uri).body(axum::body::Body::empty()).unwrap()
+        Request::builder()
+            .uri(uri)
+            .body(axum::body::Body::empty())
+            .unwrap()
     }
 
     fn post_json(uri: &str, body: serde_json::Value) -> Request<axum::body::Body> {
@@ -448,7 +466,8 @@ mod tests {
         };
         let report = mem.pipeline().absorb(req).await.unwrap();
         assert_eq!(report.created, 1, "seed failed: {report:?}");
-        mem.db.list(&pr_memory::ScopeFilter::new(), Some("active"), 1)
+        mem.db
+            .list(&pr_memory::ScopeFilter::new(), Some("active"), 1)
             .unwrap()
             .remove(0)
             .id
@@ -503,21 +522,45 @@ mod tests {
 
     #[test]
     fn distill_query_defaults() {
-        assert!(!DistillQuery { session: None, dry_run: false }.dry_run);
+        assert!(
+            !DistillQuery {
+                session: None,
+                dry_run: false
+            }
+            .dry_run
+        );
     }
 
     #[test]
     fn gc_query_defaults() {
-        assert_eq!(GcQuery { ttl_days: None, dry_run: false }.ttl_days, None);
-        let g = GcQuery { ttl_days: Some(5), dry_run: true };
+        assert_eq!(
+            GcQuery {
+                ttl_days: None,
+                dry_run: false
+            }
+            .ttl_days,
+            None
+        );
+        let g = GcQuery {
+            ttl_days: Some(5),
+            dry_run: true,
+        };
         assert_eq!(g.ttl_days, Some(5));
         assert!(g.dry_run);
     }
 
     #[test]
     fn get_query_defaults() {
-        assert_eq!(GetQuery { follow: "latest".to_string() }.follow, default_follow());
-        let g = GetQuery { follow: "active".to_string() };
+        assert_eq!(
+            GetQuery {
+                follow: "latest".to_string()
+            }
+            .follow,
+            default_follow()
+        );
+        let g = GetQuery {
+            follow: "active".to_string(),
+        };
         assert_eq!(g.follow, "active");
     }
 
@@ -580,7 +623,10 @@ mod tests {
             value.get("expires_at").is_none(),
             "expires_at must be omitted when None: {value}"
         );
-        assert!(value.get("score").is_none(), "score must be omitted: {value}");
+        assert!(
+            value.get("score").is_none(),
+            "score must be omitted: {value}"
+        );
     }
 
     // ── list_memories ────────────────────────────────────────────────────
@@ -611,7 +657,11 @@ mod tests {
         seed(&mem, "default scoped fact one for list").await;
         seed(&mem, "default scoped fact two for list").await;
         let state = mem_with_state(mem);
-        let (status, body) = send(crate::build_router(state), get_req("/api/v1/memories?limit=1")).await;
+        let (status, body) = send(
+            crate::build_router(state),
+            get_req("/api/v1/memories?limit=1"),
+        )
+        .await;
         assert_eq!(status, StatusCode::OK);
         let items = body["memories"].as_array().unwrap();
         assert_eq!(items.len(), 1, "limit=1 respected");
@@ -758,7 +808,10 @@ mod tests {
         )
         .await;
         assert_eq!(status, StatusCode::BAD_REQUEST);
-        assert!(body["error"].as_str().unwrap().contains("facts must not be empty"));
+        assert!(body["error"]
+            .as_str()
+            .unwrap()
+            .contains("facts must not be empty"));
     }
 
     #[tokio::test]
@@ -766,10 +819,17 @@ mod tests {
         let state = mem_with_state(mem_store());
         let (status, _) = send(
             crate::build_router(state),
-            post_json("/api/v1/memories/absorb", serde_json::json!({"source": "t"})),
+            post_json(
+                "/api/v1/memories/absorb",
+                serde_json::json!({"source": "t"}),
+            ),
         )
         .await;
-        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "absent facts must fail deserialization, got {status}");
+        assert_eq!(
+            status,
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "absent facts must fail deserialization, got {status}"
+        );
     }
 
     #[tokio::test]
@@ -791,7 +851,10 @@ mod tests {
         assert_eq!(status, StatusCode::OK, "{body}");
         assert_eq!(body["created"], 1);
         assert_eq!(body["rejected"], 0);
-        let id = body["details"][0]["memory_id"].as_str().unwrap().to_string();
+        let id = body["details"][0]["memory_id"]
+            .as_str()
+            .unwrap()
+            .to_string();
         assert!(!id.is_empty());
 
         let (status, body) = send(router, get_req("/api/v1/memories")).await;
@@ -809,7 +872,11 @@ mod tests {
             "facts": [{"content": "vpn config uses aes-256-gcm for all tunnels"}],
             "source": "dup-test"
         });
-        let (s1, b1) = send(router.clone(), post_json("/api/v1/memories/absorb", body.clone())).await;
+        let (s1, b1) = send(
+            router.clone(),
+            post_json("/api/v1/memories/absorb", body.clone()),
+        )
+        .await;
         assert_eq!(s1, StatusCode::OK);
         assert_eq!(b1["created"], 1);
         let (s2, b2) = send(router, post_json("/api/v1/memories/absorb", body)).await;
@@ -835,7 +902,10 @@ mod tests {
         .await;
         assert_eq!(status, StatusCode::OK);
         assert_eq!(body["created"], 0);
-        assert_eq!(body["rejected"], 1, "secret-bearing facts must be rejected: {body}");
+        assert_eq!(
+            body["rejected"], 1,
+            "secret-bearing facts must be rejected: {body}"
+        );
         assert!(body["details"][0]["reason"].as_str().is_some());
     }
 
@@ -984,7 +1054,11 @@ mod tests {
         assert_eq!(body["dry_run"], true, "{body}");
         // Original run fact must still exist untouched.
         let (_, body) = send(router, get_req("/api/v1/memories?scope=run")).await;
-        assert_eq!(body["memories"].as_array().unwrap().len(), 1, "dry_run keeps rows: {body}");
+        assert_eq!(
+            body["memories"].as_array().unwrap().len(),
+            1,
+            "dry_run keeps rows: {body}"
+        );
     }
 
     #[tokio::test]
@@ -1103,7 +1177,11 @@ mod tests {
             let s = Arc::get_mut(&mut state).unwrap();
             s.memory = None;
         }
-        let (status, _) = send(crate::build_router(state), get_req("/api/v1/memories/stats")).await;
+        let (status, _) = send(
+            crate::build_router(state),
+            get_req("/api/v1/memories/stats"),
+        )
+        .await;
         assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE);
     }
 
@@ -1112,7 +1190,11 @@ mod tests {
         let mem = mem_store();
         seed(&mem, "agent fact counted by stats").await;
         let state = mem_with_state(mem);
-        let (status, body) = send(crate::build_router(state), get_req("/api/v1/memories/stats")).await;
+        let (status, body) = send(
+            crate::build_router(state),
+            get_req("/api/v1/memories/stats"),
+        )
+        .await;
         assert_eq!(status, StatusCode::OK);
         assert_eq!(body["scopes"]["agent"]["active"], 1);
         assert_eq!(body["scopes"]["user"]["active"], 0);
@@ -1217,7 +1299,11 @@ mod tests {
             get_req(&format!("/api/v1/memories/{id}?follow=active")),
         )
         .await;
-        assert_eq!(status, StatusCode::NOT_FOUND, "archived rows are invisible to follow=active");
+        assert_eq!(
+            status,
+            StatusCode::NOT_FOUND,
+            "archived rows are invisible to follow=active"
+        );
     }
 
     // ── archive_memory ───────────────────────────────────────────────────
@@ -1243,7 +1329,11 @@ mod tests {
         let id = seed(&mem, "fact that gets archived by the api").await;
         let state = mem_with_state(mem.clone());
         let router = crate::build_router(state);
-        let (status, body) = send(router.clone(), delete_req(&format!("/api/v1/memories/{id}"))).await;
+        let (status, body) = send(
+            router.clone(),
+            delete_req(&format!("/api/v1/memories/{id}")),
+        )
+        .await;
         assert_eq!(status, StatusCode::OK, "{body}");
         assert_eq!(body["archived"], id);
         let row = mem.db.get(&id).unwrap().unwrap();
@@ -1282,7 +1372,11 @@ mod tests {
             delete_req(&format!("/api/v1/memories/{id}")),
         )
         .await;
-        assert_eq!(status, StatusCode::OK, "archiving an already-archived memory is idempotent: {body}");
+        assert_eq!(
+            status,
+            StatusCode::OK,
+            "archiving an already-archived memory is idempotent: {body}"
+        );
     }
 
     // ── end-to-end integration: supersession chain via follow ────────────

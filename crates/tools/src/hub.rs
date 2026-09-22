@@ -8,8 +8,8 @@
 //! - `set_activity` — update the agent's own activity description
 
 use async_trait::async_trait;
-use pr_core::irc::{AgentRegistry, DeliveryReceipt, IrcBus, IrcMessage};
 use pr_core::ids::AgentId;
+use pr_core::irc::{AgentRegistry, DeliveryReceipt, IrcBus, IrcMessage};
 use pr_core::{ToolOutput, ToolSchema};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -213,7 +213,8 @@ impl Tool for HubTool {
                         // Correlate both sender and recipient to avoid stealing
                         // another agent's message.
                         let (tx, rx) = oneshot::channel();
-                        let waiter_id = bus.register_waiter(Some(target.clone()), Some(agent_id.clone()), tx);
+                        let waiter_id =
+                            bus.register_waiter(Some(target.clone()), Some(agent_id.clone()), tx);
                         let _receipt = bus.send(msg);
 
                         let timeout = std::time::Duration::from_secs(120);
@@ -255,7 +256,11 @@ impl Tool for HubTool {
                                         })
                                         .await
                                     {
-                                        if let pr_core::Message::Assistant { content: Some(text), .. } = &resp.message {
+                                        if let pr_core::Message::Assistant {
+                                            content: Some(text),
+                                            ..
+                                        } = &resp.message
+                                        {
                                             return Ok(ToolOutput::ok(format!(
                                                 "[auto-reply from {}] {}",
                                                 target_id, text
@@ -269,9 +274,7 @@ impl Tool for HubTool {
                             }
                             Err(_) => {
                                 bus.cancel_waiter(waiter_id);
-                                return Ok(ToolOutput::ok(
-                                    "Timed out waiting for reply.",
-                                ));
+                                return Ok(ToolOutput::ok("Timed out waiting for reply."));
                             }
                         }
                     } else {
@@ -333,7 +336,7 @@ impl Tool for HubTool {
                     Err(_) => {
                         bus.cancel_waiter(waiter_id);
                         Ok(ToolOutput::ok("Timed out waiting for message."))
-                    },
+                    }
                 }
             }
 
@@ -385,8 +388,7 @@ impl Tool for HubTool {
             }
 
             HubCommand::Jobs => {
-                let jobs = pr_core::async_job::AsyncJobManager::global()
-                    .list_by_owner(&agent_id);
+                let jobs = pr_core::async_job::AsyncJobManager::global().list_by_owner(&agent_id);
                 if jobs.is_empty() {
                     return Ok(ToolOutput::ok("No async jobs."));
                 }
@@ -427,11 +429,19 @@ impl Tool for HubTool {
 
                 let session = match broker.spawn_process(&name, &application, &args, &work_dir) {
                     Ok(s) => s,
-                    Err(e) => return Ok(ToolOutput::err(format!("Failed to start PTY process '{}': {}", name, e))),
+                    Err(e) => {
+                        return Ok(ToolOutput::err(format!(
+                            "Failed to start PTY process '{}': {}",
+                            name, e
+                        )))
+                    }
                 };
 
                 if let Some(pattern) = ready_log {
-                    let matched = session.wait_for_pattern(&pattern, timeout_secs).await.unwrap_or(false);
+                    let matched = session
+                        .wait_for_pattern(&pattern, timeout_secs)
+                        .await
+                        .unwrap_or(false);
                     if !matched {
                         return Ok(ToolOutput::ok(format!(
                             "Process '{}' started (PID {}), but timed out waiting for ready_log '{}'",
@@ -442,19 +452,33 @@ impl Tool for HubTool {
 
                 Ok(ToolOutput::ok(format!(
                     "Started PTY process '{}' (PID {}) in {}",
-                    name, session.pid, work_dir.display()
+                    name,
+                    session.pid,
+                    work_dir.display()
                 )))
             }
 
-            HubCommand::Logs { name, cursor, limit } => {
+            HubCommand::Logs {
+                name,
+                cursor,
+                limit,
+            } => {
                 let broker = crate::pty::PtyBroker::global();
                 let session = match broker.get(&name) {
                     Some(s) => s,
-                    None => return Ok(ToolOutput::err(format!("No PTY session named '{}' found", name))),
+                    None => {
+                        return Ok(ToolOutput::err(format!(
+                            "No PTY session named '{}' found",
+                            name
+                        )))
+                    }
                 };
 
                 let (chunks, latest_seq) = session.read_logs(cursor, limit.unwrap_or(100));
-                let lines: Vec<String> = chunks.iter().map(|c| format!("[#{}] {}", c.seq, c.text)).collect();
+                let lines: Vec<String> = chunks
+                    .iter()
+                    .map(|c| format!("[#{}] {}", c.seq, c.text))
+                    .collect();
                 Ok(ToolOutput::ok(format!(
                     "--- PTY '{}' logs (cursor: {}) ---\n{}",
                     name,
@@ -463,11 +487,21 @@ impl Tool for HubTool {
                 )))
             }
 
-            HubCommand::PtySend { name, text, enter, keys } => {
+            HubCommand::PtySend {
+                name,
+                text,
+                enter,
+                keys,
+            } => {
                 let broker = crate::pty::PtyBroker::global();
                 let session = match broker.get(&name) {
                     Some(s) => s,
-                    None => return Ok(ToolOutput::err(format!("No PTY session named '{}' found", name))),
+                    None => {
+                        return Ok(ToolOutput::err(format!(
+                            "No PTY session named '{}' found",
+                            name
+                        )))
+                    }
                 };
 
                 if let Some(t) = text {
@@ -483,13 +517,15 @@ impl Tool for HubTool {
                 let broker = crate::pty::PtyBroker::global();
                 match broker.stop(&name) {
                     Ok(_) => Ok(ToolOutput::ok(format!("Stopped PTY process '{}'", name))),
-                    Err(e) => Ok(ToolOutput::err(format!("Failed to stop PTY '{}': {}", name, e))),
+                    Err(e) => Ok(ToolOutput::err(format!(
+                        "Failed to stop PTY '{}': {}",
+                        name, e
+                    ))),
                 }
             }
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -513,7 +549,12 @@ mod tests {
         });
         let params: HubParams = serde_json::from_value(json).unwrap();
         match params.command {
-            HubCommand::Send { to, message, await_reply, steer: _ } => {
+            HubCommand::Send {
+                to,
+                message,
+                await_reply,
+                steer: _,
+            } => {
                 assert_eq!(to, Some("agent-123".to_string()));
                 assert_eq!(message, "hello");
                 assert!(!await_reply);

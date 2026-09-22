@@ -42,8 +42,7 @@ fn ctx_with_llm() -> ToolContext {
         &api_key(),
         "deepseek-chat",
     ));
-    ToolContext::new(PathBuf::from("/tmp"), pr_core::SearchConfig::default())
-        .with_llm(llm)
+    ToolContext::new(PathBuf::from("/tmp"), pr_core::SearchConfig::default()).with_llm(llm)
 }
 
 // ── A. extract_contacts + LLM-enrichment ────────────────────────────────────
@@ -74,11 +73,27 @@ Acme Software is a Moscow-based CRM vendor with 120 employees.
     println!("content: {}", out.content);
     assert!(out.success, "extract должен пройти: {}", out.content);
     // Вывод тула — человекочитаемый отчёт (не JSON).
-    assert!(out.content.contains("3 email(s)"), "три email в тексте: {}", out.content);
-    assert!(out.content.contains("Maria Ivanova — CEO"), "CEO-персона извлечена LLM");
-    assert!(out.content.contains("Ivan Petrov — CTO"), "CTO-персона извлечена LLM");
-    assert!(out.content.contains("Acme Software"), "компания извлечена LLM");
-    assert!(out.content.contains("industry: CRM vendor"), "атрибуты компании обогащены LLM");
+    assert!(
+        out.content.contains("3 email(s)"),
+        "три email в тексте: {}",
+        out.content
+    );
+    assert!(
+        out.content.contains("Maria Ivanova — CEO"),
+        "CEO-персона извлечена LLM"
+    );
+    assert!(
+        out.content.contains("Ivan Petrov — CTO"),
+        "CTO-персона извлечена LLM"
+    );
+    assert!(
+        out.content.contains("Acme Software"),
+        "компания извлечена LLM"
+    );
+    assert!(
+        out.content.contains("industry: CRM vendor"),
+        "атрибуты компании обогащены LLM"
+    );
     assert!(out.content.contains("+74951234567"), "телефон нормализован");
     println!("✓ extract: 3 email + 2 персоны + компания с атрибутами — LLM-enrichment работает");
 }

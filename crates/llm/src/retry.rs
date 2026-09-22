@@ -13,7 +13,11 @@ fn jitter(delay: Duration) -> Duration {
     // Full-jitter-ish: shift the delay by up to ±25% deterministically.
     let ms = delay.as_millis() as u64;
     let spread = ms / 4;
-    let delta = if spread == 0 { 0 } else { (seq % (2 * spread + 1)) as i64 - spread as i64 };
+    let delta = if spread == 0 {
+        0
+    } else {
+        (seq % (2 * spread + 1)) as i64 - spread as i64
+    };
     Duration::from_millis((ms as i64 + delta).max(50) as u64)
 }
 

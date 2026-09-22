@@ -1,10 +1,10 @@
-use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
+use crate::registry::{Tool, ToolContext};
 use async_trait::async_trait;
 use pr_core::{PrError, PrResult, ToolOutput, ToolSchema};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use crate::registry::{Tool, ToolContext};
+use std::collections::{HashMap, HashSet};
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AstSymbol {
@@ -57,11 +57,16 @@ Modes:
         ToolSchema {
             name: self.name().to_string(),
             description: self.description().to_string(),
-            parameters: serde_json::to_value(&schemars::schema_for!(AstQuery).schema).unwrap_or_default(),
+            parameters: serde_json::to_value(&schemars::schema_for!(AstQuery).schema)
+                .unwrap_or_default(),
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: AstQuery = serde_json::from_value(args)?;
         let target_path = params
             .path
@@ -82,22 +87,31 @@ Modes:
                 let symbols = extract_symbols(&content);
 
                 if symbols.is_empty() {
-                    return Ok(ToolOutput::ok(format!("No top-level AST symbols found in {}", target_path.display())));
+                    return Ok(ToolOutput::ok(format!(
+                        "No top-level AST symbols found in {}",
+                        target_path.display()
+                    )));
                 }
 
                 let mut lines = Vec::new();
                 lines.push(format!("AST Outline for {}:", target_path.display()));
                 for sym in symbols.iter().take(params.max_results) {
-                    lines.push(format!("  {:4} | [{}] {}", sym.line, sym.kind, sym.signature));
+                    lines.push(format!(
+                        "  {:4} | [{}] {}",
+                        sym.line, sym.kind, sym.signature
+                    ));
                 }
 
                 Ok(ToolOutput::ok(lines.join("\n")))
             }
 
             "repomap" => {
-                let repomap_entries = compute_pagerank_repomap(&ctx.working_dir, params.max_results).await?;
+                let repomap_entries =
+                    compute_pagerank_repomap(&ctx.working_dir, params.max_results).await?;
                 let mut lines = Vec::new();
-                lines.push("PageRank Architectural Repo-Map (Most Referenced Components):".to_string());
+                lines.push(
+                    "PageRank Architectural Repo-Map (Most Referenced Components):".to_string(),
+                );
                 for (rank, path, score, symbol_count) in repomap_entries {
                     lines.push(format!(
                         "  #{:2} [{:.3}] {} ({} public symbols)",
@@ -110,11 +124,19 @@ Modes:
             "references" => {
                 let identifier = params.path.unwrap_or_default();
                 if identifier.is_empty() {
-                    return Ok(ToolOutput::err("References mode requires identifier in 'path' parameter"));
+                    return Ok(ToolOutput::err(
+                        "References mode requires identifier in 'path' parameter",
+                    ));
                 }
 
-                let hits = search_workspace_references(&ctx.working_dir, &identifier, params.max_results).await?;
-                Ok(ToolOutput::ok(format!("References for '{}':\n{}", identifier, hits.join("\n"))))
+                let hits =
+                    search_workspace_references(&ctx.working_dir, &identifier, params.max_results)
+                        .await?;
+                Ok(ToolOutput::ok(format!(
+                    "References for '{}':\n{}",
+                    identifier,
+                    hits.join("\n")
+                )))
             }
 
             other => Ok(ToolOutput::err(format!("Unsupported mode '{}'", other))),
@@ -136,12 +158,17 @@ fn extract_symbols(content: &str) -> Vec<AstSymbol> {
 
         let is_pub = trimmed.starts_with("pub ") || trimmed.starts_with("export ");
         let rest = if is_pub {
-            trimmed.strip_prefix("pub ").or_else(|| trimmed.strip_prefix("export ")).unwrap_or(trimmed).trim()
+            trimmed
+                .strip_prefix("pub ")
+                .or_else(|| trimmed.strip_prefix("export "))
+                .unwrap_or(trimmed)
+                .trim()
         } else {
             trimmed
         };
 
-        if rest.starts_with("fn ") || rest.starts_with("async fn ") || rest.starts_with("function ") {
+        if rest.starts_with("fn ") || rest.starts_with("async fn ") || rest.starts_with("function ")
+        {
             let name = extract_name_token(rest);
             symbols.push(AstSymbol {
                 name,
@@ -190,7 +217,9 @@ fn extract_symbols(content: &str) -> Vec<AstSymbol> {
 fn extract_name_token(line: &str) -> String {
     let parts: Vec<&str> = line.split_whitespace().collect();
     if parts.len() > 1 {
-        parts[1].trim_matches(|c: char| !c.is_alphanumeric() && c != '_').to_string()
+        parts[1]
+            .trim_matches(|c: char| !c.is_alphanumeric() && c != '_')
+            .to_string()
     } else {
         "unknown".to_string()
     }
@@ -205,7 +234,9 @@ async fn compute_pagerank_repomap(
     let mut dir_queue = vec![workspace_root.to_path_buf()];
 
     while let Some(dir) = dir_queue.pop() {
-        let mut entries = tokio::fs::read_dir(&dir).await.map_err(|e| PrError::Tool(e.to_string()))?;
+        let mut entries = tokio::fs::read_dir(&dir)
+            .await
+            .map_err(|e| PrError::Tool(e.to_string()))?;
         while let Ok(Some(entry)) = entries.next_entry().await {
             let path = entry.path();
             if path.is_dir() {
@@ -253,7 +284,10 @@ async fn compute_pagerank_repomap(
 
     // PageRank calculation
     let num_nodes = files.len().max(1);
-    let mut ranks: HashMap<PathBuf, f64> = files.iter().map(|f| (f.clone(), 1.0 / num_nodes as f64)).collect();
+    let mut ranks: HashMap<PathBuf, f64> = files
+        .iter()
+        .map(|f| (f.clone(), 1.0 / num_nodes as f64))
+        .collect();
     let d = 0.85;
 
     for _ in 0..10 {
@@ -289,7 +323,11 @@ async fn compute_pagerank_repomap(
         .take(limit)
         .enumerate()
         .map(|(idx, (p, score, count))| {
-            let rel = p.strip_prefix(workspace_root).unwrap_or(&p).display().to_string();
+            let rel = p
+                .strip_prefix(workspace_root)
+                .unwrap_or(&p)
+                .display()
+                .to_string();
             (idx + 1, rel, score, count)
         })
         .collect();
@@ -306,7 +344,9 @@ async fn search_workspace_references(
     let mut dir_queue = vec![workspace_root.to_path_buf()];
 
     while let Some(dir) = dir_queue.pop() {
-        let mut entries = tokio::fs::read_dir(&dir).await.map_err(|e| PrError::Tool(e.to_string()))?;
+        let mut entries = tokio::fs::read_dir(&dir)
+            .await
+            .map_err(|e| PrError::Tool(e.to_string()))?;
         while let Ok(Some(entry)) = entries.next_entry().await {
             let path = entry.path();
             if path.is_dir() {

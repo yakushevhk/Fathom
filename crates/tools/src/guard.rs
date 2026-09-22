@@ -16,7 +16,9 @@ pub const MAX_REDIRECTS: usize = 5;
 pub const SSRF_LOOPBACK_ENV: &str = "PR_SSRF_ALLOW_LOOPBACK";
 
 fn loopback_allowed_for_tests() -> bool {
-    std::env::var(SSRF_LOOPBACK_ENV).map(|v| v == "1").unwrap_or(false)
+    std::env::var(SSRF_LOOPBACK_ENV)
+        .map(|v| v == "1")
+        .unwrap_or(false)
 }
 
 /// Hostnames rejected outright (before DNS resolution).
@@ -52,7 +54,7 @@ pub fn is_internal_ip(ip: &IpAddr) -> bool {
                 || a == 192 && b == 88 && c == 99         // 192.88.99.0/24 6to4 relay
                 || a == 198 && (b == 18 || b == 19)       // 198.18.0.0/15 benchmarking
                 || a == 198 && b == 51 && c == 100        // 198.51.100.0/24 TEST-NET-2
-                || a == 203 && b == 0 && c == 113         // 203.0.113.0/24 TEST-NET-3
+                || a == 203 && b == 0 && c == 113 // 203.0.113.0/24 TEST-NET-3
         }
         IpAddr::V6(v6) => {
             let segs = v6.segments();
@@ -174,7 +176,13 @@ mod tests {
                 "{ip} must be internal"
             );
         }
-        for ip in ["8.8.8.8", "93.184.216.34", "1.1.1.1", "172.32.0.1", "100.128.0.1"] {
+        for ip in [
+            "8.8.8.8",
+            "93.184.216.34",
+            "1.1.1.1",
+            "172.32.0.1",
+            "100.128.0.1",
+        ] {
             assert!(
                 !is_internal_ip(&ip.parse::<IpAddr>().unwrap()),
                 "{ip} must be public"
@@ -190,11 +198,19 @@ mod tests {
                 "{ip} must be internal"
             );
         }
-        assert!(!is_internal_ip(&"2001:4860:4860::8888".parse::<IpAddr>().unwrap()));
+        assert!(!is_internal_ip(
+            &"2001:4860:4860::8888".parse::<IpAddr>().unwrap()
+        ));
         // IPv4-mapped internal
-        assert!(is_internal_ip(&"::ffff:127.0.0.1".parse::<IpAddr>().unwrap()));
-        assert!(is_internal_ip(&"::ffff:169.254.169.254".parse::<IpAddr>().unwrap()));
-        assert!(!is_internal_ip(&"::ffff:8.8.8.8".parse::<IpAddr>().unwrap()));
+        assert!(is_internal_ip(
+            &"::ffff:127.0.0.1".parse::<IpAddr>().unwrap()
+        ));
+        assert!(is_internal_ip(
+            &"::ffff:169.254.169.254".parse::<IpAddr>().unwrap()
+        ));
+        assert!(!is_internal_ip(
+            &"::ffff:8.8.8.8".parse::<IpAddr>().unwrap()
+        ));
     }
 
     #[tokio::test]

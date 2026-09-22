@@ -1,9 +1,9 @@
 mod bench;
 
 use clap::{Parser, Subcommand};
+use pr_agent::Coordinator;
 use pr_core::{AppConfig, SessionId};
 use pr_persistence::Persistence;
-use pr_agent::Coordinator;
 use std::sync::Arc;
 use tokio::sync::broadcast;
 use tracing_subscriber::EnvFilter;
@@ -12,7 +12,7 @@ use tracing_subscriber::EnvFilter;
 #[command(
     name = "fathom",
     about = "Universal autonomous AI worker — research, outreach, code, computer use",
-    version,
+    version
 )]
 struct Cli {
     #[command(subcommand)]
@@ -240,10 +240,7 @@ enum ContactsAction {
 #[derive(Subcommand)]
 enum ConfigAction {
     Show,
-    Set {
-        key: String,
-        value: String,
-    },
+    Set { key: String, value: String },
 }
 
 #[derive(Subcommand)]
@@ -332,8 +329,7 @@ async fn main() -> anyhow::Result<()> {
     // not be polluted by log lines either.
     tracing_subscriber::fmt()
         .with_env_filter(
-            EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| EnvFilter::new("info"))
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
         )
         .with_target(false)
         .with_writer(std::io::stderr)
@@ -353,9 +349,8 @@ async fn main() -> anyhow::Result<()> {
             // positional query — Terminal-Bench hands us long instructions
             // that would be awkward to shell-quote.
             let query = match task_file {
-                Some(path) => std::fs::read_to_string(&path).map_err(|e| {
-                    anyhow::anyhow!("reading task file {}: {e}", path.display())
-                })?,
+                Some(path) => std::fs::read_to_string(&path)
+                    .map_err(|e| anyhow::anyhow!("reading task file {}: {e}", path.display()))?,
                 None => query.ok_or_else(|| {
                     anyhow::anyhow!("no task: pass <QUERY> or --task-file <FILE>")
                 })?,
@@ -367,8 +362,7 @@ async fn main() -> anyhow::Result<()> {
                     // runs we diff the contact store and alert about new
                     // findings ("new people at company X").
                     let watch_config = AppConfig::load()?;
-                    let notifier =
-                        pr_core::Notifier::from_config(&watch_config.notifications);
+                    let notifier = pr_core::Notifier::from_config(&watch_config.notifications);
                     let contact_store =
                         match pr_persistence::open_contact_store(&watch_config.contacts).await {
                             Ok(s) => Some(s),
@@ -431,10 +425,20 @@ async fn main() -> anyhow::Result<()> {
                 _ => run_research(query, output, profile).await?,
             }
         }
-        Commands::Worker { session_id, agent_id, task, socket, role } => {
+        Commands::Worker {
+            session_id,
+            agent_id,
+            task,
+            socket,
+            role,
+        } => {
             run_worker(session_id, agent_id, task, socket, role).await?;
         }
-        Commands::Tui { query, profile, replay } => {
+        Commands::Tui {
+            query,
+            profile,
+            replay,
+        } => {
             run_tui(query, profile, replay).await?;
         }
         Commands::Serve { port, host } => {
@@ -455,18 +459,16 @@ async fn main() -> anyhow::Result<()> {
         Commands::Resume { output, session_id } => {
             cmd_resume(output, session_id).await?;
         }
-        Commands::Config { action } => {
-            match action {
-                ConfigAction::Show => {
-                    let config = AppConfig::load()?;
-                    println!("{}", toml::to_string_pretty(&config)?);
-                }
-                ConfigAction::Set { key, value } => {
-                    pr_core::set_config_value(&key, &value)?;
-                    println!("Set {key} = {value}");
-                }
+        Commands::Config { action } => match action {
+            ConfigAction::Show => {
+                let config = AppConfig::load()?;
+                println!("{}", toml::to_string_pretty(&config)?);
             }
-        }
+            ConfigAction::Set { key, value } => {
+                pr_core::set_config_value(&key, &value)?;
+                println!("Set {key} = {value}");
+            }
+        },
         Commands::Bench { scenario, n, save } => {
             bench::run_bench(&scenario, n, save).await?;
         }
@@ -558,7 +560,11 @@ async fn cmd_memory(action: MemoryAction) -> anyhow::Result<()> {
     };
 
     match action {
-        MemoryAction::Search { query, top_k, scope } => {
+        MemoryAction::Search {
+            query,
+            top_k,
+            scope,
+        } => {
             let filter = memory_scope_filter(&scope)?;
             let hits = mem.search(&query, &filter, Some(top_k)).await?;
             if hits.is_empty() {
@@ -572,13 +578,21 @@ async fn cmd_memory(action: MemoryAction) -> anyhow::Result<()> {
                     h.score,
                     &h.memory.created_at[..h.memory.created_at.len().min(10)],
                     h.memory.scope,
-                    if h.memory.source.is_empty() { "-" } else { &h.memory.source },
+                    if h.memory.source.is_empty() {
+                        "-"
+                    } else {
+                        &h.memory.source
+                    },
                     h.memory.confidence,
                     h.memory.content
                 );
             }
         }
-        MemoryAction::List { scope, status, limit } => {
+        MemoryAction::List {
+            scope,
+            status,
+            limit,
+        } => {
             let filter = memory_scope_filter(&scope)?;
             let status_arg = match status.as_str() {
                 "all" => None,
@@ -596,7 +610,11 @@ async fn cmd_memory(action: MemoryAction) -> anyhow::Result<()> {
                     r.status,
                     &r.created_at[..r.created_at.len().min(10)],
                     r.scope,
-                    if r.scope_key.is_empty() { String::new() } else { format!(":{}", r.scope_key) },
+                    if r.scope_key.is_empty() {
+                        String::new()
+                    } else {
+                        format!(":{}", r.scope_key)
+                    },
                     r.content
                 );
             }
@@ -628,7 +646,10 @@ async fn cmd_memory(action: MemoryAction) -> anyhow::Result<()> {
                 ("user", pr_memory::Scope::User),
                 ("run", pr_memory::Scope::Run),
             ];
-            println!("Memory store: {}", config.memory.db_path.if_empty_then_default());
+            println!(
+                "Memory store: {}",
+                config.memory.db_path.if_empty_then_default()
+            );
             println!(
                 "  embedding model: {} (backend: {})",
                 mem.embedder.model_name(),
@@ -651,17 +672,27 @@ async fn cmd_memory(action: MemoryAction) -> anyhow::Result<()> {
                 std::path::PathBuf::from(&config.memory.db_path)
             };
             if let Ok(meta) = std::fs::metadata(&path) {
-                println!("  db size: {:.1} MB ({})", meta.len() as f64 / 1_048_576.0, path.display());
+                println!(
+                    "  db size: {:.1} MB ({})",
+                    meta.len() as f64 / 1_048_576.0,
+                    path.display()
+                );
             }
         }
         MemoryAction::Rebuild => {
             let n = mem.rebuild_embeddings().await?;
-            println!("Re-embedded {n} memory(ies) with model '{}'", mem.embedder.model_name());
+            println!(
+                "Re-embedded {n} memory(ies) with model '{}'",
+                mem.embedder.model_name()
+            );
         }
         MemoryAction::Distill { session, dry_run } => {
             println!(
                 "Distilling run-scoped facts{}{}",
-                session.as_deref().map(|s| format!(" of session {s}")).unwrap_or_default(),
+                session
+                    .as_deref()
+                    .map(|s| format!(" of session {s}"))
+                    .unwrap_or_default(),
                 if dry_run { " (dry run)" } else { "" }
             );
             let report = mem.distill(session.as_deref(), dry_run).await?;
@@ -771,7 +802,10 @@ fn cmd_sessions(output: Option<String>, action: SessionsAction) -> anyhow::Resul
                 anyhow::bail!("no session with id/prefix '{id}'");
             }
             if matches.len() > 1 {
-                anyhow::bail!("ambiguous session prefix '{id}' ({} matches)", matches.len());
+                anyhow::bail!(
+                    "ambiguous session prefix '{id}' ({} matches)",
+                    matches.len()
+                );
             }
             let sid = SessionId(matches[0].id.0.clone());
             let Some(details) = history.get_session_details(&sid) else {
@@ -851,9 +885,9 @@ async fn run_tui(
     profile: Option<String>,
     replay: Option<String>,
 ) -> anyhow::Result<()> {
-    use pr_tui::{App, app::InputMode};
-    use pr_tui::event::{EventHandler, spawn_terminal_reader, spawn_agent_reader};
-    
+    use pr_tui::event::{spawn_agent_reader, spawn_terminal_reader, EventHandler};
+    use pr_tui::{app::InputMode, App};
+
     use crossterm::{
         event::{DisableMouseCapture, EnableMouseCapture},
         execute,
@@ -921,7 +955,7 @@ async fn run_tui(
 
     // Create event channels
     let (event_handler, event_tx) = EventHandler::new();
-    
+
     // Spawn terminal event reader
     spawn_terminal_reader(event_tx.clone());
 
@@ -1020,54 +1054,55 @@ async fn run_tui_loop(
             match event {
                 pr_tui::event::AppEvent::Terminal(crossterm::event::Event::Key(key)) => {
                     app.handle_key(key);
-                        
-                        // Check if the user submitted input.
-                        // No active session -> start one; active session ->
-                        // steer it mid-run (fleet E1).
-                        if !app.query.is_empty() {
-                            if research_task.is_none() {
-                                let query = app.query.clone();
-                                app.query.clear();
 
-                                let (steer_tx, steer_rx) =
-                                    tokio::sync::mpsc::unbounded_channel::<String>();
-                                app.steer_tx = Some(steer_tx);
+                    // Check if the user submitted input.
+                    // No active session -> start one; active session ->
+                    // steer it mid-run (fleet E1).
+                    if !app.query.is_empty() {
+                        if research_task.is_none() {
+                            let query = app.query.clone();
+                            app.query.clear();
 
-                                // Operator control plane for this session.
-                                let (q_tx, q_rx) =
-                                    tokio::sync::mpsc::unbounded_channel::<pr_agent::QuestionRequest>();
-                                let (a_tx, a_rx) =
-                                    tokio::sync::mpsc::unbounded_channel::<pr_agent::ApprovalRequest>();
-                                control_rx = Some((q_rx, a_rx));
+                            let (steer_tx, steer_rx) =
+                                tokio::sync::mpsc::unbounded_channel::<String>();
+                            app.steer_tx = Some(steer_tx);
 
-                                let tx = agent_event_tx.clone();
-                                let prof = profile.clone();
-                                research_task = Some(tokio::spawn(async move {
-                                    if let Err(e) = run_research_with_events(
-                                        query,
-                                        None,
-                                        tx,
-                                        Some(steer_rx),
-                                        Some((q_tx, a_tx)),
-                                        prof,
-                                    )
-                                    .await
-                                    {
-                                        eprintln!("Research error: {e}");
-                                    }
-                                }));
-                            } else if let Some(steer_tx) = &app.steer_tx {
-                                let msg = app.query.clone();
-                                app.query.clear();
-                                if steer_tx.send(msg).is_ok() {
-                                    app.event_log.push(pr_tui::EventLogEntry {
-                                        time: chrono::Local::now(),
-                                        message: "steering instruction sent to the running session".to_string(),
-                                        level: pr_tui::LogLevel::Info,
-                                    });
+                            // Operator control plane for this session.
+                            let (q_tx, q_rx) =
+                                tokio::sync::mpsc::unbounded_channel::<pr_agent::QuestionRequest>();
+                            let (a_tx, a_rx) =
+                                tokio::sync::mpsc::unbounded_channel::<pr_agent::ApprovalRequest>();
+                            control_rx = Some((q_rx, a_rx));
+
+                            let tx = agent_event_tx.clone();
+                            let prof = profile.clone();
+                            research_task = Some(tokio::spawn(async move {
+                                if let Err(e) = run_research_with_events(
+                                    query,
+                                    None,
+                                    tx,
+                                    Some(steer_rx),
+                                    Some((q_tx, a_tx)),
+                                    prof,
+                                )
+                                .await
+                                {
+                                    eprintln!("Research error: {e}");
                                 }
+                            }));
+                        } else if let Some(steer_tx) = &app.steer_tx {
+                            let msg = app.query.clone();
+                            app.query.clear();
+                            if steer_tx.send(msg).is_ok() {
+                                app.event_log.push(pr_tui::EventLogEntry {
+                                    time: chrono::Local::now(),
+                                    message: "steering instruction sent to the running session"
+                                        .to_string(),
+                                    level: pr_tui::LogLevel::Info,
+                                });
                             }
                         }
+                    }
                 }
                 pr_tui::event::AppEvent::Agent(agent_event) => {
                     app.handle_agent_event(agent_event);
@@ -1105,10 +1140,7 @@ async fn run_tui_loop(
 /// Load a persona/profile and apply its overrides onto the config.
 /// Returns the profile's system-prompt block (when non-empty) so the caller
 /// can inject it into every agent of the session.
-fn apply_profile(
-    config: &mut AppConfig,
-    profile: Option<&str>,
-) -> anyhow::Result<Option<String>> {
+fn apply_profile(config: &mut AppConfig, profile: Option<&str>) -> anyhow::Result<Option<String>> {
     let Some(name) = profile else {
         return Ok(None);
     };
@@ -1227,14 +1259,7 @@ async fn run_research_with_events(
     let final_config = config.clone();
     let query_for_failure = query.clone();
     let mut coordinator = Coordinator::new(
-        session_id,
-        query,
-        llm,
-        tools,
-        event_tx,
-        db,
-        output_dir,
-        config,
+        session_id, query, llm, tools, event_tx, db, output_dir, config,
     );
     if let Some(rx) = steer_rx {
         coordinator = coordinator.with_steer_rx(rx);
@@ -1315,7 +1340,11 @@ async fn run_research(
     let (contact_db, crm) = open_contact_attachments(&config).await;
     let memory = open_memory(&config);
     if let Some(store) = &contact_db {
-        println!("  👤 Contacts: {} ({})", config.contacts.db_path, store.backend());
+        println!(
+            "  👤 Contacts: {} ({})",
+            config.contacts.db_path,
+            store.backend()
+        );
     }
     if config.crm.is_configured() {
         println!("  🔄 CRM sync: {}", config.crm.provider);
@@ -1329,22 +1358,37 @@ async fn run_research(
     let event_handle = tokio::spawn(async move {
         while let Ok(event) = event_rx.recv().await {
             match &event {
-                pr_core::AgentEvent::AgentSpawned { id, task, depth, .. } => {
-                    println!("  🚀 Agent {} spawned (depth {}): {}", id, depth, task.chars().take(60).collect::<String>());
+                pr_core::AgentEvent::AgentSpawned {
+                    id, task, depth, ..
+                } => {
+                    println!(
+                        "  🚀 Agent {} spawned (depth {}): {}",
+                        id,
+                        depth,
+                        task.chars().take(60).collect::<String>()
+                    );
                 }
                 pr_core::AgentEvent::ToolCallStarted { agent_id, tool, .. } => {
                     println!("  🔧 [{}] calling: {}", agent_id, tool);
                 }
-                pr_core::AgentEvent::ToolCallCompleted { tool, duration_ms, .. } => {
+                pr_core::AgentEvent::ToolCallCompleted {
+                    tool, duration_ms, ..
+                } => {
                     println!("  ✅ {} completed ({}ms)", tool, duration_ms);
                 }
-                pr_core::AgentEvent::AgentCompleted { id, tokens_used, .. } => {
+                pr_core::AgentEvent::AgentCompleted {
+                    id, tokens_used, ..
+                } => {
                     println!("  🏁 Agent {} completed ({} tokens)", id, tokens_used);
                 }
                 pr_core::AgentEvent::AgentFailed { id, error } => {
                     println!("  ❌ Agent {} failed: {}", id, error);
                 }
-                pr_core::AgentEvent::SessionCompleted { total_tokens, total_agents, .. } => {
+                pr_core::AgentEvent::SessionCompleted {
+                    total_tokens,
+                    total_agents,
+                    ..
+                } => {
                     println!();
                     println!("  ══════════════════════════════════════");
                     println!("  ✅ Session completed!");
@@ -1391,7 +1435,15 @@ async fn run_research(
             println!();
             println!("  📁 Results: {}", output.output_dir.display());
             println!("  📝 Summary preview:");
-            println!("  {}", output.synthesis.lines().take(5).collect::<Vec<_>>().join("\n  "));
+            println!(
+                "  {}",
+                output
+                    .synthesis
+                    .lines()
+                    .take(5)
+                    .collect::<Vec<_>>()
+                    .join("\n  ")
+            );
             finalize_session(&output, &final_config, started_at).await;
         }
         Err(e) => {
@@ -1413,7 +1465,11 @@ async fn notify_failure(config: &AppConfig, query: &str, err: &impl std::fmt::Di
     }
     let text = format!("Query: {query}\nError: {err}");
     notifier
-        .notify_alert("session.failed", &format!("Research session failed: {query}"), &text)
+        .notify_alert(
+            "session.failed",
+            &format!("Research session failed: {query}"),
+            &text,
+        )
         .await;
 }
 
@@ -1819,10 +1875,9 @@ async fn cmd_contacts(action: ContactsAction) -> anyhow::Result<()> {
             }
         }
         ContactsAction::Export { format, output } => {
-            let fmt = pr_core::ContactExportFormat::parse(&format)
-                .ok_or_else(|| anyhow::anyhow!(
-                    "unknown format '{format}' (expected csv, vcf, json or xlsx)"
-                ))?;
+            let fmt = pr_core::ContactExportFormat::parse(&format).ok_or_else(|| {
+                anyhow::anyhow!("unknown format '{format}' (expected csv, vcf, json or xlsx)")
+            })?;
             let dir = output
                 .map(std::path::PathBuf::from)
                 .unwrap_or_else(|| std::path::PathBuf::from(&config.output.dir));
@@ -1838,7 +1893,11 @@ async fn cmd_contacts(action: ContactsAction) -> anyhow::Result<()> {
             }
             let exporter = pr_core::Exporter::new(dir);
             let path = exporter.export_contacts(&contacts, fmt).await?;
-            println!("Exported {} contact(s) to {}", contacts.len(), path.display());
+            println!(
+                "Exported {} contact(s) to {}",
+                contacts.len(),
+                path.display()
+            );
         }
         ContactsAction::Dedup { merge } => {
             let contacts = store.list_all(i64::MAX, 0).await?;
@@ -1853,10 +1912,8 @@ async fn cmd_contacts(action: ContactsAction) -> anyhow::Result<()> {
                     groups.entry(format!("phone:{p}")).or_default().push(c);
                 }
             }
-            let mut dup_groups: Vec<(String, Vec<&pr_core::Contact>)> = groups
-                .into_iter()
-                .filter(|(_, v)| v.len() > 1)
-                .collect();
+            let mut dup_groups: Vec<(String, Vec<&pr_core::Contact>)> =
+                groups.into_iter().filter(|(_, v)| v.len() > 1).collect();
             dup_groups.sort_by(|a, b| a.0.cmp(&b.0));
             if dup_groups.is_empty() {
                 println!("No duplicates found ({} contacts checked).", contacts.len());
@@ -1913,10 +1970,11 @@ async fn cmd_contacts(action: ContactsAction) -> anyhow::Result<()> {
             );
         }
         ContactsAction::PushCrm => {
-            let crm = pr_core::CrmSync::from_config(&config.crm)
-                .ok_or_else(|| anyhow::anyhow!(
+            let crm = pr_core::CrmSync::from_config(&config.crm).ok_or_else(|| {
+                anyhow::anyhow!(
                     "CRM is not configured ([crm] provider/domain/api_key in config.toml)"
-                ))?;
+                )
+            })?;
             let contacts = store.list_all(i64::MAX, 0).await?;
             if contacts.is_empty() {
                 println!("No contacts to push");
@@ -1991,11 +2049,7 @@ async fn cmd_resume(output: Option<String>, session_id: Option<String>) -> anyho
             for s in &interrupted {
                 println!(
                     "  {} — \"{}\" ({} agents, {} completed) — updated {}",
-                    s.session_id,
-                    s.query,
-                    s.total_agents,
-                    s.completed_agents,
-                    s.updated_at
+                    s.session_id, s.query, s.total_agents, s.completed_agents, s.updated_at
                 );
             }
             let latest = interrupted
@@ -2104,8 +2158,9 @@ fn truncate(s: &str, max: usize) -> String {
 fn print_job_status(job: &pr_persistence::JobRow) {
     let status = match (job.status.as_str(), job.pid.map(pr_persistence::pid_alive)) {
         ("running", Some(true)) => format!("running (pid {})", job.pid.unwrap_or(0)),
-        ("running", Some(false)) => "running, but the process is gone (crashed or killed)"
-            .to_string(),
+        ("running", Some(false)) => {
+            "running, but the process is gone (crashed or killed)".to_string()
+        }
         (s, _) => s.to_string(),
     };
     println!("Job:       {} ({})", short_id(&job.id), job.id);
@@ -2122,7 +2177,9 @@ fn print_job_status(job: &pr_persistence::JobRow) {
     println!("Output:    {}", job.output_dir);
     println!(
         "Log:       {}",
-        std::path::Path::new(&job.output_dir).join("job.log").display()
+        std::path::Path::new(&job.output_dir)
+            .join("job.log")
+            .display()
     );
     if let Some(err) = &job.error {
         println!("Error:     {}", truncate(err, 400));
@@ -2186,7 +2243,10 @@ fn cmd_profiles(action: ProfilesAction) -> anyhow::Result<()> {
                 anyhow::bail!("{} already exists", path.display());
             }
             std::fs::write(&path, pr_core::Profile::template(&name))?;
-            println!("Created {}. Edit it, then run with --profile {name}.", path.display());
+            println!(
+                "Created {}. Edit it, then run with --profile {name}.",
+                path.display()
+            );
         }
     }
     Ok(())
@@ -2221,7 +2281,10 @@ async fn cmd_jobs_submit(task: String, attempts: i64) -> anyhow::Result<()> {
     println!("  Dir:      {}", job_dir.display());
     println!("  Log:      {}", log_path.display());
     println!();
-    println!("  Watch it live:  fathom jobs status {} --watch 5", short_id(&job.id));
+    println!(
+        "  Watch it live:  fathom jobs status {} --watch 5",
+        short_id(&job.id)
+    );
     println!("  Tail the log:   fathom jobs logs {}", short_id(&job.id));
     Ok(())
 }
@@ -2316,7 +2379,10 @@ fn cmd_jobs_rerun(id: String) -> anyhow::Result<()> {
         }
         "running" => match job.pid {
             Some(pid) if !pr_persistence::pid_alive(pid) => {
-                println!("Job {} is stale (pid {pid} is gone); resetting", short_id(&job.id));
+                println!(
+                    "Job {} is stale (pid {pid} is gone); resetting",
+                    short_id(&job.id)
+                );
                 db.reset_running_with_pid(&job.id, pid)?
             }
             _ => anyhow::bail!(
@@ -2327,7 +2393,11 @@ fn cmd_jobs_rerun(id: String) -> anyhow::Result<()> {
         _ => db.reset_for_rerun(&job.id)?,
     };
     if !reset {
-        anyhow::bail!("job {} cannot be re-run from state '{}'", short_id(&job.id), job.status);
+        anyhow::bail!(
+            "job {} cannot be re-run from state '{}'",
+            short_id(&job.id),
+            job.status
+        );
     }
 
     let job_dir = std::path::PathBuf::from(&job.output_dir);
@@ -2337,7 +2407,10 @@ fn cmd_jobs_rerun(id: String) -> anyhow::Result<()> {
     pr_persistence::spawn_detached_runner(&exe, &job.id, Some(&log_path))?;
 
     println!("Re-run started for job {}", short_id(&job.id));
-    println!("  Watch it live:  fathom jobs status {} --watch 5", short_id(&job.id));
+    println!(
+        "  Watch it live:  fathom jobs status {} --watch 5",
+        short_id(&job.id)
+    );
     Ok(())
 }
 
@@ -2395,7 +2468,10 @@ async fn cmd_job_run(id: String) -> anyhow::Result<()> {
             Ok(()) => {
                 db.mark_completed(&job.id)?;
                 println!();
-                println!("✅ Job {} completed on attempt {attempt}", short_id(&job.id));
+                println!(
+                    "✅ Job {} completed on attempt {attempt}",
+                    short_id(&job.id)
+                );
                 return Ok(());
             }
             Err(e) => {
@@ -2445,7 +2521,13 @@ mod tests {
     fn parse_run_basic() {
         let cli = Cli::try_parse_from(["pr", "run", "test query"]).unwrap();
         match cli.command {
-            Commands::Run { query, output, repeat, profile, task_file } => {
+            Commands::Run {
+                query,
+                output,
+                repeat,
+                profile,
+                task_file,
+            } => {
                 assert_eq!(query.as_deref(), Some("test query"));
                 assert!(output.is_none());
                 assert!(repeat.is_none());
@@ -2460,9 +2542,14 @@ mod tests {
     fn parse_run_with_task_file() {
         let cli = Cli::try_parse_from(["pr", "run", "--task-file", "/tmp/task.txt"]).unwrap();
         match cli.command {
-            Commands::Run { query, task_file, .. } => {
+            Commands::Run {
+                query, task_file, ..
+            } => {
                 assert!(query.is_none());
-                assert_eq!(task_file.as_deref(), Some(std::path::Path::new("/tmp/task.txt")));
+                assert_eq!(
+                    task_file.as_deref(),
+                    Some(std::path::Path::new("/tmp/task.txt"))
+                );
             }
             _ => panic!("expected Run"),
         }
@@ -2488,9 +2575,17 @@ mod tests {
 
     #[test]
     fn parse_run_with_all_flags() {
-        let cli = Cli::try_parse_from(["pr", "run", "query", "--output", "/tmp/o", "--repeat", "30"]).unwrap();
+        let cli =
+            Cli::try_parse_from(["pr", "run", "query", "--output", "/tmp/o", "--repeat", "30"])
+                .unwrap();
         match cli.command {
-            Commands::Run { query, output, repeat, profile, .. } => {
+            Commands::Run {
+                query,
+                output,
+                repeat,
+                profile,
+                ..
+            } => {
                 assert_eq!(query.as_deref(), Some("query"));
                 assert_eq!(output.as_deref(), Some("/tmp/o"));
                 assert_eq!(repeat, Some(30));
@@ -2506,7 +2601,9 @@ mod tests {
         // error is raised at dispatch time, not by clap.
         let cli = Cli::try_parse_from(["pr", "run"]).unwrap();
         match cli.command {
-            Commands::Run { query, task_file, .. } => {
+            Commands::Run {
+                query, task_file, ..
+            } => {
                 assert!(query.is_none());
                 assert!(task_file.is_none());
             }
@@ -2519,15 +2616,28 @@ mod tests {
     #[test]
     fn parse_worker() {
         let cli = Cli::try_parse_from([
-            "pr", "worker",
-            "--session-id", "sess-1",
-            "--agent-id", "agent-1",
-            "--task", "find info",
-            "--socket", "/tmp/s.sock",
-            "--role", "analyst",
-        ]).unwrap();
+            "pr",
+            "worker",
+            "--session-id",
+            "sess-1",
+            "--agent-id",
+            "agent-1",
+            "--task",
+            "find info",
+            "--socket",
+            "/tmp/s.sock",
+            "--role",
+            "analyst",
+        ])
+        .unwrap();
         match cli.command {
-            Commands::Worker { session_id, agent_id, task, socket, role } => {
+            Commands::Worker {
+                session_id,
+                agent_id,
+                task,
+                socket,
+                role,
+            } => {
                 assert_eq!(session_id, "sess-1");
                 assert_eq!(agent_id, "agent-1");
                 assert_eq!(task, "find info");
@@ -2541,9 +2651,18 @@ mod tests {
     #[test]
     fn parse_worker_default_role() {
         let cli = Cli::try_parse_from([
-            "pr", "worker",
-            "--session-id", "s", "--agent-id", "a", "--task", "t", "--socket", "/s",
-        ]).unwrap();
+            "pr",
+            "worker",
+            "--session-id",
+            "s",
+            "--agent-id",
+            "a",
+            "--task",
+            "t",
+            "--socket",
+            "/s",
+        ])
+        .unwrap();
         match cli.command {
             Commands::Worker { role, .. } => assert_eq!(role, "researcher"),
             _ => panic!("expected Worker"),
@@ -2561,7 +2680,11 @@ mod tests {
     fn parse_tui_no_query() {
         let cli = Cli::try_parse_from(["pr", "tui"]).unwrap();
         match cli.command {
-            Commands::Tui { query, profile, replay } => {
+            Commands::Tui {
+                query,
+                profile,
+                replay,
+            } => {
                 assert!(query.is_none());
                 assert!(profile.is_none());
                 assert!(replay.is_none());
@@ -2574,7 +2697,11 @@ mod tests {
     fn parse_tui_with_query() {
         let cli = Cli::try_parse_from(["pr", "tui", "hello"]).unwrap();
         match cli.command {
-            Commands::Tui { query, profile, replay } => {
+            Commands::Tui {
+                query,
+                profile,
+                replay,
+            } => {
                 assert_eq!(query.as_deref(), Some("hello"));
                 assert!(profile.is_none());
                 assert!(replay.is_none());
@@ -2687,7 +2814,8 @@ mod tests {
 
     #[test]
     fn parse_serve_custom() {
-        let cli = Cli::try_parse_from(["pr", "serve", "--port", "9090", "--host", "0.0.0.0"]).unwrap();
+        let cli =
+            Cli::try_parse_from(["pr", "serve", "--port", "9090", "--host", "0.0.0.0"]).unwrap();
         match cli.command {
             Commands::Serve { port, host } => {
                 assert_eq!(port, 9090);
@@ -2740,7 +2868,9 @@ mod tests {
 
     #[test]
     fn parse_contacts_export_with_output() {
-        let cli = Cli::try_parse_from(["pr", "contacts", "export", "--format", "csv", "-o", "/tmp"]).unwrap();
+        let cli =
+            Cli::try_parse_from(["pr", "contacts", "export", "--format", "csv", "-o", "/tmp"])
+                .unwrap();
         match cli.command {
             Commands::Contacts { action } => match action {
                 ContactsAction::Export { format, output } => {
@@ -2850,7 +2980,14 @@ mod tests {
     #[test]
     fn parse_bench_with_args() {
         let cli = Cli::try_parse_from([
-            "pr", "bench", "-s", "parallel-io", "-n", "8", "--save", "/tmp/report.md",
+            "pr",
+            "bench",
+            "-s",
+            "parallel-io",
+            "-n",
+            "8",
+            "--save",
+            "/tmp/report.md",
         ])
         .unwrap();
         match cli.command {
@@ -2891,10 +3028,7 @@ mod tests {
 
     #[test]
     fn parse_jobs_submit_with_attempts() {
-        let cli = Cli::try_parse_from([
-            "pr", "jobs", "submit", "task", "--attempts", "5",
-        ])
-        .unwrap();
+        let cli = Cli::try_parse_from(["pr", "jobs", "submit", "task", "--attempts", "5"]).unwrap();
         match cli.command {
             Commands::Jobs { action } => match action {
                 JobsAction::Submit { attempts, .. } => assert_eq!(attempts, 5),

@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use pr_core::{ToolSchema, ToolOutput, SearchConfig};
+use pr_core::{SearchConfig, ToolOutput, ToolSchema};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -220,7 +220,11 @@ pub trait Tool: Send + Sync {
     fn name(&self) -> &str;
     fn description(&self) -> &str;
     fn schema(&self) -> ToolSchema;
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput>;
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput>;
 }
 
 #[derive(Default)]
@@ -306,11 +310,21 @@ impl ToolRegistry {
         // are additive: the CDP browser tools below remain available as a
         // local fallback when a browser is reachable.
         if let Ok(Some(client)) = crate::computer::ComputerClient::from_env() {
-            registry.register(Arc::new(crate::computer::ComputerSnapshotTool { client: client.clone() }));
-            registry.register(Arc::new(crate::computer::ComputerNavigateTool { client: client.clone() }));
-            registry.register(Arc::new(crate::computer::ComputerClickTool { client: client.clone() }));
-            registry.register(Arc::new(crate::computer::ComputerTypeTool { client: client.clone() }));
-            registry.register(Arc::new(crate::computer::ComputerKeyTool { client: client.clone() }));
+            registry.register(Arc::new(crate::computer::ComputerSnapshotTool {
+                client: client.clone(),
+            }));
+            registry.register(Arc::new(crate::computer::ComputerNavigateTool {
+                client: client.clone(),
+            }));
+            registry.register(Arc::new(crate::computer::ComputerClickTool {
+                client: client.clone(),
+            }));
+            registry.register(Arc::new(crate::computer::ComputerTypeTool {
+                client: client.clone(),
+            }));
+            registry.register(Arc::new(crate::computer::ComputerKeyTool {
+                client: client.clone(),
+            }));
             registry.register(Arc::new(crate::computer::ComputerScreenshotTool { client }));
         }
 
@@ -427,7 +441,11 @@ impl Tool for LspToolAdapter {
         self.inner.schema()
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         self.inner.execute(args, &ctx.working_dir).await
     }
 }
@@ -448,9 +466,14 @@ mod tests {
     fn test_with_builtins_registers_new_tools() {
         let registry = ToolRegistry::with_builtins();
         for name in [
-            "web_search", "web_fetch", "web_crawl", "web_feed",
-            "code_symbols", "repo_map",
-            "parse_html", "extract_json",
+            "web_search",
+            "web_fetch",
+            "web_crawl",
+            "web_feed",
+            "code_symbols",
+            "repo_map",
+            "parse_html",
+            "extract_json",
             "analyze_image",
             "git_status",
             "git_diff",

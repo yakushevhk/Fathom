@@ -49,8 +49,12 @@ pub const ATTENTION_KINDS: &[&str] = &[
 ];
 
 /// Delegation constraint directives the parent can act on.
-pub const DELEGATION_CONSTRAINT_DIRECTIVES: &[&str] =
-    &["halt_fanout", "cap_children", "require_lane", "block_surface"];
+pub const DELEGATION_CONSTRAINT_DIRECTIVES: &[&str] = &[
+    "halt_fanout",
+    "cap_children",
+    "require_lane",
+    "block_surface",
+];
 
 /// Hard cap on the text of any single row, mirroring ouroboros `_MAX_TEXT_CHARS`.
 pub const MAX_TEXT_CHARS: usize = 4000;
@@ -113,7 +117,13 @@ impl TaskTreeLedger {
         // Sanitize the id so it cannot escape the directory.
         let safe: String = session_id
             .chars()
-            .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+            .map(|c| {
+                if c.is_alphanumeric() || c == '-' || c == '_' {
+                    c
+                } else {
+                    '_'
+                }
+            })
             .collect();
         dir.as_ref().join("task_tree").join(format!("{safe}.jsonl"))
     }
@@ -132,7 +142,12 @@ impl TaskTreeLedger {
         let raw = match tokio::fs::read(&self.path).await {
             Ok(b) => String::from_utf8_lossy(&b).into_owned(),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
-            Err(e) => return Err(anyhow::anyhow!("read tree ledger {}: {e}", self.path.display())),
+            Err(e) => {
+                return Err(anyhow::anyhow!(
+                    "read tree ledger {}: {e}",
+                    self.path.display()
+                ))
+            }
         };
         let mut state = self.state.lock().await;
         state.bytes = raw.len() as u64;
@@ -174,7 +189,10 @@ impl TaskTreeLedger {
             anyhow::bail!("unknown tree-ledger kind: {kind}");
         }
         if text.len() > MAX_TEXT_CHARS {
-            anyhow::bail!("tree-ledger text too long ({} > {MAX_TEXT_CHARS})", text.len());
+            anyhow::bail!(
+                "tree-ledger text too long ({} > {MAX_TEXT_CHARS})",
+                text.len()
+            );
         }
         let row = TreeRow {
             ts: Self::now_ts(),
@@ -272,9 +290,16 @@ mod tests {
             l.append("fact", "found acme.com", "a1", "researcher", false, None)
                 .await
                 .unwrap();
-            l.append("blocker", "captcha on source", "a2", "researcher", true, None)
-                .await
-                .unwrap();
+            l.append(
+                "blocker",
+                "captcha on source",
+                "a2",
+                "researcher",
+                true,
+                None,
+            )
+            .await
+            .unwrap();
             assert_eq!(l.len().await, 2);
         }
         let l = TaskTreeLedger::new(&path);
@@ -290,9 +315,16 @@ mod tests {
         let tmp = tempfile::TempDir::new().unwrap();
         let l = TaskTreeLedger::new(tmp.path().join("t.jsonl"));
         let t0 = TaskTreeLedger::now_ts();
-        l.append("milestone", "lead complete", "a1", "researcher", false, None)
-            .await
-            .unwrap();
+        l.append(
+            "milestone",
+            "lead complete",
+            "a1",
+            "researcher",
+            false,
+            None,
+        )
+        .await
+        .unwrap();
         tokio::time::sleep(std::time::Duration::from_millis(10)).await;
         l.append("blocker", "hit rate limit", "a2", "researcher", true, None)
             .await
@@ -308,10 +340,7 @@ mod tests {
     async fn refuses_bad_kind_and_oversized_row() {
         let tmp = tempfile::TempDir::new().unwrap();
         let l = TaskTreeLedger::new(tmp.path().join("t.jsonl"));
-        assert!(l
-            .append("nope", "x", "a", "r", false, None)
-            .await
-            .is_err());
+        assert!(l.append("nope", "x", "a", "r", false, None).await.is_err());
         let huge = "x".repeat(MAX_TEXT_CHARS + 1);
         assert!(l
             .append("fact", &huge, "a", "r", false, None)
@@ -324,9 +353,15 @@ mod tests {
     async fn tail_returns_latest_first_order() {
         let tmp = tempfile::TempDir::new().unwrap();
         let l = TaskTreeLedger::new(tmp.path().join("t.jsonl"));
-        l.append("fact", "one", "a", "r", false, None).await.unwrap();
-        l.append("fact", "two", "a", "r", false, None).await.unwrap();
-        l.append("fact", "three", "a", "r", false, None).await.unwrap();
+        l.append("fact", "one", "a", "r", false, None)
+            .await
+            .unwrap();
+        l.append("fact", "two", "a", "r", false, None)
+            .await
+            .unwrap();
+        l.append("fact", "three", "a", "r", false, None)
+            .await
+            .unwrap();
         let tail = l.tail(2).await;
         let texts: Vec<&str> = tail.iter().map(|r| r.text.as_str()).collect();
         assert_eq!(texts, vec!["two", "three"]);

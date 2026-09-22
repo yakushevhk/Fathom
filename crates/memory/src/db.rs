@@ -22,9 +22,7 @@ pub fn default_memory_db_path() -> PathBuf {
         return PathBuf::from(p);
     }
     let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-    PathBuf::from(home)
-        .join(".fathom")
-        .join("memory.db")
+    PathBuf::from(home).join(".fathom").join("memory.db")
 }
 
 // ── Scope ────────────────────────────────────────────────────────────────────
@@ -221,7 +219,9 @@ impl MemoryDb {
             )
             .is_ok();
         if !fts_available {
-            tracing::warn!("FTS5 unavailable in this SQLite build; falling back to LIKE keyword search");
+            tracing::warn!(
+                "FTS5 unavailable in this SQLite build; falling back to LIKE keyword search"
+            );
         }
         let db = Self {
             conn: Mutex::new(conn),
@@ -369,7 +369,12 @@ impl MemoryDb {
     }
 
     /// All memories visible under `filter`, newest first.
-    pub fn list(&self, filter: &ScopeFilter, status: Option<&str>, limit: usize) -> anyhow::Result<Vec<MemoryRow>> {
+    pub fn list(
+        &self,
+        filter: &ScopeFilter,
+        status: Option<&str>,
+        limit: usize,
+    ) -> anyhow::Result<Vec<MemoryRow>> {
         let conn = self.conn.lock().unwrap();
         let mut sql = format!("{} WHERE 1=1", Self::SELECT_COLS);
         let mut params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
@@ -397,14 +402,20 @@ impl MemoryDb {
         let limit = (limit as u64).min(i64::MAX as u64);
         sql.push_str(&format!(" ORDER BY created_at DESC LIMIT {limit}"));
         let mut stmt = conn.prepare(&sql)?;
-        let rusqlite_params: Vec<&dyn rusqlite::ToSql> = params.iter().map(|p| p.as_ref()).collect();
+        let rusqlite_params: Vec<&dyn rusqlite::ToSql> =
+            params.iter().map(|p| p.as_ref()).collect();
         let rows = stmt
             .query_map(rusqlite::params_from_iter(rusqlite_params), map_row)?
             .collect::<rusqlite::Result<Vec<_>>>()?;
         Ok(rows)
     }
 
-    pub fn find_by_hash(&self, hash: &str, scope: &str, scope_key: &str) -> anyhow::Result<Option<MemoryRow>> {
+    pub fn find_by_hash(
+        &self,
+        hash: &str,
+        scope: &str,
+        scope_key: &str,
+    ) -> anyhow::Result<Option<MemoryRow>> {
         let conn = self.conn.lock().unwrap();
         let row = conn
             .prepare(&format!(
@@ -512,7 +523,10 @@ impl MemoryDb {
     pub fn delete(&self, id: &str) -> anyhow::Result<bool> {
         let conn = self.conn.lock().unwrap();
         let n = conn.execute("DELETE FROM memories WHERE id = ?1", params![id])?;
-        conn.execute("DELETE FROM memories_embeddings WHERE memory_id = ?1", params![id])?;
+        conn.execute(
+            "DELETE FROM memories_embeddings WHERE memory_id = ?1",
+            params![id],
+        )?;
         conn.execute(
             "DELETE FROM memory_edges WHERE from_id = ?1 OR to_id = ?1",
             params![id],
@@ -568,7 +582,12 @@ impl MemoryDb {
 
     /// Keyword search. Returns (memory_id, relevance) with higher = better.
     /// Uses FTS5 BM25 when available, else a LIKE fallback.
-    pub fn keyword_search(&self, query: &str, filter: &ScopeFilter, limit: usize) -> anyhow::Result<Vec<(String, f64)>> {
+    pub fn keyword_search(
+        &self,
+        query: &str,
+        filter: &ScopeFilter,
+        limit: usize,
+    ) -> anyhow::Result<Vec<(String, f64)>> {
         let conn = self.conn.lock().unwrap();
         if self.fts_available {
             let match_expr = fts_match_expr(query);
@@ -613,7 +632,8 @@ impl MemoryDb {
             "SELECT id, content, tags FROM memories WHERE status = 'active' {scope_clause}"
         );
         let mut stmt = conn.prepare(&sql)?;
-        let rusqlite_params: Vec<&dyn rusqlite::ToSql> = scope_params.iter().map(|p| p.as_ref()).collect();
+        let rusqlite_params: Vec<&dyn rusqlite::ToSql> =
+            scope_params.iter().map(|p| p.as_ref()).collect();
         let mut scored: Vec<(String, f64)> = Vec::new();
         let mut rows = stmt.query(rusqlite::params_from_iter(rusqlite_params))?;
         while let Some(r) = rows.next()? {
@@ -635,7 +655,12 @@ impl MemoryDb {
 
     // ── Embeddings ──────────────────────────────────────────────────────
 
-    pub fn put_embedding(&self, memory_id: &str, model: &str, vector: &[f32]) -> anyhow::Result<()> {
+    pub fn put_embedding(
+        &self,
+        memory_id: &str,
+        model: &str,
+        vector: &[f32],
+    ) -> anyhow::Result<()> {
         let bytes = f32_vec_to_bytes(vector);
         let conn = self.conn.lock().unwrap();
         conn.execute(
@@ -649,7 +674,11 @@ impl MemoryDb {
     /// All embeddings for memories visible under `filter`, restricted to
     /// rows embedded with `model` (vectors from different models are not
     /// comparable). Expired/superseded rows are excluded.
-    pub fn load_embeddings(&self, filter: &ScopeFilter, model: &str) -> anyhow::Result<Vec<(String, Vec<f32>)>> {
+    pub fn load_embeddings(
+        &self,
+        filter: &ScopeFilter,
+        model: &str,
+    ) -> anyhow::Result<Vec<(String, Vec<f32>)>> {
         let conn = self.conn.lock().unwrap();
         let (scope_clause, scope_params) = build_scope_filter(filter, "m.");
         let sql = format!(
@@ -693,7 +722,13 @@ impl MemoryDb {
 
     // ── Edges ───────────────────────────────────────────────────────────
 
-    pub fn add_edge(&self, from: &str, to: &str, edge_type: &str, reason: Option<&str>) -> anyhow::Result<()> {
+    pub fn add_edge(
+        &self,
+        from: &str,
+        to: &str,
+        edge_type: &str,
+        reason: Option<&str>,
+    ) -> anyhow::Result<()> {
         let now = chrono::Utc::now().to_rfc3339();
         let conn = self.conn.lock().unwrap();
         conn.execute(
@@ -740,7 +775,13 @@ impl MemoryDb {
 
     // ── History & meta ──────────────────────────────────────────────────
 
-    pub fn log_history(&self, memory_id: &str, event: &str, old_value: Option<&str>, new_value: Option<&str>) {
+    pub fn log_history(
+        &self,
+        memory_id: &str,
+        event: &str,
+        old_value: Option<&str>,
+        new_value: Option<&str>,
+    ) {
         let now = chrono::Utc::now().to_rfc3339();
         let conn = self.conn.lock().unwrap();
         let _ = conn.execute(
@@ -804,7 +845,10 @@ fn fts_match_expr(query: &str) -> String {
 }
 
 /// Build parameterized SQL fragment and dynamic parameter vector restricting `scope`/`scope_key` to filter pairs.
-fn build_scope_filter(filter: &ScopeFilter, prefix: &str) -> (String, Vec<Box<dyn rusqlite::ToSql>>) {
+fn build_scope_filter(
+    filter: &ScopeFilter,
+    prefix: &str,
+) -> (String, Vec<Box<dyn rusqlite::ToSql>>) {
     if filter.pairs.is_empty() {
         return (String::new(), Vec::new());
     }
@@ -915,7 +959,9 @@ mod tests {
         db.insert(&u).unwrap();
         db.insert(&run).unwrap();
 
-        let persistent = db.list(&ScopeFilter::persistent(), Some("active"), 100).unwrap();
+        let persistent = db
+            .list(&ScopeFilter::persistent(), Some("active"), 100)
+            .unwrap();
         assert_eq!(persistent.len(), 2);
         assert!(persistent.iter().all(|m| m.scope != "run"));
 
@@ -931,9 +977,14 @@ mod tests {
         let db = db();
         let r = row("dup fact");
         db.insert(&r).unwrap();
-        let found = db.find_by_hash(&content_hash("dup fact"), "agent", "").unwrap();
+        let found = db
+            .find_by_hash(&content_hash("dup fact"), "agent", "")
+            .unwrap();
         assert!(found.is_some());
-        assert!(db.find_by_hash(&content_hash("other"), "agent", "").unwrap().is_none());
+        assert!(db
+            .find_by_hash(&content_hash("other"), "agent", "")
+            .unwrap()
+            .is_none());
     }
 
     #[test]
@@ -943,7 +994,8 @@ mod tests {
         let v2 = row("CEO is Bob since 2025");
         db.insert(&v1).unwrap();
         db.insert(&v2).unwrap();
-        db.add_edge(&v2.id, &v1.id, "supersedes", Some("management change")).unwrap();
+        db.add_edge(&v2.id, &v1.id, "supersedes", Some("management change"))
+            .unwrap();
         db.set_status(&v1.id, "superseded").unwrap();
 
         assert_eq!(db.superseded_by(&v1.id).unwrap(), Some(v2.id.clone()));
@@ -954,7 +1006,9 @@ mod tests {
         assert_eq!(edges[0].edge_type, "supersedes");
 
         // Superseded rows leave active listings.
-        let active = db.list(&ScopeFilter::persistent(), Some("active"), 100).unwrap();
+        let active = db
+            .list(&ScopeFilter::persistent(), Some("active"), 100)
+            .unwrap();
         assert_eq!(active.len(), 1);
         assert_eq!(active[0].id, v2.id);
     }
@@ -984,13 +1038,17 @@ mod tests {
         db.insert(&r).unwrap();
         db.fts_insert(&r.id, &r.content, &r.tags);
 
-        let hits = db.keyword_search("postgres billing", &ScopeFilter::persistent(), 10).unwrap();
+        let hits = db
+            .keyword_search("postgres billing", &ScopeFilter::persistent(), 10)
+            .unwrap();
         assert_eq!(hits.len(), 1);
         assert_eq!(hits[0].0, r.id);
 
         // Superseded rows are excluded.
         db.set_status(&r.id, "superseded").unwrap();
-        let hits = db.keyword_search("postgres", &ScopeFilter::persistent(), 10).unwrap();
+        let hits = db
+            .keyword_search("postgres", &ScopeFilter::persistent(), 10)
+            .unwrap();
         assert!(hits.is_empty());
     }
 
@@ -999,18 +1057,31 @@ mod tests {
         let db = db();
         let r = row("vector fact");
         db.insert(&r).unwrap();
-        db.put_embedding(&r.id, "tfidf-hash-512", &[0.1, 0.2, 0.3]).unwrap();
+        db.put_embedding(&r.id, "tfidf-hash-512", &[0.1, 0.2, 0.3])
+            .unwrap();
 
-        let same = db.load_embeddings(&ScopeFilter::persistent(), "tfidf-hash-512").unwrap();
+        let same = db
+            .load_embeddings(&ScopeFilter::persistent(), "tfidf-hash-512")
+            .unwrap();
         assert_eq!(same.len(), 1);
         assert!((same[0].1[1] - 0.2).abs() < 1e-6);
 
         // Different model name => not comparable => not returned.
-        let other = db.load_embeddings(&ScopeFilter::persistent(), "text-embedding-3-small").unwrap();
+        let other = db
+            .load_embeddings(&ScopeFilter::persistent(), "text-embedding-3-small")
+            .unwrap();
         assert!(other.is_empty());
 
-        assert_eq!(db.ids_without_embedding("text-embedding-3-small").unwrap().len(), 1);
-        assert!(db.ids_without_embedding("tfidf-hash-512").unwrap().is_empty());
+        assert_eq!(
+            db.ids_without_embedding("text-embedding-3-small")
+                .unwrap()
+                .len(),
+            1
+        );
+        assert!(db
+            .ids_without_embedding("tfidf-hash-512")
+            .unwrap()
+            .is_empty());
     }
 
     #[test]
@@ -1023,8 +1094,14 @@ mod tests {
         db.log_history(&r.id, "add", None, Some("x"));
         assert!(db.delete(&r.id).unwrap());
         assert!(db.get(&r.id).unwrap().is_none());
-        assert!(db.load_embeddings(&ScopeFilter::persistent(), "m").unwrap().is_empty());
-        assert!(db.keyword_search("delete", &ScopeFilter::persistent(), 10).unwrap().is_empty());
+        assert!(db
+            .load_embeddings(&ScopeFilter::persistent(), "m")
+            .unwrap()
+            .is_empty());
+        assert!(db
+            .keyword_search("delete", &ScopeFilter::persistent(), 10)
+            .unwrap()
+            .is_empty());
     }
 
     #[test]
@@ -1034,7 +1111,10 @@ mod tests {
         r.expires_at = Some((chrono::Utc::now() - chrono::Duration::days(1)).to_rfc3339());
         db.insert(&r).unwrap();
         db.put_embedding(&r.id, "m", &[1.0]).unwrap();
-        assert!(db.load_embeddings(&ScopeFilter::persistent(), "m").unwrap().is_empty());
+        assert!(db
+            .load_embeddings(&ScopeFilter::persistent(), "m")
+            .unwrap()
+            .is_empty());
         assert!(r.is_expired());
     }
 
@@ -1043,7 +1123,10 @@ mod tests {
         let db = db();
         assert!(db.meta_get("embedding_model").is_none());
         db.meta_set("embedding_model", "tfidf-hash-512");
-        assert_eq!(db.meta_get("embedding_model").as_deref(), Some("tfidf-hash-512"));
+        assert_eq!(
+            db.meta_get("embedding_model").as_deref(),
+            Some("tfidf-hash-512")
+        );
         db.meta_set("embedding_model", "other");
         assert_eq!(db.meta_get("embedding_model").as_deref(), Some("other"));
     }
@@ -1060,7 +1143,9 @@ mod tests {
 
         let db2 = MemoryDb::open(&path).unwrap();
         assert!(db2.get(&r.id).unwrap().is_some());
-        let hits = db2.keyword_search("persistent", &ScopeFilter::persistent(), 5).unwrap();
+        let hits = db2
+            .keyword_search("persistent", &ScopeFilter::persistent(), 5)
+            .unwrap();
         assert_eq!(hits.len(), 1);
     }
 

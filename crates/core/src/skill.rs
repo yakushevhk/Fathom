@@ -130,8 +130,8 @@ impl SkillRegistry {
     }
 
     fn discover_recursive(&mut self, dir: &Path) -> Result<()> {
-        let entries = fs::read_dir(dir)
-            .with_context(|| format!("reading skills dir {}", dir.display()))?;
+        let entries =
+            fs::read_dir(dir).with_context(|| format!("reading skills dir {}", dir.display()))?;
 
         for entry in entries {
             let entry = entry?;
@@ -193,7 +193,9 @@ impl SkillRegistry {
     /// Get a skill by name (case-insensitive).
     pub fn get_skill(&self, name: &str) -> Option<&Skill> {
         let name_lower = name.to_lowercase();
-        self.skills.iter().find(|s| s.name.to_lowercase() == name_lower)
+        self.skills
+            .iter()
+            .find(|s| s.name.to_lowercase() == name_lower)
     }
 
     /// Get all discovered skills.
@@ -247,8 +249,10 @@ mod tests {
     use super::*;
 
     fn test_dir() -> PathBuf {
-        let dir =
-            std::env::temp_dir().join(format!("pr-skill-test-{}", uuid::Uuid::new_v7(uuid::Timestamp::now(uuid::NoContext))));
+        let dir = std::env::temp_dir().join(format!(
+            "pr-skill-test-{}",
+            uuid::Uuid::new_v7(uuid::Timestamp::now(uuid::NoContext))
+        ));
         fs::create_dir_all(&dir).unwrap();
         dir
     }
@@ -263,7 +267,10 @@ mod tests {
         let path = skill_dir.join("SKILL.md");
         fs::write(
             &path,
-            format!("# {}\n\n{}\n\n## Instructions\n\nDo the thing.\n", name, description),
+            format!(
+                "# {}\n\n{}\n\n## Instructions\n\nDo the thing.\n",
+                name, description
+            ),
         )
         .unwrap();
         path
@@ -449,9 +456,7 @@ mod tests {
     fn test_new_store_paths() {
         let dir = test_dir();
         let registry = SkillRegistry::new(&dir);
-        assert!(registry
-            .skills_dir()
-            .ends_with(".fathom/skills"));
+        assert!(registry.skills_dir().ends_with(".fathom/skills"));
         cleanup(&dir);
     }
 }

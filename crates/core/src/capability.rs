@@ -77,24 +77,45 @@ mod tests {
 
     #[test]
     fn explicit_window_is_confirmed() {
-        assert_eq!(resolve_window(Some(200_000), WindowProfile::Low), CapabilityEvidence::Confirmed(200_000));
+        assert_eq!(
+            resolve_window(Some(200_000), WindowProfile::Low),
+            CapabilityEvidence::Confirmed(200_000)
+        );
     }
 
     #[test]
     fn profile_falls_back_to_conservative_floor() {
-        assert_eq!(resolve_window(None, WindowProfile::Low), CapabilityEvidence::Asserted(LOW_WINDOW_FLOOR));
-        assert_eq!(resolve_window(None, WindowProfile::Max), CapabilityEvidence::Asserted(MAX_WINDOW_FLOOR));
+        assert_eq!(
+            resolve_window(None, WindowProfile::Low),
+            CapabilityEvidence::Asserted(LOW_WINDOW_FLOOR)
+        );
+        assert_eq!(
+            resolve_window(None, WindowProfile::Max),
+            CapabilityEvidence::Asserted(MAX_WINDOW_FLOOR)
+        );
     }
 
     #[test]
     fn zero_explicit_counts_as_unset() {
-        assert_eq!(resolve_window(Some(0), WindowProfile::Low), CapabilityEvidence::Asserted(LOW_WINDOW_FLOOR));
+        assert_eq!(
+            resolve_window(Some(0), WindowProfile::Low),
+            CapabilityEvidence::Asserted(LOW_WINDOW_FLOOR)
+        );
     }
 
     #[test]
     fn effective_never_below_safety_floor() {
-        assert_eq!(effective_window(CapabilityEvidence::Confirmed(1000)), MIN_SAFE_WINDOW);
-        assert_eq!(effective_window(CapabilityEvidence::Asserted(LOW_WINDOW_FLOOR)), LOW_WINDOW_FLOOR);
-        assert_eq!(effective_window(CapabilityEvidence::Unknown), MIN_SAFE_WINDOW);
+        assert_eq!(
+            effective_window(CapabilityEvidence::Confirmed(1000)),
+            MIN_SAFE_WINDOW
+        );
+        assert_eq!(
+            effective_window(CapabilityEvidence::Asserted(LOW_WINDOW_FLOOR)),
+            LOW_WINDOW_FLOOR
+        );
+        assert_eq!(
+            effective_window(CapabilityEvidence::Unknown),
+            MIN_SAFE_WINDOW
+        );
     }
 }

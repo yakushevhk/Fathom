@@ -1,5 +1,5 @@
 use pr_core::{ToolCall, ToolOutput};
-use pr_tools::{ToolRegistry, ToolContext};
+use pr_tools::{ToolContext, ToolRegistry};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -172,13 +172,12 @@ impl ToolExecutor {
                         }
 
                         let start = std::time::Instant::now();
-                        let output =
-                            match registry.execute(tc.name(), tc.arguments(), ctx).await {
-                                Ok(o) => o,
-                                // {e:#} keeps the full anyhow chain (root
-                                // cause like "Operation not permitted").
-                                Err(e) => ToolOutput::err(format!("Tool execution error: {e:#}")),
-                            };
+                        let output = match registry.execute(tc.name(), tc.arguments(), ctx).await {
+                            Ok(o) => o,
+                            // {e:#} keeps the full anyhow chain (root
+                            // cause like "Operation not permitted").
+                            Err(e) => ToolOutput::err(format!("Tool execution error: {e:#}")),
+                        };
                         let duration_ms = start.elapsed().as_millis() as u64;
 
                         ToolBatchResult {
@@ -311,8 +310,7 @@ impl ToolExecutor {
                         }
 
                         let start = std::time::Instant::now();
-                        let output = match registry.execute(tc.name(), tc.arguments(), &ctx).await
-                        {
+                        let output = match registry.execute(tc.name(), tc.arguments(), &ctx).await {
                             Ok(o) => o,
                             // {e:#} keeps the full anyhow chain (root cause).
                             Err(e) => ToolOutput::err(format!("Tool execution error: {e:#}")),

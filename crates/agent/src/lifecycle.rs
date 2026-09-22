@@ -11,8 +11,8 @@
 //! the global reviver callback.
 
 use pr_core::agent::AgentRole;
-use pr_core::irc::{AgentRegistry, IrcBus, IrcMessage, IrcReviver, PeerStatus, register_reviver};
 use pr_core::ids::AgentId;
+use pr_core::irc::{register_reviver, AgentRegistry, IrcBus, IrcMessage, IrcReviver, PeerStatus};
 use pr_core::{AppConfig, Message, SessionId};
 use pr_llm::LlmProvider;
 use pr_persistence::Persistence;
@@ -125,7 +125,10 @@ impl AgentLifecycleManager {
             .is_some();
         if !persisted {
             let _ = std::fs::remove_file(&tmp);
-            tracing::error!("failed to persist agent {} checkpoint; keeping it live", runtime.id);
+            tracing::error!(
+                "failed to persist agent {} checkpoint; keeping it live",
+                runtime.id
+            );
             return;
         }
         tracing::debug!("parked agent {} to {}", runtime.id, path.display());
@@ -234,7 +237,11 @@ impl IrcReviver for AgentLifecycleManager {
                 Ok(output) => {
                     let path = park_dir.join(format!("{}.json", id.0));
                     let _ = std::fs::remove_file(path);
-                    tracing::info!("revived agent {} completed: {}", id, output.summary.chars().take(100).collect::<String>());
+                    tracing::info!(
+                        "revived agent {} completed: {}",
+                        id,
+                        output.summary.chars().take(100).collect::<String>()
+                    );
                 }
                 Err(e) => {
                     tracing::warn!("revived agent {} failed; checkpoint retained: {}", id, e);
@@ -249,18 +256,22 @@ impl IrcReviver for AgentLifecycleManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pr_core::{AgentRole, SessionId};
-    use pr_persistence::Persistence;
-    use pr_llm::{CompletionRequest, CompletionResponse, LlmProvider, StreamChunk};
-    use pr_core::{PrError, PrResult};
     use async_trait::async_trait;
     use futures::Stream;
+    use pr_core::{AgentRole, SessionId};
+    use pr_core::{PrError, PrResult};
+    use pr_llm::{CompletionRequest, CompletionResponse, LlmProvider, StreamChunk};
+    use pr_persistence::Persistence;
 
     struct MockProvider;
     #[async_trait]
     impl LlmProvider for MockProvider {
-        fn name(&self) -> &str { "mock" }
-        fn model(&self) -> &str { "mock" }
+        fn name(&self) -> &str {
+            "mock"
+        }
+        fn model(&self) -> &str {
+            "mock"
+        }
         async fn complete(&self, _: &CompletionRequest) -> PrResult<CompletionResponse> {
             Ok(CompletionResponse {
                 message: pr_core::Message::assistant("ok"),
@@ -268,7 +279,10 @@ mod tests {
                 finish_reason: Some("stop".to_string()),
             })
         }
-        async fn stream(&self, _: &CompletionRequest) -> PrResult<Box<dyn Stream<Item=PrResult<StreamChunk>> + Send + Unpin>> {
+        async fn stream(
+            &self,
+            _: &CompletionRequest,
+        ) -> PrResult<Box<dyn Stream<Item = PrResult<StreamChunk>> + Send + Unpin>> {
             Err(PrError::Llm("unused".into()))
         }
     }
@@ -335,14 +349,8 @@ mod tests {
         agent.register_with_bus();
 
         // Park it manually via the manager
-        let mgr = AgentLifecycleManager::new_with_park_dir(
-            tools,
-            tx,
-            db,
-            llm,
-            cancel,
-            park_dir.clone(),
-        );
+        let mgr =
+            AgentLifecycleManager::new_with_park_dir(tools, tx, db, llm, cancel, park_dir.clone());
 
         // The manager uses the isolated test checkpoint directory.
 

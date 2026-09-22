@@ -36,7 +36,10 @@ impl ComputerView {
             return div();
         }
 
-        let reason = self.needs_you_reason.as_deref().unwrap_or("CAPTCHA challenge or 2FA approval requires human attention");
+        let reason = self
+            .needs_you_reason
+            .as_deref()
+            .unwrap_or("CAPTCHA challenge or 2FA approval requires human attention");
 
         div()
             .flex()
@@ -52,11 +55,7 @@ impl ComputerView {
                     .flex()
                     .items_center()
                     .gap_2()
-                    .child(
-                        div()
-                            .text_sm()
-                            .child("⚠️"),
-                    )
+                    .child(div().text_sm().child("⚠️"))
                     .child(
                         div()
                             .flex()
@@ -101,7 +100,8 @@ impl ComputerView {
                                 let api = this.state.api.clone();
                                 cx.spawn(async move |_this, _cx| {
                                     let _ = api.take_control(None).await;
-                                }).detach();
+                                })
+                                .detach();
                                 cx.notify();
                             })),
                     )
@@ -125,7 +125,11 @@ impl ComputerView {
             )
     }
 
-    fn render_browser_canvas(&self, human_control: bool, cx: &mut Context<Self>) -> gpui::Stateful<Div> {
+    fn render_browser_canvas(
+        &self,
+        human_control: bool,
+        cx: &mut Context<Self>,
+    ) -> gpui::Stateful<Div> {
         let screenshot = self.state.computer_screenshot.read().clone();
 
         div()
@@ -326,28 +330,55 @@ impl ComputerView {
                             .child(format!("{} events", activities.len())),
                     ),
             )
-            .child(
-                div()
-                    .flex()
-                    .flex_1()
-                    .overflow_hidden()
-                    .gap_2()
-                    .children(
-                        if activities.is_empty() {
-                            vec![
-                                self.render_static_activity("shell_exec", "Run build in /workspace", "$ cargo build --release (exit: 0)", "completed"),
-                                self.render_static_activity("file_write", "Save generated output", "/workspace/output.json (4.2 KB)", "completed"),
-                                self.render_static_activity("file_read", "Inspect package manifest", "/workspace/Cargo.toml (1.1 KB)", "completed"),
-                                self.render_static_activity("computer_snapshot", "Inspect DOM & accessibility tree", "active_tab", "completed"),
-                                self.render_static_activity("computer_navigate", "Navigate to target portal", "https://github.com", "completed"),
-                            ]
-                        } else {
-                            activities.iter().rev().map(|act| {
-                                self.render_static_activity(&act.tool_name, &act.intent, &act.target, &act.status)
-                            }).collect()
-                        }
-                    ),
-            )
+            .child(div().flex().flex_1().overflow_hidden().gap_2().children(
+                if activities.is_empty() {
+                    vec![
+                        self.render_static_activity(
+                            "shell_exec",
+                            "Run build in /workspace",
+                            "$ cargo build --release (exit: 0)",
+                            "completed",
+                        ),
+                        self.render_static_activity(
+                            "file_write",
+                            "Save generated output",
+                            "/workspace/output.json (4.2 KB)",
+                            "completed",
+                        ),
+                        self.render_static_activity(
+                            "file_read",
+                            "Inspect package manifest",
+                            "/workspace/Cargo.toml (1.1 KB)",
+                            "completed",
+                        ),
+                        self.render_static_activity(
+                            "computer_snapshot",
+                            "Inspect DOM & accessibility tree",
+                            "active_tab",
+                            "completed",
+                        ),
+                        self.render_static_activity(
+                            "computer_navigate",
+                            "Navigate to target portal",
+                            "https://github.com",
+                            "completed",
+                        ),
+                    ]
+                } else {
+                    activities
+                        .iter()
+                        .rev()
+                        .map(|act| {
+                            self.render_static_activity(
+                                &act.tool_name,
+                                &act.intent,
+                                &act.target,
+                                &act.status,
+                            )
+                        })
+                        .collect()
+                },
+            ))
     }
 
     fn render_static_activity(&self, tool: &str, intent: &str, target: &str, status: &str) -> Div {
@@ -569,47 +600,76 @@ impl Render for ComputerView {
                     .items_center()
                     .px_3()
                     .gap_1p5()
-                    .children(self.state.browser_tabs.read().clone().into_iter().map(|tab| {
-                        let is_active = tab.active;
-                        let tab_id = tab.id.clone();
-                        let tab_url = tab.url.clone();
-                        div()
-                            .id(gpui::SharedString::from(format!("browser-tab-{}", tab.id)))
-                            .flex()
-                            .items_center()
-                            .gap_2()
-                            .px_3()
-                            .py_1()
-                            .rounded_t_md()
-                            .bg(if is_active { Theme::bg_elevated() } else { Theme::bg_surface() })
-                            .border_t_1()
-                            .border_l_1()
-                            .border_r_1()
-                            .border_color(if is_active { Theme::border_focus() } else { Theme::border_subtle() })
-                            .cursor_pointer()
-                            .child(
+                    .children(
+                        self.state
+                            .browser_tabs
+                            .read()
+                            .clone()
+                            .into_iter()
+                            .map(|tab| {
+                                let is_active = tab.active;
+                                let tab_id = tab.id.clone();
+                                let tab_url = tab.url.clone();
                                 div()
-                                    .text_xs()
-                                    .font_weight(if is_active { gpui::FontWeight::BOLD } else { gpui::FontWeight::NORMAL })
-                                    .text_color(if is_active { Theme::text_primary() } else { Theme::text_muted() })
-                                    .child(if tab.title.len() > 24 { format!("{}...", &tab.title[..24]) } else { tab.title.clone() }),
-                            )
-                            .child(
-                                div()
-                                    .text_xs()
-                                    .text_color(Theme::text_muted())
-                                    .hover(|s| s.text_color(Theme::danger_red()))
-                                    .child("✕")
-                            )
-                            .on_click(cx.listener(move |this, _event: &ClickEvent, _window, cx| {
-                                let mut tabs = this.state.browser_tabs.write();
-                                for t in tabs.iter_mut() {
-                                    t.active = t.id == tab_id;
-                                }
-                                *this.state.computer_url.write() = tab_url.clone();
-                                cx.notify();
-                            }))
-                    }))
+                                    .id(gpui::SharedString::from(format!("browser-tab-{}", tab.id)))
+                                    .flex()
+                                    .items_center()
+                                    .gap_2()
+                                    .px_3()
+                                    .py_1()
+                                    .rounded_t_md()
+                                    .bg(if is_active {
+                                        Theme::bg_elevated()
+                                    } else {
+                                        Theme::bg_surface()
+                                    })
+                                    .border_t_1()
+                                    .border_l_1()
+                                    .border_r_1()
+                                    .border_color(if is_active {
+                                        Theme::border_focus()
+                                    } else {
+                                        Theme::border_subtle()
+                                    })
+                                    .cursor_pointer()
+                                    .child(
+                                        div()
+                                            .text_xs()
+                                            .font_weight(if is_active {
+                                                gpui::FontWeight::BOLD
+                                            } else {
+                                                gpui::FontWeight::NORMAL
+                                            })
+                                            .text_color(if is_active {
+                                                Theme::text_primary()
+                                            } else {
+                                                Theme::text_muted()
+                                            })
+                                            .child(if tab.title.len() > 24 {
+                                                format!("{}...", &tab.title[..24])
+                                            } else {
+                                                tab.title.clone()
+                                            }),
+                                    )
+                                    .child(
+                                        div()
+                                            .text_xs()
+                                            .text_color(Theme::text_muted())
+                                            .hover(|s| s.text_color(Theme::danger_red()))
+                                            .child("✕"),
+                                    )
+                                    .on_click(cx.listener(
+                                        move |this, _event: &ClickEvent, _window, cx| {
+                                            let mut tabs = this.state.browser_tabs.write();
+                                            for t in tabs.iter_mut() {
+                                                t.active = t.id == tab_id;
+                                            }
+                                            *this.state.computer_url.write() = tab_url.clone();
+                                            cx.notify();
+                                        },
+                                    ))
+                            }),
+                    )
                     .child(
                         div()
                             .id("new-browser-tab-btn")
@@ -623,13 +683,17 @@ impl Render for ComputerView {
                             .hover(|s| s.bg(Theme::bg_card()))
                             .child("+ New Tab")
                             .on_click(cx.listener(|this, _event: &ClickEvent, _window, cx| {
-                                let new_id = format!("tab-{}", this.state.browser_tabs.read().len() + 1);
-                                this.state.browser_tabs.write().push(crate::state::BrowserTab {
-                                    id: new_id,
-                                    title: "New Blank Tab".to_string(),
-                                    url: "about:blank".to_string(),
-                                    active: false,
-                                });
+                                let new_id =
+                                    format!("tab-{}", this.state.browser_tabs.read().len() + 1);
+                                this.state
+                                    .browser_tabs
+                                    .write()
+                                    .push(crate::state::BrowserTab {
+                                        id: new_id,
+                                        title: "New Blank Tab".to_string(),
+                                        url: "about:blank".to_string(),
+                                        active: false,
+                                    });
                                 cx.notify();
                             })),
                     ),
@@ -695,15 +759,21 @@ impl Render for ComputerView {
                                 let agent_target = agent.clone();
                                 cx.spawn(async move |_this, _cx| {
                                     let _ = api.reset_computer(&agent).await;
-                                }).detach();
-                                this.state.computer_activities.write().push(ComputerActivity {
-                                    id: uuid::Uuid::new_v4().to_string(),
-                                    tool_name: "computer_reset".to_string(),
-                                    intent: "Container profile and workspace reset".to_string(),
-                                    target: agent_target,
-                                    status: "completed".to_string(),
-                                    timestamp: chrono::Utc::now().format("%H:%M:%S").to_string(),
-                                });
+                                })
+                                .detach();
+                                this.state
+                                    .computer_activities
+                                    .write()
+                                    .push(ComputerActivity {
+                                        id: uuid::Uuid::new_v4().to_string(),
+                                        tool_name: "computer_reset".to_string(),
+                                        intent: "Container profile and workspace reset".to_string(),
+                                        target: agent_target,
+                                        status: "completed".to_string(),
+                                        timestamp: chrono::Utc::now()
+                                            .format("%H:%M:%S")
+                                            .to_string(),
+                                    });
                                 cx.notify();
                             })),
                     )
@@ -717,13 +787,27 @@ impl Render for ComputerView {
                             .px_3()
                             .py_1()
                             .rounded_md()
-                            .bg(if human_control { Theme::danger_red() } else { Theme::accent_purple() })
+                            .bg(if human_control {
+                                Theme::danger_red()
+                            } else {
+                                Theme::accent_purple()
+                            })
                             .text_xs()
                             .font_weight(gpui::FontWeight::SEMIBOLD)
                             .text_color(Theme::text_primary())
                             .cursor_pointer()
-                            .hover(|s| s.bg(if human_control { Theme::warning_yellow() } else { Theme::accent_blue() }))
-                            .child(if human_control { "🛑 Release Wheel (Back to Bot)" } else { "🕹️ Take the Wheel" })
+                            .hover(|s| {
+                                s.bg(if human_control {
+                                    Theme::warning_yellow()
+                                } else {
+                                    Theme::accent_blue()
+                                })
+                            })
+                            .child(if human_control {
+                                "🛑 Release Wheel (Back to Bot)"
+                            } else {
+                                "🕹️ Take the Wheel"
+                            })
                             .on_click(cx.listener(|this, _event: &ClickEvent, _window, cx| {
                                 let mut val = this.state.computer_human_control.write();
                                 *val = !*val;
@@ -735,15 +819,26 @@ impl Render for ComputerView {
                                     } else {
                                         let _ = api.release_control(None).await;
                                     }
-                                }).detach();
-                                this.state.computer_activities.write().push(ComputerActivity {
-                                    id: uuid::Uuid::new_v4().to_string(),
-                                    tool_name: "computer_control".to_string(),
-                                    intent: if is_human { "Human takeover started (forwarding CDP input)" } else { "Human released control" }.to_string(),
-                                    target: "operator".to_string(),
-                                    status: "recorded".to_string(),
-                                    timestamp: chrono::Utc::now().format("%H:%M:%S").to_string(),
-                                });
+                                })
+                                .detach();
+                                this.state
+                                    .computer_activities
+                                    .write()
+                                    .push(ComputerActivity {
+                                        id: uuid::Uuid::new_v4().to_string(),
+                                        tool_name: "computer_control".to_string(),
+                                        intent: if is_human {
+                                            "Human takeover started (forwarding CDP input)"
+                                        } else {
+                                            "Human released control"
+                                        }
+                                        .to_string(),
+                                        target: "operator".to_string(),
+                                        status: "recorded".to_string(),
+                                        timestamp: chrono::Utc::now()
+                                            .format("%H:%M:%S")
+                                            .to_string(),
+                                    });
                                 cx.notify();
                             })),
                     )
@@ -762,7 +857,10 @@ impl Render for ComputerView {
                             .text_xs()
                             .text_color(Theme::text_secondary())
                             .cursor_pointer()
-                            .hover(|s| s.bg(Theme::bg_elevated_hover()).text_color(Theme::text_primary()))
+                            .hover(|s| {
+                                s.bg(Theme::bg_elevated_hover())
+                                    .text_color(Theme::text_primary())
+                            })
                             .child("🔑 Supply Secret")
                             .on_click(cx.listener(|this, _event: &ClickEvent, _window, cx| {
                                 this.show_secret_modal = !this.show_secret_modal;
@@ -787,11 +885,7 @@ impl Render for ComputerView {
             )
             // Optional Secret Modal overlay
             .children(if self.show_secret_modal {
-                Some(
-                    div()
-                        .p_4()
-                        .child(self.render_secret_modal(cx)),
-                )
+                Some(div().p_4().child(self.render_secret_modal(cx)))
             } else {
                 None
             })

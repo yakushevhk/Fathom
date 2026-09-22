@@ -68,15 +68,15 @@ impl Tool for McpBridgeTool {
     ) -> anyhow::Result<ToolOutput> {
         let result = {
             let mut client = self.client.lock().await;
-            match client.call_tool(&self.server, &self.tool_name, args.clone()).await {
+            match client
+                .call_tool(&self.server, &self.tool_name, args.clone())
+                .await
+            {
                 Ok(v) => Ok(v),
                 // A dead stdio server fails every subsequent call; try to
                 // re-establish the connection once before giving up.
                 Err(e) if e.to_string().contains("closed the connection") => {
-                    tracing::warn!(
-                        "MCP server {} went away; attempting reconnect",
-                        self.server
-                    );
+                    tracing::warn!("MCP server {} went away; attempting reconnect", self.server);
                     match client.reconnect(&self.server).await {
                         Ok(()) => client.call_tool(&self.server, &self.tool_name, args).await,
                         Err(re) => Err(anyhow::anyhow!("{e} (reconnect failed: {re})")),

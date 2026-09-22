@@ -92,7 +92,8 @@ impl Notifier {
             });
         }
 
-        if !config.telegram_bot_token.trim().is_empty() && !config.telegram_chat_id.trim().is_empty()
+        if !config.telegram_bot_token.trim().is_empty()
+            && !config.telegram_chat_id.trim().is_empty()
         {
             channels.push(NotificationChannel::Telegram {
                 bot_token: config.telegram_bot_token.trim().to_string(),
@@ -307,7 +308,10 @@ impl Notifier {
         let email = Message::builder()
             .from(from.parse::<Mailbox>()?)
             .to(to.parse::<Mailbox>()?)
-            .subject(format!("Research session completed: {}", session.session_id))
+            .subject(format!(
+                "Research session completed: {}",
+                session.session_id
+            ))
             .header(ContentType::TEXT_PLAIN)
             .body(email_body(session))?;
 
@@ -436,7 +440,12 @@ email_to = "me@example.com"
         let notifier = Notifier::from_config(&cfg);
         assert_eq!(notifier.channels().len(), 1);
         match &notifier.channels()[0] {
-            NotificationChannel::Email { smtp_host, to, from, .. } => {
+            NotificationChannel::Email {
+                smtp_host,
+                to,
+                from,
+                ..
+            } => {
                 assert_eq!(smtp_host, "localhost");
                 assert_eq!(to, "me@example.com");
                 assert_eq!(from, "fathom@localhost");

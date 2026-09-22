@@ -1,8 +1,8 @@
+use crate::registry::{Tool, ToolContext};
 use async_trait::async_trait;
 use pr_core::{ToolOutput, ToolSchema};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use crate::registry::{Tool, ToolContext};
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "action")]
@@ -29,10 +29,7 @@ pub enum DapAction {
     },
     /// Remove an existing breakpoint
     #[serde(rename = "remove_breakpoint")]
-    RemoveBreakpoint {
-        file: String,
-        line: u32,
-    },
+    RemoveBreakpoint { file: String, line: u32 },
     /// Continue execution
     #[serde(rename = "continue")]
     Continue,
@@ -108,13 +105,18 @@ impl Tool for DapTool {
         ToolSchema {
             name: self.name().to_string(),
             description: self.description().to_string(),
-            parameters: serde_json::to_value(&schemars::schema_for!(DapParams).schema).unwrap_or_default(),
+            parameters: serde_json::to_value(&schemars::schema_for!(DapParams).schema)
+                .unwrap_or_default(),
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: DapParams = serde_json::from_value(args)?;
-        
+
         match params.action {
             DapAction::Launch { program, args, adapter } => {
                 let target_path = crate::file::resolve_path(&ctx.working_dir, &program);

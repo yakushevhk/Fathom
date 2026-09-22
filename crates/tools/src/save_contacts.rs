@@ -215,21 +215,20 @@ impl Tool for SaveContactsTool {
 
                 // Push concurrently (bounded): a 20-contact batch no longer
                 // serializes 20 sequential CRM round-trips.
-                let results: Vec<(i64, Result<String, String>)> =
-                    futures::stream::iter(to_push)
-                        .map(|(id, contact)| {
-                            let crm = crm.clone();
-                            async move {
-                                let label = contact.display_label();
-                                let res = push_with_retry(&crm, &contact)
-                                    .await
-                                    .map_err(|e| format!("{label}: {e}"));
-                                (id, res)
-                            }
-                        })
-                        .buffer_unordered(4)
-                        .collect()
-                        .await;
+                let results: Vec<(i64, Result<String, String>)> = futures::stream::iter(to_push)
+                    .map(|(id, contact)| {
+                        let crm = crm.clone();
+                        async move {
+                            let label = contact.display_label();
+                            let res = push_with_retry(&crm, &contact)
+                                .await
+                                .map_err(|e| format!("{label}: {e}"));
+                            (id, res)
+                        }
+                    })
+                    .buffer_unordered(4)
+                    .collect()
+                    .await;
 
                 let mut crm_pushed_inner = 0usize;
                 for (id, res) in results {
@@ -349,9 +348,9 @@ async fn push_with_retry(crm: &CrmSync, contact: &Contact) -> anyhow::Result<Str
         Ok(id) => Ok(id),
         Err(e) => {
             tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-            crm.push_contact(contact).await.map_err(|e2| {
-                anyhow::anyhow!("{e} (retry: {e2})")
-            })
+            crm.push_contact(contact)
+                .await
+                .map_err(|e2| anyhow::anyhow!("{e} (retry: {e2})"))
         }
     }
 }
@@ -409,7 +408,10 @@ mod tests {
         let tool = SaveContactsTool;
 
         let out = tool
-            .execute(args(r#"[{"email":"dup@x.io","name":"Ann","tags":["lead"]}]"#), &ctx)
+            .execute(
+                args(r#"[{"email":"dup@x.io","name":"Ann","tags":["lead"]}]"#),
+                &ctx,
+            )
             .await
             .unwrap();
         assert!(out.success);
@@ -497,7 +499,10 @@ mod tests {
         .unwrap();
         assert_eq!(
             input.notes,
-            vec!["SMTP accepted 2026-08-07", "pattern {first}.{last} confirmed"]
+            vec![
+                "SMTP accepted 2026-08-07",
+                "pattern {first}.{last} confirmed"
+            ]
         );
         assert_eq!(input.tags, vec!["ceo, founder"]);
 

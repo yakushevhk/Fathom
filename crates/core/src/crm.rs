@@ -313,10 +313,7 @@ pub fn bitrix24_fields(contact: &Contact) -> serde_json::Value {
         );
     }
     if let Some(phone) = contact.phone.as_deref().filter(|s| !s.trim().is_empty()) {
-        fields.insert(
-            "PHONE".to_string(),
-            serde_json::json!([{ "VALUE": phone }]),
-        );
+        fields.insert("PHONE".to_string(), serde_json::json!([{ "VALUE": phone }]));
     }
     if !contact.notes.is_empty() {
         let comments = contact.notes.join("\n");
@@ -358,7 +355,14 @@ fn split_name(name: &str) -> (String, Option<String>) {
     let mut parts = name.split_whitespace();
     let first = parts.next().unwrap_or_default().to_string();
     let rest: Vec<&str> = parts.collect();
-    (first, if rest.is_empty() { None } else { Some(rest.join(" ")) })
+    (
+        first,
+        if rest.is_empty() {
+            None
+        } else {
+            Some(rest.join(" "))
+        },
+    )
 }
 
 fn id_to_string(v: &serde_json::Value) -> String {
@@ -515,7 +519,9 @@ mod tests {
         );
         assert_eq!(
             CrmProvider::parse("hubspot", "", "key"),
-            Some(CrmProvider::HubSpot { api_key: "key".into() })
+            Some(CrmProvider::HubSpot {
+                api_key: "key".into()
+            })
         );
         // Missing requirements.
         assert_eq!(CrmProvider::parse("amocrm", "", "key"), None);
@@ -677,10 +683,9 @@ mod tests {
             Some("Invalid field")
         );
 
-        let b24: serde_json::Value = serde_json::from_str(
-            r#"{"error":"AUTH","error_description":"Access denied"}"#,
-        )
-        .unwrap();
+        let b24: serde_json::Value =
+            serde_json::from_str(r#"{"error":"AUTH","error_description":"Access denied"}"#)
+                .unwrap();
         assert_eq!(
             extract_api_error_message(&b24).as_deref(),
             Some("Access denied")
@@ -697,8 +702,10 @@ mod tests {
         let addr = listener.local_addr().unwrap();
         drop(listener);
 
-        let sync = CrmSync::new(CrmProvider::HubSpot { api_key: "k".into() })
-            .with_endpoint(format!("http://{addr}/x"));
+        let sync = CrmSync::new(CrmProvider::HubSpot {
+            api_key: "k".into(),
+        })
+        .with_endpoint(format!("http://{addr}/x"));
         let err = sync.push_contact(&sample_contact()).await.unwrap_err();
         assert!(err.to_string().to_lowercase().contains("error"));
     }

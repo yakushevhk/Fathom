@@ -1,8 +1,8 @@
 //! Desktop application state management and data models.
 
 use crate::api::{
-    ApiClient, AuditEntry, Channel, Coworker, Credential,
-    PolicyDocument, Routine, SessionSummary, Skill,
+    ApiClient, AuditEntry, Channel, Coworker, Credential, PolicyDocument, Routine, SessionSummary,
+    Skill,
 };
 use crate::daemon::DaemonManager;
 use parking_lot::RwLock;
@@ -184,7 +184,12 @@ impl AppState {
         }
         *self.active_channel_id.write() = channel_id.clone();
         if let Some(new_id) = channel_id {
-            let loaded = self.channel_messages.read().get(&new_id).cloned().unwrap_or_default();
+            let loaded = self
+                .channel_messages
+                .read()
+                .get(&new_id)
+                .cloned()
+                .unwrap_or_default();
             *self.messages.write() = loaded;
         } else {
             self.messages.write().clear();
@@ -204,7 +209,11 @@ impl AppState {
     pub fn add_message(&self, msg: ChatMessage) {
         self.messages.write().push(msg.clone());
         if let Some(active_ch) = self.active_channel_id.read().clone() {
-            self.channel_messages.write().entry(active_ch).or_default().push(msg);
+            self.channel_messages
+                .write()
+                .entry(active_ch)
+                .or_default()
+                .push(msg);
         }
     }
     /// Apply an incoming AgentEvent from the server SSE stream to reactive local UI state.
@@ -252,7 +261,10 @@ impl AppState {
             }
             pr_core::AgentEvent::LlmStreamChunk { chunk, .. } => {
                 // Time-Traveling Stream Rule check (omp parity): scan stream chunk on the fly
-                if chunk.contains("Box::leak") || chunk.contains("rm -rf /") || chunk.contains("169.254.169.254") {
+                if chunk.contains("Box::leak")
+                    || chunk.contains("rm -rf /")
+                    || chunk.contains("169.254.169.254")
+                {
                     self.add_message(ChatMessage {
                         id: uuid::Uuid::new_v4().to_string(),
                         role: "system".to_string(),
@@ -275,7 +287,11 @@ impl AppState {
                 }
 
                 let mut msgs = self.messages.write();
-                if let Some(last) = msgs.iter_mut().rev().find(|m| m.role == "assistant" && m.tool_name.is_none()) {
+                if let Some(last) = msgs
+                    .iter_mut()
+                    .rev()
+                    .find(|m| m.role == "assistant" && m.tool_name.is_none())
+                {
                     last.content.push_str(chunk);
                 } else {
                     msgs.push(ChatMessage {
@@ -316,20 +332,37 @@ impl AppState {
                         id: uuid::Uuid::new_v4().to_string(),
                         tool_name: tool.clone(),
                         intent: format!("Executing {}", tool),
-                        target: args.get("url").or_else(|| args.get("ref")).and_then(|v| v.as_str()).unwrap_or("viewport").to_string(),
+                        target: args
+                            .get("url")
+                            .or_else(|| args.get("ref"))
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("viewport")
+                            .to_string(),
                         status: "running".to_string(),
                         timestamp: now,
                     });
                 }
             }
-            pr_core::AgentEvent::ToolCallCompleted { tool, result_preview, .. } => {
+            pr_core::AgentEvent::ToolCallCompleted {
+                tool,
+                result_preview,
+                ..
+            } => {
                 let mut msgs = self.messages.write();
-                if let Some(last_tool) = msgs.iter_mut().rev().find(|m| m.tool_name.as_deref() == Some(tool)) {
+                if let Some(last_tool) = msgs
+                    .iter_mut()
+                    .rev()
+                    .find(|m| m.tool_name.as_deref() == Some(tool))
+                {
                     last_tool.tool_status = Some("completed".to_string());
                     last_tool.tool_output = Some(serde_json::Value::String(result_preview.clone()));
                 }
             }
-            pr_core::AgentEvent::QuestionAsked { request_id, question, .. } => {
+            pr_core::AgentEvent::QuestionAsked {
+                request_id,
+                question,
+                ..
+            } => {
                 self.add_message(ChatMessage {
                     id: uuid::Uuid::new_v4().to_string(),
                     role: "assistant".to_string(),
@@ -345,11 +378,19 @@ impl AppState {
                     expanded: false,
                 });
             }
-            pr_core::AgentEvent::ApprovalRequested { request_id, tool, args_preview, .. } => {
+            pr_core::AgentEvent::ApprovalRequested {
+                request_id,
+                tool,
+                args_preview,
+                ..
+            } => {
                 self.add_message(ChatMessage {
                     id: uuid::Uuid::new_v4().to_string(),
                     role: "assistant".to_string(),
-                    content: format!("Permission required to execute `{}`: {}", tool, args_preview),
+                    content: format!(
+                        "Permission required to execute `{}`: {}",
+                        tool, args_preview
+                    ),
                     thinking: None,
                     tool_name: Some(tool.clone()),
                     tool_status: Some("running".to_string()),
@@ -361,11 +402,19 @@ impl AppState {
                     expanded: true,
                 });
             }
-            pr_core::AgentEvent::SessionCompleted { output_dir, total_tokens, total_agents, .. } => {
+            pr_core::AgentEvent::SessionCompleted {
+                output_dir,
+                total_tokens,
+                total_agents,
+                ..
+            } => {
                 self.add_message(ChatMessage {
                     id: uuid::Uuid::new_v4().to_string(),
                     role: "system".to_string(),
-                    content: format!("✓ Session completed. Tokens: {}, Agents: {}, Artifacts: {}", total_tokens, total_agents, output_dir),
+                    content: format!(
+                        "✓ Session completed. Tokens: {}, Agents: {}, Artifacts: {}",
+                        total_tokens, total_agents, output_dir
+                    ),
                     thinking: None,
                     tool_name: None,
                     tool_status: None,
@@ -395,5 +444,11 @@ impl AppState {
             }
             _ => {}
         }
+    }
+}
+
+impl Default for AppState {
+    fn default() -> Self {
+        Self::new()
     }
 }

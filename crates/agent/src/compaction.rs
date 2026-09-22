@@ -101,8 +101,7 @@ impl CompactionEngine {
     /// Engage the hysteresis region after a pass that did not meaningfully
     /// help: suppress further compaction until the transcript grows back.
     pub fn suppress_compaction(&mut self, current_tokens: u32) {
-        self.hysteresis_until_tokens =
-            (current_tokens as f32 * HYSTERESIS_GROWTH).ceil() as u32;
+        self.hysteresis_until_tokens = (current_tokens as f32 * HYSTERESIS_GROWTH).ceil() as u32;
     }
 
     /// Whether we are currently in a cooldown period.
@@ -135,8 +134,11 @@ impl CompactionEngine {
                 // Dedup: if we've seen identical content before, collapse to one line.
                 let hash = content_hash(content);
                 if !seen_content_hashes.insert(hash) {
-                    let summary = format!("[Duplicate tool result — {} bytes, {} tokens]",
-                        content.len(), tokens);
+                    let summary = format!(
+                        "[Duplicate tool result — {} bytes, {} tokens]",
+                        content.len(),
+                        tokens
+                    );
                     *content = summary;
                     pruned += 1;
                     continue;
@@ -220,7 +222,10 @@ impl CompactionEngine {
                 )),
             ];
             summarize_fn(prompt).await.unwrap_or_else(|e| {
-                format!("[Compaction summarization failed: {}. Middle section removed.]", e)
+                format!(
+                    "[Compaction summarization failed: {}. Middle section removed.]",
+                    e
+                )
             })
         } else {
             String::new()
@@ -350,7 +355,11 @@ fn split_head_middle_tail(messages: &[Message]) -> (Vec<Message>, Vec<Message>, 
     }
     if tail_start <= head_end {
         // Degenerate overlap — keep everything in head/tail, no middle.
-        return (messages[..head_end].to_vec(), vec![], messages[head_end..].to_vec());
+        return (
+            messages[..head_end].to_vec(),
+            vec![],
+            messages[head_end..].to_vec(),
+        );
     }
 
     let head = messages[..head_end].to_vec();
@@ -375,7 +384,11 @@ fn messages_to_text(messages: &[Message]) -> String {
             Message::User { content } => {
                 out.push_str(&format!("[user]: {}\n\n", content));
             }
-            Message::Assistant { content, tool_calls, .. } => {
+            Message::Assistant {
+                content,
+                tool_calls,
+                ..
+            } => {
                 if let Some(text) = content {
                     out.push_str(&format!("[assistant]: {}\n\n", text));
                 }
@@ -387,7 +400,10 @@ fn messages_to_text(messages: &[Message]) -> String {
                     ));
                 }
             }
-            Message::Tool { tool_call_id, content } => {
+            Message::Tool {
+                tool_call_id,
+                content,
+            } => {
                 // For summarization, truncate very long tool outputs
                 // (char-boundary safe for multi-byte UTF-8).
                 let truncated = if content.len() > 2000 {

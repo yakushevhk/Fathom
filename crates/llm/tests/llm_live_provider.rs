@@ -39,7 +39,9 @@ fn make_llm() -> Arc<DeepSeekProvider> {
 
 fn msg_text(m: &pr_core::Message) -> String {
     match m {
-        pr_core::Message::System { content } | pr_core::Message::User { content } => content.clone(),
+        pr_core::Message::System { content } | pr_core::Message::User { content } => {
+            content.clone()
+        }
         pr_core::Message::Assistant { content, .. } => content.clone().unwrap_or_default(),
         pr_core::Message::Tool { content, .. } => content.clone(),
     }
@@ -111,13 +113,19 @@ async fn reasoning_truncation_returns_gracefully() {
         max_tokens: Some(1), // заведомо мало: reasoning съест весь бюджет
         stream: false,
     };
-    let resp = llm.complete(&req).await.expect("обрыв должен вернуться без ошибки");
+    let resp = llm
+        .complete(&req)
+        .await
+        .expect("обрыв должен вернуться без ошибки");
     let text = msg_text(&resp.message);
     println!("content: {:?}", text);
     println!("finish_reason: {:?}", resp.finish_reason);
     // Пустой content при finish_reason=length — штатный диагностический случай
     // (не паника, не PrError): именно это ловит synthesis retry-логика.
-    println!("✓ обрыв обработан без паники (контент {} символов)", text.len());
+    println!(
+        "✓ обрыв обработан без паники (контент {} символов)",
+        text.len()
+    );
 }
 
 // ── 3. Путь ошибок: недоступный эндпоинт (без ключа API) ───────────────────
@@ -142,7 +150,10 @@ async fn invalid_endpoint_fails_cleanly_with_retries() {
         Ok(_) => panic!("недоступный эндпоинт не должен отвечать"),
     }
     // retry: 500ms → 1s → 2s (+jitter) — хотя бы ~3 попытки.
-    assert!(elapsed.as_millis() >= 500, "должен быть хотя бы один retry-цикл");
+    assert!(
+        elapsed.as_millis() >= 500,
+        "должен быть хотя бы один retry-цикл"
+    );
     println!("✓ ошибка вернулась чисто после retry-цикла");
 }
 
@@ -164,8 +175,15 @@ async fn russian_response_quality() {
     };
     let resp = llm.complete(&req).await.expect("русский запрос упал");
     let text = msg_text(&resp.message);
-    println!("ответ ({} символов): {}", text.len(), &text[..text.len().min(400)]);
-    assert!(text.contains("MVCC") || text.contains("mvcc"), "ответ должен упоминать MVCC");
+    println!(
+        "ответ ({} символов): {}",
+        text.len(),
+        &text[..text.len().min(400)]
+    );
+    assert!(
+        text.contains("MVCC") || text.contains("mvcc"),
+        "ответ должен упоминать MVCC"
+    );
     println!("✓ русскоязычный ответ получен");
 }
 
@@ -175,7 +193,11 @@ async fn russian_response_quality() {
 #[ignore = "live API"]
 async fn invalid_api_key_returns_http_error() {
     log_sep("Ошибки: неверный API-ключ (401)");
-    let llm = DeepSeekProvider::new("https://api.deepseek.com", "sk-invalid-key-000", "deepseek-chat");
+    let llm = DeepSeekProvider::new(
+        "https://api.deepseek.com",
+        "sk-invalid-key-000",
+        "deepseek-chat",
+    );
     let req = CompletionRequest {
         messages: vec![pr_core::Message::user("ping")],
         tools: vec![],
@@ -214,10 +236,15 @@ async fn usage_accounting_is_consistent() {
         };
         let resp = llm.complete(&req).await.expect("usage call failed");
         let u = resp.usage.expect("usage должен быть у non-stream ответа");
-        println!("call {i}: prompt={} completion={} total={}",
-            u.prompt_tokens, u.completion_tokens, u.total_tokens);
-        assert_eq!(u.prompt_tokens + u.completion_tokens, u.total_tokens,
-            "total должен быть суммой prompt+completion");
+        println!(
+            "call {i}: prompt={} completion={} total={}",
+            u.prompt_tokens, u.completion_tokens, u.total_tokens
+        );
+        assert_eq!(
+            u.prompt_tokens + u.completion_tokens,
+            u.total_tokens,
+            "total должен быть суммой prompt+completion"
+        );
         assert!(u.prompt_tokens > 0 && u.completion_tokens > 0);
     }
     println!("✓ usage accounting: сумма токенов сходится на всех вызовах");

@@ -13,9 +13,7 @@
 
 use async_trait::async_trait;
 use pr_core::{ToolOutput, ToolSchema};
-use pr_memory::{
-    AbsorbFact, AbsorbRequest, Scope, ScopeFilter,
-};
+use pr_memory::{AbsorbFact, AbsorbRequest, Scope, ScopeFilter};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -131,7 +129,11 @@ A summary line (created/superseded/contradicted/linked/skipped/consolidated/reje
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: AbsorbParams = serde_json::from_value(args)?;
         let Some(mem) = memory(ctx) else {
             return Ok(no_memory());
@@ -263,7 +265,11 @@ Ranked list of memories with id, content, score, source, confidence and dates."
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: SearchParams = serde_json::from_value(args)?;
         let Some(mem) = memory(ctx) else {
             return Ok(no_memory());
@@ -271,10 +277,11 @@ Ranked list of memories with id, content, score, source, confidence and dates."
 
         // Single-memory lookup with follow resolution.
         if let Some(id) = &params.id {
-            let follow: pr_memory::Follow = match params.follow.as_deref().unwrap_or("active").parse() {
-                Ok(f) => f,
-                Err(e) => return Ok(ToolOutput::err(e.to_string())),
-            };
+            let follow: pr_memory::Follow =
+                match params.follow.as_deref().unwrap_or("active").parse() {
+                    Ok(f) => f,
+                    Err(e) => return Ok(ToolOutput::err(e.to_string())),
+                };
             let rows = pr_memory::resolve_follow(&mem.db, id, follow)?;
             if rows.is_empty() {
                 return Ok(ToolOutput::err_code(
@@ -288,7 +295,11 @@ Ranked list of memories with id, content, score, source, confidence and dates."
                     "[{}] ({}, source: {}, conf {:.2}, created {}) {}\n",
                     short(&r.id),
                     r.status,
-                    if r.source.is_empty() { "unknown" } else { &r.source },
+                    if r.source.is_empty() {
+                        "unknown"
+                    } else {
+                        &r.source
+                    },
                     r.confidence,
                     &r.created_at[..r.created_at.len().min(10)],
                     r.content
@@ -308,7 +319,9 @@ Ranked list of memories with id, content, score, source, confidence and dates."
         let rerank = mem.config.rerank && aux.is_some();
         let top_k = params.top_k.unwrap_or(mem.config.top_k as usize);
         let fetch_k = if rerank { top_k * 3 } else { top_k };
-        let mut hits = mem.search(&params.query, &scope_filter(ctx), Some(fetch_k)).await?;
+        let mut hits = mem
+            .search(&params.query, &scope_filter(ctx), Some(fetch_k))
+            .await?;
         if rerank {
             if let Some(llm) = &aux {
                 hits = pr_memory::llm_rerank(llm, &params.query, hits).await;
@@ -370,7 +383,11 @@ A markdown digest with real memory ids (verify any of them via memory_search id=
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: DigestParams = serde_json::from_value(args)?;
         let Some(mem) = memory(ctx) else {
             return Ok(no_memory());
@@ -381,7 +398,9 @@ A markdown digest with real memory ids (verify any of them via memory_search id=
         let digest = mem.digest(&params.topic, &scope_filter(ctx)).await?;
         let block = digest.to_prompt_block(4000);
         if block.is_empty() {
-            return Ok(ToolOutput::ok("No relevant memories for this topic yet.".to_string()));
+            return Ok(ToolOutput::ok(
+                "No relevant memories for this topic yet.".to_string(),
+            ));
         }
         Ok(ToolOutput::ok(block))
     }
@@ -428,7 +447,11 @@ impl Tool for MemoryBoostTool {
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: BoostParams = serde_json::from_value(args)?;
         let Some(mem) = memory(ctx) else {
             return Ok(no_memory());
@@ -504,7 +527,11 @@ impl Tool for MemoryLinkTool {
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: LinkParams = serde_json::from_value(args)?;
         let Some(mem) = memory(ctx) else {
             return Ok(no_memory());
@@ -536,10 +563,18 @@ impl Tool for MemoryLinkTool {
                 "not_found",
             ));
         };
-        mem.db
-            .add_edge(&from.id, &to.id, &params.edge_type, params.reason.as_deref())?;
-        mem.db
-            .log_history(&from.id, "link", None, Some(&format!("{} -> {}", params.edge_type, to.id)));
+        mem.db.add_edge(
+            &from.id,
+            &to.id,
+            &params.edge_type,
+            params.reason.as_deref(),
+        )?;
+        mem.db.log_history(
+            &from.id,
+            "link",
+            None,
+            Some(&format!("{} -> {}", params.edge_type, to.id)),
+        );
         Ok(ToolOutput::ok(format!(
             "Linked {} --{}--> {}",
             short(&from.id),
@@ -553,7 +588,13 @@ impl Tool for MemoryLinkTool {
 /// the discriminating part — show the last 8 chars. `MemoryDb::get`
 /// resolves these back via suffix matching.
 fn short(id: &str) -> String {
-    id.chars().rev().take(8).collect::<Vec<_>>().into_iter().rev().collect()
+    id.chars()
+        .rev()
+        .take(8)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect()
 }
 
 // ── memory_graph ─────────────────────────────────────────────────────────────
@@ -645,7 +686,11 @@ works_at, leads, owns, member_of, located_in, founded, uses, related_to (free vo
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: GraphParams = serde_json::from_value(args)?;
         let Some(mem) = memory(ctx) else {
             return Ok(no_memory());
@@ -696,8 +741,9 @@ works_at, leads, owns, member_of, located_in, founded, uses, related_to (free vo
                 let Some(name) = params.name.as_deref() else {
                     return Ok(ToolOutput::err("query requires 'name'"));
                 };
-                let Some(node) =
-                    mem.db.entity_by_name(name, params.entity_type.as_deref().unwrap_or(""))?
+                let Some(node) = mem
+                    .db
+                    .entity_by_name(name, params.entity_type.as_deref().unwrap_or(""))?
                 else {
                     return Ok(ToolOutput::err_code(
                         format!("entity '{name}' not found in the graph"),
@@ -724,10 +770,9 @@ works_at, leads, owns, member_of, located_in, founded, uses, related_to (free vo
                 Ok(ToolOutput::ok(out.trim_end().to_string()))
             }
             "list" => {
-                let nodes = mem.db.list_entities(
-                    params.entity_type.as_deref(),
-                    params.limit.unwrap_or(50),
-                )?;
+                let nodes = mem
+                    .db
+                    .list_entities(params.entity_type.as_deref(), params.limit.unwrap_or(50))?;
                 if nodes.is_empty() {
                     return Ok(ToolOutput::ok("Graph is empty.".to_string()));
                 }
@@ -779,7 +824,10 @@ mod tests {
 
         let search = MemorySearchTool;
         let out = search
-            .execute(serde_json::json!({"query": "where is Acme head office"}), &ctx)
+            .execute(
+                serde_json::json!({"query": "where is Acme head office"}),
+                &ctx,
+            )
             .await
             .unwrap();
         assert!(out.success);
@@ -847,7 +895,10 @@ mod tests {
 
         // Extract an id from the search output to boost/link.
         let search_out = MemorySearchTool
-            .execute(serde_json::json!({"query": "billing rewrite rust workspace"}), &ctx)
+            .execute(
+                serde_json::json!({"query": "billing rewrite rust workspace"}),
+                &ctx,
+            )
             .await
             .unwrap();
         let id = search_out
@@ -893,7 +944,10 @@ mod tests {
 
         // Invalid edge type is rejected.
         let bad = MemoryLinkTool
-            .execute(serde_json::json!({"from": id, "to": id2, "edge_type": "bogus"}), &ctx)
+            .execute(
+                serde_json::json!({"from": id, "to": id2, "edge_type": "bogus"}),
+                &ctx,
+            )
             .await
             .unwrap();
         assert!(!bad.success);
@@ -919,7 +973,10 @@ mod tests {
             .to_string();
 
         let by_id = MemorySearchTool
-            .execute(serde_json::json!({"query": "", "id": id, "follow": "latest"}), &ctx)
+            .execute(
+                serde_json::json!({"query": "", "id": id, "follow": "latest"}),
+                &ctx,
+            )
             .await
             .unwrap();
         assert!(by_id.success, "{}", by_id.content);
@@ -999,7 +1056,10 @@ mod tests {
         assert!(out.success);
 
         let out = graph
-            .execute(serde_json::json!({"action": "query", "name": "Telegram"}), &ctx)
+            .execute(
+                serde_json::json!({"action": "query", "name": "Telegram"}),
+                &ctx,
+            )
             .await
             .unwrap();
         assert!(out.success, "{}", out.content);
@@ -1007,14 +1067,20 @@ mod tests {
         assert!(out.content.contains("founded"), "{}", out.content);
 
         let out = graph
-            .execute(serde_json::json!({"action": "list", "entity_type": "company"}), &ctx)
+            .execute(
+                serde_json::json!({"action": "list", "entity_type": "company"}),
+                &ctx,
+            )
             .await
             .unwrap();
         assert!(out.success);
         assert!(out.content.contains("Telegram"));
 
         let missing = graph
-            .execute(serde_json::json!({"action": "query", "name": "Nobody Here"}), &ctx)
+            .execute(
+                serde_json::json!({"action": "query", "name": "Nobody Here"}),
+                &ctx,
+            )
             .await
             .unwrap();
         assert!(!missing.success);

@@ -28,12 +28,20 @@ pub async fn test(
     let channel = body.channel.trim().to_ascii_lowercase();
     let configured = &state.config.notifications;
     let selected = match channel.as_str() {
-        "webhook" if !configured.webhook_url.trim().is_empty() => {
-            NotificationChannel::Webhook { url: configured.webhook_url.trim().to_string() }
-        }
+        "webhook" if !configured.webhook_url.trim().is_empty() => NotificationChannel::Webhook {
+            url: configured.webhook_url.trim().to_string(),
+        },
         "email" if !configured.email_to.trim().is_empty() => {
-            let smtp_host = if configured.smtp_host.trim().is_empty() { "localhost".to_string() } else { configured.smtp_host.trim().to_string() };
-            let from = if configured.email_from.trim().is_empty() { "fathom@localhost".to_string() } else { configured.email_from.trim().to_string() };
+            let smtp_host = if configured.smtp_host.trim().is_empty() {
+                "localhost".to_string()
+            } else {
+                configured.smtp_host.trim().to_string()
+            };
+            let from = if configured.email_from.trim().is_empty() {
+                "fathom@localhost".to_string()
+            } else {
+                configured.email_from.trim().to_string()
+            };
             NotificationChannel::Email {
                 smtp_host,
                 smtp_port: configured.smtp_port,
@@ -43,16 +51,27 @@ pub async fn test(
                 password: configured.smtp_password.clone(),
             }
         }
-        "telegram" if !configured.telegram_bot_token.trim().is_empty() && !configured.telegram_chat_id.trim().is_empty() => {
+        "telegram"
+            if !configured.telegram_bot_token.trim().is_empty()
+                && !configured.telegram_chat_id.trim().is_empty() =>
+        {
             NotificationChannel::Telegram {
                 bot_token: configured.telegram_bot_token.trim().to_string(),
                 chat_id: configured.telegram_chat_id.trim().to_string(),
             }
         }
         "webhook" | "email" | "telegram" => {
-            return error(StatusCode::CONFLICT, format!("notification channel '{channel}' is not configured"));
+            return error(
+                StatusCode::CONFLICT,
+                format!("notification channel '{channel}' is not configured"),
+            );
         }
-        _ => return error(StatusCode::BAD_REQUEST, "channel must be one of: webhook, email, telegram"),
+        _ => {
+            return error(
+                StatusCode::BAD_REQUEST,
+                "channel must be one of: webhook, email, telegram",
+            )
+        }
     };
 
     let notifier = Notifier::new(vec![selected]);
@@ -63,15 +82,22 @@ pub async fn test(
         total_tokens: 0,
         total_agents: 0,
     };
-    let delivery = tokio::time::timeout(DELIVERY_TIMEOUT, notifier.notify_completion(&session)).await;
+    let delivery =
+        tokio::time::timeout(DELIVERY_TIMEOUT, notifier.notify_completion(&session)).await;
     match delivery {
-        Err(_) => error(StatusCode::GATEWAY_TIMEOUT, "notification delivery timed out"),
+        Err(_) => error(
+            StatusCode::GATEWAY_TIMEOUT,
+            "notification delivery timed out",
+        ),
         Ok(Err(_)) => {
             // Avoid echoing configured addresses or transport details to the
             // caller; the symbolic channel is the only safe diagnostic.
             tracing::warn!(channel = %channel, "configured notification delivery failed");
             error(StatusCode::BAD_GATEWAY, "notification delivery failed")
         }
-        Ok(Ok(())) => json(StatusCode::OK, serde_json::json!({ "channel": channel, "status": "sent" })),
+        Ok(Ok(())) => json(
+            StatusCode::OK,
+            serde_json::json!({ "channel": channel, "status": "sent" }),
+        ),
     }
 }

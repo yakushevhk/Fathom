@@ -52,8 +52,12 @@ pub struct LlmConfig {
     pub temperature: f32,
 }
 
-fn default_max_tokens() -> u32 { 8192 }
-fn default_temperature() -> f32 { 0.7 }
+fn default_max_tokens() -> u32 {
+    8192
+}
+fn default_temperature() -> f32 {
+    0.7
+}
 
 impl Default for LlmConfig {
     fn default() -> Self {
@@ -123,19 +127,39 @@ pub struct AgentConfig {
     pub approval_timeout_seconds: u64,
 }
 
-fn default_max_depth() -> u32 { 2 }
-fn default_max_agents() -> u32 { 20 }
-fn default_max_iterations() -> u32 { 50 }
-fn default_timeout() -> u64 { 600 }
-fn default_max_concurrent_children() -> u32 { 4 }
-fn default_stall_warn() -> u64 { 450 }
-fn default_stall_kill() -> u64 { 1200 }
-fn default_replan_rounds() -> u32 { 1 }
+fn default_max_depth() -> u32 {
+    2
+}
+fn default_max_agents() -> u32 {
+    20
+}
+fn default_max_iterations() -> u32 {
+    50
+}
+fn default_timeout() -> u64 {
+    600
+}
+fn default_max_concurrent_children() -> u32 {
+    4
+}
+fn default_stall_warn() -> u64 {
+    450
+}
+fn default_stall_kill() -> u64 {
+    1200
+}
+fn default_replan_rounds() -> u32 {
+    1
+}
 fn default_approval_tools() -> Vec<String> {
     vec!["save_contacts".to_string(), "git_push".to_string()]
 }
-fn default_approval_fallback() -> String { "deny".to_string() }
-fn default_approval_timeout() -> u64 { 300 }
+fn default_approval_fallback() -> String {
+    "deny".to_string()
+}
+fn default_approval_timeout() -> u64 {
+    300
+}
 
 impl Default for AgentConfig {
     fn default() -> Self {
@@ -181,7 +205,9 @@ pub struct SearchConfig {
     pub brave: Option<BraveConfig>,
 }
 
-fn default_backend() -> String { "hybrid".to_string() }
+fn default_backend() -> String {
+    "hybrid".to_string()
+}
 
 impl Default for SearchConfig {
     fn default() -> Self {
@@ -233,11 +259,15 @@ pub struct OutputConfig {
     pub dir: String,
 }
 
-fn default_output_dir() -> String { "./research-output".to_string() }
+fn default_output_dir() -> String {
+    "./research-output".to_string()
+}
 
 impl Default for OutputConfig {
     fn default() -> Self {
-        Self { dir: default_output_dir() }
+        Self {
+            dir: default_output_dir(),
+        }
     }
 }
 
@@ -255,7 +285,9 @@ fn default_export_format() -> String {
 
 impl Default for ExportConfig {
     fn default() -> Self {
-        Self { format: default_export_format() }
+        Self {
+            format: default_export_format(),
+        }
     }
 }
 
@@ -263,7 +295,8 @@ impl ExportConfig {
     /// Parse the configured format string into an [`ExportFormat`],
     /// falling back to HTML for unknown values.
     pub fn parsed_format(&self) -> crate::export::ExportFormat {
-        crate::export::ExportFormat::parse(&self.format).unwrap_or(crate::export::ExportFormat::Html)
+        crate::export::ExportFormat::parse(&self.format)
+            .unwrap_or(crate::export::ExportFormat::Html)
     }
 }
 
@@ -432,17 +465,39 @@ pub struct MemoryConfig {
     pub gc_auto: bool,
 }
 
-fn default_memory_enabled() -> bool { true }
-fn default_embedding_backend() -> String { "auto".to_string() }
-fn default_embedding_model() -> String { "text-embedding-3-small".to_string() }
-fn default_semantic_weight() -> f32 { 0.7 }
-fn default_memory_top_k() -> u32 { 5 }
-fn default_memory_min_score() -> f32 { 0.25 }
-fn default_temporal_decay() -> f32 { 0.01 }
-fn default_gc_ttl_days() -> u32 { 30 }
-fn default_gc_compact_above() -> u32 { 200 }
-fn default_gc_confidence_decay_rate() -> f64 { 0.02 }
-fn default_gc_confidence_threshold() -> f64 { 0.15 }
+fn default_memory_enabled() -> bool {
+    true
+}
+fn default_embedding_backend() -> String {
+    "auto".to_string()
+}
+fn default_embedding_model() -> String {
+    "text-embedding-3-small".to_string()
+}
+fn default_semantic_weight() -> f32 {
+    0.7
+}
+fn default_memory_top_k() -> u32 {
+    5
+}
+fn default_memory_min_score() -> f32 {
+    0.25
+}
+fn default_temporal_decay() -> f32 {
+    0.01
+}
+fn default_gc_ttl_days() -> u32 {
+    30
+}
+fn default_gc_compact_above() -> u32 {
+    200
+}
+fn default_gc_confidence_decay_rate() -> f64 {
+    0.02
+}
+fn default_gc_confidence_threshold() -> f64 {
+    0.15
+}
 
 impl Default for MemoryConfig {
     fn default() -> Self {
@@ -501,11 +556,21 @@ pub struct ContextConfig {
     pub turn_budget_bytes: u32,
 }
 
-fn default_context_window() -> u32 { 128_000 }
-fn default_compact_threshold() -> f32 { 0.50 }
-fn default_tool_output_max_bytes() -> u32 { 50_000 }
-fn default_tool_output_max_lines() -> u32 { 2_000 }
-fn default_turn_budget_bytes() -> u32 { 200_000 }
+fn default_context_window() -> u32 {
+    128_000
+}
+fn default_compact_threshold() -> f32 {
+    0.50
+}
+fn default_tool_output_max_bytes() -> u32 {
+    50_000
+}
+fn default_tool_output_max_lines() -> u32 {
+    2_000
+}
+fn default_turn_budget_bytes() -> u32 {
+    200_000
+}
 
 impl Default for ContextConfig {
     fn default() -> Self {
@@ -543,7 +608,7 @@ impl ContextConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct McpServerConfig {
     pub name: String,
-    pub transport: String,  // "stdio" or "http"
+    pub transport: String, // "stdio" or "http"
     #[serde(default)]
     pub command: Option<String>,
     #[serde(default)]
@@ -824,10 +889,7 @@ telegram_chat_id = "42"
         .unwrap();
 
         assert_eq!(cfg.export.format, "pdf");
-        assert_eq!(
-            cfg.export.parsed_format(),
-            crate::export::ExportFormat::Pdf
-        );
+        assert_eq!(cfg.export.parsed_format(), crate::export::ExportFormat::Pdf);
         assert_eq!(cfg.notifications.webhook_url, "https://hooks.example.com/x");
         assert_eq!(cfg.notifications.email_to, "user@example.com");
         assert_eq!(cfg.notifications.telegram_bot_token, "123:abc");
@@ -897,7 +959,10 @@ api_key = "secret-key"
         .unwrap();
 
         assert_eq!(cfg.contacts.db_path, "/data/contacts.db");
-        assert_eq!(cfg.contacts.pg_url, "postgres://user:pass@localhost/contacts");
+        assert_eq!(
+            cfg.contacts.pg_url,
+            "postgres://user:pass@localhost/contacts"
+        );
         assert_eq!(cfg.crm.provider, "amocrm");
         assert_eq!(cfg.crm.domain, "mycompany");
         assert_eq!(cfg.crm.api_key, "secret-key");
@@ -992,8 +1057,14 @@ analyst = "strong-model"
         )
         .unwrap();
         assert_eq!(cfg.agent.session_token_limit, 500000);
-        assert_eq!(cfg.agent.role_models.get("researcher").map(String::as_str), Some("cheap-model"));
-        assert_eq!(cfg.agent.role_models.get("analyst").map(String::as_str), Some("strong-model"));
+        assert_eq!(
+            cfg.agent.role_models.get("researcher").map(String::as_str),
+            Some("cheap-model")
+        );
+        assert_eq!(
+            cfg.agent.role_models.get("analyst").map(String::as_str),
+            Some("strong-model")
+        );
     }
 
     #[test]

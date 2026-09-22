@@ -41,7 +41,9 @@ fn hooks_for<'a>(hooks: &'a [HookConfig], event: &str, tool: Option<&str>) -> Ve
         .filter(|h| h.event.eq_ignore_ascii_case(event))
         .filter(|h| {
             h.tool.is_empty()
-                || tool.map(|t| t.eq_ignore_ascii_case(&h.tool)).unwrap_or(false)
+                || tool
+                    .map(|t| t.eq_ignore_ascii_case(&h.tool))
+                    .unwrap_or(false)
         })
         .collect()
 }
@@ -73,10 +75,17 @@ async fn run_hook(hook: &HookConfig, payload: &Value) -> Option<Value> {
 
     // Write stdin and wait for the child under ONE deadline: a hook that
     // never drains its stdin would otherwise block write_all forever
-    // (payloads can exceed the OS pipe buffer).
+    // (payloads can exceed the OS pipe buffer). A hook that exits without
+    // reading stdin closes the pipe early — tolerate EPIPE: its stdout
+    // verdict still counts.
     let exchange = async move {
-        stdin.write_all(stdin_payload.as_bytes()).await?;
-        stdin.flush().await?;
+        match stdin.write_all(stdin_payload.as_bytes()).await {
+            Ok(()) => {
+                let _ = stdin.flush().await;
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::BrokenPipe => {}
+            Err(e) => return Err(e),
+        }
         drop(stdin);
         child.wait_with_output().await
     };
@@ -87,7 +96,11 @@ async fn run_hook(hook: &HookConfig, payload: &Value) -> Option<Value> {
             return None;
         }
         Err(_) => {
-            tracing::warn!("hook timed out after {}ms ({})", hook.timeout_ms, hook.command);
+            tracing::warn!(
+                "hook timed out after {}ms ({})",
+                hook.timeout_ms,
+                hook.command
+            );
             // Dropping the `exchange` future drops the child; kill_on_drop
             // kills it and tokio's process reaper collects it.
             return None;
@@ -105,11 +118,7 @@ async fn run_hook(hook: &HookConfig, payload: &Value) -> Option<Value> {
 }
 
 /// Run all matching PreToolUse hooks; the first `deny` wins.
-pub async fn run_pre_tool_hooks(
-    hooks: &[HookConfig],
-    tool: &str,
-    args: &Value,
-) -> PreToolVerdict {
+pub async fn run_pre_tool_hooks(hooks: &[HookConfig], tool: &str, args: &Value) -> PreToolVerdict {
     for hook in hooks_for(hooks, "pretooluse", Some(tool)) {
         let payload = serde_json::json!({
             "event": "PreToolUse",
@@ -224,7 +233,10 @@ mod tests {
             r#"{"decision":"deny","reason":"forbidden by policy"}"#,
         )];
         let verdict = run_pre_tool_hooks(&hooks, "shell", &serde_json::json!({})).await;
-        assert_eq!(verdict, PreToolVerdict::Deny("forbidden by policy".to_string()));
+        assert_eq!(
+            verdict,
+            PreToolVerdict::Deny("forbidden by policy".to_string())
+        );
     }
 
     #[tokio::test]
@@ -249,7 +261,11 @@ mod tests {
 
     #[tokio::test]
     async fn stop_hook_continue_and_stop() {
-        let cont = vec![hook("Stop", "printf", r#"{"continue":true,"reason":"no sources"}"#)];
+        let cont = vec![hook(
+            "Stop",
+            "printf",
+            r#"{"continue":true,"reason":"no sources"}"#,
+        )];
         assert_eq!(
             run_stop_hooks(&cont, "done").await,
             StopVerdict::Continue("no sources".to_string())

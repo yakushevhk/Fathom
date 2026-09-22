@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::ids::AgentId;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -98,7 +98,13 @@ mod tests {
 
     #[test]
     fn agent_role_serde_roundtrip() {
-        for role in [AgentRole::Coordinator, AgentRole::Researcher, AgentRole::Analyst, AgentRole::Verifier, AgentRole::Writer] {
+        for role in [
+            AgentRole::Coordinator,
+            AgentRole::Researcher,
+            AgentRole::Analyst,
+            AgentRole::Verifier,
+            AgentRole::Writer,
+        ] {
             let json = serde_json::to_string(&role).unwrap();
             let back: AgentRole = serde_json::from_str(&json).unwrap();
             assert_eq!(role, back);
@@ -107,13 +113,25 @@ mod tests {
 
     #[test]
     fn agent_role_serde_values() {
-        assert_eq!(serde_json::to_string(&AgentRole::Coordinator).unwrap(), "\"coordinator\"");
-        assert_eq!(serde_json::to_string(&AgentRole::Writer).unwrap(), "\"writer\"");
+        assert_eq!(
+            serde_json::to_string(&AgentRole::Coordinator).unwrap(),
+            "\"coordinator\""
+        );
+        assert_eq!(
+            serde_json::to_string(&AgentRole::Writer).unwrap(),
+            "\"writer\""
+        );
     }
 
     #[test]
     fn agent_status_serde_roundtrip() {
-        for status in [AgentStatus::Spawned, AgentStatus::Running, AgentStatus::Completed, AgentStatus::Failed, AgentStatus::Cancelled] {
+        for status in [
+            AgentStatus::Spawned,
+            AgentStatus::Running,
+            AgentStatus::Completed,
+            AgentStatus::Failed,
+            AgentStatus::Cancelled,
+        ] {
             let json = serde_json::to_string(&status).unwrap();
             let back: AgentStatus = serde_json::from_str(&json).unwrap();
             assert_eq!(status, back);
@@ -130,7 +148,9 @@ mod tests {
 
     #[test]
     fn agent_state_serde_planning() {
-        let state = AgentState::Planning { query: "test query".into() };
+        let state = AgentState::Planning {
+            query: "test query".into(),
+        };
         let json = serde_json::to_string(&state).unwrap();
         assert!(json.contains("planning"));
         assert!(json.contains("test query"));
@@ -143,7 +163,9 @@ mod tests {
 
     #[test]
     fn agent_state_serde_error() {
-        let state = AgentState::Error { message: "something broke".into() };
+        let state = AgentState::Error {
+            message: "something broke".into(),
+        };
         let json = serde_json::to_string(&state).unwrap();
         assert!(json.contains("error"));
         let back: AgentState = serde_json::from_str(&json).unwrap();
@@ -155,7 +177,9 @@ mod tests {
 
     #[test]
     fn agent_state_serde_researching() {
-        let state = AgentState::Researching { sub_tasks: vec!["a".into(), "b".into()] };
+        let state = AgentState::Researching {
+            sub_tasks: vec!["a".into(), "b".into()],
+        };
         let json = serde_json::to_string(&state).unwrap();
         let back: AgentState = serde_json::from_str(&json).unwrap();
         match back {

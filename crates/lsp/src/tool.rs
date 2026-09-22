@@ -1,4 +1,4 @@
-use pr_core::{ToolSchema, ToolOutput};
+use pr_core::{ToolOutput, ToolSchema};
 use schemars::JsonSchema;
 use serde::Deserialize;
 use std::path::PathBuf;
@@ -140,21 +140,21 @@ impl LspTool {
             }
         }
 
-        let client = LspClient::spawn(
-            &lang_info.lsp_command,
-            &lang_info.lsp_args,
-            &self.root,
-        )
-        .await?;
+        let client =
+            LspClient::spawn(&lang_info.lsp_command, &lang_info.lsp_args, &self.root).await?;
 
         *guard = Some(client);
         Ok(())
     }
 
     /// Execute an LSP query. The `working_dir` is used to resolve relative file paths.
-    pub async fn execute(&self, args: serde_json::Value, working_dir: &std::path::Path) -> anyhow::Result<ToolOutput> {
-        let args: LspArgs = serde_json::from_value(args)
-            .map_err(|e| anyhow::anyhow!("invalid LSP args: {}", e))?;
+    pub async fn execute(
+        &self,
+        args: serde_json::Value,
+        working_dir: &std::path::Path,
+    ) -> anyhow::Result<ToolOutput> {
+        let args: LspArgs =
+            serde_json::from_value(args).map_err(|e| anyhow::anyhow!("invalid LSP args: {}", e))?;
 
         if let Err(e) = self.get_or_create_client().await {
             return Ok(ToolOutput::err(format!("LSP initialization failed: {}", e)));
@@ -288,7 +288,10 @@ fn format_symbols(result: &serde_json::Value) -> String {
                 let name = sym["name"].as_str().unwrap_or("?");
                 let kind = symbol_kind_name(sym["kind"].as_u64().unwrap_or(0));
                 let detail = sym["detail"].as_str().unwrap_or("");
-                let line = sym["range"]["start"]["line"].as_u64().map(|l| l + 1).unwrap_or(0);
+                let line = sym["range"]["start"]["line"]
+                    .as_u64()
+                    .map(|l| l + 1)
+                    .unwrap_or(0);
                 let container = sym["containerName"].as_str().unwrap_or("");
 
                 let mut entry = format!("  {} {} (line {})", kind, name, line);
@@ -303,7 +306,10 @@ fn format_symbols(result: &serde_json::Value) -> String {
             lines.join("\n")
         }
         serde_json::Value::Null => "No symbols found.".to_string(),
-        other => format!("Symbols: {}", serde_json::to_string_pretty(other).unwrap_or_default()),
+        other => format!(
+            "Symbols: {}",
+            serde_json::to_string_pretty(other).unwrap_or_default()
+        ),
     }
 }
 
@@ -314,7 +320,10 @@ fn format_location(result: &serde_json::Value) -> String {
             let mut lines = Vec::new();
             for loc in arr {
                 let uri = loc["uri"].as_str().unwrap_or("?");
-                let line = loc["range"]["start"]["line"].as_u64().map(|l| l + 1).unwrap_or(0);
+                let line = loc["range"]["start"]["line"]
+                    .as_u64()
+                    .map(|l| l + 1)
+                    .unwrap_or(0);
                 let col = loc["range"]["start"]["character"].as_u64().unwrap_or(0);
                 let path = uri.strip_prefix("file://").unwrap_or(uri);
                 lines.push(format!("  {}:{}:{}", path, line, col));
@@ -322,7 +331,10 @@ fn format_location(result: &serde_json::Value) -> String {
             lines.join("\n")
         }
         serde_json::Value::Null => "No definition found.".to_string(),
-        other => format!("Location: {}", serde_json::to_string_pretty(other).unwrap_or_default()),
+        other => format!(
+            "Location: {}",
+            serde_json::to_string_pretty(other).unwrap_or_default()
+        ),
     }
 }
 
@@ -343,22 +355,47 @@ fn format_hover(result: &serde_json::Value) -> String {
                     .collect::<Vec<_>>()
                     .join("\n\n")
             } else {
-                format!("Hover: {}", serde_json::to_string_pretty(contents).unwrap_or_default())
+                format!(
+                    "Hover: {}",
+                    serde_json::to_string_pretty(contents).unwrap_or_default()
+                )
             }
         }
-        other => format!("Hover: {}", serde_json::to_string_pretty(other).unwrap_or_default()),
+        other => format!(
+            "Hover: {}",
+            serde_json::to_string_pretty(other).unwrap_or_default()
+        ),
     }
 }
 
 fn symbol_kind_name(kind: u64) -> &'static str {
     match kind {
-        1 => "File", 2 => "Module", 3 => "Namespace", 4 => "Package",
-        5 => "Class", 6 => "Method", 7 => "Property", 8 => "Field",
-        9 => "Constructor", 10 => "Enum", 11 => "Interface", 12 => "Function",
-        13 => "Variable", 14 => "Constant", 15 => "String", 16 => "Number",
-        17 => "Boolean", 18 => "Array", 19 => "Object", 20 => "Key",
-        21 => "Null", 22 => "EnumMember", 23 => "Struct", 24 => "Event",
-        25 => "Operator", 26 => "TypeParameter",
+        1 => "File",
+        2 => "Module",
+        3 => "Namespace",
+        4 => "Package",
+        5 => "Class",
+        6 => "Method",
+        7 => "Property",
+        8 => "Field",
+        9 => "Constructor",
+        10 => "Enum",
+        11 => "Interface",
+        12 => "Function",
+        13 => "Variable",
+        14 => "Constant",
+        15 => "String",
+        16 => "Number",
+        17 => "Boolean",
+        18 => "Array",
+        19 => "Object",
+        20 => "Key",
+        21 => "Null",
+        22 => "EnumMember",
+        23 => "Struct",
+        24 => "Event",
+        25 => "Operator",
+        26 => "TypeParameter",
         _ => "Symbol",
     }
 }
@@ -378,7 +415,10 @@ mod tests {
     #[test]
     fn test_format_symbols_empty() {
         assert_eq!(format_symbols(&serde_json::json!([])), "No symbols found.");
-        assert_eq!(format_symbols(&serde_json::json!(null)), "No symbols found.");
+        assert_eq!(
+            format_symbols(&serde_json::json!(null)),
+            "No symbols found."
+        );
     }
 
     #[test]
@@ -404,7 +444,10 @@ mod tests {
 
     #[test]
     fn test_format_location_empty() {
-        assert_eq!(format_location(&serde_json::json!([])), "No definition found.");
+        assert_eq!(
+            format_location(&serde_json::json!([])),
+            "No definition found."
+        );
     }
 
     #[test]
@@ -419,7 +462,10 @@ mod tests {
 
     #[test]
     fn test_format_hover_null() {
-        assert_eq!(format_hover(&serde_json::json!(null)), "No hover information.");
+        assert_eq!(
+            format_hover(&serde_json::json!(null)),
+            "No hover information."
+        );
     }
 
     #[test]

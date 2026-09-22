@@ -30,9 +30,8 @@ impl MockLlm {
             plan_response: "I cannot decompose this query into sub-tasks.".to_string(),
             synthesis_response: "# Research Report\n\nSingle-agent synthesis of the findings."
                 .to_string(),
-            answer_response:
-                "Task completed. Consulted source: https://example.com/primary-source"
-                    .to_string(),
+            answer_response: "Task completed. Consulted source: https://example.com/primary-source"
+                .to_string(),
         }
     }
 
@@ -47,9 +46,8 @@ impl MockLlm {
             synthesis_response: format!(
                 "# Research Report\n\nSynthesis integrating {tasks} parallel sub-tasks."
             ),
-            answer_response:
-                "Sub-task completed. Consulted source: https://example.org/reference"
-                    .to_string(),
+            answer_response: "Sub-task completed. Consulted source: https://example.org/reference"
+                .to_string(),
         }
     }
 }

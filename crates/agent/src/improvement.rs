@@ -65,7 +65,7 @@ pub struct BacklogEntry {
     pub priority: Priority,
     pub kind: String, // bug | improvement | capability_idea
     pub count: u64,
-    pub last_seen: String, // RFC3339
+    pub last_seen: String,  // RFC3339
     pub created_at: String, // RFC3339
     pub closed_at: Option<String>,
     pub requires_plan_review: bool,
@@ -144,15 +144,18 @@ impl ImprovementBacklog {
         proposed_next_step: Option<String>,
         semantic_llm: Option<
             &(dyn Fn(&str, &[(String, String, String)]) -> anyhow::Result<Option<String>>
-                + Send
-                + Sync),
+                  + Send
+                  + Sync),
         >,
     ) -> anyhow::Result<()> {
         // Fast path: exact fingerprint under lock.
         let now = now_rfc3339();
         {
             let mut state = self.inner.lock().await;
-            if let Some(ex) = state.by_fp.get_mut(&stable_fingerprint(summary, category, source)) {
+            if let Some(ex) = state
+                .by_fp
+                .get_mut(&stable_fingerprint(summary, category, source))
+            {
                 ex.count += 1;
                 ex.last_seen = now.clone();
                 if ex.status == "done" {
@@ -291,7 +294,11 @@ impl ImprovementBacklog {
         }
         let mut buf = String::from("# Improvement Backlog\n\n");
         let mut items: Vec<&BacklogEntry> = state.by_fp.values().collect();
-        items.sort_by(|a, b| b.priority.cmp(&a.priority).then(b.last_seen.cmp(&a.last_seen)));
+        items.sort_by(|a, b| {
+            b.priority
+                .cmp(&a.priority)
+                .then(b.last_seen.cmp(&a.last_seen))
+        });
         for e in items {
             buf.push_str(&format!("### {}\n", e.fingerprint));
             buf.push_str(&format!("- status: {}\n", e.status));
@@ -307,7 +314,11 @@ impl ImprovementBacklog {
             }
             buf.push_str(&format!(
                 "- requires_plan_review: {}\n",
-                if e.requires_plan_review { "true" } else { "false" }
+                if e.requires_plan_review {
+                    "true"
+                } else {
+                    "false"
+                }
             ));
             buf.push_str(&format!("- summary: {}\n", e.summary));
             if let Some(c) = &e.context {
@@ -339,7 +350,12 @@ fn now_rfc3339() -> String {
 /// triple — the same idea expressed with a different casing/whitespace maps to
 /// the same fingerprint.
 pub fn stable_fingerprint(summary: &str, category: &str, source: &str) -> String {
-    let norm = |s: &str| s.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase();
+    let norm = |s: &str| {
+        s.split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ")
+            .to_lowercase()
+    };
     let joined = format!("{} | {} | {}", norm(summary), norm(category), norm(source));
     fingerprint_of_str(&joined)
 }
@@ -370,8 +386,12 @@ fn parse_backlog(raw: &str) -> Vec<BacklogEntry> {
             continue;
         }
         if let Some(c) = &mut current {
-            let Some(kv) = line.strip_prefix("- ") else { continue };
-            let Some((k, v)) = kv.split_once(": ") else { continue };
+            let Some(kv) = line.strip_prefix("- ") else {
+                continue;
+            };
+            let Some((k, v)) = kv.split_once(": ") else {
+                continue;
+            };
             match k {
                 "status" => c.status = v.trim().to_string(),
                 "kind" => c.kind = v.trim().to_string(),
@@ -428,12 +448,32 @@ mod tests {
     async fn add_bumps_recurrence_on_fingerprint_match() {
         let tmp = tempfile::TempDir::new().unwrap();
         let b = backlog(&tmp).await;
-        b.add("Fix MX fallback", "tool", "verify_email", "bug", Priority::High, false, None, None, None)
-            .await
-            .unwrap();
-        b.add("fix mx fallback ", "tool", "verify_email", "bug", Priority::High, false, None, None, None)
-            .await
-            .unwrap();
+        b.add(
+            "Fix MX fallback",
+            "tool",
+            "verify_email",
+            "bug",
+            Priority::High,
+            false,
+            None,
+            None,
+            None,
+        )
+        .await
+        .unwrap();
+        b.add(
+            "fix mx fallback ",
+            "tool",
+            "verify_email",
+            "bug",
+            Priority::High,
+            false,
+            None,
+            None,
+            None,
+        )
+        .await
+        .unwrap();
         assert_eq!(b.len().await, 1);
         let state = b.inner.lock().await;
         let e = state.by_fp.values().next().unwrap();
@@ -447,9 +487,19 @@ mod tests {
         {
             let b = ImprovementBacklog::new(&path);
             b.load().await.unwrap();
-            b.add("Add tool", "capability", "synthesize", "capability_idea", Priority::Low, false, Some("desc".into()), None, None)
-                .await
-                .unwrap();
+            b.add(
+                "Add tool",
+                "capability",
+                "synthesize",
+                "capability_idea",
+                Priority::Low,
+                false,
+                Some("desc".into()),
+                None,
+                None,
+            )
+            .await
+            .unwrap();
         }
         let b = ImprovementBacklog::new(&path);
         b.load().await.unwrap();
@@ -464,16 +514,36 @@ mod tests {
     async fn close_reopens_on_repeat() {
         let tmp = tempfile::TempDir::new().unwrap();
         let b = backlog(&tmp).await;
-        b.add("Fix X", "tool", "src", "bug", Priority::High, false, None, None, None)
-            .await
-            .unwrap();
+        b.add(
+            "Fix X",
+            "tool",
+            "src",
+            "bug",
+            Priority::High,
+            false,
+            None,
+            None,
+            None,
+        )
+        .await
+        .unwrap();
         let fp = stable_fingerprint("Fix X", "tool", "src");
         let closed = b.close(&[&fp]).await.unwrap();
         assert_eq!(closed, 1);
         // Re-adding the same item re-opens it.
-        b.add("Fix X", "tool", "src", "bug", Priority::High, false, None, None, None)
-            .await
-            .unwrap();
+        b.add(
+            "Fix X",
+            "tool",
+            "src",
+            "bug",
+            Priority::High,
+            false,
+            None,
+            None,
+            None,
+        )
+        .await
+        .unwrap();
         let state = b.inner.lock().await;
         let e = state.by_fp.get(&fp).unwrap();
         assert_eq!(e.status, "open");
@@ -484,12 +554,32 @@ mod tests {
     async fn digest_omits_done_and_sorts() {
         let tmp = tempfile::TempDir::new().unwrap();
         let b = backlog(&tmp).await;
-        b.add("Low idea", "cap", "s", "capability_idea", Priority::Low, false, None, None, None)
-            .await
-            .unwrap();
-        b.add("High bug", "tool", "s", "bug", Priority::High, false, None, None, None)
-            .await
-            .unwrap();
+        b.add(
+            "Low idea",
+            "cap",
+            "s",
+            "capability_idea",
+            Priority::Low,
+            false,
+            None,
+            None,
+            None,
+        )
+        .await
+        .unwrap();
+        b.add(
+            "High bug",
+            "tool",
+            "s",
+            "bug",
+            Priority::High,
+            false,
+            None,
+            None,
+            None,
+        )
+        .await
+        .unwrap();
         let fp = stable_fingerprint("Low idea", "cap", "s");
         b.close(&[&fp]).await.unwrap();
         let d = b.digest(10).await;

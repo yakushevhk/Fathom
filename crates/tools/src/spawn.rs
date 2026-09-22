@@ -35,7 +35,6 @@ struct SpawnAgentParams {
     background: bool,
 
     // ── Batch spawn fields ──────────────────────────────────────────────
-
     /// Batch of sub-tasks for parallel execution (mutually exclusive with
     /// `task`). Each task runs as a separate agent concurrently.
     #[serde(default)]
@@ -346,8 +345,14 @@ mod tests {
         let meta = out.metadata.unwrap();
         assert_eq!(meta["spawn_request"], true);
         assert_eq!(meta["spawn_batch"].as_array().unwrap().len(), 2);
-        assert!(meta["spawn_batch"][0]["task"].as_str().unwrap().contains("Task A"));
-        assert!(meta["spawn_batch"][1]["task"].as_str().unwrap().contains("Task B"));
+        assert!(meta["spawn_batch"][0]["task"]
+            .as_str()
+            .unwrap()
+            .contains("Task A"));
+        assert!(meta["spawn_batch"][1]["task"]
+            .as_str()
+            .unwrap()
+            .contains("Task B"));
         assert_eq!(meta["spawn_batch"][1]["role"], "analyst");
         // output_schema is threaded through
         assert!(meta["output_schema"].is_object());
@@ -394,7 +399,10 @@ mod tests {
             .unwrap();
         assert!(out.success);
         let meta = out.metadata.unwrap();
-        assert!(meta["task"].as_str().unwrap().contains("Respond with JSON matching this schema"));
+        assert!(meta["task"]
+            .as_str()
+            .unwrap()
+            .contains("Respond with JSON matching this schema"));
         assert!(meta["isolated"] == false);
     }
 

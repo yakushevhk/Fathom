@@ -131,8 +131,7 @@ pub(crate) fn mime_from_extension(path: &Path) -> &'static str {
 /// Resolve the image argument into something the API can fetch: http(s)/data
 /// URLs are passed through; local files become base64 `data:` URLs.
 pub(crate) fn resolve_image_source(image: &str, working_dir: &Path) -> anyhow::Result<String> {
-    if image.starts_with("http://") || image.starts_with("https://") || image.starts_with("data:")
-    {
+    if image.starts_with("http://") || image.starts_with("https://") || image.starts_with("data:") {
         return Ok(image.to_string());
     }
     let path = Path::new(image);
@@ -158,7 +157,12 @@ pub(crate) fn resolve_image_source(image: &str, working_dir: &Path) -> anyhow::R
 }
 
 /// Build the OpenAI-compatible chat-completions request body.
-pub(crate) fn build_request_body(model: &str, prompt: &str, image_url: &str, max_tokens: u32) -> Value {
+pub(crate) fn build_request_body(
+    model: &str,
+    prompt: &str,
+    image_url: &str,
+    max_tokens: u32,
+) -> Value {
     json!({
         "model": model,
         "max_tokens": max_tokens,
@@ -425,10 +429,7 @@ mod tests {
         let tool = VisionTool::with_config("https://api.test.com", "test-key", "qwen-vl-max");
         let ctx = test_ctx();
         let out = tool
-            .execute(
-                serde_json::json!({"image": "/nonexistent/nope.png"}),
-                &ctx,
-            )
+            .execute(serde_json::json!({"image": "/nonexistent/nope.png"}), &ctx)
             .await
             .unwrap();
         assert!(!out.success);

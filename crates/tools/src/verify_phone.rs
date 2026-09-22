@@ -57,7 +57,12 @@ impl PhoneVerifier {
             .and_then(|c| c.to_uppercase().parse::<country::Id>().ok());
 
         // Unknown default country → report a clear error rather than guessing.
-        if default_country.map(str::trim).filter(|c| !c.is_empty()).is_some() && region.is_none() {
+        if default_country
+            .map(str::trim)
+            .filter(|c| !c.is_empty())
+            .is_some()
+            && region.is_none()
+        {
             return PhoneVerification {
                 original,
                 normalized: strip_formatting(phone),
@@ -88,10 +93,7 @@ impl PhoneVerifier {
                     .map(|id| country_name_from_id(id.as_ref()))
                     .unwrap_or_default();
                 let number_type = number.number_type(&phonenumber::metadata::DATABASE);
-                let is_mobile = matches!(
-                    number_type,
-                    Type::Mobile | Type::FixedLineOrMobile
-                );
+                let is_mobile = matches!(number_type, Type::Mobile | Type::FixedLineOrMobile);
                 let carrier = number.carrier().map(|c| c.to_string());
 
                 PhoneVerification {

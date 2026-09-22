@@ -164,7 +164,10 @@ fn context_around(text: &str, start: usize, end: usize) -> String {
     while hi < text.len() && !text.is_char_boundary(hi) {
         hi -= 1;
     }
-    text[lo..hi].split_whitespace().collect::<Vec<_>>().join(" ")
+    text[lo..hi]
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 /// Char-boundary-safe truncation (no ellipsis marker — used for LLM input).
@@ -209,10 +212,20 @@ fn team_card_selectors() -> &'static [scraper::Selector] {
 fn member_name_selectors() -> &'static [scraper::Selector] {
     static SELS: OnceLock<Vec<scraper::Selector>> = OnceLock::new();
     SELS.get_or_init(|| {
-        ["h1", "h2", "h3", "h4", "h5", ".name", "[class*=\"name\"]", "strong", "b"]
-            .into_iter()
-            .filter_map(|s| scraper::Selector::parse(s).ok())
-            .collect()
+        [
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            ".name",
+            "[class*=\"name\"]",
+            "strong",
+            "b",
+        ]
+        .into_iter()
+        .filter_map(|s| scraper::Selector::parse(s).ok())
+        .collect()
     })
 }
 
@@ -299,9 +312,30 @@ fn is_plausible_email(email: &str) -> bool {
     let tld = email.rsplit('.').next().unwrap_or("").to_ascii_lowercase();
     !matches!(
         tld.as_str(),
-        "png" | "jpg" | "jpeg" | "gif" | "webp" | "svg" | "ico" | "css" | "js" | "woff"
-            | "woff2" | "ttf" | "otf" | "eot" | "mp3" | "mp4" | "webm" | "mov" | "avi"
-            | "pdf" | "zip" | "gz" | "exe" | "dmg"
+        "png"
+            | "jpg"
+            | "jpeg"
+            | "gif"
+            | "webp"
+            | "svg"
+            | "ico"
+            | "css"
+            | "js"
+            | "woff"
+            | "woff2"
+            | "ttf"
+            | "otf"
+            | "eot"
+            | "mp3"
+            | "mp4"
+            | "webm"
+            | "mov"
+            | "avi"
+            | "pdf"
+            | "zip"
+            | "gz"
+            | "exe"
+            | "dmg"
     )
 }
 
@@ -355,10 +389,8 @@ fn reconstruct_obfuscated_email(m: &str) -> String {
             .expect("at regex")
     });
     let dot_re = DOT_RE.get_or_init(|| {
-        Regex::new(
-            r"(?i)\s*\[\s*dot\s*\]\s*|\s*\(\s*dot\s*\)\s*|\s*\{\s*dot\s*\}\s*|\s+dot\s+|\.",
-        )
-        .expect("dot regex")
+        Regex::new(r"(?i)\s*\[\s*dot\s*\]\s*|\s*\(\s*dot\s*\)\s*|\s*\{\s*dot\s*\}\s*|\s+dot\s+|\.")
+            .expect("dot regex")
     });
     let s = at_re.replace_all(m, "@");
     dot_re.replace_all(&s, ".").into_owned()
@@ -412,9 +444,7 @@ pub fn extract_emails(text: &str) -> Vec<EmailContact> {
             continue;
         }
         let email = reconstruct_obfuscated_email(m.as_str());
-        if is_plausible_email(&email)
-            && !out.iter().any(|e| e.email.eq_ignore_ascii_case(&email))
-        {
+        if is_plausible_email(&email) && !out.iter().any(|e| e.email.eq_ignore_ascii_case(&email)) {
             out.push(EmailContact {
                 email,
                 confidence: 0.7,
@@ -435,7 +465,9 @@ pub fn extract_emails_from_html(doc: &scraper::Html, raw_html: &str) -> Vec<Emai
 
     // mailto: links.
     for el in doc.select(anchor_selector()) {
-        let Some(href) = el.attr("href") else { continue };
+        let Some(href) = el.attr("href") else {
+            continue;
+        };
         let href = href.trim();
         let lower = href.to_ascii_lowercase();
         let Some(rest) = lower
@@ -478,9 +510,7 @@ pub fn extract_emails_from_html(doc: &scraper::Html, raw_html: &str) -> Vec<Emai
     // Raw markup scan (catches addresses in JSON-LD, scripts, comments).
     for m in email_re().find_iter(raw_html) {
         let email = m.as_str().to_string();
-        if is_plausible_email(&email)
-            && !out.iter().any(|e| e.email.eq_ignore_ascii_case(&email))
-        {
+        if is_plausible_email(&email) && !out.iter().any(|e| e.email.eq_ignore_ascii_case(&email)) {
             out.push(EmailContact {
                 email,
                 confidence: 0.9,
@@ -554,7 +584,11 @@ fn normalize_phone(raw: &str) -> Option<NormalizedPhone> {
         Some(rest) => {
             let rest_trimmed = rest.trim_start();
             if !rest_trimmed.is_empty()
-                && rest_trimmed.chars().next().map(|c| c.is_ascii_digit()).unwrap_or(false)
+                && rest_trimmed
+                    .chars()
+                    .next()
+                    .map(|c| c.is_ascii_digit())
+                    .unwrap_or(false)
             {
                 format!("+{rest_trimmed}")
             } else {
@@ -645,9 +679,7 @@ pub fn extract_phones(text: &str) -> Vec<PhoneContact> {
         if !phone_boundaries_ok(text, &m) {
             continue;
         }
-        let raw = m
-            .as_str()
-            .trim_end_matches(|c| " ()-./".contains(c));
+        let raw = m.as_str().trim_end_matches(|c| " ()-./".contains(c));
         let digits: String = raw.chars().filter(|c| c.is_ascii_digit()).collect();
         if !(7..=15).contains(&digits.len()) {
             continue;
@@ -705,7 +737,9 @@ pub fn extract_phones(text: &str) -> Vec<PhoneContact> {
 fn tel_link_phones(doc: &scraper::Html) -> Vec<PhoneContact> {
     let mut out: Vec<PhoneContact> = Vec::new();
     for el in doc.select(tel_link_selector()) {
-        let Some(href) = el.attr("href") else { continue };
+        let Some(href) = el.attr("href") else {
+            continue;
+        };
         let candidate = href.trim().strip_prefix("tel:").unwrap_or(href).trim();
         if let Some(np) = normalize_phone(candidate) {
             out.push(PhoneContact {
@@ -813,9 +847,7 @@ fn build_profile(pattern: &SocialPattern, full: &str, matched: &str) -> Option<S
         return None;
     }
     // Twitter/X handles are never all-numeric.
-    if pattern.platform == SocialPlatform::Twitter
-        && username.chars().all(|c| c.is_ascii_digit())
-    {
+    if pattern.platform == SocialPlatform::Twitter && username.chars().all(|c| c.is_ascii_digit()) {
         return None;
     }
     let url = if full.starts_with("http") {
@@ -862,8 +894,13 @@ fn extract_handles(text: &str) -> Vec<SocialProfile> {
         // Context window (same offsets in the original text).
         let lo = m_start.saturating_sub(60);
         let hi = (m_end + 60).min(text.len());
-        let ctx_lo = (0..=lo).rev().find(|&i| text.is_char_boundary(i)).unwrap_or(lo);
-        let ctx_hi = (hi..=text.len()).find(|&i| text.is_char_boundary(i)).unwrap_or(hi);
+        let ctx_lo = (0..=lo)
+            .rev()
+            .find(|&i| text.is_char_boundary(i))
+            .unwrap_or(lo);
+        let ctx_hi = (hi..=text.len())
+            .find(|&i| text.is_char_boundary(i))
+            .unwrap_or(hi);
         let ctx = text[ctx_lo..ctx_hi].to_ascii_lowercase();
 
         let (platform, confidence) = if ctx.contains("telegram") || ctx.contains("t.me") {
@@ -936,8 +973,7 @@ pub fn extract_social_profiles(text: &str, html: &str) -> Vec<SocialProfile> {
                     }
                 }
             }
-            if let Some(sp) = build_profile(pattern, m.as_str(), &combined[m.start()..m.end()])
-            {
+            if let Some(sp) = build_profile(pattern, m.as_str(), &combined[m.start()..m.end()]) {
                 insert(sp);
             }
         }
@@ -1232,7 +1268,11 @@ pub fn parse_entities_json(raw: &str) -> anyhow::Result<(Vec<PersonInfo>, Vec<Co
     let payload: EntityPayload = serde_json::from_str(&s[start..=end])
         .map_err(|e| anyhow::anyhow!("could not parse LLM entity JSON: {e}"))?;
 
-    let persons = payload.persons.into_iter().filter_map(convert_person).collect();
+    let persons = payload
+        .persons
+        .into_iter()
+        .filter_map(convert_person)
+        .collect();
     let companies = payload
         .companies
         .into_iter()
@@ -1326,14 +1366,14 @@ pub fn parse_team_members(doc: &scraper::Html) -> Vec<PersonInfo> {
             break;
         }
     }
-    let members: Vec<PersonInfo> = cards
-        .iter()
-        .filter_map(parse_member_card)
-        .collect();
+    let members: Vec<PersonInfo> = cards.iter().filter_map(parse_member_card).collect();
     dedupe_persons(members)
 }
 
-fn select_first_text(root: &scraper::ElementRef, selectors: &[scraper::Selector]) -> Option<String> {
+fn select_first_text(
+    root: &scraper::ElementRef,
+    selectors: &[scraper::Selector],
+) -> Option<String> {
     for sel in selectors {
         if let Some(el) = root.select(sel).next() {
             let text = el.text().collect::<String>();
@@ -1382,7 +1422,10 @@ fn parse_member_card(card: &scraper::ElementRef) -> Option<PersonInfo> {
 
     // Contacts mentioned directly in the card text.
     let card_text = card.text().collect::<String>();
-    let email = extract_emails(&card_text).into_iter().next().map(|e| e.email);
+    let email = extract_emails(&card_text)
+        .into_iter()
+        .next()
+        .map(|e| e.email);
     let phone = extract_phones(&card_text)
         .into_iter()
         .next()
@@ -1650,7 +1693,9 @@ async fn fetch_url(client: &reqwest::Client, url: &str) -> anyhow::Result<(Strin
 
 fn format_contacts(contacts: &ExtractedContacts, source_desc: &str) -> String {
     let mut out = String::new();
-    out.push_str(&format!("Contact extraction results (source: {source_desc})\n"));
+    out.push_str(&format!(
+        "Contact extraction results (source: {source_desc})\n"
+    ));
     out.push_str(&format!(
         "Found: {} email(s), {} phone(s), {} social profile(s), {} person(s), {} company(ies)\n",
         contacts.emails.len(),
@@ -1871,7 +1916,10 @@ mod tests {
 
         let mailto = emails.iter().find(|e| e.email == "info@site.org").unwrap();
         assert_eq!(mailto.confidence, 0.98);
-        let alt = emails.iter().find(|e| e.email == "bob@example.com").unwrap();
+        let alt = emails
+            .iter()
+            .find(|e| e.email == "bob@example.com")
+            .unwrap();
         assert!(alt.source.contains("alt"));
     }
 
@@ -1882,10 +1930,14 @@ mod tests {
         let phones = extract_phones("Call us: +7 (999) 123-45-67 or +44 20 7946 0958");
         let by_norm: HashMap<&str, &PhoneContact> =
             phones.iter().map(|p| (p.normalized.as_str(), p)).collect();
-        let ru = by_norm.get("+79991234567").expect("RU number missing: {phones:?}");
+        let ru = by_norm
+            .get("+79991234567")
+            .expect("RU number missing: {phones:?}");
         assert_eq!(ru.country_code, "RU");
         assert!(ru.confidence >= 0.85);
-        let gb = by_norm.get("+442079460958").expect("GB number missing: {phones:?}");
+        let gb = by_norm
+            .get("+442079460958")
+            .expect("GB number missing: {phones:?}");
         assert_eq!(gb.country_code, "GB");
     }
 
@@ -1955,8 +2007,12 @@ mod tests {
             .filter(|s| s.platform == SocialPlatform::LinkedIn)
             .collect();
         assert_eq!(linkedin.len(), 2, "{socials:?}");
-        assert!(linkedin.iter().any(|s| s.username.as_deref() == Some("john-doe")));
-        assert!(linkedin.iter().any(|s| s.username.as_deref() == Some("acme-corp")));
+        assert!(linkedin
+            .iter()
+            .any(|s| s.username.as_deref() == Some("john-doe")));
+        assert!(linkedin
+            .iter()
+            .any(|s| s.username.as_deref() == Some("acme-corp")));
     }
 
     #[test]
@@ -1969,8 +2025,12 @@ mod tests {
             .iter()
             .filter(|s| s.platform == SocialPlatform::Twitter)
             .collect();
-        assert!(twitter.iter().any(|s| s.username.as_deref() == Some("jack")));
-        assert!(twitter.iter().any(|s| s.username.as_deref() == Some("elonmusk")));
+        assert!(twitter
+            .iter()
+            .any(|s| s.username.as_deref() == Some("jack")));
+        assert!(twitter
+            .iter()
+            .any(|s| s.username.as_deref() == Some("elonmusk")));
         assert!(!twitter.iter().any(|s| s.username.as_deref() == Some("i")));
     }
 
@@ -1990,7 +2050,8 @@ mod tests {
 
     #[test]
     fn test_social_telegram_url_and_handle() {
-        let socials = extract_social_profiles("Channel: https://t.me/durov and Telegram: @durov", "");
+        let socials =
+            extract_social_profiles("Channel: https://t.me/durov and Telegram: @durov", "");
         let tg: Vec<&SocialProfile> = socials
             .iter()
             .filter(|s| s.platform == SocialPlatform::Telegram)
@@ -2187,10 +2248,7 @@ mod tests {
     async fn test_tool_execute_html_input() {
         let tool = ContactExtractor;
         let out = tool
-            .execute(
-                serde_json::json!({ "html": TEAM_HTML }),
-                &test_ctx(),
-            )
+            .execute(serde_json::json!({ "html": TEAM_HTML }), &test_ctx())
             .await
             .unwrap();
         assert!(out.success, "{}", out.content);
@@ -2202,7 +2260,10 @@ mod tests {
     #[tokio::test]
     async fn test_tool_requires_input() {
         let tool = ContactExtractor;
-        let out = tool.execute(serde_json::json!({}), &test_ctx()).await.unwrap();
+        let out = tool
+            .execute(serde_json::json!({}), &test_ctx())
+            .await
+            .unwrap();
         assert!(!out.success);
         assert!(out.content.contains("at least one"));
     }

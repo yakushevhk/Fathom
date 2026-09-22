@@ -177,8 +177,7 @@ mod tests {
     #[test]
     fn test_cap_result_exceeds_budget() {
         let tmp = TempDir::new().unwrap();
-        let budget = ResultBudget::new(1000, 1, tmp.path().to_path_buf())
-            .with_max_chars(200);
+        let budget = ResultBudget::new(1000, 1, tmp.path().to_path_buf()).with_max_chars(200);
         let long_text = "x".repeat(500);
         let result = budget.cap_result(&long_text);
         assert!(result.was_capped);
@@ -195,8 +194,7 @@ mod tests {
     #[test]
     fn test_cap_result_exact_boundary() {
         let tmp = TempDir::new().unwrap();
-        let budget = ResultBudget::new(100_000, 1, tmp.path().to_path_buf())
-            .with_max_chars(100);
+        let budget = ResultBudget::new(100_000, 1, tmp.path().to_path_buf()).with_max_chars(100);
         let text = "a".repeat(100);
         let result = budget.cap_result(&text);
         assert!(!result.was_capped);
@@ -206,8 +204,7 @@ mod tests {
     #[test]
     fn test_cap_result_one_over_boundary() {
         let tmp = TempDir::new().unwrap();
-        let budget = ResultBudget::new(100_000, 1, tmp.path().to_path_buf())
-            .with_max_chars(100);
+        let budget = ResultBudget::new(100_000, 1, tmp.path().to_path_buf()).with_max_chars(100);
         let text = "a".repeat(101);
         let result = budget.cap_result(&text);
         assert!(result.was_capped);
@@ -216,8 +213,7 @@ mod tests {
     #[test]
     fn test_cap_result_utf8_boundary() {
         let tmp = TempDir::new().unwrap();
-        let budget = ResultBudget::new(100_000, 1, tmp.path().to_path_buf())
-            .with_max_chars(10);
+        let budget = ResultBudget::new(100_000, 1, tmp.path().to_path_buf()).with_max_chars(10);
         // Chinese chars are 3 bytes each.
         let text = "你好世界你好世界你好世界"; // 12 chars, 36 bytes > 10 chars
         let result = budget.cap_result(text);
@@ -229,16 +225,14 @@ mod tests {
     #[test]
     fn test_effective_cap_custom_max() {
         let tmp = TempDir::new().unwrap();
-        let budget = ResultBudget::new(100_000, 1, tmp.path().to_path_buf())
-            .with_max_chars(2048);
+        let budget = ResultBudget::new(100_000, 1, tmp.path().to_path_buf()).with_max_chars(2048);
         assert_eq!(budget.effective_cap(), 2048);
     }
 
     #[test]
     fn test_capped_result_debug() {
         let tmp = TempDir::new().unwrap();
-        let budget = ResultBudget::new(100, 1, tmp.path().to_path_buf())
-            .with_max_chars(50);
+        let budget = ResultBudget::new(100, 1, tmp.path().to_path_buf()).with_max_chars(50);
         let result = budget.cap_result(&"x".repeat(200));
         let debug = format!("{:?}", result);
         assert!(debug.contains("was_capped: true"));
@@ -263,8 +257,7 @@ mod tests {
     #[test]
     fn test_with_max_chars_builder() {
         let tmp = TempDir::new().unwrap();
-        let budget = ResultBudget::new(10_000, 1, tmp.path().to_path_buf())
-            .with_max_chars(8192);
+        let budget = ResultBudget::new(10_000, 1, tmp.path().to_path_buf()).with_max_chars(8192);
         assert_eq!(budget.max_summary_chars, 8192);
     }
 }

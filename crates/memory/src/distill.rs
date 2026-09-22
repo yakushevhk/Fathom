@@ -110,7 +110,11 @@ impl Memory {
                             &row.id,
                             "distilled",
                             Some("run"),
-                            Some(if was_duplicate { "duplicate-in-agent-scope" } else { "promoted" }),
+                            Some(if was_duplicate {
+                                "duplicate-in-agent-scope"
+                            } else {
+                                "promoted"
+                            }),
                         );
                         report.archived += 1;
                     }
@@ -127,7 +131,13 @@ impl Memory {
 }
 
 fn short(id: &str) -> String {
-    id.chars().rev().take(8).collect::<Vec<_>>().into_iter().rev().collect()
+    id.chars()
+        .rev()
+        .take(8)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect()
 }
 
 #[cfg(test)]
@@ -200,7 +210,11 @@ mod tests {
         let first = mem.distill(None, false).await.unwrap();
         assert_eq!(first.promoted, 1);
         let second = mem.distill(None, false).await.unwrap();
-        assert_eq!(second.promoted + second.skipped, 0, "nothing left to distill");
+        assert_eq!(
+            second.promoted + second.skipped,
+            0,
+            "nothing left to distill"
+        );
     }
 
     #[tokio::test]
@@ -236,8 +250,14 @@ mod tests {
     async fn distill_respects_session_key() {
         let mem = Memory::in_memory(MemoryConfig::default()).unwrap();
         for (sess, fact) in [
-            ("s1", "first session learned about the alpha vendor pricing model"),
-            ("s2", "second session mapped the beta supplier delivery schedule"),
+            (
+                "s1",
+                "first session learned about the alpha vendor pricing model",
+            ),
+            (
+                "s2",
+                "second session mapped the beta supplier delivery schedule",
+            ),
         ] {
             mem.pipeline()
                 .absorb(AbsorbRequest {

@@ -76,8 +76,14 @@ impl EmailVerifier {
         let email = email.trim().to_string();
         let is_valid_syntax = check_syntax(&email);
 
-        let domain = email.rsplit_once('@').map(|(_, d)| d.to_lowercase()).unwrap_or_default();
-        let local_part = email.split_once('@').map(|(l, _)| l.to_lowercase()).unwrap_or_default();
+        let domain = email
+            .rsplit_once('@')
+            .map(|(_, d)| d.to_lowercase())
+            .unwrap_or_default();
+        let local_part = email
+            .split_once('@')
+            .map(|(l, _)| l.to_lowercase())
+            .unwrap_or_default();
 
         let is_disposable = is_disposable_domain(&domain);
         let is_role_based = is_role_based_local(&local_part);
@@ -101,12 +107,8 @@ impl EmailVerifier {
             None
         };
 
-        let confidence = compute_confidence(
-            is_valid_syntax,
-            domain_exists,
-            is_disposable,
-            smtp.as_ref(),
-        );
+        let confidence =
+            compute_confidence(is_valid_syntax, domain_exists, is_disposable, smtp.as_ref());
 
         EmailVerification {
             email,
@@ -142,7 +144,11 @@ pub async fn record_email_receipts(ledger: &ReceiptLedger, result: &EmailVerific
         .record(
             ReceiptKind::of(ReceiptKind::EMAIL_SYNTAX),
             &email,
-            if result.is_valid_syntax { Verdict::Pass } else { Verdict::Fail },
+            if result.is_valid_syntax {
+                Verdict::Pass
+            } else {
+                Verdict::Fail
+            },
             None,
             src.clone(),
         )
@@ -154,7 +160,11 @@ pub async fn record_email_receipts(ledger: &ReceiptLedger, result: &EmailVerific
             .record(
                 ReceiptKind::of(ReceiptKind::EMAIL_DOMAIN_MX),
                 email.rsplit_once('@').map(|(_, d)| d).unwrap_or(&email),
-                if result.domain_exists { Verdict::Pass } else { Verdict::Fail },
+                if result.domain_exists {
+                    Verdict::Pass
+                } else {
+                    Verdict::Fail
+                },
                 if result.mx_records.is_empty() {
                     None
                 } else {
@@ -190,7 +200,11 @@ pub async fn record_email_receipts(ledger: &ReceiptLedger, result: &EmailVerific
         .record(
             ReceiptKind::of(ReceiptKind::EMAIL_DISPOSABLE),
             &email,
-            if result.is_disposable { Verdict::Fail } else { Verdict::Pass },
+            if result.is_disposable {
+                Verdict::Fail
+            } else {
+                Verdict::Pass
+            },
             None,
             src.clone(),
         )
@@ -227,8 +241,29 @@ fn valid_local_part(local: &str) -> bool {
         return false;
     }
     local.chars().all(|c| {
-        c.is_ascii_alphanumeric() || matches!(c, '.' | '!' | '#' | '$' | '%' | '&' | '\'' | '*'
-            | '+' | '-' | '/' | '=' | '?' | '^' | '_' | '`' | '{' | '|' | '}' | '~')
+        c.is_ascii_alphanumeric()
+            || matches!(
+                c,
+                '.' | '!'
+                    | '#'
+                    | '$'
+                    | '%'
+                    | '&'
+                    | '\''
+                    | '*'
+                    | '+'
+                    | '-'
+                    | '/'
+                    | '='
+                    | '?'
+                    | '^'
+                    | '_'
+                    | '`'
+                    | '{'
+                    | '|'
+                    | '}'
+                    | '~'
+            )
     })
 }
 
@@ -259,20 +294,60 @@ fn valid_domain(domain: &str) -> bool {
 
 /// Known disposable / temporary email providers.
 const DISPOSABLE_DOMAINS: &[&str] = &[
-    "0-mail.com", "10minutemail.com", "20minutemail.com", "anonymbox.com",
-    "bccto.me", "burnermail.io", "deadaddress.com", "discard.email",
-    "dispostable.com", "emailigo.com", "emailondeck.com", "fakeinbox.com",
-    "getnada.com", "grr.la", "guerrillamail.com", "guerrillamail.net",
-    "guerrillamail.org", "guerrillamailblock.com", "harakirimail.com",
-    "inboxkitten.com", "junkmail.com", "mailcatch.com", "maildrop.cc",
-    "mailinator.com", "mailnesia.com", "mailnull.com", "mailtemp.info",
-    "mail-temp.com", "mailzilla.com", "mintemail.com", "moakt.com",
-    "mohmal.com", "mytemp.email", "safetymail.info", "sharklasers.com",
-    "spam.la", "spambog.com", "spamfree24.org", "spamgourmet.com",
-    "spamobox.com", "tempinbox.com", "tempmail.com", "temp-mail.org",
-    "tempr.email", "throwawaymail.com", "trashmail.com", "trashmail.net",
-    "trashed.net", "yopmail.com", "disposablemail.com", "mailcatch.com",
-    "mailnesia.com", "mailsac.com", "vmani.com",
+    "0-mail.com",
+    "10minutemail.com",
+    "20minutemail.com",
+    "anonymbox.com",
+    "bccto.me",
+    "burnermail.io",
+    "deadaddress.com",
+    "discard.email",
+    "dispostable.com",
+    "emailigo.com",
+    "emailondeck.com",
+    "fakeinbox.com",
+    "getnada.com",
+    "grr.la",
+    "guerrillamail.com",
+    "guerrillamail.net",
+    "guerrillamail.org",
+    "guerrillamailblock.com",
+    "harakirimail.com",
+    "inboxkitten.com",
+    "junkmail.com",
+    "mailcatch.com",
+    "maildrop.cc",
+    "mailinator.com",
+    "mailnesia.com",
+    "mailnull.com",
+    "mailtemp.info",
+    "mail-temp.com",
+    "mailzilla.com",
+    "mintemail.com",
+    "moakt.com",
+    "mohmal.com",
+    "mytemp.email",
+    "safetymail.info",
+    "sharklasers.com",
+    "spam.la",
+    "spambog.com",
+    "spamfree24.org",
+    "spamgourmet.com",
+    "spamobox.com",
+    "tempinbox.com",
+    "tempmail.com",
+    "temp-mail.org",
+    "tempr.email",
+    "throwawaymail.com",
+    "trashmail.com",
+    "trashmail.net",
+    "trashed.net",
+    "yopmail.com",
+    "disposablemail.com",
+    "mailcatch.com",
+    "mailnesia.com",
+    "mailsac.com",
+    "vmani.com",
 ];
 
 /// Check whether `domain` is a known disposable-email provider (exact match,
@@ -282,19 +357,50 @@ pub fn is_disposable_domain(domain: &str) -> bool {
     if domain.is_empty() {
         return false;
     }
-    DISPOSABLE_DOMAINS.iter().any(|d| {
-        domain == *d || domain.ends_with(&format!(".{d}"))
-    })
+    DISPOSABLE_DOMAINS
+        .iter()
+        .any(|d| domain == *d || domain.ends_with(&format!(".{d}")))
 }
 
 /// Local parts that belong to a department or function rather than a person.
 const ROLE_LOCAL_PARTS: &[&str] = &[
-    "admin", "administrator", "abuse", "billing", "careers", "compliance",
-    "contact", "contactus", "customerservice", "feedback", "finance",
-    "hello", "help", "hr", "info", "it", "jobs", "legal", "marketing",
-    "media", "noc", "no-reply", "noreply", "office", "operations",
-    "postmaster", "press", "privacy", "reception", "root", "sales",
-    "security", "service", "studio", "support", "team", "webmaster",
+    "admin",
+    "administrator",
+    "abuse",
+    "billing",
+    "careers",
+    "compliance",
+    "contact",
+    "contactus",
+    "customerservice",
+    "feedback",
+    "finance",
+    "hello",
+    "help",
+    "hr",
+    "info",
+    "it",
+    "jobs",
+    "legal",
+    "marketing",
+    "media",
+    "noc",
+    "no-reply",
+    "noreply",
+    "office",
+    "operations",
+    "postmaster",
+    "press",
+    "privacy",
+    "reception",
+    "root",
+    "sales",
+    "security",
+    "service",
+    "studio",
+    "support",
+    "team",
+    "webmaster",
 ];
 
 /// Check whether the local part is role-based (info@, support@, admin@, …).
@@ -343,10 +449,16 @@ pub async fn check_mx(
 async fn lookup_mx_doh(client: &reqwest::Client, domain: &str) -> (Vec<String>, bool) {
     for (base, header) in [
         ("https://dns.google/resolve", None),
-        ("https://cloudflare-dns.com/dns-query", Some("application/dns-json")),
+        (
+            "https://cloudflare-dns.com/dns-query",
+            Some("application/dns-json"),
+        ),
     ] {
         let mut req = client
-            .get(format!("{base}?name={}&type=MX", urlencoding::encode(domain)))
+            .get(format!(
+                "{base}?name={}&type=MX",
+                urlencoding::encode(domain)
+            ))
             .header("User-Agent", "ParallelResearch/0.1")
             .timeout(Duration::from_secs(5));
         if let Some(accept) = header {
@@ -384,12 +496,10 @@ pub async fn has_a_record(client: &reqwest::Client, domain: &str) -> bool {
         .header("User-Agent", "ParallelResearch/0.1")
         .timeout(Duration::from_secs(5));
     match req.send().await {
-        Ok(resp) if resp.status().is_success() => {
-            match resp.json::<serde_json::Value>().await {
-                Ok(value) => parse_doh_a(&value),
-                Err(_) => false,
-            }
-        }
+        Ok(resp) if resp.status().is_success() => match resp.json::<serde_json::Value>().await {
+            Ok(value) => parse_doh_a(&value),
+            Err(_) => false,
+        },
         _ => {
             // Cloudflare fallback.
             let fallback = client
@@ -470,7 +580,10 @@ pub async fn smtp_probe(mx_host: &str, recipient: &str) -> SmtpResult {
             connected: false,
             banner: None,
             accepted: None,
-            detail: Some(format!("SMTP probe timed out after {}s", SMTP_PROBE_TIMEOUT.as_secs())),
+            detail: Some(format!(
+                "SMTP probe timed out after {}s",
+                SMTP_PROBE_TIMEOUT.as_secs()
+            )),
         },
     }
 }
@@ -524,7 +637,14 @@ async fn smtp_dialogue(mx_host: &str, recipient: &str) -> SmtpResult {
     }
 
     // 3. MAIL FROM.
-    if !send_and_expect(&mut reader, &mut write_half, &format!("MAIL FROM:<{PROBE_FROM}>\r\n"), "250").await {
+    if !send_and_expect(
+        &mut reader,
+        &mut write_half,
+        &format!("MAIL FROM:<{PROBE_FROM}>\r\n"),
+        "250",
+    )
+    .await
+    {
         return SmtpResult {
             connected: true,
             banner: Some(banner),
@@ -534,7 +654,9 @@ async fn smtp_dialogue(mx_host: &str, recipient: &str) -> SmtpResult {
     }
 
     // 4. RCPT TO — the actual deliverability signal.
-    let _ = write_half.write_all(format!("RCPT TO:<{recipient}>\r\n").as_bytes()).await;
+    let _ = write_half
+        .write_all(format!("RCPT TO:<{recipient}>\r\n").as_bytes())
+        .await;
     let rcpt = read_reply(&mut reader).await.unwrap_or_default();
     let accepted = if rcpt.starts_with("250") || rcpt.starts_with("251") {
         Some(true)
@@ -684,7 +806,12 @@ A per-signal report plus a confidence score: 0.0 = invalid syntax, ~0.9 = valid 
     ) -> anyhow::Result<ToolOutput> {
         let params: VerifyEmailParams = serde_json::from_value(args)?;
         let result = self
-            .verify(&ctx.http_client, &params.email, params.smtp_check, Some(&ctx.mx_cache))
+            .verify(
+                &ctx.http_client,
+                &params.email,
+                params.smtp_check,
+                Some(&ctx.mx_cache),
+            )
             .await;
 
         let verdict = if !result.is_valid_syntax {
@@ -703,18 +830,36 @@ A per-signal report plus a confidence score: 0.0 = invalid syntax, ~0.9 = valid 
 
         let mut out = format!("Email verification: {}\n", result.email);
         out.push_str(&format!("Verdict: {verdict}\n"));
-        out.push_str(&format!("Syntax: {}\n", if result.is_valid_syntax { "valid" } else { "INVALID" }));
+        out.push_str(&format!(
+            "Syntax: {}\n",
+            if result.is_valid_syntax {
+                "valid"
+            } else {
+                "INVALID"
+            }
+        ));
         out.push_str(&format!(
             "Domain: {}\n",
-            if result.domain_exists { "exists" } else { "NOT FOUND" }
+            if result.domain_exists {
+                "exists"
+            } else {
+                "NOT FOUND"
+            }
         ));
         if !result.mx_records.is_empty() {
             out.push_str(&format!("MX records: {}\n", result.mx_records.join(", ")));
         }
-        out.push_str(&format!("Disposable: {}\n", if result.is_disposable { "YES" } else { "no" }));
+        out.push_str(&format!(
+            "Disposable: {}\n",
+            if result.is_disposable { "YES" } else { "no" }
+        ));
         out.push_str(&format!(
             "Role-based: {}\n",
-            if result.is_role_based { "YES (department address, not a person)" } else { "no" }
+            if result.is_role_based {
+                "YES (department address, not a person)"
+            } else {
+                "no"
+            }
         ));
         if let Some(ref smtp) = result.smtp_check {
             let accepted = match smtp.accepted {
@@ -818,10 +963,7 @@ pub struct DomainEmailPattern {
 
 /// Infer the corporate email pattern from known addresses on the same
 /// domain. Role addresses (info@, sales@, …) are ignored.
-pub fn detect_domain_pattern(
-    known_emails: &[String],
-    domain: &str,
-) -> Option<DomainEmailPattern> {
+pub fn detect_domain_pattern(known_emails: &[String], domain: &str) -> Option<DomainEmailPattern> {
     let domain = domain.trim().to_lowercase();
     // Counts for separators: '.', '_', '-', none.
     let mut sep_counts = [0usize; 4];
@@ -1102,17 +1244,17 @@ mod tests {
             "@no-local.com",
             "user@",
             "user@@example.com",
-            "user@com",                 // no dotted domain
-            "user@.example.com",       // empty label
-            "user@example..com",       // empty label
-            "user@-example.com",       // leading hyphen
-            "user@example.com-",       // trailing hyphen
-            ".user@example.com",       // leading dot in local
-            "user.@example.com",       // trailing dot in local
-            "us..er@example.com",      // consecutive dots
-            "user name@example.com",   // space in local
-            "user@example.123",        // numeric TLD
-            "user@exam ple.com",       // space in domain
+            "user@com",              // no dotted domain
+            "user@.example.com",     // empty label
+            "user@example..com",     // empty label
+            "user@-example.com",     // leading hyphen
+            "user@example.com-",     // trailing hyphen
+            ".user@example.com",     // leading dot in local
+            "user.@example.com",     // trailing dot in local
+            "us..er@example.com",    // consecutive dots
+            "user name@example.com", // space in local
+            "user@example.123",      // numeric TLD
+            "user@exam ple.com",     // space in domain
         ] {
             assert!(!check_syntax(email), "{email} should be invalid");
         }
@@ -1148,7 +1290,10 @@ mod tests {
             assert!(is_role_based_local(local), "{local} should be role-based");
         }
         for local in ["john.doe", "jane", "user123"] {
-            assert!(!is_role_based_local(local), "{local} should not be role-based");
+            assert!(
+                !is_role_based_local(local),
+                "{local} should not be role-based"
+            );
         }
     }
 
@@ -1205,14 +1350,24 @@ mod tests {
 
     #[test]
     fn test_confidence_smtp_accepted_raises_score() {
-        let smtp = SmtpResult { connected: true, banner: None, accepted: Some(true), detail: None };
+        let smtp = SmtpResult {
+            connected: true,
+            banner: None,
+            accepted: Some(true),
+            detail: None,
+        };
         let c = compute_confidence(true, true, false, Some(&smtp));
         assert!(c >= 0.95);
     }
 
     #[test]
     fn test_confidence_smtp_rejected_lowers_score() {
-        let smtp = SmtpResult { connected: true, banner: None, accepted: Some(false), detail: None };
+        let smtp = SmtpResult {
+            connected: true,
+            banner: None,
+            accepted: Some(false),
+            detail: None,
+        };
         let c = compute_confidence(true, true, false, Some(&smtp));
         assert!(c <= 0.2);
     }
@@ -1324,7 +1479,10 @@ mod tests {
 
     #[test]
     fn test_detect_domain_pattern_no_separator() {
-        let known = vec!["johnsmith@corp.com".to_string(), "annajones@corp.com".to_string()];
+        let known = vec![
+            "johnsmith@corp.com".to_string(),
+            "annajones@corp.com".to_string(),
+        ];
         let p = detect_domain_pattern(&known, "corp.com").unwrap();
         assert_eq!(p.separator, '\0');
         assert!(!p.initial_first);

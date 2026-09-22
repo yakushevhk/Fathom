@@ -93,13 +93,15 @@ impl NewsSearch {
             .await;
 
         match response {
-            Ok(resp) if resp.status().is_success() => match resp.json::<serde_json::Value>().await {
-                Ok(value) => parse_serper_news_response(&value, limit),
-                Err(e) => {
-                    tracing::warn!("Serper news response parse error: {e}");
-                    vec![]
+            Ok(resp) if resp.status().is_success() => {
+                match resp.json::<serde_json::Value>().await {
+                    Ok(value) => parse_serper_news_response(&value, limit),
+                    Err(e) => {
+                        tracing::warn!("Serper news response parse error: {e}");
+                        vec![]
+                    }
                 }
-            },
+            }
             Ok(resp) => {
                 tracing::warn!("Serper news search failed: HTTP {}", resp.status());
                 vec![]
@@ -308,20 +310,52 @@ fn normalize_date(date: &str) -> Option<String> {
 
 /// Corporate suffixes that mark a capitalized sequence as a company.
 const COMPANY_SUFFIXES: &[&str] = &[
-    "Inc", "Inc.", "LLC", "Ltd", "Ltd.", "GmbH", "Corp", "Corp.", "Corporation",
-    "Group", "Company", "Co", "Co.", "AG", "SAS", "SA", "Holdings", "Labs",
-    "Technologies", "Technology", "Systems", "Solutions", "Partners", "Capital",
-    "Bank", "Airways", "Airlines", "Motors", "Studios", "OOO", "OAO", "PAO",
-    "ZAO", "АО", "ПАО", "ОАО", "ЗАО",
+    "Inc",
+    "Inc.",
+    "LLC",
+    "Ltd",
+    "Ltd.",
+    "GmbH",
+    "Corp",
+    "Corp.",
+    "Corporation",
+    "Group",
+    "Company",
+    "Co",
+    "Co.",
+    "AG",
+    "SAS",
+    "SA",
+    "Holdings",
+    "Labs",
+    "Technologies",
+    "Technology",
+    "Systems",
+    "Solutions",
+    "Partners",
+    "Capital",
+    "Bank",
+    "Airways",
+    "Airlines",
+    "Motors",
+    "Studios",
+    "OOO",
+    "OAO",
+    "PAO",
+    "ZAO",
+    "АО",
+    "ПАО",
+    "ОАО",
+    "ЗАО",
 ];
 
 /// Sentence-initial / function words that disqualify a person candidate.
 const ENTITY_STOPWORDS: &[&str] = &[
-    "The", "This", "That", "These", "Those", "A", "An", "In", "On", "At", "It",
-    "He", "She", "They", "We", "You", "Our", "Your", "His", "Her", "Its", "But",
-    "And", "Or", "If", "When", "While", "After", "Before", "For", "From", "With",
-    "About", "As", "By", "To", "Of", "New", "Last", "First", "Next", "Also",
-    "More", "Most", "Some", "Many", "All", "No", "Not", "Now", "Today",
+    "The", "This", "That", "These", "Those", "A", "An", "In", "On", "At", "It", "He", "She",
+    "They", "We", "You", "Our", "Your", "His", "Her", "Its", "But", "And", "Or", "If", "When",
+    "While", "After", "Before", "For", "From", "With", "About", "As", "By", "To", "Of", "New",
+    "Last", "First", "Next", "Also", "More", "Most", "Some", "Many", "All", "No", "Not", "Now",
+    "Today",
 ];
 
 /// Extract person and company candidates from text.
@@ -402,7 +436,9 @@ fn capitalized_runs(text: &str) -> Vec<Vec<String>> {
     let mut current: Vec<String> = Vec::new();
 
     for token in text.split_whitespace() {
-        let clean: String = token.trim_matches(|c: char| !c.is_alphanumeric()).to_string();
+        let clean: String = token
+            .trim_matches(|c: char| !c.is_alphanumeric())
+            .to_string();
         let is_cap = clean
             .chars()
             .next()
@@ -481,7 +517,11 @@ Uses the Serper news endpoint when a Serper key is configured; otherwise falls b
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: NewsSearchParams = serde_json::from_value(args)?;
         if params.query.trim().is_empty() {
             return Ok(ToolOutput::err("Parameter `query` must not be empty."));
@@ -497,7 +537,11 @@ Uses the Serper news endpoint when a Serper key is configured; otherwise falls b
             )));
         }
 
-        let mut output = format!("Found {} news articles for '{}':\n\n", results.len(), params.query);
+        let mut output = format!(
+            "Found {} news articles for '{}':\n\n",
+            results.len(),
+            params.query
+        );
         for (i, r) in results.iter().enumerate() {
             output.push_str(&format!("{}. **{}**\n", i + 1, r.title));
             output.push_str(&format!("   URL: {}\n", r.url));
@@ -519,7 +563,10 @@ Uses the Serper news endpoint when a Serper key is configured; otherwise falls b
                 output.push_str(&format!("   Persons: {}\n", r.mentioned_persons.join(", ")));
             }
             if !r.mentioned_companies.is_empty() {
-                output.push_str(&format!("   Companies: {}\n", r.mentioned_companies.join(", ")));
+                output.push_str(&format!(
+                    "   Companies: {}\n",
+                    r.mentioned_companies.join(", ")
+                ));
             }
             output.push('\n');
         }
@@ -616,14 +663,21 @@ mod tests {
         );
         assert_eq!(extract_xml_field("<x>no match</x>", "title"), None);
         assert_eq!(
-            extract_xml_field("<description><![CDATA[inner <b>html</b>]]></description>", "description").as_deref(),
+            extract_xml_field(
+                "<description><![CDATA[inner <b>html</b>]]></description>",
+                "description"
+            )
+            .as_deref(),
             Some("inner <b>html</b>")
         );
     }
 
     #[test]
     fn test_decode_entities() {
-        assert_eq!(decode_entities("Tom &amp; Jerry &#39;s &quot;show&quot;"), "Tom & Jerry 's \"show\"");
+        assert_eq!(
+            decode_entities("Tom &amp; Jerry &#39;s &quot;show&quot;"),
+            "Tom & Jerry 's \"show\""
+        );
     }
 
     #[test]
@@ -641,8 +695,13 @@ mod tests {
             ("Big news today".to_string(), "Reuters".to_string())
         );
         // Dash inside headline with a long tail is kept whole.
-        let (t, s) = split_title_source("Headline with dash - and a very long trailing part that exceeds forty chars");
-        assert_eq!(t, "Headline with dash - and a very long trailing part that exceeds forty chars");
+        let (t, s) = split_title_source(
+            "Headline with dash - and a very long trailing part that exceeds forty chars",
+        );
+        assert_eq!(
+            t,
+            "Headline with dash - and a very long trailing part that exceeds forty chars"
+        );
         assert_eq!(s, "");
         let (t, s) = split_title_source("No source here");
         assert_eq!(t, "No source here");
@@ -651,8 +710,14 @@ mod tests {
 
     #[test]
     fn test_normalize_date() {
-        assert_eq!(normalize_date("Tue, 05 Aug 2026 10:00:00 GMT").as_deref(), Some("2026-08-05"));
-        assert_eq!(normalize_date("2 hours ago").as_deref(), Some("2 hours ago"));
+        assert_eq!(
+            normalize_date("Tue, 05 Aug 2026 10:00:00 GMT").as_deref(),
+            Some("2026-08-05")
+        );
+        assert_eq!(
+            normalize_date("2 hours ago").as_deref(),
+            Some("2 hours ago")
+        );
         assert_eq!(normalize_date(""), None);
     }
 
@@ -663,11 +728,26 @@ mod tests {
         let text = "Acme Corp CEO Tim Cook met with IBM executives. Maria Gonzalez, \
                       VP at Globex Corporation, also attended the Berlin summit.";
         let (persons, companies) = extract_entities(text);
-        assert!(persons.iter().any(|p| p == "Tim Cook"), "persons: {persons:?}");
-        assert!(persons.iter().any(|p| p == "Maria Gonzalez"), "persons: {persons:?}");
-        assert!(companies.iter().any(|c| c.contains("Acme")), "companies: {companies:?}");
-        assert!(companies.iter().any(|c| c == "IBM"), "companies: {companies:?}");
-        assert!(companies.iter().any(|c| c.contains("Globex")), "companies: {companies:?}");
+        assert!(
+            persons.iter().any(|p| p == "Tim Cook"),
+            "persons: {persons:?}"
+        );
+        assert!(
+            persons.iter().any(|p| p == "Maria Gonzalez"),
+            "persons: {persons:?}"
+        );
+        assert!(
+            companies.iter().any(|c| c.contains("Acme")),
+            "companies: {companies:?}"
+        );
+        assert!(
+            companies.iter().any(|c| c == "IBM"),
+            "companies: {companies:?}"
+        );
+        assert!(
+            companies.iter().any(|c| c.contains("Globex")),
+            "companies: {companies:?}"
+        );
     }
 
     #[test]
@@ -680,7 +760,13 @@ mod tests {
     #[test]
     fn test_extract_entities_dedupes() {
         let (persons, _) = extract_entities("John Smith met John Smith and john smith");
-        assert_eq!(persons.iter().filter(|p| p.as_str() == "John Smith").count(), 1);
+        assert_eq!(
+            persons
+                .iter()
+                .filter(|p| p.as_str() == "John Smith")
+                .count(),
+            1
+        );
     }
 
     #[test]

@@ -198,7 +198,15 @@ impl VaultView {
             )
     }
 
-    fn render_cred_card(&self, id: &str, name: &str, service: &str, created: &str, configured: bool, cx: &mut Context<Self>) -> Div {
+    fn render_cred_card(
+        &self,
+        id: &str,
+        name: &str,
+        service: &str,
+        created: &str,
+        configured: bool,
+        cx: &mut Context<Self>,
+    ) -> Div {
         let cred_id = id.to_string();
 
         div()
@@ -280,12 +288,24 @@ impl VaultView {
                             .px_2()
                             .py_0p5()
                             .rounded_md()
-                            .bg(if configured { Theme::bg_card() } else { Theme::bg_elevated() })
+                            .bg(if configured {
+                                Theme::bg_card()
+                            } else {
+                                Theme::bg_elevated()
+                            })
                             .border_1()
-                            .border_color(if configured { Theme::success_green() } else { Theme::danger_red() })
+                            .border_color(if configured {
+                                Theme::success_green()
+                            } else {
+                                Theme::danger_red()
+                            })
                             .text_xs()
                             .font_weight(gpui::FontWeight::BOLD)
-                            .text_color(if configured { Theme::success_green() } else { Theme::danger_red() })
+                            .text_color(if configured {
+                                Theme::success_green()
+                            } else {
+                                Theme::danger_red()
+                            })
                             .child(if configured { "ENCRYPTED" } else { "EXPIRED" }),
                     )
                     .child(
@@ -300,15 +320,18 @@ impl VaultView {
                             .cursor_pointer()
                             .hover(|s| s.bg(Theme::danger_red()).text_color(Theme::text_primary()))
                             .child("Revoke ✕")
-                            .on_click(cx.listener(move |this, _event: &ClickEvent, _window, cx| {
-                                let c_id = cred_id.clone();
-                                let api = this.state.api.clone();
-                                cx.spawn(async move |_this, _cx| {
-                                    let _ = api.delete_credential(&c_id).await;
-                                }).detach();
-                                this.state.credentials.write().retain(|c| c.id != cred_id);
-                                cx.notify();
-                            })),
+                            .on_click(cx.listener(
+                                move |this, _event: &ClickEvent, _window, cx| {
+                                    let c_id = cred_id.clone();
+                                    let api = this.state.api.clone();
+                                    cx.spawn(async move |_this, _cx| {
+                                        let _ = api.delete_credential(&c_id).await;
+                                    })
+                                    .detach();
+                                    this.state.credentials.write().retain(|c| c.id != cred_id);
+                                    cx.notify();
+                                },
+                            )),
                     ),
             )
     }

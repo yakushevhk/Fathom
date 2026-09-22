@@ -73,29 +73,58 @@ async fn cross_call_merge_combines_similar_fact_into_one_row() {
     assert_eq!(r1.created, 1);
 
     let r2 = mem.pipeline().absorb(req(fact(b, None))).await.unwrap();
-    assert_eq!(r2.created, 0, "второй факт не должен создать новую строку: {}", r2.summary_line());
-    assert!(r2.consolidated >= 1, "должен сработать cross-call merge: {}", r2.summary_line());
+    assert_eq!(
+        r2.created,
+        0,
+        "второй факт не должен создать новую строку: {}",
+        r2.summary_line()
+    );
+    assert!(
+        r2.consolidated >= 1,
+        "должен сработать cross-call merge: {}",
+        r2.summary_line()
+    );
 
-    let active = mem.db.list(&ScopeFilter::persistent(), Some("active"), 100).unwrap();
+    let active = mem
+        .db
+        .list(&ScopeFilter::persistent(), Some("active"), 100)
+        .unwrap();
     assert_eq!(active.len(), 1, "должна остаться одна объединённая строка");
-    assert!(active[0].content.contains(a) && active[0].content.contains(b),
-        "контент должен быть объединён: {}", active[0].content);
+    assert!(
+        active[0].content.contains(a) && active[0].content.contains(b),
+        "контент должен быть объединён: {}",
+        active[0].content
+    );
 }
 
 #[tokio::test]
 async fn cross_call_merge_does_not_fire_below_threshold() {
     // cosine = 0.714 → ниже порога 0.85 → новый факт остаётся отдельной строкой.
     let mem = in_memory();
-    let r1 = mem.pipeline().absorb(req(fact(
-        "Redis is great for caching session data", None))).await.unwrap();
+    let r1 = mem
+        .pipeline()
+        .absorb(req(fact("Redis is great for caching session data", None)))
+        .await
+        .unwrap();
     assert_eq!(r1.created, 1);
 
-    let r2 = mem.pipeline().absorb(req(fact(
-        "Redis works well for caching session data", None))).await.unwrap();
-    assert_eq!(r2.created, 1, "ниже порога merge факт должен быть отдельным: {}", r2.summary_line());
+    let r2 = mem
+        .pipeline()
+        .absorb(req(fact("Redis works well for caching session data", None)))
+        .await
+        .unwrap();
+    assert_eq!(
+        r2.created,
+        1,
+        "ниже порога merge факт должен быть отдельным: {}",
+        r2.summary_line()
+    );
     assert_eq!(r2.consolidated, 0);
 
-    let active = mem.db.list(&ScopeFilter::persistent(), Some("active"), 100).unwrap();
+    let active = mem
+        .db
+        .list(&ScopeFilter::persistent(), Some("active"), 100)
+        .unwrap();
     assert_eq!(active.len(), 2, "две строки, без объединения");
 }
 
@@ -104,42 +133,88 @@ async fn cross_call_merge_does_not_fire_below_threshold() {
 #[tokio::test]
 async fn memory_class_ephemeral_forced_to_run_scope() {
     let mem = in_memory();
-    let r = mem.pipeline().absorb(req(fact(
-        "This bug is annoying right now", Some("ephemeral")))).await.unwrap();
+    let r = mem
+        .pipeline()
+        .absorb(req(fact(
+            "This bug is annoying right now",
+            Some("ephemeral"),
+        )))
+        .await
+        .unwrap();
     assert_eq!(r.created, 1);
 
-    let agent_rows = mem.db.list(&ScopeFilter::new().add(Scope::Agent, ""), Some("active"), 100).unwrap();
-    assert!(agent_rows.iter().all(|r| !r.content.contains("bug is annoying")),
-        "ephemeral-факт не должен попасть в agent scope");
+    let agent_rows = mem
+        .db
+        .list(
+            &ScopeFilter::new().add(Scope::Agent, ""),
+            Some("active"),
+            100,
+        )
+        .unwrap();
+    assert!(
+        agent_rows
+            .iter()
+            .all(|r| !r.content.contains("bug is annoying")),
+        "ephemeral-факт не должен попасть в agent scope"
+    );
 
-    let run_rows = mem.db.list(&ScopeFilter::new().add(Scope::Run, ""), Some("active"), 100).unwrap();
-    assert!(run_rows.iter().any(|r| r.content.contains("bug is annoying")),
-        "ephemeral-факт должен быть в run scope");
+    let run_rows = mem
+        .db
+        .list(&ScopeFilter::new().add(Scope::Run, ""), Some("active"), 100)
+        .unwrap();
+    assert!(
+        run_rows
+            .iter()
+            .any(|r| r.content.contains("bug is annoying")),
+        "ephemeral-факт должен быть в run scope"
+    );
 }
 
 #[tokio::test]
 async fn memory_class_expiring_gets_default_90_day_ttl() {
     let mem = in_memory();
-    mem.pipeline().absorb(req(fact(
-        "The quarterly report deadline is 2026-09-30", Some("expiring")))).await.unwrap();
+    mem.pipeline()
+        .absorb(req(fact(
+            "The quarterly report deadline is 2026-09-30",
+            Some("expiring"),
+        )))
+        .await
+        .unwrap();
 
-    let rows = mem.db.list(&ScopeFilter::persistent(), Some("active"), 100).unwrap();
-    let row = rows.iter().find(|r| r.content.contains("quarterly")).unwrap();
-    assert!(row.expires_at.is_some(), "expiring-факт должен получить expires_at");
+    let rows = mem
+        .db
+        .list(&ScopeFilter::persistent(), Some("active"), 100)
+        .unwrap();
+    let row = rows
+        .iter()
+        .find(|r| r.content.contains("quarterly"))
+        .unwrap();
+    assert!(
+        row.expires_at.is_some(),
+        "expiring-факт должен получить expires_at"
+    );
 
     let exp = chrono::DateTime::parse_from_rfc3339(row.expires_at.as_deref().unwrap()).unwrap();
     let now = chrono::Utc::now();
     let days = (exp.with_timezone(&chrono::Utc) - now).num_days();
-    assert!((85..=95).contains(&days), "TTL по умолчанию ~90 дней, получено {days}");
+    assert!(
+        (85..=95).contains(&days),
+        "TTL по умолчанию ~90 дней, получено {days}"
+    );
 }
 
 #[tokio::test]
 async fn memory_class_durable_is_default_no_ttl() {
     let mem = in_memory();
-    mem.pipeline().absorb(req(fact(
-        "The user prefers terse code reviews", None))).await.unwrap();
+    mem.pipeline()
+        .absorb(req(fact("The user prefers terse code reviews", None)))
+        .await
+        .unwrap();
 
-    let rows = mem.db.list(&ScopeFilter::persistent(), Some("active"), 100).unwrap();
+    let rows = mem
+        .db
+        .list(&ScopeFilter::persistent(), Some("active"), 100)
+        .unwrap();
     let row = rows.iter().find(|r| r.content.contains("terse")).unwrap();
     assert!(row.expires_at.is_none(), "durable-факт не должен иметь TTL");
     assert_eq!(row.scope, "agent", "durable по умолчанию в agent scope");
@@ -150,8 +225,15 @@ async fn memory_class_durable_is_default_no_ttl() {
 async fn seed_twin_rows(mem: &Memory, content: &str, conf_a: f64, conf_b: f64) {
     for conf in [conf_a, conf_b] {
         let row = raw_row(mem, content, conf, 0);
-        let vec = mem.embedder.embed(&[content.to_string()]).await.unwrap().remove(0);
-        mem.db.put_embedding(&row.id, mem.embedder.model_name(), &vec).unwrap();
+        let vec = mem
+            .embedder
+            .embed(&[content.to_string()])
+            .await
+            .unwrap()
+            .remove(0);
+        mem.db
+            .put_embedding(&row.id, mem.embedder.model_name(), &vec)
+            .unwrap();
     }
 }
 
@@ -161,11 +243,17 @@ async fn scoring_higher_confidence_ranks_higher() {
     let content = "Acme Corp uses Kubernetes for production deployments";
     seed_twin_rows(&mem, content, 0.9, 0.4).await;
 
-    let hits = mem.search("kubernetes production", &ScopeFilter::persistent(), None).await.unwrap();
+    let hits = mem
+        .search("kubernetes production", &ScopeFilter::persistent(), None)
+        .await
+        .unwrap();
     assert_eq!(hits.len(), 2, "оба близнеца должны попасть в выдачу");
-    assert!(hits[0].memory.confidence > hits[1].memory.confidence,
+    assert!(
+        hits[0].memory.confidence > hits[1].memory.confidence,
         "высокая confidence должна ранжироваться выше: [{:.3}/{:.3}]",
-        hits[0].score, hits[1].score);
+        hits[0].score,
+        hits[1].score
+    );
 }
 
 #[tokio::test]
@@ -174,16 +262,34 @@ async fn scoring_more_accesses_ranks_higher() {
     let content = "Redis is used as a cache in the product";
     let a = raw_row(&mem, content, 0.8, 12); // reinforcement = min(12/10, 1) = 1.0
     let _b = raw_row(&mem, content, 0.8, 0); // reinforcement = 0
-    let vec = mem.embedder.embed(&[content.to_string()]).await.unwrap().remove(0);
-    mem.db.put_embedding(&a.id, mem.embedder.model_name(), &vec).unwrap();
-    for row in mem.db.list(&ScopeFilter::persistent(), Some("active"), 100).unwrap() {
-        mem.db.put_embedding(&row.id, mem.embedder.model_name(), &vec).unwrap();
+    let vec = mem
+        .embedder
+        .embed(&[content.to_string()])
+        .await
+        .unwrap()
+        .remove(0);
+    mem.db
+        .put_embedding(&a.id, mem.embedder.model_name(), &vec)
+        .unwrap();
+    for row in mem
+        .db
+        .list(&ScopeFilter::persistent(), Some("active"), 100)
+        .unwrap()
+    {
+        mem.db
+            .put_embedding(&row.id, mem.embedder.model_name(), &vec)
+            .unwrap();
     }
 
-    let hits = mem.search("redis cache", &ScopeFilter::persistent(), None).await.unwrap();
+    let hits = mem
+        .search("redis cache", &ScopeFilter::persistent(), None)
+        .await
+        .unwrap();
     assert_eq!(hits.len(), 2);
-    assert_eq!(hits[0].memory.id, a.id,
-        "часто читаемая память (access_count=12) должна быть первой");
+    assert_eq!(
+        hits[0].memory.id, a.id,
+        "часто читаемая память (access_count=12) должна быть первой"
+    );
 }
 
 // ── GC: decay-сопротивление и updated_at ───────────────────────────────────
@@ -221,14 +327,26 @@ async fn gc_decay_resistance_keeps_frequently_accessed() {
     mem.db.insert(&untouched).unwrap();
 
     let report = mem.gc(&GcOptions::default()).await.unwrap();
-    println!("archived={} decayed={}", report.confidence_archived, report.confidence_decayed);
+    println!(
+        "archived={} decayed={}",
+        report.confidence_archived, report.confidence_decayed
+    );
 
-    assert_eq!(mem.db.get(&untouched.id).unwrap().unwrap().status, "archived",
-        "нетронутый факт (0 обращений) должен быть архивирован");
-    assert_eq!(mem.db.get(&accessed.id).unwrap().unwrap().status, "active",
-        "часто читаемый факт должен пережить decay");
+    assert_eq!(
+        mem.db.get(&untouched.id).unwrap().unwrap().status,
+        "archived",
+        "нетронутый факт (0 обращений) должен быть архивирован"
+    );
+    assert_eq!(
+        mem.db.get(&accessed.id).unwrap().unwrap().status,
+        "active",
+        "часто читаемый факт должен пережить decay"
+    );
     let conf = mem.db.get(&accessed.id).unwrap().unwrap().confidence;
-    assert!(conf > 0.15 && conf < 0.2, "confidence должен снизиться, но не ниже порога: {conf}");
+    assert!(
+        conf > 0.15 && conf < 0.2,
+        "confidence должен снизиться, но не ниже порога: {conf}"
+    );
 }
 
 #[tokio::test]
@@ -238,8 +356,10 @@ async fn gc_update_confidence_preserves_updated_at() {
     let before = mem.db.get(&row.id).unwrap().unwrap().updated_at;
     mem.db.update_confidence(&row.id, 0.5).unwrap();
     let after = mem.db.get(&row.id).unwrap().unwrap().updated_at;
-    assert_eq!(before, after,
-        "update_confidence не должен трогать updated_at (иначе decay сбросит idle-счётчик)");
+    assert_eq!(
+        before, after,
+        "update_confidence не должен трогать updated_at (иначе decay сбросит idle-счётчик)"
+    );
 }
 
 // ── merge_into ──────────────────────────────────────────────────────────────
@@ -253,15 +373,22 @@ async fn merge_into_unions_tags_and_takes_max_confidence() {
     row.tags = vec!["alpha".into()];
     mem.db.insert(&row).unwrap();
 
-    let ok = mem.db
+    let ok = mem
+        .db
         .merge_into(&row.id, "additional content", &["beta".to_string()], 0.9)
         .unwrap();
     assert!(ok);
 
     let merged = mem.db.get(&row.id).unwrap().unwrap();
-    assert!(merged.content.contains("original") && merged.content.contains("additional"),
-        "контент объединён: {}", merged.content);
-    assert!(merged.tags.contains(&"alpha".to_string()) && merged.tags.contains(&"beta".to_string()),
-        "теги объединены: {:?}", merged.tags);
+    assert!(
+        merged.content.contains("original") && merged.content.contains("additional"),
+        "контент объединён: {}",
+        merged.content
+    );
+    assert!(
+        merged.tags.contains(&"alpha".to_string()) && merged.tags.contains(&"beta".to_string()),
+        "теги объединены: {:?}",
+        merged.tags
+    );
     assert_eq!(merged.confidence, 0.9, "confidence берётся по максимуму");
 }

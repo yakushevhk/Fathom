@@ -1,7 +1,7 @@
+use crate::streaming::StreamingBuffer;
+use crossterm::event::{KeyCode, KeyModifiers};
 use pr_core::{AgentEvent, AgentId, AgentState, SessionId};
 use std::collections::HashMap;
-use crossterm::event::{KeyCode, KeyModifiers};
-use crate::streaming::StreamingBuffer;
 
 pub struct App {
     pub should_quit: bool,
@@ -138,11 +138,22 @@ impl MemorySnapshot {
             snap.entity_nodes = n;
             snap.entity_edges = e;
         }
-        if let Ok(rows) = mem.db.list(&pr_memory::ScopeFilter::persistent(), Some("active"), 15) {
+        if let Ok(rows) = mem
+            .db
+            .list(&pr_memory::ScopeFilter::persistent(), Some("active"), 15)
+        {
             snap.recent = rows
                 .into_iter()
                 .map(|r| MemoryLine {
-                    id: r.id.chars().rev().take(8).collect::<Vec<_>>().into_iter().rev().collect(),
+                    id: r
+                        .id
+                        .chars()
+                        .rev()
+                        .take(8)
+                        .collect::<Vec<_>>()
+                        .into_iter()
+                        .rev()
+                        .collect(),
                     scope: r.scope,
                     content: r.content,
                 })
@@ -342,8 +353,7 @@ impl App {
                     if self.selected_panel == Panel::Agents {
                         let visible = self.visible_agents();
                         if !visible.is_empty() {
-                            self.agents_cursor =
-                                (self.agents_cursor + 1).min(visible.len() - 1);
+                            self.agents_cursor = (self.agents_cursor + 1).min(visible.len() - 1);
                         }
                     } else {
                         self.scroll_offset = self.scroll_offset.saturating_add(1);
@@ -652,7 +662,9 @@ impl App {
                 self.in_file_ref = false;
                 self.dialog = None;
             }
-            KeyCode::Char(c) if c.is_alphanumeric() || c == '.' || c == '/' || c == '_' || c == '-' => {
+            KeyCode::Char(c)
+                if c.is_alphanumeric() || c == '.' || c == '/' || c == '_' || c == '-' =>
+            {
                 self.file_ref_query.push(c);
                 self.update_file_refs();
                 if self.file_refs.len() <= 1 {
@@ -759,144 +771,209 @@ impl App {
     }
 
     pub fn handle_agent_event(&mut self, event: AgentEvent) {
-        let log_msg = match &event {
-            AgentEvent::SessionStarted { id, query, .. } => {
-                self.start_time = std::time::Instant::now();
-                self.session_id = Some(id.clone());
-                format!("Session started: {}", query.chars().take(50).collect::<String>())
-            }
-            AgentEvent::AgentSpawned { id, parent, role, task, depth, .. } => {
-                self.total_agents += 1;
-                self.agents.insert(id.clone(), AgentInfo {
-                    id: id.clone(),
-                    parent: parent.clone(),
-                    role: role.clone(),
-                    task: task.clone(),
-                    state: AgentState::Idle,
-                    tokens: 0,
-                    depth: *depth,
-                    tool_calls: Vec::new(),
-                    start_time: std::time::Instant::now(),
-                });
-                self.streams.insert(id.clone(), StreamingBuffer::new());
-                format!("Agent {} spawned ({}): {}", id, role, task.chars().take(40).collect::<String>())
-            }
-            AgentEvent::AgentStateChanged { id, state } => {
-                if let Some(agent) = self.agents.get_mut(id) {
-                    agent.state = state.clone();
+        let log_msg =
+            match &event {
+                AgentEvent::SessionStarted { id, query, .. } => {
+                    self.start_time = std::time::Instant::now();
+                    self.session_id = Some(id.clone());
+                    format!(
+                        "Session started: {}",
+                        query.chars().take(50).collect::<String>()
+                    )
                 }
-                format!("Agent {} state: {:?}", id, state)
-            }
-            AgentEvent::ToolCallStarted { agent_id, tool, .. } => {
-                if let Some(agent) = self.agents.get_mut(agent_id) {
-                    agent.tool_calls.push(format!("→ {tool}"));
+                AgentEvent::AgentSpawned {
+                    id,
+                    parent,
+                    role,
+                    task,
+                    depth,
+                    ..
+                } => {
+                    self.total_agents += 1;
+                    self.agents.insert(
+                        id.clone(),
+                        AgentInfo {
+                            id: id.clone(),
+                            parent: parent.clone(),
+                            role: role.clone(),
+                            task: task.clone(),
+                            state: AgentState::Idle,
+                            tokens: 0,
+                            depth: *depth,
+                            tool_calls: Vec::new(),
+                            start_time: std::time::Instant::now(),
+                        },
+                    );
+                    self.streams.insert(id.clone(), StreamingBuffer::new());
+                    format!(
+                        "Agent {} spawned ({}): {}",
+                        id,
+                        role,
+                        task.chars().take(40).collect::<String>()
+                    )
                 }
-                self.active_tools.insert(agent_id.clone(), tool.clone());
-                self.tool_calls.push(ToolCallEntry {
-                    agent_id: agent_id.clone(),
-                    tool: tool.clone(),
-                    start_time: std::time::Instant::now(),
-                    duration_ms: None,
-                    result_preview: None,
-                });
-                format!("[{}] calling: {}", agent_id, tool)
-            }
-            AgentEvent::ToolCallCompleted { agent_id, tool, result_preview, duration_ms, .. } => {
-                self.active_tools.remove(agent_id);
-                // Update the last matching tool call entry
-                if let Some(entry) = self.tool_calls.iter_mut().rev().find(|e| {
-                    e.agent_id == *agent_id && e.tool == *tool && e.duration_ms.is_none()
-                }) {
-                    entry.duration_ms = Some(*duration_ms);
-                    entry.result_preview = Some(result_preview.clone());
+                AgentEvent::AgentStateChanged { id, state } => {
+                    if let Some(agent) = self.agents.get_mut(id) {
+                        agent.state = state.clone();
+                    }
+                    format!("Agent {} state: {:?}", id, state)
                 }
-                format!("✓ {} ({}ms)", tool, duration_ms)
-            }
-            AgentEvent::AgentCompleted { id, tokens_used, .. } => {
-                self.total_tokens += tokens_used;
-                if let Some(agent) = self.agents.get_mut(id) {
-                    agent.tokens = *tokens_used;
+                AgentEvent::ToolCallStarted { agent_id, tool, .. } => {
+                    if let Some(agent) = self.agents.get_mut(agent_id) {
+                        agent.tool_calls.push(format!("→ {tool}"));
+                    }
+                    self.active_tools.insert(agent_id.clone(), tool.clone());
+                    self.tool_calls.push(ToolCallEntry {
+                        agent_id: agent_id.clone(),
+                        tool: tool.clone(),
+                        start_time: std::time::Instant::now(),
+                        duration_ms: None,
+                        result_preview: None,
+                    });
+                    format!("[{}] calling: {}", agent_id, tool)
                 }
-                // Flush streaming buffer
-                if let Some(buf) = self.streams.get_mut(id) {
-                    buf.flush();
-                }
-                self.active_tools.remove(id);
-                self.sample_token_history();
-                format!("Agent {} completed ({} tokens)", id, tokens_used)
-            }
-            AgentEvent::AgentFailed { id, error } => {
-                if let Some(agent) = self.agents.get_mut(id) {
-                    agent.state = AgentState::Error { message: error.clone() };
-                }
-                self.active_tools.remove(id);
-                format!("Agent {} FAILED: {}", id, error.chars().take(50).collect::<String>())
-            }
-            AgentEvent::SessionCompleted { total_tokens, total_agents, .. } => {
-                self.total_tokens = *total_tokens;
-                self.total_agents = *total_agents;
-                self.sample_token_history();
-                format!("Session completed! {} agents, {} tokens", total_agents, total_tokens)
-            }
-            AgentEvent::ThinkingChunk { agent_id, chunk } => {
-                self.handle_thinking_chunk(agent_id, chunk);
-                return;
-            }
-            AgentEvent::LlmStreamChunk { agent_id, chunk } => {
-                if let Some(buf) = self.streams.get_mut(agent_id) {
-                    buf.push(chunk);
-                }
-                self.update_output_text();
-                return;
-            }
-            AgentEvent::Finding { agent_id, finding } => {
-                format!(
-                    "Agent {} finding: {} (confidence {:.2})",
-                    agent_id, finding.title, finding.confidence
-                )
-            }
-            AgentEvent::SessionFailed { id, error } => {
-                if self.session_id.as_ref() == Some(id) {
-                    self.session_id = None;
-                }
-                format!("Session {} FAILED: {}", id, error.chars().take(60).collect::<String>())
-            }
-            AgentEvent::QuestionAsked { agent_id, question, .. } => {
-                format!(
-                    "❓ Agent {} asks: {} — type the answer and press Enter",
-                    agent_id,
-                    question.chars().take(80).collect::<String>()
-                )
-            }
-            AgentEvent::ApprovalRequested { agent_id, tool, args_preview, .. } => {
-                format!(
-                    "🔐 Agent {} wants to run '{}' [{}] — press y to allow, n to deny",
+                AgentEvent::ToolCallCompleted {
                     agent_id,
                     tool,
-                    args_preview.chars().take(60).collect::<String>()
-                )
-            }
-            AgentEvent::SessionForked { parent_id, child_id, query } => {
-                format!(
-                    "🔀 Session forked: {} → {} ({})",
-                    &parent_id.0[..8.min(parent_id.0.len())],
-                    &child_id.0[..8.min(child_id.0.len())],
-                    query.chars().take(40).collect::<String>()
-                )
-            }
-            AgentEvent::FileChangeUndone { file_path, operation, .. } => {
-                format!("↩ Undone {} on {}", operation, file_path)
-            }
-            AgentEvent::TitleGenerated { title, .. } => {
-                format!("📌 Title: {}", title)
-            }
-        };
+                    result_preview,
+                    duration_ms,
+                    ..
+                } => {
+                    self.active_tools.remove(agent_id);
+                    // Update the last matching tool call entry
+                    if let Some(entry) = self.tool_calls.iter_mut().rev().find(|e| {
+                        e.agent_id == *agent_id && e.tool == *tool && e.duration_ms.is_none()
+                    }) {
+                        entry.duration_ms = Some(*duration_ms);
+                        entry.result_preview = Some(result_preview.clone());
+                    }
+                    format!("✓ {} ({}ms)", tool, duration_ms)
+                }
+                AgentEvent::AgentCompleted {
+                    id, tokens_used, ..
+                } => {
+                    self.total_tokens += tokens_used;
+                    if let Some(agent) = self.agents.get_mut(id) {
+                        agent.tokens = *tokens_used;
+                    }
+                    // Flush streaming buffer
+                    if let Some(buf) = self.streams.get_mut(id) {
+                        buf.flush();
+                    }
+                    self.active_tools.remove(id);
+                    self.sample_token_history();
+                    format!("Agent {} completed ({} tokens)", id, tokens_used)
+                }
+                AgentEvent::AgentFailed { id, error } => {
+                    if let Some(agent) = self.agents.get_mut(id) {
+                        agent.state = AgentState::Error {
+                            message: error.clone(),
+                        };
+                    }
+                    self.active_tools.remove(id);
+                    format!(
+                        "Agent {} FAILED: {}",
+                        id,
+                        error.chars().take(50).collect::<String>()
+                    )
+                }
+                AgentEvent::SessionCompleted {
+                    total_tokens,
+                    total_agents,
+                    ..
+                } => {
+                    self.total_tokens = *total_tokens;
+                    self.total_agents = *total_agents;
+                    self.sample_token_history();
+                    format!(
+                        "Session completed! {} agents, {} tokens",
+                        total_agents, total_tokens
+                    )
+                }
+                AgentEvent::ThinkingChunk { agent_id, chunk } => {
+                    self.handle_thinking_chunk(agent_id, chunk);
+                    return;
+                }
+                AgentEvent::LlmStreamChunk { agent_id, chunk } => {
+                    if let Some(buf) = self.streams.get_mut(agent_id) {
+                        buf.push(chunk);
+                    }
+                    self.update_output_text();
+                    return;
+                }
+                AgentEvent::Finding { agent_id, finding } => {
+                    format!(
+                        "Agent {} finding: {} (confidence {:.2})",
+                        agent_id, finding.title, finding.confidence
+                    )
+                }
+                AgentEvent::SessionFailed { id, error } => {
+                    if self.session_id.as_ref() == Some(id) {
+                        self.session_id = None;
+                    }
+                    format!(
+                        "Session {} FAILED: {}",
+                        id,
+                        error.chars().take(60).collect::<String>()
+                    )
+                }
+                AgentEvent::QuestionAsked {
+                    agent_id, question, ..
+                } => {
+                    format!(
+                        "❓ Agent {} asks: {} — type the answer and press Enter",
+                        agent_id,
+                        question.chars().take(80).collect::<String>()
+                    )
+                }
+                AgentEvent::ApprovalRequested {
+                    agent_id,
+                    tool,
+                    args_preview,
+                    ..
+                } => {
+                    format!(
+                        "🔐 Agent {} wants to run '{}' [{}] — press y to allow, n to deny",
+                        agent_id,
+                        tool,
+                        args_preview.chars().take(60).collect::<String>()
+                    )
+                }
+                AgentEvent::SessionForked {
+                    parent_id,
+                    child_id,
+                    query,
+                } => {
+                    format!(
+                        "🔀 Session forked: {} → {} ({})",
+                        &parent_id.0[..8.min(parent_id.0.len())],
+                        &child_id.0[..8.min(child_id.0.len())],
+                        query.chars().take(40).collect::<String>()
+                    )
+                }
+                AgentEvent::FileChangeUndone {
+                    file_path,
+                    operation,
+                    ..
+                } => {
+                    format!("↩ Undone {} on {}", operation, file_path)
+                }
+                AgentEvent::TitleGenerated { title, .. } => {
+                    format!("📌 Title: {}", title)
+                }
+            };
 
         let level = match &event {
             AgentEvent::AgentFailed { .. } | AgentEvent::SessionFailed { .. } => LogLevel::Error,
-            AgentEvent::ToolCallStarted { .. } | AgentEvent::ToolCallCompleted { .. } => LogLevel::Tool,
-            AgentEvent::AgentCompleted { .. } | AgentEvent::SessionCompleted { .. } => LogLevel::Success,
-            AgentEvent::SessionForked { .. } | AgentEvent::TitleGenerated { .. } => LogLevel::Success,
+            AgentEvent::ToolCallStarted { .. } | AgentEvent::ToolCallCompleted { .. } => {
+                LogLevel::Tool
+            }
+            AgentEvent::AgentCompleted { .. } | AgentEvent::SessionCompleted { .. } => {
+                LogLevel::Success
+            }
+            AgentEvent::SessionForked { .. } | AgentEvent::TitleGenerated { .. } => {
+                LogLevel::Success
+            }
             _ => LogLevel::Info,
         };
 
@@ -914,10 +991,13 @@ impl App {
 
     /// Handle a thinking/reasoning chunk from the LLM
     pub fn handle_thinking_chunk(&mut self, agent_id: &AgentId, chunk: &str) {
-        let state = self.thinking.entry(agent_id.clone()).or_insert_with(|| ThinkingState {
-            content: String::new(),
-            last_update: std::time::Instant::now(),
-        });
+        let state = self
+            .thinking
+            .entry(agent_id.clone())
+            .or_insert_with(|| ThinkingState {
+                content: String::new(),
+                last_update: std::time::Instant::now(),
+            });
         state.content.push_str(chunk);
         state.last_update = std::time::Instant::now();
         self.last_thinking_time = Some(std::time::Instant::now());
@@ -980,16 +1060,18 @@ impl App {
 
     /// Count active (non-complete, non-error) agents
     pub fn active_agent_count(&self) -> u32 {
-        self.agents.values().filter(|a| {
-            !matches!(a.state, AgentState::Complete | AgentState::Error { .. })
-        }).count() as u32
+        self.agents
+            .values()
+            .filter(|a| !matches!(a.state, AgentState::Complete | AgentState::Error { .. }))
+            .count() as u32
     }
 
     /// Count completed agents
     pub fn completed_agent_count(&self) -> u32 {
-        self.agents.values().filter(|a| {
-            matches!(a.state, AgentState::Complete)
-        }).count() as u32
+        self.agents
+            .values()
+            .filter(|a| matches!(a.state, AgentState::Complete))
+            .count() as u32
     }
 
     /// Token usage ratio (0.0..=1.0)
@@ -1019,7 +1101,11 @@ impl App {
                     .unwrap_or(true)
             })
             .collect();
-        roots.sort_by(|a, b| a.start_time.cmp(&b.start_time).then_with(|| a.id.0.cmp(&b.id.0)));
+        roots.sort_by(|a, b| {
+            a.start_time
+                .cmp(&b.start_time)
+                .then_with(|| a.id.0.cmp(&b.id.0))
+        });
 
         let children_of = |id: &AgentId| {
             let mut kids: Vec<&AgentInfo> = self
@@ -1028,7 +1114,9 @@ impl App {
                 .filter(|a| a.parent.as_ref() == Some(id))
                 .collect();
             kids.sort_by(|a, b| {
-                a.start_time.cmp(&b.start_time).then_with(|| a.id.0.cmp(&b.id.0))
+                a.start_time
+                    .cmp(&b.start_time)
+                    .then_with(|| a.id.0.cmp(&b.id.0))
             });
             kids
         };
@@ -1308,28 +1396,34 @@ mod tests {
         let mut app = App::new();
         assert_eq!(app.active_agent_count(), 0);
 
-        app.agents.insert(AgentId("a1".to_string()), AgentInfo {
-            id: AgentId("a1".to_string()),
-            parent: None,
-            role: "coordinator".to_string(),
-            task: "test".to_string(),
-            state: AgentState::Researching { sub_tasks: vec![] },
-            tokens: 0,
-            depth: 0,
-            tool_calls: Vec::new(),
-            start_time: std::time::Instant::now(),
-        });
-        app.agents.insert(AgentId("a2".to_string()), AgentInfo {
-            id: AgentId("a2".to_string()),
-            parent: Some(AgentId("a1".to_string())),
-            role: "researcher".to_string(),
-            task: "test2".to_string(),
-            state: AgentState::Complete,
-            tokens: 100,
-            depth: 1,
-            tool_calls: Vec::new(),
-            start_time: std::time::Instant::now(),
-        });
+        app.agents.insert(
+            AgentId("a1".to_string()),
+            AgentInfo {
+                id: AgentId("a1".to_string()),
+                parent: None,
+                role: "coordinator".to_string(),
+                task: "test".to_string(),
+                state: AgentState::Researching { sub_tasks: vec![] },
+                tokens: 0,
+                depth: 0,
+                tool_calls: Vec::new(),
+                start_time: std::time::Instant::now(),
+            },
+        );
+        app.agents.insert(
+            AgentId("a2".to_string()),
+            AgentInfo {
+                id: AgentId("a2".to_string()),
+                parent: Some(AgentId("a1".to_string())),
+                role: "researcher".to_string(),
+                task: "test2".to_string(),
+                state: AgentState::Complete,
+                tokens: 100,
+                depth: 1,
+                tool_calls: Vec::new(),
+                start_time: std::time::Instant::now(),
+            },
+        );
 
         assert_eq!(app.active_agent_count(), 1);
         assert_eq!(app.completed_agent_count(), 1);
@@ -1404,12 +1498,12 @@ mod tests {
         app.handle_agent_event(spawn_child_event("c2", "root", 2));
 
         app.collapsed.insert(AgentId("c1".to_string()));
-        let ids: Vec<String> = app
-            .visible_agents()
-            .into_iter()
-            .map(|id| id.0)
-            .collect();
-        assert_eq!(ids, vec!["root", "c1", "c2"], "gc1 hidden under collapsed c1");
+        let ids: Vec<String> = app.visible_agents().into_iter().map(|id| id.0).collect();
+        assert_eq!(
+            ids,
+            vec!["root", "c1", "c2"],
+            "gc1 hidden under collapsed c1"
+        );
 
         app.collapsed.remove(&AgentId("c1".to_string()));
         assert_eq!(app.visible_agents().len(), 4);
@@ -1450,7 +1544,12 @@ mod tests {
             tool: "web_search".to_string(),
             args: serde_json::json!({"query": "rust"}),
         });
-        assert_eq!(app.active_tools.get(&AgentId("a1".to_string())).map(String::as_str), Some("web_search"));
+        assert_eq!(
+            app.active_tools
+                .get(&AgentId("a1".to_string()))
+                .map(String::as_str),
+            Some("web_search")
+        );
         assert_eq!(app.tool_calls.len(), 1);
         assert!(app.tool_calls[0].duration_ms.is_none());
 
@@ -1462,8 +1561,14 @@ mod tests {
         });
         assert!(app.active_tools.is_empty());
         assert_eq!(app.tool_calls[0].duration_ms, Some(123));
-        assert_eq!(app.tool_calls[0].result_preview.as_deref(), Some("results..."));
-        assert!(app.agents[&AgentId("a1".to_string())].tool_calls.iter().any(|t| t.contains("web_search")));
+        assert_eq!(
+            app.tool_calls[0].result_preview.as_deref(),
+            Some("results...")
+        );
+        assert!(app.agents[&AgentId("a1".to_string())]
+            .tool_calls
+            .iter()
+            .any(|t| t.contains("web_search")));
     }
 
     #[test]
@@ -1501,7 +1606,9 @@ mod tests {
         });
 
         // Chunk lands in the streaming buffer and the assembled output.
-        assert!(app.streams[&AgentId("w1".to_string())].published_text().contains("Hello report"));
+        assert!(app.streams[&AgentId("w1".to_string())]
+            .published_text()
+            .contains("Hello report"));
         assert!(app.output_text.contains("Hello report"));
         // Stream chunks are not logged.
         assert_eq!(app.event_log.len(), log_before);
@@ -1612,7 +1719,10 @@ mod tests {
     fn test_dialog_confirm() {
         let mut app = App::new();
         app.dialog = Some(Dialog::Confirm("Are you sure?".to_string()));
-        assert_eq!(app.dialog, Some(Dialog::Confirm("Are you sure?".to_string())));
+        assert_eq!(
+            app.dialog,
+            Some(Dialog::Confirm("Are you sure?".to_string()))
+        );
 
         // Any key closes confirm
         app.handle_key(crossterm::event::KeyEvent::new(
@@ -1728,18 +1838,16 @@ mod tests {
     #[test]
     fn test_open_session_browser() {
         let mut app = App::new();
-        let sessions = vec![
-            pr_persistence::SessionSummary {
-                id: SessionId("s1".to_string()),
-                query: "test query".to_string(),
-                status: "completed".to_string(),
-                output_dir: None,
-                total_tokens: 100,
-                total_agents: 1,
-                created_at: "2024-01-01".to_string(),
-                updated_at: "2024-01-01".to_string(),
-            },
-        ];
+        let sessions = vec![pr_persistence::SessionSummary {
+            id: SessionId("s1".to_string()),
+            query: "test query".to_string(),
+            status: "completed".to_string(),
+            output_dir: None,
+            total_tokens: 100,
+            total_agents: 1,
+            created_at: "2024-01-01".to_string(),
+            updated_at: "2024-01-01".to_string(),
+        }];
 
         app.open_session_browser(sessions);
         assert_eq!(app.dialog, Some(Dialog::SessionBrowser));

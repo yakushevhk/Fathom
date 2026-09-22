@@ -8,9 +8,9 @@
 //! exposes management operations to agents via the `daemon` tool.
 
 use crate::ids::AgentId;
+use parking_lot::Mutex;
 use std::collections::HashMap;
 use std::sync::LazyLock;
-use parking_lot::Mutex;
 use std::time::SystemTime;
 
 /// Status of a daemon process.

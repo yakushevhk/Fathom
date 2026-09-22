@@ -1,8 +1,8 @@
 use async_trait::async_trait;
 use pr_core::{PrError, PrResult, ThinkingBlock, ToolCall, ToolCallFunction};
 
-use crate::types::{CompletionRequest, CompletionResponse, StreamChunk, Usage};
 use crate::provider::LlmProvider;
+use crate::types::{CompletionRequest, CompletionResponse, StreamChunk, Usage};
 
 pub struct AnthropicProvider {
     api_key: String,
@@ -47,10 +47,14 @@ impl LlmProvider for AnthropicProvider {
 
         // 1. System blocks with Breakpoint #1 on last system block
         let mut system_blocks = Vec::new();
-        let sys_msgs: Vec<_> = req.messages.iter().filter_map(|m| match m {
-            pr_core::Message::System { content } => Some(content),
-            _ => None,
-        }).collect();
+        let sys_msgs: Vec<_> = req
+            .messages
+            .iter()
+            .filter_map(|m| match m {
+                pr_core::Message::System { content } => Some(content),
+                _ => None,
+            })
+            .collect();
 
         for (idx, content) in sys_msgs.iter().enumerate() {
             let mut block = serde_json::json!({
@@ -64,7 +68,11 @@ impl LlmProvider for AnthropicProvider {
         }
 
         // 2. Non-system messages with Thinking and Signature preservation
-        let non_sys_msgs: Vec<_> = req.messages.iter().filter(|m| !matches!(m, pr_core::Message::System { .. })).collect();
+        let non_sys_msgs: Vec<_> = req
+            .messages
+            .iter()
+            .filter(|m| !matches!(m, pr_core::Message::System { .. }))
+            .collect();
         let total_non_sys = non_sys_msgs.len();
         let mut messages = Vec::new();
 
@@ -83,16 +91,24 @@ impl LlmProvider for AnthropicProvider {
                         }]
                     });
                     if self.prompt_caching && (is_transcript_head || is_rolling_checkpoint) {
-                        user_val["content"][0]["cache_control"] = serde_json::json!({ "type": "ephemeral" });
+                        user_val["content"][0]["cache_control"] =
+                            serde_json::json!({ "type": "ephemeral" });
                     }
                     messages.push(user_val);
                 }
-                pr_core::Message::Assistant { content, thinking_blocks, tool_calls } => {
+                pr_core::Message::Assistant {
+                    content,
+                    thinking_blocks,
+                    tool_calls,
+                } => {
                     let mut content_blocks = Vec::new();
 
                     for tb in thinking_blocks {
                         match tb {
-                            ThinkingBlock::Thinking { thinking, signature } => {
+                            ThinkingBlock::Thinking {
+                                thinking,
+                                signature,
+                            } => {
                                 let mut block = serde_json::json!({
                                     "type": "thinking",
                                     "thinking": thinking
@@ -121,8 +137,9 @@ impl LlmProvider for AnthropicProvider {
                     }
 
                     for tc in tool_calls {
-                        let parsed_args: serde_json::Value = serde_json::from_str(&tc.function.arguments)
-                            .unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
+                        let parsed_args: serde_json::Value =
+                            serde_json::from_str(&tc.function.arguments)
+                                .unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
                         content_blocks.push(serde_json::json!({
                             "type": "tool_use",
                             "id": tc.id,
@@ -136,7 +153,10 @@ impl LlmProvider for AnthropicProvider {
                         "content": content_blocks
                     }));
                 }
-                pr_core::Message::Tool { tool_call_id, content } => {
+                pr_core::Message::Tool {
+                    tool_call_id,
+                    content,
+                } => {
                     let mut tool_res = serde_json::json!({
                         "type": "tool_result",
                         "tool_use_id": tool_call_id,
@@ -149,7 +169,9 @@ impl LlmProvider for AnthropicProvider {
                     // in a single user message block to prevent consecutive "user" roles.
                     if let Some(last) = messages.last_mut() {
                         if last.get("role").and_then(|r| r.as_str()) == Some("user") {
-                            if let Some(arr) = last.get_mut("content").and_then(|c| c.as_array_mut()) {
+                            if let Some(arr) =
+                                last.get_mut("content").and_then(|c| c.as_array_mut())
+                            {
                                 arr.push(tool_res);
                                 continue;
                             }
@@ -195,12 +217,15 @@ impl LlmProvider for AnthropicProvider {
                 .collect();
             if self.prompt_caching && !anthropic_tools.is_empty() {
                 let last_idx = anthropic_tools.len() - 1;
-                anthropic_tools[last_idx]["cache_control"] = serde_json::json!({ "type": "ephemeral" });
+                anthropic_tools[last_idx]["cache_control"] =
+                    serde_json::json!({ "type": "ephemeral" });
             }
             body["tools"] = serde_json::Value::Array(anthropic_tools);
         }
 
-        let resp = self.client.post(&url)
+        let resp = self
+            .client
+            .post(&url)
             .header("x-api-key", &self.api_key)
             .header("anthropic-version", "2023-06-01")
             .header("anthropic-beta", "prompt-caching-2024-07-31")
@@ -224,7 +249,9 @@ impl LlmProvider for AnthropicProvider {
             });
         }
 
-        let json_val: serde_json::Value = resp.json().await
+        let json_val: serde_json::Value = resp
+            .json()
+            .await
             .map_err(|e| PrError::Llm(format!("Failed to parse Anthropic JSON: {e}")))?;
 
         let mut text_parts = Vec::new();
@@ -233,11 +260,17 @@ impl LlmProvider for AnthropicProvider {
 
         if let Some(content_arr) = json_val.get("content").and_then(|v| v.as_array()) {
             for item in content_arr {
-                let item_type = item.get("type").and_then(|v| v.as_str()).unwrap_or_default();
+                let item_type = item
+                    .get("type")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or_default();
                 match item_type {
                     "thinking" => {
                         if let Some(th) = item.get("thinking").and_then(|v| v.as_str()) {
-                            let sig = item.get("signature").and_then(|v| v.as_str()).map(|s| s.to_string());
+                            let sig = item
+                                .get("signature")
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string());
                             thinking_blocks.push(ThinkingBlock::Thinking {
                                 thinking: th.to_string(),
                                 signature: sig,
@@ -257,8 +290,16 @@ impl LlmProvider for AnthropicProvider {
                         }
                     }
                     "tool_use" => {
-                        let id = item.get("id").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-                        let name = item.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+                        let id = item
+                            .get("id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or_default()
+                            .to_string();
+                        let name = item
+                            .get("name")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or_default()
+                            .to_string();
                         let input = item.get("input").cloned().unwrap_or(serde_json::json!({}));
                         tool_calls.push(ToolCall {
                             id,
@@ -277,8 +318,14 @@ impl LlmProvider for AnthropicProvider {
         let usage = json_val.get("usage").map(|u| {
             let input_tokens = u.get("input_tokens").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
             let output_tokens = u.get("output_tokens").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
-            let cache_creation = u.get("cache_creation_input_tokens").and_then(|v| v.as_u64()).map(|v| v as u32);
-            let cache_read = u.get("cache_read_input_tokens").and_then(|v| v.as_u64()).map(|v| v as u32);
+            let cache_creation = u
+                .get("cache_creation_input_tokens")
+                .and_then(|v| v.as_u64())
+                .map(|v| v as u32);
+            let cache_read = u
+                .get("cache_read_input_tokens")
+                .and_then(|v| v.as_u64())
+                .map(|v| v as u32);
             Usage {
                 prompt_tokens: input_tokens,
                 completion_tokens: output_tokens,
@@ -288,8 +335,15 @@ impl LlmProvider for AnthropicProvider {
             }
         });
 
-        let finish_reason = json_val.get("stop_reason").and_then(|v| v.as_str()).map(|s| s.to_string());
-        let final_text = if text_parts.is_empty() { None } else { Some(text_parts.join("\n")) };
+        let finish_reason = json_val
+            .get("stop_reason")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+        let final_text = if text_parts.is_empty() {
+            None
+        } else {
+            Some(text_parts.join("\n"))
+        };
 
         Ok(CompletionResponse {
             message: pr_core::Message::assistant_full(final_text, thinking_blocks, tool_calls),
@@ -304,7 +358,9 @@ impl LlmProvider for AnthropicProvider {
     ) -> PrResult<Box<dyn futures::Stream<Item = PrResult<StreamChunk>> + Send + Unpin>> {
         let resp = self.complete(req).await?;
         let text = match &resp.message {
-            pr_core::Message::Assistant { content: Some(c), .. } => c.clone(),
+            pr_core::Message::Assistant {
+                content: Some(c), ..
+            } => c.clone(),
             _ => String::new(),
         };
 

@@ -3,9 +3,7 @@
 
 use crate::state::AppState;
 use crate::theme::Theme;
-use gpui::{
-    div, prelude::*, ClickEvent, Context, Div, IntoElement, Render, SharedString, Window,
-};
+use gpui::{div, prelude::*, ClickEvent, Context, Div, IntoElement, Render, SharedString, Window};
 use std::sync::Arc;
 
 pub struct SkillsView {
@@ -184,7 +182,14 @@ impl SkillsView {
             )
     }
 
-    fn render_skill_card(&self, id: &str, name: &str, desc: &str, tools: &[String], cx: &mut Context<Self>) -> Div {
+    fn render_skill_card(
+        &self,
+        id: &str,
+        name: &str,
+        desc: &str,
+        tools: &[String],
+        cx: &mut Context<Self>,
+    ) -> Div {
         let s_id = id.to_string();
         let mut tool_tags = div().flex().flex_wrap().gap_1p5();
         for tool in tools {
@@ -234,10 +239,12 @@ impl SkillsView {
                             .cursor_pointer()
                             .hover(|s| s.bg(Theme::danger_red()).text_color(Theme::text_primary()))
                             .child("Delete ✕")
-                            .on_click(cx.listener(move |this, _event: &ClickEvent, _window, cx| {
-                                this.state.skills.write().retain(|s| s.id != s_id);
-                                cx.notify();
-                            })),
+                            .on_click(cx.listener(
+                                move |this, _event: &ClickEvent, _window, cx| {
+                                    this.state.skills.write().retain(|s| s.id != s_id);
+                                    cx.notify();
+                                },
+                            )),
                     ),
             )
             .child(

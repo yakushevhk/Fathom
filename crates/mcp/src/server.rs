@@ -16,7 +16,10 @@ pub struct McpServer {
 
 impl McpServer {
     pub fn new(tools: Vec<ToolSchema>) -> Self {
-        Self { tools, executor: None }
+        Self {
+            tools,
+            executor: None,
+        }
     }
 
     /// Build a server that really executes tools.
@@ -210,7 +213,9 @@ mod tests {
     async fn handle_tools_call_schema_only_mode() {
         let srv = server();
         let resp = srv
-            .handle_request(r#"{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"test_tool"}}"#)
+            .handle_request(
+                r#"{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"test_tool"}}"#,
+            )
             .await
             .unwrap();
         assert_eq!(resp["id"], 3);
@@ -225,7 +230,10 @@ mod tests {
             .handle_request(r#"{"jsonrpc":"2.0","method":"notifications/initialized"}"#)
             .await
             .is_none());
-        assert!(srv.handle_request(r#"{"jsonrpc":"2.0","id":null,"method":"ping"}"#).await.is_none());
+        assert!(srv
+            .handle_request(r#"{"jsonrpc":"2.0","id":null,"method":"ping"}"#)
+            .await
+            .is_none());
     }
 
     #[tokio::test]
@@ -250,7 +258,10 @@ mod tests {
     #[tokio::test]
     async fn handle_missing_method() {
         let srv = server();
-        let resp = srv.handle_request(r#"{"jsonrpc":"2.0","id":5}"#).await.unwrap();
+        let resp = srv
+            .handle_request(r#"{"jsonrpc":"2.0","id":5}"#)
+            .await
+            .unwrap();
         assert_eq!(resp["error"]["code"], -32601);
     }
 

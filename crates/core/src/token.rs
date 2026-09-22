@@ -111,7 +111,11 @@ pub fn estimate_message_tokens(msg: &Message) -> u32 {
         Message::User { content } => {
             total += estimate_tokens(content);
         }
-        Message::Assistant { content, tool_calls, .. } => {
+        Message::Assistant {
+            content,
+            tool_calls,
+            ..
+        } => {
             if let Some(text) = content {
                 total += estimate_tokens(text);
             }
@@ -119,7 +123,10 @@ pub fn estimate_message_tokens(msg: &Message) -> u32 {
                 total += estimate_tool_call_tokens(tc);
             }
         }
-        Message::Tool { tool_call_id, content } => {
+        Message::Tool {
+            tool_call_id,
+            content,
+        } => {
             // Tool call ID costs a few tokens
             total += estimate_tokens(tool_call_id);
             total += estimate_tokens(content);
@@ -277,4 +284,3 @@ mod tests {
         assert!(ratio > 0.5 && ratio < 2.0, "ratio {ratio}");
     }
 }
-

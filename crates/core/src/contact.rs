@@ -23,7 +23,11 @@ pub struct SocialProfile {
 }
 
 impl SocialProfile {
-    pub fn new(platform: impl Into<String>, url: impl Into<String>, username: impl Into<String>) -> Self {
+    pub fn new(
+        platform: impl Into<String>,
+        url: impl Into<String>,
+        username: impl Into<String>,
+    ) -> Self {
         Self {
             id: None,
             platform: platform.into(),
@@ -214,7 +218,10 @@ mod tests {
 
     #[test]
     fn test_normalize_email_and_phone() {
-        assert_eq!(normalize_email("  Jane.Doe@Example.COM "), "jane.doe@example.com");
+        assert_eq!(
+            normalize_email("  Jane.Doe@Example.COM "),
+            "jane.doe@example.com"
+        );
         assert_eq!(normalize_phone("+1 (555) 010-0100"), "15550100100");
         assert_eq!(normalize_phone("no digits"), "");
 

@@ -24,7 +24,10 @@ impl SessionOutput {
     pub fn summary_line(&self) -> String {
         format!(
             "Research session {} completed: {} agent(s), {} tokens. Output: {}",
-            self.session_id, self.total_agents, self.total_tokens, self.output_dir.display()
+            self.session_id,
+            self.total_agents,
+            self.total_tokens,
+            self.output_dir.display()
         )
     }
 

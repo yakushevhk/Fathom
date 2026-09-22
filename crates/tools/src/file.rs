@@ -1,6 +1,6 @@
-use async_trait::async_trait;
-use pr_core::{ToolSchema, ToolOutput};
 use crate::registry::{Tool, ToolContext};
+use async_trait::async_trait;
+use pr_core::{ToolOutput, ToolSchema};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -25,7 +25,9 @@ pub struct FileReadTool;
 
 #[async_trait]
 impl Tool for FileReadTool {
-    fn name(&self) -> &str { "file_read" }
+    fn name(&self) -> &str {
+        "file_read"
+    }
     fn description(&self) -> &str {
         "Read a file from the filesystem and return its content with line numbers.
 
@@ -61,13 +63,18 @@ Reads a file at the given path (absolute or relative to the working directory) a
         ToolSchema {
             name: self.name().to_string(),
             description: self.description().to_string(),
-            parameters: serde_json::to_value(&schemars::schema_for!(FileReadParams).schema).unwrap_or_default(),
+            parameters: serde_json::to_value(&schemars::schema_for!(FileReadParams).schema)
+                .unwrap_or_default(),
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: FileReadParams = serde_json::from_value(args)?;
-        
+
         // Parse extended selectors like "file.rs:50-200", ":50-", ":50+150", ":1-10,50-60", ":conflicts", ":raw"
         let mut raw_path = params.path.as_str();
         let mut is_raw = false;
@@ -90,7 +97,11 @@ Reads a file at the given path (absolute or relative to the working directory) a
                         }
                     } else if let Some((s_str, e_str)) = part.split_once('-') {
                         let s = s_str.parse::<usize>().unwrap_or(1);
-                        let e = if e_str.is_empty() { usize::MAX } else { e_str.parse::<usize>().unwrap_or(usize::MAX) };
+                        let e = if e_str.is_empty() {
+                            usize::MAX
+                        } else {
+                            e_str.parse::<usize>().unwrap_or(usize::MAX)
+                        };
                         line_ranges.push((s, e));
                     } else if let Ok(s) = part.parse::<usize>() {
                         line_ranges.push((s, s));
@@ -102,7 +113,10 @@ Reads a file at the given path (absolute or relative to the working directory) a
         let path = resolve_path(&ctx.working_dir, raw_path);
 
         if !path.exists() {
-            return Ok(ToolOutput::err(format!("File not found: {}", path.display())));
+            return Ok(ToolOutput::err(format!(
+                "File not found: {}",
+                path.display()
+            )));
         }
 
         let content = tokio::fs::read_to_string(&path).await?;
@@ -110,7 +124,11 @@ Reads a file at the given path (absolute or relative to the working directory) a
         let lines: Vec<&str> = content.lines().collect();
         let total_lines = lines.len();
 
-        let display_path = path.strip_prefix(&ctx.working_dir).unwrap_or(&path).display().to_string();
+        let display_path = path
+            .strip_prefix(&ctx.working_dir)
+            .unwrap_or(&path)
+            .display()
+            .to_string();
         let output;
 
         if is_conflicts {
@@ -133,9 +151,17 @@ Reads a file at the given path (absolute or relative to the working directory) a
             if conflict_blocks.is_empty() {
                 output = format!("[{}#{}]\n(no git merge conflicts found)", display_path, tag);
             } else {
-                output = format!("[{}#{}]\n{}", display_path, tag, conflict_blocks.join("\n---\n"));
+                output = format!(
+                    "[{}#{}]\n{}",
+                    display_path,
+                    tag,
+                    conflict_blocks.join("\n---\n")
+                );
             }
-        } else if line_ranges.is_empty() && params.start_line.is_none() && params.line_count.is_none() {
+        } else if line_ranges.is_empty()
+            && params.start_line.is_none()
+            && params.line_count.is_none()
+        {
             if is_raw {
                 output = content;
             } else if content.is_empty() {
@@ -205,7 +231,9 @@ pub struct FileWriteTool;
 
 #[async_trait]
 impl Tool for FileWriteTool {
-    fn name(&self) -> &str { "file_write" }
+    fn name(&self) -> &str {
+        "file_write"
+    }
     fn description(&self) -> &str {
         "Write content to a file, creating it and any parent directories if they do not exist.
 
@@ -238,11 +266,16 @@ Writes the provided `content` string to the file at `path`. If the file already 
         ToolSchema {
             name: self.name().to_string(),
             description: self.description().to_string(),
-            parameters: serde_json::to_value(&schemars::schema_for!(FileWriteParams).schema).unwrap_or_default(),
+            parameters: serde_json::to_value(&schemars::schema_for!(FileWriteParams).schema)
+                .unwrap_or_default(),
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: FileWriteParams = serde_json::from_value(args)?;
         let path = resolve_path(&ctx.working_dir, &params.path);
 
@@ -323,7 +356,9 @@ pub struct FileEditTool;
 
 #[async_trait]
 impl Tool for FileEditTool {
-    fn name(&self) -> &str { "file_edit" }
+    fn name(&self) -> &str {
+        "file_edit"
+    }
     fn description(&self) -> &str {
         "Edit a file by finding and replacing an exact string match.
 
@@ -361,16 +396,24 @@ Reads the file at `path`, finds the first (or all) occurrences of `old_string`, 
         ToolSchema {
             name: self.name().to_string(),
             description: self.description().to_string(),
-            parameters: serde_json::to_value(&schemars::schema_for!(FileEditParams).schema).unwrap_or_default(),
+            parameters: serde_json::to_value(&schemars::schema_for!(FileEditParams).schema)
+                .unwrap_or_default(),
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: FileEditParams = serde_json::from_value(args)?;
         let path = resolve_path(&ctx.working_dir, &params.path);
 
         if !path.exists() {
-            return Ok(ToolOutput::err(format!("File not found: {}", path.display())));
+            return Ok(ToolOutput::err(format!(
+                "File not found: {}",
+                path.display()
+            )));
         }
 
         // ── Validation Gate ──
@@ -486,7 +529,9 @@ pub struct HashlinePatchTool;
 
 #[async_trait]
 impl Tool for HashlinePatchTool {
-    fn name(&self) -> &str { "edit" }
+    fn name(&self) -> &str {
+        "edit"
+    }
     fn description(&self) -> &str {
         "Line-anchored snapshot-verified patch tool: apply high-precision edits to files using #TAG verification.
 
@@ -506,11 +551,16 @@ Body lines MUST start with `+`. Keeps unchanged lines excluded from ranges. Fail
         ToolSchema {
             name: self.name().to_string(),
             description: self.description().to_string(),
-            parameters: serde_json::to_value(&schemars::schema_for!(HashlinePatchParams).schema).unwrap_or_default(),
+            parameters: serde_json::to_value(&schemars::schema_for!(HashlinePatchParams).schema)
+                .unwrap_or_default(),
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: HashlinePatchParams = serde_json::from_value(args)?;
         let sections = match crate::hashline::parse_hashline_patch(&params.input) {
             Ok(s) => s,
@@ -518,7 +568,9 @@ Body lines MUST start with `+`. Keeps unchanged lines excluded from ranges. Fail
         };
 
         if sections.is_empty() {
-            return Ok(ToolOutput::err("No valid [path#TAG] sections found in patch input"));
+            return Ok(ToolOutput::err(
+                "No valid [path#TAG] sections found in patch input",
+            ));
         }
 
         // Two-Phase Commit (2PC) Pipeline
@@ -529,13 +581,20 @@ Body lines MUST start with `+`. Keeps unchanged lines excluded from ranges. Fail
         for sec in &sections {
             let path = resolve_path(&ctx.working_dir, &sec.path.to_string_lossy());
 
-            if sec.ops.iter().any(|op| matches!(op, crate::hashline::HashlineOp::RemoveFile)) {
+            if sec
+                .ops
+                .iter()
+                .any(|op| matches!(op, crate::hashline::HashlineOp::RemoveFile))
+            {
                 staging_plan.push((path, None, None, true));
                 continue;
             }
 
             if !path.exists() {
-                return Ok(ToolOutput::err(format!("File not found for patching: {}", path.display())));
+                return Ok(ToolOutput::err(format!(
+                    "File not found for patching: {}",
+                    path.display()
+                )));
             }
 
             let content = tokio::fs::read_to_string(&path).await?;
@@ -548,10 +607,10 @@ Body lines MUST start with `+`. Keeps unchanged lines excluded from ranges. Fail
                 Ok(res) => res,
                 Err(e) => {
                     return Ok(ToolOutput::err(format!(
-                        "Patch validation failed on {}: {}\n[2PC ABORT: Zero files modified on disk]",
-                        path.display(),
-                        e
-                    )))
+                    "Patch validation failed on {}: {}\n[2PC ABORT: Zero files modified on disk]",
+                    path.display(),
+                    e
+                )))
                 }
             };
 
@@ -611,7 +670,9 @@ pub struct GlobTool;
 
 #[async_trait]
 impl Tool for GlobTool {
-    fn name(&self) -> &str { "glob" }
+    fn name(&self) -> &str {
+        "glob"
+    }
     fn description(&self) -> &str {
         "Find files matching a glob pattern. Returns a list of matching file paths (up to 200).
 
@@ -643,11 +704,16 @@ Searches the working directory (and subdirectories) for files whose paths match 
         ToolSchema {
             name: self.name().to_string(),
             description: self.description().to_string(),
-            parameters: serde_json::to_value(&schemars::schema_for!(GlobParams).schema).unwrap_or_default(),
+            parameters: serde_json::to_value(&schemars::schema_for!(GlobParams).schema)
+                .unwrap_or_default(),
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: GlobParams = serde_json::from_value(args)?;
         let full_pattern = ctx.working_dir.join(&params.pattern);
         let pattern_str = full_pattern.to_string_lossy().to_string();
@@ -668,9 +734,16 @@ Searches the working directory (and subdirectories) for files whose paths match 
         }
 
         if results.is_empty() {
-            Ok(ToolOutput::ok(format!("No files matched pattern: {}", params.pattern)))
+            Ok(ToolOutput::ok(format!(
+                "No files matched pattern: {}",
+                params.pattern
+            )))
         } else {
-            Ok(ToolOutput::ok(format!("Found {} files:\n{}", results.len(), results.join("\n"))))
+            Ok(ToolOutput::ok(format!(
+                "Found {} files:\n{}",
+                results.len(),
+                results.join("\n")
+            )))
         }
     }
 }
@@ -693,7 +766,9 @@ pub struct GrepTool;
 
 #[async_trait]
 impl Tool for GrepTool {
-    fn name(&self) -> &str { "grep" }
+    fn name(&self) -> &str {
+        "grep"
+    }
     fn description(&self) -> &str {
         "Search file contents using a regular expression pattern. Returns matching lines with file paths and line numbers.
 
@@ -729,13 +804,19 @@ Scans files in the given directory (default: working directory) for lines matchi
         ToolSchema {
             name: self.name().to_string(),
             description: self.description().to_string(),
-            parameters: serde_json::to_value(&schemars::schema_for!(GrepParams).schema).unwrap_or_default(),
+            parameters: serde_json::to_value(&schemars::schema_for!(GrepParams).schema)
+                .unwrap_or_default(),
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: GrepParams = serde_json::from_value(args)?;
-        let search_dir = params.path
+        let search_dir = params
+            .path
             .map(|p| resolve_path(&ctx.working_dir, &p))
             .unwrap_or_else(|| ctx.working_dir.clone());
 
@@ -756,16 +837,30 @@ Scans files in the given directory (default: working directory) for lines matchi
                 let mut lines: Vec<&str> = stdout.lines().collect();
                 lines.truncate(100);
                 if lines.is_empty() {
-                    Ok(ToolOutput::ok(format!("No matches found for pattern: {}", params.pattern)))
+                    Ok(ToolOutput::ok(format!(
+                        "No matches found for pattern: {}",
+                        params.pattern
+                    )))
                 } else {
                     Ok(ToolOutput::ok(format!("Matches:\n{}", lines.join("\n"))))
                 }
             }
             Err(_) => {
                 // Fallback: manual search if rg not available
-                search_files_manual(&search_dir, &re, params.extension.as_deref(), &mut results, &mut count, 100).await;
+                search_files_manual(
+                    &search_dir,
+                    &re,
+                    params.extension.as_deref(),
+                    &mut results,
+                    &mut count,
+                    100,
+                )
+                .await;
                 if results.is_empty() {
-                    Ok(ToolOutput::ok(format!("No matches found for pattern: {}", params.pattern)))
+                    Ok(ToolOutput::ok(format!(
+                        "No matches found for pattern: {}",
+                        params.pattern
+                    )))
                 } else {
                     Ok(ToolOutput::ok(format!("Matches:\n{}", results.join("\n"))))
                 }
@@ -782,7 +877,9 @@ async fn search_files_manual(
     count: &mut usize,
     max_results: usize,
 ) {
-    if *count >= max_results { return; }
+    if *count >= max_results {
+        return;
+    }
 
     let mut entries = match tokio::fs::read_dir(dir).await {
         Ok(e) => e,
@@ -790,7 +887,9 @@ async fn search_files_manual(
     };
 
     while let Ok(Some(entry)) = entries.next_entry().await {
-        if *count >= max_results { return; }
+        if *count >= max_results {
+            return;
+        }
         let path = entry.path();
 
         if path.is_dir() {
@@ -798,10 +897,20 @@ async fn search_files_manual(
             if name.starts_with('.') || name == "node_modules" || name == "target" {
                 continue;
             }
-            Box::pin(search_files_manual(&path, re, extension, results, count, max_results)).await;
+            Box::pin(search_files_manual(
+                &path,
+                re,
+                extension,
+                results,
+                count,
+                max_results,
+            ))
+            .await;
         } else if path.is_file() {
             if let Some(ext) = extension {
-                if path.extension().map(|e| e.to_string_lossy().to_string()) != Some(ext.to_string()) {
+                if path.extension().map(|e| e.to_string_lossy().to_string())
+                    != Some(ext.to_string())
+                {
                     continue;
                 }
             }
@@ -810,7 +919,9 @@ async fn search_files_manual(
                     if re.is_match(line) {
                         results.push(format!("{}:{}: {}", path.display(), i + 1, line.trim()));
                         *count += 1;
-                        if *count >= max_results { return; }
+                        if *count >= max_results {
+                            return;
+                        }
                     }
                 }
             }
@@ -834,12 +945,14 @@ pub(crate) fn resolve_path(working_dir: &std::path::Path, path_str: &str) -> std
     let mut normalized = working_dir.to_path_buf();
     for component in p.components() {
         match component {
-            std::path::Component::Prefix(_) | std::path::Component::RootDir | std::path::Component::CurDir => {},
+            std::path::Component::Prefix(_)
+            | std::path::Component::RootDir
+            | std::path::Component::CurDir => {}
             std::path::Component::ParentDir => {
                 if normalized != working_dir && normalized.starts_with(working_dir) {
                     normalized.pop();
                 }
-            },
+            }
             std::path::Component::Normal(c) => normalized.push(c),
         }
     }
@@ -902,7 +1015,11 @@ mod tests {
     #[tokio::test]
     async fn read_existing_file() {
         let tmp = TempDir::new().unwrap();
-        std::fs::write(tmp.path().join("hello.txt"), "line one\nline two\nline three\n").unwrap();
+        std::fs::write(
+            tmp.path().join("hello.txt"),
+            "line one\nline two\nline three\n",
+        )
+        .unwrap();
         let ctx = ctx(tmp.path());
 
         let args = serde_json::json!({ "path": "hello.txt" });
@@ -985,7 +1102,10 @@ mod tests {
         let out = FileWriteTool.execute(args, &ctx).await.unwrap();
 
         assert!(out.success);
-        assert_eq!(std::fs::read_to_string(tmp.path().join("output.txt")).unwrap(), "hello world");
+        assert_eq!(
+            std::fs::read_to_string(tmp.path().join("output.txt")).unwrap(),
+            "hello world"
+        );
     }
 
     #[tokio::test]
@@ -997,7 +1117,10 @@ mod tests {
         let out = FileWriteTool.execute(args, &ctx).await.unwrap();
 
         assert!(out.success);
-        assert_eq!(std::fs::read_to_string(tmp.path().join("a/b/c/deep.txt")).unwrap(), "nested");
+        assert_eq!(
+            std::fs::read_to_string(tmp.path().join("a/b/c/deep.txt")).unwrap(),
+            "nested"
+        );
     }
 
     #[tokio::test]
@@ -1010,7 +1133,10 @@ mod tests {
         let out = FileWriteTool.execute(args, &ctx).await.unwrap();
 
         assert!(out.success);
-        assert_eq!(std::fs::read_to_string(tmp.path().join("overwrite.txt")).unwrap(), "new content");
+        assert_eq!(
+            std::fs::read_to_string(tmp.path().join("overwrite.txt")).unwrap(),
+            "new content"
+        );
     }
 
     #[tokio::test]
@@ -1037,7 +1163,10 @@ mod tests {
         let ctx = ctx(tmp.path());
 
         // Must read before editing.
-        FileReadTool.execute(serde_json::json!({ "path": "edit.txt" }), &ctx).await.unwrap();
+        FileReadTool
+            .execute(serde_json::json!({ "path": "edit.txt" }), &ctx)
+            .await
+            .unwrap();
 
         let args = serde_json::json!({
             "path": "edit.txt",
@@ -1058,7 +1187,10 @@ mod tests {
         std::fs::write(tmp.path().join("all.txt"), "aaa bbb aaa bbb aaa\n").unwrap();
         let ctx = ctx(tmp.path());
 
-        FileReadTool.execute(serde_json::json!({ "path": "all.txt" }), &ctx).await.unwrap();
+        FileReadTool
+            .execute(serde_json::json!({ "path": "all.txt" }), &ctx)
+            .await
+            .unwrap();
 
         let args = serde_json::json!({
             "path": "all.txt",
@@ -1079,7 +1211,10 @@ mod tests {
         std::fs::write(tmp.path().join("miss.txt"), "hello world\n").unwrap();
         let ctx = ctx(tmp.path());
 
-        FileReadTool.execute(serde_json::json!({ "path": "miss.txt" }), &ctx).await.unwrap();
+        FileReadTool
+            .execute(serde_json::json!({ "path": "miss.txt" }), &ctx)
+            .await
+            .unwrap();
 
         let args = serde_json::json!({
             "path": "miss.txt",
@@ -1123,7 +1258,9 @@ mod tests {
         let out = FileEditTool.execute(args, &ctx).await.unwrap();
 
         assert!(!out.success);
-        assert!(out.content.contains("must be read with file_read before editing"));
+        assert!(out
+            .content
+            .contains("must be read with file_read before editing"));
     }
 
     // ─── GlobTool ───────────────────────────────────────────────
@@ -1179,7 +1316,11 @@ mod tests {
     #[tokio::test]
     async fn grep_match_pattern() {
         let tmp = TempDir::new().unwrap();
-        std::fs::write(tmp.path().join("code.rs"), "fn main() {\n    println!(\"hello\");\n}\n").unwrap();
+        std::fs::write(
+            tmp.path().join("code.rs"),
+            "fn main() {\n    println!(\"hello\");\n}\n",
+        )
+        .unwrap();
         let ctx = ctx(tmp.path());
 
         let args = serde_json::json!({ "pattern": "println" });

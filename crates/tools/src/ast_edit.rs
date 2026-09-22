@@ -1,8 +1,8 @@
+use crate::registry::{Tool, ToolContext};
 use async_trait::async_trait;
 use pr_core::{ToolOutput, ToolSchema};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use crate::registry::{Tool, ToolContext};
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema, Clone)]
 pub struct AstRewriteOp {
@@ -48,11 +48,16 @@ impl Tool for AstEditTool {
         ToolSchema {
             name: self.name().to_string(),
             description: self.description().to_string(),
-            parameters: serde_json::to_value(&schemars::schema_for!(AstEditParams).schema).unwrap_or_default(),
+            parameters: serde_json::to_value(&schemars::schema_for!(AstEditParams).schema)
+                .unwrap_or_default(),
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: AstEditParams = serde_json::from_value(args)?;
         if params.ops.is_empty() {
             return Ok(ToolOutput::err("No rewrite operations ('ops') specified"));
@@ -83,7 +88,9 @@ impl Tool for AstEditTool {
         }
 
         if matched_files.is_empty() {
-            return Ok(ToolOutput::err("No matching source files found for AST rewrite"));
+            return Ok(ToolOutput::err(
+                "No matching source files found for AST rewrite",
+            ));
         }
 
         let mut diffs = Vec::new();
@@ -121,8 +128,14 @@ impl Tool for AstEditTool {
 
             if changed {
                 modified_count += 1;
-                let rel = file_path.strip_prefix(&ctx.working_dir).unwrap_or(file_path);
-                diffs.push(format!("--- {}\n+++ {}\n[AST structural rewrite applied]", rel.display(), rel.display()));
+                let rel = file_path
+                    .strip_prefix(&ctx.working_dir)
+                    .unwrap_or(file_path);
+                diffs.push(format!(
+                    "--- {}\n+++ {}\n[AST structural rewrite applied]",
+                    rel.display(),
+                    rel.display()
+                ));
 
                 if params.action == "apply" {
                     tokio::fs::write(file_path, &current).await?;
@@ -131,7 +144,9 @@ impl Tool for AstEditTool {
         }
 
         if modified_count == 0 {
-            Ok(ToolOutput::ok("AST pattern matched 0 locations. No changes made."))
+            Ok(ToolOutput::ok(
+                "AST pattern matched 0 locations. No changes made.",
+            ))
         } else if params.action == "stage" {
             Ok(ToolOutput::ok(format!(
                 "Staged AST rewrites across {} file(s):\n\n{}",

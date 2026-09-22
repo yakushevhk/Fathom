@@ -37,14 +37,33 @@ impl SettingsView {
             .px_3()
             .py_1p5()
             .rounded_md()
-            .bg(if is_active { Theme::bg_elevated() } else { Theme::bg_surface() })
+            .bg(if is_active {
+                Theme::bg_elevated()
+            } else {
+                Theme::bg_surface()
+            })
             .border_1()
-            .border_color(if is_active { Theme::border_focus() } else { Theme::border_subtle() })
+            .border_color(if is_active {
+                Theme::border_focus()
+            } else {
+                Theme::border_subtle()
+            })
             .text_xs()
-            .font_weight(if is_active { gpui::FontWeight::SEMIBOLD } else { gpui::FontWeight::NORMAL })
-            .text_color(if is_active { Theme::text_primary() } else { Theme::text_secondary() })
+            .font_weight(if is_active {
+                gpui::FontWeight::SEMIBOLD
+            } else {
+                gpui::FontWeight::NORMAL
+            })
+            .text_color(if is_active {
+                Theme::text_primary()
+            } else {
+                Theme::text_secondary()
+            })
             .cursor_pointer()
-            .hover(|s| s.bg(Theme::bg_elevated_hover()).text_color(Theme::text_primary()))
+            .hover(|s| {
+                s.bg(Theme::bg_elevated_hover())
+                    .text_color(Theme::text_primary())
+            })
             .child(label)
             .on_click(cx.listener(move |this, _event: &ClickEvent, _window, cx| {
                 this.selected_subtab = id.to_string();
@@ -204,9 +223,24 @@ impl SettingsView {
                     .flex()
                     .flex_col()
                     .gap_2()
-                    .child(self.render_account_row("GitHub", "Enterprise Git & CI/CD", "Connected as @yakushev", true))
-                    .child(self.render_account_row("Google Workspace", "Drive, Gmail & Docs", "Connected", true))
-                    .child(self.render_account_row("Slack", "Channel notifications & alerting", "Not connected", false)),
+                    .child(self.render_account_row(
+                        "GitHub",
+                        "Enterprise Git & CI/CD",
+                        "Connected as @yakushev",
+                        true,
+                    ))
+                    .child(self.render_account_row(
+                        "Google Workspace",
+                        "Drive, Gmail & Docs",
+                        "Connected",
+                        true,
+                    ))
+                    .child(self.render_account_row(
+                        "Slack",
+                        "Channel notifications & alerting",
+                        "Not connected",
+                        false,
+                    )),
             )
     }
 
@@ -246,10 +280,18 @@ impl SettingsView {
                     .rounded_md()
                     .bg(Theme::bg_elevated())
                     .border_1()
-                    .border_color(if active { Theme::success_green() } else { Theme::border_subtle() })
+                    .border_color(if active {
+                        Theme::success_green()
+                    } else {
+                        Theme::border_subtle()
+                    })
                     .text_xs()
                     .font_weight(gpui::FontWeight::SEMIBOLD)
-                    .text_color(if active { Theme::success_green() } else { Theme::text_muted() })
+                    .text_color(if active {
+                        Theme::success_green()
+                    } else {
+                        Theme::text_muted()
+                    })
                     .child(status.to_string()),
             )
     }
@@ -273,10 +315,9 @@ impl SettingsView {
                             .child("Tenant Package Configuration (TENANT_PACKAGE_DIR)"),
                     )
                     .child(
-                        div()
-                            .text_xs()
-                            .text_color(Theme::text_muted())
-                            .child("Declarative brand, agents, channels, and knowledge definitions"),
+                        div().text_xs().text_color(Theme::text_muted()).child(
+                            "Declarative brand, agents, channels, and knowledge definitions",
+                        ),
                     ),
             )
             .child(
@@ -284,11 +325,31 @@ impl SettingsView {
                     .flex()
                     .flex_col()
                     .gap_2()
-                    .child(self.render_tenant_file_card("brand.yaml", "Brand identity, logos, UI accents, company guidelines", "Loaded (FinTech Enterprise)"))
-                    .child(self.render_tenant_file_card("agents.yaml", "Built-in coworker declarations and role prompts", "3 coworkers active"))
-                    .child(self.render_tenant_file_card("channels.yaml", "Initial fleet channels, ACLs, and thread mappings", "5 channels bound"))
-                    .child(self.render_tenant_file_card("model.yaml", "Default LLM routing, fallback chains, thinking effort", "DeepSeek / Sonnet 3.7"))
-                    .child(self.render_tenant_file_card("knowledge.yaml", "RAG vector indices, Google Drive, and SharePoint sync", "2 connectors indexed")),
+                    .child(self.render_tenant_file_card(
+                        "brand.yaml",
+                        "Brand identity, logos, UI accents, company guidelines",
+                        "Loaded (FinTech Enterprise)",
+                    ))
+                    .child(self.render_tenant_file_card(
+                        "agents.yaml",
+                        "Built-in coworker declarations and role prompts",
+                        "3 coworkers active",
+                    ))
+                    .child(self.render_tenant_file_card(
+                        "channels.yaml",
+                        "Initial fleet channels, ACLs, and thread mappings",
+                        "5 channels bound",
+                    ))
+                    .child(self.render_tenant_file_card(
+                        "model.yaml",
+                        "Default LLM routing, fallback chains, thinking effort",
+                        "DeepSeek / Sonnet 3.7",
+                    ))
+                    .child(self.render_tenant_file_card(
+                        "knowledge.yaml",
+                        "RAG vector indices, Google Drive, and SharePoint sync",
+                        "2 connectors indexed",
+                    )),
             )
     }
 
@@ -384,14 +445,45 @@ impl SettingsView {
                     .flex()
                     .flex_col()
                     .gap_2()
-                    .child(self.render_person_row("Admin Operator", "admin@fathom.internal", "Administrator", "Active Session", true))
-                    .child(self.render_person_row("Security Lead", "security@fathom.internal", "Auditor", "OAuth (Okta SSO)", false))
-                    .child(self.render_person_row("DevOps Staff", "devops@fathom.internal", "Operator", "Active Session", false))
-                    .child(self.render_person_row("External Guest", "guest@contractor.io", "Observer (Read-Only)", "Expired", false)),
+                    .child(self.render_person_row(
+                        "Admin Operator",
+                        "admin@fathom.internal",
+                        "Administrator",
+                        "Active Session",
+                        true,
+                    ))
+                    .child(self.render_person_row(
+                        "Security Lead",
+                        "security@fathom.internal",
+                        "Auditor",
+                        "OAuth (Okta SSO)",
+                        false,
+                    ))
+                    .child(self.render_person_row(
+                        "DevOps Staff",
+                        "devops@fathom.internal",
+                        "Operator",
+                        "Active Session",
+                        false,
+                    ))
+                    .child(self.render_person_row(
+                        "External Guest",
+                        "guest@contractor.io",
+                        "Observer (Read-Only)",
+                        "Expired",
+                        false,
+                    )),
             )
     }
 
-    fn render_person_row(&self, name: &str, email: &str, role: &str, status: &str, is_current: bool) -> Div {
+    fn render_person_row(
+        &self,
+        name: &str,
+        email: &str,
+        role: &str,
+        status: &str,
+        is_current: bool,
+    ) -> Div {
         div()
             .flex()
             .items_center()
@@ -479,7 +571,11 @@ impl SettingsView {
                     .child(
                         div()
                             .text_xs()
-                            .text_color(if status.contains("Active") { Theme::success_green() } else { Theme::text_muted() })
+                            .text_color(if status.contains("Active") {
+                                Theme::success_green()
+                            } else {
+                                Theme::text_muted()
+                            })
                             .child(status.to_string()),
                     ),
             )
@@ -505,12 +601,9 @@ impl SettingsView {
                             .text_color(Theme::text_primary())
                             .child("MCP Plugins & Knowledge Connectors (/admin/plugins)"),
                     )
-                    .child(
-                        div()
-                            .text_xs()
-                            .text_color(Theme::text_muted())
-                            .child("Governed Model Context Protocol bridges with RAG indexing and IdP SSO"),
-                    ),
+                    .child(div().text_xs().text_color(Theme::text_muted()).child(
+                        "Governed Model Context Protocol bridges with RAG indexing and IdP SSO",
+                    )),
             )
             .child(
                 div()
@@ -519,20 +612,69 @@ impl SettingsView {
                     .gap_2()
                     .children(if plugins.is_empty() {
                         vec![
-                            self.render_mcp_item("google_drive", "Google Drive", "Read company docs, sheets, and presentations", true, "Google (OAuth)", vec!["General Assistant".to_string()]),
-                            self.render_mcp_item("notion", "Notion Workspace", "Read and write company wikis, projects, and roadmaps", true, "Notion (OAuth)", vec!["General Assistant".to_string(), "Risk Analyst".to_string()]),
-                            self.render_mcp_item("rag_knowledge", "Corporate RAG Explorer", "Vector embeddings (pgvector/HNSW) across internal repos", true, "Local Vector DB", vec!["General Assistant".to_string(), "DevOps Engineer".to_string()]),
-                            self.render_mcp_item("okta_saml", "Identity Provider (SAML/OIDC)", "Domain routed SSO for @company.com with automatic token rotation", true, "Okta / Azure AD", vec!["Security Lead".to_string()]),
+                            self.render_mcp_item(
+                                "google_drive",
+                                "Google Drive",
+                                "Read company docs, sheets, and presentations",
+                                true,
+                                "Google (OAuth)",
+                                vec!["General Assistant".to_string()],
+                            ),
+                            self.render_mcp_item(
+                                "notion",
+                                "Notion Workspace",
+                                "Read and write company wikis, projects, and roadmaps",
+                                true,
+                                "Notion (OAuth)",
+                                vec!["General Assistant".to_string(), "Risk Analyst".to_string()],
+                            ),
+                            self.render_mcp_item(
+                                "rag_knowledge",
+                                "Corporate RAG Explorer",
+                                "Vector embeddings (pgvector/HNSW) across internal repos",
+                                true,
+                                "Local Vector DB",
+                                vec![
+                                    "General Assistant".to_string(),
+                                    "DevOps Engineer".to_string(),
+                                ],
+                            ),
+                            self.render_mcp_item(
+                                "okta_saml",
+                                "Identity Provider (SAML/OIDC)",
+                                "Domain routed SSO for @company.com with automatic token rotation",
+                                true,
+                                "Okta / Azure AD",
+                                vec!["Security Lead".to_string()],
+                            ),
                         ]
                     } else {
-                        plugins.into_iter().map(|p| {
-                            self.render_mcp_item(&p.id, &p.name, &p.description, p.enabled, &p.vendor, p.granted_agents)
-                        }).collect()
+                        plugins
+                            .into_iter()
+                            .map(|p| {
+                                self.render_mcp_item(
+                                    &p.id,
+                                    &p.name,
+                                    &p.description,
+                                    p.enabled,
+                                    &p.vendor,
+                                    p.granted_agents,
+                                )
+                            })
+                            .collect()
                     }),
             )
     }
 
-    fn render_mcp_item(&self, _id: &str, name: &str, desc: &str, enabled: bool, vendor: &str, agents: Vec<String>) -> Div {
+    fn render_mcp_item(
+        &self,
+        _id: &str,
+        name: &str,
+        desc: &str,
+        enabled: bool,
+        vendor: &str,
+        agents: Vec<String>,
+    ) -> Div {
         div()
             .flex()
             .flex_col()
@@ -577,10 +719,18 @@ impl SettingsView {
                             .rounded_md()
                             .bg(Theme::bg_elevated())
                             .border_1()
-                            .border_color(if enabled { Theme::success_green() } else { Theme::text_muted() })
+                            .border_color(if enabled {
+                                Theme::success_green()
+                            } else {
+                                Theme::text_muted()
+                            })
                             .text_xs()
                             .font_weight(gpui::FontWeight::BOLD)
-                            .text_color(if enabled { Theme::success_green() } else { Theme::text_muted() })
+                            .text_color(if enabled {
+                                Theme::success_green()
+                            } else {
+                                Theme::text_muted()
+                            })
                             .child(if enabled { "CONNECTED" } else { "DISABLED" }),
                     ),
             )
@@ -628,23 +778,44 @@ impl SettingsView {
                     .text_color(Theme::text_primary())
                     .child("Generative UI Components Catalogue"),
             )
-            .child(
-                div()
-                    .text_xs()
-                    .text_color(Theme::text_muted())
-                    .child("Components published for LLM autonomous generation in conversation transcripts."),
-            )
+            .child(div().text_xs().text_color(Theme::text_muted()).child(
+                "Components published for LLM autonomous generation in conversation transcripts.",
+            ))
             .child(
                 div()
                     .flex()
                     .flex_col()
                     .gap_2()
-                    .child(self.render_comp_tile("RecordCard", "Structured key-value record grid with tone badge", "card"))
-                    .child(self.render_comp_tile("MetricsCard", "Headline metric with trend arrow and percentage delta", "card"))
-                    .child(self.render_comp_tile("ChecklistCard", "Interactive task checklist with completion counters", "card"))
-                    .child(self.render_comp_tile("BarChartCard", "Proportional horizontal bar charts with value labels", "chart"))
-                    .child(self.render_comp_tile("ProgressChartCard", "Target progress indicators with percentage gauges", "chart"))
-                    .child(self.render_comp_tile("ChoiceCard", "Interactive multi-option decision prompts", "decision")),
+                    .child(self.render_comp_tile(
+                        "RecordCard",
+                        "Structured key-value record grid with tone badge",
+                        "card",
+                    ))
+                    .child(self.render_comp_tile(
+                        "MetricsCard",
+                        "Headline metric with trend arrow and percentage delta",
+                        "card",
+                    ))
+                    .child(self.render_comp_tile(
+                        "ChecklistCard",
+                        "Interactive task checklist with completion counters",
+                        "card",
+                    ))
+                    .child(self.render_comp_tile(
+                        "BarChartCard",
+                        "Proportional horizontal bar charts with value labels",
+                        "chart",
+                    ))
+                    .child(self.render_comp_tile(
+                        "ProgressChartCard",
+                        "Target progress indicators with percentage gauges",
+                        "chart",
+                    ))
+                    .child(self.render_comp_tile(
+                        "ChoiceCard",
+                        "Interactive multi-option decision prompts",
+                        "decision",
+                    )),
             )
     }
 
@@ -719,13 +890,48 @@ impl Render for SettingsView {
                             .flex()
                             .items_center()
                             .gap_2()
-                            .child(self.render_subtab_button("Engine & Local", "engine", &current_subtab, cx))
-                            .child(self.render_subtab_button("Tenant Package", "tenant", &current_subtab, cx))
-                            .child(self.render_subtab_button("Standing Instructions", "instructions", &current_subtab, cx))
-                            .child(self.render_subtab_button("People & Access", "people", &current_subtab, cx))
-                            .child(self.render_subtab_button("Connected Accounts", "accounts", &current_subtab, cx))
-                            .child(self.render_subtab_button("MCP Connectors", "mcp", &current_subtab, cx))
-                            .child(self.render_subtab_button("UI Components Preview", "components", &current_subtab, cx)),
+                            .child(self.render_subtab_button(
+                                "Engine & Local",
+                                "engine",
+                                &current_subtab,
+                                cx,
+                            ))
+                            .child(self.render_subtab_button(
+                                "Tenant Package",
+                                "tenant",
+                                &current_subtab,
+                                cx,
+                            ))
+                            .child(self.render_subtab_button(
+                                "Standing Instructions",
+                                "instructions",
+                                &current_subtab,
+                                cx,
+                            ))
+                            .child(self.render_subtab_button(
+                                "People & Access",
+                                "people",
+                                &current_subtab,
+                                cx,
+                            ))
+                            .child(self.render_subtab_button(
+                                "Connected Accounts",
+                                "accounts",
+                                &current_subtab,
+                                cx,
+                            ))
+                            .child(self.render_subtab_button(
+                                "MCP Connectors",
+                                "mcp",
+                                &current_subtab,
+                                cx,
+                            ))
+                            .child(self.render_subtab_button(
+                                "UI Components Preview",
+                                "components",
+                                &current_subtab,
+                                cx,
+                            )),
                     ),
             )
             // Content view

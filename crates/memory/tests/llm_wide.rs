@@ -48,7 +48,9 @@ fn make_llm() -> Arc<DeepSeekProvider> {
 
 fn msg_text(m: &pr_core::Message) -> String {
     match m {
-        pr_core::Message::System { content } | pr_core::Message::User { content } => content.clone(),
+        pr_core::Message::System { content } | pr_core::Message::User { content } => {
+            content.clone()
+        }
         pr_core::Message::Assistant { content, .. } => content.clone().unwrap_or_default(),
         pr_core::Message::Tool { content, .. } => content.clone(),
     }
@@ -116,11 +118,16 @@ async fn a_llm_rerank_orders_by_relevance() {
     for h in &hits {
         println!("   [{:.3}] {}", h.score, h.memory.content);
     }
-    assert!(hits.len() >= 2, "нужно ≥2 кандидатов для теста rerank, получено {}", hits.len());
+    assert!(
+        hits.len() >= 2,
+        "нужно ≥2 кандидатов для теста rerank, получено {}",
+        hits.len()
+    );
 
     let llm_dyn: Arc<dyn pr_llm::LlmProvider> = llm.clone();
     let reranked =
-        pr_memory::search::llm_rerank(&llm_dyn, "in-memory caching message broker", hits.clone()).await;
+        pr_memory::search::llm_rerank(&llm_dyn, "in-memory caching message broker", hits.clone())
+            .await;
     println!("after LLM rerank:");
     for h in &reranked {
         println!("   - {}", h.memory.content);
@@ -158,7 +165,10 @@ async fn b_llm_absorb_coexist_context() {
         context: None,
         dry_run: false,
     };
-    mem.pipeline_with_llm(llm.clone()).absorb(req1).await.unwrap();
+    mem.pipeline_with_llm(llm.clone())
+        .absorb(req1)
+        .await
+        .unwrap();
 
     let req2 = AbsorbRequest {
         facts: vec![p_fact(
@@ -170,15 +180,27 @@ async fn b_llm_absorb_coexist_context() {
         context: None,
         dry_run: false,
     };
-    let r2 = mem.pipeline_with_llm(llm.clone()).absorb(req2).await.unwrap();
-    println!("second fact: created={} superseded={} contradicted={} coexisted={} related={} skipped={}",
-        r2.created, r2.superseded, r2.contradicted, r2.coexisted, r2.related, r2.skipped);
+    let r2 = mem
+        .pipeline_with_llm(llm.clone())
+        .absorb(req2)
+        .await
+        .unwrap();
+    println!(
+        "second fact: created={} superseded={} contradicted={} coexisted={} related={} skipped={}",
+        r2.created, r2.superseded, r2.contradicted, r2.coexisted, r2.related, r2.skipped
+    );
 
-    let active = mem.db.list(&ScopeFilter::persistent(), Some("active"), 100).unwrap();
+    let active = mem
+        .db
+        .list(&ScopeFilter::persistent(), Some("active"), 100)
+        .unwrap();
     for a in &active {
         println!("   (status={}) {}", a.status, a.content);
     }
-    assert!(active.len() >= 2, "оба контекстных предпочтения должны остаться active");
+    assert!(
+        active.len() >= 2,
+        "оба контекстных предпочтения должны остаться active"
+    );
     println!("✓ absorb: оба предпочтения хранятся активными");
 }
 
@@ -195,23 +217,44 @@ async fn c_llm_absorb_supersede_chain() {
     };
     let mem = Memory::in_memory(cfg).unwrap();
 
-    let r1 = mem.pipeline_with_llm(llm.clone()).absorb(AbsorbRequest {
-        facts: vec![p_fact("Acme Corp CEO is Ivan Petrov as of 2024")],
-        source: "s".into(), scope: Scope::Agent, scope_key: String::new(), context: None, dry_run: false,
-    }).await.unwrap();
+    let r1 = mem
+        .pipeline_with_llm(llm.clone())
+        .absorb(AbsorbRequest {
+            facts: vec![p_fact("Acme Corp CEO is Ivan Petrov as of 2024")],
+            source: "s".into(),
+            scope: Scope::Agent,
+            scope_key: String::new(),
+            context: None,
+            dry_run: false,
+        })
+        .await
+        .unwrap();
     println!("v1: {}", r1.summary_line());
 
-    let r2 = mem.pipeline_with_llm(llm.clone()).absorb(AbsorbRequest {
-        facts: vec![p_fact("Acme Corp CEO is Maria Ivanova as of 2025")],
-        source: "s".into(), scope: Scope::Agent, scope_key: String::new(), context: None, dry_run: false,
-    }).await.unwrap();
+    let r2 = mem
+        .pipeline_with_llm(llm.clone())
+        .absorb(AbsorbRequest {
+            facts: vec![p_fact("Acme Corp CEO is Maria Ivanova as of 2025")],
+            source: "s".into(),
+            scope: Scope::Agent,
+            scope_key: String::new(),
+            context: None,
+            dry_run: false,
+        })
+        .await
+        .unwrap();
     println!("v2: {}", r2.summary_line());
 
-    let active = mem.db.list(&ScopeFilter::persistent(), Some("active"), 100).unwrap();
+    let active = mem
+        .db
+        .list(&ScopeFilter::persistent(), Some("active"), 100)
+        .unwrap();
     for a in &active {
         println!("   (status={}) {}", a.status, a.content);
     }
-    let old_active = active.iter().any(|r| r.content.contains("Ivan Petrov") && r.content.contains("2024"));
+    let old_active = active
+        .iter()
+        .any(|r| r.content.contains("Ivan Petrov") && r.content.contains("2024"));
     let new_active = active.iter().any(|r| r.content.contains("Maria Ivanova"));
     println!("old CEO active: {old_active}, new CEO active: {new_active}");
     assert!(new_active, "новый CEO должен быть активным");
@@ -239,7 +282,10 @@ async fn d_llm_provider_usage_and_json() {
     println!("content: {:?}", msg_text(&resp.message));
     println!("finish_reason: {:?}", resp.finish_reason);
     if let Some(u) = &resp.usage {
-        println!("usage: prompt={} completion={} total={}", u.prompt_tokens, u.completion_tokens, u.total_tokens);
+        println!(
+            "usage: prompt={} completion={} total={}",
+            u.prompt_tokens, u.completion_tokens, u.total_tokens
+        );
         assert!(u.total_tokens > 0, "usage.total_tokens должен быть > 0");
     }
 
@@ -254,7 +300,10 @@ async fn d_llm_provider_usage_and_json() {
     };
     let resp2 = llm.complete(&req2).await.expect("json completion failed");
     let text = msg_text(&resp2.message);
-    println!("json attempt: {}", text.trim_start().chars().take(70).collect::<String>());
+    println!(
+        "json attempt: {}",
+        text.trim_start().chars().take(70).collect::<String>()
+    );
     if let Ok(p) = serde_json::from_str::<serde_json::Value>(text.trim()) {
         println!("parsed JSON ok: {}", p);
         assert_eq!(p["ok"].as_bool(), Some(true));
@@ -298,7 +347,10 @@ async fn e_llm_provider_streaming() {
     }
     println!("streamed text: {:?}", text);
     println!("usage in Done chunk: {usage_seen}");
-    assert!(text.contains('1') && text.contains('5'), "стрим должен вернуть числа 1..5, получили: {text:?}");
+    assert!(
+        text.contains('1') && text.contains('5'),
+        "стрим должен вернуть числа 1..5, получили: {text:?}"
+    );
     println!("✓ streaming: SSE-дельта собраны в текст");
 }
 
@@ -338,7 +390,10 @@ async fn f_llm_provider_tool_calls() {
             assert_eq!(tool_calls[0].name(), "get_weather");
             assert_eq!(tool_calls[0].arguments()["city"], "Kazan");
         }
-        other => panic!("ожидался Assistant с tool_calls, получено: {:?}", msg_text(other)),
+        other => panic!(
+            "ожидался Assistant с tool_calls, получено: {:?}",
+            msg_text(other)
+        ),
     }
     println!("✓ function calling: get_weather(Kazan) распознан корректно");
 }

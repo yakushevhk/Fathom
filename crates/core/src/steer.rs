@@ -12,9 +12,9 @@
 //! treats it as a command).
 
 use crate::ids::AgentId;
+use parking_lot::Mutex;
 use std::collections::HashMap;
 use std::sync::LazyLock;
-use parking_lot::Mutex;
 use tokio::sync::mpsc;
 
 /// Registry mapping agent ids to their steering sender half.

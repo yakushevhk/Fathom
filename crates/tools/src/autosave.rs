@@ -129,7 +129,11 @@ pub async fn autosave_leads(
             }
 
             let mut contact = Contact {
-                name: if name.trim().is_empty() { None } else { Some(name) },
+                name: if name.trim().is_empty() {
+                    None
+                } else {
+                    Some(name)
+                },
                 title: person
                     .and_then(|p| p.get("role"))
                     .and_then(|v| v.as_str())
@@ -153,16 +157,12 @@ pub async fn autosave_leads(
                 .and_then(|p| p.get("profile_url"))
                 .and_then(|v| v.as_str())
             {
-                contact.social_profiles.push(pr_core::SocialProfile::new(
-                    "linkedin",
-                    url,
-                    "",
-                ));
+                contact
+                    .social_profiles
+                    .push(pr_core::SocialProfile::new("linkedin", url, ""));
             }
             if let Some(conf) = lead.get("confidence").and_then(|v| v.as_f64()) {
-                contact
-                    .notes
-                    .push(format!("lead confidence: {conf:.2}"));
+                contact.notes.push(format!("lead confidence: {conf:.2}"));
             }
             let source = lead
                 .get("source")
@@ -191,12 +191,18 @@ async fn persist_all(
         if let (Some(ledger), Some(email)) = (&ledger, &contact.email) {
             // Delivering-check first: an accepted mailbox is the strongest
             // signal. Otherwise a syntax+domain green earns at least Partial.
-            let smtp = ledger.verdict(ReceiptKind::of(ReceiptKind::EMAIL_SMTP), email).await;
+            let smtp = ledger
+                .verdict(ReceiptKind::of(ReceiptKind::EMAIL_SMTP), email)
+                .await;
             if smtp == Some(Verdict::Pass) {
                 contact.verification = Verification::Verified;
             } else {
-                let domain_ok = ledger.is_passing(ReceiptKind::of(ReceiptKind::EMAIL_DOMAIN_MX), email).await
-                    || ledger.is_passing(ReceiptKind::of(ReceiptKind::EMAIL_SYNTAX), email).await;
+                let domain_ok = ledger
+                    .is_passing(ReceiptKind::of(ReceiptKind::EMAIL_DOMAIN_MX), email)
+                    .await
+                    || ledger
+                        .is_passing(ReceiptKind::of(ReceiptKind::EMAIL_SYNTAX), email)
+                        .await;
                 if domain_ok {
                     contact.verification = Verification::Partial;
                 }

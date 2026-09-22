@@ -3,9 +3,7 @@
 //! BarChartCard, ProgressChartCard, ChoiceCard, and RefusedCard.
 
 use crate::theme::Theme;
-use gpui::{
-    div, prelude::*, px, ClickEvent, Context, Div, SharedString,
-};
+use gpui::{div, prelude::*, px, ClickEvent, Context, Div, SharedString};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -307,7 +305,11 @@ pub fn render_confirm_action_card<V: 'static>(
 /// Renders a ComputerStatusCard (Container / Sandbox runtime metrics)
 pub fn render_computer_status_card(card: &ComputerStatusCardData) -> Div {
     let is_running = card.status == "running";
-    let status_color = if is_running { Theme::success_green() } else { Theme::danger_red() };
+    let status_color = if is_running {
+        Theme::success_green()
+    } else {
+        Theme::danger_red()
+    };
 
     div()
         .flex()
@@ -328,12 +330,7 @@ pub fn render_computer_status_card(card: &ComputerStatusCardData) -> Div {
                         .flex()
                         .items_center()
                         .gap_2()
-                        .child(
-                            div()
-                                .size(px(8.0))
-                                .rounded_full()
-                                .bg(status_color),
-                        )
+                        .child(div().size(px(8.0)).rounded_full().bg(status_color))
                         .child(
                             div()
                                 .text_xs()
@@ -368,7 +365,11 @@ pub fn render_computer_status_card(card: &ComputerStatusCardData) -> Div {
                         .flex()
                         .gap_1()
                         .child(div().text_color(Theme::text_muted()).child("Memory:"))
-                        .child(div().text_color(Theme::text_secondary()).child(format!("{} MB", mem)))
+                        .child(
+                            div()
+                                .text_color(Theme::text_secondary())
+                                .child(format!("{} MB", mem)),
+                        )
                 })),
         )
 }
@@ -483,7 +484,11 @@ pub fn render_skill_draft_card<V: 'static>(
 /// Renders an AgentHandoffCard showing multi-agent task delegation chain
 pub fn render_agent_handoff_card(card: &AgentHandoffCardData) -> Div {
     let is_refused = card.status == "refused";
-    let status_color = if is_refused { Theme::danger_red() } else { Theme::accent_purple() };
+    let status_color = if is_refused {
+        Theme::danger_red()
+    } else {
+        Theme::accent_purple()
+    };
 
     div()
         .flex()
@@ -509,7 +514,10 @@ pub fn render_agent_handoff_card(card: &AgentHandoffCardData) -> Div {
                                 .text_xs()
                                 .font_weight(gpui::FontWeight::BOLD)
                                 .text_color(Theme::text_primary())
-                                .child(format!("Multi-Agent Handoff: @{} ➔ @{}", card.from_agent, card.to_agent)),
+                                .child(format!(
+                                    "Multi-Agent Handoff: @{} ➔ @{}",
+                                    card.from_agent, card.to_agent
+                                )),
                         )
                         .child(
                             div()
@@ -635,7 +643,11 @@ pub fn render_advisor_note_card(card: &AdvisorNoteCardData) -> Div {
 
 /// Renders CollabSessionCard (peer-to-peer / relay live session sharing)
 pub fn render_collab_session_card(card: &CollabSessionCardData) -> Div {
-    let status_color = if card.is_active { Theme::success_green() } else { Theme::text_muted() };
+    let status_color = if card.is_active {
+        Theme::success_green()
+    } else {
+        Theme::text_muted()
+    };
 
     div()
         .flex()
@@ -656,12 +668,7 @@ pub fn render_collab_session_card(card: &CollabSessionCardData) -> Div {
                         .flex()
                         .items_center()
                         .gap_2()
-                        .child(
-                            div()
-                                .size(px(8.0))
-                                .rounded_full()
-                                .bg(status_color),
-                        )
+                        .child(div().size(px(8.0)).rounded_full().bg(status_color))
                         .child(
                             div()
                                 .text_xs()
@@ -814,7 +821,11 @@ pub fn render_review_summary_card(card: &ReviewSummaryCardData) -> Div {
                                         .text_xs()
                                         .font_family("JetBrains Mono")
                                         .text_color(Theme::text_muted())
-                                        .child(format!("({}:{})", issue.file, issue.line.unwrap_or(1))),
+                                        .child(format!(
+                                            "({}:{})",
+                                            issue.file,
+                                            issue.line.unwrap_or(1)
+                                        )),
                                 ),
                         )
                         .child(
@@ -871,7 +882,10 @@ pub fn render_stream_rule_alert_card(card: &StreamRuleAlertCardData) -> Div {
                 .text_xs()
                 .font_family("JetBrains Mono")
                 .text_color(Theme::danger_red())
-                .child(format!("Rule Matched: {} (pattern: {})", card.rule_name, card.pattern_matched)),
+                .child(format!(
+                    "Rule Matched: {} (pattern: {})",
+                    card.rule_name, card.pattern_matched
+                )),
         )
         .child(
             div()
@@ -1086,9 +1100,17 @@ pub fn render_checklist_card(card: &ChecklistCardData) -> Div {
                             div()
                                 .size(px(14.0))
                                 .rounded_sm()
-                                .bg(if item.checked { Theme::accent_purple() } else { Theme::bg_elevated() })
+                                .bg(if item.checked {
+                                    Theme::accent_purple()
+                                } else {
+                                    Theme::bg_elevated()
+                                })
                                 .border_1()
-                                .border_color(if item.checked { Theme::accent_purple() } else { Theme::border_subtle() })
+                                .border_color(if item.checked {
+                                    Theme::accent_purple()
+                                } else {
+                                    Theme::border_subtle()
+                                })
                                 .flex()
                                 .items_center()
                                 .justify_center()
@@ -1097,7 +1119,11 @@ pub fn render_checklist_card(card: &ChecklistCardData) -> Div {
                         )
                         .child(
                             div()
-                                .text_color(if item.checked { Theme::text_muted() } else { Theme::text_primary() })
+                                .text_color(if item.checked {
+                                    Theme::text_muted()
+                                } else {
+                                    Theme::text_primary()
+                                })
                                 .child(item.label.clone()),
                         )
                 })),
@@ -1122,11 +1148,7 @@ pub fn render_notice_card(card: &NoticeCardData) -> Div {
         .bg(Theme::bg_elevated())
         .border_1()
         .border_color(border_color)
-        .child(
-            div()
-                .text_sm()
-                .child(icon),
-        )
+        .child(div().text_sm().child(icon))
         .child(
             div()
                 .flex()
@@ -1375,15 +1397,26 @@ pub fn render_choice_card<V: 'static>(
                     let o_id = opt_id.clone();
 
                     div()
-                        .id(SharedString::from(format!("choice-opt-{}-{}", req_id, opt.id)))
+                        .id(SharedString::from(format!(
+                            "choice-opt-{}-{}",
+                            req_id, opt.id
+                        )))
                         .flex()
                         .items_center()
                         .justify_between()
                         .p_2()
                         .rounded_md()
-                        .bg(if is_selected { Theme::bg_elevated_hover() } else { Theme::bg_elevated() })
+                        .bg(if is_selected {
+                            Theme::bg_elevated_hover()
+                        } else {
+                            Theme::bg_elevated()
+                        })
                         .border_1()
-                        .border_color(if is_selected { Theme::accent_purple() } else { Theme::border_subtle() })
+                        .border_color(if is_selected {
+                            Theme::accent_purple()
+                        } else {
+                            Theme::border_subtle()
+                        })
                         .cursor_pointer()
                         .hover(|s| s.bg(Theme::bg_elevated_hover()))
                         .child(
@@ -1409,8 +1442,16 @@ pub fn render_choice_card<V: 'static>(
                                 .size(px(14.0))
                                 .rounded_full()
                                 .border_1()
-                                .border_color(if is_selected { Theme::accent_purple() } else { Theme::border_subtle() })
-                                .bg(if is_selected { Theme::accent_purple() } else { Theme::bg_window() }),
+                                .border_color(if is_selected {
+                                    Theme::accent_purple()
+                                } else {
+                                    Theme::border_subtle()
+                                })
+                                .bg(if is_selected {
+                                    Theme::accent_purple()
+                                } else {
+                                    Theme::bg_window()
+                                }),
                         )
                         .on_click(cx.listener(move |this, _event: &ClickEvent, _window, cx| {
                             cb(&r_id, &o_id, this, cx);

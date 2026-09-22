@@ -1,8 +1,8 @@
 //! IPC protocol for multi-process agent coordination.
 //! Uses Unix domain sockets for communication between coordinator and workers.
 
-use serde::{Deserialize, Serialize};
 use pr_core::{AgentEvent, AgentId, AgentRole, AgentState};
+use serde::{Deserialize, Serialize};
 
 /// Messages sent between coordinator and worker processes.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -44,15 +44,9 @@ pub enum IpcMessage {
         tokens_used: u64,
     },
     #[serde(rename = "failed")]
-    Failed {
-        agent_id: AgentId,
-        error: String,
-    },
+    Failed { agent_id: AgentId, error: String },
     #[serde(rename = "llm_chunk")]
-    LlmChunk {
-        agent_id: AgentId,
-        chunk: String,
-    },
+    LlmChunk { agent_id: AgentId, chunk: String },
 }
 
 impl IpcMessage {
@@ -78,7 +72,11 @@ impl IpcMessage {
                 id: agent_id.clone(),
                 state: state.clone(),
             }),
-            IpcMessage::ToolCall { agent_id, tool, args } => Some(AgentEvent::ToolCallStarted {
+            IpcMessage::ToolCall {
+                agent_id,
+                tool,
+                args,
+            } => Some(AgentEvent::ToolCallStarted {
                 agent_id: agent_id.clone(),
                 tool: tool.clone(),
                 args: args.clone(),
@@ -116,13 +114,15 @@ pub fn agent_event_to_ipc(event: &AgentEvent, agent_id: &AgentId) -> Option<IpcM
                 state: state.clone(),
             })
         }
-        AgentEvent::ToolCallStarted { agent_id: id, tool, args } if id == agent_id => {
-            Some(IpcMessage::ToolCall {
-                agent_id: id.clone(),
-                tool: tool.clone(),
-                args: args.clone(),
-            })
-        }
+        AgentEvent::ToolCallStarted {
+            agent_id: id,
+            tool,
+            args,
+        } if id == agent_id => Some(IpcMessage::ToolCall {
+            agent_id: id.clone(),
+            tool: tool.clone(),
+            args: args.clone(),
+        }),
         AgentEvent::ToolCallCompleted {
             agent_id: id,
             tool,
@@ -134,12 +134,13 @@ pub fn agent_event_to_ipc(event: &AgentEvent, agent_id: &AgentId) -> Option<IpcM
             result_preview: result_preview.clone(),
             duration_ms: *duration_ms,
         }),
-        AgentEvent::LlmStreamChunk { agent_id: id, chunk } if id == agent_id => {
-            Some(IpcMessage::LlmChunk {
-                agent_id: id.clone(),
-                chunk: chunk.clone(),
-            })
-        }
+        AgentEvent::LlmStreamChunk {
+            agent_id: id,
+            chunk,
+        } if id == agent_id => Some(IpcMessage::LlmChunk {
+            agent_id: id.clone(),
+            chunk: chunk.clone(),
+        }),
         _ => None,
     }
 }
@@ -200,7 +201,13 @@ mod tests {
             duration_ms: 42,
         };
         let event = msg.to_agent_event().unwrap();
-        assert!(matches!(event, AgentEvent::ToolCallCompleted { duration_ms: 42, .. }));
+        assert!(matches!(
+            event,
+            AgentEvent::ToolCallCompleted {
+                duration_ms: 42,
+                ..
+            }
+        ));
     }
 
     #[test]

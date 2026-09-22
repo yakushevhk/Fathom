@@ -24,24 +24,24 @@
 //! - `GET    /health`                     — health check
 //! - `GET    /metrics`                    — Prometheus metrics
 
-pub mod auth;
-pub mod metrics;
-pub mod observability;
-pub mod notifications_api;
 pub mod agui;
+pub mod auth;
 mod computers_api;
+mod coworkers_api;
+mod credentials_api;
+mod governance_api;
 mod jobs_api;
 mod memory_api;
-mod coworkers_api;
-mod governance_api;
+pub mod metrics;
+pub mod notifications_api;
+pub mod observability;
+pub mod openapi;
 mod replay_api;
-mod supervisor_api;
 mod schedules_api;
-mod credentials_api;
+mod supervisor_api;
+pub mod watcher;
 pub mod webhooks;
 pub mod ws;
-pub mod openapi;
-pub mod watcher;
 
 use auth::{auth_middleware, rate_limit_middleware, ApiKeyAuth, RateLimiter};
 use axum::{
@@ -60,9 +60,9 @@ use futures::stream::Stream;
 use metrics::Metrics;
 use pr_agent::Coordinator;
 use pr_core::{AgentEvent, AppConfig, SessionId};
+use pr_governance::{ActionContext, AuditEvent, Decision, Governance, PolicyConfig, PolicyEngine};
 use pr_llm::{DeepSeekProvider, LlmProvider};
 use pr_persistence::{JobsDb, Persistence, SessionRow};
-use pr_governance::{ActionContext, AuditEvent, Decision, Governance, PolicyConfig, PolicyEngine};
 use pr_tools::ToolRegistry;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -188,14 +188,13 @@ impl AppState {
         // Honor `[llm] provider`; fall back to a bare OpenAI-compatible
         // client when no key is configured yet (the server still starts and
         // answers 503 on session creation).
-        let llm: Arc<dyn LlmProvider> = pr_llm::build_provider(&config.llm)
-            .unwrap_or_else(|_| {
-                Arc::new(DeepSeekProvider::new(
-                    &config.llm.base_url,
-                    &config.llm.api_key,
-                    &config.llm.model,
-                ))
-            });
+        let llm: Arc<dyn LlmProvider> = pr_llm::build_provider(&config.llm).unwrap_or_else(|_| {
+            Arc::new(DeepSeekProvider::new(
+                &config.llm.base_url,
+                &config.llm.api_key,
+                &config.llm.model,
+            ))
+        });
         // Long-term memory: opened once per server, shared by all sessions
         // and the /memories API. Best-effort.
         let memory = if config.memory.enabled {
@@ -210,13 +209,16 @@ impl AppState {
             None
         };
         let governance_enabled = std::env::var("FATHOM_GOVERNANCE_ENABLED")
-            .ok().and_then(|v| v.parse::<bool>().ok()).unwrap_or(false);
+            .ok()
+            .and_then(|v| v.parse::<bool>().ok())
+            .unwrap_or(false);
         let policy = std::env::var("FATHOM_GOVERNANCE_POLICY")
-            .ok().and_then(|raw| serde_json::from_str::<PolicyConfig>(&raw).ok())
+            .ok()
+            .and_then(|raw| serde_json::from_str::<PolicyConfig>(&raw).ok())
             .unwrap_or_default();
-        let governance = Arc::new(tokio::sync::RwLock::new(
-            Governance::new(PolicyEngine::new(policy)),
-        ));
+        let governance = Arc::new(tokio::sync::RwLock::new(Governance::new(
+            PolicyEngine::new(policy),
+        )));
         let supervisor = match pr_supervisor::ComputerSupervisor::from_env() {
             Ok(value) => Some(Arc::new(value)),
             Err(error) => {
@@ -259,7 +261,10 @@ impl AppState {
 
     pub(crate) async fn governance_snapshot(&self) -> (bool, PolicyConfig) {
         let governance = self.governance.read().await;
-        (self.governance_enabled, governance.policy().config().clone())
+        (
+            self.governance_enabled,
+            governance.policy().config().clone(),
+        )
     }
 
     pub(crate) async fn replace_governance(&self, policy: PolicyConfig) {
@@ -267,9 +272,16 @@ impl AppState {
         *governance = Governance::new(PolicyEngine::new(policy));
     }
 
-    pub(crate) async fn governance_decide(&self, context: &ActionContext) -> Result<Decision, String> {
+    pub(crate) async fn governance_decide(
+        &self,
+        context: &ActionContext,
+    ) -> Result<Decision, String> {
         let governance = self.governance.read().await;
-        let decision = if self.governance_enabled { governance.authorize(context) } else { Decision::Allow };
+        let decision = if self.governance_enabled {
+            governance.authorize(context)
+        } else {
+            Decision::Allow
+        };
         let event = AuditEvent::new(context, decision);
         let row = pr_persistence::AuditEventRow {
             id: event.id,
@@ -283,10 +295,16 @@ impl AppState {
             file: event.context.file,
             intent: event.context.intent,
             mcp_metadata: event.context.mcp_metadata.map(|v| v.to_string()),
-            decision: match event.decision { pr_governance::AuditDecision::Allow => "allow", pr_governance::AuditDecision::Deny => "deny" }.to_string(),
+            decision: match event.decision {
+                pr_governance::AuditDecision::Allow => "allow",
+                pr_governance::AuditDecision::Deny => "deny",
+            }
+            .to_string(),
         };
         let denied = matches!(decision, Decision::Deny);
-        self.db.record_audit_event(&row).map_err(|e| e.to_string())?;
+        self.db
+            .record_audit_event(&row)
+            .map_err(|e| e.to_string())?;
         if denied {
             tracing::warn!(
                 agent = %row.agent,
@@ -307,14 +325,22 @@ impl AppState {
 fn dashboard_cors() -> CorsLayer {
     CorsLayer::new()
         .allow_origin(AllowOrigin::predicate(|origin, _| {
-            let Ok(origin) = origin.to_str() else { return false };
-            let Some(host_port) = origin.strip_prefix("http://") else { return false };
+            let Ok(origin) = origin.to_str() else {
+                return false;
+            };
+            let Some(host_port) = origin.strip_prefix("http://") else {
+                return false;
+            };
             if host_port.is_empty() || host_port.contains('/') || host_port.contains('@') {
                 return false;
             }
             let host = if let Some(rest) = host_port.strip_prefix('[') {
-                let Some((host, suffix)) = rest.split_once(']') else { return false };
-                if !suffix.is_empty() && !suffix.starts_with(':') { return false }
+                let Some((host, suffix)) = rest.split_once(']') else {
+                    return false;
+                };
+                if !suffix.is_empty() && !suffix.starts_with(':') {
+                    return false;
+                }
                 host
             } else {
                 host_port.split(':').next().unwrap_or_default()
@@ -344,7 +370,10 @@ pub fn build_router(state: Arc<AppState>) -> Router {
     // can key off the authenticated principal.
     let api = Router::new()
         .route("/sessions", post(create_session).get(list_sessions))
-        .route("/sessions/:id", get(get_session_status).delete(cancel_session))
+        .route(
+            "/sessions/:id",
+            get(get_session_status).delete(cancel_session),
+        )
         .route("/sessions/:id/steer", post(steer_session))
         .route("/sessions/:id/answer", post(answer_question))
         .route("/sessions/:id/approve", post(approve_tool))
@@ -353,9 +382,14 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/events", get(global_events))
         .route("/observability/summary", get(observability::summary))
         .route("/notifications/test", post(notifications_api::test))
-        .route("/credentials", get(credentials_api::list).post(credentials_api::store))
-        .route("/credentials/:id", axum::routing::delete(credentials_api::delete))
-
+        .route(
+            "/credentials",
+            get(credentials_api::list).post(credentials_api::store),
+        )
+        .route(
+            "/credentials/:id",
+            axum::routing::delete(credentials_api::delete),
+        )
         .route("/ws", get(ws::ws_handler))
         .route("/openapi.json", get(openapi::openapi_spec))
         .route("/ag-ui/events", get(agui::events))
@@ -376,32 +410,86 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/computers/snapshot", get(computers_api::snapshot_default))
         .route("/computers/tabs", get(computers_api::tabs))
         .route("/computers/tabs/open", post(computers_api::tabs_open))
-        .route("/computers/tabs/:tab_id/activate", post(computers_api::tab_activate))
-        .route("/computers/tabs/:tab_id/close", post(computers_api::tab_close))
-        .route("/computers/screenshot", get(computers_api::screenshot_default))
+        .route(
+            "/computers/tabs/:tab_id/activate",
+            post(computers_api::tab_activate),
+        )
+        .route(
+            "/computers/tabs/:tab_id/close",
+            post(computers_api::tab_close),
+        )
+        .route(
+            "/computers/screenshot",
+            get(computers_api::screenshot_default),
+        )
         .route("/computers/control/take", post(computers_api::take_control))
-        .route("/computers/control/release", post(computers_api::release_control))
+        .route(
+            "/computers/control/release",
+            post(computers_api::release_control),
+        )
         .route("/computers/navigate", post(computers_api::navigate))
-        .route("/computers/:agent_id/health", get(computers_api::health_for_agent))
-        .route("/computers/:agent_id/snapshot", get(computers_api::snapshot_for_agent))
+        .route(
+            "/computers/:agent_id/health",
+            get(computers_api::health_for_agent),
+        )
+        .route(
+            "/computers/:agent_id/snapshot",
+            get(computers_api::snapshot_for_agent),
+        )
         .route("/computers/:agent_id/screen", get(computers_api::screen))
-        .route("/computers/:agent_id/screenshot", get(computers_api::screenshot))
-        .route("/computers/:agent_id/control/take", post(computers_api::take_control_for_agent))
-        .route("/computers/:agent_id/control/release", post(computers_api::release_control_for_agent))
-        .route("/computers/:agent_id/navigate", post(computers_api::navigate_for_agent))
+        .route(
+            "/computers/:agent_id/screenshot",
+            get(computers_api::screenshot),
+        )
+        .route(
+            "/computers/:agent_id/control/take",
+            post(computers_api::take_control_for_agent),
+        )
+        .route(
+            "/computers/:agent_id/control/release",
+            post(computers_api::release_control_for_agent),
+        )
+        .route(
+            "/computers/:agent_id/navigate",
+            post(computers_api::navigate_for_agent),
+        )
         .route("/computers/click", post(computers_api::click))
         .route("/computers/type", post(computers_api::type_text))
         .route("/computers/secret", post(computers_api::secret))
         .route("/computers/key", post(computers_api::key))
-        .route("/computers/:agent_id/click", post(computers_api::click_for_agent))
-        .route("/computers/:agent_id/type", post(computers_api::type_for_agent))
-        .route("/computers/:agent_id/key", post(computers_api::key_for_agent))
-        .route("/computers/files", get(computers_api::files).delete(computers_api::files_delete))
+        .route(
+            "/computers/:agent_id/click",
+            post(computers_api::click_for_agent),
+        )
+        .route(
+            "/computers/:agent_id/type",
+            post(computers_api::type_for_agent),
+        )
+        .route(
+            "/computers/:agent_id/key",
+            post(computers_api::key_for_agent),
+        )
+        .route(
+            "/computers/files",
+            get(computers_api::files).delete(computers_api::files_delete),
+        )
         .route("/computers/files/read", get(computers_api::files_read))
-        .route("/computers/files/write", axum::routing::put(computers_api::files_write))
-        .route("/computers/:agent_id/files", get(computers_api::files_for_agent).delete(computers_api::files_delete_for_agent))
-        .route("/computers/:agent_id/files/read", get(computers_api::files_read_for_agent))
-        .route("/computers/:agent_id/files/write", axum::routing::put(computers_api::files_write_for_agent))
+        .route(
+            "/computers/files/write",
+            axum::routing::put(computers_api::files_write),
+        )
+        .route(
+            "/computers/:agent_id/files",
+            get(computers_api::files_for_agent).delete(computers_api::files_delete_for_agent),
+        )
+        .route(
+            "/computers/:agent_id/files/read",
+            get(computers_api::files_read_for_agent),
+        )
+        .route(
+            "/computers/:agent_id/files/write",
+            axum::routing::put(computers_api::files_write_for_agent),
+        )
         .route("/computers", get(supervisor_api::list))
         .route("/computers/:agent_id/ensure", post(supervisor_api::ensure))
         .route("/computers/:agent_id/stop", post(supervisor_api::stop))
@@ -427,10 +515,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
                 .patch(coworkers_api::update_channel)
                 .delete(coworkers_api::delete_channel),
         )
-        .route(
-            "/jobs",
-            post(jobs_api::create_job).get(jobs_api::list_jobs),
-        )
+        .route("/jobs", post(jobs_api::create_job).get(jobs_api::list_jobs))
         .route(
             "/schedules",
             post(schedules_api::create_schedule).get(schedules_api::list_schedules),
@@ -464,7 +549,10 @@ pub fn build_router(state: Arc<AppState>) -> Router {
             state.clone(),
             rate_limit_middleware,
         ))
-        .layer(middleware::from_fn_with_state(state.clone(), auth_middleware));
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            auth_middleware,
+        ));
 
     Router::new()
         .nest("/api/v1", api)
@@ -557,10 +645,7 @@ fn json(status: StatusCode, value: serde_json::Value) -> Response {
 }
 
 fn error(status: StatusCode, message: impl Into<String>) -> Response {
-    json(
-        status,
-        serde_json::json!({ "error": message.into() }),
-    )
+    json(status, serde_json::json!({ "error": message.into() }))
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -850,8 +935,8 @@ fn spawn_session(
                 output_dir,
                 config,
             )
-                .with_steer_rx(steer_rx)
-                .with_control_plane(q_tx, a_tx);
+            .with_steer_rx(steer_rx)
+            .with_control_plane(q_tx, a_tx);
             if let Some(governance) = governance {
                 coordinator = coordinator.with_governance(governance);
             }
@@ -899,7 +984,8 @@ fn spawn_session(
                 if let Ok(mut controls) = self.state.pending_controls.lock() {
                     let sid = self.session_id.0.clone();
                     controls.retain(|_, v| match v {
-                        PendingControl::Question { session_id, .. } | PendingControl::Approval { session_id, .. } => session_id != &sid,
+                        PendingControl::Question { session_id, .. }
+                        | PendingControl::Approval { session_id, .. } => session_id != &sid,
                     });
                 }
             }
@@ -935,14 +1021,16 @@ async fn list_sessions(State(state): State<Arc<AppState>>) -> Response {
 }
 
 /// `GET /api/v1/sessions/:id` — get session status.
-async fn get_session_status(State(state): State<Arc<AppState>>, Path(id): Path<String>) -> Response {
+async fn get_session_status(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+) -> Response {
     match state.db.get_session(&SessionId(id.clone())) {
         Ok(Some(row)) => {
             let active = state.is_active(&id);
             json(
                 StatusCode::OK,
-                serde_json::to_value(SessionResponse::from_row(row, active))
-                    .unwrap_or_default(),
+                serde_json::to_value(SessionResponse::from_row(row, active)).unwrap_or_default(),
             )
         }
         Ok(None) => error(StatusCode::NOT_FOUND, "session not found"),
@@ -1029,31 +1117,41 @@ async fn answer_question(
     Path(id): Path<String>,
     Json(body): Json<AnswerRequest>,
 ) -> Response {
-    let pending = state
-        .pending_controls
-        .lock()
-        .ok()
-        .and_then(|mut m| match m.get(&body.request_id) {
-            Some(PendingControl::Question { session_id, .. })
-            | Some(PendingControl::Approval { session_id, .. })
-                if session_id == &id => m.remove(&body.request_id),
-            // A control owned by another session is deliberately treated as
-            // absent and left pending for its owner.
-            _ => None,
-        });
+    let pending =
+        state
+            .pending_controls
+            .lock()
+            .ok()
+            .and_then(|mut m| match m.get(&body.request_id) {
+                Some(PendingControl::Question { session_id, .. })
+                | Some(PendingControl::Approval { session_id, .. })
+                    if session_id == &id =>
+                {
+                    m.remove(&body.request_id)
+                }
+                // A control owned by another session is deliberately treated as
+                // absent and left pending for its owner.
+                _ => None,
+            });
     match pending {
         Some(PendingControl::Question { reply, .. }) => match reply.send(body.text.clone()) {
             Ok(()) => json(
                 StatusCode::OK,
                 serde_json::json!({ "answered": true, "request_id": body.request_id }),
             ),
-            Err(_) => error(StatusCode::GONE, "the agent stopped waiting for this answer"),
+            Err(_) => error(
+                StatusCode::GONE,
+                "the agent stopped waiting for this answer",
+            ),
         },
         Some(PendingControl::Approval { .. }) => error(
             StatusCode::BAD_REQUEST,
             "request_id belongs to an approval, use /approve",
         ),
-        None => error(StatusCode::NOT_FOUND, "no pending question with this request_id"),
+        None => error(
+            StatusCode::NOT_FOUND,
+            "no pending question with this request_id",
+        ),
     }
 }
 
@@ -1064,18 +1162,22 @@ async fn approve_tool(
     Path(id): Path<String>,
     Json(body): Json<ApproveRequest>,
 ) -> Response {
-    let pending = state
-        .pending_controls
-        .lock()
-        .ok()
-        .and_then(|mut m| match m.get(&body.request_id) {
-            Some(PendingControl::Question { session_id, .. })
-            | Some(PendingControl::Approval { session_id, .. })
-                if session_id == &id => m.remove(&body.request_id),
-            // A control owned by another session is deliberately treated as
-            // absent and left pending for its owner.
-            _ => None,
-        });
+    let pending =
+        state
+            .pending_controls
+            .lock()
+            .ok()
+            .and_then(|mut m| match m.get(&body.request_id) {
+                Some(PendingControl::Question { session_id, .. })
+                | Some(PendingControl::Approval { session_id, .. })
+                    if session_id == &id =>
+                {
+                    m.remove(&body.request_id)
+                }
+                // A control owned by another session is deliberately treated as
+                // absent and left pending for its owner.
+                _ => None,
+            });
     match pending {
         Some(PendingControl::Approval { reply, .. }) => match reply.send(body.approved) {
             Ok(()) => json(
@@ -1085,13 +1187,19 @@ async fn approve_tool(
                     "request_id": body.request_id
                 }),
             ),
-            Err(_) => error(StatusCode::GONE, "the agent stopped waiting for this approval"),
+            Err(_) => error(
+                StatusCode::GONE,
+                "the agent stopped waiting for this approval",
+            ),
         },
         Some(PendingControl::Question { .. }) => error(
             StatusCode::BAD_REQUEST,
             "request_id belongs to a question, use /answer",
         ),
-        None => error(StatusCode::NOT_FOUND, "no pending approval with this request_id"),
+        None => error(
+            StatusCode::NOT_FOUND,
+            "no pending approval with this request_id",
+        ),
     }
 }
 
@@ -1166,20 +1274,21 @@ async fn list_agents(State(state): State<Arc<AppState>>) -> Response {
 /// `GET /api/v1/agents/:id` — get a single agent's status.
 async fn get_agent_status(State(state): State<Arc<AppState>>, Path(id): Path<String>) -> Response {
     match state.db.get_agent(&id) {
-        Ok(Some(agent)) => json(StatusCode::OK, serde_json::to_value(agent).unwrap_or_default()),
+        Ok(Some(agent)) => json(
+            StatusCode::OK,
+            serde_json::to_value(agent).unwrap_or_default(),
+        ),
         Ok(None) => error(StatusCode::NOT_FOUND, "agent not found"),
         Err(e) => error(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
     }
 }
 
-
 // ---------------------------------------------------------------------------
 // Server-Sent Events (live agent event streams)
 // ---------------------------------------------------------------------------
 
-type SseStream = Sse<
-    std::pin::Pin<Box<dyn Stream<Item = Result<Event, std::convert::Infallible>> + Send>>,
->;
+type SseStream =
+    Sse<std::pin::Pin<Box<dyn Stream<Item = Result<Event, std::convert::Infallible>> + Send>>>;
 
 /// `GET /api/v1/events` — SSE stream of every agent event on this server.
 ///
@@ -1196,10 +1305,7 @@ async fn global_events(State(state): State<Arc<AppState>>) -> SseStream {
 ///
 /// The agent set is snapshotted from the database at connect time; agents
 /// spawned later are picked up via a DB lookup on first sight.
-async fn session_events(
-    State(state): State<Arc<AppState>>,
-    Path(id): Path<String>,
-) -> Response {
+async fn session_events(State(state): State<Arc<AppState>>, Path(id): Path<String>) -> Response {
     match state.db.get_session(&SessionId(id.clone())) {
         Ok(Some(_)) => {}
         Ok(None) => return error(StatusCode::NOT_FOUND, "session not found"),
@@ -1218,7 +1324,9 @@ async fn session_events(
         Some((id, agents, std::collections::HashSet::new())),
         state.db.clone(),
     );
-    Sse::new(stream).keep_alive(KeepAlive::default()).into_response()
+    Sse::new(stream)
+        .keep_alive(KeepAlive::default())
+        .into_response()
 }
 
 /// Serialize an event for SSE while preserving user-facing fields such as a
@@ -1228,7 +1336,16 @@ fn serialize_sse_event(event: &AgentEvent) -> String {
     let mut data = serde_json::to_value(event).unwrap_or_default();
     data = pr_governance::redact_secrets(&data);
     if let serde_json::Value::Object(object) = &mut data {
-        for key in ["text", "value", "secret", "result_preview", "content", "command", "query", "input"] {
+        for key in [
+            "text",
+            "value",
+            "secret",
+            "result_preview",
+            "content",
+            "command",
+            "query",
+            "input",
+        ] {
             if object.contains_key(key)
                 && matches!(
                     event,
@@ -1237,14 +1354,27 @@ fn serialize_sse_event(event: &AgentEvent) -> String {
                         | AgentEvent::LlmStreamChunk { .. }
                 )
             {
-                object.insert(key.to_owned(), serde_json::Value::String("[REDACTED]".into()));
+                object.insert(
+                    key.to_owned(),
+                    serde_json::Value::String("[REDACTED]".into()),
+                );
             }
         }
         // Deep redact within nested args object for ToolCallStarted
         if let Some(serde_json::Value::Object(args_obj)) = object.get_mut("args") {
-            for key in ["secret", "password", "token", "key", "api_key", "credentials"] {
+            for key in [
+                "secret",
+                "password",
+                "token",
+                "key",
+                "api_key",
+                "credentials",
+            ] {
                 if args_obj.contains_key(key) {
-                    args_obj.insert(key.to_owned(), serde_json::Value::String("[REDACTED]".into()));
+                    args_obj.insert(
+                        key.to_owned(),
+                        serde_json::Value::String("[REDACTED]".into()),
+                    );
                 }
             }
         }
@@ -1272,11 +1402,7 @@ fn event_stream(
                         Ok(event) => {
                             if let Some((session_id, agents, negative)) = &mut filter {
                                 if !event_belongs_to_session(
-                                    &event,
-                                    session_id,
-                                    agents,
-                                    negative,
-                                    &db,
+                                    &event, session_id, agents, negative, &db,
                                 ) {
                                     continue;
                                 }
@@ -1433,10 +1559,10 @@ mod tests {
             s.jobs_root = tmp.path().to_path_buf();
             let spawned_calls = spawned.clone();
             s.job_spawner = Arc::new(move |job_id: &str, log_path: &Path| {
-                spawned_calls.lock().unwrap().push((
-                    job_id.to_string(),
-                    log_path.display().to_string(),
-                ));
+                spawned_calls
+                    .lock()
+                    .unwrap()
+                    .push((job_id.to_string(), log_path.display().to_string()));
                 let _ = std::fs::OpenOptions::new()
                     .create(true)
                     .append(true)
@@ -1571,7 +1697,10 @@ mod tests {
 
     #[tokio::test]
     async fn dashboard_serves_embedded_html() {
-        let resp = app(test_state()).oneshot(get_req("/dashboard")).await.unwrap();
+        let resp = app(test_state())
+            .oneshot(get_req("/dashboard"))
+            .await
+            .unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
         let ctype = resp
             .headers()
@@ -1579,7 +1708,9 @@ mod tests {
             .map(|v| v.to_str().unwrap_or_default().to_string())
             .unwrap_or_default();
         assert!(ctype.contains("text/html"), "{ctype}");
-        let body = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+        let body = axum::body::to_bytes(resp.into_body(), usize::MAX)
+            .await
+            .unwrap();
         let html = String::from_utf8_lossy(&body);
         assert!(html.contains("Fathom"));
         assert!(html.contains("/api/v1/sessions") || html.contains("api/v1"));
@@ -1629,7 +1760,10 @@ mod tests {
             .uri("/api/v1/sessions")
             .header(header::ORIGIN, "http://127.0.0.1:3000")
             .header(header::ACCESS_CONTROL_REQUEST_METHOD, Method::POST.as_str())
-            .header(header::ACCESS_CONTROL_REQUEST_HEADERS, "content-type,x-api-key")
+            .header(
+                header::ACCESS_CONTROL_REQUEST_HEADERS,
+                "content-type,x-api-key",
+            )
             .body(Body::empty())
             .unwrap();
         let response = router.clone().oneshot(preflight).await.unwrap();
@@ -1780,7 +1914,11 @@ mod tests {
         assert!(!state.is_active(&id));
 
         // DB row is marked cancelled.
-        let row = state.db.get_session(&SessionId(id.clone())).unwrap().unwrap();
+        let row = state
+            .db
+            .get_session(&SessionId(id.clone()))
+            .unwrap()
+            .unwrap();
         assert_eq!(row.status, "cancelled");
 
         // Cancelling again reports a conflict.
@@ -1882,7 +2020,10 @@ mod tests {
 
         let (status, body) = send(
             app(state.clone()),
-            post_json(&format!("/api/v1/jobs/{}/rerun", row.id), serde_json::json!({})),
+            post_json(
+                &format!("/api/v1/jobs/{}/rerun", row.id),
+                serde_json::json!({}),
+            ),
         )
         .await;
         assert_eq!(status, StatusCode::ACCEPTED);
@@ -1900,11 +2041,7 @@ mod tests {
         assert_eq!(status, StatusCode::OK);
         assert_eq!(body["count"], 0);
 
-        let (status, _) = send(
-            app(test_state()),
-            get_req("/api/v1/agents/does-not-exist"),
-        )
-        .await;
+        let (status, _) = send(app(test_state()), get_req("/api/v1/agents/does-not-exist")).await;
         assert_eq!(status, StatusCode::NOT_FOUND);
     }
 
@@ -1955,11 +2092,7 @@ mod tests {
         state.db.create_session(&session_id, "q").unwrap();
 
         // Unknown session -> 404.
-        let (status, _) = send(
-            app(state.clone()),
-            get_req("/api/v1/sessions/nope/results"),
-        )
-        .await;
+        let (status, _) = send(app(state.clone()), get_req("/api/v1/sessions/nope/results")).await;
         assert_eq!(status, StatusCode::NOT_FOUND);
 
         // Running session -> 409.
@@ -2005,8 +2138,7 @@ mod tests {
     #[tokio::test]
     async fn auth_blocks_requests_without_valid_key() {
         let mut state = test_state();
-        Arc::get_mut(&mut state).unwrap().auth =
-            ApiKeyAuth::new().with_key("secret-key", "tester");
+        Arc::get_mut(&mut state).unwrap().auth = ApiKeyAuth::new().with_key("secret-key", "tester");
 
         // No key -> 401.
         let (status, _) = send(app(state.clone()), get_req("/api/v1/sessions")).await;
@@ -2029,8 +2161,7 @@ mod tests {
     #[tokio::test]
     async fn auth_accepts_valid_key_via_both_headers() {
         let mut state = test_state();
-        Arc::get_mut(&mut state).unwrap().auth =
-            ApiKeyAuth::new().with_key("secret-key", "tester");
+        Arc::get_mut(&mut state).unwrap().auth = ApiKeyAuth::new().with_key("secret-key", "tester");
 
         let req = Request::builder()
             .uri("/api/v1/sessions")
@@ -2124,7 +2255,6 @@ mod tests {
         );
     }
 
-
     #[tokio::test]
     async fn steer_requires_running_session() {
         let state = test_state();
@@ -2143,7 +2273,10 @@ mod tests {
         // Empty message -> 400 even for a valid-looking session id.
         let (status, _) = send(
             app(state),
-            post_json("/api/v1/sessions/x/steer", serde_json::json!({ "message": " " })),
+            post_json(
+                "/api/v1/sessions/x/steer",
+                serde_json::json!({ "message": " " }),
+            ),
         )
         .await;
         assert_eq!(status, StatusCode::BAD_REQUEST);
@@ -2157,12 +2290,7 @@ mod tests {
             s.config.llm.api_key = "test-key".into();
             s.config.llm.base_url = "http://127.0.0.1:1".into();
         }
-        for evil in [
-            "/etc/cron.d",
-            "../../escape",
-            "a/b",
-            "..",
-        ] {
+        for evil in ["/etc/cron.d", "../../escape", "a/b", ".."] {
             let (status, _) = send(
                 app(state.clone()),
                 post_json(
@@ -2246,7 +2374,11 @@ mod tests {
         assert_eq!(body["scopes"]["agent"]["active"], 1);
 
         // Archive (soft delete).
-        let (status, body) = send(router.clone(), delete_req(&format!("/api/v1/memories/{id}"))).await;
+        let (status, body) = send(
+            router.clone(),
+            delete_req(&format!("/api/v1/memories/{id}")),
+        )
+        .await;
         assert_eq!(status, StatusCode::OK, "{body}");
         assert_eq!(body["archived"], id);
 
@@ -2283,7 +2415,10 @@ mod tests {
 
         let (status, body) = send(
             router.clone(),
-            post_json("/api/v1/memories/distill?dry_run=false", serde_json::json!({})),
+            post_json(
+                "/api/v1/memories/distill?dry_run=false",
+                serde_json::json!({}),
+            ),
         )
         .await;
         assert_eq!(status, StatusCode::OK, "{body}");
@@ -2373,15 +2508,20 @@ mod tests {
         // В agent-scope факта нет.
         let (status, body) = send(router.clone(), get_req("/api/v1/memories?scope=agent")).await;
         assert_eq!(status, StatusCode::OK);
-        assert!(body["memories"].as_array().unwrap().is_empty(),
-            "ephemeral-факт не должен быть в agent scope");
+        assert!(
+            body["memories"].as_array().unwrap().is_empty(),
+            "ephemeral-факт не должен быть в agent scope"
+        );
 
         // В run-scope есть.
         let (status, body) = send(router, get_req("/api/v1/memories?scope=run")).await;
         assert_eq!(status, StatusCode::OK);
         let memories = body["memories"].as_array().unwrap();
         assert_eq!(memories.len(), 1);
-        assert!(memories[0]["content"].as_str().unwrap().contains("annoying bug"));
+        assert!(memories[0]["content"]
+            .as_str()
+            .unwrap()
+            .contains("annoying bug"));
     }
 
     #[tokio::test]
@@ -2407,8 +2547,13 @@ mod tests {
         assert_eq!(status, StatusCode::OK);
         let memories = body["memories"].as_array().unwrap();
         assert_eq!(memories.len(), 1);
-        assert!(memories[0].get("expires_at").and_then(|v| v.as_str()).is_some(),
-            "expiring-факт должен получить expires_at: {memories:?}");
+        assert!(
+            memories[0]
+                .get("expires_at")
+                .and_then(|v| v.as_str())
+                .is_some(),
+            "expiring-факт должен получить expires_at: {memories:?}"
+        );
     }
 
     #[tokio::test]
@@ -2437,7 +2582,10 @@ mod tests {
         .await;
         assert_eq!(status, StatusCode::OK, "{body}");
         let memories = body["memories"].as_array().unwrap();
-        assert!(!memories.is_empty(), "кириллический запрос должен находить факт");
+        assert!(
+            !memories.is_empty(),
+            "кириллический запрос должен находить факт"
+        );
         assert!(memories[0]["content"].as_str().unwrap().contains("Акме"));
     }
 
@@ -2467,10 +2615,14 @@ mod tests {
         .await;
         assert_eq!(status, StatusCode::OK, "{body}");
         // Отчёт GC включает новые поля confidence decay.
-        assert!(body.get("confidence_archived").is_some(),
-            "gc-отчёт должен содержать confidence_archived: {body}");
-        assert!(body.get("confidence_decayed").is_some(),
-            "gc-отчёт должен содержать confidence_decayed: {body}");
+        assert!(
+            body.get("confidence_archived").is_some(),
+            "gc-отчёт должен содержать confidence_archived: {body}"
+        );
+        assert!(
+            body.get("confidence_decayed").is_some(),
+            "gc-отчёт должен содержать confidence_decayed: {body}"
+        );
     }
 
     #[tokio::test]
@@ -2497,7 +2649,10 @@ mod tests {
         )
         .await;
         assert_eq!(status, StatusCode::OK);
-        let v1 = body["details"][0]["memory_id"].as_str().unwrap_or("").to_string();
+        let v1 = body["details"][0]["memory_id"]
+            .as_str()
+            .unwrap_or("")
+            .to_string();
         assert!(!v1.is_empty(), "первый absorb должен вернуть memory_id");
 
         let (status, body) = send(
@@ -2512,7 +2667,10 @@ mod tests {
         )
         .await;
         assert_eq!(status, StatusCode::OK, "{body}");
-        let v2 = body["details"][0]["memory_id"].as_str().unwrap_or("").to_string();
+        let v2 = body["details"][0]["memory_id"]
+            .as_str()
+            .unwrap_or("")
+            .to_string();
         assert!(!v2.is_empty());
 
         // follow=latest от v1 должен вести к v2.
@@ -2524,8 +2682,13 @@ mod tests {
         assert_eq!(status, StatusCode::OK, "{body}");
         let mems = body["memories"].as_array().unwrap();
         assert_eq!(mems.len(), 1);
-        assert!(mems[0]["content"].as_str().unwrap().contains("Maria Ivanova"),
-            "follow=latest должен вернуть новую версию CEO: {mems:?}");
+        assert!(
+            mems[0]["content"]
+                .as_str()
+                .unwrap()
+                .contains("Maria Ivanova"),
+            "follow=latest должен вернуть новую версию CEO: {mems:?}"
+        );
     }
 
     /// Мок-LLM для классификации absorb: всегда возвращает вердикт
@@ -2555,8 +2718,9 @@ mod tests {
         async fn stream(
             &self,
             _req: &pr_llm::CompletionRequest,
-        ) -> pr_core::PrResult<Box<dyn futures::Stream<Item = pr_core::PrResult<pr_llm::StreamChunk>> + Send + Unpin>>
-        {
+        ) -> pr_core::PrResult<
+            Box<dyn futures::Stream<Item = pr_core::PrResult<pr_llm::StreamChunk>> + Send + Unpin>,
+        > {
             Err(pr_core::PrError::Llm("stream not used".into()))
         }
     }

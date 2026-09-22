@@ -43,8 +43,17 @@ fn is_secret_key(key: &str) -> bool {
         .flat_map(|character| character.to_lowercase())
         .collect();
     [
-        "password", "passwd", "secret", "token", "apikey", "authorization",
-        "credential", "privatekey", "accesskey", "clientsecret", "cookie",
+        "password",
+        "passwd",
+        "secret",
+        "token",
+        "apikey",
+        "authorization",
+        "credential",
+        "privatekey",
+        "accesskey",
+        "clientsecret",
+        "cookie",
     ]
     .iter()
     .any(|needle| key == *needle || key.ends_with(needle))
@@ -70,8 +79,17 @@ fn redact_value(value: &Value) -> Value {
         Value::String(text) => {
             let lower = text.to_ascii_lowercase();
             let marker = [
-                "password", "passwd", "secret", "token", "api_key", "apikey",
-                "authorization", "credential", "private_key", "access_key", "cookie",
+                "password",
+                "passwd",
+                "secret",
+                "token",
+                "api_key",
+                "apikey",
+                "authorization",
+                "credential",
+                "private_key",
+                "access_key",
+                "cookie",
             ];
             if marker.iter().any(|needle| lower.contains(needle)) {
                 Value::String("[REDACTED]".to_owned())
@@ -95,8 +113,17 @@ fn redact_payload(value: &str, field: &str, required_json: bool) -> anyhow::Resu
             // credential-bearing field. Callers should pass result_redacted.
             let lower = value.to_ascii_lowercase();
             let has_secret_marker = [
-                "password", "passwd", "secret", "token", "api_key", "apikey",
-                "authorization", "credential", "private_key", "access_key", "cookie",
+                "password",
+                "passwd",
+                "secret",
+                "token",
+                "api_key",
+                "apikey",
+                "authorization",
+                "credential",
+                "private_key",
+                "access_key",
+                "cookie",
             ]
             .iter()
             .any(|marker| lower.contains(marker));
@@ -152,7 +179,10 @@ impl Persistence {
                 validate_field(value, field)?;
                 if field.starts_with("screenshot_") {
                     let lower = value.to_ascii_lowercase();
-                    if lower.starts_with("data:") || lower.contains("token=") || lower.contains("secret=") {
+                    if lower.starts_with("data:")
+                        || lower.contains("token=")
+                        || lower.contains("secret=")
+                    {
                         anyhow::bail!("{field} must be a non-sensitive reference");
                     }
                 }
@@ -231,19 +261,29 @@ mod tests {
 
     fn action(id: &str, started_at: &str) -> ReplayActionRow {
         ReplayActionRow {
-            id: id.into(), agent: "agent-1".into(), session: "session-1".into(),
-            tool: "browser.click".into(), args_redacted: r#"{"password":"oops","x":1}"#.into(),
-            decision: "allow".into(), started_at: started_at.into(), completed_at: Some(started_at.into()),
-            duration_ms: Some(12), result_redacted: Some(r#"{"token":"oops","ok":true}"#.into()),
-            screenshot_before: None, screenshot_after: None, policy_version: "v1".into(),
+            id: id.into(),
+            agent: "agent-1".into(),
+            session: "session-1".into(),
+            tool: "browser.click".into(),
+            args_redacted: r#"{"password":"oops","x":1}"#.into(),
+            decision: "allow".into(),
+            started_at: started_at.into(),
+            completed_at: Some(started_at.into()),
+            duration_ms: Some(12),
+            result_redacted: Some(r#"{"token":"oops","ok":true}"#.into()),
+            screenshot_before: None,
+            screenshot_after: None,
+            policy_version: "v1".into(),
         }
     }
 
     #[test]
     fn replay_rows_are_redacted_and_newest_first() {
         let db = Persistence::in_memory().unwrap();
-        db.record_replay_action(&action("a", "2026-01-01T00:00:00Z")).unwrap();
-        db.record_replay_action(&action("b", "2026-01-02T00:00:00Z")).unwrap();
+        db.record_replay_action(&action("a", "2026-01-01T00:00:00Z"))
+            .unwrap();
+        db.record_replay_action(&action("b", "2026-01-02T00:00:00Z"))
+            .unwrap();
         let rows = db.list_replay_actions(None, None, 10).unwrap();
         assert_eq!(rows[0].id, "b");
         assert!(!rows[0].args_redacted.contains("oops"));
@@ -254,12 +294,21 @@ mod tests {
     #[test]
     fn replay_filters_and_bounds_are_enforced() {
         let db = Persistence::in_memory().unwrap();
-        db.record_replay_action(&action("a", "2026-01-01T00:00:00Z")).unwrap();
+        db.record_replay_action(&action("a", "2026-01-01T00:00:00Z"))
+            .unwrap();
         let mut other = action("b", "2026-01-02T00:00:00Z");
         other.agent = "agent-2".into();
         other.session = "session-2".into();
         db.record_replay_action(&other).unwrap();
-        assert_eq!(db.list_replay_actions(Some("session-1"), None, 999).unwrap().len(), 1);
-        assert_eq!(db.list_replay_actions(None, Some("agent-2"), 1).unwrap()[0].id, "b");
+        assert_eq!(
+            db.list_replay_actions(Some("session-1"), None, 999)
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            db.list_replay_actions(None, Some("agent-2"), 1).unwrap()[0].id,
+            "b"
+        );
     }
 }

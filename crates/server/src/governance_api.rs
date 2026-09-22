@@ -1,6 +1,10 @@
 //! Governance policy and audit HTTP endpoints.
 use crate::{error, AppState};
-use axum::{extract::{Query, State}, response::{IntoResponse, Response}, Json};
+use axum::{
+    extract::{Query, State},
+    response::{IntoResponse, Response},
+    Json,
+};
 use pr_governance::{ActionContext, Governance, PolicyConfig, PolicyEngine};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -17,7 +21,10 @@ pub struct AuditQuery {
 }
 
 #[derive(Debug, Serialize)]
-struct PolicyResponse { enabled: bool, policy: PolicyConfig }
+struct PolicyResponse {
+    enabled: bool,
+    policy: PolicyConfig,
+}
 
 /// GET /governance/policy
 pub async fn get_policy(State(state): State<Arc<AppState>>) -> Response {
@@ -31,7 +38,10 @@ pub async fn put_policy(
     Json(policy): Json<PolicyConfig>,
 ) -> Response {
     if policy.rules.len() > 1000 {
-        return error(axum::http::StatusCode::BAD_REQUEST, "too many policy rules (maximum 1000)");
+        return error(
+            axum::http::StatusCode::BAD_REQUEST,
+            "too many policy rules (maximum 1000)",
+        );
     }
     state.replace_governance(policy).await;
     get_policy(State(state)).await
@@ -60,9 +70,14 @@ pub async fn audit(
         Err(e) => return error(axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
     };
     rows.reverse();
-    rows.retain(|row| query.decision.as_deref().is_none_or(|v| row.decision.eq_ignore_ascii_case(v))
-        && query.agent.as_deref().is_none_or(|v| row.agent == v)
-        && query.session.as_deref().is_none_or(|v| row.session == v));
+    rows.retain(|row| {
+        query
+            .decision
+            .as_deref()
+            .is_none_or(|v| row.decision.eq_ignore_ascii_case(v))
+            && query.agent.as_deref().is_none_or(|v| row.agent == v)
+            && query.session.as_deref().is_none_or(|v| row.session == v)
+    });
     rows.truncate(limit);
     Json(rows).into_response()
 }

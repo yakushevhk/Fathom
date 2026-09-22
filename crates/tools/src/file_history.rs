@@ -72,9 +72,7 @@ impl FileHistory {
     /// Call this *before* editing a file. The actual backup content is captured
     /// at `make_snapshot` time to avoid redundant reads.
     pub fn track_edit(&mut self, path: &Path) -> Result<()> {
-        let canonical = path
-            .canonicalize()
-            .unwrap_or_else(|_| path.to_path_buf());
+        let canonical = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
         if !self.tracked_files.contains(&canonical) {
             self.tracked_files.push(canonical);
         }
@@ -90,8 +88,7 @@ impl FileHistory {
             anyhow::bail!("No files tracked for snapshot");
         }
 
-        std::fs::create_dir_all(&self.backup_dir)
-            .context("Failed to create backup directory")?;
+        std::fs::create_dir_all(&self.backup_dir).context("Failed to create backup directory")?;
 
         let checkpoint_id = SnapshotId::new();
         let timestamp = Utc::now();
@@ -187,17 +184,15 @@ impl FileHistory {
                 continue;
             }
 
-            let content = std::fs::read(&snap.backup_path).with_context(|| {
-                format!("Failed to read backup {}", snap.backup_path.display())
-            })?;
+            let content = std::fs::read(&snap.backup_path)
+                .with_context(|| format!("Failed to read backup {}", snap.backup_path.display()))?;
 
             if let Some(parent) = snap.file_path.parent() {
                 std::fs::create_dir_all(parent)?;
             }
 
-            std::fs::write(&snap.file_path, &content).with_context(|| {
-                format!("Failed to restore {}", snap.file_path.display())
-            })?;
+            std::fs::write(&snap.file_path, &content)
+                .with_context(|| format!("Failed to restore {}", snap.file_path.display()))?;
         }
 
         Ok(())
@@ -247,8 +242,7 @@ fn blake3_hash(data: &[u8]) -> String {
 /// Sanitize a path for use as a filename component.
 fn sanitize_filename(path: &Path) -> String {
     let s = path.to_string_lossy();
-    s.replace(['/', '\\', ':'], "_")
-        .replace("..", "__")
+    s.replace(['/', '\\', ':'], "_").replace("..", "__")
 }
 
 #[cfg(test)]
@@ -281,7 +275,10 @@ mod tests {
 
         let checkpoint = history.get_checkpoint(&snap_id).unwrap();
         assert_eq!(checkpoint.snapshots.len(), 1);
-        assert_eq!(checkpoint.snapshots[0].file_path, file.canonicalize().unwrap());
+        assert_eq!(
+            checkpoint.snapshots[0].file_path,
+            file.canonicalize().unwrap()
+        );
         assert!(!checkpoint.snapshots[0].content_hash.is_empty());
         assert!(checkpoint.snapshots[0].backup_path.exists());
     }

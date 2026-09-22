@@ -31,10 +31,9 @@ pub async fn ensure_server(command: &str) -> ServerStatus {
                 ))
             }
         }
-        Err(e) => ServerStatus::NotAvailable(format!(
-            "could not auto-install '{}': {}",
-            command, e
-        )),
+        Err(e) => {
+            ServerStatus::NotAvailable(format!("could not auto-install '{}': {}", command, e))
+        }
     }
 }
 
@@ -45,7 +44,9 @@ async fn try_install(command: &str) -> anyhow::Result<()> {
             if is_available("rustup") {
                 return run_cmd("rustup", &["component", "add", "rust-analyzer"]).await;
             }
-            Err(anyhow::anyhow!("rustup not found; install rust-analyzer manually"))
+            Err(anyhow::anyhow!(
+                "rustup not found; install rust-analyzer manually"
+            ))
         }
         "pyright-langserver" => {
             if is_available("npm") {
@@ -58,7 +59,11 @@ async fn try_install(command: &str) -> anyhow::Result<()> {
         }
         "typescript-language-server" => {
             if is_available("npm") {
-                return run_cmd("npm", &["install", "-g", "typescript-language-server", "typescript"]).await;
+                return run_cmd(
+                    "npm",
+                    &["install", "-g", "typescript-language-server", "typescript"],
+                )
+                .await;
             }
             Err(anyhow::anyhow!("npm not found"))
         }
@@ -95,12 +100,10 @@ async fn try_install(command: &str) -> anyhow::Result<()> {
             }
             Err(anyhow::anyhow!("no suitable package manager found"))
         }
-        _ => {
-            Err(anyhow::anyhow!(
-                "no auto-install recipe for '{}'; install it manually",
-                command
-            ))
-        }
+        _ => Err(anyhow::anyhow!(
+            "no auto-install recipe for '{}'; install it manually",
+            command
+        )),
     }
 }
 

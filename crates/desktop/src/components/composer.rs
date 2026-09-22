@@ -5,8 +5,8 @@
 use crate::state::{AppState, ChatMessage};
 use crate::theme::Theme;
 use gpui::{
-    div, prelude::*, ClickEvent, Context, Div, IntoElement, KeyDownEvent, Render,
-    SharedString, Window,
+    div, prelude::*, ClickEvent, Context, Div, IntoElement, KeyDownEvent, Render, SharedString,
+    Window,
 };
 use std::sync::Arc;
 
@@ -43,9 +43,13 @@ impl Composer {
             return;
         }
 
-        let is_running = self.state.messages.read().iter().rev().any(|m| {
-            m.role == "tool" && m.tool_status.as_deref() == Some("running")
-        });
+        let is_running = self
+            .state
+            .messages
+            .read()
+            .iter()
+            .rev()
+            .any(|m| m.role == "tool" && m.tool_status.as_deref() == Some("running"));
 
         if is_running {
             // Mid-turn queueing (OpenBot queue.ts parity): park message while bot has the turn
@@ -85,7 +89,8 @@ impl Composer {
             if let Ok(res) = api.create_session(&text).await {
                 *state_clone.active_session_id.write() = Some(res.id);
             }
-        }).detach();
+        })
+        .detach();
         cx.notify();
     }
 
@@ -149,12 +154,14 @@ impl Composer {
                             .text_color(Theme::text_primary())
                             .cursor_pointer()
                             .child("Undo ✕")
-                            .on_click(cx.listener(move |this, _event: &ClickEvent, _window, cx| {
-                                if ix < this.queued_messages.len() {
-                                    this.queued_messages.remove(ix);
-                                    cx.notify();
-                                }
-                            })),
+                            .on_click(cx.listener(
+                                move |this, _event: &ClickEvent, _window, cx| {
+                                    if ix < this.queued_messages.len() {
+                                        this.queued_messages.remove(ix);
+                                        cx.notify();
+                                    }
+                                },
+                            )),
                     ),
             );
         }
@@ -168,30 +175,67 @@ impl Composer {
         }
 
         let is_agent = self.show_agent_suggestions;
-        let title = if is_agent { "Select Coworker to Hand Work to (@):" } else { "Select Skill or Command (/):" };
+        let title = if is_agent {
+            "Select Coworker to Hand Work to (@):"
+        } else {
+            "Select Skill or Command (/):"
+        };
 
         let coworkers = self.state.coworkers.read().clone();
         let skills = self.state.skills.read().clone();
 
         let items: Vec<(String, String, String)> = if is_agent {
             if !coworkers.is_empty() {
-                coworkers.into_iter().map(|c| {
-                    (format!("@{}", c.name.replace(' ', "")), c.name, c.role)
-                }).collect()
+                coworkers
+                    .into_iter()
+                    .map(|c| (format!("@{}", c.name.replace(' ', "")), c.name, c.role))
+                    .collect()
             } else {
                 vec![
-                    ("@GeneralAssistant".to_string(), "🤖 General Autonomous Worker".to_string(), "Full computer use, file management, search".to_string()),
-                    ("@RiskAnalyst".to_string(), "🛡️ Compliance & Risk Officer".to_string(), "CEL rule checks, credential audits, DLP review".to_string()),
-                    ("@DevOpsEngineer".to_string(), "🐳 DevOps & Cloud Infrastructure".to_string(), "Container management, health checks, shell runner".to_string()),
+                    (
+                        "@GeneralAssistant".to_string(),
+                        "🤖 General Autonomous Worker".to_string(),
+                        "Full computer use, file management, search".to_string(),
+                    ),
+                    (
+                        "@RiskAnalyst".to_string(),
+                        "🛡️ Compliance & Risk Officer".to_string(),
+                        "CEL rule checks, credential audits, DLP review".to_string(),
+                    ),
+                    (
+                        "@DevOpsEngineer".to_string(),
+                        "🐳 DevOps & Cloud Infrastructure".to_string(),
+                        "Container management, health checks, shell runner".to_string(),
+                    ),
                 ]
             }
         } else {
             let mut cmds = vec![
-                ("/browser".to_string(), "🌐 Launch Computer Session".to_string(), "Open Chromium container and navigate".to_string()),
-                ("/routine".to_string(), "⚡ Standing Routine".to_string(), "Register scheduled cron automation".to_string()),
-                ("/vault".to_string(), "🔑 Access Credential".to_string(), "Inject encrypted AES-256 secret token".to_string()),
-                ("/audit".to_string(), "📜 View Audit Ledger".to_string(), "Inspect refusal reasons and action logs".to_string()),
-                ("/skill-creator".to_string(), "🛠️ Create New Skill".to_string(), "Author and register coworker skill".to_string()),
+                (
+                    "/browser".to_string(),
+                    "🌐 Launch Computer Session".to_string(),
+                    "Open Chromium container and navigate".to_string(),
+                ),
+                (
+                    "/routine".to_string(),
+                    "⚡ Standing Routine".to_string(),
+                    "Register scheduled cron automation".to_string(),
+                ),
+                (
+                    "/vault".to_string(),
+                    "🔑 Access Credential".to_string(),
+                    "Inject encrypted AES-256 secret token".to_string(),
+                ),
+                (
+                    "/audit".to_string(),
+                    "📜 View Audit Ledger".to_string(),
+                    "Inspect refusal reasons and action logs".to_string(),
+                ),
+                (
+                    "/skill-creator".to_string(),
+                    "🛠️ Create New Skill".to_string(),
+                    "Author and register coworker skill".to_string(),
+                ),
             ];
             for s in skills {
                 cmds.push((format!("/{}", s.id), s.name, s.description));
@@ -237,12 +281,7 @@ impl Composer {
                                     .text_color(Theme::text_primary())
                                     .child(name),
                             )
-                            .child(
-                                div()
-                                    .text_xs()
-                                    .text_color(Theme::text_muted())
-                                    .child(desc),
-                            ),
+                            .child(div().text_xs().text_color(Theme::text_muted()).child(desc)),
                     )
                     .child(
                         div()
@@ -267,9 +306,13 @@ impl Composer {
 
 impl Render for Composer {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let is_running = self.state.messages.read().iter().rev().any(|m| {
-            m.role == "tool" && m.tool_status.as_deref() == Some("running")
-        });
+        let is_running = self
+            .state
+            .messages
+            .read()
+            .iter()
+            .rev()
+            .any(|m| m.role == "tool" && m.tool_status.as_deref() == Some("running"));
 
         div()
             .track_focus(&self.focus_handle)

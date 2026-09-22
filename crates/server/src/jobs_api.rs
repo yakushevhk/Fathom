@@ -42,8 +42,7 @@ fn default_log_lines() -> usize {
 
 fn job_json(row: &JobRow) -> serde_json::Value {
     let mut v = serde_json::to_value(row).unwrap_or_default();
-    let stale = row.status == "running"
-        && row.pid.map(|p| !pid_alive(p)).unwrap_or(false);
+    let stale = row.status == "running" && row.pid.map(|p| !pid_alive(p)).unwrap_or(false);
     if stale {
         v["status"] = serde_json::json!("stale");
     }
@@ -68,10 +67,7 @@ pub(crate) async fn create_job(
         return error(StatusCode::BAD_REQUEST, "task must not be empty");
     }
     if !(1..=10).contains(&body.attempts) {
-        return error(
-            StatusCode::BAD_REQUEST,
-            "attempts must be between 1 and 10",
-        );
+        return error(StatusCode::BAD_REQUEST, "attempts must be between 1 and 10");
     }
 
     let row = match state.jobs.create(task, body.attempts, "") {
@@ -213,14 +209,10 @@ pub(crate) async fn rerun_job(
     let reset = match row.status.as_str() {
         "queued" => return error(StatusCode::CONFLICT, "job is already queued"),
         "running" => match row.pid {
-            Some(pid) if !pid_alive(pid) => {
-                match state.jobs.reset_running_with_pid(&row.id, pid) {
-                    Ok(r) => r,
-                    Err(e) => {
-                        return error(StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
-                    }
-                }
-            }
+            Some(pid) if !pid_alive(pid) => match state.jobs.reset_running_with_pid(&row.id, pid) {
+                Ok(r) => r,
+                Err(e) => return error(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+            },
             _ => {
                 return error(
                     StatusCode::CONFLICT,
@@ -307,10 +299,9 @@ mod tests {
             s.jobs_root = tmp.path().to_path_buf();
             let calls = spawned.clone();
             s.job_spawner = Arc::new(move |job_id: &str, log_path: &Path| {
-                calls.lock().push((
-                    job_id.to_string(),
-                    log_path.display().to_string(),
-                ));
+                calls
+                    .lock()
+                    .push((job_id.to_string(), log_path.display().to_string()));
                 // Create the log file so the log endpoints can read it.
                 std::fs::OpenOptions::new()
                     .create(true)
@@ -359,12 +350,7 @@ mod tests {
 
     /// Register a job directly in the registry (no spawner), mirroring the
     /// state a runner leaves behind. Returns the created row.
-    fn seed_job(
-        state: &AppState,
-        task: &str,
-        status: &str,
-        write_log: bool,
-    ) -> JobRow {
+    fn seed_job(state: &AppState, task: &str, status: &str, write_log: bool) -> JobRow {
         let row = state.jobs.create(task, 3, "").unwrap();
         if status != "queued" {
             let job_dir = state.jobs_root.join(&row.id);
@@ -495,7 +481,10 @@ mod tests {
         // Row is persisted with output_dir set to the job dir.
         let row = state.jobs.get(&id).unwrap().unwrap();
         assert_eq!(row.status, "queued");
-        assert_eq!(row.output_dir, Path::new(&log).parent().unwrap().display().to_string());
+        assert_eq!(
+            row.output_dir,
+            Path::new(&log).parent().unwrap().display().to_string()
+        );
     }
 
     #[tokio::test]
@@ -586,9 +575,7 @@ mod tests {
         {
             let s = Arc::get_mut(&mut state).unwrap();
             s.jobs_root = tempfile::tempdir().unwrap().path().to_path_buf();
-            s.job_spawner = Arc::new(|_, _| {
-                Err(std::io::Error::other("no runner available"))
-            });
+            s.job_spawner = Arc::new(|_, _| Err(std::io::Error::other("no runner available")));
         }
         let (status, body) = send(
             app(state),
@@ -596,7 +583,10 @@ mod tests {
         )
         .await;
         assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR);
-        assert!(body["error"].as_str().unwrap().contains("failed to spawn runner"));
+        assert!(body["error"]
+            .as_str()
+            .unwrap()
+            .contains("failed to spawn runner"));
     }
 
     #[tokio::test]
@@ -646,10 +636,7 @@ mod tests {
         let (state, _tmp, _spawned) = test_state();
         let row = seed_job(&state, "stale-job", "running", false);
         // 4242 may theoretically be alive; force a pid that cannot be.
-        state
-            .jobs
-            .mark_running(&row.id, 1, i64::MAX - 1)
-            .unwrap();
+        state.jobs.mark_running(&row.id, 1, i64::MAX - 1).unwrap();
         let (status, body) = send(
             app(state.clone()),
             get_req(&format!("/api/v1/jobs/{}", row.id)),
@@ -722,11 +709,7 @@ mod tests {
 
         // lines=0 -> clamped up to 1, so we get the last line.
         // But this job has no log file yet, so it'll be empty.
-        let (status, body) = send(
-            app(state.clone()),
-            get_req(&format!("{url}?lines=0")),
-        )
-        .await;
+        let (status, body) = send(app(state.clone()), get_req(&format!("{url}?lines=0"))).await;
         assert_eq!(status, StatusCode::OK);
         // No log file written for this seed (write_log=false), so 0 lines.
         assert_eq!(body["total_lines"], 0);

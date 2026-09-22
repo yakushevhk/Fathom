@@ -231,7 +231,10 @@ fn extract_symbols(content: &str, lang: &str) -> Vec<SymbolHit> {
                 }
                 if !matched {
                     if let Some(caps) = js_arrow.captures(trimmed) {
-                        let name = caps.get(1).map(|m| m.as_str().to_string()).unwrap_or_default();
+                        let name = caps
+                            .get(1)
+                            .map(|m| m.as_str().to_string())
+                            .unwrap_or_default();
                         if !name.is_empty() {
                             let sig: String = trimmed.chars().take(120).collect();
                             out.push(SymbolHit {
@@ -258,13 +261,10 @@ fn extract_symbols(content: &str, lang: &str) -> Vec<SymbolHit> {
                         // method with receiver: func (r *Recv) Name(
                         rest.find(')').and_then(|close| {
                             let after = rest[close + 1..].trim_start();
-                            after
-                                .find('(')
-                                .map(|open| after[..open].trim().to_string())
+                            after.find('(').map(|open| after[..open].trim().to_string())
                         })
                     } else {
-                        rest.find('(')
-                            .map(|open| rest[..open].trim().to_string())
+                        rest.find('(').map(|open| rest[..open].trim().to_string())
                     };
                     if let Some(name) = name {
                         if !name.is_empty() {
@@ -310,10 +310,7 @@ fn extract_symbols(content: &str, lang: &str) -> Vec<SymbolHit> {
                 for kw in ["class ", "interface ", "enum "] {
                     let spaced = [" ", kw].concat();
                     if trimmed.contains(&spaced) || trimmed.starts_with(kw) {
-                        let pos = trimmed
-                            .find(kw)
-                            .map(|p| p + kw.len())
-                            .unwrap_or_default();
+                        let pos = trimmed.find(kw).map(|p| p + kw.len()).unwrap_or_default();
                         let name: String = trimmed[pos..]
                             .chars()
                             .take_while(|c| c.is_alphanumeric() || *c == '_')
@@ -408,7 +405,10 @@ async fn collect_source_files(root: &Path) -> Vec<PathBuf> {
                     stack.push(path);
                 }
             } else if ft.is_file() {
-                let ext = path.extension().and_then(|e| e.to_str()).unwrap_or_default();
+                let ext = path
+                    .extension()
+                    .and_then(|e| e.to_str())
+                    .unwrap_or_default();
                 if lang_of(ext).is_some() {
                     files.push(path);
                     if files.len() >= MAX_FILES_SCANNED {
@@ -745,7 +745,10 @@ enum Kind { A, B }
 async fn fetch_all() {}
 "#;
         let syms = extract_symbols(src, "rust");
-        let names: Vec<_> = syms.iter().map(|s| (s.name.as_str(), s.kind.as_str())).collect();
+        let names: Vec<_> = syms
+            .iter()
+            .map(|s| (s.name.as_str(), s.kind.as_str()))
+            .collect();
         assert!(names.contains(&("Config", "struct")));
         assert!(names.contains(&("Config", "impl")));
         assert!(names.contains(&("load", "fn")));
@@ -779,7 +782,10 @@ async fn fetch_all() {}
     fn go_symbols_extracted() {
         let src = "func main() {}\n\nfunc (s *Server) Start(port int) error { return nil }\n\ntype Server struct{}\n";
         let syms = extract_symbols(src, "go");
-        let names: Vec<_> = syms.iter().map(|s| (s.name.as_str().to_string(), s.kind.clone())).collect();
+        let names: Vec<_> = syms
+            .iter()
+            .map(|s| (s.name.as_str().to_string(), s.kind.clone()))
+            .collect();
         assert!(names.contains(&("main".to_string(), "fn".to_string())));
         assert!(names.contains(&("Start".to_string(), "fn".to_string())));
         assert!(names.contains(&("Server".to_string(), "struct".to_string())));

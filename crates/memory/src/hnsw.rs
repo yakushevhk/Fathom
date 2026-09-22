@@ -37,7 +37,12 @@ impl SimdVectorIndex {
             norm_b += b[i] * b[i];
         }
 
-        if norm_a == 0.0 || norm_b == 0.0 || !norm_a.is_finite() || !norm_b.is_finite() || !dot.is_finite() {
+        if norm_a == 0.0
+            || norm_b == 0.0
+            || !norm_a.is_finite()
+            || !norm_b.is_finite()
+            || !dot.is_finite()
+        {
             0.0
         } else {
             let score = dot / (norm_a.sqrt() * norm_b.sqrt());

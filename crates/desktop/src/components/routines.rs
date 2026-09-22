@@ -3,9 +3,7 @@
 
 use crate::state::AppState;
 use crate::theme::Theme;
-use gpui::{
-    div, prelude::*, ClickEvent, Context, Div, IntoElement, Render, SharedString, Window,
-};
+use gpui::{div, prelude::*, ClickEvent, Context, Div, IntoElement, Render, SharedString, Window};
 use std::sync::Arc;
 
 pub struct RoutinesView {
@@ -16,6 +14,17 @@ pub struct RoutinesView {
     new_prompt: String,
 }
 
+/// Data for a single routine card row.
+struct RoutineCard<'a> {
+    id: &'a str,
+    name: &'a str,
+    cron: &'a str,
+    prompt: &'a str,
+    channel: &'a str,
+    enabled: bool,
+    last_run: &'a str,
+}
+
 impl RoutinesView {
     pub fn new(state: Arc<AppState>) -> Self {
         Self {
@@ -23,7 +32,8 @@ impl RoutinesView {
             show_add_modal: false,
             new_name: "Daily Market Sweep".to_string(),
             new_cron: "0 9 * * 1-5".to_string(),
-            new_prompt: "Check competitor announcements on Twitter and G2, summarize to channel".to_string(),
+            new_prompt: "Check competitor announcements on Twitter and G2, summarize to channel"
+                .to_string(),
         }
     }
 
@@ -196,17 +206,14 @@ impl RoutinesView {
             )
     }
 
-    fn render_routine_card(
-        &self,
-        id: &str,
-        name: &str,
-        cron: &str,
-        prompt: &str,
-        channel: &str,
-        enabled: bool,
-        last_run: &str,
-        cx: &mut Context<Self>,
-    ) -> Div {
+    fn render_routine_card(&self, card: RoutineCard<'_>, cx: &mut Context<Self>) -> Div {
+        let id = card.id;
+        let name = card.name;
+        let cron = card.cron;
+        let prompt = card.prompt;
+        let channel = card.channel;
+        let enabled = card.enabled;
+        let last_run = card.last_run;
         let r_id = id.to_string();
         let r_cron = cron.to_string();
         let r_prompt = prompt.to_string();
@@ -260,29 +267,62 @@ impl RoutinesView {
                                     .px_2()
                                     .py_0p5()
                                     .rounded_md()
-                                    .bg(if enabled { Theme::bg_card() } else { Theme::bg_elevated() })
+                                    .bg(if enabled {
+                                        Theme::bg_card()
+                                    } else {
+                                        Theme::bg_elevated()
+                                    })
                                     .border_1()
-                                    .border_color(if enabled { Theme::success_green() } else { Theme::border_subtle() })
+                                    .border_color(if enabled {
+                                        Theme::success_green()
+                                    } else {
+                                        Theme::border_subtle()
+                                    })
                                     .font_weight(gpui::FontWeight::BOLD)
-                                    .text_color(if enabled { Theme::success_green() } else { Theme::text_muted() })
+                                    .text_color(if enabled {
+                                        Theme::success_green()
+                                    } else {
+                                        Theme::text_muted()
+                                    })
                                     .cursor_pointer()
-                                    .child(if enabled { "ACTIVE (Click to Pause)" } else { "PAUSED (Click to Run)" })
-                                    .on_click(cx.listener(move |this, _event: &ClickEvent, _window, cx| {
-                                        let api = this.state.api.clone();
-                                        let s_id = r_id.clone();
-                                        let s_cron = r_cron.clone();
-                                        let s_prompt = r_prompt.clone();
-                                        let new_status = !enabled;
-                                        let api_id = s_id.clone();
-                                        let api_clone = api.clone();
-                                        cx.spawn(async move |_this, _cx| {
-                                            let _ = api_clone.toggle_schedule(&api_id, "general_assistant", &s_cron, &s_prompt, new_status).await;
-                                        }).detach();
-                                        if let Some(r) = this.state.routines.write().iter_mut().find(|r| r.id == s_id) {
-                                            r.enabled = new_status;
-                                        }
-                                        cx.notify();
-                                    })),
+                                    .child(if enabled {
+                                        "ACTIVE (Click to Pause)"
+                                    } else {
+                                        "PAUSED (Click to Run)"
+                                    })
+                                    .on_click(cx.listener(
+                                        move |this, _event: &ClickEvent, _window, cx| {
+                                            let api = this.state.api.clone();
+                                            let s_id = r_id.clone();
+                                            let s_cron = r_cron.clone();
+                                            let s_prompt = r_prompt.clone();
+                                            let new_status = !enabled;
+                                            let api_id = s_id.clone();
+                                            let api_clone = api.clone();
+                                            cx.spawn(async move |_this, _cx| {
+                                                let _ = api_clone
+                                                    .toggle_schedule(
+                                                        &api_id,
+                                                        "general_assistant",
+                                                        &s_cron,
+                                                        &s_prompt,
+                                                        new_status,
+                                                    )
+                                                    .await;
+                                            })
+                                            .detach();
+                                            if let Some(r) = this
+                                                .state
+                                                .routines
+                                                .write()
+                                                .iter_mut()
+                                                .find(|r| r.id == s_id)
+                                            {
+                                                r.enabled = new_status;
+                                            }
+                                            cx.notify();
+                                        },
+                                    )),
                             )
                             .child({
                                 let d_id = id.to_string();
@@ -295,18 +335,23 @@ impl RoutinesView {
                                     .text_xs()
                                     .text_color(Theme::danger_red())
                                     .cursor_pointer()
-                                    .hover(|s| s.bg(Theme::danger_red()).text_color(Theme::text_primary()))
+                                    .hover(|s| {
+                                        s.bg(Theme::danger_red()).text_color(Theme::text_primary())
+                                    })
                                     .child("Delete ✕")
-                                    .on_click(cx.listener(move |this, _event: &ClickEvent, _window, cx| {
-                                        let del_id = d_id.clone();
-                                        let api = this.state.api.clone();
-                                        let api_del = del_id.clone();
-                                        cx.spawn(async move |_this, _cx| {
-                                            let _ = api.delete_schedule(&api_del).await;
-                                        }).detach();
-                                        this.state.routines.write().retain(|r| r.id != del_id);
-                                        cx.notify();
-                                    }))
+                                    .on_click(cx.listener(
+                                        move |this, _event: &ClickEvent, _window, cx| {
+                                            let del_id = d_id.clone();
+                                            let api = this.state.api.clone();
+                                            let api_del = del_id.clone();
+                                            cx.spawn(async move |_this, _cx| {
+                                                let _ = api.delete_schedule(&api_del).await;
+                                            })
+                                            .detach();
+                                            this.state.routines.write().retain(|r| r.id != del_id);
+                                            cx.notify();
+                                        },
+                                    ))
                             }),
                     ),
             )
@@ -408,13 +453,13 @@ impl Render for RoutinesView {
                     .child(
                         if routines.is_empty() {
                             div().flex().flex_col().gap_3()
-                                .child(self.render_routine_card("sched_1", "Morning Lead Qualification", "0 9 * * 1-5", "Scan newly posted RFP notices on target procurement boards and draft outreach summaries", "sdr-leads", true, "Today at 09:00", cx))
-                                .child(self.render_routine_card("sched_2", "Hourly Security Perimeter Check", "0 * * * *", "Verify all public endpoints against CEL boundaries and ensure zero credential leaks", "sec-audit", true, "42m ago", cx))
-                                .child(self.render_routine_card("sched_3", "Weekly Synthesis Digest", "0 18 * * 5", "Aggregate competitor updates, closed deals, and model token budgets into executive summary", "general", false, "Friday at 18:00", cx))
+                                .child(self.render_routine_card(RoutineCard { id: "sched_1", name: "Morning Lead Qualification", cron: "0 9 * * 1-5", prompt: "Scan newly posted RFP notices on target procurement boards and draft outreach summaries", channel: "sdr-leads", enabled: true, last_run: "Today at 09:00" }, cx))
+                                .child(self.render_routine_card(RoutineCard { id: "sched_2", name: "Hourly Security Perimeter Check", cron: "0 * * * *", prompt: "Verify all public endpoints against CEL boundaries and ensure zero credential leaks", channel: "sec-audit", enabled: true, last_run: "42m ago" }, cx))
+                                .child(self.render_routine_card(RoutineCard { id: "sched_3", name: "Weekly Synthesis Digest", cron: "0 18 * * 5", prompt: "Aggregate competitor updates, closed deals, and model token budgets into executive summary", channel: "general", enabled: false, last_run: "Friday at 18:00" }, cx))
                         } else {
                             let mut list = div().flex().flex_col().gap_3();
                             for r in routines {
-                                list = list.child(self.render_routine_card(&r.id, &r.name, &r.cron, &r.prompt, &r.channel_id, r.enabled, r.last_run.as_deref().unwrap_or("Never"), cx));
+                                list = list.child(self.render_routine_card(RoutineCard { id: &r.id, name: &r.name, cron: &r.cron, prompt: &r.prompt, channel: &r.channel_id, enabled: r.enabled, last_run: r.last_run.as_deref().unwrap_or("Never") }, cx));
                             }
                             list
                         },

@@ -1,7 +1,7 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use serde::{Deserialize, Serialize};
 
 /// In-process and persistent subprocess evaluation kernel context.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -46,11 +46,14 @@ impl EvalKernelManager {
 
     pub async fn get_or_create_state(&self, session_id: &str, language: &str) -> KernelState {
         let mut guard = self.states.lock().await;
-        guard.entry(session_id.to_string()).or_insert_with(|| KernelState {
-            session_id: session_id.to_string(),
-            language: language.to_string(),
-            variables: HashMap::new(),
-        }).clone()
+        guard
+            .entry(session_id.to_string())
+            .or_insert_with(|| KernelState {
+                session_id: session_id.to_string(),
+                language: language.to_string(),
+                variables: HashMap::new(),
+            })
+            .clone()
     }
 
     pub async fn update_variable(&self, session_id: &str, key: &str, value: serde_json::Value) {

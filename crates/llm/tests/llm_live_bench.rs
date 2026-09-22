@@ -32,7 +32,9 @@ fn api_key() -> String {
 
 fn msg_text(m: &pr_core::Message) -> String {
     match m {
-        pr_core::Message::System { content } | pr_core::Message::User { content } => content.clone(),
+        pr_core::Message::System { content } | pr_core::Message::User { content } => {
+            content.clone()
+        }
         pr_core::Message::Assistant { content, .. } => content.clone().unwrap_or_default(),
         pr_core::Message::Tool { content, .. } => content.clone(),
     }
@@ -65,13 +67,17 @@ Choose EXACTLY ONE verdict: duplicate | supersede | contradict | coexist | relat
 Respond with ONLY JSON: {"candidate":"c0","verdict":"...","reason":"short"}"#;
     let mut lat = Vec::new();
     for _ in 0..5 {
-        let (d, text) = timed(&flash, CompletionRequest {
-            messages: vec![pr_core::Message::user(classify_task)],
-            tools: vec![],
-            temperature: Some(0.1),
-            max_tokens: Some(2048),
-            stream: false,
-        }).await;
+        let (d, text) = timed(
+            &flash,
+            CompletionRequest {
+                messages: vec![pr_core::Message::user(classify_task)],
+                tools: vec![],
+                temperature: Some(0.1),
+                max_tokens: Some(2048),
+                stream: false,
+            },
+        )
+        .await;
         assert!(!text.is_empty());
         lat.push(d);
     }
@@ -90,14 +96,21 @@ Respond with ONLY JSON: {"candidate":"c0","verdict":"...","reason":"short"}"#;
 Query: Compare Rust and Go for building web backends in 2026
 
 Respond with ONLY a JSON array of strings."#;
-    let (d_plan, plan) = timed(&flash, CompletionRequest {
-        messages: vec![pr_core::Message::user(plan_prompt)],
-        tools: vec![],
-        temperature: Some(0.3),
-        max_tokens: Some(2048),
-        stream: false,
-    }).await;
-    let plan_tasks = serde_json::from_str::<Vec<String>>(plan.trim()).ok().map(|v| v.len()).unwrap_or(0);
+    let (d_plan, plan) = timed(
+        &flash,
+        CompletionRequest {
+            messages: vec![pr_core::Message::user(plan_prompt)],
+            tools: vec![],
+            temperature: Some(0.3),
+            max_tokens: Some(2048),
+            stream: false,
+        },
+    )
+    .await;
+    let plan_tasks = serde_json::from_str::<Vec<String>>(plan.trim())
+        .ok()
+        .map(|v| v.len())
+        .unwrap_or(0);
     println!("\n## plan (2048 токенов, {} задач)", plan_tasks);
     println!("| метрика | значение |");
     println!("|---|---|");
@@ -116,13 +129,17 @@ PostgreSQL 17 показывает 120k TPS в sysbench на 16 ядрах (perc
 MySQL 8.4 достигает 95k TPS на том же железе, p99 latency ниже (mysql.com, 2026-02).
 
 Write a comprehensive, well-structured markdown report that answers the query, notes contradictions, lists sources and identifies gaps."#;
-    let (d_synth, synth) = timed(&flash, CompletionRequest {
-        messages: vec![pr_core::Message::user(synth_prompt)],
-        tools: vec![],
-        temperature: Some(0.5),
-        max_tokens: Some(2048),
-        stream: false,
-    }).await;
+    let (d_synth, synth) = timed(
+        &flash,
+        CompletionRequest {
+            messages: vec![pr_core::Message::user(synth_prompt)],
+            tools: vec![],
+            temperature: Some(0.5),
+            max_tokens: Some(2048),
+            stream: false,
+        },
+    )
+    .await;
     println!("\n## synthesis ({} символов вывода)", synth.chars().count());
     println!("| метрика | значение |");
     println!("|---|---|");
@@ -167,7 +184,9 @@ Write a comprehensive, well-structured markdown report that answers the query, n
         let llm = llm.clone();
         handles.push(tokio::spawn(async move {
             let req = CompletionRequest {
-                messages: vec![pr_core::Message::user(format!("Reply with the two characters: a{i}"))],
+                messages: vec![pr_core::Message::user(format!(
+                    "Reply with the two characters: a{i}"
+                ))],
                 tools: vec![],
                 temperature: Some(0.0),
                 max_tokens: Some(10),
@@ -187,7 +206,10 @@ Write a comprehensive, well-structured markdown report that answers the query, n
     println!("| метрика | значение |");
     println!("|---|---|");
     println!("| total | {:.2}s |", parallel.as_secs_f64());
-    println!("| per-call amortized | {:.2}s |", parallel.as_secs_f64() / 10.0);
+    println!(
+        "| per-call amortized | {:.2}s |",
+        parallel.as_secs_f64() / 10.0
+    );
     println!("| успешно | {ok}/10 |");
 
     println!("\n✓ benchmark завершён");

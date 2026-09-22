@@ -46,7 +46,9 @@ fn make_llm() -> Arc<DeepSeekProvider> {
 
 fn msg_text(m: &pr_core::Message) -> String {
     match m {
-        pr_core::Message::System { content } | pr_core::Message::User { content } => content.clone(),
+        pr_core::Message::System { content } | pr_core::Message::User { content } => {
+            content.clone()
+        }
         pr_core::Message::Assistant { content, .. } => content.clone().unwrap_or_default(),
         pr_core::Message::Tool { content, .. } => content.clone(),
     }
@@ -90,30 +92,68 @@ async fn a_llm_supersede_three_version_chain() {
     };
     let mem = Memory::in_memory(cfg).unwrap();
 
-    let r1 = mem.pipeline_with_llm(llm.clone()).absorb(p_req(p_fact(
-        "Acme Corp CEO is Ivan Petrov as of 2023"))).await.unwrap();
-    let r2 = mem.pipeline_with_llm(llm.clone()).absorb(p_req(p_fact(
-        "Acme Corp CEO is Sergey Ivanov as of 2024"))).await.unwrap();
-    let r3 = mem.pipeline_with_llm(llm.clone()).absorb(p_req(p_fact(
-        "Acme Corp CEO is Maria Ivanova as of 2025"))).await.unwrap();
-    println!("v1: {} | v2: {} | v3: {}", r1.summary_line(), r2.summary_line(), r3.summary_line());
+    let r1 = mem
+        .pipeline_with_llm(llm.clone())
+        .absorb(p_req(p_fact("Acme Corp CEO is Ivan Petrov as of 2023")))
+        .await
+        .unwrap();
+    let r2 = mem
+        .pipeline_with_llm(llm.clone())
+        .absorb(p_req(p_fact("Acme Corp CEO is Sergey Ivanov as of 2024")))
+        .await
+        .unwrap();
+    let r3 = mem
+        .pipeline_with_llm(llm.clone())
+        .absorb(p_req(p_fact("Acme Corp CEO is Maria Ivanova as of 2025")))
+        .await
+        .unwrap();
+    println!(
+        "v1: {} | v2: {} | v3: {}",
+        r1.summary_line(),
+        r2.summary_line(),
+        r3.summary_line()
+    );
 
-    let mut all = mem.db.list(&ScopeFilter::persistent(), Some("active"), 100).unwrap();
-    all.extend(mem.db.list(&ScopeFilter::persistent(), Some("superseded"), 100).unwrap());
+    let mut all = mem
+        .db
+        .list(&ScopeFilter::persistent(), Some("active"), 100)
+        .unwrap();
+    all.extend(
+        mem.db
+            .list(&ScopeFilter::persistent(), Some("superseded"), 100)
+            .unwrap(),
+    );
     println!("все строки (active+superseded): {}", all.len());
     for r in &all {
         println!("   (status={}) {}", r.status, r.content);
     }
-    let v1 = all.iter().find(|r| r.content.contains("2023")).expect("версия 2023 есть");
-    let latest = pr_memory::search::resolve_follow(&mem.db, &v1.id, pr_memory::Follow::Latest).unwrap();
+    let v1 = all
+        .iter()
+        .find(|r| r.content.contains("2023"))
+        .expect("версия 2023 есть");
+    let latest =
+        pr_memory::search::resolve_follow(&mem.db, &v1.id, pr_memory::Follow::Latest).unwrap();
     assert_eq!(latest.len(), 1);
-    assert!(latest[0].content.contains("Maria Ivanova"),
-        "Latest должен разрешиться до версии 2025, получено: {}", latest[0].content);
+    assert!(
+        latest[0].content.contains("Maria Ivanova"),
+        "Latest должен разрешиться до версии 2025, получено: {}",
+        latest[0].content
+    );
 
-    let active = mem.db.list(&ScopeFilter::persistent(), Some("active"), 100).unwrap();
-    let ceo_active: Vec<_> = active.iter().filter(|r| r.content.contains("CEO")).collect();
+    let active = mem
+        .db
+        .list(&ScopeFilter::persistent(), Some("active"), 100)
+        .unwrap();
+    let ceo_active: Vec<_> = active
+        .iter()
+        .filter(|r| r.content.contains("CEO"))
+        .collect();
     println!("активных CEO-строк: {}", ceo_active.len());
-    assert_eq!(ceo_active.len(), 1, "должна остаться одна активная версия CEO");
+    assert_eq!(
+        ceo_active.len(),
+        1,
+        "должна остаться одна активная версия CEO"
+    );
     println!("✓ цепочка версий: Latest разрешается до 2025, активна одна версия");
 }
 
@@ -132,17 +172,33 @@ async fn b_llm_context_hint_preferences_coexist() {
 
     let mut f1 = p_fact("I prefer terse code reviews with no preamble");
     f1.metadata = serde_json::json!({"context": "applies to work pull requests only"});
-    mem.pipeline_with_llm(llm.clone()).absorb(p_req(f1)).await.unwrap();
+    mem.pipeline_with_llm(llm.clone())
+        .absorb(p_req(f1))
+        .await
+        .unwrap();
 
     let mut f2 = p_fact("I prefer detailed long-form code reviews with examples");
     f2.metadata = serde_json::json!({"context": "applies to personal open-source projects only"});
-    let r2 = mem.pipeline_with_llm(llm.clone()).absorb(p_req(f2)).await.unwrap();
+    let r2 = mem
+        .pipeline_with_llm(llm.clone())
+        .absorb(p_req(f2))
+        .await
+        .unwrap();
     println!("второй факт: {}", r2.summary_line());
 
-    let active = mem.db.list(&ScopeFilter::persistent(), Some("active"), 100).unwrap();
-    let prefs: Vec<_> = active.iter().filter(|r| r.content.contains("reviews")).collect();
+    let active = mem
+        .db
+        .list(&ScopeFilter::persistent(), Some("active"), 100)
+        .unwrap();
+    let prefs: Vec<_> = active
+        .iter()
+        .filter(|r| r.content.contains("reviews"))
+        .collect();
     println!("активных предпочтений: {}", prefs.len());
-    assert!(prefs.len() >= 2, "контекстные предпочтения не должны вытеснять друг друга");
+    assert!(
+        prefs.len() >= 2,
+        "контекстные предпочтения не должны вытеснять друг друга"
+    );
     println!("✓ context-hint: оба предпочтения остались активными");
 }
 
@@ -159,35 +215,71 @@ async fn c_llm_contradict_then_boost_sways_ranking() {
     };
     let mem = Memory::in_memory(cfg).unwrap();
 
-    mem.pipeline_with_llm(llm.clone()).absorb(p_req(p_fact(
-        "The company headquarters is located in Moscow"))).await.unwrap();
-    let r2 = mem.pipeline_with_llm(llm.clone()).absorb(p_req(p_fact(
-        "The company headquarters is located in Kazan"))).await.unwrap();
+    mem.pipeline_with_llm(llm.clone())
+        .absorb(p_req(p_fact(
+            "The company headquarters is located in Moscow",
+        )))
+        .await
+        .unwrap();
+    let r2 = mem
+        .pipeline_with_llm(llm.clone())
+        .absorb(p_req(p_fact(
+            "The company headquarters is located in Kazan",
+        )))
+        .await
+        .unwrap();
     println!("второй факт: {}", r2.summary_line());
 
-    let active = mem.db.list(&ScopeFilter::persistent(), Some("active"), 100).unwrap();
-    let hq: Vec<_> = active.iter().filter(|r| r.content.contains("headquarters")).collect();
+    let active = mem
+        .db
+        .list(&ScopeFilter::persistent(), Some("active"), 100)
+        .unwrap();
+    let hq: Vec<_> = active
+        .iter()
+        .filter(|r| r.content.contains("headquarters"))
+        .collect();
     println!("активных HQ-строк: {}", hq.len());
     assert!(!hq.is_empty());
 
     // Усиливаем версию Kazan (важность — тай-брейкер ранжирования).
-    let kazan = hq.iter().find(|r| r.content.contains("Kazan")).expect("Kazan-версия есть");
+    let kazan = hq
+        .iter()
+        .find(|r| r.content.contains("Kazan"))
+        .expect("Kazan-версия есть");
     mem.db.boost(&kazan.id, 2.0).unwrap();
     for _ in 0..3 {
         mem.db.record_access(std::slice::from_ref(&kazan.id));
     }
 
-    let hits = mem.search("company headquarters location", &ScopeFilter::persistent(), None).await.unwrap();
+    let hits = mem
+        .search(
+            "company headquarters location",
+            &ScopeFilter::persistent(),
+            None,
+        )
+        .await
+        .unwrap();
     println!("ранжирование после boost:");
     for h in &hits {
-        println!("   [{:.3}] (imp={}) {}", h.score, h.memory.importance, h.memory.content);
+        println!(
+            "   [{:.3}] (imp={}) {}",
+            h.score, h.memory.importance, h.memory.content
+        );
     }
-    assert!(hits.iter().any(|h| h.memory.content.contains("Kazan")),
-        "Kazan-версия должна быть в выдаче");
+    assert!(
+        hits.iter().any(|h| h.memory.content.contains("Kazan")),
+        "Kazan-версия должна быть в выдаче"
+    );
     if hits.len() >= 2 {
-        let kazan_idx = hits.iter().position(|h| h.memory.content.contains("Kazan")).unwrap();
+        let kazan_idx = hits
+            .iter()
+            .position(|h| h.memory.content.contains("Kazan"))
+            .unwrap();
         println!("Kazan на позиции {}", kazan_idx + 1);
-        assert_eq!(kazan_idx, 0, "boost + reinforcement должны вывести Kazan на первое место");
+        assert_eq!(
+            kazan_idx, 0,
+            "boost + reinforcement должны вывести Kazan на первое место"
+        );
     }
     println!("✓ contradict+boost: усиленная сторона конфликта ранжируется выше");
 }
@@ -213,8 +305,14 @@ async fn d_llm_multi_turn_conversation() {
     let resp = llm.complete(&req).await.expect("multi-turn failed");
     let text = msg_text(&resp.message);
     println!("ответ: {}", text);
-    assert!(text.contains("Hermann"), "модель должна помнить имя из истории: {text}");
-    assert!(text.to_lowercase().contains("parallel"), "и название проекта: {text}");
+    assert!(
+        text.contains("Hermann"),
+        "модель должна помнить имя из истории: {text}"
+    );
+    assert!(
+        text.to_lowercase().contains("parallel"),
+        "и название проекта: {text}"
+    );
     println!("✓ multi-turn: история сообщений работает");
 }
 
@@ -242,13 +340,21 @@ async fn e_llm_streaming_tool_call_reassembly() {
     };
     let mut stream = llm.stream(&req).await.expect("stream failed");
     use futures::StreamExt;
-    let mut tool_calls: std::collections::HashMap<usize, (String, String, String)> = std::collections::HashMap::new();
+    let mut tool_calls: std::collections::HashMap<usize, (String, String, String)> =
+        std::collections::HashMap::new();
     let mut text = String::new();
     while let Some(c) = stream.next().await {
         match c.unwrap() {
             StreamChunk::Text { delta } => text.push_str(&delta),
-            StreamChunk::ToolCallDelta { index, id, name, arguments_delta } => {
-                let e = tool_calls.entry(index).or_insert_with(|| (id, name, String::new()));
+            StreamChunk::ToolCallDelta {
+                index,
+                id,
+                name,
+                arguments_delta,
+            } => {
+                let e = tool_calls
+                    .entry(index)
+                    .or_insert_with(|| (id, name, String::new()));
                 if !arguments_delta.is_empty() {
                     e.2.push_str(&arguments_delta);
                 }
@@ -260,9 +366,16 @@ async fn e_llm_streaming_tool_call_reassembly() {
     println!("tool-дельт: {}", tool_calls.len());
     for (idx, (id, name, args)) in &tool_calls {
         println!("   [{idx}] id={id} name={name} args={args}");
-        assert_eq!(name, "get_weather", "имя инструмента должно реассемблироваться");
-        let args_json: serde_json::Value = serde_json::from_str(args).unwrap_or(serde_json::json!({}));
-        assert_eq!(args_json["city"], "Sochi", "аргументы должны реассемблироваться");
+        assert_eq!(
+            name, "get_weather",
+            "имя инструмента должно реассемблироваться"
+        );
+        let args_json: serde_json::Value =
+            serde_json::from_str(args).unwrap_or(serde_json::json!({}));
+        assert_eq!(
+            args_json["city"], "Sochi",
+            "аргументы должны реассемблироваться"
+        );
     }
     assert!(!tool_calls.is_empty(), "модель должна вызвать get_weather");
     println!("✓ streaming tool-call: имя и аргументы собраны из SSE-дельт");
@@ -292,7 +405,10 @@ async fn f_llm_edge_prompts_no_panic() {
             stream: false,
         };
         match llm.complete(&req).await {
-            Ok(resp) => println!("{label:>10}: ok ({} символов)", msg_text(&resp.message).len()),
+            Ok(resp) => println!(
+                "{label:>10}: ok ({} символов)",
+                msg_text(&resp.message).len()
+            ),
             Err(e) => println!("{label:>10}: ошибка: {}", head(&e.to_string(), 80)),
         }
         // Никаких паник — любой исход валиден для edge-промптов.
@@ -321,15 +437,26 @@ async fn g_llm_mixed_language_json() {
     let resp = llm.complete(&req).await.expect("mixed-language failed");
     let text = msg_text(&resp.message);
     println!("ответ: {}", head(&text, 150));
-    let parsed: serde_json::Value = serde_json::from_str(text.trim()).unwrap_or(serde_json::json!({}));
-    let v = parsed.get("verdict").and_then(|v| v.as_str()).unwrap_or("?");
+    let parsed: serde_json::Value =
+        serde_json::from_str(text.trim()).unwrap_or(serde_json::json!({}));
+    let v = parsed
+        .get("verdict")
+        .and_then(|v| v.as_str())
+        .unwrap_or("?");
     assert!(
-        ["duplicate", "supersede", "contradict", "coexist", "related", "new"].contains(&v),
+        [
+            "duplicate",
+            "supersede",
+            "contradict",
+            "coexist",
+            "related",
+            "new"
+        ]
+        .contains(&v),
         "вердикт должен быть валидным, получено: {text}"
     );
     println!("✓ mixed-language: RU-задача даёт валидный EN-JSON вердикт: {v}");
 }
-
 
 // ── H. Rerank на 10 кандидатов: ничего не теряется ─────────────────────────
 
@@ -354,21 +481,27 @@ async fn h_llm_rerank_ten_hits_no_drops() {
         "Read-through caching fetches missing keys from the database",
         "Write-behind caching defers database writes to a queue",
     ];
-    let facts: Vec<AbsorbFact> = pool.iter().map(|c| AbsorbFact {
-        content: c.to_string(),
-        metadata: serde_json::json!({}),
-        tags: vec![],
-        confidence: None,
-        memory_class: None,
-    }).collect();
-    mem.pipeline().absorb(AbsorbRequest {
-        facts,
-        source: "rerank10".into(),
-        scope: Scope::Agent,
-        scope_key: String::new(),
-        context: None,
-        dry_run: false,
-    }).await.unwrap();
+    let facts: Vec<AbsorbFact> = pool
+        .iter()
+        .map(|c| AbsorbFact {
+            content: c.to_string(),
+            metadata: serde_json::json!({}),
+            tags: vec![],
+            confidence: None,
+            memory_class: None,
+        })
+        .collect();
+    mem.pipeline()
+        .absorb(AbsorbRequest {
+            facts,
+            source: "rerank10".into(),
+            scope: Scope::Agent,
+            scope_key: String::new(),
+            context: None,
+            dry_run: false,
+        })
+        .await
+        .unwrap();
 
     let hits = pr_memory::search::hybrid_search(
         &mem.db,
@@ -381,17 +514,31 @@ async fn h_llm_rerank_ten_hits_no_drops() {
             temporal_decay: 0.0,
             scope: ScopeFilter::persistent(),
         },
-    ).await.unwrap();
+    )
+    .await
+    .unwrap();
     println!("хитов до rerank: {}", hits.len());
-    assert!(hits.len() >= 5, "нужно >=5 кандидатов, получено {}", hits.len());
+    assert!(
+        hits.len() >= 5,
+        "нужно >=5 кандидатов, получено {}",
+        hits.len()
+    );
 
     let llm_dyn: Arc<dyn pr_llm::LlmProvider> = llm.clone();
-    let reranked = pr_memory::search::llm_rerank(&llm_dyn, "in-memory caching query results", hits.clone()).await;
+    let reranked =
+        pr_memory::search::llm_rerank(&llm_dyn, "in-memory caching query results", hits.clone())
+            .await;
     println!("после rerank: {} хитов", reranked.len());
     // llm_rerank обязан сохранить всех кандидатов (неуместные — в хвосте).
-    assert_eq!(reranked.len(), hits.len(), "rerank не должен терять кандидатов");
-    let before: std::collections::HashSet<String> = hits.iter().map(|h| h.memory.id.clone()).collect();
-    let after: std::collections::HashSet<String> = reranked.iter().map(|h| h.memory.id.clone()).collect();
+    assert_eq!(
+        reranked.len(),
+        hits.len(),
+        "rerank не должен терять кандидатов"
+    );
+    let before: std::collections::HashSet<String> =
+        hits.iter().map(|h| h.memory.id.clone()).collect();
+    let after: std::collections::HashSet<String> =
+        reranked.iter().map(|h| h.memory.id.clone()).collect();
     assert_eq!(before, after, "состав кандидатов после rerank не меняется");
     println!("✓ rerank×10: перестановка без потери кандидатов");
 }
@@ -415,32 +562,63 @@ async fn i_llm_batch_classify_mixed_verdicts() {
             p_fact("The office is at 12 Tverskaya street in Moscow"),
             p_fact("Acme Corp CEO is Ivan Petrov as of 2024"),
         ],
-        source: "batch".into(), scope: Scope::Agent, scope_key: String::new(), context: None, dry_run: false,
+        source: "batch".into(),
+        scope: Scope::Agent,
+        scope_key: String::new(),
+        context: None,
+        dry_run: false,
     };
-    mem.pipeline_with_llm(llm.clone()).absorb(seed).await.unwrap();
+    mem.pipeline_with_llm(llm.clone())
+        .absorb(seed)
+        .await
+        .unwrap();
 
     let batch = AbsorbRequest {
         facts: vec![
-            p_fact("The office is at 12 Tverskaya street in Moscow"),   // duplicate
-            p_fact("Acme Corp CEO is Maria Ivanova as of 2025"),        // supersede
+            p_fact("The office is at 12 Tverskaya street in Moscow"), // duplicate
+            p_fact("Acme Corp CEO is Maria Ivanova as of 2025"),      // supersede
             p_fact("Kubernetes 1.36 ships in 2026 with dynamic resource classes"), // new
             p_fact("Kubernetes 1.36 ships in 2026 with dynamic resource classes"), // дубль внутри батча
         ],
-        source: "batch".into(), scope: Scope::Agent, scope_key: String::new(), context: None, dry_run: false,
+        source: "batch".into(),
+        scope: Scope::Agent,
+        scope_key: String::new(),
+        context: None,
+        dry_run: false,
     };
-    let report = mem.pipeline_with_llm(llm.clone()).absorb(batch).await.unwrap();
+    let report = mem
+        .pipeline_with_llm(llm.clone())
+        .absorb(batch)
+        .await
+        .unwrap();
     println!("{}", report.summary_line());
-    println!("created={} skipped={} superseded={} consolidated={}",
-        report.created, report.skipped, report.superseded, report.consolidated);
+    println!(
+        "created={} skipped={} superseded={} consolidated={}",
+        report.created, report.skipped, report.superseded, report.consolidated
+    );
 
     assert_eq!(report.skipped, 1, "первый факт батча — точный дубль");
     assert_eq!(report.superseded, 1, "смена CEO — supersede");
     // Внутрибатчевый дубль (две одинаковые строки Kubernetes) консолидируется
     // или пропускается hash-дедупом; создаётся ровно одна строка про 1.36.
-    let active = mem.db.list(&ScopeFilter::persistent(), Some("active"), 100).unwrap();
-    let k8s: Vec<_> = active.iter().filter(|r| r.content.contains("1.36")).collect();
-    assert_eq!(k8s.len(), 1, "две одинаковые строки Kubernetes → одна: {}", k8s.len());
-    let ceo: Vec<_> = active.iter().filter(|r| r.content.contains("CEO")).collect();
+    let active = mem
+        .db
+        .list(&ScopeFilter::persistent(), Some("active"), 100)
+        .unwrap();
+    let k8s: Vec<_> = active
+        .iter()
+        .filter(|r| r.content.contains("1.36"))
+        .collect();
+    assert_eq!(
+        k8s.len(),
+        1,
+        "две одинаковые строки Kubernetes → одна: {}",
+        k8s.len()
+    );
+    let ceo: Vec<_> = active
+        .iter()
+        .filter(|r| r.content.contains("CEO"))
+        .collect();
     assert_eq!(ceo.len(), 1, "активна одна версия CEO");
     assert!(ceo[0].content.contains("Maria"), "активна новая версия");
     println!("✓ batch-classify: три вердикта + внутрибатчевый дубль обработаны корректно");

@@ -3,10 +3,10 @@
 //! Allows agents to add, replace, remove, and batch-manage persistent memory
 //! and user context entries via the `memory` tool.
 
-use async_trait::async_trait;
-use pr_core::memory::{MemoryOp, MemoryAction, MemoryTarget, MemoryStore};
-use pr_core::{ToolSchema, ToolOutput};
 use crate::registry::{Tool, ToolContext};
+use async_trait::async_trait;
+use pr_core::memory::{MemoryAction, MemoryOp, MemoryStore, MemoryTarget};
+use pr_core::{ToolOutput, ToolSchema};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -145,10 +145,7 @@ memory(action=\"batch\", operations=[
                     }
                 }
 
-                Ok(ToolOutput::ok(format!(
-                    "Added entry to {}",
-                    params.target
-                )))
+                Ok(ToolOutput::ok(format!("Added entry to {}", params.target)))
             }
 
             "replace" => {
@@ -171,9 +168,7 @@ memory(action=\"batch\", operations=[
                         let _idx = entries
                             .iter()
                             .position(|e| e.content.contains(old))
-                            .ok_or_else(|| {
-                                anyhow::anyhow!("no user entry containing '{}'", old)
-                            })?;
+                            .ok_or_else(|| anyhow::anyhow!("no user entry containing '{}'", old))?;
                         drop(entries);
                         replace_in_file(&path, old, new, store.max_user_chars)?;
                     }
@@ -310,7 +305,10 @@ fn remove_in_file(path: &std::path::Path, substr: &str) -> anyhow::Result<()> {
         .collect();
 
     let before = entries.len();
-    let remaining: Vec<String> = entries.into_iter().filter(|e| !e.contains(substr)).collect();
+    let remaining: Vec<String> = entries
+        .into_iter()
+        .filter(|e| !e.contains(substr))
+        .collect();
 
     if remaining.len() == before {
         return Err(anyhow::anyhow!("no entry containing '{}'", substr));

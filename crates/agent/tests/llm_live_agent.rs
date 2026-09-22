@@ -78,7 +78,9 @@ async fn a_llm_compaction_full_pipeline() {
     // fail-closed окна (min 32K токенов → порог ~16K токенов).
     let mut messages = vec![
         Message::system("You are a research assistant. Work methodically, cite sources."),
-        Message::user("Research the state of superconducting quantum computing and write a report."),
+        Message::user(
+            "Research the state of superconducting quantum computing and write a report.",
+        ),
     ];
     for i in 0..400 {
         messages.push(Message::user(format!(
@@ -93,7 +95,9 @@ async fn a_llm_compaction_full_pipeline() {
             i as f32 * 0.71 % 99.0,
         )));
     }
-    messages.push(Message::user("Synthesize the final report from all observations."));
+    messages.push(Message::user(
+        "Synthesize the final report from all observations.",
+    ));
 
     let before = pr_core::estimate_messages_tokens(&messages);
     println!("estimated tokens before: {before}");
@@ -123,8 +127,14 @@ async fn a_llm_compaction_full_pipeline() {
         .expect("compaction failed");
 
     println!("used_llm: {}", result.used_llm);
-    println!("tokens_before: {}  tokens_after: {}", result.tokens_before, result.tokens_after);
-    println!("micro_pruned: {}  cooldown: {}", result.micro_pruned, result.cooldown_triggered);
+    println!(
+        "tokens_before: {}  tokens_after: {}",
+        result.tokens_before, result.tokens_after
+    );
+    println!(
+        "micro_pruned: {}  cooldown: {}",
+        result.micro_pruned, result.cooldown_triggered
+    );
 
     let summary = result
         .messages
@@ -137,7 +147,10 @@ async fn a_llm_compaction_full_pipeline() {
 
     assert!(result.used_llm, "LLM summarization must have run");
     assert!(!summary.is_empty(), "summary must be non-empty");
-    assert!(result.tokens_after < result.tokens_before, "compaction must reduce tokens");
+    assert!(
+        result.tokens_after < result.tokens_before,
+        "compaction must reduce tokens"
+    );
     println!("✓ compaction: LLM-саммаризация выполнена, токены сокращены");
 }
 
@@ -177,10 +190,21 @@ Do NOT include any explanation, just the JSON array."#
     for t in &tasks {
         println!("   - {t}");
     }
-    assert!((2..=5).contains(&tasks.len()), "plan must contain 2-5 subtasks, got {}", tasks.len());
-    assert!(tasks.iter().any(|t| t.to_lowercase().contains("postgres") || t.to_lowercase().contains("mysql")),
-        "subtasks must cover the query subject");
-    println!("✓ planning: research-запрос декомпозирован на {} задач", tasks.len());
+    assert!(
+        (2..=5).contains(&tasks.len()),
+        "plan must contain 2-5 subtasks, got {}",
+        tasks.len()
+    );
+    assert!(
+        tasks
+            .iter()
+            .any(|t| t.to_lowercase().contains("postgres") || t.to_lowercase().contains("mysql")),
+        "subtasks must cover the query subject"
+    );
+    println!(
+        "✓ planning: research-запрос декомпозирован на {} задач",
+        tasks.len()
+    );
 }
 
 // ── C. Planning: LeadGen-декомпозиция с квотами ────────────────────────────
@@ -220,11 +244,21 @@ Do NOT include any explanation, just the JSON array."#
     for t in &tasks {
         println!("   - {t}");
     }
-    assert!((2..=5).contains(&tasks.len()), "leadgen plan must have 2-5 subtasks, got {}", tasks.len());
-    let with_quota = tasks.iter().filter(|t| t.to_lowercase().contains("quota") || t.contains("квот")).count();
+    assert!(
+        (2..=5).contains(&tasks.len()),
+        "leadgen plan must have 2-5 subtasks, got {}",
+        tasks.len()
+    );
+    let with_quota = tasks
+        .iter()
+        .filter(|t| t.to_lowercase().contains("quota") || t.contains("квот"))
+        .count();
     println!("subtasks with quota: {with_quota}/{}", tasks.len());
     assert!(with_quota >= 1, "at least one subtask should carry a quota");
-    println!("✓ planning: LeadGen-запрос декомпозирован на {} задач с квотами", tasks.len());
+    println!(
+        "✓ planning: LeadGen-запрос декомпозирован на {} задач с квотами",
+        tasks.len()
+    );
 }
 
 // ── D. Goal-judge: полный/неполный вердикт ─────────────────────────────────
@@ -261,27 +295,43 @@ Rules: at most 3 new_subtasks; each must be independently executable by a resear
     let results = "Найдено 5 бенчмарков 2025-2026: PostgreSQL 17 — 120k TPS, MySQL 8.4 — 95k TPS на одинаковом железе; \
                    проанализированы индексы, репликация, изоляция транзакций; выводы подкреплены источниками.";
     let text = complete(&llm, vec![Message::user(judge_prompt(goal, results))], 1024).await;
-    let verdict: serde_json::Value = serde_json::from_str(text.trim())
-        .unwrap_or_else(|_| {
-            let s = text.find('{').unwrap();
-            let e = text.rfind('}').unwrap();
-            serde_json::from_str(&text[s..=e]).expect("judge JSON unparsable")
-        });
+    let verdict: serde_json::Value = serde_json::from_str(text.trim()).unwrap_or_else(|_| {
+        let s = text.find('{').unwrap();
+        let e = text.rfind('}').unwrap();
+        serde_json::from_str(&text[s..=e]).expect("judge JSON unparsable")
+    });
     println!("scenario 1 verdict: {}", verdict);
-    assert_eq!(verdict["complete"].as_bool(), Some(true), "full results → complete=true");
+    assert_eq!(
+        verdict["complete"].as_bool(),
+        Some(true),
+        "full results → complete=true"
+    );
 
     // Scenario 2: concrete gap remains.
     let results2 = "Найдено 2 бенчмарка PostgreSQL (2024). Данных по MySQL нет, сравнения нет.";
-    let text2 = complete(&llm, vec![Message::user(judge_prompt(goal, results2))], 1024).await;
-    let verdict2: serde_json::Value = serde_json::from_str(text2.trim())
-        .unwrap_or_else(|_| {
-            let s = text2.find('{').unwrap();
-            let e = text2.rfind('}').unwrap();
-            serde_json::from_str(&text2[s..=e]).expect("judge JSON unparsable")
-        });
+    let text2 = complete(
+        &llm,
+        vec![Message::user(judge_prompt(goal, results2))],
+        1024,
+    )
+    .await;
+    let verdict2: serde_json::Value = serde_json::from_str(text2.trim()).unwrap_or_else(|_| {
+        let s = text2.find('{').unwrap();
+        let e = text2.rfind('}').unwrap();
+        serde_json::from_str(&text2[s..=e]).expect("judge JSON unparsable")
+    });
     println!("scenario 2 verdict: {}", verdict2);
-    assert_eq!(verdict2["complete"].as_bool(), Some(false), "missing MySQL → complete=false");
-    assert!(verdict2["new_subtasks"].as_array().map(|a| !a.is_empty()).unwrap_or(false),
-        "gap scenario must propose new subtasks");
+    assert_eq!(
+        verdict2["complete"].as_bool(),
+        Some(false),
+        "missing MySQL → complete=false"
+    );
+    assert!(
+        verdict2["new_subtasks"]
+            .as_array()
+            .map(|a| !a.is_empty())
+            .unwrap_or(false),
+        "gap scenario must propose new subtasks"
+    );
     println!("✓ goal-judge: оба сценария (полный / неполный) распознаны корректно");
 }

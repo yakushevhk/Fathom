@@ -84,10 +84,8 @@ impl SessionResumer {
                     return None;
                 }
                 let session_id = SessionId(row.id.clone());
-                let (total_agents, completed_agents) = self
-                    .db
-                    .count_session_agents(&session_id)
-                    .unwrap_or((0, 0));
+                let (total_agents, completed_agents) =
+                    self.db.count_session_agents(&session_id).unwrap_or((0, 0));
                 Some(SessionInfo {
                     session_id,
                     query: row.query,
@@ -120,7 +118,10 @@ impl SessionResumer {
         match self.db.get_session_findings(session_id) {
             Ok(findings) => {
                 for f in findings {
-                    findings_by_agent.entry(f.agent_id.0.clone()).or_default().push(f);
+                    findings_by_agent
+                        .entry(f.agent_id.0.clone())
+                        .or_default()
+                        .push(f);
                 }
             }
             Err(e) => tracing::warn!("resume: findings unavailable: {e}"),
@@ -282,7 +283,8 @@ mod tests {
         let db = make_db();
         let session_id = SessionId::new();
         db.create_session(&session_id, "done query").unwrap();
-        db.complete_session(&session_id, "/tmp/out", 100, 2).unwrap();
+        db.complete_session(&session_id, "/tmp/out", 100, 2)
+            .unwrap();
 
         let resumer = SessionResumer::with_staleness(db.clone(), chrono::Duration::zero());
         assert!(resumer.find_interrupted_sessions().is_empty());
@@ -309,7 +311,13 @@ mod tests {
         let db = make_db();
         let session_id = SessionId::new();
         db.create_session(&session_id, "research X").unwrap();
-        create_agent_record(&db, &session_id, "task one", AgentStatus::Completed, Some("summary one"));
+        create_agent_record(
+            &db,
+            &session_id,
+            "task one",
+            AgentStatus::Completed,
+            Some("summary one"),
+        );
         create_agent_record(&db, &session_id, "task two", AgentStatus::Running, None);
         create_agent_record(&db, &session_id, "task three", AgentStatus::Failed, None);
 
@@ -332,7 +340,9 @@ mod tests {
     async fn test_resume_missing_session_errors() {
         let db = make_db();
         let resumer = SessionResumer::new(db);
-        let result = resumer.resume_session(&SessionId("does-not-exist".to_string())).await;
+        let result = resumer
+            .resume_session(&SessionId("does-not-exist".to_string()))
+            .await;
         assert!(result.is_err());
     }
 
@@ -371,7 +381,8 @@ mod tests {
             completed_at: None,
         };
         db.create_agent(&record).unwrap();
-        db.update_agent_status(&agent_id, status, tokens, Some("done")).unwrap();
+        db.update_agent_status(&agent_id, status, tokens, Some("done"))
+            .unwrap();
         agent_id
     }
 
@@ -382,11 +393,15 @@ mod tests {
         db.create_session(&session_id, "q").unwrap();
 
         // Parent (10 own tokens) with a completed child (32 tokens).
-        let parent = create_child_record(
-            &db, &session_id, None, "parent", AgentStatus::Completed, 10,
-        );
+        let parent =
+            create_child_record(&db, &session_id, None, "parent", AgentStatus::Completed, 10);
         let _child = create_child_record(
-            &db, &session_id, Some(&parent), "child", AgentStatus::Completed, 32,
+            &db,
+            &session_id,
+            Some(&parent),
+            "child",
+            AgentStatus::Completed,
+            32,
         );
         // A finding harvested by the parent.
         let finding = pr_core::Finding {

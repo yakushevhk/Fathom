@@ -1,6 +1,6 @@
-use async_trait::async_trait;
-use pr_core::{ToolSchema, ToolOutput};
 use crate::registry::{Tool, ToolContext};
+use async_trait::async_trait;
+use pr_core::{ToolOutput, ToolSchema};
 use regex::Regex;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -9,14 +9,14 @@ use std::sync::OnceLock;
 /// Regex patterns matching commands that are almost always destructive and
 /// irreversible. Any command matching one of these patterns is refused.
 const DESTRUCTIVE_PATTERNS: &[&str] = &[
-    r"rm\s+-rf\s+/",           // rm -rf /
-    r"rm\s+-rf\s+~",           // rm -rf ~
-    r"rm\s+-rf\s+\$",          // rm -rf $HOME
-    r"mkfs\.",                 // mkfs.*
-    r"dd\s+if=.+of=/dev/",     // dd to /dev/
-    r">\s*/dev/sd",            // redirect to /dev/sd*
-    r"chmod\s+-R\s+777\s+/",   // chmod -R 777 /
-    r":\(\)\{.*\};:",          // fork bomb
+    r"rm\s+-rf\s+/",         // rm -rf /
+    r"rm\s+-rf\s+~",         // rm -rf ~
+    r"rm\s+-rf\s+\$",        // rm -rf $HOME
+    r"mkfs\.",               // mkfs.*
+    r"dd\s+if=.+of=/dev/",   // dd to /dev/
+    r">\s*/dev/sd",          // redirect to /dev/sd*
+    r"chmod\s+-R\s+777\s+/", // chmod -R 777 /
+    r":\(\)\{.*\};:",        // fork bomb
 ];
 
 static DESTRUCTIVE_REGEXES: OnceLock<Vec<Regex>> = OnceLock::new();
@@ -53,13 +53,17 @@ struct ShellParams {
     timeout: u64,
 }
 
-fn default_timeout() -> u64 { 120 }
+fn default_timeout() -> u64 {
+    120
+}
 
 pub struct ShellTool;
 
 #[async_trait]
 impl Tool for ShellTool {
-    fn name(&self) -> &str { "shell" }
+    fn name(&self) -> &str {
+        "shell"
+    }
     fn description(&self) -> &str {
         "Execute a shell command in the working directory and return stdout, stderr, and exit code.
 
@@ -104,11 +108,16 @@ Runs the given command in `bash` within the working directory. Returns combined 
         ToolSchema {
             name: self.name().to_string(),
             description: self.description().to_string(),
-            parameters: serde_json::to_value(&schemars::schema_for!(ShellParams).schema).unwrap_or_default(),
+            parameters: serde_json::to_value(&schemars::schema_for!(ShellParams).schema)
+                .unwrap_or_default(),
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: ShellParams = serde_json::from_value(args)?;
 
         // Refuse commands that would cause irreversible damage.
@@ -121,8 +130,14 @@ Runs the given command in `bash` within the working directory. Returns combined 
 
         // Use HostSandbox to constrain execution to workspace directory where supported
         let sandbox = pr_supervisor::HostSandbox::new(&ctx.working_dir);
-        let (prog, args) = if std::env::var("FATHOM_DISABLE_SANDBOX").map(|v| v == "1" || v == "true").unwrap_or(false) {
-            ("bash".to_string(), vec!["-c".to_string(), params.command.clone()])
+        let (prog, args) = if std::env::var("FATHOM_DISABLE_SANDBOX")
+            .map(|v| v == "1" || v == "true")
+            .unwrap_or(false)
+        {
+            (
+                "bash".to_string(),
+                vec!["-c".to_string(), params.command.clone()],
+            )
         } else {
             sandbox.wrap_command("bash", &["-c".to_string(), params.command.clone()])
         };
@@ -131,10 +146,9 @@ Runs the given command in `bash` within the working directory. Returns combined 
         cmd.args(&args)
             .current_dir(&ctx.working_dir)
             .kill_on_drop(true);
-        let output = tokio::time::timeout(
-            std::time::Duration::from_secs(params.timeout),
-            cmd.output(),
-        ).await;
+        let output =
+            tokio::time::timeout(std::time::Duration::from_secs(params.timeout), cmd.output())
+                .await;
 
         match output {
             Ok(Ok(out)) => {
@@ -159,7 +173,8 @@ Runs the given command in `bash` within the working directory. Returns combined 
             }
             Ok(Err(e)) => Ok(ToolOutput::err(format!("Command failed to start: {e}"))),
             Err(_) => Ok(ToolOutput::err(format!(
-                "Command timed out after {}s", params.timeout
+                "Command timed out after {}s",
+                params.timeout
             ))),
         }
     }
@@ -234,24 +249,20 @@ mod tests {
     #[tokio::test]
     async fn test_shell_tool_blocks_destructive_command() {
         let tool = ShellTool;
-        let ctx = ToolContext::new(
-            std::env::temp_dir(),
-            pr_core::SearchConfig::default(),
-        );
+        let ctx = ToolContext::new(std::env::temp_dir(), pr_core::SearchConfig::default());
         let args = serde_json::json!({ "command": "rm -rf /" });
         let output = tool.execute(args, &ctx).await.unwrap();
 
         assert!(!output.success);
-        assert!(output.content.starts_with("BLOCKED: Destructive command detected:"));
+        assert!(output
+            .content
+            .starts_with("BLOCKED: Destructive command detected:"));
     }
 
     #[tokio::test]
     async fn test_shell_tool_blocks_destructive_embedded_in_chain() {
         let tool = ShellTool;
-        let ctx = ToolContext::new(
-            std::env::temp_dir(),
-            pr_core::SearchConfig::default(),
-        );
+        let ctx = ToolContext::new(std::env::temp_dir(), pr_core::SearchConfig::default());
         let args = serde_json::json!({ "command": "echo cleaning && rm -rf $HOME" });
         let output = tool.execute(args, &ctx).await.unwrap();
 
@@ -262,10 +273,7 @@ mod tests {
     #[tokio::test]
     async fn test_shell_tool_allows_safe_command() {
         let tool = ShellTool;
-        let ctx = ToolContext::new(
-            std::env::temp_dir(),
-            pr_core::SearchConfig::default(),
-        );
+        let ctx = ToolContext::new(std::env::temp_dir(), pr_core::SearchConfig::default());
         let args = serde_json::json!({ "command": "echo ok" });
         let output = tool.execute(args, &ctx).await.unwrap();
 

@@ -11,9 +11,7 @@ pub enum ThinkingBlock {
         signature: Option<String>,
     },
     #[serde(rename = "redacted_thinking")]
-    RedactedThinking {
-        data: String,
-    },
+    RedactedThinking { data: String },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -31,7 +29,11 @@ pub struct ToolCall {
 }
 
 impl ToolCall {
-    pub fn new(id: impl Into<String>, name: impl Into<String>, arguments: impl IntoToolArgs) -> Self {
+    pub fn new(
+        id: impl Into<String>,
+        name: impl Into<String>,
+        arguments: impl IntoToolArgs,
+    ) -> Self {
         Self {
             id: id.into(),
             call_type: "function".into(),
@@ -87,10 +89,10 @@ pub struct ToolResult {
 pub enum Message {
     #[serde(rename = "system")]
     System { content: String },
-    
+
     #[serde(rename = "user")]
     User { content: String },
-    
+
     #[serde(rename = "assistant")]
     Assistant {
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -100,7 +102,7 @@ pub enum Message {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         tool_calls: Vec<ToolCall>,
     },
-    
+
     #[serde(rename = "tool")]
     Tool {
         tool_call_id: String,
@@ -110,11 +112,15 @@ pub enum Message {
 
 impl Message {
     pub fn system(content: impl Into<String>) -> Self {
-        Self::System { content: content.into() }
+        Self::System {
+            content: content.into(),
+        }
     }
 
     pub fn user(content: impl Into<String>) -> Self {
-        Self::User { content: content.into() }
+        Self::User {
+            content: content.into(),
+        }
     }
 
     pub fn assistant(content: impl Into<String>) -> Self {

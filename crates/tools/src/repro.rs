@@ -1,8 +1,8 @@
+use crate::registry::{Tool, ToolContext};
 use async_trait::async_trait;
 use pr_core::{ToolOutput, ToolSchema};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use crate::registry::{Tool, ToolContext};
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "action")]
@@ -72,11 +72,16 @@ impl Tool for ReproTestTool {
         ToolSchema {
             name: self.name().to_string(),
             description: self.description().to_string(),
-            parameters: serde_json::to_value(&schemars::schema_for!(ReproTestParams).schema).unwrap_or_default(),
+            parameters: serde_json::to_value(&schemars::schema_for!(ReproTestParams).schema)
+                .unwrap_or_default(),
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: ReproTestParams = serde_json::from_value(args)?;
         let working_dir = &ctx.working_dir;
 
@@ -99,7 +104,9 @@ impl Tool for ReproTestTool {
                         "cargo"
                     } else if working_dir.join("package.json").exists() {
                         "npm"
-                    } else if working_dir.join("pytest.ini").exists() || working_dir.join("pyproject.toml").exists() {
+                    } else if working_dir.join("pytest.ini").exists()
+                        || working_dir.join("pyproject.toml").exists()
+                    {
                         "pytest"
                     } else if working_dir.join("go.mod").exists() {
                         "go"
@@ -169,12 +176,21 @@ impl Tool for ReproTestTool {
                 let target = crate::file::resolve_path(working_dir, &file);
                 if target.exists() {
                     tokio::fs::remove_file(&target).await?;
-                    Ok(ToolOutput::ok(format!("Cleaned up reproduction test file '{}'.", target.display())))
+                    Ok(ToolOutput::ok(format!(
+                        "Cleaned up reproduction test file '{}'.",
+                        target.display()
+                    )))
                 } else {
-                    Ok(ToolOutput::err(format!("Reproduction test file '{}' not found for cleanup.", target.display())))
+                    Ok(ToolOutput::err(format!(
+                        "Reproduction test file '{}' not found for cleanup.",
+                        target.display()
+                    )))
                 }
             }
-            ReproAction::Synthesize { stack_trace, target_file } => {
+            ReproAction::Synthesize {
+                stack_trace,
+                target_file,
+            } => {
                 let target = crate::file::resolve_path(working_dir, &target_file);
                 let synthesized = format!(
                     "// Auto-synthesized regression test for stack trace\n#[test]\nfn test_reproduction() {{\n    // Stack trace context:\n    // {}\n    assert!(true, \"Reproduction harness synthesized\");\n}}\n",

@@ -89,7 +89,10 @@ fn valid_id(value: &str) -> bool {
 fn bounded(value: &str, max: usize, field: &str, required: bool) -> Result<String, Response> {
     let value = value.trim();
     if required && value.is_empty() {
-        return Err(error(StatusCode::BAD_REQUEST, format!("{field} must not be empty")));
+        return Err(error(
+            StatusCode::BAD_REQUEST,
+            format!("{field} must not be empty"),
+        ));
     }
     if value.chars().count() > max {
         return Err(error(
@@ -178,11 +181,16 @@ pub(crate) async fn create_coworker(
     State(state): State<Arc<AppState>>,
     Json(body): Json<CreateCoworkerRequest>,
 ) -> Response {
-    let (name, title, role, prompt, visibility) =
-        match coworker_fields(&body.name, &body.title, &body.role, &body.prompt, &body.visibility) {
-            Ok(fields) => fields,
-            Err(response) => return response,
-        };
+    let (name, title, role, prompt, visibility) = match coworker_fields(
+        &body.name,
+        &body.title,
+        &body.role,
+        &body.prompt,
+        &body.visibility,
+    ) {
+        Ok(fields) => fields,
+        Err(response) => return response,
+    };
     match state
         .db
         .create_coworker(&name, &title, &role, &prompt, &visibility, body.active)
@@ -201,12 +209,20 @@ pub(crate) async fn update_coworker(
     if !valid_id(&id) {
         return error(StatusCode::BAD_REQUEST, "coworker id is invalid");
     }
-    let (name, title, role, prompt, visibility) =
-        match coworker_fields(&body.name, &body.title, &body.role, &body.prompt, &body.visibility) {
-            Ok(fields) => fields,
-            Err(response) => return response,
-        };
-    match state.db.update_coworker(&id, &name, &title, &role, &prompt, &visibility, body.active) {
+    let (name, title, role, prompt, visibility) = match coworker_fields(
+        &body.name,
+        &body.title,
+        &body.role,
+        &body.prompt,
+        &body.visibility,
+    ) {
+        Ok(fields) => fields,
+        Err(response) => return response,
+    };
+    match state
+        .db
+        .update_coworker(&id, &name, &title, &role, &prompt, &visibility, body.active)
+    {
         Ok(Some(row)) => row_json(&row, "coworker"),
         Ok(None) => error(StatusCode::NOT_FOUND, "coworker not found"),
         Err(err) => error(StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
@@ -266,7 +282,10 @@ pub(crate) async fn create_channel(
         Err(err) => return error(StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
     }
     if let Some(session_id) = session_id.as_deref() {
-        match state.db.get_session(&pr_core::SessionId(session_id.to_string())) {
+        match state
+            .db
+            .get_session(&pr_core::SessionId(session_id.to_string()))
+        {
             Ok(Some(_)) => {}
             Ok(None) => return error(StatusCode::NOT_FOUND, "session not found"),
             Err(err) => return error(StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
@@ -303,7 +322,10 @@ pub(crate) async fn update_channel(
         None => None,
     };
     if let Some(session_id) = session_id.as_deref() {
-        match state.db.get_session(&pr_core::SessionId(session_id.to_string())) {
+        match state
+            .db
+            .get_session(&pr_core::SessionId(session_id.to_string()))
+        {
             Ok(Some(_)) => {}
             Ok(None) => return error(StatusCode::NOT_FOUND, "session not found"),
             Err(err) => return error(StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),

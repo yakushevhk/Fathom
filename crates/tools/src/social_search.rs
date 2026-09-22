@@ -137,20 +137,22 @@ impl SocialSearch {
             .await;
         results
             .into_iter()
-            .filter_map(|r| parse_profile_url(&r.url, &["x.com", "twitter.com"]).map(|handle| {
-                SocialSearchResult {
-                    platform: "twitter".to_string(),
-                    profile_url: format!("https://x.com/{handle}"),
-                    name: clean_search_title(&r.title, &handle),
-                    bio: if r.snippet.trim().is_empty() {
-                        None
-                    } else {
-                        Some(r.snippet)
-                    },
-                    followers: None,
-                    location: None,
-                }
-            }))
+            .filter_map(|r| {
+                parse_profile_url(&r.url, &["x.com", "twitter.com"]).map(|handle| {
+                    SocialSearchResult {
+                        platform: "twitter".to_string(),
+                        profile_url: format!("https://x.com/{handle}"),
+                        name: clean_search_title(&r.title, &handle),
+                        bio: if r.snippet.trim().is_empty() {
+                            None
+                        } else {
+                            Some(r.snippet)
+                        },
+                        followers: None,
+                        location: None,
+                    }
+                })
+            })
             .collect()
     }
 
@@ -168,13 +170,15 @@ impl SocialSearch {
             .await;
 
         match response {
-            Ok(resp) if resp.status().is_success() => match resp.json::<serde_json::Value>().await {
-                Ok(value) => parse_twitter_api_response(&value),
-                Err(e) => {
-                    tracing::warn!("Twitter response parse error: {e}");
-                    vec![]
+            Ok(resp) if resp.status().is_success() => {
+                match resp.json::<serde_json::Value>().await {
+                    Ok(value) => parse_twitter_api_response(&value),
+                    Err(e) => {
+                        tracing::warn!("Twitter response parse error: {e}");
+                        vec![]
+                    }
                 }
-            },
+            }
             Ok(resp) => {
                 tracing::warn!("Twitter search failed: HTTP {}", resp.status());
                 vec![]
@@ -192,15 +196,11 @@ impl SocialSearch {
     /// then enrich the top candidates from their t.me preview pages.
     pub async fn search_telegram(&self, query: &str) -> Vec<SocialSearchResult> {
         let engine = SearchEngine::new(self.search_config.clone());
-        let results = engine
-            .search(&format!("site:t.me {query}"), 10)
-            .await;
+        let results = engine.search(&format!("site:t.me {query}"), 10).await;
 
         let mut candidates: Vec<(String, String)> = results
             .into_iter()
-            .filter_map(|r| {
-                parse_profile_url(&r.url, &["t.me"]).map(|handle| (handle, r.snippet))
-            })
+            .filter_map(|r| parse_profile_url(&r.url, &["t.me"]).map(|handle| (handle, r.snippet)))
             .collect();
         candidates.dedup_by(|a, b| a.0 == b.0);
         candidates.truncate(TELEGRAM_ENRICH_LIMIT);
@@ -209,7 +209,15 @@ impl SocialSearch {
         for (handle, snippet) in candidates {
             let enriched = self.fetch_telegram_preview(&handle).await;
             let (name, bio, followers) = enriched.unwrap_or_else(|| {
-                (handle.clone(), if snippet.is_empty() { None } else { Some(snippet) }, None)
+                (
+                    handle.clone(),
+                    if snippet.is_empty() {
+                        None
+                    } else {
+                        Some(snippet)
+                    },
+                    None,
+                )
             });
             out.push(SocialSearchResult {
                 platform: "telegram".to_string(),
@@ -225,7 +233,10 @@ impl SocialSearch {
 
     /// Fetch the public preview page of a Telegram channel/user and extract
     /// name, description and subscriber count.
-    async fn fetch_telegram_preview(&self, handle: &str) -> Option<(String, Option<String>, Option<u32>)> {
+    async fn fetch_telegram_preview(
+        &self,
+        handle: &str,
+    ) -> Option<(String, Option<String>, Option<u32>)> {
         let url = format!("https://t.me/{handle}");
         let resp = self
             .http
@@ -255,9 +266,7 @@ impl SocialSearch {
             .await;
         results
             .into_iter()
-            .filter_map(|r| {
-                parse_linkedin_result(&r.url, &r.title, &r.snippet)
-            })
+            .filter_map(|r| parse_linkedin_result(&r.url, &r.title, &r.snippet))
             .collect()
     }
 }
@@ -277,7 +286,9 @@ fn parse_twitter_api_response(value: &serde_json::Value) -> Vec<SocialSearchResu
                 profile_url: format!("https://x.com/{username}"),
                 name,
                 bio: user["description"].as_str().map(|s| s.to_string()),
-                followers: user["public_metrics"]["followers_count"].as_u64().map(|v| v as u32),
+                followers: user["public_metrics"]["followers_count"]
+                    .as_u64()
+                    .map(|v| v as u32),
                 location: user["location"].as_str().map(|s| s.to_string()),
             })
         })
@@ -291,7 +302,10 @@ fn parse_twitter_api_response(value: &serde_json::Value) -> Vec<SocialSearchResu
 fn parse_profile_url(url: &str, hosts: &[&str]) -> Option<String> {
     let parsed = url::Url::parse(url).ok()?;
     let host = parsed.host_str()?.to_lowercase();
-    if !hosts.iter().any(|h| host == *h || host.ends_with(&format!(".{h}"))) {
+    if !hosts
+        .iter()
+        .any(|h| host == *h || host.ends_with(&format!(".{h}")))
+    {
         return None;
     }
     let mut segments = parsed.path_segments()?;
@@ -300,14 +314,32 @@ fn parse_profile_url(url: &str, hosts: &[&str]) -> Option<String> {
     if segment == "s" {
         segment = segments.next()?.to_string();
     }
-    let segment = segment.trim_start_matches('@').trim_end_matches('/').to_string();
+    let segment = segment
+        .trim_start_matches('@')
+        .trim_end_matches('/')
+        .to_string();
     if segment.is_empty() {
         return None;
     }
     // Filter out platform-reserved paths that are not profiles.
     const RESERVED: &[&str] = &[
-        "search", "home", "explore", "notifications", "messages", "settings", "i", "hashtag",
-        "login", "signup", "share", "add", "company", "school", "showcase", "feed", "jobs",
+        "search",
+        "home",
+        "explore",
+        "notifications",
+        "messages",
+        "settings",
+        "i",
+        "hashtag",
+        "login",
+        "signup",
+        "share",
+        "add",
+        "company",
+        "school",
+        "showcase",
+        "feed",
+        "jobs",
     ];
     if RESERVED.contains(&segment.to_lowercase().as_str()) {
         return None;
@@ -362,8 +394,10 @@ fn extract_subscriber_count(html: &str) -> Option<u32> {
         }
         out
     };
-    let re = regex::Regex::new(r"(?i)([\d][\d\s\u{00A0}\u{202F}]*)\s*(?:subscribers|members|подписчиков|участников)")
-        .ok()?;
+    let re = regex::Regex::new(
+        r"(?i)([\d][\d\s\u{00A0}\u{202F}]*)\s*(?:subscribers|members|подписчиков|участников)",
+    )
+    .ok()?;
     re.captures(&text).and_then(|caps| {
         let digits: String = caps[1].chars().filter(|c| c.is_ascii_digit()).collect();
         digits.parse::<u32>().ok()
@@ -422,12 +456,15 @@ fn clean_search_title(title: &str, handle: &str) -> String {
     }
     // Cut off the earliest common suffix.
     const SEPARATORS: &[&str] = &[
-        " / X", " / Twitter", " (@", " on X", " on Twitter", " | LinkedIn", " - LinkedIn",
+        " / X",
+        " / Twitter",
+        " (@",
+        " on X",
+        " on Twitter",
+        " | LinkedIn",
+        " - LinkedIn",
     ];
-    let earliest = SEPARATORS
-        .iter()
-        .filter_map(|sep| trimmed.find(sep))
-        .min();
+    let earliest = SEPARATORS.iter().filter_map(|sep| trimmed.find(sep)).min();
     if let Some(idx) = earliest {
         let head = trimmed[..idx].trim();
         if !head.is_empty() {
@@ -440,9 +477,7 @@ fn clean_search_title(title: &str, handle: &str) -> String {
 /// Deduplicate profiles by (platform, lowercased profile URL).
 fn dedupe_profiles(results: &mut Vec<SocialSearchResult>) {
     let mut seen: std::collections::HashSet<(String, String)> = std::collections::HashSet::new();
-    results.retain(|r| {
-        seen.insert((r.platform.clone(), r.profile_url.to_lowercase()))
-    });
+    results.retain(|r| seen.insert((r.platform.clone(), r.profile_url.to_lowercase())));
 }
 
 // ─── Tool ───
@@ -504,7 +539,11 @@ Runs platform-specific searches in parallel. Twitter uses the X API v2 when PARA
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: SocialSearchParams = serde_json::from_value(args)?;
         if params.query.trim().is_empty() {
             return Ok(ToolOutput::err("Parameter `query` must not be empty."));
@@ -512,7 +551,11 @@ Runs platform-specific searches in parallel. Twitter uses the X API v2 when PARA
 
         let searcher = SocialSearch::new(ctx.search_config.clone());
         let results = searcher
-            .search(params.query.trim(), params.platforms.as_deref(), params.limit)
+            .search(
+                params.query.trim(),
+                params.platforms.as_deref(),
+                params.limit,
+            )
             .await;
 
         if results.is_empty() {
@@ -611,7 +654,10 @@ mod tests {
             Some("janedoe".to_string())
         );
         assert_eq!(
-            parse_profile_url("https://twitter.com/janedoe?ref=1", &["x.com", "twitter.com"]),
+            parse_profile_url(
+                "https://twitter.com/janedoe?ref=1",
+                &["x.com", "twitter.com"]
+            ),
             Some("janedoe".to_string())
         );
         assert_eq!(
@@ -619,9 +665,15 @@ mod tests {
             Some("handle".to_string())
         );
         // Reserved paths and non-profile hosts are rejected.
-        assert_eq!(parse_profile_url("https://x.com/search?q=a", &["x.com"]), None);
+        assert_eq!(
+            parse_profile_url("https://x.com/search?q=a", &["x.com"]),
+            None
+        );
         assert_eq!(parse_profile_url("https://x.com/", &["x.com"]), None);
-        assert_eq!(parse_profile_url("https://example.com/janedoe", &["x.com"]), None);
+        assert_eq!(
+            parse_profile_url("https://example.com/janedoe", &["x.com"]),
+            None
+        );
         assert_eq!(parse_profile_url("not a url", &["x.com"]), None);
     }
 
@@ -636,7 +688,10 @@ mod tests {
             parse_profile_url("https://t.me/s/durov/123", &["t.me"]),
             Some("durov".to_string())
         );
-        assert_eq!(parse_profile_url("https://t.me/share/url?url=x", &["t.me"]), None);
+        assert_eq!(
+            parse_profile_url("https://t.me/share/url?url=x", &["t.me"]),
+            None
+        );
     }
 
     // ─── Telegram preview parsing ───
@@ -658,7 +713,8 @@ mod tests {
 
     #[test]
     fn test_parse_telegram_preview_html_minimal() {
-        let html = r#"<html><head><meta property="og:title" content="Solo"></head><body></body></html>"#;
+        let html =
+            r#"<html><head><meta property="og:title" content="Solo"></head><body></body></html>"#;
         let (name, bio, followers) = parse_telegram_preview_html(html).unwrap();
         assert_eq!(name, "Solo");
         assert!(bio.is_none());
@@ -672,7 +728,10 @@ mod tests {
 
     #[test]
     fn test_extract_subscriber_count_variants() {
-        assert_eq!(extract_subscriber_count("<div>1 234 subscribers</div>"), Some(1234));
+        assert_eq!(
+            extract_subscriber_count("<div>1 234 subscribers</div>"),
+            Some(1234)
+        );
         assert_eq!(extract_subscriber_count("55 members joined"), Some(55));
         assert_eq!(extract_subscriber_count("10 подписчиков"), Some(10));
         assert_eq!(extract_subscriber_count("no count here"), None);
@@ -690,7 +749,10 @@ mod tests {
         .unwrap();
         assert_eq!(r.name, "John Doe - CEO at Acme Corp");
         assert_eq!(r.platform, "linkedin");
-        assert_eq!(r.bio.as_deref(), Some("Acme Corp CEO with 20 years experience."));
+        assert_eq!(
+            r.bio.as_deref(),
+            Some("Acme Corp CEO with 20 years experience.")
+        );
         assert!(r.followers.is_none());
     }
 
@@ -699,14 +761,22 @@ mod tests {
         assert!(parse_linkedin_result("https://www.linkedin.com/pulse/article", "T", "").is_none());
         assert!(parse_linkedin_result("https://example.com/in/someone", "T", "").is_none());
         // Company pages are kept.
-        assert!(parse_linkedin_result("https://www.linkedin.com/company/acme", "Acme | LinkedIn", "").is_some());
+        assert!(parse_linkedin_result(
+            "https://www.linkedin.com/company/acme",
+            "Acme | LinkedIn",
+            ""
+        )
+        .is_some());
     }
 
     // ─── Title cleaning ───
 
     #[test]
     fn test_clean_search_title() {
-        assert_eq!(clean_search_title("Jane Doe (@janedoe) / X", "janedoe"), "Jane Doe");
+        assert_eq!(
+            clean_search_title("Jane Doe (@janedoe) / X", "janedoe"),
+            "Jane Doe"
+        );
         assert_eq!(clean_search_title("Jane Doe / X", "janedoe"), "Jane Doe");
         assert_eq!(clean_search_title("", "janedoe"), "janedoe");
         assert_eq!(clean_search_title("Plain title", "handle"), "Plain title");

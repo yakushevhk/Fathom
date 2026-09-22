@@ -1,19 +1,19 @@
 pub mod contacts;
-pub mod credentials;
 pub mod coworkers;
+pub mod credentials;
 pub mod db;
 pub mod history;
 pub mod jobs;
 pub mod replay;
-pub mod store;
 pub mod schedules;
+pub mod store;
 
 #[cfg(feature = "postgres")]
 pub mod pg;
 
 pub use contacts::*;
-pub use credentials::*;
 pub use coworkers::*;
+pub use credentials::*;
 pub use db::*;
 pub use history::*;
 pub use jobs::*;

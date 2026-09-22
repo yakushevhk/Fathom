@@ -102,7 +102,7 @@ impl ProcessManager {
         role: AgentRole,
     ) -> anyhow::Result<()> {
         let socket_path = self.socket_dir.join(short_socket_name(&agent_id));
-        
+
         // Remove existing socket if present
         let _ = std::fs::remove_file(&socket_path);
 
@@ -116,11 +116,16 @@ impl ProcessManager {
             cmd.process_group(0);
         }
         cmd.arg("worker")
-            .arg("--session-id").arg(session_id)
-            .arg("--agent-id").arg(&agent_id.0)
-            .arg("--task").arg(&task)
-            .arg("--socket").arg(&socket_path)
-            .arg("--role").arg(role.to_string());
+            .arg("--session-id")
+            .arg(session_id)
+            .arg("--agent-id")
+            .arg(&agent_id.0)
+            .arg("--task")
+            .arg(&task)
+            .arg("--socket")
+            .arg(&socket_path)
+            .arg("--role")
+            .arg(role.to_string());
 
         // Tell the worker where the session output directory lives so it
         // opens the same SQLite database as the coordinator. The socket dir
@@ -133,8 +138,7 @@ impl ProcessManager {
 
         // Wait for the worker to create its socket and connect. On failure
         // wait_for_socket has already killed and reaped the child.
-        let socket = match wait_for_socket(&socket_path, &mut process, self.startup_timeout).await
-        {
+        let socket = match wait_for_socket(&socket_path, &mut process, self.startup_timeout).await {
             Ok(stream) => stream,
             Err(e) => {
                 let _ = std::fs::remove_file(&socket_path);
@@ -154,8 +158,14 @@ impl ProcessManager {
     }
 
     /// Send a message to a worker.
-    pub async fn send_message(&mut self, agent_id: &AgentId, msg: IpcMessage) -> anyhow::Result<()> {
-        let handle = self.workers.get_mut(agent_id)
+    pub async fn send_message(
+        &mut self,
+        agent_id: &AgentId,
+        msg: IpcMessage,
+    ) -> anyhow::Result<()> {
+        let handle = self
+            .workers
+            .get_mut(agent_id)
             .ok_or_else(|| anyhow::anyhow!("Worker not found: {}", agent_id))?;
 
         let line = msg.to_line();
@@ -165,7 +175,10 @@ impl ProcessManager {
     }
 
     /// Read messages from a worker until completion or failure.
-    pub async fn wait_for_completion(&mut self, agent_id: &AgentId) -> anyhow::Result<WorkerResult> {
+    pub async fn wait_for_completion(
+        &mut self,
+        agent_id: &AgentId,
+    ) -> anyhow::Result<WorkerResult> {
         self.wait_for_completion_with_events(agent_id, None).await
     }
 
@@ -184,7 +197,9 @@ impl ProcessManager {
         agent_id: &AgentId,
         event_tx: Option<&broadcast::Sender<AgentEvent>>,
     ) -> anyhow::Result<WorkerResult> {
-        let handle = self.workers.get_mut(agent_id)
+        let handle = self
+            .workers
+            .get_mut(agent_id)
             .ok_or_else(|| anyhow::anyhow!("Worker not found: {}", agent_id))?;
 
         let mut reader = BufReader::new(&mut handle.socket);
@@ -213,16 +228,22 @@ impl ProcessManager {
                 Err(_) => {
                     kill_and_reap(&mut handle.process).await;
                     return Ok(WorkerResult::Failed {
-                        error: "worker protocol error: invalid UTF-8 in message line"
-                            .to_string(),
+                        error: "worker protocol error: invalid UTF-8 in message line".to_string(),
                     });
                 }
             };
 
             if let Some(msg) = IpcMessage::from_line(line) {
                 match msg {
-                    IpcMessage::Completed { summary, tokens_used, .. } => {
-                        return Ok(WorkerResult::Completed { summary, tokens_used });
+                    IpcMessage::Completed {
+                        summary,
+                        tokens_used,
+                        ..
+                    } => {
+                        return Ok(WorkerResult::Completed {
+                            summary,
+                            tokens_used,
+                        });
                     }
                     IpcMessage::Failed { error, .. } => {
                         return Ok(WorkerResult::Failed { error });
@@ -584,14 +605,20 @@ mod tests {
         // Empty input: immediate EOF.
         let mut reader = tokio::io::BufReader::new(&b""[..]);
         let mut line = Vec::new();
-        assert_eq!(read_line_capped(&mut reader, &mut line, 64).await.unwrap(), 0);
+        assert_eq!(
+            read_line_capped(&mut reader, &mut line, 64).await.unwrap(),
+            0
+        );
 
         // Partial line at EOF is returned as-is (like read_line), and the
         // next read reports EOF.
         let mut reader = tokio::io::BufReader::new(&b"partial"[..]);
         let n = read_line_capped(&mut reader, &mut line, 64).await.unwrap();
         assert_eq!(&line[..n], b"partial");
-        assert_eq!(read_line_capped(&mut reader, &mut line, 64).await.unwrap(), 0);
+        assert_eq!(
+            read_line_capped(&mut reader, &mut line, 64).await.unwrap(),
+            0
+        );
     }
 
     // ------------------------------------------------------------------
@@ -629,7 +656,11 @@ mod tests {
             .expect("try_wait must not fail")
             .expect("child must have been reaped after timeout kill");
         use std::os::unix::process::ExitStatusExt as _;
-        assert_eq!(status.signal(), Some(9), "timed-out worker must be SIGKILLed");
+        assert_eq!(
+            status.signal(),
+            Some(9),
+            "timed-out worker must be SIGKILLed"
+        );
         // ...and the OS agrees the pid is gone.
         assert!(!pid_alive(pid), "worker pid {pid} must be dead");
 
@@ -687,7 +718,11 @@ mod tests {
             result.is_err(),
             "spawn must fail when the worker never opens its socket"
         );
-        assert_eq!(pm.active_count(), 0, "no worker may be registered on failure");
+        assert_eq!(
+            pm.active_count(),
+            0,
+            "no worker may be registered on failure"
+        );
 
         let _ = std::fs::remove_dir_all(dir);
     }

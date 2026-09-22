@@ -35,15 +35,33 @@ pub struct ActionContext {
 }
 
 impl ActionContext {
-    pub fn new(agent: impl Into<String>, session: impl Into<String>, tool: impl Into<String>, args: Value) -> Self {
-        Self { agent: agent.into(), session: session.into(), tool: tool.into(), args, url: None, element: None, file: None, intent: None, mcp_metadata: None }
+    pub fn new(
+        agent: impl Into<String>,
+        session: impl Into<String>,
+        tool: impl Into<String>,
+        args: Value,
+    ) -> Self {
+        Self {
+            agent: agent.into(),
+            session: session.into(),
+            tool: tool.into(),
+            args,
+            url: None,
+            element: None,
+            file: None,
+            intent: None,
+            mcp_metadata: None,
+        }
     }
 }
 
 /// Whether a matching policy rule grants or rejects an action.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
-pub enum PolicyEffect { Allow, Deny }
+pub enum PolicyEffect {
+    Allow,
+    Deny,
+}
 
 /// A rule uses simple, safe string matching; it never evaluates code.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -60,8 +78,24 @@ pub struct PolicyRule {
 }
 
 impl PolicyRule {
-    pub fn allow() -> Self { Self { effect: PolicyEffect::Allow, tool: None, host: None, path: None, intent: None } }
-    pub fn deny() -> Self { Self { effect: PolicyEffect::Deny, tool: None, host: None, path: None, intent: None } }
+    pub fn allow() -> Self {
+        Self {
+            effect: PolicyEffect::Allow,
+            tool: None,
+            host: None,
+            path: None,
+            intent: None,
+        }
+    }
+    pub fn deny() -> Self {
+        Self {
+            effect: PolicyEffect::Deny,
+            tool: None,
+            host: None,
+            path: None,
+            intent: None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
@@ -73,11 +107,18 @@ pub struct PolicyConfig {
 /// The result of policy evaluation.  Policy evaluation fails closed.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
-pub enum Decision { Allow, Deny }
+pub enum Decision {
+    Allow,
+    Deny,
+}
 
 impl Decision {
-    pub fn is_allowed(self) -> bool { matches!(self, Self::Allow) }
-    pub fn allowed(self) -> bool { self.is_allowed() }
+    pub fn is_allowed(self) -> bool {
+        matches!(self, Self::Allow)
+    }
+    pub fn allowed(self) -> bool {
+        self.is_allowed()
+    }
 }
 
 #[derive(Debug, Error)]
@@ -87,37 +128,57 @@ pub enum PolicyError {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct PolicyEngine { config: PolicyConfig }
+pub struct PolicyEngine {
+    config: PolicyConfig,
+}
 
 impl PolicyEngine {
-    pub fn new(config: PolicyConfig) -> Self { Self { config } }
+    pub fn new(config: PolicyConfig) -> Self {
+        Self { config }
+    }
 
     pub fn from_json(input: &str) -> Result<Self, PolicyError> {
         Ok(Self::new(serde_json::from_str(input)?))
     }
 
-    pub fn config(&self) -> &PolicyConfig { &self.config }
+    pub fn config(&self) -> &PolicyConfig {
+        &self.config
+    }
 
     pub fn decide(&self, action: &ActionContext) -> Decision {
         // A deny rule always takes precedence, including when an allow rule
         // also matches.  An empty policy and unmatched actions are denied.
         let mut allowed = false;
         for rule in &self.config.rules {
-            if !rule_matches(rule, action) { continue; }
+            if !rule_matches(rule, action) {
+                continue;
+            }
             match rule.effect {
                 PolicyEffect::Deny => return Decision::Deny,
                 PolicyEffect::Allow => allowed = true,
             }
         }
-        if allowed { Decision::Allow } else { Decision::Deny }
+        if allowed {
+            Decision::Allow
+        } else {
+            Decision::Deny
+        }
     }
 }
 
 fn rule_matches(rule: &PolicyRule, action: &ActionContext) -> bool {
-    rule.tool.as_deref().is_none_or(|v| glob_match(v, &action.tool))
-        && rule.host.as_deref().is_none_or(|v| action.url.as_deref().is_some_and(|u| host_matches(v, u)))
+    rule.tool
+        .as_deref()
+        .is_none_or(|v| glob_match(v, &action.tool))
+        && rule
+            .host
+            .as_deref()
+            .is_none_or(|v| action.url.as_deref().is_some_and(|u| host_matches(v, u)))
         && rule.path.as_deref().is_none_or(|v| path_matches(v, action))
-        && rule.intent.as_deref().is_none_or(|v| action.intent.as_deref().is_some_and(|i| glob_match(v, i)))
+        && rule
+            .intent
+            .as_deref()
+            .is_none_or(|v| action.intent.as_deref().is_some_and(|i| glob_match(v, i)))
 }
 
 fn normalize_path(raw: &str) -> String {
@@ -125,7 +186,9 @@ fn normalize_path(raw: &str) -> String {
     let mut components = Vec::new();
     for c in path.components() {
         match c {
-            std::path::Component::Prefix(p) => components.push(p.as_os_str().to_string_lossy().into_owned()),
+            std::path::Component::Prefix(p) => {
+                components.push(p.as_os_str().to_string_lossy().into_owned())
+            }
             std::path::Component::RootDir => components.push("".to_string()),
             std::path::Component::CurDir => {}
             std::path::Component::ParentDir => {
@@ -152,8 +215,12 @@ fn path_matches(expected: &str, action: &ActionContext) -> bool {
             return true;
         }
     }
-    let Some(url) = action.url.as_deref() else { return false; };
-    if glob_match(expected, url) { return true; }
+    let Some(url) = action.url.as_deref() else {
+        return false;
+    };
+    if glob_match(expected, url) {
+        return true;
+    }
     url::Url::parse(url).ok().is_some_and(|parsed| {
         let p = parsed.path();
         glob_match(expected, p) || glob_match(&norm_expected, &normalize_path(p))
@@ -161,7 +228,9 @@ fn path_matches(expected: &str, action: &ActionContext) -> bool {
 }
 
 fn host_matches(expected: &str, url: &str) -> bool {
-    let host = url::Url::parse(url).ok().and_then(|u| u.host_str().map(str::to_owned));
+    let host = url::Url::parse(url)
+        .ok()
+        .and_then(|u| u.host_str().map(str::to_owned));
     host.is_some_and(|h| glob_match(expected, &h))
 }
 
@@ -171,12 +240,24 @@ fn glob_match(pattern: &str, text: &str) -> bool {
     let (p, t) = (pattern.as_bytes(), text.as_bytes());
     let (mut i, mut j, mut star, mut mark) = (0usize, 0usize, None, 0usize);
     while j < t.len() {
-        if i < p.len() && (p[i] == t[j]) { i += 1; j += 1; }
-        else if i < p.len() && p[i] == b'*' { star = Some(i); i += 1; mark = j; }
-        else if let Some(s) = star { i = s + 1; mark += 1; j = mark; }
-        else { return false; }
+        if i < p.len() && (p[i] == t[j]) {
+            i += 1;
+            j += 1;
+        } else if i < p.len() && p[i] == b'*' {
+            star = Some(i);
+            i += 1;
+            mark = j;
+        } else if let Some(s) = star {
+            i = s + 1;
+            mark += 1;
+            j = mark;
+        } else {
+            return false;
+        }
     }
-    while i < p.len() && p[i] == b'*' { i += 1; }
+    while i < p.len() && p[i] == b'*' {
+        i += 1;
+    }
     i == p.len()
 }
 
@@ -191,16 +272,30 @@ pub struct AuditEvent {
 
 impl AuditEvent {
     pub fn new(context: &ActionContext, decision: Decision) -> Self {
-        Self { id: Uuid::now_v7().to_string(), timestamp: Utc::now(), context: redact_action_context(context), decision: decision.into() }
+        Self {
+            id: Uuid::now_v7().to_string(),
+            timestamp: Utc::now(),
+            context: redact_action_context(context),
+            decision: decision.into(),
+        }
     }
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
-pub enum AuditDecision { Allow, Deny }
+pub enum AuditDecision {
+    Allow,
+    Deny,
+}
 
 impl From<Decision> for AuditDecision {
-    fn from(value: Decision) -> Self { if value.is_allowed() { Self::Allow } else { Self::Deny } }
+    fn from(value: Decision) -> Self {
+        if value.is_allowed() {
+            Self::Allow
+        } else {
+            Self::Deny
+        }
+    }
 }
 
 /// Recursively redact values below common credential/secret keys.
@@ -209,8 +304,11 @@ pub fn redact_secrets(value: &Value) -> Value {
         Value::Object(obj) => {
             let mut result = Map::new();
             for (key, val) in obj {
-                if is_secret_key(key) { result.insert(key.clone(), Value::String("[REDACTED]".into())); }
-                else { result.insert(key.clone(), redact_secrets(val)); }
+                if is_secret_key(key) {
+                    result.insert(key.clone(), Value::String("[REDACTED]".into()));
+                } else {
+                    result.insert(key.clone(), redact_secrets(val));
+                }
             }
             Value::Object(result)
         }
@@ -222,20 +320,50 @@ pub fn redact_secrets(value: &Value) -> Value {
 fn is_secret_key(key: &str) -> bool {
     let mut normalized = String::with_capacity(key.len() + 8);
     for (index, ch) in key.chars().enumerate() {
-        if ch == '-' || ch == ' ' || ch == '_' { normalized.push('_'); continue; }
-        if ch.is_ascii_uppercase() && index > 0 { normalized.push('_'); }
+        if ch == '-' || ch == ' ' || ch == '_' {
+            normalized.push('_');
+            continue;
+        }
+        if ch.is_ascii_uppercase() && index > 0 {
+            normalized.push('_');
+        }
         normalized.push(ch.to_ascii_lowercase());
     }
-    ["password", "passwd", "secret", "token", "api_key", "apikey", "authorization", "cookie", "credential", "private_key", "access_key", "client_secret", "access_token"]
-        .iter().any(|needle| normalized == *needle || normalized.starts_with(&format!("{needle}_")) || normalized.ends_with(&format!("_{needle}")) || normalized.contains(&format!("_{needle}_")))
+    [
+        "password",
+        "passwd",
+        "secret",
+        "token",
+        "api_key",
+        "apikey",
+        "authorization",
+        "cookie",
+        "credential",
+        "private_key",
+        "access_key",
+        "client_secret",
+        "access_token",
+    ]
+    .iter()
+    .any(|needle| {
+        normalized == *needle
+            || normalized.starts_with(&format!("{needle}_"))
+            || normalized.ends_with(&format!("_{needle}"))
+            || normalized.contains(&format!("_{needle}_"))
+    })
 }
 
 pub fn redact_action_context(action: &ActionContext) -> ActionContext {
     let mut copy = action.clone();
     copy.args = redact_secrets(&copy.args);
-    if copy.tool == "computer_type" || copy.tool == "browser_type" || copy.tool == "computer_secret" {
+    if copy.tool == "computer_type" || copy.tool == "browser_type" || copy.tool == "computer_secret"
+    {
         if let Value::Object(object) = &mut copy.args {
-            for key in ["text", "value", "secret"] { if object.contains_key(key) { object.insert(key.to_owned(), Value::String("[REDACTED]".into())); } }
+            for key in ["text", "value", "secret"] {
+                if object.contains_key(key) {
+                    object.insert(key.to_owned(), Value::String("[REDACTED]".into()));
+                }
+            }
         }
     }
     copy.mcp_metadata = copy.mcp_metadata.as_ref().map(redact_secrets);
@@ -244,7 +372,9 @@ pub fn redact_action_context(action: &ActionContext) -> ActionContext {
 }
 
 fn redact_url(raw: &str) -> String {
-    let Ok(mut parsed) = url::Url::parse(raw) else { return "[REDACTED_URL]".to_owned(); };
+    let Ok(mut parsed) = url::Url::parse(raw) else {
+        return "[REDACTED_URL]".to_owned();
+    };
     let _ = parsed.set_username("");
     let _ = parsed.set_password(None);
     parsed.set_fragment(None);
@@ -252,24 +382,44 @@ fn redact_url(raw: &str) -> String {
     let mut had_query = false;
     for (key, value) in parsed.query_pairs() {
         had_query = true;
-        let safe_value = if is_secret_key(&key) { "[REDACTED]".to_owned() } else { value.into_owned() };
+        let safe_value = if is_secret_key(&key) {
+            "[REDACTED]".to_owned()
+        } else {
+            value.into_owned()
+        };
         serializer.append_pair(&key, &safe_value);
     }
     let query = serializer.finish();
-    parsed.set_query(if had_query { Some(query.as_str()) } else { None });
+    parsed.set_query(if had_query {
+        Some(query.as_str())
+    } else {
+        None
+    });
     parsed.to_string()
 }
 
 /// Resolves only references that were explicitly present in a snapshot.
 #[derive(Debug, Clone, Default)]
-pub struct TargetResolver { targets: HashMap<String, Value> }
+pub struct TargetResolver {
+    targets: HashMap<String, Value>,
+}
 
 impl TargetResolver {
-    pub fn new() -> Self { Self::default() }
-    pub fn register(&mut self, reference: impl Into<String>, target: Value) { self.targets.insert(reference.into(), target); }
-    pub fn resolve(&self, reference: &str) -> Option<&Value> { self.targets.get(reference) }
-    pub fn contains(&self, reference: &str) -> bool { self.targets.contains_key(reference) }
-    pub fn clear(&mut self) { self.targets.clear(); }
+    pub fn new() -> Self {
+        Self::default()
+    }
+    pub fn register(&mut self, reference: impl Into<String>, target: Value) {
+        self.targets.insert(reference.into(), target);
+    }
+    pub fn resolve(&self, reference: &str) -> Option<&Value> {
+        self.targets.get(reference)
+    }
+    pub fn contains(&self, reference: &str) -> bool {
+        self.targets.contains_key(reference)
+    }
+    pub fn clear(&mut self) {
+        self.targets.clear();
+    }
 }
 
 #[derive(Debug, Error)]
@@ -298,10 +448,16 @@ impl Governance {
             kill_switch: Arc::new(std::sync::atomic::AtomicBool::new(false)),
         }
     }
-    pub fn with_audit_sink(mut self, sink: Arc<dyn AuditSink>) -> Self { self.sink = Some(sink); self }
-    pub fn policy(&self) -> &PolicyEngine { &self.policy }
+    pub fn with_audit_sink(mut self, sink: Arc<dyn AuditSink>) -> Self {
+        self.sink = Some(sink);
+        self
+    }
+    pub fn policy(&self) -> &PolicyEngine {
+        &self.policy
+    }
     pub fn trigger_kill_switch(&self) {
-        self.kill_switch.store(true, std::sync::atomic::Ordering::SeqCst);
+        self.kill_switch
+            .store(true, std::sync::atomic::Ordering::SeqCst);
     }
     pub fn is_kill_switch_active(&self) -> bool {
         self.kill_switch.load(std::sync::atomic::Ordering::SeqCst)
@@ -313,10 +469,15 @@ impl Governance {
         self.policy.decide(context)
     }
     pub fn record(&self, event: &AuditEvent) -> Result<(), GovernanceError> {
-        if let Some(sink) = &self.sink { sink.record(event).map_err(GovernanceError::Sink)?; }
+        if let Some(sink) = &self.sink {
+            sink.record(event).map_err(GovernanceError::Sink)?;
+        }
         Ok(())
     }
-    pub fn authorize_and_record(&self, context: &ActionContext) -> Result<Decision, GovernanceError> {
+    pub fn authorize_and_record(
+        &self,
+        context: &ActionContext,
+    ) -> Result<Decision, GovernanceError> {
         let decision = self.authorize(context);
         self.record(&AuditEvent::new(context, decision))?;
         Ok(decision)
@@ -326,19 +487,56 @@ impl Governance {
 #[cfg(test)]
 mod tests {
     use super::*;
-    fn ctx() -> ActionContext { ActionContext::new("a", "s", "browser.click", serde_json::json!({"nested":{"password":"raw"}})) }
+    fn ctx() -> ActionContext {
+        ActionContext::new(
+            "a",
+            "s",
+            "browser.click",
+            serde_json::json!({"nested":{"password":"raw"}}),
+        )
+    }
 
     #[test]
     fn deny_precedence_and_fail_closed() {
-        assert_eq!(PolicyEngine::new(PolicyConfig::default()).decide(&ctx()), Decision::Deny);
-        let p = PolicyConfig { rules: vec![PolicyRule { effect: PolicyEffect::Allow, tool: Some("browser.*".into()), host: None, path: None, intent: None }, PolicyRule { effect: PolicyEffect::Deny, tool: Some("browser.click".into()), host: None, path: None, intent: None }] };
+        assert_eq!(
+            PolicyEngine::new(PolicyConfig::default()).decide(&ctx()),
+            Decision::Deny
+        );
+        let p = PolicyConfig {
+            rules: vec![
+                PolicyRule {
+                    effect: PolicyEffect::Allow,
+                    tool: Some("browser.*".into()),
+                    host: None,
+                    path: None,
+                    intent: None,
+                },
+                PolicyRule {
+                    effect: PolicyEffect::Deny,
+                    tool: Some("browser.click".into()),
+                    host: None,
+                    path: None,
+                    intent: None,
+                },
+            ],
+        };
         assert_eq!(PolicyEngine::new(p).decide(&ctx()), Decision::Deny);
     }
 
     #[test]
     fn matches_tool_host_path_intent() {
-        let mut c = ctx(); c.url = Some("https://example.com/a".into()); c.intent = Some("read".into());
-        let p = PolicyConfig { rules: vec![PolicyRule { effect: PolicyEffect::Allow, tool: Some("browser.*".into()), host: Some("example.com".into()), path: Some("https://example.com/*".into()), intent: Some("read".into()) }] };
+        let mut c = ctx();
+        c.url = Some("https://example.com/a".into());
+        c.intent = Some("read".into());
+        let p = PolicyConfig {
+            rules: vec![PolicyRule {
+                effect: PolicyEffect::Allow,
+                tool: Some("browser.*".into()),
+                host: Some("example.com".into()),
+                path: Some("https://example.com/*".into()),
+                intent: Some("read".into()),
+            }],
+        };
         assert_eq!(PolicyEngine::new(p).decide(&c), Decision::Allow);
     }
 
@@ -350,15 +548,23 @@ mod tests {
 
     #[test]
     fn resolver_only_known_refs() {
-        let mut r = TargetResolver::new(); r.register("e1", serde_json::json!({"role":"button"}));
-        assert!(r.resolve("e1").is_some()); assert!(r.resolve("e2").is_none());
+        let mut r = TargetResolver::new();
+        r.register("e1", serde_json::json!({"role":"button"}));
+        assert!(r.resolve("e1").is_some());
+        assert!(r.resolve("e2").is_none());
     }
 
     #[test]
     fn fail_closed_invariants() {
         // Unmatched tool -> Deny
         let p = PolicyConfig {
-            rules: vec![PolicyRule { effect: PolicyEffect::Allow, tool: Some("file_read".into()), host: None, path: None, intent: None }]
+            rules: vec![PolicyRule {
+                effect: PolicyEffect::Allow,
+                tool: Some("file_read".into()),
+                host: None,
+                path: None,
+                intent: None,
+            }],
         };
         let engine = PolicyEngine::new(p);
         let mut c = ctx();
@@ -367,7 +573,13 @@ mod tests {
 
         // Host mismatch -> Deny
         let p_host = PolicyConfig {
-            rules: vec![PolicyRule { effect: PolicyEffect::Allow, tool: None, host: Some("allowed.com".into()), path: None, intent: None }]
+            rules: vec![PolicyRule {
+                effect: PolicyEffect::Allow,
+                tool: None,
+                host: Some("allowed.com".into()),
+                path: None,
+                intent: None,
+            }],
         };
         let engine_host = PolicyEngine::new(p_host);
         c.url = Some("https://evil.com/".into());
@@ -375,7 +587,13 @@ mod tests {
 
         // Intent mismatch -> Deny
         let p_intent = PolicyConfig {
-            rules: vec![PolicyRule { effect: PolicyEffect::Allow, tool: None, host: None, path: None, intent: Some("safe".into()) }]
+            rules: vec![PolicyRule {
+                effect: PolicyEffect::Allow,
+                tool: None,
+                host: None,
+                path: None,
+                intent: Some("safe".into()),
+            }],
         };
         let engine_intent = PolicyEngine::new(p_intent);
         c.intent = Some("dangerous".into());

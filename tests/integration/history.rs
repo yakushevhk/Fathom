@@ -15,7 +15,12 @@ use pr_persistence::{Persistence, SessionHistory};
 use pr_tools::ToolRegistry;
 use tokio::sync::broadcast;
 
-async fn run_session(db: Arc<Persistence>, output_dir: std::path::PathBuf, query: &str, tasks: usize) -> SessionId {
+async fn run_session(
+    db: Arc<Persistence>,
+    output_dir: std::path::PathBuf,
+    query: &str,
+    tasks: usize,
+) -> SessionId {
     let mut config = AppConfig::default();
     config.agent.max_iterations = 5;
 
@@ -34,7 +39,10 @@ async fn run_session(db: Arc<Persistence>, output_dir: std::path::PathBuf, query
         config,
     );
 
-    coordinator.execute().await.expect("session should complete");
+    coordinator
+        .execute()
+        .await
+        .expect("session should complete");
     session_id
 }
 

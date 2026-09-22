@@ -36,7 +36,9 @@ impl ContactDb {
              PRAGMA foreign_keys=ON;
              PRAGMA busy_timeout=5000;",
         )?;
-        let db = Self { conn: Mutex::new(conn) };
+        let db = Self {
+            conn: Mutex::new(conn),
+        };
         db.init_schema()?;
         Ok(db)
     }
@@ -45,14 +47,17 @@ impl ContactDb {
     pub fn in_memory() -> anyhow::Result<Self> {
         let conn = Connection::open_in_memory()?;
         conn.execute_batch("PRAGMA foreign_keys=ON;")?;
-        let db = Self { conn: Mutex::new(conn) };
+        let db = Self {
+            conn: Mutex::new(conn),
+        };
         db.init_schema()?;
         Ok(db)
     }
 
     fn init_schema(&self) -> anyhow::Result<()> {
         let conn = self.conn.lock().unwrap();
-        conn.execute_batch(r#"
+        conn.execute_batch(
+            r#"
             CREATE TABLE IF NOT EXISTS contacts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 email TEXT,
@@ -98,7 +103,8 @@ impl ContactDb {
                 note TEXT NOT NULL,
                 created_at TEXT NOT NULL
             );
-        "#)?;
+        "#,
+        )?;
 
         // Migrate databases created before these columns existed. Must run
         // BEFORE the indexes below: idx_contacts_phone_norm references the
@@ -106,13 +112,15 @@ impl ContactDb {
         crate::add_column_if_missing(&conn, "contacts", "crm_id", "TEXT")?;
         crate::add_column_if_missing(&conn, "contacts", "phone_norm", "TEXT")?;
 
-        conn.execute_batch(r#"
+        conn.execute_batch(
+            r#"
             CREATE INDEX IF NOT EXISTS idx_contacts_email ON contacts(email);
             CREATE INDEX IF NOT EXISTS idx_contacts_phone_norm ON contacts(phone_norm);
             CREATE INDEX IF NOT EXISTS idx_social_contact ON social_profiles(contact_id);
             CREATE INDEX IF NOT EXISTS idx_tags_contact ON tags(contact_id);
             CREATE INDEX IF NOT EXISTS idx_notes_contact ON notes(contact_id);
-        "#)?;
+        "#,
+        )?;
         Ok(())
     }
 
@@ -516,9 +524,8 @@ impl ContactDb {
         }
         let pattern = format!("%{}%", escape_like(needle));
         let conn = self.conn.lock().unwrap();
-        let stmt = conn.prepare(
-            &format!(
-                "SELECT DISTINCT {CONTACT_COLS} FROM contacts c
+        let stmt = conn.prepare(&format!(
+            "SELECT DISTINCT {CONTACT_COLS} FROM contacts c
                  LEFT JOIN tags t ON t.contact_id = c.id
                  WHERE c.name LIKE ?1 ESCAPE '\\'
                     OR c.email LIKE ?1 ESCAPE '\\'
@@ -527,8 +534,7 @@ impl ContactDb {
                     OR c.company LIKE ?1 ESCAPE '\\'
                     OR t.tag LIKE ?1 ESCAPE '\\'
                  ORDER BY c.id DESC"
-            ),
-        );
+        ));
         let mut stmt = match stmt {
             Ok(stmt) => stmt,
             Err(e) => {
@@ -578,8 +584,10 @@ impl ContactDb {
     /// Total number of stored contacts.
     pub fn count(&self) -> usize {
         let conn = self.conn.lock().unwrap();
-        conn.query_row("SELECT COUNT(*) FROM contacts", [], |row| row.get::<_, i64>(0))
-            .unwrap_or(0) as usize
+        conn.query_row("SELECT COUNT(*) FROM contacts", [], |row| {
+            row.get::<_, i64>(0)
+        })
+        .unwrap_or(0) as usize
     }
 
     /// List all companies ordered by name.
@@ -688,7 +696,10 @@ impl ContactDb {
         let phone_norm = phone.as_deref().map(normalize_phone);
         let name = primary.name.clone().or_else(|| duplicate.name.clone());
         let title = primary.title.clone().or_else(|| duplicate.title.clone());
-        let company = primary.company.clone().or_else(|| duplicate.company.clone());
+        let company = primary
+            .company
+            .clone()
+            .or_else(|| duplicate.company.clone());
         let crm_id = primary.crm_id.clone().or_else(|| duplicate.crm_id.clone());
         tx.execute(
             "UPDATE contacts SET email=?2, phone=?3, phone_norm=?4, name=?5, title=?6, company=?7, crm_id=?8, updated_at=?9
@@ -928,8 +939,11 @@ mod tests {
         c.phone = Some("+1 (555) 010-0100".into());
         c.title = Some("CTO".into());
         c.company = Some("Acme".into());
-        c.social_profiles
-            .push(SocialProfile::new("linkedin", "https://linkedin.com/in/jdoe", "jdoe"));
+        c.social_profiles.push(SocialProfile::new(
+            "linkedin",
+            "https://linkedin.com/in/jdoe",
+            "jdoe",
+        ));
         c.tags = vec!["lead".into(), "vip".into()];
         c.notes = vec!["Met at conference".into()];
         c
@@ -1027,7 +1041,8 @@ mod tests {
     #[test]
     fn test_find_by_email_is_case_insensitive_and_normalized() {
         let db = ContactDb::in_memory().unwrap();
-        db.add_contact(&sample_contact("Jane", "Jane.Doe@Example.COM")).unwrap();
+        db.add_contact(&sample_contact("Jane", "Jane.Doe@Example.COM"))
+            .unwrap();
 
         let found = db.find_by_email("jane.doe@example.com").expect("found");
         assert_eq!(found.name.as_deref(), Some("Jane"));
@@ -1127,8 +1142,10 @@ mod tests {
     fn test_find_duplicates_by_email_and_phone() {
         let db = ContactDb::in_memory().unwrap();
         // Two contacts sharing an email (different case/format).
-        db.add_contact(&sample_contact("Jane A", "jane@x.com")).unwrap();
-        db.add_contact(&sample_contact("Jane B", "JANE@x.com ")).unwrap();
+        db.add_contact(&sample_contact("Jane A", "jane@x.com"))
+            .unwrap();
+        db.add_contact(&sample_contact("Jane B", "JANE@x.com "))
+            .unwrap();
         // Two contacts sharing a phone number.
         let mut p1 = sample_contact("Phone One", "p1@x.com");
         p1.phone = Some("+1 555 0100".into());
@@ -1137,7 +1154,8 @@ mod tests {
         db.add_contact(&p1).unwrap();
         db.add_contact(&p2).unwrap();
         // One unique contact.
-        db.add_contact(&sample_contact("Unique", "unique@x.com")).unwrap();
+        db.add_contact(&sample_contact("Unique", "unique@x.com"))
+            .unwrap();
 
         let dupes = db.find_duplicates();
         assert_eq!(dupes.len(), 2);
@@ -1155,8 +1173,11 @@ mod tests {
 
         let mut primary = sample_contact("Jane", "jane@x.com");
         primary.tags = vec!["lead".into()];
-        primary.social_profiles
-            .push(SocialProfile::new("linkedin", "https://linkedin.com/in/jane", "jane"));
+        primary.social_profiles.push(SocialProfile::new(
+            "linkedin",
+            "https://linkedin.com/in/jane",
+            "jane",
+        ));
         primary.notes = vec!["primary note".into()];
         let primary_id = db.add_contact(&primary).unwrap();
 
@@ -1165,10 +1186,16 @@ mod tests {
         dup.phone = Some("+1 555 0100".into());
         dup.title = Some("CTO".into());
         dup.company = Some("Acme".into());
-        dup.social_profiles
-            .push(SocialProfile::new("linkedin", "https://linkedin.com/in/jane", "jane")); // duplicate
-        dup.social_profiles
-            .push(SocialProfile::new("twitter", "https://twitter.com/jane", "jane"));
+        dup.social_profiles.push(SocialProfile::new(
+            "linkedin",
+            "https://linkedin.com/in/jane",
+            "jane",
+        )); // duplicate
+        dup.social_profiles.push(SocialProfile::new(
+            "twitter",
+            "https://twitter.com/jane",
+            "jane",
+        ));
         dup.tags = vec!["lead".into(), "vip".into()];
         dup.notes = vec!["dup note".into()];
         let dup_id = db.add_contact(&dup).unwrap();
@@ -1230,7 +1257,10 @@ mod tests {
 
         let companies = db.list_companies();
         assert_eq!(companies.len(), 1);
-        assert_eq!(companies[0].website.as_deref(), Some("https://www.acme.com"));
+        assert_eq!(
+            companies[0].website.as_deref(),
+            Some("https://www.acme.com")
+        );
         assert_eq!(companies[0].description.as_deref(), Some("Anvil maker"));
     }
 
@@ -1254,8 +1284,11 @@ mod tests {
         a.notes = vec!["Met at conference".into(), "Follow up in Q3".into()];
 
         let mut b = sample_contact("Bob Stone", "bob@globex.com");
-        b.social_profiles =
-            vec![SocialProfile::new("telegram", "https://t.me/bobstone", "bobstone")];
+        b.social_profiles = vec![SocialProfile::new(
+            "telegram",
+            "https://t.me/bobstone",
+            "bobstone",
+        )];
         b.tags = vec!["vip".into()];
         b.notes = vec!["Referred by Alice".into()];
 
@@ -1374,7 +1407,10 @@ mod tests {
         {
             let conn = db.conn.lock().unwrap();
             assert!(is_null(&conn, legacy_id), "legacy row starts un-backfilled");
-            assert!(!is_null(&conn, modern_id), "new rows set phone_norm on insert");
+            assert!(
+                !is_null(&conn, modern_id),
+                "new rows set phone_norm on insert"
+            );
         }
 
         // The indexed lookup misses; the scan fallback finds and backfills.
@@ -1415,7 +1451,9 @@ mod tests {
     #[test]
     fn test_merge_contacts_updates_phone_norm() {
         let db = ContactDb::in_memory().unwrap();
-        let primary_id = db.add_contact(&sample_contact("Jane", "jane@x.com")).unwrap();
+        let primary_id = db
+            .add_contact(&sample_contact("Jane", "jane@x.com"))
+            .unwrap();
         let mut dup = Contact::new();
         dup.email = Some("jane@x.com".into());
         dup.phone = Some("+7 (916) 000-00-00".into());

@@ -1,5 +1,5 @@
-use std::collections::{HashMap, HashSet, VecDeque};
 use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 /// An RDF-style Subject-Predicate-Object knowledge graph triple.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]

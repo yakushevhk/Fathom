@@ -1,10 +1,10 @@
 pub mod chat;
-pub mod gallery;
 pub mod composer;
 pub mod computer;
-pub mod settings;
+pub mod gallery;
 pub mod governance;
 pub mod routines;
+pub mod settings;
 pub mod sidebar;
 pub mod skills;
 pub mod topbar;

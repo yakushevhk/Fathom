@@ -13,7 +13,8 @@ use crate::components::vault::VaultView;
 use crate::state::{AppState, NavigationTab};
 use crate::theme::Theme;
 use gpui::{
-    div, px, prelude::*, App, Context, Div, Entity, FocusHandle, Focusable, IntoElement, Render, Window,
+    div, prelude::*, px, App, Context, Div, Entity, FocusHandle, Focusable, IntoElement, Render,
+    Window,
 };
 use std::sync::Arc;
 
@@ -55,20 +56,25 @@ impl DesktopApp {
         // Observe child views so navigation & state changes re-render the app shell
         cx.observe(&sidebar, |_this, _sidebar, cx| {
             cx.notify();
-        }).detach();
+        })
+        .detach();
         cx.observe(&composer, |_this, _composer, cx| {
             cx.notify();
-        }).detach();
+        })
+        .detach();
         cx.observe(&chat, |_this, _chat, cx| {
             cx.notify();
-        }).detach();
+        })
+        .detach();
         cx.observe(&computer, |_this, _comp, cx| {
             cx.notify();
-        }).detach();
+        })
+        .detach();
         // Check daemon and start real-time SSE event consumption loop
         let state_clone = state.clone();
         cx.spawn(async move |this, cx| {
-            let running = state_clone.daemon.is_running() || state_clone.api.health().await.unwrap_or(false);
+            let running =
+                state_clone.daemon.is_running() || state_clone.api.health().await.unwrap_or(false);
             *state_clone.is_engine_running.write() = running;
             let _ = this.update(&mut *cx, |_this, cx| {
                 cx.notify();
@@ -119,7 +125,9 @@ impl DesktopApp {
                 while let Some(event_result) = event_source.next().await {
                     match event_result {
                         Ok(reqwest_eventsource::Event::Message(msg)) => {
-                            if let Ok(agent_event) = serde_json::from_str::<pr_core::AgentEvent>(&msg.data) {
+                            if let Ok(agent_event) =
+                                serde_json::from_str::<pr_core::AgentEvent>(&msg.data)
+                            {
                                 state_clone.apply_agent_event(&agent_event);
                                 let _ = this.update(&mut *cx, |_this, cx| {
                                     cx.notify();
@@ -137,7 +145,8 @@ impl DesktopApp {
                 }
                 tokio::time::sleep(std::time::Duration::from_secs(3)).await;
             }
-        }).detach();
+        })
+        .detach();
         Self {
             state,
             topbar,
@@ -284,74 +293,58 @@ impl Render for DesktopApp {
                             .flex_1()
                             .h_full()
                             .overflow_hidden()
-                            .child(
-                                match active_tab {
-                                    NavigationTab::Channels => {
-                                        div()
-                                            .flex()
-                                            .flex_col()
-                                            .flex_1()
-                                            .h_full()
-                                            .overflow_hidden()
-                                            .child(self.chat.clone())
-                                            .child(self.composer.clone())
-                                    }
-                                    NavigationTab::Computer => {
-                                        div()
-                                            .flex()
-                                            .flex_col()
-                                            .flex_1()
-                                            .h_full()
-                                            .overflow_hidden()
-                                            .child(self.computer.clone())
-                                    }
-                                    NavigationTab::Governance => {
-                                        div()
-                                            .flex()
-                                            .flex_col()
-                                            .flex_1()
-                                            .h_full()
-                                            .overflow_hidden()
-                                            .child(self.governance.clone())
-                                    }
-                                    NavigationTab::Routines => {
-                                        div()
-                                            .flex()
-                                            .flex_col()
-                                            .flex_1()
-                                            .h_full()
-                                            .overflow_hidden()
-                                            .child(self.routines.clone())
-                                    }
-                                    NavigationTab::Skills => {
-                                        div()
-                                            .flex()
-                                            .flex_col()
-                                            .flex_1()
-                                            .h_full()
-                                            .overflow_hidden()
-                                            .child(self.skills.clone())
-                                    }
-                                    NavigationTab::Vault => {
-                                        div()
-                                            .flex()
-                                            .flex_col()
-                                            .flex_1()
-                                            .h_full()
-                                            .overflow_hidden()
-                                            .child(self.vault.clone())
-                                    }
-                                    NavigationTab::Settings => {
-                                        div()
-                                            .flex()
-                                            .flex_col()
-                                            .flex_1()
-                                            .h_full()
-                                            .overflow_hidden()
-                                            .child(self.settings.clone())
-                                    }
-                                }
-                            ),
+                            .child(match active_tab {
+                                NavigationTab::Channels => div()
+                                    .flex()
+                                    .flex_col()
+                                    .flex_1()
+                                    .h_full()
+                                    .overflow_hidden()
+                                    .child(self.chat.clone())
+                                    .child(self.composer.clone()),
+                                NavigationTab::Computer => div()
+                                    .flex()
+                                    .flex_col()
+                                    .flex_1()
+                                    .h_full()
+                                    .overflow_hidden()
+                                    .child(self.computer.clone()),
+                                NavigationTab::Governance => div()
+                                    .flex()
+                                    .flex_col()
+                                    .flex_1()
+                                    .h_full()
+                                    .overflow_hidden()
+                                    .child(self.governance.clone()),
+                                NavigationTab::Routines => div()
+                                    .flex()
+                                    .flex_col()
+                                    .flex_1()
+                                    .h_full()
+                                    .overflow_hidden()
+                                    .child(self.routines.clone()),
+                                NavigationTab::Skills => div()
+                                    .flex()
+                                    .flex_col()
+                                    .flex_1()
+                                    .h_full()
+                                    .overflow_hidden()
+                                    .child(self.skills.clone()),
+                                NavigationTab::Vault => div()
+                                    .flex()
+                                    .flex_col()
+                                    .flex_1()
+                                    .h_full()
+                                    .overflow_hidden()
+                                    .child(self.vault.clone()),
+                                NavigationTab::Settings => div()
+                                    .flex()
+                                    .flex_col()
+                                    .flex_1()
+                                    .h_full()
+                                    .overflow_hidden()
+                                    .child(self.settings.clone()),
+                            }),
                     )
                     // Right slide-out: Agent Hub Roster Drawer (Alt+A)
                     .children(if *self.state.agent_hub_open.read() {

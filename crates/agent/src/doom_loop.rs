@@ -63,10 +63,7 @@ impl DoomLoopDetector {
         }
 
         self.history.len() == self.max_identical
-            && self
-                .history
-                .iter()
-                .all(|sig| *sig == self.history[0])
+            && self.history.iter().all(|sig| *sig == self.history[0])
     }
 
     /// Clear the recorded history (e.g. after the agent recovers or after a
@@ -89,11 +86,28 @@ impl Default for DoomLoopDetector {
 
 /// Hash tool call arguments into a stable hex string.
 ///
-/// `serde_json::Value` maps serialize in sorted key order (BTreeMap backing),
-/// so semantically identical argument objects produce the same hash
-/// regardless of insertion order.
+/// Object keys are sorted recursively before hashing: serde_json's Map
+/// preserves insertion order when the `preserve_order` feature is enabled
+/// anywhere in the dependency tree, so semantically identical argument
+/// objects must not depend on key order.
 fn hash_args(args: &serde_json::Value) -> String {
-    let serialized = serde_json::to_string(args).unwrap_or_default();
+    fn canon(v: &serde_json::Value) -> serde_json::Value {
+        match v {
+            serde_json::Value::Object(m) => {
+                let sorted: std::collections::BTreeMap<&String, &serde_json::Value> =
+                    m.iter().collect();
+                serde_json::Value::Object(
+                    sorted
+                        .into_iter()
+                        .map(|(k, v)| (k.clone(), canon(v)))
+                        .collect(),
+                )
+            }
+            serde_json::Value::Array(a) => serde_json::Value::Array(a.iter().map(canon).collect()),
+            other => other.clone(),
+        }
+    }
+    let serialized = serde_json::to_string(&canon(args)).unwrap_or_default();
     let mut hasher = DefaultHasher::new();
     serialized.hash(&mut hasher);
     format!("{:016x}", hasher.finish())

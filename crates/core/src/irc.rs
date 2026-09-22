@@ -17,12 +17,12 @@
 use crate::agent::AgentRole;
 use crate::ids::AgentId;
 use chrono::{DateTime, Utc};
+use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 use std::sync::LazyLock;
-use parking_lot::Mutex;
 use tokio::sync::{mpsc, oneshot};
 
 // ─── PeerStatus ────────────────────────────────────────────────────────────
@@ -198,11 +198,18 @@ impl IrcBus {
             // peers and must not be consumed by an unrelated waiter.
             let waiter = {
                 let mut waiters = self.waiters.lock();
-                waiters.iter().position(|w| {
-                    let from_matches = w.from.as_ref().map(|f| msg.from.0 == f.0).unwrap_or(true);
-                    let to_matches = w.to.as_ref().map(|t| msg.to.as_ref().map(|m| m.0 == t.0).unwrap_or(false)).unwrap_or(true);
-                    from_matches && to_matches
-                }).map(|pos| waiters.remove(pos))
+                waiters
+                    .iter()
+                    .position(|w| {
+                        let from_matches =
+                            w.from.as_ref().map(|f| msg.from.0 == f.0).unwrap_or(true);
+                        let to_matches =
+                            w.to.as_ref()
+                                .map(|t| msg.to.as_ref().map(|m| m.0 == t.0).unwrap_or(false))
+                                .unwrap_or(true);
+                        from_matches && to_matches
+                    })
+                    .map(|pos| waiters.remove(pos))
             };
             if let Some(waiter) = waiter {
                 let _ = waiter.tx.send(msg);
@@ -218,7 +225,11 @@ impl IrcBus {
                         // message. Remove the stale sender, then mailbox it.
                         self.agents.lock().remove(&to.0);
                         if !self.try_revive(&msg) {
-                            self.mailboxes.lock().entry(to.0.clone()).or_default().push(msg);
+                            self.mailboxes
+                                .lock()
+                                .entry(to.0.clone())
+                                .or_default()
+                                .push(msg);
                         }
                         DeliveryReceipt::AgentNotFound
                     } else {
@@ -251,7 +262,12 @@ impl IrcBus {
     /// Register a one-shot waiter. When a message arrives (optionally
     /// filtered by `from`), it is delivered to this channel instead of the
     /// agent's mailbox.
-    pub fn register_waiter(&self, from: Option<AgentId>, to: Option<AgentId>, tx: oneshot::Sender<IrcMessage>) -> u64 {
+    pub fn register_waiter(
+        &self,
+        from: Option<AgentId>,
+        to: Option<AgentId>,
+        tx: oneshot::Sender<IrcMessage>,
+    ) -> u64 {
         let id = self.next_id.fetch_add(1, Ordering::Relaxed);
         self.waiters.lock().push(Waiter { id, from, to, tx });
         id
@@ -269,7 +285,11 @@ impl IrcBus {
 
     /// Inspect the mailbox without consuming messages.
     pub fn peek_mailbox(&self, id: &AgentId) -> Vec<IrcMessage> {
-        self.mailboxes.lock().get(&id.0).cloned().unwrap_or_default()
+        self.mailboxes
+            .lock()
+            .get(&id.0)
+            .cloned()
+            .unwrap_or_default()
     }
 
     /// Generate a unique message id.
@@ -321,9 +341,7 @@ impl AgentRegistry {
 
     /// Register an agent.
     pub fn register(&self, r#ref: AgentRef) {
-        self.agents
-            .lock()
-            .insert(r#ref.id.0.clone(), r#ref);
+        self.agents.lock().insert(r#ref.id.0.clone(), r#ref);
     }
 
     /// Unregister an agent by id.

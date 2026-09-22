@@ -351,7 +351,9 @@ mod tests {
                 .expect("git should run")
         };
         assert!(run(&["init", "-q"]).status.success());
-        assert!(run(&["config", "user.email", "test@example.com"]).status.success());
+        assert!(run(&["config", "user.email", "test@example.com"])
+            .status
+            .success());
         assert!(run(&["config", "user.name", "Test"]).status.success());
         assert!(run(&["config", "commit.gpgsign", "false"]).status.success());
         (tmp, dir)
@@ -512,8 +514,10 @@ mod tests {
             .await
             .unwrap();
         assert!(!out.success);
-        assert!(out.content.to_lowercase().contains("not a git repository")
-            || out.content.contains("failed"));
+        assert!(
+            out.content.to_lowercase().contains("not a git repository")
+                || out.content.contains("failed")
+        );
     }
 
     #[tokio::test]

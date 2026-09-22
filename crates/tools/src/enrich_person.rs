@@ -58,9 +58,14 @@ impl PersonEnricher {
             .unwrap_or_default();
 
         // 1. General search + LinkedIn-targeted search.
-        let general = engine.search(&format!("\"{name}\"{company_suffix}"), 10).await;
+        let general = engine
+            .search(&format!("\"{name}\"{company_suffix}"), 10)
+            .await;
         let linkedin = engine
-            .search(&format!("\"{name}\" site:linkedin.com/in{company_suffix}"), 5)
+            .search(
+                &format!("\"{name}\" site:linkedin.com/in{company_suffix}"),
+                5,
+            )
             .await;
 
         // 2. Cross-reference: keep only results that mention the person.
@@ -80,10 +85,7 @@ impl PersonEnricher {
 
         // 4. Title & company from the LinkedIn result title, with fallbacks.
         let (mut title, mut company_found) = (None, None);
-        if let Some(li) = results
-            .iter()
-            .find(|r| r.url.contains("linkedin.com/in/"))
-        {
+        if let Some(li) = results.iter().find(|r| r.url.contains("linkedin.com/in/")) {
             if let Some((t, c)) = parse_linkedin_title(&li.title, &name) {
                 title = t;
                 company_found = c;
@@ -130,25 +132,40 @@ impl PersonEnricher {
 /// its title or snippet (case-insensitive).
 pub fn mentions_name(name: &str, result: &SearchResult) -> bool {
     let name = name.to_lowercase();
-    result.title.to_lowercase().contains(&name)
-        || result.snippet.to_lowercase().contains(&name)
+    result.title.to_lowercase().contains(&name) || result.snippet.to_lowercase().contains(&name)
 }
 
 // ─── URL extraction ───
 
 /// Find the first profile URL containing `marker` (query string stripped).
 pub fn find_profile_url(results: &[SearchResult], marker: &str) -> Option<String> {
-    results
-        .iter()
-        .find(|r| r.url.contains(marker))
-        .map(|r| r.url.split('?').next().unwrap_or(&r.url).trim_end_matches('/').to_string())
+    results.iter().find(|r| r.url.contains(marker)).map(|r| {
+        r.url
+            .split('?')
+            .next()
+            .unwrap_or(&r.url)
+            .trim_end_matches('/')
+            .to_string()
+    })
 }
 
 /// Find an X/Twitter profile URL, skipping reserved paths (/home, /share, …).
 pub fn find_twitter_url(results: &[SearchResult]) -> Option<String> {
     const RESERVED: &[&str] = &[
-        "home", "share", "intent", "search", "explore", "i", "hashtag",
-        "login", "signup", "tos", "privacy", "about", "settings", "notifications",
+        "home",
+        "share",
+        "intent",
+        "search",
+        "explore",
+        "i",
+        "hashtag",
+        "login",
+        "signup",
+        "tos",
+        "privacy",
+        "about",
+        "settings",
+        "notifications",
     ];
     for result in results {
         let Ok(url) = url::Url::parse(&result.url) else {
@@ -238,15 +255,16 @@ pub fn extract_title_fallback(name: &str, text: &str) -> Option<String> {
 
 /// Company-name capture: consecutive capitalized words with `of|the|for|&`
 /// connectives, so surrounding lowercase prose is not swallowed.
-const COMPANY_NAME: &str =
-    r"[A-Z][A-Za-z0-9.&'-]*(?:\s+(?:of|the|for|&|[A-Z][A-Za-z0-9.&'-]*))*";
+const COMPANY_NAME: &str = r"[A-Z][A-Za-z0-9.&'-]*(?:\s+(?:of|the|for|&|[A-Z][A-Za-z0-9.&'-]*))*";
 
 /// Fallback company extraction: "works at Acme", "founder of Acme".
 pub fn extract_company_fallback(name: &str, text: &str) -> Option<String> {
     let escaped = regex::escape(name);
     let patterns = [
         format!(r"(?i){escaped}\s+(?:works at|works for|joined)\s+(?-i:({COMPANY_NAME}))"),
-        format!(r"(?i){escaped}\s+(?:is|was)\s+(?:a|an|the)?\s*(?:co-)?(?:founder|ceo|cto|coo|cfo|president|owner)\s+of\s+(?-i:({COMPANY_NAME}))"),
+        format!(
+            r"(?i){escaped}\s+(?:is|was)\s+(?:a|an|the)?\s*(?:co-)?(?:founder|ceo|cto|coo|cfo|president|owner)\s+of\s+(?-i:({COMPANY_NAME}))"
+        ),
     ];
     for pattern in &patterns {
         let Ok(re) = regex::Regex::new(pattern) else {
@@ -273,10 +291,22 @@ const JUNK_EMAIL_TLDS: &[&str] = &[
 ];
 /// Domains that belong to tooling/markup rather than people.
 const JUNK_EMAIL_DOMAINS: &[&str] = &[
-    "example.com", "example.org", "sentry.io", "sentry-next.wixpress.com",
-    "wixpress.com", "schema.org", "w3.org", "godaddy.com", "google.com",
-    "gstatic.com", "cloudflare.com", "domain.com", "email.com", "yourdomain.com",
-    "company.com", "site.com",
+    "example.com",
+    "example.org",
+    "sentry.io",
+    "sentry-next.wixpress.com",
+    "wixpress.com",
+    "schema.org",
+    "w3.org",
+    "godaddy.com",
+    "google.com",
+    "gstatic.com",
+    "cloudflare.com",
+    "domain.com",
+    "email.com",
+    "yourdomain.com",
+    "company.com",
+    "site.com",
 ];
 
 /// Extract the first plausible email address from text.
@@ -290,10 +320,16 @@ pub fn extract_email(text: &str) -> Option<String> {
         if JUNK_EMAIL_TLDS.contains(&tld) {
             continue;
         }
-        if JUNK_EMAIL_DOMAINS.iter().any(|d| domain == *d || domain.ends_with(&format!(".{d}"))) {
+        if JUNK_EMAIL_DOMAINS
+            .iter()
+            .any(|d| domain == *d || domain.ends_with(&format!(".{d}")))
+        {
             continue;
         }
-        if local.is_empty() || local.eq_ignore_ascii_case("name") || local.eq_ignore_ascii_case("yourname") {
+        if local.is_empty()
+            || local.eq_ignore_ascii_case("name")
+            || local.eq_ignore_ascii_case("yourname")
+        {
             continue;
         }
         return Some(email.to_string());
@@ -328,7 +364,12 @@ pub fn extract_location(text: &str) -> Option<String> {
     )
     .ok()?;
     re.captures(text)
-        .map(|cap| cap[1].trim().trim_end_matches([',', '.', ';', ')']).to_string())
+        .map(|cap| {
+            cap[1]
+                .trim()
+                .trim_end_matches([',', '.', ';', ')'])
+                .to_string()
+        })
         .filter(|l| !l.is_empty())
 }
 
@@ -353,18 +394,15 @@ pub fn pick_bio(name: &str, results: &[SearchResult]) -> Option<String> {
             .collect();
     }
 
-    candidates
-        .into_iter()
-        .max_by_key(|s| s.len())
-        .map(|s| {
-            let chars: Vec<char> = s.chars().collect();
-            if chars.len() <= MAX_BIO_CHARS {
-                s.trim().to_string()
-            } else {
-                let truncated: String = chars.iter().take(MAX_BIO_CHARS).collect();
-                format!("{truncated}...")
-            }
-        })
+    candidates.into_iter().max_by_key(|s| s.len()).map(|s| {
+        let chars: Vec<char> = s.chars().collect();
+        if chars.len() <= MAX_BIO_CHARS {
+            s.trim().to_string()
+        } else {
+            let truncated: String = chars.iter().take(MAX_BIO_CHARS).collect();
+            format!("{truncated}...")
+        }
+    })
 }
 
 // ─── Tool ───
@@ -426,7 +464,9 @@ Person profile with as many fields as corroborated public signals allow; unknown
         ctx: &ToolContext,
     ) -> anyhow::Result<ToolOutput> {
         let params: EnrichPersonParams = serde_json::from_value(args)?;
-        let result = self.enrich(ctx, &params.name, params.company.as_deref()).await;
+        let result = self
+            .enrich(ctx, &params.name, params.company.as_deref())
+            .await;
 
         let mut out = format!("Person enrichment: {}\n", result.name);
         if let Some(ref t) = result.title {
@@ -530,9 +570,11 @@ mod tests {
 
     #[test]
     fn test_parse_linkedin_title_at_variant() {
-        let (title, company) =
-            parse_linkedin_title("Jane Doe - Head of Engineering at Acme - Berlin | LinkedIn", "Jane Doe")
-                .unwrap();
+        let (title, company) = parse_linkedin_title(
+            "Jane Doe - Head of Engineering at Acme - Berlin | LinkedIn",
+            "Jane Doe",
+        )
+        .unwrap();
         assert_eq!(title, Some("Head of Engineering".to_string()));
         assert_eq!(company, Some("Acme".to_string()));
     }
@@ -560,7 +602,10 @@ mod tests {
             Some("jane.doe@acme.com".to_string())
         );
         // Junk TLD / placeholder domains are skipped.
-        assert_eq!(extract_email("logo at image.png and name@example.com"), None);
+        assert_eq!(
+            extract_email("logo at image.png and name@example.com"),
+            None
+        );
         assert_eq!(extract_email("no email here"), None);
     }
 
@@ -586,7 +631,10 @@ mod tests {
             extract_location("Jane is based in Austin, TX. She works"),
             Some("Austin, TX".to_string())
         );
-        assert_eq!(extract_location("based in Berlin"), Some("Berlin".to_string()));
+        assert_eq!(
+            extract_location("based in Berlin"),
+            Some("Berlin".to_string())
+        );
         assert_eq!(extract_location("no location"), None);
     }
 

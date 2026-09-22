@@ -42,9 +42,7 @@ impl PrError {
     /// Permanent failures (auth, bad request, oversized response) are not.
     pub fn is_retryable(&self) -> bool {
         match self {
-            PrError::Http { status, .. } => {
-                *status == 408 || *status == 429 || *status >= 500
-            }
+            PrError::Http { status, .. } => *status == 408 || *status == 429 || *status >= 500,
             // Network-ish failures surface as PrError::Llm from the transport.
             PrError::Llm(_) | PrError::Timeout(_) => true,
             _ => false,
@@ -74,7 +72,11 @@ mod tests {
 
     #[test]
     fn display_http() {
-        let e = PrError::Http { status: 429, message: "Too Many Requests".into(), retry_after: Some(60) };
+        let e = PrError::Http {
+            status: 429,
+            message: "Too Many Requests".into(),
+            retry_after: Some(60),
+        };
         assert_eq!(e.to_string(), "API error 429: Too Many Requests");
     }
 
@@ -85,7 +87,10 @@ mod tests {
 
     #[test]
     fn display_max_depth() {
-        assert_eq!(PrError::MaxDepthReached(5).to_string(), "Max depth reached (5)");
+        assert_eq!(
+            PrError::MaxDepthReached(5).to_string(),
+            "Max depth reached (5)"
+        );
     }
 
     #[test]
@@ -95,27 +100,52 @@ mod tests {
 
     #[test]
     fn is_retryable_http_429() {
-        assert!(PrError::Http { status: 429, message: "".into(), retry_after: None }.is_retryable());
+        assert!(PrError::Http {
+            status: 429,
+            message: "".into(),
+            retry_after: None
+        }
+        .is_retryable());
     }
 
     #[test]
     fn is_retryable_http_500() {
-        assert!(PrError::Http { status: 500, message: "".into(), retry_after: None }.is_retryable());
+        assert!(PrError::Http {
+            status: 500,
+            message: "".into(),
+            retry_after: None
+        }
+        .is_retryable());
     }
 
     #[test]
     fn is_retryable_http_408() {
-        assert!(PrError::Http { status: 408, message: "".into(), retry_after: None }.is_retryable());
+        assert!(PrError::Http {
+            status: 408,
+            message: "".into(),
+            retry_after: None
+        }
+        .is_retryable());
     }
 
     #[test]
     fn not_retryable_http_400() {
-        assert!(!PrError::Http { status: 400, message: "".into(), retry_after: None }.is_retryable());
+        assert!(!PrError::Http {
+            status: 400,
+            message: "".into(),
+            retry_after: None
+        }
+        .is_retryable());
     }
 
     #[test]
     fn not_retryable_http_403() {
-        assert!(!PrError::Http { status: 403, message: "".into(), retry_after: None }.is_retryable());
+        assert!(!PrError::Http {
+            status: 403,
+            message: "".into(),
+            retry_after: None
+        }
+        .is_retryable());
     }
 
     #[test]
@@ -155,7 +185,11 @@ mod tests {
 
     #[test]
     fn retry_after_http() {
-        let e = PrError::Http { status: 429, message: "".into(), retry_after: Some(120) };
+        let e = PrError::Http {
+            status: 429,
+            message: "".into(),
+            retry_after: Some(120),
+        };
         assert_eq!(e.retry_after_secs(), Some(120));
     }
 

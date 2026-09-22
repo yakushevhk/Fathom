@@ -118,7 +118,10 @@ async fn test_multi_agent_respects_max_agents_cap() {
         config,
     );
 
-    let output = coordinator.execute().await.expect("session should complete");
+    let output = coordinator
+        .execute()
+        .await
+        .expect("session should complete");
     assert_eq!(output.total_agents, 2);
     let (total, completed) = db.count_session_agents(&session_id).unwrap();
     assert_eq!(total, 2);

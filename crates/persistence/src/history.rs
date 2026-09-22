@@ -99,21 +99,15 @@ impl SessionHistory {
             }
         };
 
-        let agents = self
-            .db
-            .get_session_agents_detail(id)
-            .unwrap_or_else(|e| {
-                tracing::error!("failed to fetch agents for session {id}: {e}");
-                Vec::new()
-            });
+        let agents = self.db.get_session_agents_detail(id).unwrap_or_else(|e| {
+            tracing::error!("failed to fetch agents for session {id}: {e}");
+            Vec::new()
+        });
 
-        let findings = self
-            .db
-            .get_session_findings(id)
-            .unwrap_or_else(|e| {
-                tracing::error!("failed to fetch findings for session {id}: {e}");
-                Vec::new()
-            });
+        let findings = self.db.get_session_findings(id).unwrap_or_else(|e| {
+            tracing::error!("failed to fetch findings for session {id}: {e}");
+            Vec::new()
+        });
 
         Some(SessionDetails {
             session: row.into(),
@@ -184,7 +178,9 @@ mod tests {
 
         let hits = history.search_sessions("quantum");
         assert_eq!(hits.len(), 2);
-        assert!(hits.iter().all(|s| s.query.to_lowercase().contains("quantum")));
+        assert!(hits
+            .iter()
+            .all(|s| s.query.to_lowercase().contains("quantum")));
 
         // SQL wildcards in user input are treated literally.
         assert!(history.search_sessions("%").is_empty());
@@ -217,7 +213,9 @@ mod tests {
         .unwrap();
 
         let history = SessionHistory::new(db.clone());
-        let details = history.get_session_details(&session_id).expect("session exists");
+        let details = history
+            .get_session_details(&session_id)
+            .expect("session exists");
 
         assert_eq!(details.session.query, "detail test");
         assert_eq!(details.agents.len(), 1);
@@ -233,6 +231,8 @@ mod tests {
     fn test_get_session_details_missing_returns_none() {
         let db = Arc::new(Persistence::in_memory().unwrap());
         let history = SessionHistory::new(db);
-        assert!(history.get_session_details(&SessionId("nope".into())).is_none());
+        assert!(history
+            .get_session_details(&SessionId("nope".into()))
+            .is_none());
     }
 }

@@ -68,7 +68,11 @@ async fn absorb(llm: &Arc<DeepSeekProvider>, mem: &Memory, content: &str, tags: 
         context: None,
         dry_run: false,
     };
-    let report = mem.pipeline_with_llm(llm.clone()).absorb(req).await.unwrap();
+    let report = mem
+        .pipeline_with_llm(llm.clone())
+        .absorb(req)
+        .await
+        .unwrap();
     let s = report.summary_line();
     println!("   <- {content}");
     println!("      → {s}");
@@ -84,14 +88,27 @@ async fn llm_supersede_contradict_coexist() {
     println!("\n════════ LLM-MODE MEMORY ENGINEERING ════════\n");
 
     // 1. Base fact
-    let r1 = absorb(&llm, &mem,
-        "PostgreSQL 16 is 40% faster than v15 for complex analytics queries", &["database"]).await;
-    assert!(r1.starts_with("1 created"), "base fact should be created: {r1}");
+    let r1 = absorb(
+        &llm,
+        &mem,
+        "PostgreSQL 16 is 40% faster than v15 for complex analytics queries",
+        &["database"],
+    )
+    .await;
+    assert!(
+        r1.starts_with("1 created"),
+        "base fact should be created: {r1}"
+    );
 
     // 2. Newer version → supersede expected
     println!("\n▶ supersede:");
-    let r2 = absorb(&llm, &mem,
-        "PostgreSQL 17 is now 55% faster than v15 for complex analytics queries", &["database"]).await;
+    let r2 = absorb(
+        &llm,
+        &mem,
+        "PostgreSQL 17 is now 55% faster than v15 for complex analytics queries",
+        &["database"],
+    )
+    .await;
 
     // 3. Verify v16 was superseded (status), v17 is the active one
     let active = mem
@@ -101,21 +118,39 @@ async fn llm_supersede_contradict_coexist() {
     let v16 = active.iter().find(|r| r.content.contains("16 is 40%"));
     let v17 = active.iter().find(|r| r.content.contains("17 is now 55%"));
     if r2.contains("supersede") || r2.contains("created") {
-        println!("   active v16 present: {}, active v17 present: {}",
-            v16.is_some(), v17.is_some());
+        println!(
+            "   active v16 present: {}, active v17 present: {}",
+            v16.is_some(),
+            v17.is_some()
+        );
     }
 
     // 4. Contradiction — conflicting claim about the same fact
     println!("\n▶ contradict:");
-    absorb(&llm, &mem,
-        "Benchmarks show PostgreSQL 17 is actually slower than v16 for write-heavy workloads", &["database"]).await;
+    absorb(
+        &llm,
+        &mem,
+        "Benchmarks show PostgreSQL 17 is actually slower than v16 for write-heavy workloads",
+        &["database"],
+    )
+    .await;
 
     // 5. Coexist — context-specific preferences
     println!("\n▶ coexist (context-aware):");
-    let _r5a = absorb(&llm, &mem,
-        "I prefer terse code reviews with no preamble in my day job at work", &["preferences"]).await;
-    let r5b = absorb(&llm, &mem,
-        "I prefer long-form detailed technical documentation for my open-source side projects", &["preferences"]).await;
+    let _r5a = absorb(
+        &llm,
+        &mem,
+        "I prefer terse code reviews with no preamble in my day job at work",
+        &["preferences"],
+    )
+    .await;
+    let r5b = absorb(
+        &llm,
+        &mem,
+        "I prefer long-form detailed technical documentation for my open-source side projects",
+        &["preferences"],
+    )
+    .await;
 
     let prefs = mem
         .db
@@ -125,7 +160,10 @@ async fn llm_supersede_contradict_coexist() {
         .filter(|r| r.tags.contains(&"preferences".to_string()))
         .collect::<Vec<_>>();
     println!("   active preference memories: {}", prefs.len());
-    assert!(prefs.len() >= 2, "both context preferences must stay active");
+    assert!(
+        prefs.len() >= 2,
+        "both context preferences must stay active"
+    );
 
     // Show the actual verdict LLM returned for the second fact (coexist vs related)
     if r5b.contains("coexist") {
@@ -135,7 +173,15 @@ async fn llm_supersede_contradict_coexist() {
     }
 
     println!("\n─ search 'PostgreSQL performance' ─");
-    for hit in mem.search("PostgreSQL 17 performance benchmarks", &ScopeFilter::persistent(), None).await.unwrap() {
+    for hit in mem
+        .search(
+            "PostgreSQL 17 performance benchmarks",
+            &ScopeFilter::persistent(),
+            None,
+        )
+        .await
+        .unwrap()
+    {
         println!("   [{:.3}] {}", hit.score, hit.memory.content);
     }
 }

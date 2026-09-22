@@ -9,7 +9,10 @@ use crate::AppState;
 use axum::{
     extract::{Query, State},
     http::HeaderMap,
-    response::{sse::{Event, KeepAlive, Sse}, IntoResponse, Response},
+    response::{
+        sse::{Event, KeepAlive, Sse},
+        IntoResponse, Response,
+    },
     Json,
 };
 use futures::stream::Stream;
@@ -48,29 +51,48 @@ impl AgUiEvent {
             AgentEvent::AgentSpawned { id, .. } => ("STEP_STARTED", Some(id.0.clone())),
             AgentEvent::AgentCompleted { id, .. } => ("STEP_FINISHED", Some(id.0.clone())),
             AgentEvent::AgentFailed { id, .. } => ("STEP_ERROR", Some(id.0.clone())),
-            AgentEvent::LlmStreamChunk { agent_id, .. } => ("TEXT_MESSAGE_CONTENT", Some(agent_id.0.clone())),
-            AgentEvent::ThinkingChunk { agent_id, .. } => ("THINKING_CONTENT", Some(agent_id.0.clone())),
-            AgentEvent::ToolCallStarted { agent_id, .. } => ("TOOL_CALL_START", Some(agent_id.0.clone())),
-            AgentEvent::ToolCallCompleted { agent_id, .. } => ("TOOL_CALL_END", Some(agent_id.0.clone())),
+            AgentEvent::LlmStreamChunk { agent_id, .. } => {
+                ("TEXT_MESSAGE_CONTENT", Some(agent_id.0.clone()))
+            }
+            AgentEvent::ThinkingChunk { agent_id, .. } => {
+                ("THINKING_CONTENT", Some(agent_id.0.clone()))
+            }
+            AgentEvent::ToolCallStarted { agent_id, .. } => {
+                ("TOOL_CALL_START", Some(agent_id.0.clone()))
+            }
+            AgentEvent::ToolCallCompleted { agent_id, .. } => {
+                ("TOOL_CALL_END", Some(agent_id.0.clone()))
+            }
             AgentEvent::Finding { agent_id, .. } => ("STATE_DELTA", Some(agent_id.0.clone())),
             AgentEvent::AgentStateChanged { id, .. } => ("STATE_DELTA", Some(id.0.clone())),
             AgentEvent::QuestionAsked { agent_id, .. } => ("INTERRUPT", Some(agent_id.0.clone())),
-            AgentEvent::ApprovalRequested { agent_id, .. } => ("INTERRUPT", Some(agent_id.0.clone())),
+            AgentEvent::ApprovalRequested { agent_id, .. } => {
+                ("INTERRUPT", Some(agent_id.0.clone()))
+            }
             AgentEvent::SessionForked { child_id, .. } => ("RUN_STARTED", Some(child_id.0.clone())),
-            AgentEvent::FileChangeUndone { session_id, .. } => ("STATE_DELTA", Some(session_id.0.clone())),
-            AgentEvent::TitleGenerated { session_id, .. } => ("STATE_DELTA", Some(session_id.0.clone())),
+            AgentEvent::FileChangeUndone { session_id, .. } => {
+                ("STATE_DELTA", Some(session_id.0.clone()))
+            }
+            AgentEvent::TitleGenerated { session_id, .. } => {
+                ("STATE_DELTA", Some(session_id.0.clone()))
+            }
         };
-        let mut data = serde_json::to_value(event).unwrap_or_else(|_| serde_json::json!({
-            "type": "serialization_error",
-            "error": "event could not be serialized",
-        }));
+        let mut data = serde_json::to_value(event).unwrap_or_else(|_| {
+            serde_json::json!({
+                "type": "serialization_error",
+                "error": "event could not be serialized",
+            })
+        });
         redact_value(&mut data);
         Self {
             protocol: "fathom.ag-ui",
             version: "1",
             event_type,
             event_id,
-            timestamp_ms: SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis(),
+            timestamp_ms: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis(),
             data,
         }
     }
@@ -81,7 +103,10 @@ impl AgUiEvent {
             version: "1",
             event_type: "ERROR",
             event_id: None,
-            timestamp_ms: SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis(),
+            timestamp_ms: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis(),
             data: serde_json::json!({"error": {"code": code, "message": message.into()}}),
         }
     }
@@ -95,8 +120,18 @@ fn redact_value(value: &mut Value) {
         Value::Object(object) => {
             for (key, value) in object.iter_mut() {
                 let key_lower = key.to_ascii_lowercase();
-                if ["api_key", "apikey", "authorization", "password", "secret", "token", "private_key", "credential"]
-                    .iter().any(|needle| key_lower.contains(needle))
+                if [
+                    "api_key",
+                    "apikey",
+                    "authorization",
+                    "password",
+                    "secret",
+                    "token",
+                    "private_key",
+                    "credential",
+                ]
+                .iter()
+                .any(|needle| key_lower.contains(needle))
                 {
                     *value = Value::String("[REDACTED]".to_string());
                 } else {
@@ -204,14 +239,18 @@ pub(crate) async fn health() -> Response {
         "version": "1",
         "transport": "sse",
         "capabilities": {"events": true, "commands": false, "state_mutation": false},
-    })).into_response()
+    }))
+    .into_response()
 }
 
 fn sse_event(recorded: RecordedEvent) -> Result<Event, Infallible> {
     let event_type = recorded.envelope.event_type;
     let data = serde_json::to_string(&recorded.envelope).unwrap_or_else(|_| {
-        serde_json::to_string(&AgUiEvent::error("serialization_error", "event envelope could not be serialized"))
-            .unwrap_or_else(|_| "{\"event_type\":\"ERROR\"}".to_string())
+        serde_json::to_string(&AgUiEvent::error(
+            "serialization_error",
+            "event envelope could not be serialized",
+        ))
+        .unwrap_or_else(|_| "{\"event_type\":\"ERROR\"}".to_string())
     });
     Ok(Event::default()
         .id(recorded.sequence.to_string())
@@ -229,7 +268,10 @@ fn reset_event(cursor: u64, oldest: u64) -> RecordedEvent {
             version: "1",
             event_type: "RESET",
             event_id: None,
-            timestamp_ms: SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis(),
+            timestamp_ms: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis(),
             data: serde_json::json!({"error": {"code": "cursor_too_old", "message": format!("event cursor {cursor} is no longer available"), "oldest_event_id": oldest}}),
         },
     }
@@ -242,20 +284,26 @@ fn event_stream(
     // Subscribe before taking the snapshot so events emitted during replay are
     // queued for the live phase rather than falling through the gap.
     let rx = store.tx.subscribe();
-    let replay = store.ring.lock().map(|ring| {
-        let oldest = ring.front().map(|event| event.sequence);
-        let mut events = Vec::new();
-        if let Some(cursor) = cursor {
-            match oldest {
-                Some(oldest) if cursor.saturating_add(1) < oldest => events.push(reset_event(cursor, oldest)),
-                _ => {}
+    let replay = store
+        .ring
+        .lock()
+        .map(|ring| {
+            let oldest = ring.front().map(|event| event.sequence);
+            let mut events = Vec::new();
+            if let Some(cursor) = cursor {
+                match oldest {
+                    Some(oldest) if cursor.saturating_add(1) < oldest => {
+                        events.push(reset_event(cursor, oldest))
+                    }
+                    _ => {}
+                }
+                events.extend(ring.iter().filter(|event| event.sequence > cursor).cloned());
+            } else {
+                events.extend(ring.iter().cloned());
             }
-            events.extend(ring.iter().filter(|event| event.sequence > cursor).cloned());
-        } else {
-            events.extend(ring.iter().cloned());
-        }
-        events
-    }).unwrap_or_default();
+            events
+        })
+        .unwrap_or_default();
     Box::pin(futures::stream::unfold(
         (replay.into_iter(), rx),
         |(mut replay, mut rx)| async move {
@@ -265,8 +313,10 @@ fn event_stream(
             match rx.recv().await {
                 Ok(event) => Some((sse_event(event), (replay, rx))),
                 Err(broadcast::error::RecvError::Lagged(count)) => {
-                    let envelope = AgUiEvent::error("event_lagged", format!("{count} events were skipped"));
-                    let data = serde_json::to_string(&envelope).unwrap_or_else(|_| "{\"event_type\":\"ERROR\"}".to_string());
+                    let envelope =
+                        AgUiEvent::error("event_lagged", format!("{count} events were skipped"));
+                    let data = serde_json::to_string(&envelope)
+                        .unwrap_or_else(|_| "{\"event_type\":\"ERROR\"}".to_string());
                     Some((Ok(Event::default().event("ERROR").data(data)), (replay, rx)))
                 }
                 Err(broadcast::error::RecvError::Closed) => None,

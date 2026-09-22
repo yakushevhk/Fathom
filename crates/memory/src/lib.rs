@@ -19,9 +19,9 @@ pub mod distill;
 pub mod embed;
 pub mod gc;
 pub mod graph;
+pub mod hnsw;
 pub mod search;
 pub mod secrets;
-pub mod hnsw;
 pub mod triples;
 pub mod vault_sync;
 
@@ -31,9 +31,9 @@ pub use distill::*;
 pub use embed::*;
 pub use gc::*;
 pub use graph::*;
+pub use hnsw::*;
 pub use search::*;
 pub use secrets::detect_secrets;
-pub use hnsw::*;
 pub use triples::*;
 pub use vault_sync::*;
 
@@ -198,7 +198,10 @@ mod tests {
             .unwrap();
         assert_eq!(report.created, 1);
 
-        let hits = mem.search("tverskaya office address", &ScopeFilter::persistent(), None).await.unwrap();
+        let hits = mem
+            .search("tverskaya office address", &ScopeFilter::persistent(), None)
+            .await
+            .unwrap();
         assert!(!hits.is_empty());
     }
 
@@ -206,7 +209,10 @@ mod tests {
     async fn digest_block_bounded_and_fault_tolerant() {
         let mem = Memory::in_memory(config()).unwrap();
         // Empty store => empty block.
-        assert!(mem.digest_block("anything", &ScopeFilter::persistent(), 2000).await.is_empty());
+        assert!(mem
+            .digest_block("anything", &ScopeFilter::persistent(), 2000)
+            .await
+            .is_empty());
 
         mem.pipeline()
             .absorb(AbsorbRequest {
@@ -225,7 +231,9 @@ mod tests {
             })
             .await
             .unwrap();
-        let block = mem.digest_block("acme ceo email", &ScopeFilter::persistent(), 2000).await;
+        let block = mem
+            .digest_block("acme ceo email", &ScopeFilter::persistent(), 2000)
+            .await;
         assert!(block.contains("Long-term memory digest"));
         assert!(block.contains("Maria Ivanova"));
     }
@@ -250,7 +258,10 @@ mod tests {
         mem.pipeline().absorb(req.clone()).await.unwrap();
 
         // Persistent-only scope does not see run facts...
-        let hits = mem.search("team page employees", &ScopeFilter::persistent(), None).await.unwrap();
+        let hits = mem
+            .search("team page employees", &ScopeFilter::persistent(), None)
+            .await
+            .unwrap();
         assert!(hits.is_empty());
         // ...but the session scope does.
         let hits = mem

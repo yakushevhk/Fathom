@@ -29,7 +29,8 @@ async fn run_session(
 
     let session_id = SessionId::new();
     let db = Arc::new(Persistence::open(&output_dir.join(".research.db")).unwrap());
-    db.create_session(&session_id, "integration test query").unwrap();
+    db.create_session(&session_id, "integration test query")
+        .unwrap();
 
     let (event_tx, _) = broadcast::channel(1024);
     let mut coordinator = Coordinator::new(
@@ -43,18 +44,18 @@ async fn run_session(
         config,
     );
 
-    let output = coordinator.execute().await.expect("session should complete");
+    let output = coordinator
+        .execute()
+        .await
+        .expect("session should complete");
     (output, db)
 }
 
 #[tokio::test]
 async fn test_research_then_export_html_and_json() {
     let tmp = tempfile::tempdir().unwrap();
-    let (output, _db) = run_session(
-        tmp.path().to_path_buf(),
-        Arc::new(MockLlm::multi_agent(2)),
-    )
-    .await;
+    let (output, _db) =
+        run_session(tmp.path().to_path_buf(), Arc::new(MockLlm::multi_agent(2))).await;
 
     let exporter = Exporter::new(tmp.path().to_path_buf());
 
@@ -95,11 +96,8 @@ async fn test_research_then_export_pdf_docx_via_pandoc() {
     }
 
     let tmp = tempfile::tempdir().unwrap();
-    let (output, _db) = run_session(
-        tmp.path().to_path_buf(),
-        Arc::new(MockLlm::single_agent()),
-    )
-    .await;
+    let (output, _db) =
+        run_session(tmp.path().to_path_buf(), Arc::new(MockLlm::single_agent())).await;
 
     let exporter = Exporter::new(tmp.path().to_path_buf());
 
@@ -165,11 +163,8 @@ async fn test_research_then_notify_webhook() {
     });
 
     let tmp = tempfile::tempdir().unwrap();
-    let (output, _db) = run_session(
-        tmp.path().to_path_buf(),
-        Arc::new(MockLlm::multi_agent(2)),
-    )
-    .await;
+    let (output, _db) =
+        run_session(tmp.path().to_path_buf(), Arc::new(MockLlm::multi_agent(2))).await;
 
     let notifier = Notifier::new(vec![NotificationChannel::Webhook {
         url: format!("http://{addr}/research-hook"),

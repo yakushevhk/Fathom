@@ -71,7 +71,12 @@ impl PatternRegister {
         let raw = match tokio::fs::read_to_string(&self.path).await {
             Ok(s) => s,
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
-            Err(e) => return Err(anyhow::anyhow!("read patterns {}: {e}", self.path.display())),
+            Err(e) => {
+                return Err(anyhow::anyhow!(
+                    "read patterns {}: {e}",
+                    self.path.display()
+                ))
+            }
         };
         let mut m = self.inner.lock().await;
         for row in parse_patterns(&raw) {
@@ -104,7 +109,11 @@ impl PatternRegister {
         } else {
             if m.len() >= MAX_PATTERN_ROWS && !m.contains_key(class) {
                 // Evict the least-common row to keep the table bounded.
-                if let Some(min_key) = m.iter().min_by_key(|(_, r)| r.count).map(|(k, _)| k.clone()) {
+                if let Some(min_key) = m
+                    .iter()
+                    .min_by_key(|(_, r)| r.count)
+                    .map(|(k, _)| k.clone())
+                {
                     m.remove(&min_key);
                 }
             }
@@ -127,7 +136,11 @@ impl PatternRegister {
     }
 
     /// Append to the JSONL history (old row → new row), for traceability.
-    async fn record_history(&self, old: Option<&PatternRow>, new: &PatternRow) -> anyhow::Result<()> {
+    async fn record_history(
+        &self,
+        old: Option<&PatternRow>,
+        new: &PatternRow,
+    ) -> anyhow::Result<()> {
         if let Some(parent) = self.history.parent() {
             tokio::fs::create_dir_all(parent).await.ok();
         }
@@ -152,7 +165,8 @@ impl PatternRegister {
         if let Some(p) = self.path.parent() {
             tokio::fs::create_dir_all(p).await.ok();
         }
-        let mut buf = String::from("| Error class | Count | Root cause | Structural fix | Status |\n");
+        let mut buf =
+            String::from("| Error class | Count | Root cause | Structural fix | Status |\n");
         buf.push_str("|---|---|---|---|---|\n");
         let mut sorted = rows.to_vec();
         sorted.sort_by_key(|b| std::cmp::Reverse(b.count));
@@ -269,7 +283,9 @@ mod tests {
         {
             let reg = PatternRegister::new(tmp.path());
             reg.load().await.unwrap();
-            reg.upsert("mx_timeout", "network", "use DoH fallback").await.unwrap();
+            reg.upsert("mx_timeout", "network", "use DoH fallback")
+                .await
+                .unwrap();
         }
         let reg = PatternRegister::new(tmp.path());
         reg.load().await.unwrap();
@@ -315,7 +331,9 @@ mod tests {
         })
         .await
         .unwrap();
-        let raw = tokio::fs::read_to_string(tmp.path().join("reflections.jsonl")).await.unwrap();
+        let raw = tokio::fs::read_to_string(tmp.path().join("reflections.jsonl"))
+            .await
+            .unwrap();
         assert_eq!(raw.lines().count(), 2);
     }
 }

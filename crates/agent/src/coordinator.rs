@@ -1,10 +1,10 @@
-use pr_core::*;
-use pr_llm::{LlmProvider, CompletionRequest};
-use pr_tools::ToolRegistry;
-use pr_persistence::Persistence;
-use crate::prompt::role_prompt_for;
-use crate::runtime::{AgentRuntime, AgentOutput};
 use crate::process_manager::{ProcessManager, WorkerResult};
+use crate::prompt::role_prompt_for;
+use crate::runtime::{AgentOutput, AgentRuntime};
+use pr_core::*;
+use pr_llm::{CompletionRequest, LlmProvider};
+use pr_persistence::Persistence;
+use pr_tools::ToolRegistry;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::broadcast;
@@ -42,9 +42,7 @@ pub struct Coordinator {
     /// Live agents' cancel tokens, keyed by agent id (stall monitor).
     agent_tokens: Arc<std::sync::Mutex<HashMap<String, CancellationToken>>>,
     /// Mid-run user instructions shared by top-level agents (fleet E1).
-    steer_rx: Option<
-        Arc<tokio::sync::Mutex<tokio::sync::mpsc::UnboundedReceiver<String>>>,
-    >,
+    steer_rx: Option<Arc<tokio::sync::Mutex<tokio::sync::mpsc::UnboundedReceiver<String>>>>,
     /// Control plane channels handed to every agent (questions/approvals).
     question_tx: Option<crate::control::QuestionTx>,
     approval_tx: Option<crate::control::ApprovalTx>,
@@ -93,7 +91,14 @@ impl Coordinator {
         let use_multiprocess = config.agent.use_multiprocess;
         let role_llms = Self::build_role_llms(&config);
         Self {
-            session_id, query, llm, tools, event_tx, db, output_dir, config,
+            session_id,
+            query,
+            llm,
+            tools,
+            event_tx,
+            db,
+            output_dir,
+            config,
             total_tokens: 0,
             total_agents: 0,
             use_multiprocess,
@@ -195,10 +200,7 @@ impl Coordinator {
 
     /// Attach the session steering channel (fleet E1). Top-level agents
     /// drain it at turn boundaries.
-    pub fn with_steer_rx(
-        mut self,
-        rx: tokio::sync::mpsc::UnboundedReceiver<String>,
-    ) -> Self {
+    pub fn with_steer_rx(mut self, rx: tokio::sync::mpsc::UnboundedReceiver<String>) -> Self {
         self.steer_rx = Some(Arc::new(tokio::sync::Mutex::new(rx)));
         self
     }
@@ -276,7 +278,10 @@ impl Coordinator {
 
     /// Periodic memory maintenance: hourly GC + distill when `gc_auto` is
     /// enabled.  Runs as a background task alongside the heartbeat.
-    fn start_memory_maintenance(memory: Arc<pr_memory::Memory>, config: AppConfig) -> Option<tokio::task::JoinHandle<()>> {
+    fn start_memory_maintenance(
+        memory: Arc<pr_memory::Memory>,
+        config: AppConfig,
+    ) -> Option<tokio::task::JoinHandle<()>> {
         if !config.memory.gc_auto {
             return None;
         }
@@ -466,11 +471,7 @@ impl Coordinator {
         if timeout_secs == 0 {
             return agent.run().await;
         }
-        match tokio::time::timeout(
-            std::time::Duration::from_secs(timeout_secs),
-            agent.run(),
-        )
-        .await
+        match tokio::time::timeout(std::time::Duration::from_secs(timeout_secs), agent.run()).await
         {
             Ok(res) => res,
             Err(_) => Err(anyhow::anyhow!(
@@ -510,7 +511,9 @@ impl Coordinator {
             if self.total_agents >= self.config.agent.max_agents {
                 tracing::warn!("Max agents reached, skipping remaining tasks");
                 let _ = self.db.update_subtask_status(
-                    &self.session_id, task_desc, "skipped",
+                    &self.session_id,
+                    task_desc,
+                    "skipped",
                     Some("max agents reached"),
                 );
                 break;
@@ -521,7 +524,9 @@ impl Coordinator {
                     self.config.agent.session_token_limit
                 );
                 let _ = self.db.update_subtask_status(
-                    &self.session_id, task_desc, "skipped",
+                    &self.session_id,
+                    task_desc,
+                    "skipped",
                     Some("token budget exhausted"),
                 );
                 break;
@@ -581,9 +586,7 @@ impl Coordinator {
                         .await
                         {
                             Ok(res) => res,
-                            Err(_) => Err(anyhow::anyhow!(
-                                "agent timed out after {timeout_secs}s"
-                            )),
+                            Err(_) => Err(anyhow::anyhow!("agent timed out after {timeout_secs}s")),
                         }
                     }
                 };
@@ -697,8 +700,16 @@ impl Coordinator {
         // was attempted.
         let mut observations = Vec::new();
         for f in findings.iter().take(8) {
-            let first = f.summary.lines().find(|l| !l.trim().is_empty()).unwrap_or_default();
-            observations.push(format!("[{}] {}", f.agent_id.0, first.chars().take(200).collect::<String>()));
+            let first = f
+                .summary
+                .lines()
+                .find(|l| !l.trim().is_empty())
+                .unwrap_or_default();
+            observations.push(format!(
+                "[{}] {}",
+                f.agent_id.0,
+                first.chars().take(200).collect::<String>()
+            ));
         }
 
         // Pattern: if this was a lead-gen run and we still have findings, note
@@ -741,9 +752,10 @@ impl Coordinator {
 
     pub async fn execute(&mut self) -> anyhow::Result<SessionOutput> {
         let _heartbeat = Self::start_heartbeat(self.db.clone(), self.session_id.clone());
-        let _memory_maintenance = self.memory.as_ref().and_then(|m| {
-            Self::start_memory_maintenance(m.clone(), self.config.clone())
-        });
+        let _memory_maintenance = self
+            .memory
+            .as_ref()
+            .and_then(|m| Self::start_memory_maintenance(m.clone(), self.config.clone()));
         // Open the shared task-tree blackboard for this session (best-effort:
         // absent a usable data dir we run without durable coordination).
         if let Ok(dir) = default_ledger_dir() {
@@ -808,9 +820,7 @@ impl Coordinator {
         if self.task_type == TaskType::LeadGen {
             if let Some(target) = self.target_count {
                 let saved = self.contacts_saved_so_far().await.unwrap_or(0);
-                if saved < target
-                    && self.total_agents < self.config.agent.max_agents
-                {
+                if saved < target && self.total_agents < self.config.agent.max_agents {
                     let gap = target - saved;
                     tracing::info!(
                         "reflection: {saved}/{target} contacts collected, running gap-filling round ({gap} missing)"
@@ -976,10 +986,30 @@ impl Coordinator {
     fn detect_task_type(query: &str) -> TaskType {
         let q = query.to_lowercase();
         const LEADGEN_MARKERS: &[&str] = &[
-            "email", "e-mail", "emails", "телефон", "телефоны", "phone", "контакт",
-            "контакты", "contact", "contacts", "лид", "лиды", "lead", "leads",
-            "ceo", "cto", "cfo", "директор", "руководител", "linkedin",
-            "соцсет", "сотрудник", "employees", "decision maker",
+            "email",
+            "e-mail",
+            "emails",
+            "телефон",
+            "телефоны",
+            "phone",
+            "контакт",
+            "контакты",
+            "contact",
+            "contacts",
+            "лид",
+            "лиды",
+            "lead",
+            "leads",
+            "ceo",
+            "cto",
+            "cfo",
+            "директор",
+            "руководител",
+            "linkedin",
+            "соцсет",
+            "сотрудник",
+            "employees",
+            "decision maker",
         ];
         if LEADGEN_MARKERS.iter().any(|m| q.contains(m)) {
             TaskType::LeadGen
@@ -991,7 +1021,16 @@ impl Coordinator {
     /// Extract an explicit target count ("найди 20 email", "find 15 leads").
     fn detect_target_count(query: &str) -> Option<u32> {
         let q = query.to_lowercase();
-        let markers = ["email", "e-mail", "контакт", "contact", "лид", "lead", "телефон", "phone"];
+        let markers = [
+            "email",
+            "e-mail",
+            "контакт",
+            "contact",
+            "лид",
+            "lead",
+            "телефон",
+            "phone",
+        ];
         let bytes = q.as_bytes();
         let mut num = String::new();
         let mut i = 0;
@@ -1075,9 +1114,16 @@ Do NOT include any explanation, just the JSON array."#,
 
         // Planning is a coordinator-level call: honor `[agent.role_models]
         // coordinator` when configured.
-        let response = self.llm_for_role(AgentRole::Coordinator).complete(&req).await?;
+        let response = self
+            .llm_for_role(AgentRole::Coordinator)
+            .complete(&req)
+            .await?;
 
-        if let Message::Assistant { content: Some(text), .. } = &response.message {
+        if let Message::Assistant {
+            content: Some(text),
+            ..
+        } = &response.message
+        {
             // Try to parse JSON array from the response
             if let Ok(tasks) = serde_json::from_str::<Vec<String>>(text) {
                 return Ok(tasks);
@@ -1145,7 +1191,9 @@ Rules: at most 3 new_subtasks; each must be independently executable by a resear
 
         let req = CompletionRequest {
             messages: vec![
-                Message::system("You are a rigorous research goal-checker. Output only valid JSON.".to_string()),
+                Message::system(
+                    "You are a rigorous research goal-checker. Output only valid JSON.".to_string(),
+                ),
                 Message::user(prompt),
             ],
             tools: vec![],
@@ -1154,14 +1202,22 @@ Rules: at most 3 new_subtasks; each must be independently executable by a resear
             stream: false,
         };
 
-        let response = match self.llm_for_role(AgentRole::Coordinator).complete(&req).await {
+        let response = match self
+            .llm_for_role(AgentRole::Coordinator)
+            .complete(&req)
+            .await
+        {
             Ok(r) => r,
             Err(e) => {
                 tracing::warn!("replan judge call failed: {e}");
                 return None;
             }
         };
-        let Message::Assistant { content: Some(text), .. } = &response.message else {
+        let Message::Assistant {
+            content: Some(text),
+            ..
+        } = &response.message
+        else {
             return None;
         };
 
@@ -1174,15 +1230,14 @@ Rules: at most 3 new_subtasks; each must be independently executable by a resear
         }
 
         let parse = |s: &str| serde_json::from_str::<Verdict>(s).ok();
-        let verdict = parse(text)
-            .or_else(|| {
-                let start = text.find('{')?;
-                let end = text.rfind('}')?;
-                if end <= start {
-                    return None;
-                }
-                parse(&text[start..=end])
-            });
+        let verdict = parse(text).or_else(|| {
+            let start = text.find('{')?;
+            let end = text.rfind('}')?;
+            if end <= start {
+                return None;
+            }
+            parse(&text[start..=end])
+        });
 
         match verdict {
             Some(v) if !v.complete && !v.new_subtasks.is_empty() => {
@@ -1301,7 +1356,9 @@ Rules: at most 3 new_subtasks; each must be independently executable by a resear
             if self.total_agents >= self.config.agent.max_agents {
                 tracing::warn!("Max agents reached, skipping remaining tasks");
                 let _ = self.db.update_subtask_status(
-                    &self.session_id, task_desc, "skipped",
+                    &self.session_id,
+                    task_desc,
+                    "skipped",
                     Some("max agents reached"),
                 );
                 break;
@@ -1312,7 +1369,9 @@ Rules: at most 3 new_subtasks; each must be independently executable by a resear
                     self.config.agent.session_token_limit
                 );
                 let _ = self.db.update_subtask_status(
-                    &self.session_id, task_desc, "skipped",
+                    &self.session_id,
+                    task_desc,
+                    "skipped",
                     Some("token budget exhausted"),
                 );
                 break;
@@ -1389,7 +1448,10 @@ Rules: at most 3 new_subtasks; each must be independently executable by a resear
             };
 
             match result {
-                Ok(WorkerResult::Completed { summary, tokens_used }) => {
+                Ok(WorkerResult::Completed {
+                    summary,
+                    tokens_used,
+                }) => {
                     self.total_tokens += tokens_used; // worker incl. its own only
                     self.db.update_agent_status(
                         &agent_id,
@@ -1473,10 +1535,14 @@ Rules: at most 3 new_subtasks; each must be independently executable by a resear
             findings.len().max(1),
             self.output_dir.join(".pr-context").join("spills"),
         );
-        let findings_text: Vec<String> = findings.iter().enumerate().map(|(i, f)| {
-            let capped = budget.cap_result(&f.summary);
-            format!("### Finding {}\n{}", i + 1, capped.summary)
-        }).collect();
+        let findings_text: Vec<String> = findings
+            .iter()
+            .enumerate()
+            .map(|(i, f)| {
+                let capped = budget.cap_result(&f.summary);
+                format!("### Finding {}\n{}", i + 1, capped.summary)
+            })
+            .collect();
 
         // Pull attention-worthy beacons from the shared tree blackboard so the
         // synthesis considers blockers/questions children flagged mid-run, not
@@ -1636,9 +1702,12 @@ Rules: at most 3 new_subtasks; each must be independently executable by a resear
             chrono::Utc::now().to_rfc3339(),
             self.total_agents,
             self.total_tokens,
-            findings.iter().enumerate().map(|(i, _f)| {
-                format!("- [Finding {}](findings/finding-{}.md)", i + 1, i + 1)
-            }).collect::<Vec<_>>().join("\n")
+            findings
+                .iter()
+                .enumerate()
+                .map(|(i, _f)| { format!("- [Finding {}](findings/finding-{}.md)", i + 1, i + 1) })
+                .collect::<Vec<_>>()
+                .join("\n")
         );
         std::fs::write(self.output_dir.join("index.md"), index_content)?;
 
@@ -1726,7 +1795,8 @@ mod tests {
 
         async fn complete(&self, _req: &CompletionRequest) -> PrResult<CompletionResponse> {
             let mut q = self.responses.lock().await;
-            Ok(q.pop_front().unwrap_or_else(|| Self::assistant("default answer")))
+            Ok(q.pop_front()
+                .unwrap_or_else(|| Self::assistant("default answer")))
         }
 
         async fn stream(
@@ -1878,11 +1948,8 @@ mod tests {
         // scripted response); disable replanning.
         let mut config = AppConfig::default();
         config.agent.replan_rounds = 0;
-        let (mut coordinator, mut event_rx) = make_coordinator(
-            llm,
-            tmp.path().to_path_buf(),
-            config,
-        );
+        let (mut coordinator, mut event_rx) =
+            make_coordinator(llm, tmp.path().to_path_buf(), config);
 
         let output = coordinator.execute().await.unwrap();
 
@@ -1902,7 +1969,9 @@ mod tests {
         while let Ok(e) = event_rx.try_recv() {
             events.push(e);
         }
-        assert!(events.iter().any(|e| matches!(e, AgentEvent::SessionStarted { .. })));
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, AgentEvent::SessionStarted { .. })));
         let spawned = events
             .iter()
             .filter(|e| matches!(e, AgentEvent::AgentSpawned { .. }))
@@ -1913,7 +1982,9 @@ mod tests {
             .count();
         assert_eq!(spawned, 2);
         assert_eq!(completed, 2);
-        assert!(events.iter().any(|e| matches!(e, AgentEvent::SessionCompleted { .. })));
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, AgentEvent::SessionCompleted { .. })));
     }
 
     #[tokio::test]
@@ -1928,11 +1999,8 @@ mod tests {
             MockProvider::assistant("Report"),
         ]));
 
-        let (mut coordinator, _) = make_coordinator(
-            llm,
-            tmp.path().to_path_buf(),
-            AppConfig::default(),
-        );
+        let (mut coordinator, _) =
+            make_coordinator(llm, tmp.path().to_path_buf(), AppConfig::default());
 
         let output = coordinator.execute().await.unwrap();
         assert_eq!(output.total_agents, 1);
@@ -1940,7 +2008,6 @@ mod tests {
         let finding = std::fs::read_to_string(tmp.path().join("findings/finding-1.md")).unwrap();
         assert_eq!(finding, "Single finding");
     }
-
 
     #[tokio::test]
     async fn test_execute_resume_reruns_pending_and_merges_completed() {
@@ -1952,11 +2019,8 @@ mod tests {
             MockProvider::assistant("# Resumed report"),
         ]));
 
-        let (mut coordinator, _) = make_coordinator(
-            llm,
-            tmp.path().to_path_buf(),
-            AppConfig::default(),
-        );
+        let (mut coordinator, _) =
+            make_coordinator(llm, tmp.path().to_path_buf(), AppConfig::default());
 
         let state = crate::resume::ResumeState {
             session_id: SessionId::new(),
@@ -1965,9 +2029,9 @@ mod tests {
                 agent_id: AgentId::new(),
                 summary: "done before crash".to_string(),
                 tokens_used: 30,
-                        descendant_tokens: 0,
+                descendant_tokens: 0,
                 findings: vec![],
-            
+
                 aborted: false,
             }],
             pending_tasks: vec!["pending task".to_string()],
@@ -1986,20 +2050,40 @@ mod tests {
         assert!(tmp.path().join("summary.md").exists());
     }
 
-
     #[test]
     fn test_detect_task_type() {
-        assert_eq!(Coordinator::detect_task_type("Найди контакты CEO IT-компаний"), TaskType::LeadGen);
-        assert_eq!(Coordinator::detect_task_type("find emails of decision makers"), TaskType::LeadGen);
-        assert_eq!(Coordinator::detect_task_type("Что такое квантовые компьютеры?"), TaskType::Research);
+        assert_eq!(
+            Coordinator::detect_task_type("Найди контакты CEO IT-компаний"),
+            TaskType::LeadGen
+        );
+        assert_eq!(
+            Coordinator::detect_task_type("find emails of decision makers"),
+            TaskType::LeadGen
+        );
+        assert_eq!(
+            Coordinator::detect_task_type("Что такое квантовые компьютеры?"),
+            TaskType::Research
+        );
     }
 
     #[test]
     fn test_detect_target_count() {
-        assert_eq!(Coordinator::detect_target_count("Найди 20 email CEO в Москве"), Some(20));
-        assert_eq!(Coordinator::detect_target_count("find 15 leads in Berlin"), Some(15));
-        assert_eq!(Coordinator::detect_target_count("найди контакты без числа"), None);
-        assert_eq!(Coordinator::detect_target_count("компания работает 20 лет, найди контакты"), None);
+        assert_eq!(
+            Coordinator::detect_target_count("Найди 20 email CEO в Москве"),
+            Some(20)
+        );
+        assert_eq!(
+            Coordinator::detect_target_count("find 15 leads in Berlin"),
+            Some(15)
+        );
+        assert_eq!(
+            Coordinator::detect_target_count("найди контакты без числа"),
+            None
+        );
+        assert_eq!(
+            Coordinator::detect_target_count("компания работает 20 лет, найди контакты"),
+            None
+        );
     }
 
     #[tokio::test]
@@ -2008,11 +2092,8 @@ mod tests {
         let llm = Arc::new(MockProvider::new(vec![MockProvider::assistant(
             "[\"Task A: find emails via directories; quota: 5\", \"Task B: find emails via social; quota: 5\"]",
         )]));
-        let (mut coordinator, _) = make_coordinator(
-            llm,
-            tmp.path().to_path_buf(),
-            AppConfig::default(),
-        );
+        let (mut coordinator, _) =
+            make_coordinator(llm, tmp.path().to_path_buf(), AppConfig::default());
         coordinator.query = "Найди 10 email CEO".to_string();
 
         let tasks = coordinator.plan().await.unwrap();
@@ -2040,11 +2121,7 @@ mod tests {
         // judge would consume a scripted response, so disable replanning.
         let mut config = AppConfig::default();
         config.agent.replan_rounds = 0;
-        let (mut coordinator, _) = make_coordinator(
-            llm,
-            tmp.path().to_path_buf(),
-            config,
-        );
+        let (mut coordinator, _) = make_coordinator(llm, tmp.path().to_path_buf(), config);
         coordinator.query = "Найди 5 email".to_string();
         coordinator.task_type = TaskType::LeadGen;
         coordinator.target_count = Some(5);
@@ -2069,11 +2146,8 @@ mod tests {
             MockProvider::assistant("# Report"),
         ]));
 
-        let (mut coordinator, _) = make_coordinator(
-            llm,
-            tmp.path().to_path_buf(),
-            AppConfig::default(),
-        );
+        let (mut coordinator, _) =
+            make_coordinator(llm, tmp.path().to_path_buf(), AppConfig::default());
         coordinator.query = "Найди 1 email".to_string();
         coordinator.task_type = TaskType::LeadGen;
         coordinator.target_count = Some(1);
@@ -2091,7 +2165,6 @@ mod tests {
         let output = coordinator.execute().await.unwrap();
         assert_eq!(output.total_agents, 1, "no gap round when target met");
     }
-
 
     #[tokio::test]
     async fn test_stall_monitor_cancels_idle_agent() {
@@ -2146,11 +2219,7 @@ mod tests {
         let mut config = AppConfig::default();
         config.agent.max_agents = 2;
 
-        let (mut coordinator, _) = make_coordinator(
-            llm,
-            tmp.path().to_path_buf(),
-            config,
-        );
+        let (mut coordinator, _) = make_coordinator(llm, tmp.path().to_path_buf(), config);
 
         let output = coordinator.execute().await.unwrap();
         // Only 2 of the 4 planned sub-tasks were executed.
@@ -2178,11 +2247,8 @@ mod tests {
             MockProvider::empty_truncated(),
             MockProvider::assistant("# Recovered report"),
         ]));
-        let (coordinator, _) = make_coordinator(
-            llm,
-            tmp.path().to_path_buf(),
-            AppConfig::default(),
-        );
+        let (coordinator, _) =
+            make_coordinator(llm, tmp.path().to_path_buf(), AppConfig::default());
 
         let findings = vec![sample_finding("finding one")];
         let result = coordinator.synthesize(&findings).await.unwrap();
@@ -2198,11 +2264,8 @@ mod tests {
             MockProvider::empty_truncated(),
             MockProvider::empty_truncated(),
         ]));
-        let (coordinator, _) = make_coordinator(
-            llm,
-            tmp.path().to_path_buf(),
-            AppConfig::default(),
-        );
+        let (coordinator, _) =
+            make_coordinator(llm, tmp.path().to_path_buf(), AppConfig::default());
 
         let findings = vec![sample_finding("finding one")];
         let result = coordinator.synthesize(&findings).await.unwrap();
@@ -2236,7 +2299,8 @@ mod tests {
             async fn stream(
                 &self,
                 _req: &CompletionRequest,
-            ) -> PrResult<Box<dyn Stream<Item = PrResult<StreamChunk>> + Send + Unpin>> {
+            ) -> PrResult<Box<dyn Stream<Item = PrResult<StreamChunk>> + Send + Unpin>>
+            {
                 Err(PrError::Llm("unused".into()))
             }
         }
@@ -2246,11 +2310,7 @@ mod tests {
         });
         let mut config = AppConfig::default();
         config.llm.max_tokens = 8192;
-        let (coordinator, _) = make_coordinator(
-            spy.clone(),
-            tmp.path().to_path_buf(),
-            config,
-        );
+        let (coordinator, _) = make_coordinator(spy.clone(), tmp.path().to_path_buf(), config);
 
         let findings = vec![sample_finding("finding one")];
         coordinator.synthesize(&findings).await.unwrap();
@@ -2272,7 +2332,8 @@ mod tests {
         let llm = Arc::new(MockProvider::new(vec![MockProvider::assistant(
             r#"{"complete": false, "new_subtasks": ["Find pricing details", "Find support SLA"]}"#,
         )]));
-        let (coordinator, _) = make_coordinator(llm, tmp.path().to_path_buf(), AppConfig::default());
+        let (coordinator, _) =
+            make_coordinator(llm, tmp.path().to_path_buf(), AppConfig::default());
 
         let findings = vec![sample_finding("found the company overview")];
         let tasks = coordinator.evaluate_and_replan(&findings).await;
@@ -2291,7 +2352,8 @@ mod tests {
         let llm = Arc::new(MockProvider::new(vec![MockProvider::assistant(
             r#"{"complete": true, "new_subtasks": []}"#,
         )]));
-        let (coordinator, _) = make_coordinator(llm, tmp.path().to_path_buf(), AppConfig::default());
+        let (coordinator, _) =
+            make_coordinator(llm, tmp.path().to_path_buf(), AppConfig::default());
 
         let findings = vec![sample_finding("everything covered")];
         assert_eq!(coordinator.evaluate_and_replan(&findings).await, None);
@@ -2303,7 +2365,8 @@ mod tests {
         let llm = Arc::new(MockProvider::new(vec![MockProvider::assistant(
             r#"After review: {"complete": false, "new_subtasks": ["Gap task one"]} — that's my verdict."#,
         )]));
-        let (coordinator, _) = make_coordinator(llm, tmp.path().to_path_buf(), AppConfig::default());
+        let (coordinator, _) =
+            make_coordinator(llm, tmp.path().to_path_buf(), AppConfig::default());
 
         let findings = vec![sample_finding("partial coverage")];
         assert_eq!(
@@ -2318,7 +2381,8 @@ mod tests {
         let llm = Arc::new(MockProvider::new(vec![MockProvider::assistant(
             r#"{"complete": false, "new_subtasks": ["a", "", "b", "c", "d"]}"#,
         )]));
-        let (coordinator, _) = make_coordinator(llm, tmp.path().to_path_buf(), AppConfig::default());
+        let (coordinator, _) =
+            make_coordinator(llm, tmp.path().to_path_buf(), AppConfig::default());
 
         let findings = vec![sample_finding("x")];
         let tasks = coordinator.evaluate_and_replan(&findings).await.unwrap();
@@ -2331,7 +2395,8 @@ mod tests {
         let llm = Arc::new(MockProvider::new(vec![MockProvider::assistant(
             "I cannot decide, this is hard.",
         )]));
-        let (coordinator, _) = make_coordinator(llm, tmp.path().to_path_buf(), AppConfig::default());
+        let (coordinator, _) =
+            make_coordinator(llm, tmp.path().to_path_buf(), AppConfig::default());
 
         let findings = vec![sample_finding("x")];
         assert_eq!(coordinator.evaluate_and_replan(&findings).await, None);
@@ -2342,12 +2407,11 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let mut config = AppConfig::default();
         config.agent.max_agents = 1; // already "spent"
-        // Even a judge that wants more tasks must be ignored.
+                                     // Even a judge that wants more tasks must be ignored.
         let llm = Arc::new(MockProvider::new(vec![MockProvider::assistant(
             r#"{"complete": false, "new_subtasks": ["should not run"]}"#,
         )]));
-        let (mut coordinator, _) =
-            make_coordinator(llm, tmp.path().to_path_buf(), config);
+        let (mut coordinator, _) = make_coordinator(llm, tmp.path().to_path_buf(), config);
         coordinator.total_agents = 1;
 
         let findings = vec![sample_finding("x")];
@@ -2363,9 +2427,7 @@ mod tests {
             // researcher A
             MockProvider::assistant("Finding A"),
             // goal-mode judge: one concrete gap
-            MockProvider::assistant(
-                r#"{"complete": false, "new_subtasks": ["Gap task"]}"#,
-            ),
+            MockProvider::assistant(r#"{"complete": false, "new_subtasks": ["Gap task"]}"#),
             // gap-filling researcher
             MockProvider::assistant("Gap finding"),
             // synthesis
@@ -2374,11 +2436,7 @@ mod tests {
 
         let mut config = AppConfig::default();
         config.agent.replan_rounds = 1;
-        let (mut coordinator, _) = make_coordinator(
-            llm,
-            tmp.path().to_path_buf(),
-            config,
-        );
+        let (mut coordinator, _) = make_coordinator(llm, tmp.path().to_path_buf(), config);
 
         let output = coordinator.execute().await.unwrap();
         // 1 planned researcher + 1 gap-filling researcher.
@@ -2402,14 +2460,13 @@ mod tests {
 
         let mut config = AppConfig::default();
         config.agent.replan_rounds = 3; // generous budget, unused
-        let (mut coordinator, _) = make_coordinator(
-            llm,
-            tmp.path().to_path_buf(),
-            config,
-        );
+        let (mut coordinator, _) = make_coordinator(llm, tmp.path().to_path_buf(), config);
 
         let output = coordinator.execute().await.unwrap();
-        assert_eq!(output.total_agents, 1, "no gap agents when judge is satisfied");
+        assert_eq!(
+            output.total_agents, 1,
+            "no gap agents when judge is satisfied"
+        );
         assert_eq!(output.synthesis, "# Done");
     }
 }

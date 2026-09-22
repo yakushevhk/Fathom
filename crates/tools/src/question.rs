@@ -92,7 +92,10 @@ mod tests {
     async fn question_packages_marker() {
         let tool = QuestionTool;
         let out = tool
-            .execute(serde_json::json!({"question": "Which region should I focus on?"}), &ctx())
+            .execute(
+                serde_json::json!({"question": "Which region should I focus on?"}),
+                &ctx(),
+            )
             .await
             .unwrap();
         assert!(out.success);

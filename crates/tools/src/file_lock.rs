@@ -22,9 +22,7 @@ impl FileLockManager {
 
     /// Get or create a lock for the given canonical path.
     async fn get_lock(&self, path: &Path) -> Arc<Mutex<()>> {
-        let canonical = path
-            .canonicalize()
-            .unwrap_or_else(|_| path.to_path_buf());
+        let canonical = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
 
         let mut map = self.locks.lock().await;
         map.entry(canonical)
@@ -88,10 +86,7 @@ mod tests {
         let file = tmp.path().join("test.txt");
         std::fs::write(&file, "data").unwrap();
 
-        let result = manager
-            .with_lock(&file, || async { Ok(42) })
-            .await
-            .unwrap();
+        let result = manager.with_lock(&file, || async { Ok(42) }).await.unwrap();
         assert_eq!(result, 42);
     }
 
@@ -179,23 +174,51 @@ mod tests {
 
     #[tokio::test]
     async fn test_lock_count() {
-        let manager = FileLockManager::new();
+        // Lock entries live only while held or contended — `with_lock` prunes
+        // them on completion so the map cannot grow without bound.
+        let manager = Arc::new(FileLockManager::new());
         let tmp = tempfile::TempDir::new().unwrap();
         let f1 = tmp.path().join("x.txt");
-        let f2 = tmp.path().join("y.txt");
         std::fs::write(&f1, "x").unwrap();
-        std::fs::write(&f2, "y").unwrap();
 
         assert_eq!(manager.lock_count().await, 0);
 
-        manager.with_lock(&f1, || async { Ok(()) }).await.unwrap();
+        let (entered_tx, entered_rx) = tokio::sync::oneshot::channel::<()>();
+        let (release_tx, release_rx) = tokio::sync::oneshot::channel::<()>();
+        let m2 = Arc::clone(&manager);
+        let path = f1.clone();
+        let held = tokio::spawn(async move {
+            m2.with_lock(&path, || async move {
+                entered_tx.send(()).ok();
+                let _ = release_rx.await;
+                Ok(())
+            })
+            .await
+            .unwrap();
+        });
+        entered_rx.await.unwrap();
         assert_eq!(manager.lock_count().await, 1);
 
-        manager.with_lock(&f2, || async { Ok(()) }).await.unwrap();
-        assert_eq!(manager.lock_count().await, 2);
+        // A contender on the same file reuses the existing entry.
+        let (contended_tx, contended_rx) = tokio::sync::oneshot::channel::<()>();
+        let m3 = Arc::clone(&manager);
+        let path = f1.clone();
+        let contender = tokio::spawn(async move {
+            m3.with_lock(&path, || async move {
+                contended_tx.send(()).ok();
+                Ok(())
+            })
+            .await
+            .unwrap();
+        });
+        assert_eq!(manager.lock_count().await, 1);
 
-        // Same file reuses existing lock.
-        manager.with_lock(&f1, || async { Ok(()) }).await.unwrap();
-        assert_eq!(manager.lock_count().await, 2);
+        // Releasing the first holder lets the contender through; when the last
+        // holder finishes, the entry is pruned.
+        release_tx.send(()).ok();
+        held.await.unwrap();
+        contended_rx.await.unwrap();
+        contender.await.unwrap();
+        assert_eq!(manager.lock_count().await, 0);
     }
 }

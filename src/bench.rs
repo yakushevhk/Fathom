@@ -150,7 +150,10 @@ impl BenchEnv {
             }));
         }
         let json_path = workdir.join("large.json");
-        std::fs::write(&json_path, json!({ "items": items, "total": 20_000 }).to_string())?;
+        std::fs::write(
+            &json_path,
+            json!({ "items": items, "total": 20_000 }).to_string(),
+        )?;
 
         // RSS fixture: a ~20k-item feed (~5 MB) for web_feed (quick-xml) tests.
         let feed_items = 20_000usize;
@@ -318,7 +321,11 @@ async fn bench_dispatch(env: &BenchEnv, report: &mut Report) {
     let iters = 100_000u32;
     let start = Instant::now();
     for i in 0..iters {
-        let tc = ToolCall::new(format!("c{i}"), "file_read", json!({"path": path0, "offset": 0}));
+        let tc = ToolCall::new(
+            format!("c{i}"),
+            "file_read",
+            json!({"path": path0, "offset": 0}),
+        );
         let _ = tc.arguments();
     }
     let serde_ns = start.elapsed().as_nanos() / iters as u128;
@@ -348,7 +355,10 @@ async fn bench_parallel_io(env: &BenchEnv, report: &mut Report) {
 
     let start = Instant::now();
     for tc in &calls {
-        let _ = env.registry.execute(tc.name(), tc.arguments(), &env.ctx).await;
+        let _ = env
+            .registry
+            .execute(tc.name(), tc.arguments(), &env.ctx)
+            .await;
     }
     let seq = start.elapsed();
     report.line(&format!(
@@ -414,12 +424,19 @@ async fn bench_parallel_cpu(env: &BenchEnv, report: &mut Report) {
     // Warm-up (scraper selector compilation is cheap but caches fill in).
     let _ = env
         .registry
-        .execute("parse_html", json!({"source": html, "selector": "tr.item", "mode": "texts"}), &env.ctx)
+        .execute(
+            "parse_html",
+            json!({"source": html, "selector": "tr.item", "mode": "texts"}),
+            &env.ctx,
+        )
         .await;
 
     let start = Instant::now();
     for tc in make_calls("s") {
-        let _ = env.registry.execute(tc.name(), tc.arguments(), &env.ctx).await;
+        let _ = env
+            .registry
+            .execute(tc.name(), tc.arguments(), &env.ctx)
+            .await;
     }
     let seq = start.elapsed();
     report.line(&format!(
@@ -541,7 +558,10 @@ async fn bench_parse_scale(env: &BenchEnv, report: &mut Report) {
 
         // Warm-up + 5 timed runs.
         let args = json!({"source": path.display().to_string(), "selector": "tr.item", "mode": "texts", "limit": 500});
-        let _ = env.registry.execute("parse_html", args.clone(), &env.ctx).await;
+        let _ = env
+            .registry
+            .execute("parse_html", args.clone(), &env.ctx)
+            .await;
         let mut samples: Vec<u128> = Vec::new();
         for _ in 0..5 {
             let start = Instant::now();
@@ -572,12 +592,24 @@ async fn bench_extract_json(env: &BenchEnv, report: &mut Report) {
     report.line("|---|---:|---:|");
 
     let cases = [
-        ("wildcard scan `items[*].value` (limit 500)", json!({"source": src, "path": "items[*].value", "limit": 500})),
-        ("deep single key `items.12345.meta.score`", json!({"source": src, "path": "items.12345.meta.score"})),
-        ("top-level key `total`", json!({"source": src, "path": "total"})),
+        (
+            "wildcard scan `items[*].value` (limit 500)",
+            json!({"source": src, "path": "items[*].value", "limit": 500}),
+        ),
+        (
+            "deep single key `items.12345.meta.score`",
+            json!({"source": src, "path": "items.12345.meta.score"}),
+        ),
+        (
+            "top-level key `total`",
+            json!({"source": src, "path": "total"}),
+        ),
     ];
     for (label, args) in &cases {
-        let _ = env.registry.execute("extract_json", args.clone(), &env.ctx).await;
+        let _ = env
+            .registry
+            .execute("extract_json", args.clone(), &env.ctx)
+            .await;
         let mut samples: Vec<u128> = Vec::new();
         for _ in 0..10 {
             let start = Instant::now();
@@ -590,10 +622,7 @@ async fn bench_extract_json(env: &BenchEnv, report: &mut Report) {
         }
         samples.sort_unstable();
         let med = percentile(&samples, 0.5);
-        report.line(&format!(
-            "| {label} | 10 | {:.2} ms |",
-            med as f64 / 1000.0
-        ));
+        report.line(&format!("| {label} | 10 | {:.2} ms |", med as f64 / 1000.0));
     }
     report.line("\nSource parsing dominates: the JSON document is re-parsed per call (no cross-call cache), which keeps the tool stateless and parallel-safe.");
 }
@@ -618,7 +647,10 @@ async fn bench_feed_parse(env: &BenchEnv, report: &mut Report) {
         std::fs::write(&path, &xml).unwrap();
 
         let args = json!({"source": path.display().to_string(), "limit": items});
-        let _ = env.registry.execute("web_feed", args.clone(), &env.ctx).await;
+        let _ = env
+            .registry
+            .execute("web_feed", args.clone(), &env.ctx)
+            .await;
         let mut samples: Vec<u128> = Vec::new();
         for _ in 0..5 {
             let start = Instant::now();
@@ -647,13 +679,7 @@ async fn bench_feed_parse(env: &BenchEnv, report: &mut Report) {
     let feed = env.feed_path.display().to_string();
     let make_calls = |tag: &str| -> Vec<ToolCall> {
         (0..rounds)
-            .map(|i| {
-                ToolCall::new(
-                    format!("{tag}{i}"),
-                    "web_feed",
-                    json!({"source": feed}),
-                )
-            })
+            .map(|i| ToolCall::new(format!("{tag}{i}"), "web_feed", json!({"source": feed})))
             .collect()
     };
     let _ = env
@@ -662,7 +688,10 @@ async fn bench_feed_parse(env: &BenchEnv, report: &mut Report) {
         .await;
     let start = Instant::now();
     for tc in make_calls("s") {
-        let _ = env.registry.execute(tc.name(), tc.arguments(), &env.ctx).await;
+        let _ = env
+            .registry
+            .execute(tc.name(), tc.arguments(), &env.ctx)
+            .await;
     }
     let seq = start.elapsed();
     report.line(&format!(
@@ -784,7 +813,10 @@ async fn bench_code_map(env: &BenchEnv, report: &mut Report) {
     };
     let start = Instant::now();
     for tc in make_calls("s") {
-        let _ = env.registry.execute(tc.name(), tc.arguments(), &env.ctx).await;
+        let _ = env
+            .registry
+            .execute(tc.name(), tc.arguments(), &env.ctx)
+            .await;
     }
     let seq = start.elapsed();
     report.line(&format!(
@@ -845,19 +877,52 @@ async fn bench_memory(_env: &BenchEnv, report: &mut Report) {
     // dedup/consolidation layer does NOT merge them (each fact gets a unique
     // combination of company/metric/city/year tokens).
     const COMPANIES: &[&str] = &[
-        "Acme", "Globex", "Initech", "Umbrella", "Stark", "Wayne", "Hooli",
-        "Pied Piper", "Vandelay", "Cyberdyne", "Soylent", "Wonka", "Tyrell",
-        "Weyland", "Massive Dynamic", "Aperture", "Black Mesa", "Oscorp",
-        "LexCorp", "Momcorp",
+        "Acme",
+        "Globex",
+        "Initech",
+        "Umbrella",
+        "Stark",
+        "Wayne",
+        "Hooli",
+        "Pied Piper",
+        "Vandelay",
+        "Cyberdyne",
+        "Soylent",
+        "Wonka",
+        "Tyrell",
+        "Weyland",
+        "Massive Dynamic",
+        "Aperture",
+        "Black Mesa",
+        "Oscorp",
+        "LexCorp",
+        "Momcorp",
     ];
     const METRICS: &[&str] = &[
-        "revenue", "headcount", "churn rate", "conversion", "margin",
-        "burn rate", "ARR", "support load", "latency", "uptime",
-        "storage cost", "pipeline volume",
+        "revenue",
+        "headcount",
+        "churn rate",
+        "conversion",
+        "margin",
+        "burn rate",
+        "ARR",
+        "support load",
+        "latency",
+        "uptime",
+        "storage cost",
+        "pipeline volume",
     ];
     const CITIES: &[&str] = &[
-        "Moscow", "Kazan", "Berlin", "Amsterdam", "Lisbon", "Tbilisi",
-        "Almaty", "Dubai", "Singapore", "Toronto",
+        "Moscow",
+        "Kazan",
+        "Berlin",
+        "Amsterdam",
+        "Lisbon",
+        "Tbilisi",
+        "Almaty",
+        "Dubai",
+        "Singapore",
+        "Toronto",
     ];
     let make_facts = |n: usize| -> Vec<pr_memory::AbsorbFact> {
         (0..n)
@@ -950,10 +1015,7 @@ async fn bench_memory(_env: &BenchEnv, report: &mut Report) {
         }
         samples.sort_unstable();
         let med = percentile(&samples, 0.5);
-        report.line(&format!(
-            "| {q} | {hits} | {:.2} ms |",
-            med as f64 / 1000.0
-        ));
+        report.line(&format!("| {q} | {hits} | {:.2} ms |", med as f64 / 1000.0));
     }
 
     // ── Search scaling with store size ─────────────────────────────────
@@ -1051,10 +1113,7 @@ pub fn run_stats(output: Option<String>) -> anyhow::Result<()> {
     )?;
 
     let mut out = String::new();
-    out.push_str(&format!(
-        "# Session statistics — {}\n",
-        db_path.display()
-    ));
+    out.push_str(&format!("# Session statistics — {}\n", db_path.display()));
 
     // Sessions.
     let mut stmt = conn.prepare(
@@ -1075,7 +1134,15 @@ pub fn run_stats(output: Option<String>) -> anyhow::Result<()> {
     )?;
     let agents: Vec<AgentStatRow> = stmt
         .query_map([], |r| {
-            Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?, r.get(5)?, r.get(6)?))
+            Ok((
+                r.get(0)?,
+                r.get(1)?,
+                r.get(2)?,
+                r.get(3)?,
+                r.get(4)?,
+                r.get(5)?,
+                r.get(6)?,
+            ))
         })?
         .collect::<rusqlite::Result<_>>()?;
     out.push_str("\n## Agents\n\n| agent | role | status | tokens | wall time | task |\n|---|---|---|---:|---:|---|\n");
@@ -1253,19 +1320,25 @@ mod tests {
 
     #[tokio::test]
     async fn test_run_bench_dispatch() {
-        run_bench("dispatch", 2, None).await.expect("run_bench dispatch");
+        run_bench("dispatch", 2, None)
+            .await
+            .expect("run_bench dispatch");
     }
 
     /// Race on shared `pr-bench-{pid}` temp dir when run in parallel.
     #[tokio::test]
     async fn test_run_bench_parallel_io() {
-        run_bench("parallel-io", 2, None).await.expect("run_bench parallel-io");
+        run_bench("parallel-io", 2, None)
+            .await
+            .expect("run_bench parallel-io");
     }
 
     /// Race on shared `pr-bench-{pid}` temp dir when run in parallel.
     #[tokio::test]
     async fn test_run_bench_parallel_cpu() {
-        run_bench("parallel-cpu", 2, None).await.expect("run_bench parallel-cpu");
+        run_bench("parallel-cpu", 2, None)
+            .await
+            .expect("run_bench parallel-cpu");
     }
 
     /// Race on shared `pr-bench-{pid}` temp dir when run in parallel.
@@ -1278,19 +1351,25 @@ mod tests {
     /// `pr-bench-{pid}` dir when run in parallel. Marked `#[ignore]`.
     #[tokio::test]
     async fn test_run_bench_parse_scale() {
-        run_bench("parse-scale", 2, None).await.expect("run_bench parse-scale");
+        run_bench("parse-scale", 2, None)
+            .await
+            .expect("run_bench parse-scale");
     }
 
     /// Race on shared `pr-bench-{pid}` temp dir when run in parallel.
     #[tokio::test]
     async fn test_run_bench_extract_json() {
-        run_bench("extract-json", 2, None).await.expect("run_bench extract-json");
+        run_bench("extract-json", 2, None)
+            .await
+            .expect("run_bench extract-json");
     }
 
     /// Race on shared `pr-bench-{pid}` temp dir when run in parallel.
     #[tokio::test]
     async fn test_run_bench_feed_parse() {
-        run_bench("feed-parse", 2, None).await.expect("run_bench feed-parse");
+        run_bench("feed-parse", 2, None)
+            .await
+            .expect("run_bench feed-parse");
     }
 
     /// code_map benchmark requires external tools (tree-sitter). Crashes when
@@ -1299,13 +1378,17 @@ mod tests {
     /// `cargo test -- --ignored test_run_bench_code_map`.
     #[tokio::test]
     async fn test_run_bench_code_map() {
-        run_bench("code-map", 2, None).await.expect("run_bench code-map");
+        run_bench("code-map", 2, None)
+            .await
+            .expect("run_bench code-map");
     }
 
     /// Race on shared `pr-bench-{pid}` temp dir when run in parallel.
     #[tokio::test]
     async fn test_run_bench_memory() {
-        run_bench("memory", 2, None).await.expect("run_bench memory");
+        run_bench("memory", 2, None)
+            .await
+            .expect("run_bench memory");
     }
 
     /// Race on shared `pr-bench-{pid}` temp dir when run in parallel.
@@ -1313,7 +1396,10 @@ mod tests {
     async fn test_run_bench_unknown_scenario_errors() {
         let err = run_bench("nonexistent", 4, None).await.unwrap_err();
         let msg = format!("{err:#}");
-        assert!(msg.contains("unknown scenario"), "expected unknown scenario error, got: {msg}");
+        assert!(
+            msg.contains("unknown scenario"),
+            "expected unknown scenario error, got: {msg}"
+        );
     }
 
     // ── Individual scenario benchmarks ────────────────────────────────────────
@@ -1324,9 +1410,18 @@ mod tests {
         let mut report = Report::new();
         bench_dispatch(&env, &mut report).await;
         let text = report.finish();
-        assert!(text.contains("registry.execute"), "report should contain dispatch metrics");
-        assert!(text.contains("execute_batch"), "report should contain batch metrics");
-        assert!(text.contains("ToolCall"), "report should contain serde metrics");
+        assert!(
+            text.contains("registry.execute"),
+            "report should contain dispatch metrics"
+        );
+        assert!(
+            text.contains("execute_batch"),
+            "report should contain batch metrics"
+        );
+        assert!(
+            text.contains("ToolCall"),
+            "report should contain serde metrics"
+        );
         env.cleanup();
     }
 
@@ -1336,7 +1431,10 @@ mod tests {
         let mut report = Report::new();
         bench_parallel_io(&env, &mut report).await;
         let text = report.finish();
-        assert!(text.contains("succeeded"), "report should contain success count");
+        assert!(
+            text.contains("succeeded"),
+            "report should contain success count"
+        );
         env.cleanup();
     }
 
@@ -1356,8 +1454,14 @@ mod tests {
         let mut report = Report::new();
         bench_mixed(&env, &mut report).await;
         let text = report.finish();
-        assert!(text.contains("parallel"), "report should mention parallel phase");
-        assert!(text.contains("sequential"), "report should mention sequential phase");
+        assert!(
+            text.contains("parallel"),
+            "report should mention parallel phase"
+        );
+        assert!(
+            text.contains("sequential"),
+            "report should mention sequential phase"
+        );
         env.cleanup();
     }
 
@@ -1377,9 +1481,18 @@ mod tests {
         let mut report = Report::new();
         bench_extract_json(&env, &mut report).await;
         let text = report.finish();
-        assert!(text.contains("wildcard"), "report should contain wildcard scan");
-        assert!(text.contains("deep single key"), "report should contain deep key scan");
-        assert!(text.contains("top-level key"), "report should contain top-level key scan");
+        assert!(
+            text.contains("wildcard"),
+            "report should contain wildcard scan"
+        );
+        assert!(
+            text.contains("deep single key"),
+            "report should contain deep key scan"
+        );
+        assert!(
+            text.contains("top-level key"),
+            "report should contain top-level key scan"
+        );
         env.cleanup();
     }
 
@@ -1402,7 +1515,10 @@ mod tests {
         let mut report = Report::new();
         bench_code_map(&env, &mut report).await;
         let text = report.finish();
-        assert!(text.contains("code_symbols"), "report should contain code_symbols");
+        assert!(
+            text.contains("code_symbols"),
+            "report should contain code_symbols"
+        );
         assert!(text.contains("repo_map"), "report should contain repo_map");
         env.cleanup();
     }
@@ -1413,9 +1529,18 @@ mod tests {
         let mut report = Report::new();
         bench_memory(&env, &mut report).await;
         let text = report.finish();
-        assert!(text.contains("absorb"), "report should contain absorb metrics");
-        assert!(text.contains("search"), "report should contain search metrics");
-        assert!(text.contains("digest"), "report should contain digest metrics");
+        assert!(
+            text.contains("absorb"),
+            "report should contain absorb metrics"
+        );
+        assert!(
+            text.contains("search"),
+            "report should contain search metrics"
+        );
+        assert!(
+            text.contains("digest"),
+            "report should contain digest metrics"
+        );
         env.cleanup();
     }
 
@@ -1477,14 +1602,20 @@ mod tests {
     fn test_benchenv_setup_no_clamping_in_setup() {
         // setup() itself does NOT clamp; only run_bench applies n.max(2).
         let env = BenchEnv::setup(1).expect("setup with n=1");
-        assert_eq!(env.data_files.len(), 1, "setup(n) creates exactly n data files");
+        assert_eq!(
+            env.data_files.len(),
+            1,
+            "setup(n) creates exactly n data files"
+        );
         env.cleanup();
     }
 
     #[tokio::test]
     async fn test_run_bench_clamps_n_below_two() {
         // run_bench applies n.max(2); n=1 must still work.
-        run_bench("dispatch", 1, None).await.expect("run_bench with n=1");
+        run_bench("dispatch", 1, None)
+            .await
+            .expect("run_bench with n=1");
     }
 
     #[test]
@@ -1503,7 +1634,10 @@ mod tests {
         let tc = env.read_call(42, 0);
         assert_eq!(tc.name(), "file_read");
         assert_eq!(tc.id, "c42");
-        assert!(tc.arguments()["path"].as_str().unwrap().contains("data_00.txt"));
+        assert!(tc.arguments()["path"]
+            .as_str()
+            .unwrap()
+            .contains("data_00.txt"));
         env.cleanup();
     }
 

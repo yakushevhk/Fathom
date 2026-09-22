@@ -2,9 +2,9 @@
 //! path queries over JSON. Complements `web_fetch` (plain text) with
 //! machine-readable output for tables, lists, links and API responses.
 
-use async_trait::async_trait;
-use pr_core::{ToolSchema, ToolOutput};
 use crate::registry::{Tool, ToolContext};
+use async_trait::async_trait;
+use pr_core::{ToolOutput, ToolSchema};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -22,10 +22,7 @@ fn clamp_limit(limit: usize) -> usize {
 /// Resolve `source` to a document body. URLs go through the shared cached
 /// fetcher (SSRF guard + redirects + session cache); everything else is
 /// treated as a path relative to the working directory.
-async fn resolve_source(
-    ctx: &ToolContext,
-    source: &str,
-) -> Result<(String, bool), ToolOutput> {
+async fn resolve_source(ctx: &ToolContext, source: &str) -> Result<(String, bool), ToolOutput> {
     let trimmed = source.trim();
     if trimmed.starts_with("http://") || trimmed.starts_with("https://") {
         match crate::web::fetch_url_cached(ctx, trimmed).await {
@@ -41,7 +38,10 @@ async fn resolve_source(
         };
 
         // Enforce workspace boundary check
-        let canonical_ws = ctx.working_dir.canonicalize().unwrap_or_else(|_| ctx.working_dir.clone());
+        let canonical_ws = ctx
+            .working_dir
+            .canonicalize()
+            .unwrap_or_else(|_| ctx.working_dir.clone());
         let canonical_target = target.canonicalize().unwrap_or_else(|_| target.clone());
         if !canonical_target.starts_with(&canonical_ws) {
             return Err(ToolOutput::err_code(
@@ -227,14 +227,14 @@ Fetches the document (URL with SSRF protection and session caching, or a local f
         };
 
         let document = scraper::Html::parse_document(&body);
-        let sel = scraper::Selector::parse(
-            params.selector.as_deref().unwrap_or("body"),
-        )
-        .map_err(|e| {
-            anyhow::anyhow!("Invalid CSS selector {:?}: {e}", params.selector)
-        })?;
+        let sel = scraper::Selector::parse(params.selector.as_deref().unwrap_or("body"))
+            .map_err(|e| anyhow::anyhow!("Invalid CSS selector {:?}: {e}", params.selector))?;
 
-        let base_url = if is_url { Some(params.source.as_str()) } else { None };
+        let base_url = if is_url {
+            Some(params.source.as_str())
+        } else {
+            None
+        };
 
         // Semantics by mode:
         // - texts/html/attr: the selector is the TARGET — match it across
@@ -294,9 +294,7 @@ Fetches the document (URL with SSRF protection and session caching, or a local f
             }
             other => {
                 return Ok(ToolOutput::err_code(
-                    format!(
-                        "Unknown mode {other:?}; expected texts|html|attr|links|tables"
-                    ),
+                    format!("Unknown mode {other:?}; expected texts|html|attr|links|tables"),
                     "invalid_arguments",
                 ))
             }
@@ -319,9 +317,8 @@ Fetches the document (URL with SSRF protection and session caching, or a local f
             "count": items.len(),
             "items": items,
         });
-        let pretty = truncate_json_string(
-            &serde_json::to_string_pretty(&result).unwrap_or_default(),
-        );
+        let pretty =
+            truncate_json_string(&serde_json::to_string_pretty(&result).unwrap_or_default());
 
         // Structured source for the findings harvester (sources.md).
         let title = {
@@ -406,7 +403,11 @@ fn parse_path(path: &str) -> Result<Vec<Segment>, String> {
     Ok(segments)
 }
 
-fn apply_segments(value: &serde_json::Value, segments: &[Segment], limit: usize) -> Vec<serde_json::Value> {
+fn apply_segments(
+    value: &serde_json::Value,
+    segments: &[Segment],
+    limit: usize,
+) -> Vec<serde_json::Value> {
     let mut current = vec![value.clone()];
     for seg in segments {
         let mut next = Vec::new();
@@ -509,16 +510,15 @@ Loads JSON from an http(s) URL (with SSRF protection and session caching), a loc
             }
         };
 
-        let document: serde_json::Value = serde_json::from_str(&body).map_err(|e| {
-            anyhow::anyhow!("Source is not valid JSON: {e}")
-        })?;
+        let document: serde_json::Value = serde_json::from_str(&body)
+            .map_err(|e| anyhow::anyhow!("Source is not valid JSON: {e}"))?;
 
         let path = params.path.as_deref().unwrap_or("").trim();
         let results = if path.is_empty() {
             vec![document.clone()]
         } else {
-            let segments = parse_path(path)
-                .map_err(|e| anyhow::anyhow!("Invalid path {path:?}: {e}"))?;
+            let segments =
+                parse_path(path).map_err(|e| anyhow::anyhow!("Invalid path {path:?}: {e}"))?;
             if segments.is_empty() {
                 vec![document.clone()]
             } else {
@@ -536,9 +536,8 @@ Loads JSON from an http(s) URL (with SSRF protection and session caching), a loc
             "count": results.len(),
             "results": results,
         });
-        let pretty = truncate_json_string(
-            &serde_json::to_string_pretty(&result).unwrap_or_default(),
-        );
+        let pretty =
+            truncate_json_string(&serde_json::to_string_pretty(&result).unwrap_or_default());
         Ok(ToolOutput::ok(pretty))
     }
 }
@@ -786,10 +785,7 @@ mod tests {
         );
 
         let segs = parse_path("a.[2]").unwrap();
-        assert_eq!(
-            segs,
-            vec![Segment::Key("a".into()), Segment::Index(2)]
-        );
+        assert_eq!(segs, vec![Segment::Key("a".into()), Segment::Index(2)]);
 
         assert!(parse_path("items[abc]").is_err());
         assert!(parse_path("items[0").is_err());

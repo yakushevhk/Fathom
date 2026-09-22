@@ -1,7 +1,7 @@
-use async_trait::async_trait;
-use pr_core::{ToolSchema, ToolOutput};
 use crate::registry::{Tool, ToolContext};
 use crate::search::SearchEngine;
+use async_trait::async_trait;
+use pr_core::{ToolOutput, ToolSchema};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -22,13 +22,17 @@ struct WebSearchParams {
     limit: u32,
 }
 
-fn default_limit() -> u32 { 10 }
+fn default_limit() -> u32 {
+    10
+}
 
 pub struct WebSearchTool;
 
 #[async_trait]
 impl Tool for WebSearchTool {
-    fn name(&self) -> &str { "web_search" }
+    fn name(&self) -> &str {
+        "web_search"
+    }
     fn description(&self) -> &str {
         "Search the web for information using a query string. Returns a ranked list of results, each with a title, URL, and content snippet.
 
@@ -66,13 +70,18 @@ Performs a web search across the open internet and returns up to `limit` results
         ToolSchema {
             name: self.name().to_string(),
             description: self.description().to_string(),
-            parameters: serde_json::to_value(&schemars::schema_for!(WebSearchParams).schema).unwrap_or_default(),
+            parameters: serde_json::to_value(&schemars::schema_for!(WebSearchParams).schema)
+                .unwrap_or_default(),
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: WebSearchParams = serde_json::from_value(args)?;
-        
+
         let engine = SearchEngine::new(ctx.search_config.clone());
         let results = engine.search(&params.query, params.limit).await;
 
@@ -87,7 +96,10 @@ Performs a web search across the open internet and returns up to `limit` results
         for (i, result) in results.iter().enumerate() {
             output.push_str(&format!(
                 "{}. **{}**\n   URL: {}\n   {}\n\n",
-                i + 1, result.title, result.url, result.snippet
+                i + 1,
+                result.title,
+                result.url,
+                result.snippet
             ));
         }
 
@@ -121,7 +133,9 @@ struct WebFetchParams {
     extract_text: bool,
 }
 
-fn default_true() -> bool { true }
+fn default_true() -> bool {
+    true
+}
 
 pub struct WebFetchTool;
 
@@ -159,15 +173,19 @@ pub(crate) async fn fetch_url_cached(
     let mut current = url.to_string();
     let mut hops = 0usize;
     let response = loop {
-        let validated = crate::guard::ensure_safe_url(&current)
-            .await
-            .map_err(|e| FetchFailure {
-                message: format!("Refusing to fetch {current}: {e}"),
-                code: "blocked",
-            })?;
+        let validated =
+            crate::guard::ensure_safe_url(&current)
+                .await
+                .map_err(|e| FetchFailure {
+                    message: format!("Refusing to fetch {current}: {e}"),
+                    code: "blocked",
+                })?;
         let resp = client
             .get(validated.clone())
-            .header("User-Agent", "Mozilla/5.0 (compatible; ParallelResearch/0.1)")
+            .header(
+                "User-Agent",
+                "Mozilla/5.0 (compatible; ParallelResearch/0.1)",
+            )
             .send()
             .await
             .map_err(|e| FetchFailure {
@@ -236,14 +254,17 @@ pub(crate) async fn fetch_url_cached(
 
     // Only successful responses are cached — an error response
     // should stay retriable and never get pinned in the cache.
-    ctx.fetch_cache.insert(url, body.clone(), content_type.clone());
+    ctx.fetch_cache
+        .insert(url, body.clone(), content_type.clone());
 
     Ok((body, content_type))
 }
 
 #[async_trait]
 impl Tool for WebFetchTool {
-    fn name(&self) -> &str { "web_fetch" }
+    fn name(&self) -> &str {
+        "web_fetch"
+    }
     fn description(&self) -> &str {
         "Fetch a web page by URL and return its text content. Converts HTML to readable plain text.
 
@@ -280,11 +301,16 @@ Call with a single `url` parameter. Optionally set `extract_text: false` to get 
         ToolSchema {
             name: self.name().to_string(),
             description: self.description().to_string(),
-            parameters: serde_json::to_value(&schemars::schema_for!(WebFetchParams).schema).unwrap_or_default(),
+            parameters: serde_json::to_value(&schemars::schema_for!(WebFetchParams).schema)
+                .unwrap_or_default(),
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: WebFetchParams = serde_json::from_value(args)?;
 
         let (body, content_type) = match fetch_url_cached(ctx, &params.url).await {
@@ -305,7 +331,11 @@ Call with a single `url` parameter. Optionally set `extract_text: false` to get 
             while end > 0 && !text.is_char_boundary(end) {
                 end -= 1;
             }
-            format!("{}...\n\n[Content truncated at {} characters]", &text[..end], max_chars)
+            format!(
+                "{}...\n\n[Content truncated at {} characters]",
+                &text[..end],
+                max_chars
+            )
         } else {
             text
         };
@@ -360,13 +390,15 @@ fn html_to_text_with_title(html: &str, url: &str) -> (String, String) {
     let document = scraper::Html::parse_document(html);
 
     let title_sel = scraper::Selector::parse("title").unwrap();
-    let title = document.select(&title_sel)
+    let title = document
+        .select(&title_sel)
         .next()
         .map(|el| el.text().collect::<String>())
         .unwrap_or_default();
 
     let body_sel = scraper::Selector::parse("body").unwrap();
-    let text = document.select(&body_sel)
+    let text = document
+        .select(&body_sel)
         .next()
         .map(|body| {
             let mut text = String::new();
@@ -375,7 +407,8 @@ fn html_to_text_with_title(html: &str, url: &str) -> (String, String) {
         })
         .unwrap_or_else(|| html.to_string());
 
-    let text = text.lines()
+    let text = text
+        .lines()
         .map(|l| l.trim())
         .filter(|l| !l.is_empty())
         .collect::<Vec<_>>()
@@ -386,7 +419,10 @@ fn html_to_text_with_title(html: &str, url: &str) -> (String, String) {
 
 fn extract_text_recursive(element: &scraper::ElementRef, output: &mut String) {
     let tag = element.value().name();
-    if matches!(tag, "script" | "style" | "nav" | "footer" | "header" | "noscript") {
+    if matches!(
+        tag,
+        "script" | "style" | "nav" | "footer" | "header" | "noscript"
+    ) {
         return;
     }
 
@@ -402,7 +438,10 @@ fn extract_text_recursive(element: &scraper::ElementRef, output: &mut String) {
         }
     }
 
-    if matches!(tag, "p" | "div" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "li" | "br" | "tr") {
+    if matches!(
+        tag,
+        "p" | "div" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "li" | "br" | "tr"
+    ) {
         output.push('\n');
     }
 }
@@ -453,7 +492,8 @@ mod tests {
 
     #[test]
     fn test_html_to_text_with_title_returns_both() {
-        let html = r#"<html><head><title>My Title</title></head><body><p>Body text</p></body></html>"#;
+        let html =
+            r#"<html><head><title>My Title</title></head><body><p>Body text</p></body></html>"#;
         let (text, title) = html_to_text_with_title(html, "https://example.com");
         assert_eq!(title, "My Title");
         assert!(text.contains("Body text"));
@@ -471,9 +511,13 @@ mod tests {
 
     #[test]
     fn test_html_to_text_basic() {
-        let html = r#"<html><head><title>Test Page</title></head><body><p>Hello world</p></body></html>"#;
+        let html =
+            r#"<html><head><title>Test Page</title></head><body><p>Hello world</p></body></html>"#;
         let result = html_to_text(html, "https://example.com");
-        assert!(result.contains("Test Page"), "should contain the page title");
+        assert!(
+            result.contains("Test Page"),
+            "should contain the page title"
+        );
         assert!(result.contains("Hello world"), "should contain body text");
         assert!(
             result.contains("Source: https://example.com"),
@@ -493,7 +537,10 @@ mod tests {
     fn test_html_to_text_strips_style_tags() {
         let html = r#"<html><body><style>body { color: red; }</style><p>Visible</p></body></html>"#;
         let result = html_to_text(html, "https://example.com");
-        assert!(!result.contains("color: red"), "style content must be stripped");
+        assert!(
+            !result.contains("color: red"),
+            "style content must be stripped"
+        );
         assert!(result.contains("Visible"), "visible text must remain");
     }
 
@@ -565,10 +612,7 @@ mod tests {
             result.contains("Source: https://example.com"),
             "source URL must always appear"
         );
-        assert!(
-            result.contains("Title:"),
-            "Title: label must always appear"
-        );
+        assert!(result.contains("Title:"), "Title: label must always appear");
     }
 
     #[test]
@@ -589,7 +633,8 @@ mod tests {
 
     #[test]
     fn test_html_to_text_title_extraction() {
-        let html = r#"<html><head><title>My Special Title</title></head><body><p>Body</p></body></html>"#;
+        let html =
+            r#"<html><head><title>My Special Title</title></head><body><p>Body</p></body></html>"#;
         let result = html_to_text(html, "https://test.org");
         assert!(
             result.contains("Title: My Special Title"),
@@ -605,7 +650,10 @@ mod tests {
         let html = "<p>No body wrapper</p>";
         let result = html_to_text(html, "https://example.com");
         assert!(result.contains("Source: https://example.com"));
-        assert!(result.contains("No body wrapper"), "text inside <p> must be extracted");
+        assert!(
+            result.contains("No body wrapper"),
+            "text inside <p> must be extracted"
+        );
     }
 
     // ─── extract_text_recursive ───
@@ -654,7 +702,10 @@ mod tests {
         let mut output = String::new();
         extract_text_recursive(&element, &mut output);
         // Each <p> appends a '\n', so there should be newlines in the output
-        assert!(output.contains('\n'), "block elements should produce newlines");
+        assert!(
+            output.contains('\n'),
+            "block elements should produce newlines"
+        );
         assert!(output.contains("First"));
         assert!(output.contains("Second"));
     }
@@ -680,7 +731,10 @@ mod tests {
         extract_text_recursive(&element, &mut output);
         // Empty element should just produce a trailing newline from the <p> tag
         let trimmed = output.trim();
-        assert!(trimmed.is_empty(), "empty element should produce no visible text");
+        assert!(
+            trimmed.is_empty(),
+            "empty element should produce no visible text"
+        );
     }
 
     // ─── serde round-trips for param structs ───

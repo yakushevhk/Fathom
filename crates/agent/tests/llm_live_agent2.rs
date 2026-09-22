@@ -45,7 +45,9 @@ fn make_llm() -> Arc<DeepSeekProvider> {
 
 fn msg_text(m: &pr_core::Message) -> String {
     match m {
-        pr_core::Message::System { content } | pr_core::Message::User { content } => content.clone(),
+        pr_core::Message::System { content } | pr_core::Message::User { content } => {
+            content.clone()
+        }
         pr_core::Message::Assistant { content, .. } => content.clone().unwrap_or_default(),
         pr_core::Message::Tool { content, .. } => content.clone(),
     }
@@ -119,10 +121,15 @@ MySQL 8.4 достигает 95k TPS на том же железе, но луч�
     println!("{}", head(&text, 700));
 
     assert!(text.len() > 300, "отчёт не должен быть пустым/коротким");
-    assert!(text.contains('#'), "отчёт должен содержать markdown-заголовки");
+    assert!(
+        text.contains('#'),
+        "отчёт должен содержать markdown-заголовки"
+    );
     let lower = text.to_lowercase();
-    assert!(lower.contains("postgresql") && lower.contains("mysql"),
-        "отчёт должен интегрировать оба findings");
+    assert!(
+        lower.contains("postgresql") && lower.contains("mysql"),
+        "отчёт должен интегрировать оба findings"
+    );
     println!("✓ синтез: markdown-отчёт с интеграцией findings получен");
 }
 
@@ -161,8 +168,11 @@ async fn b_researcher_prompt_produces_cited_findings() {
     let resp = llm.complete(&req).await.expect("researcher call failed");
     let text = msg_text(&resp.message);
     println!("ответ: {}", head(&text, 500));
-    assert!(text.contains("2015") || text.to_lowercase().contains("mozilla"),
-        "ответ должен содержать год (2015) или спонсора (Mozilla): {}", head(&text, 100));
+    assert!(
+        text.contains("2015") || text.to_lowercase().contains("mozilla"),
+        "ответ должен содержать год (2015) или спонсора (Mozilla): {}",
+        head(&text, 100)
+    );
     println!("✓ researcher: промпт даёт содержательный ответ с фактами");
 }
 
@@ -197,10 +207,16 @@ async fn c_gap_filling_round_prompt() {
     let resp = llm.complete(&req).await.expect("gap-filling failed");
     let text = msg_text(&resp.message);
     println!("ответ: {}", head(&text, 500));
-    assert!(!text.trim().is_empty(), "gap-промпт не должен давать пустой ответ");
+    assert!(
+        !text.trim().is_empty(),
+        "gap-промпт не должен давать пустой ответ"
+    );
     let lower = text.to_lowercase();
     assert!(
-        lower.contains("источник") || lower.contains("source") || lower.contains("company") || lower.contains("компан"),
+        lower.contains("источник")
+            || lower.contains("source")
+            || lower.contains("company")
+            || lower.contains("компан"),
         "ответ должен ссылаться на источники/компании"
     );
     println!("✓ gap-filling: агент понял задачу дозаполнения");
@@ -240,8 +256,12 @@ Claim 3: The Rust Foundation is the main steward of the Rust language.
     println!("вердикт: {}", head(&text, 600));
     let lower = text.to_lowercase();
     assert!(
-        lower.contains("verified") || lower.contains("false") || lower.contains("верно") || lower.contains("невер"),
-        "вердикт должен содержать статусы проверки: {}", head(&text, 80)
+        lower.contains("verified")
+            || lower.contains("false")
+            || lower.contains("верно")
+            || lower.contains("невер"),
+        "вердикт должен содержать статусы проверки: {}",
+        head(&text, 80)
     );
     println!("✓ verifier: утверждения размечены статусами");
 }

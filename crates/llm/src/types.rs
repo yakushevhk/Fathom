@@ -68,4 +68,3 @@ pub enum StreamChunk {
 }
 
 pub type ResponseStream = Pin<Box<dyn Stream<Item = anyhow::Result<StreamChunk>> + Send>>;
-

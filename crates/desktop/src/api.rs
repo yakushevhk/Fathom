@@ -187,16 +187,26 @@ impl ApiClient {
     // Sessions
     pub async fn list_sessions(&self) -> Result<Vec<SessionSummary>> {
         let url = format!("{}/api/v1/sessions", self.base_url);
-        let resp = self.http.get(&url).send().await?.json::<SessionListResponse>().await?;
+        let resp = self
+            .http
+            .get(&url)
+            .send()
+            .await?
+            .json::<SessionListResponse>()
+            .await?;
         Ok(resp.sessions)
     }
 
     pub async fn create_session(&self, query: &str) -> Result<SessionSummary> {
         let url = format!("{}/api/v1/sessions", self.base_url);
-        let resp = self.http.post(&url)
+        let resp = self
+            .http
+            .post(&url)
             .json(&serde_json::json!({ "query": query }))
-            .send().await?
-            .json::<SessionSummary>().await?;
+            .send()
+            .await?
+            .json::<SessionSummary>()
+            .await?;
         Ok(resp)
     }
 
@@ -208,25 +218,31 @@ impl ApiClient {
 
     pub async fn steer_session(&self, id: &str, message: &str) -> Result<()> {
         let url = format!("{}/api/v1/sessions/{}/steer", self.base_url, id);
-        self.http.post(&url)
+        self.http
+            .post(&url)
             .json(&serde_json::json!({ "message": message }))
-            .send().await?;
+            .send()
+            .await?;
         Ok(())
     }
 
     pub async fn answer_question(&self, id: &str, request_id: &str, text: &str) -> Result<()> {
         let url = format!("{}/api/v1/sessions/{}/answer", self.base_url, id);
-        self.http.post(&url)
+        self.http
+            .post(&url)
             .json(&serde_json::json!({ "request_id": request_id, "text": text }))
-            .send().await?;
+            .send()
+            .await?;
         Ok(())
     }
 
     pub async fn approve_tool(&self, id: &str, request_id: &str, approved: bool) -> Result<()> {
         let url = format!("{}/api/v1/sessions/{}/approve", self.base_url, id);
-        self.http.post(&url)
+        self.http
+            .post(&url)
             .json(&serde_json::json!({ "request_id": request_id, "approved": approved }))
-            .send().await?;
+            .send()
+            .await?;
         Ok(())
     }
 
@@ -266,15 +282,22 @@ impl ApiClient {
 
     pub async fn create_channel(&self, coworker_id: &str, title: &str) -> Result<Channel> {
         let url = format!("{}/api/v1/channels", self.base_url);
-        let resp = self.http.post(&url)
+        let resp = self
+            .http
+            .post(&url)
             .json(&serde_json::json!({ "coworker_id": coworker_id, "title": title }))
-            .send().await?
-            .json::<Channel>().await?;
+            .send()
+            .await?
+            .json::<Channel>()
+            .await?;
         Ok(resp)
     }
 
     // Computer
-    pub async fn get_computer_screenshot(&self, agent_id: Option<&str>) -> Result<ComputerScreenshotResponse> {
+    pub async fn get_computer_screenshot(
+        &self,
+        agent_id: Option<&str>,
+    ) -> Result<ComputerScreenshotResponse> {
         let url = match agent_id {
             Some(id) => format!("{}/api/v1/computers/{}/screenshot", self.base_url, id),
             None => format!("{}/api/v1/computers/screenshot", self.base_url),
@@ -308,25 +331,31 @@ impl ApiClient {
 
     pub async fn supply_secret(&self, target_ref: &str, secret: &str) -> Result<()> {
         let url = format!("{}/api/v1/computers/secret", self.base_url);
-        self.http.post(&url)
+        self.http
+            .post(&url)
             .json(&serde_json::json!({ "ref": target_ref, "secret": secret }))
-            .send().await?;
+            .send()
+            .await?;
         Ok(())
     }
 
     pub async fn navigate(&self, url: &str) -> Result<()> {
         let endpoint = format!("{}/api/v1/computers/navigate", self.base_url);
-        self.http.post(&endpoint)
+        self.http
+            .post(&endpoint)
             .json(&serde_json::json!({ "url": url }))
-            .send().await?;
+            .send()
+            .await?;
         Ok(())
     }
 
     pub async fn computer_mouse_click(&self, x: i32, y: i32) -> Result<()> {
         let endpoint = format!("{}/api/v1/computers/click", self.base_url);
-        self.http.post(&endpoint)
+        self.http
+            .post(&endpoint)
             .json(&serde_json::json!({ "x": x, "y": y }))
-            .send().await?;
+            .send()
+            .await?;
         Ok(())
     }
 
@@ -335,7 +364,10 @@ impl ApiClient {
         let endpoint = format!("{}/api/v1/computers/tabs", self.base_url);
         let resp = self.http.get(&endpoint).send().await?;
         if resp.status().is_success() {
-            let res = resp.json::<Vec<crate::state::BrowserTab>>().await.unwrap_or_default();
+            let res = resp
+                .json::<Vec<crate::state::BrowserTab>>()
+                .await
+                .unwrap_or_default();
             Ok(res)
         } else {
             Ok(Vec::new())
@@ -344,14 +376,19 @@ impl ApiClient {
 
     pub async fn open_tab(&self, url: &str) -> Result<()> {
         let endpoint = format!("{}/api/v1/computers/tabs/open", self.base_url);
-        self.http.post(&endpoint)
+        self.http
+            .post(&endpoint)
             .json(&serde_json::json!({ "url": url }))
-            .send().await?;
+            .send()
+            .await?;
         Ok(())
     }
 
     pub async fn activate_tab(&self, tab_id: &str) -> Result<()> {
-        let endpoint = format!("{}/api/v1/computers/tabs/{}/activate", self.base_url, tab_id);
+        let endpoint = format!(
+            "{}/api/v1/computers/tabs/{}/activate",
+            self.base_url, tab_id
+        );
         self.http.post(&endpoint).send().await?;
         Ok(())
     }
@@ -365,7 +402,13 @@ impl ApiClient {
     // Governance & Audit
     pub async fn get_policy(&self) -> Result<PolicyDocument> {
         let url = format!("{}/api/v1/governance/policy", self.base_url);
-        let resp = self.http.get(&url).send().await?.json::<PolicyDocument>().await?;
+        let resp = self
+            .http
+            .get(&url)
+            .send()
+            .await?
+            .json::<PolicyDocument>()
+            .await?;
         Ok(resp)
     }
 
@@ -400,9 +443,11 @@ impl ApiClient {
 
     pub async fn store_credential(&self, name: &str, kind: &str, secret: &str) -> Result<()> {
         let url = format!("{}/api/v1/credentials", self.base_url);
-        self.http.post(&url)
+        self.http
+            .post(&url)
             .json(&serde_json::json!({ "name": name, "kind": kind, "secret": secret }))
-            .send().await?;
+            .send()
+            .await?;
         Ok(())
     }
 
@@ -422,13 +467,35 @@ impl ApiClient {
             if let Some(arr) = body.get("schedules").and_then(|v| v.as_array()) {
                 for item in arr {
                     routines.push(Routine {
-                        id: item.get("id").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
-                        name: item.get("coworker_id").and_then(|v| v.as_str()).unwrap_or("Scheduled Task").to_string(),
-                        cron: item.get("cron_expression").and_then(|v| v.as_str()).unwrap_or("* * * * *").to_string(),
-                        prompt: item.get("query").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
+                        id: item
+                            .get("id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or_default()
+                            .to_string(),
+                        name: item
+                            .get("coworker_id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("Scheduled Task")
+                            .to_string(),
+                        cron: item
+                            .get("cron_expression")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("* * * * *")
+                            .to_string(),
+                        prompt: item
+                            .get("query")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or_default()
+                            .to_string(),
                         channel_id: "general".to_string(),
-                        enabled: item.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true),
-                        last_run: item.get("last_run").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                        enabled: item
+                            .get("enabled")
+                            .and_then(|v| v.as_bool())
+                            .unwrap_or(true),
+                        last_run: item
+                            .get("last_run")
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string()),
                     });
                 }
             }
@@ -440,7 +507,8 @@ impl ApiClient {
 
     pub async fn create_schedule(&self, coworker_id: &str, cron: &str, query: &str) -> Result<()> {
         let url = format!("{}/api/v1/schedules", self.base_url);
-        self.http.post(&url)
+        self.http
+            .post(&url)
             .json(&serde_json::json!({
                 "coworker_id": coworker_id,
                 "cron_expression": cron,
@@ -448,13 +516,22 @@ impl ApiClient {
                 "enabled": true,
                 "timezone": "UTC"
             }))
-            .send().await?;
+            .send()
+            .await?;
         Ok(())
     }
 
-    pub async fn toggle_schedule(&self, id: &str, coworker_id: &str, cron: &str, query: &str, enabled: bool) -> Result<()> {
+    pub async fn toggle_schedule(
+        &self,
+        id: &str,
+        coworker_id: &str,
+        cron: &str,
+        query: &str,
+        enabled: bool,
+    ) -> Result<()> {
         let url = format!("{}/api/v1/schedules/{}", self.base_url, id);
-        self.http.put(&url)
+        self.http
+            .put(&url)
             .json(&serde_json::json!({
                 "coworker_id": coworker_id,
                 "cron_expression": cron,
@@ -462,7 +539,8 @@ impl ApiClient {
                 "enabled": enabled,
                 "timezone": "UTC"
             }))
-            .send().await?;
+            .send()
+            .await?;
         Ok(())
     }
 
@@ -489,7 +567,10 @@ impl ApiClient {
         let url = format!("{}/api/v1/computers", self.base_url);
         let resp = self.http.get(&url).send().await?;
         if resp.status().is_success() {
-            let res = resp.json::<Vec<ComputerSessionInfo>>().await.unwrap_or_default();
+            let res = resp
+                .json::<Vec<ComputerSessionInfo>>()
+                .await
+                .unwrap_or_default();
             Ok(res)
         } else {
             Ok(Vec::new())

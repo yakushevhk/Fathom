@@ -94,8 +94,12 @@ impl FallbackCooldown {
     /// selects the more aggressive window for a real 429.
     pub async fn note_limit(&self, model: &str, is_rate_limit: bool) {
         let until = now_millis()
-            + (if is_rate_limit { self.rate_limit } else { self.default })
-                .as_millis() as u64;
+            + (if is_rate_limit {
+                self.rate_limit
+            } else {
+                self.default
+            })
+            .as_millis() as u64;
         self.expires.lock().await.insert(model.to_string(), until);
     }
 
@@ -165,7 +169,10 @@ mod tests {
         for t in tasks {
             t.await.unwrap();
         }
-        assert!(max_active.load(Ordering::SeqCst) <= 2, "concurrency must be ≤ 2");
+        assert!(
+            max_active.load(Ordering::SeqCst) <= 2,
+            "concurrency must be ≤ 2"
+        );
     }
 
     #[tokio::test]
@@ -176,13 +183,19 @@ mod tests {
         let a = tokio::spawn({
             let sem = sem.clone();
             async move {
-                sem.acquire("model-a", async { tokio::time::sleep(Duration::from_millis(10)).await }).await
+                sem.acquire("model-a", async {
+                    tokio::time::sleep(Duration::from_millis(10)).await
+                })
+                .await
             }
         });
         let b = tokio::spawn({
             let sem = sem.clone();
             async move {
-                sem.acquire("model-b", async { tokio::time::sleep(Duration::from_millis(10)).await }).await
+                sem.acquire("model-b", async {
+                    tokio::time::sleep(Duration::from_millis(10)).await
+                })
+                .await
             }
         });
         a.await.unwrap();

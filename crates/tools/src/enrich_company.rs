@@ -82,7 +82,9 @@ impl CompanyEnricher {
             }
         });
         if website.is_none() {
-            let site_results = engine.search(&format!("\"{name}\" official website"), 5).await;
+            let site_results = engine
+                .search(&format!("\"{name}\" official website"), 5)
+                .await;
             website = pick_official_website(&site_results);
             if let Some(ref w) = website {
                 sources.push(w.clone());
@@ -152,12 +154,34 @@ impl CompanyEnricher {
 
 /// Hosts that talk *about* companies rather than *being* the company.
 const NON_OFFICIAL_HOSTS: &[&str] = &[
-    "wikipedia.org", "linkedin.com", "crunchbase.com", "glassdoor.com",
-    "facebook.com", "twitter.com", "x.com", "instagram.com", "youtube.com",
-    "github.com", "zoominfo.com", "dnb.com", "yelp.com", "indeed.com",
-    "bloomberg.com", "reuters.com", "forbes.com", "fortune.com", "owler.com",
-    "craft.co", "tracxn.com", "pitchbook.com", "apple.com", "google.com",
-    "wikidata.org", "fandom.com", "yellowpages.com", "mapquest.com",
+    "wikipedia.org",
+    "linkedin.com",
+    "crunchbase.com",
+    "glassdoor.com",
+    "facebook.com",
+    "twitter.com",
+    "x.com",
+    "instagram.com",
+    "youtube.com",
+    "github.com",
+    "zoominfo.com",
+    "dnb.com",
+    "yelp.com",
+    "indeed.com",
+    "bloomberg.com",
+    "reuters.com",
+    "forbes.com",
+    "fortune.com",
+    "owler.com",
+    "craft.co",
+    "tracxn.com",
+    "pitchbook.com",
+    "apple.com",
+    "google.com",
+    "wikidata.org",
+    "fandom.com",
+    "yellowpages.com",
+    "mapquest.com",
 ];
 
 /// Pick the first search result that plausibly is the company's own website.
@@ -224,7 +248,11 @@ pub fn size_bucket(employees: u64) -> &'static str {
 /// Extract a founding year: "founded in 1994", "Founded: 2010".
 pub fn extract_founded(text: &str) -> Option<u32> {
     let re = regex::Regex::new(r"(?i)founded\s*(?:in|:)?\s*(\d{4})").ok()?;
-    let current_year = chrono::Utc::now().format("%Y").to_string().parse::<u32>().unwrap_or(2100);
+    let current_year = chrono::Utc::now()
+        .format("%Y")
+        .to_string()
+        .parse::<u32>()
+        .unwrap_or(2100);
     re.captures(text)
         .and_then(|cap| cap[1].parse::<u32>().ok())
         .filter(|year| (1800..=current_year).contains(year))
@@ -362,22 +390,54 @@ pub fn detect_technologies(html: &str) -> Vec<String> {
 /// Keyword rules in priority order: first match wins.
 const INDUSTRY_RULES: &[(&[&str], &str)] = &[
     (&["fintech", "financial technology"], "FinTech"),
-    (&["cryptocurrency", "blockchain", "web3", "crypto"], "Crypto & Blockchain"),
+    (
+        &["cryptocurrency", "blockchain", "web3", "crypto"],
+        "Crypto & Blockchain",
+    ),
     (&["cybersecurity", "information security"], "Cybersecurity"),
-    (&["biotech", "pharmaceutical", "healthcare", "medical", "clinical"], "Healthcare & Life Sciences"),
+    (
+        &[
+            "biotech",
+            "pharmaceutical",
+            "healthcare",
+            "medical",
+            "clinical",
+        ],
+        "Healthcare & Life Sciences",
+    ),
     (&["insurance"], "Insurance"),
-    (&["e-commerce", "ecommerce", "online store", "online retail"], "E-Commerce & Retail"),
-    (&["artificial intelligence", "machine learning"], "Artificial Intelligence"),
-    (&["saas", "software platform", "software company", "cloud software"], "Software & Technology"),
+    (
+        &["e-commerce", "ecommerce", "online store", "online retail"],
+        "E-Commerce & Retail",
+    ),
+    (
+        &["artificial intelligence", "machine learning"],
+        "Artificial Intelligence",
+    ),
+    (
+        &[
+            "saas",
+            "software platform",
+            "software company",
+            "cloud software",
+        ],
+        "Software & Technology",
+    ),
     (&["video game", "gaming"], "Gaming"),
     (&["edtech", "e-learning", "education"], "Education"),
     (&["real estate"], "Real Estate"),
-    (&["logistics", "freight", "supply chain", "shipping"], "Logistics & Supply Chain"),
+    (
+        &["logistics", "freight", "supply chain", "shipping"],
+        "Logistics & Supply Chain",
+    ),
     (&["manufacturing", "industrial"], "Manufacturing"),
     (&["telecommunications", "telecom"], "Telecommunications"),
     (&["renewable energy", "energy"], "Energy"),
     (&["automotive"], "Automotive"),
-    (&["publishing", "media company", "news"], "Media & Publishing"),
+    (
+        &["publishing", "media company", "news"],
+        "Media & Publishing",
+    ),
     (&["hospitality", "travel"], "Travel & Hospitality"),
 ];
 
@@ -489,7 +549,9 @@ Company profile with as many fields as public signals allow; unknown fields are 
         ctx: &ToolContext,
     ) -> anyhow::Result<ToolOutput> {
         let params: EnrichCompanyParams = serde_json::from_value(args)?;
-        let result = self.enrich(ctx, &params.company, params.website.as_deref()).await;
+        let result = self
+            .enrich(ctx, &params.company, params.website.as_deref())
+            .await;
 
         let mut out = format!("Company enrichment: {}\n", result.name);
         if let Some(ref w) = result.website {
@@ -514,7 +576,10 @@ Company profile with as many fields as public signals allow; unknown fields are 
             out.push_str(&format!("Description: {d}\n"));
         }
         if !result.technologies.is_empty() {
-            out.push_str(&format!("Technologies: {}\n", result.technologies.join(", ")));
+            out.push_str(&format!(
+                "Technologies: {}\n",
+                result.technologies.join(", ")
+            ));
         }
         if out.lines().count() == 1 {
             out.push_str("No public information found for this company.\n");
@@ -569,10 +634,19 @@ mod tests {
 
     #[test]
     fn test_extract_employee_count_variants() {
-        assert_eq!(extract_employee_count("Acme has 10,000+ employees worldwide"), Some(10_000));
-        assert_eq!(extract_employee_count("the company employs 250 people"), Some(250));
+        assert_eq!(
+            extract_employee_count("Acme has 10,000+ employees worldwide"),
+            Some(10_000)
+        );
+        assert_eq!(
+            extract_employee_count("the company employs 250 people"),
+            Some(250)
+        );
         assert_eq!(extract_employee_count("1.2k employees"), Some(1_200));
-        assert_eq!(extract_employee_count("with 3,500 staff members"), Some(3_500));
+        assert_eq!(
+            extract_employee_count("with 3,500 staff members"),
+            Some(3_500)
+        );
         assert_eq!(extract_employee_count("no headcount info here"), None);
     }
 
@@ -592,7 +666,10 @@ mod tests {
 
     #[test]
     fn test_extract_founded() {
-        assert_eq!(extract_founded("Acme was founded in 1994 and grew"), Some(1994));
+        assert_eq!(
+            extract_founded("Acme was founded in 1994 and grew"),
+            Some(1994)
+        );
         assert_eq!(extract_founded("Founded: 2010"), Some(2010));
         assert_eq!(extract_founded("founded 1887"), Some(1887));
         assert_eq!(extract_founded("no founding info"), None);
@@ -663,9 +740,18 @@ mod tests {
 
     #[test]
     fn test_classify_industry() {
-        assert_eq!(classify_industry("a leading fintech startup"), Some("FinTech".to_string()));
-        assert_eq!(classify_industry("Cybersecurity solutions provider"), Some("Cybersecurity".to_string()));
-        assert_eq!(classify_industry("SaaS platform for HR teams"), Some("Software & Technology".to_string()));
+        assert_eq!(
+            classify_industry("a leading fintech startup"),
+            Some("FinTech".to_string())
+        );
+        assert_eq!(
+            classify_industry("Cybersecurity solutions provider"),
+            Some("Cybersecurity".to_string())
+        );
+        assert_eq!(
+            classify_industry("SaaS platform for HR teams"),
+            Some("Software & Technology".to_string())
+        );
         assert_eq!(classify_industry("unrelated text about bananas"), None);
     }
 

@@ -122,10 +122,7 @@ impl Embedder for TfidfEmbedder {
     }
 
     async fn embed(&self, texts: &[String]) -> anyhow::Result<Vec<Vec<f32>>> {
-        Ok(texts
-            .iter()
-            .map(|t| embed_one_tfidf(t, self.dim))
-            .collect())
+        Ok(texts.iter().map(|t| embed_one_tfidf(t, self.dim)).collect())
     }
 }
 
@@ -233,11 +230,17 @@ pub fn build_embedder(
 
     match memory_cfg.embeddings.to_lowercase().as_str() {
         "tfidf" => Arc::new(TfidfEmbedder::new()),
-        "openai" => Arc::new(OpenAiEmbedder::new(&base_url, &api_key, &memory_cfg.embedding_model)),
+        "openai" => Arc::new(OpenAiEmbedder::new(
+            &base_url,
+            &api_key,
+            &memory_cfg.embedding_model,
+        )),
         _ => {
             // auto
             if api_key.is_empty() || base_url.is_empty() {
-                tracing::info!("memory embeddings: no API credentials, using offline TF-IDF backend");
+                tracing::info!(
+                    "memory embeddings: no API credentials, using offline TF-IDF backend"
+                );
                 Arc::new(TfidfEmbedder::new())
             } else {
                 // Credentials alone do not guarantee the endpoint implements
@@ -295,7 +298,8 @@ impl Embedder for FallbackEmbedder {
                 tracing::warn!(
                     "embeddings endpoint failed ({e}); falling back to offline TF-IDF for this process"
                 );
-                self.poisoned.store(true, std::sync::atomic::Ordering::Relaxed);
+                self.poisoned
+                    .store(true, std::sync::atomic::Ordering::Relaxed);
                 self.fallback.embed(texts).await
             }
         }
@@ -325,13 +329,19 @@ mod tests {
             sim_related > sim_unrelated,
             "related {sim_related} should exceed unrelated {sim_unrelated}"
         );
-        assert!(sim_related > 0.7, "high token overlap should be strong, got {sim_related}");
+        assert!(
+            sim_related > 0.7,
+            "high token overlap should be strong, got {sim_related}"
+        );
     }
 
     #[tokio::test]
     async fn tfidf_vectors_normalized() {
         let emb = TfidfEmbedder::new();
-        let vecs = emb.embed(&["hello world example".to_string()]).await.unwrap();
+        let vecs = emb
+            .embed(&["hello world example".to_string()])
+            .await
+            .unwrap();
         let norm: f32 = vecs[0].iter().map(|x| x * x).sum::<f32>().sqrt();
         assert!((norm - 1.0).abs() < 1e-5);
     }
@@ -339,7 +349,10 @@ mod tests {
     #[tokio::test]
     async fn tfidf_empty_text_gives_zero_vector() {
         let emb = TfidfEmbedder::new();
-        let vecs = emb.embed(&["".to_string(), "!!".to_string()]).await.unwrap();
+        let vecs = emb
+            .embed(&["".to_string(), "!!".to_string()])
+            .await
+            .unwrap();
         assert_eq!(vecs.len(), 2);
         assert!(vecs[0].iter().all(|x| *x == 0.0));
     }
@@ -427,11 +440,17 @@ mod tests {
     async fn fallback_embedder_degrades_to_tfidf() {
         let emb = FallbackEmbedder::new(Arc::new(BrokenEmbedder));
         assert_eq!(emb.model_name(), "broken-model");
-        let vecs = emb.embed(&["some text about billing".to_string()]).await.unwrap();
+        let vecs = emb
+            .embed(&["some text about billing".to_string()])
+            .await
+            .unwrap();
         assert_eq!(vecs.len(), 1);
         // After the failure the backend (and its model name) flipped.
         assert_eq!(emb.model_name(), TFIDF_MODEL_NAME);
-        let again = emb.embed(&["some text about billing".to_string()]).await.unwrap();
+        let again = emb
+            .embed(&["some text about billing".to_string()])
+            .await
+            .unwrap();
         assert_eq!(vecs, again, "fallback must be deterministic");
     }
 }

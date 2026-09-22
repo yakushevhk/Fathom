@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use crate::AppState;
 use axum::{
     extract::State,
     http::{HeaderMap, StatusCode},
@@ -6,7 +6,7 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
-use crate::AppState;
+use std::sync::Arc;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InboundWebhookPayload {
@@ -33,14 +33,19 @@ pub async fn handle_inbound_webhook(
         }
     };
 
-    let sig = headers.get("x-fathom-signature")
+    let sig = headers
+        .get("x-fathom-signature")
         .or_else(|| headers.get("x-hub-signature-256"))
         .and_then(|v| v.to_str().ok());
-    
+
     let Some(sig_str) = sig else {
-        return (StatusCode::UNAUTHORIZED, Json(serde_json::json!({
-            "error": "Missing webhook signature header"
-        }))).into_response();
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({
+                "error": "Missing webhook signature header"
+            })),
+        )
+            .into_response();
     };
 
     // Clean sha256= prefix if present
@@ -49,36 +54,53 @@ pub async fn handle_inbound_webhook(
     use ring::hmac;
     let s_key = hmac::Key::new(hmac::HMAC_SHA256, secret.as_bytes());
     let Ok(provided_bytes) = hex::decode(hex_sig.trim()) else {
-        return (StatusCode::UNAUTHORIZED, Json(serde_json::json!({
-            "error": "Invalid webhook signature format"
-        }))).into_response();
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({
+                "error": "Invalid webhook signature format"
+            })),
+        )
+            .into_response();
     };
 
     // Verify against raw canonical payload bytes to avoid JSON re-serialization differences
     if hmac::verify(&s_key, &raw_body, &provided_bytes).is_err() {
-        return (StatusCode::UNAUTHORIZED, Json(serde_json::json!({
-            "error": "Invalid webhook signature"
-        }))).into_response();
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({
+                "error": "Invalid webhook signature"
+            })),
+        )
+            .into_response();
     }
     let body: InboundWebhookPayload = match serde_json::from_slice(&raw_body) {
         Ok(p) => p,
         Err(e) => {
-            return (StatusCode::BAD_REQUEST, Json(serde_json::json!({
-                "error": format!("Invalid JSON payload: {e}")
-            }))).into_response();
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({
+                    "error": format!("Invalid JSON payload: {e}")
+                })),
+            )
+                .into_response();
         }
     };
 
     // Auto-dispatch session to autonomous worker
-    let query = format!("[Webhook Trigger: {}/{}] Payload: {}", body.source, body.event_type, body.payload);
-    
+    let query = format!(
+        "[Webhook Trigger: {}/{}] Payload: {}",
+        body.source, body.event_type, body.payload
+    );
+
     // Persist and spawn session execution
     let session_id = pr_core::SessionId::new();
     let base_dir = std::path::PathBuf::from(&state.config.output.dir);
     let session_dir = base_dir.join(session_id.0.clone());
     let _ = std::fs::create_dir_all(&session_dir);
     let _ = state.db.create_session(&session_id, &query);
-    let _ = state.db.set_session_output_dir(&session_id, &session_dir.display().to_string());
+    let _ = state
+        .db
+        .set_session_output_dir(&session_id, &session_dir.display().to_string());
 
     let finished = Arc::new(std::sync::atomic::AtomicBool::new(false));
     let (steer_tx, steer_rx) = tokio::sync::mpsc::unbounded_channel::<String>();
@@ -108,11 +130,15 @@ pub async fn handle_inbound_webhook(
     state.metrics.sessions_total.inc();
     state.metrics.sessions_active.inc();
 
-    (StatusCode::ACCEPTED, Json(serde_json::json!({
-        "status": "accepted",
-        "session_id": session_id.0,
-        "source": body.source,
-        "event_type": body.event_type,
-        "dispatched": true
-    }))).into_response()
+    (
+        StatusCode::ACCEPTED,
+        Json(serde_json::json!({
+            "status": "accepted",
+            "session_id": session_id.0,
+            "source": body.source,
+            "event_type": body.event_type,
+            "dispatched": true
+        })),
+    )
+        .into_response()
 }

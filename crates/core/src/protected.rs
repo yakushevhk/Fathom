@@ -63,10 +63,26 @@ const SECRET_DIRS: &[&str] = &["secrets", "env"];
 
 fn rules() -> Vec<Rule> {
     vec![
-        Rule { kind: SurfaceKind::SafetyConfig, names: SAFETY_FILES, dir_segments: SAFETY_DIRS },
-        Rule { kind: SurfaceKind::MemoryDb, names: MEMORY_FILES, dir_segments: MEMORY_DIRS },
-        Rule { kind: SurfaceKind::OwnCode, names: OWN_CODE_FILES, dir_segments: CODE_DIRS },
-        Rule { kind: SurfaceKind::Secrets, names: SECRET_FILES, dir_segments: SECRET_DIRS },
+        Rule {
+            kind: SurfaceKind::SafetyConfig,
+            names: SAFETY_FILES,
+            dir_segments: SAFETY_DIRS,
+        },
+        Rule {
+            kind: SurfaceKind::MemoryDb,
+            names: MEMORY_FILES,
+            dir_segments: MEMORY_DIRS,
+        },
+        Rule {
+            kind: SurfaceKind::OwnCode,
+            names: OWN_CODE_FILES,
+            dir_segments: CODE_DIRS,
+        },
+        Rule {
+            kind: SurfaceKind::Secrets,
+            names: SECRET_FILES,
+            dir_segments: SECRET_DIRS,
+        },
     ]
 }
 
@@ -91,13 +107,19 @@ impl ProtectedSurfaces {
         for rule in rules() {
             let file_name = lower.file_name().and_then(|f| f.to_str()).unwrap_or("");
             let name_hit = rule.names.contains(&file_name);
-            let subpath_hit = rule.names.iter().any(|n| lower.to_string_lossy().ends_with(n));
+            let subpath_hit = rule
+                .names
+                .iter()
+                .any(|n| lower.to_string_lossy().ends_with(n));
             if name_hit || subpath_hit {
                 return SurfaceVerdict::Denied(rule.kind);
             }
             for segment in rule.dir_segments {
                 if lower.components().any(|c| {
-                    c.as_os_str().to_str().map(|s| s == *segment).unwrap_or(false)
+                    c.as_os_str()
+                        .to_str()
+                        .map(|s| s == *segment)
+                        .unwrap_or(false)
                 }) {
                     return SurfaceVerdict::Denied(rule.kind);
                 }
@@ -121,13 +143,19 @@ mod tests {
     #[test]
     fn blocks_config_surface() {
         let v = ProtectedSurfaces::check(Path::new("/home/u/.fathom/config.toml"));
-        assert!(matches!(v, SurfaceVerdict::Denied(SurfaceKind::SafetyConfig)));
+        assert!(matches!(
+            v,
+            SurfaceVerdict::Denied(SurfaceKind::SafetyConfig)
+        ));
     }
 
     #[test]
     fn case_insensitive_block() {
         let v = ProtectedSurfaces::check(Path::new("/tmp/.FATHOM/CONFIG.TOML"));
-        assert!(matches!(v, SurfaceVerdict::Denied(SurfaceKind::SafetyConfig)));
+        assert!(matches!(
+            v,
+            SurfaceVerdict::Denied(SurfaceKind::SafetyConfig)
+        ));
     }
 
     #[test]

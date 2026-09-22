@@ -215,7 +215,10 @@ impl PgContactDb {
         if n == 0 {
             // Either a duplicate tag or a missing contact; distinguish them.
             let exists: bool = client
-                .query_one("SELECT EXISTS(SELECT 1 FROM contacts WHERE id = $1)", &[&contact_id])
+                .query_one(
+                    "SELECT EXISTS(SELECT 1 FROM contacts WHERE id = $1)",
+                    &[&contact_id],
+                )
                 .await?
                 .get(0);
             anyhow::ensure!(exists, "contact {contact_id} not found");
@@ -379,8 +382,11 @@ impl PgContactDb {
             &[&old_id, &new_id],
         )
         .await?;
-        tx.execute("DELETE FROM social_profiles WHERE contact_id = $1", &[&new_id])
-            .await?;
+        tx.execute(
+            "DELETE FROM social_profiles WHERE contact_id = $1",
+            &[&new_id],
+        )
+        .await?;
         tx.execute(
             "INSERT INTO tags (contact_id, tag)
              SELECT $1, tag FROM tags WHERE contact_id = $2
@@ -698,7 +704,10 @@ impl PgContactDb {
         let phone_norm = phone.as_deref().map(normalize_phone);
         let name = primary.name.clone().or_else(|| duplicate.name.clone());
         let title = primary.title.clone().or_else(|| duplicate.title.clone());
-        let company = primary.company.clone().or_else(|| duplicate.company.clone());
+        let company = primary
+            .company
+            .clone()
+            .or_else(|| duplicate.company.clone());
         let crm_id = primary.crm_id.clone().or_else(|| duplicate.crm_id.clone());
         tx.execute(
             "UPDATE contacts SET email=$2, phone=$3, phone_norm=$4, name=$5, title=$6, company=$7, crm_id=$8, updated_at=$9
@@ -747,7 +756,11 @@ impl PgContactDb {
             .await?;
 
         tx.commit().await?;
-        tracing::info!(primary_id, duplicate_id, "merged duplicate contacts (postgres)");
+        tracing::info!(
+            primary_id,
+            duplicate_id,
+            "merged duplicate contacts (postgres)"
+        );
         Ok(())
     }
 
@@ -908,7 +921,9 @@ mod tests {
     /// PostgreSQL instance, e.g.
     /// `TEST_PG_URL=postgres://postgres:postgres@localhost/postgres cargo test -p pr-persistence --features postgres`.
     fn pg_url_from_env() -> Option<String> {
-        std::env::var("TEST_PG_URL").ok().filter(|s| !s.trim().is_empty())
+        std::env::var("TEST_PG_URL")
+            .ok()
+            .filter(|s| !s.trim().is_empty())
     }
 
     fn unique_email(label: &str) -> String {
@@ -925,11 +940,13 @@ mod tests {
             .duration_since(std::time::UNIX_EPOCH)
             .map(|d| d.as_nanos() % 1_000_000_000)
             .unwrap_or_default();
-        format!("+7 (9{:02}) {:03}-{:02}-{:02}",
+        format!(
+            "+7 (9{:02}) {:03}-{:02}-{:02}",
             nanos / 10_000_000,
             (nanos / 10_000) % 1_000,
             (nanos / 100) % 100,
-            nanos % 100)
+            nanos % 100
+        )
     }
 
     fn sample_contact(name: &str, email: &str) -> Contact {
@@ -945,15 +962,19 @@ mod tests {
             eprintln!("TEST_PG_URL not set; skipping PostgreSQL integration test");
             return;
         };
-        let db = PgContactDb::connect(&url).await.expect("connect to postgres");
+        let db = PgContactDb::connect(&url)
+            .await
+            .expect("connect to postgres");
 
         let email = unique_email("jane");
         let mut contact = sample_contact("Jane Doe", &email);
         contact.phone = Some("+1 (555) 010-0100".into());
         contact.title = Some("CTO".into());
-        contact
-            .social_profiles
-            .push(SocialProfile::new("linkedin", "https://linkedin.com/in/jdoe", "jdoe"));
+        contact.social_profiles.push(SocialProfile::new(
+            "linkedin",
+            "https://linkedin.com/in/jdoe",
+            "jdoe",
+        ));
         contact.tags = vec!["lead".into(), "vip".into()];
         contact.notes = vec!["imported".into()];
 
@@ -965,12 +986,19 @@ mod tests {
         assert_eq!(loaded.social_profiles.len(), 1);
         assert_eq!(loaded.notes, vec!["imported"]);
 
-        assert!(db.find_by_email(&email.to_uppercase()).await.unwrap().is_some());
+        assert!(db
+            .find_by_email(&email.to_uppercase())
+            .await
+            .unwrap()
+            .is_some());
         assert!(db.find_by_phone("1-555-010-0100").await.unwrap().is_some());
         assert_eq!(db.search("Jane Doe").await.unwrap().len(), 1);
 
         // Duplicate + merge.
-        let dup_id = db.add_contact(&sample_contact("Jane Dup", &email)).await.unwrap();
+        let dup_id = db
+            .add_contact(&sample_contact("Jane Dup", &email))
+            .await
+            .unwrap();
         let dupes = db.find_duplicates().await.unwrap();
         assert!(dupes
             .iter()
@@ -992,7 +1020,9 @@ mod tests {
             eprintln!("TEST_PG_URL not set; skipping PostgreSQL integration test");
             return;
         };
-        let db = PgContactDb::connect(&url).await.expect("connect to postgres");
+        let db = PgContactDb::connect(&url)
+            .await
+            .expect("connect to postgres");
         let suffix = unique_email("extras");
 
         let mut a = sample_contact("Alice Johnson", &format!("alice-{suffix}"));
@@ -1004,8 +1034,11 @@ mod tests {
         a.notes = vec!["Met at conference".into(), "Follow up in Q3".into()];
 
         let mut b = sample_contact("Bob Stone", &format!("bob-{suffix}"));
-        b.social_profiles =
-            vec![SocialProfile::new("telegram", "https://t.me/bobstone", "bobstone")];
+        b.social_profiles = vec![SocialProfile::new(
+            "telegram",
+            "https://t.me/bobstone",
+            "bobstone",
+        )];
         b.tags = vec!["vip".into()];
         b.notes = vec!["Referred by Alice".into()];
 
@@ -1054,7 +1087,11 @@ mod tests {
             let hit = hits.iter().find(|c| c.id == Some(expected_id));
             assert!(hit.is_some(), "search({needle:?}) should match");
             let expected = ours.iter().find(|c| c.id == Some(expected_id)).unwrap();
-            assert_eq!(hit.unwrap(), expected, "search({needle:?}) structure mismatch");
+            assert_eq!(
+                hit.unwrap(),
+                expected,
+                "search({needle:?}) structure mismatch"
+            );
         }
     }
 
@@ -1066,7 +1103,9 @@ mod tests {
             eprintln!("TEST_PG_URL not set; skipping PostgreSQL integration test");
             return;
         };
-        let db = PgContactDb::connect(&url).await.expect("connect to postgres");
+        let db = PgContactDb::connect(&url)
+            .await
+            .expect("connect to postgres");
 
         let phone = unique_phone_formatted();
         let digits = normalize_phone(&phone);
@@ -1080,7 +1119,10 @@ mod tests {
             Some(id)
         );
         assert_eq!(
-            db.find_by_phone(&format!("+{digits}")).await.unwrap().and_then(|c| c.id),
+            db.find_by_phone(&format!("+{digits}"))
+                .await
+                .unwrap()
+                .and_then(|c| c.id),
             Some(id)
         );
         assert_eq!(
@@ -1124,7 +1166,10 @@ mod tests {
 
         // Second lookup resolves via the index.
         assert_eq!(
-            db.find_by_phone(&legacy_digits).await.unwrap().and_then(|c| c.id),
+            db.find_by_phone(&legacy_digits)
+                .await
+                .unwrap()
+                .and_then(|c| c.id),
             Some(legacy_id)
         );
     }

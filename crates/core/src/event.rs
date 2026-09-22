@@ -1,16 +1,13 @@
-use serde::{Deserialize, Serialize};
-use crate::ids::{AgentId, SessionId};
 use crate::agent::AgentState;
 use crate::finding::Finding;
+use crate::ids::{AgentId, SessionId};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum AgentEvent {
     #[serde(rename = "session_started")]
-    SessionStarted {
-        id: SessionId,
-        query: String,
-    },
+    SessionStarted { id: SessionId, query: String },
     #[serde(rename = "agent_spawned")]
     AgentSpawned {
         id: AgentId,
@@ -20,15 +17,9 @@ pub enum AgentEvent {
         depth: u32,
     },
     #[serde(rename = "agent_state_changed")]
-    AgentStateChanged {
-        id: AgentId,
-        state: AgentState,
-    },
+    AgentStateChanged { id: AgentId, state: AgentState },
     #[serde(rename = "finding")]
-    Finding {
-        agent_id: AgentId,
-        finding: Finding,
-    },
+    Finding { agent_id: AgentId, finding: Finding },
     #[serde(rename = "tool_call_started")]
     ToolCallStarted {
         agent_id: AgentId,
@@ -43,15 +34,9 @@ pub enum AgentEvent {
         duration_ms: u64,
     },
     #[serde(rename = "llm_stream_chunk")]
-    LlmStreamChunk {
-        agent_id: AgentId,
-        chunk: String,
-    },
+    LlmStreamChunk { agent_id: AgentId, chunk: String },
     #[serde(rename = "thinking_chunk")]
-    ThinkingChunk {
-        agent_id: AgentId,
-        chunk: String,
-    },
+    ThinkingChunk { agent_id: AgentId, chunk: String },
     #[serde(rename = "agent_completed")]
     AgentCompleted {
         id: AgentId,
@@ -59,10 +44,7 @@ pub enum AgentEvent {
         tokens_used: u64,
     },
     #[serde(rename = "agent_failed")]
-    AgentFailed {
-        id: AgentId,
-        error: String,
-    },
+    AgentFailed { id: AgentId, error: String },
     #[serde(rename = "session_completed")]
     SessionCompleted {
         id: SessionId,
@@ -71,10 +53,7 @@ pub enum AgentEvent {
         total_agents: u32,
     },
     #[serde(rename = "session_failed")]
-    SessionFailed {
-        id: SessionId,
-        error: String,
-    },
+    SessionFailed { id: SessionId, error: String },
     /// An agent invoked the `question` tool and is waiting for an answer.
     /// Hosts (TUI/HTTP) answer through the control plane using `request_id`.
     #[serde(rename = "question_asked")]
@@ -168,14 +147,45 @@ mod tests {
 
         // Events that have an agent_id field
         let events = vec![
-            AgentEvent::AgentSpawned { id: aid.clone(), parent: None, role: "r".into(), task: "t".into(), depth: 0 },
-            AgentEvent::AgentStateChanged { id: aid.clone(), state: AgentState::Idle },
-            AgentEvent::AgentCompleted { id: aid.clone(), summary: "done".into(), tokens_used: 100 },
-            AgentEvent::AgentFailed { id: aid.clone(), error: "err".into() },
-            AgentEvent::Finding { agent_id: aid.clone(), finding },
-            AgentEvent::ToolCallStarted { agent_id: aid.clone(), tool: "t".into(), args: serde_json::json!({}) },
-            AgentEvent::ToolCallCompleted { agent_id: aid.clone(), tool: "t".into(), result_preview: "ok".into(), duration_ms: 10 },
-            AgentEvent::LlmStreamChunk { agent_id: aid.clone(), chunk: "hi".into() },
+            AgentEvent::AgentSpawned {
+                id: aid.clone(),
+                parent: None,
+                role: "r".into(),
+                task: "t".into(),
+                depth: 0,
+            },
+            AgentEvent::AgentStateChanged {
+                id: aid.clone(),
+                state: AgentState::Idle,
+            },
+            AgentEvent::AgentCompleted {
+                id: aid.clone(),
+                summary: "done".into(),
+                tokens_used: 100,
+            },
+            AgentEvent::AgentFailed {
+                id: aid.clone(),
+                error: "err".into(),
+            },
+            AgentEvent::Finding {
+                agent_id: aid.clone(),
+                finding,
+            },
+            AgentEvent::ToolCallStarted {
+                agent_id: aid.clone(),
+                tool: "t".into(),
+                args: serde_json::json!({}),
+            },
+            AgentEvent::ToolCallCompleted {
+                agent_id: aid.clone(),
+                tool: "t".into(),
+                result_preview: "ok".into(),
+                duration_ms: 10,
+            },
+            AgentEvent::LlmStreamChunk {
+                agent_id: aid.clone(),
+                chunk: "hi".into(),
+            },
         ];
 
         for ev in &events {
@@ -184,9 +194,20 @@ mod tests {
 
         // Session-scoped events have no agent_id
         let session_events = vec![
-            AgentEvent::SessionStarted { id: sid.clone(), query: "q".into() },
-            AgentEvent::SessionCompleted { id: sid.clone(), output_dir: "/tmp".into(), total_tokens: 0, total_agents: 0 },
-            AgentEvent::SessionFailed { id: sid.clone(), error: "e".into() },
+            AgentEvent::SessionStarted {
+                id: sid.clone(),
+                query: "q".into(),
+            },
+            AgentEvent::SessionCompleted {
+                id: sid.clone(),
+                output_dir: "/tmp".into(),
+                total_tokens: 0,
+                total_agents: 0,
+            },
+            AgentEvent::SessionFailed {
+                id: sid.clone(),
+                error: "e".into(),
+            },
         ];
         for ev in &session_events {
             assert!(ev.agent_id().is_none(), "expected no agent_id for {:?}", ev);
@@ -199,26 +220,58 @@ mod tests {
         let aid = AgentId::new();
 
         let session_events = vec![
-            AgentEvent::SessionStarted { id: sid.clone(), query: "q".into() },
-            AgentEvent::SessionCompleted { id: sid.clone(), output_dir: "/tmp".into(), total_tokens: 0, total_agents: 0 },
-            AgentEvent::SessionFailed { id: sid.clone(), error: "e".into() },
+            AgentEvent::SessionStarted {
+                id: sid.clone(),
+                query: "q".into(),
+            },
+            AgentEvent::SessionCompleted {
+                id: sid.clone(),
+                output_dir: "/tmp".into(),
+                total_tokens: 0,
+                total_agents: 0,
+            },
+            AgentEvent::SessionFailed {
+                id: sid.clone(),
+                error: "e".into(),
+            },
         ];
         for ev in &session_events {
-            assert!(ev.session_id().is_some(), "expected session_id for {:?}", ev);
+            assert!(
+                ev.session_id().is_some(),
+                "expected session_id for {:?}",
+                ev
+            );
         }
 
         let agent_events = vec![
-            AgentEvent::AgentSpawned { id: aid.clone(), parent: None, role: "r".into(), task: "t".into(), depth: 0 },
-            AgentEvent::AgentCompleted { id: aid.clone(), summary: "s".into(), tokens_used: 0 },
+            AgentEvent::AgentSpawned {
+                id: aid.clone(),
+                parent: None,
+                role: "r".into(),
+                task: "t".into(),
+                depth: 0,
+            },
+            AgentEvent::AgentCompleted {
+                id: aid.clone(),
+                summary: "s".into(),
+                tokens_used: 0,
+            },
         ];
         for ev in &agent_events {
-            assert!(ev.session_id().is_none(), "expected no session_id for {:?}", ev);
+            assert!(
+                ev.session_id().is_none(),
+                "expected no session_id for {:?}",
+                ev
+            );
         }
     }
 
     #[test]
     fn serde_roundtrip_session_started() {
-        let ev = AgentEvent::SessionStarted { id: SessionId::new(), query: "test".into() };
+        let ev = AgentEvent::SessionStarted {
+            id: SessionId::new(),
+            query: "test".into(),
+        };
         let json = serde_json::to_string(&ev).unwrap();
         assert!(json.contains("session_started"));
         let back: AgentEvent = serde_json::from_str(&json).unwrap();
@@ -241,7 +294,9 @@ mod tests {
         assert!(json.contains("agent_spawned"));
         let back: AgentEvent = serde_json::from_str(&json).unwrap();
         match back {
-            AgentEvent::AgentSpawned { role, task, depth, .. } => {
+            AgentEvent::AgentSpawned {
+                role, task, depth, ..
+            } => {
                 assert_eq!(role, "researcher");
                 assert_eq!(task, "find info");
                 assert_eq!(depth, 2);
@@ -261,7 +316,9 @@ mod tests {
         let json = serde_json::to_string(&ev).unwrap();
         let back: AgentEvent = serde_json::from_str(&json).unwrap();
         match back {
-            AgentEvent::ToolCallCompleted { tool, duration_ms, .. } => {
+            AgentEvent::ToolCallCompleted {
+                tool, duration_ms, ..
+            } => {
                 assert_eq!(tool, "web_search");
                 assert_eq!(duration_ms, 1234);
             }
@@ -283,20 +340,73 @@ mod tests {
             created_at: chrono::Utc::now(),
         };
         let variants = vec![
-            AgentEvent::SessionStarted { id: sid.clone(), query: "q".into() },
-            AgentEvent::AgentSpawned { id: aid.clone(), parent: None, role: "r".into(), task: "t".into(), depth: 0 },
-            AgentEvent::AgentStateChanged { id: aid.clone(), state: AgentState::Idle },
-            AgentEvent::Finding { agent_id: aid.clone(), finding },
-            AgentEvent::ToolCallStarted { agent_id: aid.clone(), tool: "t".into(), args: serde_json::json!({}) },
-            AgentEvent::ToolCallCompleted { agent_id: aid.clone(), tool: "t".into(), result_preview: "r".into(), duration_ms: 0 },
-            AgentEvent::LlmStreamChunk { agent_id: aid.clone(), chunk: "c".into() },
-            AgentEvent::AgentCompleted { id: aid.clone(), summary: "s".into(), tokens_used: 0 },
-            AgentEvent::AgentFailed { id: aid.clone(), error: "e".into() },
-            AgentEvent::SessionCompleted { id: sid.clone(), output_dir: "/tmp".into(), total_tokens: 0, total_agents: 0 },
-            AgentEvent::SessionFailed { id: sid.clone(), error: "e".into() },
-            AgentEvent::SessionForked { parent_id: sid.clone(), child_id: SessionId::new(), query: "forked".into() },
-            AgentEvent::FileChangeUndone { session_id: sid.clone(), file_path: "/tmp/f.rs".into(), operation: "edit".into() },
-            AgentEvent::TitleGenerated { session_id: sid.clone(), title: "New Title".into() },
+            AgentEvent::SessionStarted {
+                id: sid.clone(),
+                query: "q".into(),
+            },
+            AgentEvent::AgentSpawned {
+                id: aid.clone(),
+                parent: None,
+                role: "r".into(),
+                task: "t".into(),
+                depth: 0,
+            },
+            AgentEvent::AgentStateChanged {
+                id: aid.clone(),
+                state: AgentState::Idle,
+            },
+            AgentEvent::Finding {
+                agent_id: aid.clone(),
+                finding,
+            },
+            AgentEvent::ToolCallStarted {
+                agent_id: aid.clone(),
+                tool: "t".into(),
+                args: serde_json::json!({}),
+            },
+            AgentEvent::ToolCallCompleted {
+                agent_id: aid.clone(),
+                tool: "t".into(),
+                result_preview: "r".into(),
+                duration_ms: 0,
+            },
+            AgentEvent::LlmStreamChunk {
+                agent_id: aid.clone(),
+                chunk: "c".into(),
+            },
+            AgentEvent::AgentCompleted {
+                id: aid.clone(),
+                summary: "s".into(),
+                tokens_used: 0,
+            },
+            AgentEvent::AgentFailed {
+                id: aid.clone(),
+                error: "e".into(),
+            },
+            AgentEvent::SessionCompleted {
+                id: sid.clone(),
+                output_dir: "/tmp".into(),
+                total_tokens: 0,
+                total_agents: 0,
+            },
+            AgentEvent::SessionFailed {
+                id: sid.clone(),
+                error: "e".into(),
+            },
+            AgentEvent::SessionForked {
+                parent_id: sid.clone(),
+                child_id: SessionId::new(),
+                query: "forked".into(),
+            },
+            AgentEvent::FileChangeUndone {
+                session_id: sid.clone(),
+                file_path: "/tmp/f.rs".into(),
+                operation: "edit".into(),
+            },
+            AgentEvent::TitleGenerated {
+                session_id: sid.clone(),
+                title: "New Title".into(),
+            },
         ];
         for ev in variants {
             let json = serde_json::to_string(&ev).unwrap();

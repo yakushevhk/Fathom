@@ -87,7 +87,11 @@ impl GcReport {
     }
 
     pub fn touched_anything(&self) -> bool {
-        self.expired_archived + self.stale_archived + self.confidence_archived + self.facts_compacted > 0
+        self.expired_archived
+            + self.stale_archived
+            + self.confidence_archived
+            + self.facts_compacted
+            > 0
     }
 }
 
@@ -126,7 +130,9 @@ impl Memory {
             let stale = row.scope == "run"
                 && row.access_count == 0
                 && row.importance < 0.75
-                && parsed_ts(&row.updated_at).map(|t| t < ttl_cutoff).unwrap_or(false);
+                && parsed_ts(&row.updated_at)
+                    .map(|t| t < ttl_cutoff)
+                    .unwrap_or(false);
             if stale {
                 self.archive(&row.id, "gc-stale", &mut report.errors, opts.dry_run)?;
                 report.stale_archived += 1;
@@ -153,14 +159,22 @@ impl Memory {
             let new_conf = (row.confidence - effective).max(0.0);
 
             if new_conf < opts.confidence_threshold {
-                self.archive(&row.id, "gc-confidence-decay", &mut report.errors, opts.dry_run)?;
+                self.archive(
+                    &row.id,
+                    "gc-confidence-decay",
+                    &mut report.errors,
+                    opts.dry_run,
+                )?;
                 report.confidence_archived += 1;
             } else if (new_conf - row.confidence).abs() > 1e-9 {
                 if !opts.dry_run {
                     self.db.update_confidence(&row.id, new_conf)?;
                 }
                 report.confidence_decayed += 1;
-                post_decay.push(MemoryRow { confidence: new_conf, ..row });
+                post_decay.push(MemoryRow {
+                    confidence: new_conf,
+                    ..row
+                });
             } else {
                 post_decay.push(row);
             }
@@ -199,7 +213,9 @@ impl Memory {
                         // Provenance edges back to the archived originals
                         // (best effort — edges are decorative here).
                         for v in &victims {
-                            let _ = self.db.add_edge(&id, &v.id, "references", Some("gc compaction"));
+                            let _ =
+                                self.db
+                                    .add_edge(&id, &v.id, "references", Some("gc compaction"));
                         }
                     }
                 }
@@ -213,12 +229,20 @@ impl Memory {
         Ok(report)
     }
 
-    fn archive(&self, id: &str, event: &str, errors: &mut usize, dry_run: bool) -> anyhow::Result<()> {
+    fn archive(
+        &self,
+        id: &str,
+        event: &str,
+        errors: &mut usize,
+        dry_run: bool,
+    ) -> anyhow::Result<()> {
         if dry_run {
             return Ok(());
         }
         match self.db.set_status(id, "archived") {
-            Ok(()) => self.db.log_history(id, event, Some("active"), Some("archived")),
+            Ok(()) => self
+                .db
+                .log_history(id, event, Some("active"), Some("archived")),
             Err(e) => {
                 *errors += 1;
                 tracing::warn!("gc: failed to archive {id}: {e}");
@@ -262,10 +286,7 @@ impl Memory {
             return Ok(None);
         }
 
-        let confidence = victims
-            .iter()
-            .map(|v| v.confidence)
-            .fold(1.0_f64, f64::min);
+        let confidence = victims.iter().map(|v| v.confidence).fold(1.0_f64, f64::min);
         let now = Utc::now().to_rfc3339();
         let row = MemoryRow {
             id: uuid::Uuid::now_v7().to_string(),
@@ -286,7 +307,12 @@ impl Memory {
             updated_at: now,
         };
         self.db.insert(&row)?;
-        self.db.log_history(&row.id, "gc-consolidated", None, Some(&format!("{}", victims.len())));
+        self.db.log_history(
+            &row.id,
+            "gc-consolidated",
+            None,
+            Some(&format!("{}", victims.len())),
+        );
         let mut errs = 0usize;
         for v in victims {
             self.archive(&v.id, "gc-compacted", &mut errs, false)?;
@@ -322,7 +348,14 @@ mod tests {
         Memory::in_memory(MemoryConfig::default()).unwrap()
     }
 
-    fn raw_row(mem: &Memory, scope: &str, content: &str, age_days: i64, access: i64, importance: f64) -> MemoryRow {
+    fn raw_row(
+        mem: &Memory,
+        scope: &str,
+        content: &str,
+        age_days: i64,
+        access: i64,
+        importance: f64,
+    ) -> MemoryRow {
         let ts = (Utc::now() - chrono::Duration::days(age_days)).to_rfc3339();
         let row = MemoryRow {
             id: uuid::Uuid::now_v7().to_string(),
@@ -369,9 +402,21 @@ mod tests {
         let old_agent = raw_row(&mem, "agent", "old agent knowledge", 90, 0, 0.5);
         let fresh_run = raw_row(&mem, "run", "fresh run fact", 2, 0, 0.5);
 
-        let report = mem.gc(&GcOptions { ttl_days: 30, ..Default::default() }).await.unwrap();
-        assert_eq!(report.stale_archived, 1, "only the untouched old run fact goes");
-        assert_eq!(mem.db.get(&stale_run.id).unwrap().unwrap().status, "archived");
+        let report = mem
+            .gc(&GcOptions {
+                ttl_days: 30,
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+        assert_eq!(
+            report.stale_archived, 1,
+            "only the untouched old run fact goes"
+        );
+        assert_eq!(
+            mem.db.get(&stale_run.id).unwrap().unwrap().status,
+            "archived"
+        );
         for kept in [&accessed_run, &boosted_run, &old_agent, &fresh_run] {
             assert_eq!(mem.db.get(&kept.id).unwrap().unwrap().status, "active");
         }
@@ -381,7 +426,14 @@ mod tests {
     async fn gc_compacts_oversized_group_n_to_1() {
         let mem = store().await;
         for i in 0..25 {
-            raw_row(&mem, "run", &format!("bulk run fact number {i}"), 10, 0, 0.4 + (i as f64) * 0.001);
+            raw_row(
+                &mem,
+                "run",
+                &format!("bulk run fact number {i}"),
+                10,
+                0,
+                0.4 + (i as f64) * 0.001,
+            );
         }
         let opts = GcOptions {
             ttl_days: 30,
@@ -401,8 +453,13 @@ mod tests {
         let filter = ScopeFilter::new().add(Scope::Run, "");
         let active = mem.db.list(&filter, Some("active"), usize::MAX).unwrap();
         assert_eq!(active.len(), 11, "10 survivors + 1 consolidated");
-        let consolidated = active.iter().find(|r| r.tags.iter().any(|t| t == "consolidated")).unwrap();
-        assert!(consolidated.content.starts_with("Consolidated 15 stale facts"));
+        let consolidated = active
+            .iter()
+            .find(|r| r.tags.iter().any(|t| t == "consolidated"))
+            .unwrap();
+        assert!(consolidated
+            .content
+            .starts_with("Consolidated 15 stale facts"));
         assert!(consolidated.metadata["gc"].as_bool().unwrap_or(false));
     }
 
@@ -411,12 +468,21 @@ mod tests {
         let mem = store().await;
         raw_row(&mem, "run", "stale candidate", 60, 0, 0.5);
         let report = mem
-            .gc(&GcOptions { dry_run: true, ..Default::default() })
+            .gc(&GcOptions {
+                dry_run: true,
+                ..Default::default()
+            })
             .await
             .unwrap();
         assert_eq!(report.stale_archived, 1);
         let filter = ScopeFilter::new().add(Scope::Run, "");
-        assert_eq!(mem.db.list(&filter, Some("active"), usize::MAX).unwrap().len(), 1);
+        assert_eq!(
+            mem.db
+                .list(&filter, Some("active"), usize::MAX)
+                .unwrap()
+                .len(),
+            1
+        );
     }
 
     #[tokio::test]
@@ -439,10 +505,19 @@ mod tests {
         mem.db.update_confidence(&accessed_low.id, 0.2).unwrap();
 
         let report = mem.gc(&GcOptions::default()).await.unwrap();
-        assert_eq!(report.confidence_archived, 2, "both low-confidence rows archived");
-        assert!(report.confidence_decayed >= 1, "at least one row had confidence reduced");
+        assert_eq!(
+            report.confidence_archived, 2,
+            "both low-confidence rows archived"
+        );
+        assert!(
+            report.confidence_decayed >= 1,
+            "at least one row had confidence reduced"
+        );
         assert_eq!(mem.db.get(&kept_row.id).unwrap().unwrap().status, "active");
         assert_eq!(mem.db.get(&low_row.id).unwrap().unwrap().status, "archived");
-        assert_eq!(mem.db.get(&accessed_low.id).unwrap().unwrap().status, "archived");
+        assert_eq!(
+            mem.db.get(&accessed_low.id).unwrap().unwrap().status,
+            "archived"
+        );
     }
 }

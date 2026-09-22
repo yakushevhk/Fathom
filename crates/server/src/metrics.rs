@@ -97,9 +97,11 @@ impl Histogram {
             }
         }
         self.count.fetch_add(1, Ordering::Relaxed);
-        let _ = self.sum_bits.fetch_update(Ordering::AcqRel, Ordering::Acquire, |bits| {
-            Some((f64::from_bits(bits) + value).to_bits())
-        });
+        let _ = self
+            .sum_bits
+            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |bits| {
+                Some((f64::from_bits(bits) + value).to_bits())
+            });
     }
 
     pub fn count(&self) -> u64 {

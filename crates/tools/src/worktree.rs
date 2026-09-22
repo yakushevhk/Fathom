@@ -1,8 +1,8 @@
+use crate::registry::{Tool, ToolContext};
 use async_trait::async_trait;
 use pr_core::{ToolOutput, ToolSchema};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use crate::registry::{Tool, ToolContext};
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "action")]
@@ -77,17 +77,26 @@ impl Tool for GitWorktreeTool {
         ToolSchema {
             name: self.name().to_string(),
             description: self.description().to_string(),
-            parameters: serde_json::to_value(&schemars::schema_for!(WorktreeParams).schema).unwrap_or_default(),
+            parameters: serde_json::to_value(&schemars::schema_for!(WorktreeParams).schema)
+                .unwrap_or_default(),
         }
     }
 
-    async fn execute(&self, args: serde_json::Value, ctx: &ToolContext) -> anyhow::Result<ToolOutput> {
+    async fn execute(
+        &self,
+        args: serde_json::Value,
+        ctx: &ToolContext,
+    ) -> anyhow::Result<ToolOutput> {
         let params: WorktreeParams = serde_json::from_value(args)?;
         let repo_root = &ctx.working_dir;
 
         match params.action {
             WorktreeAction::Create { name, base } => {
-                if name.starts_with('-') || !name.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-') {
+                if name.starts_with('-')
+                    || !name
+                        .chars()
+                        .all(|c| c.is_alphanumeric() || c == '_' || c == '-')
+                {
                     return Ok(ToolOutput::err("Invalid worktree name: must be alphanumeric, hyphens, or underscores, and not start with '-'"));
                 }
                 let worktrees_dir = repo_root.join(".fathom").join("worktrees");
@@ -113,7 +122,10 @@ impl Tool for GitWorktreeTool {
                 let output = cmd.output().await?;
                 if !output.status.success() {
                     let err = String::from_utf8_lossy(&output.stderr);
-                    return Ok(ToolOutput::err(format!("Failed to create worktree: {}", err)));
+                    return Ok(ToolOutput::err(format!(
+                        "Failed to create worktree: {}",
+                        err
+                    )));
                 }
 
                 Ok(ToolOutput::ok(format!(
@@ -134,14 +146,22 @@ impl Tool for GitWorktreeTool {
                 let output = cmd.output().await?;
                 if !output.status.success() {
                     let err = String::from_utf8_lossy(&output.stderr);
-                    return Ok(ToolOutput::err(format!("Failed to list worktrees: {}", err)));
+                    return Ok(ToolOutput::err(format!(
+                        "Failed to list worktrees: {}",
+                        err
+                    )));
                 }
 
                 let text = String::from_utf8_lossy(&output.stdout);
                 Ok(ToolOutput::ok(format!("Git worktrees:\n{}", text)))
             }
 
-            WorktreeAction::Merge { branch, into, message, squash } => {
+            WorktreeAction::Merge {
+                branch,
+                into,
+                message,
+                squash,
+            } => {
                 let branch_name = if branch.starts_with("fathom/") {
                     branch.clone()
                 } else {
@@ -149,7 +169,8 @@ impl Tool for GitWorktreeTool {
                 };
 
                 let target_branch = into.as_deref().unwrap_or("HEAD");
-                let msg = message.unwrap_or_else(|| format!("Merge subagent worktree branch {}", branch_name));
+                let msg = message
+                    .unwrap_or_else(|| format!("Merge subagent worktree branch {}", branch_name));
 
                 let mut cmd = tokio::process::Command::new("git");
                 cmd.current_dir(repo_root).arg("merge");
@@ -161,12 +182,16 @@ impl Tool for GitWorktreeTool {
                 let output = cmd.output().await?;
                 if !output.status.success() {
                     let err = String::from_utf8_lossy(&output.stderr);
-                    return Ok(ToolOutput::err(format!("Merge conflict or error merging {}: {}", branch_name, err)));
+                    return Ok(ToolOutput::err(format!(
+                        "Merge conflict or error merging {}: {}",
+                        branch_name, err
+                    )));
                 }
 
                 if squash {
                     let mut commit_cmd = tokio::process::Command::new("git");
-                    commit_cmd.current_dir(repo_root)
+                    commit_cmd
+                        .current_dir(repo_root)
                         .arg("commit")
                         .arg("-m")
                         .arg(&msg);
@@ -187,9 +212,7 @@ impl Tool for GitWorktreeTool {
                 let target_path = worktrees_dir.join(&name);
 
                 let mut cmd = tokio::process::Command::new("git");
-                cmd.current_dir(repo_root)
-                    .arg("worktree")
-                    .arg("remove");
+                cmd.current_dir(repo_root).arg("worktree").arg("remove");
                 if force {
                     cmd.arg("--force");
                 }
@@ -197,10 +220,16 @@ impl Tool for GitWorktreeTool {
                 let output = cmd.output().await?;
                 if !output.status.success() {
                     let err = String::from_utf8_lossy(&output.stderr);
-                    return Ok(ToolOutput::err(format!("Failed to remove worktree: {}", err)));
+                    return Ok(ToolOutput::err(format!(
+                        "Failed to remove worktree: {}",
+                        err
+                    )));
                 }
 
-                Ok(ToolOutput::ok(format!("Removed worktree at {}", target_path.display())))
+                Ok(ToolOutput::ok(format!(
+                    "Removed worktree at {}",
+                    target_path.display()
+                )))
             }
         }
     }
@@ -212,7 +241,10 @@ mod tests {
     use crate::registry::ToolContext;
 
     fn dummy_ctx() -> ToolContext {
-        ToolContext::new(std::path::PathBuf::from("."), pr_core::SearchConfig::default())
+        ToolContext::new(
+            std::path::PathBuf::from("."),
+            pr_core::SearchConfig::default(),
+        )
     }
     #[test]
     fn schema_validity() {
@@ -226,10 +258,16 @@ mod tests {
     async fn reject_invalid_worktree_name() {
         let tool = GitWorktreeTool;
         let ctx = dummy_ctx();
-        let res = tool.execute(serde_json::json!({
-            "action": "create",
-            "name": "--orphan"
-        }), &ctx).await.unwrap();
+        let res = tool
+            .execute(
+                serde_json::json!({
+                    "action": "create",
+                    "name": "--orphan"
+                }),
+                &ctx,
+            )
+            .await
+            .unwrap();
         assert!(!res.success);
         assert!(res.content.contains("Invalid worktree name"));
     }
@@ -238,10 +276,16 @@ mod tests {
     async fn reject_path_traversal() {
         let tool = GitWorktreeTool;
         let ctx = dummy_ctx();
-        let res = tool.execute(serde_json::json!({
-            "action": "remove",
-            "name": "../../etc/passwd"
-        }), &ctx).await.unwrap();
+        let res = tool
+            .execute(
+                serde_json::json!({
+                    "action": "remove",
+                    "name": "../../etc/passwd"
+                }),
+                &ctx,
+            )
+            .await
+            .unwrap();
         assert!(!res.success);
         assert!(res.content.contains("Invalid worktree path traversal"));
     }

@@ -1,12 +1,12 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::HashMap;
 use std::path::Path;
 use std::process::Stdio;
+use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{Child, Command};
 use tokio::sync::{mpsc, oneshot, Mutex};
-use std::collections::HashMap;
-use std::sync::Arc;
 
 /// A JSON-RPC 2.0 message sent to/from an LSP server.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -57,11 +57,7 @@ struct LspRequest {
 
 impl LspClient {
     /// Spawn an LSP server process and connect to it via stdio.
-    pub async fn spawn(
-        command: &str,
-        args: &[String],
-        root_path: &Path,
-    ) -> anyhow::Result<Self> {
+    pub async fn spawn(command: &str, args: &[String], root_path: &Path) -> anyhow::Result<Self> {
         let mut child = Command::new(command)
             .args(args)
             .stdin(Stdio::piped())
@@ -70,8 +66,14 @@ impl LspClient {
             .spawn()
             .map_err(|e| anyhow::anyhow!("failed to spawn LSP server '{}': {}", command, e))?;
 
-        let stdin = child.stdin.take().ok_or_else(|| anyhow::anyhow!("no stdin"))?;
-        let stdout = child.stdout.take().ok_or_else(|| anyhow::anyhow!("no stdout"))?;
+        let stdin = child
+            .stdin
+            .take()
+            .ok_or_else(|| anyhow::anyhow!("no stdin"))?;
+        let stdout = child
+            .stdout
+            .take()
+            .ok_or_else(|| anyhow::anyhow!("no stdout"))?;
 
         let pending: Arc<Mutex<HashMap<u64, PendingRequest>>> =
             Arc::new(Mutex::new(HashMap::new()));
@@ -130,7 +132,10 @@ impl LspClient {
                     if line.is_empty() {
                         break;
                     }
-                    if let Some(val) = line.strip_prefix("Content-Length: ").or_else(|| line.strip_prefix("content-length: ")) {
+                    if let Some(val) = line
+                        .strip_prefix("Content-Length: ")
+                        .or_else(|| line.strip_prefix("content-length: "))
+                    {
                         content_length = val.trim().parse().ok();
                     }
                 }
@@ -138,7 +143,10 @@ impl LspClient {
                     continue;
                 };
                 let mut buf = vec![0u8; len];
-                if tokio::io::AsyncReadExt::read_exact(&mut reader, &mut buf).await.is_err() {
+                if tokio::io::AsyncReadExt::read_exact(&mut reader, &mut buf)
+                    .await
+                    .is_err()
+                {
                     return;
                 }
                 let text = String::from_utf8_lossy(&buf);
@@ -185,7 +193,9 @@ impl LspClient {
         });
 
         let _init_result = client.request("initialize", init_params).await?;
-        client.notify_raw("initialized", serde_json::json!({})).await?;
+        client
+            .notify_raw("initialized", serde_json::json!({}))
+            .await?;
 
         Ok(client)
     }
@@ -202,7 +212,9 @@ impl LspClient {
             params,
             reply_tx: Some(reply_tx),
         })?;
-        let result = reply_rx.await.map_err(|_| anyhow::anyhow!("LSP channel closed"))?;
+        let result = reply_rx
+            .await
+            .map_err(|_| anyhow::anyhow!("LSP channel closed"))?;
         result.map_err(|e| anyhow::anyhow!("LSP error: {}", e))
     }
 
@@ -220,9 +232,13 @@ impl LspClient {
 
     /// Query document symbols (functions, classes, etc.)
     pub async fn document_symbols(&self, file_uri: &str) -> anyhow::Result<Value> {
-        self.request("textDocument/documentSymbol", serde_json::json!({
-            "textDocument": { "uri": file_uri }
-        })).await
+        self.request(
+            "textDocument/documentSymbol",
+            serde_json::json!({
+                "textDocument": { "uri": file_uri }
+            }),
+        )
+        .await
     }
 
     /// Go to definition
@@ -232,10 +248,14 @@ impl LspClient {
         line: u32,
         character: u32,
     ) -> anyhow::Result<Value> {
-        self.request("textDocument/definition", serde_json::json!({
-            "textDocument": { "uri": file_uri },
-            "position": { "line": line, "character": character }
-        })).await
+        self.request(
+            "textDocument/definition",
+            serde_json::json!({
+                "textDocument": { "uri": file_uri },
+                "position": { "line": line, "character": character }
+            }),
+        )
+        .await
     }
 
     /// Find references
@@ -245,31 +265,38 @@ impl LspClient {
         line: u32,
         character: u32,
     ) -> anyhow::Result<Value> {
-        self.request("textDocument/references", serde_json::json!({
-            "textDocument": { "uri": file_uri },
-            "position": { "line": line, "character": character },
-            "context": { "includeDeclaration": true }
-        })).await
+        self.request(
+            "textDocument/references",
+            serde_json::json!({
+                "textDocument": { "uri": file_uri },
+                "position": { "line": line, "character": character },
+                "context": { "includeDeclaration": true }
+            }),
+        )
+        .await
     }
 
     /// Hover (type info, documentation)
-    pub async fn hover(
-        &self,
-        file_uri: &str,
-        line: u32,
-        character: u32,
-    ) -> anyhow::Result<Value> {
-        self.request("textDocument/hover", serde_json::json!({
-            "textDocument": { "uri": file_uri },
-            "position": { "line": line, "character": character }
-        })).await
+    pub async fn hover(&self, file_uri: &str, line: u32, character: u32) -> anyhow::Result<Value> {
+        self.request(
+            "textDocument/hover",
+            serde_json::json!({
+                "textDocument": { "uri": file_uri },
+                "position": { "line": line, "character": character }
+            }),
+        )
+        .await
     }
 
     /// Workspace symbol search
     pub async fn workspace_symbols(&self, query: &str) -> anyhow::Result<Value> {
-        self.request("workspace/symbol", serde_json::json!({
-            "query": query
-        })).await
+        self.request(
+            "workspace/symbol",
+            serde_json::json!({
+                "query": query
+            }),
+        )
+        .await
     }
 
     /// Shut down the LSP server gracefully.
@@ -294,8 +321,8 @@ impl Drop for LspClient {
 mod tests {
     use super::*;
     use std::sync::atomic::{AtomicU64, Ordering};
-    use tokio::time::{timeout, Duration};
     use tempfile::TempDir;
+    use tokio::time::{timeout, Duration};
 
     /// Python script template for a mock LSP server that communicates over stdio.
     /// `{mode}` is replaced with the desired mode string.
@@ -395,13 +422,9 @@ if __name__ == "__main__":
     async fn spawn_mock_client(mode: &str) -> (TempDir, LspClient) {
         let (_dir, script_path) = setup_mock_server(mode);
         let root_dir = TempDir::new().expect("failed to create root dir");
-        let client = LspClient::spawn(
-            "python3",
-            &[script_path],
-            root_dir.path(),
-        )
-        .await
-        .expect("failed to spawn mock client");
+        let client = LspClient::spawn("python3", &[script_path], root_dir.path())
+            .await
+            .expect("failed to spawn mock client");
         (_dir, client)
     }
 
@@ -523,7 +546,10 @@ if __name__ == "__main__":
         let parsed: JsonRpcError = serde_json::from_str(&json).unwrap();
         assert_eq!(parsed.code, -32000);
         assert_eq!(parsed.message, "Request failed");
-        assert_eq!(parsed.data.unwrap(), serde_json::json!({"detail": "timeout"}));
+        assert_eq!(
+            parsed.data.unwrap(),
+            serde_json::json!({"detail": "timeout"})
+        );
     }
 
     #[test]
@@ -554,13 +580,11 @@ if __name__ == "__main__":
     #[tokio::test]
     async fn test_spawn_command_not_found() {
         let root_dir = TempDir::new().unwrap();
-        let result = LspClient::spawn(
-            "nonexistent-lsp-server-xyz",
-            &[],
-            root_dir.path(),
-        )
-        .await;
-        assert!(result.is_err(), "spawn with nonexistent command should fail");
+        let result = LspClient::spawn("nonexistent-lsp-server-xyz", &[], root_dir.path()).await;
+        assert!(
+            result.is_err(),
+            "spawn with nonexistent command should fail"
+        );
     }
 
     #[tokio::test]
@@ -575,7 +599,10 @@ if __name__ == "__main__":
         match result {
             Ok(Err(e)) => {
                 let msg = format!("{:#}", e);
-                assert!(msg.contains("Init failed") || msg.contains("error"), "got: {msg}");
+                assert!(
+                    msg.contains("Init failed") || msg.contains("error"),
+                    "got: {msg}"
+                );
             }
             Ok(Ok(_)) => panic!("spawn should have failed with an error response"),
             Err(_) => panic!("timeout waiting for spawn with error init"),
@@ -592,11 +619,17 @@ if __name__ == "__main__":
         let root_dir = TempDir::new().unwrap();
         let result = timeout(
             Duration::from_secs(5),
-            LspClient::spawn("python3", &[path.to_string_lossy().to_string()], root_dir.path()),
+            LspClient::spawn(
+                "python3",
+                &[path.to_string_lossy().to_string()],
+                root_dir.path(),
+            ),
         )
         .await;
-        assert!(result.is_err() || result.unwrap().is_err(),
-            "spawn with immediately-exiting server should fail");
+        assert!(
+            result.is_err() || result.unwrap().is_err(),
+            "spawn with immediately-exiting server should fail"
+        );
     }
 
     // ── Request/response tests ──────────────────────────────────────────
@@ -604,10 +637,13 @@ if __name__ == "__main__":
     #[tokio::test]
     async fn test_request_basic_response() {
         let (_dir, client) = spawn_mock_client("normal").await;
-        let result = timeout(Duration::from_secs(5), client.request("custom/method", serde_json::json!({"x": 1})))
-            .await
-            .expect("timeout")
-            .expect("request should succeed");
+        let result = timeout(
+            Duration::from_secs(5),
+            client.request("custom/method", serde_json::json!({"x": 1})),
+        )
+        .await
+        .expect("timeout")
+        .expect("request should succeed");
         assert_eq!(result, serde_json::Value::Null);
     }
 
@@ -619,12 +655,21 @@ if __name__ == "__main__":
         // deserialization. For an actual error, we'd need a mock that
         // returns error for a specific method. Let's use the echo mode
         // and verify the normal path works end-to-end.
-        let result = client.request("textDocument/definition", serde_json::json!({
-            "textDocument": {"uri": "file:///test.rs"},
-            "position": {"line": 0, "character": 0}
-        })).await.expect("request should succeed");
+        let result = client
+            .request(
+                "textDocument/definition",
+                serde_json::json!({
+                    "textDocument": {"uri": "file:///test.rs"},
+                    "position": {"line": 0, "character": 0}
+                }),
+            )
+            .await
+            .expect("request should succeed");
         // The mock returns a definition result
-        assert!(result.is_object(), "expected object response, got: {result}");
+        assert!(
+            result.is_object(),
+            "expected object response, got: {result}"
+        );
     }
 
     #[tokio::test]
@@ -646,7 +691,8 @@ if __name__ == "__main__":
     #[tokio::test]
     async fn test_request_numeric_result() {
         let (_dir, client) = spawn_mock_client("echo").await;
-        let result = client.request("ping", serde_json::json!({"val": 42}))
+        let result = client
+            .request("ping", serde_json::json!({"val": 42}))
             .await
             .expect("request should succeed");
         assert_eq!(result, serde_json::json!({"echoed": "ping"}));
@@ -733,13 +779,10 @@ if __name__ == "__main__":
     #[tokio::test]
     async fn test_workspace_symbols() {
         let (_dir, client) = spawn_mock_client("normal").await;
-        let result = timeout(
-            Duration::from_secs(5),
-            client.workspace_symbols("MySymbol"),
-        )
-        .await
-        .expect("timeout")
-        .expect("workspace_symbols should succeed");
+        let result = timeout(Duration::from_secs(5), client.workspace_symbols("MySymbol"))
+            .await
+            .expect("timeout")
+            .expect("workspace_symbols should succeed");
         assert!(result.is_array(), "expected array, got: {result}");
         let arr = result.as_array().unwrap();
         assert!(!arr.is_empty(), "expected at least one symbol");
@@ -751,12 +794,9 @@ if __name__ == "__main__":
     #[tokio::test]
     async fn test_shutdown_graceful() {
         let (_dir, client) = spawn_mock_client("normal").await;
-        let result = timeout(
-            Duration::from_secs(5),
-            client.shutdown(),
-        )
-        .await
-        .expect("timeout");
+        let result = timeout(Duration::from_secs(5), client.shutdown())
+            .await
+            .expect("timeout");
         assert!(result.is_ok(), "shutdown should succeed");
     }
 
@@ -772,9 +812,9 @@ if __name__ == "__main__":
         // may fail with channel error or hang briefly then timeout.
         // Both outcomes are acceptable.
         match result {
-            Ok(Ok(())) => {}  // unexpected but harmless
-            Ok(Err(_)) => {}  // expected: channel closed
-            Err(_) => {}      // expected: timeout
+            Ok(Ok(())) => {} // unexpected but harmless
+            Ok(Err(_)) => {} // expected: channel closed
+            Err(_) => {}     // expected: timeout
         }
     }
 
@@ -796,10 +836,13 @@ if __name__ == "__main__":
         assert!(client._child.id().is_some(), "child should have a pid");
         // A request still works, proving the child is responsive.
         client
-            .request("textDocument/hover", serde_json::json!({
-                "textDocument": {"uri": "file:///test.rs"},
-                "position": {"line": 0, "character": 0}
-            }))
+            .request(
+                "textDocument/hover",
+                serde_json::json!({
+                    "textDocument": {"uri": "file:///test.rs"},
+                    "position": {"line": 0, "character": 0}
+                }),
+            )
             .await
             .expect("request should succeed while child alive");
     }

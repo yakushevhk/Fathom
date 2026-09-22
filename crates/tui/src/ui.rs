@@ -1,3 +1,4 @@
+use crate::app::{App, Dialog, InputMode, LogLevel, Panel};
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -5,7 +6,6 @@ use ratatui::{
     widgets::{Block, Borders, Clear, Gauge, List, ListItem, Paragraph, Sparkline, Wrap},
     Frame,
 };
-use crate::app::{App, Dialog, InputMode, LogLevel, Panel};
 
 /// Main draw function: assembles the full TUI layout.
 pub fn draw(frame: &mut Frame, app: &App) {
@@ -15,7 +15,7 @@ pub fn draw(frame: &mut Frame, app: &App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),  // header with progress
+            Constraint::Length(3), // header with progress
             Constraint::Min(10),   // body
             Constraint::Length(3), // footer / input
         ])
@@ -121,10 +121,7 @@ fn draw_body(frame: &mut Frame, app: &App, area: Rect) {
     // Horizontal split: left sidebar | right content
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage(30),
-            Constraint::Percentage(70),
-        ])
+        .constraints([Constraint::Percentage(30), Constraint::Percentage(70)])
         .split(area);
 
     draw_left_panel(frame, app, chunks[0]);
@@ -138,10 +135,7 @@ fn draw_body(frame: &mut Frame, app: &App, area: Rect) {
 fn draw_left_panel(frame: &mut Frame, app: &App, area: Rect) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Percentage(60),
-            Constraint::Percentage(40),
-        ])
+        .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
         .split(area);
 
     draw_agents_panel(frame, app, chunks[0]);
@@ -168,11 +162,15 @@ fn draw_agents_panel(frame: &mut Frame, app: &App, area: Rect) {
     items.push(ListItem::new(Line::from(vec![
         Span::styled(
             format!("Active: {} ", active),
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
         ),
         Span::styled(
             format!("Done: {} ", completed),
-            Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
         ),
     ])));
     items.push(ListItem::new(""));
@@ -188,7 +186,11 @@ fn draw_agents_panel(frame: &mut Frame, app: &App, area: Rect) {
         let indent = "  ".repeat(agent.depth as usize);
         // Expand/collapse marker for nodes with children.
         let branch = if app.has_children(agent_id) {
-            if app.collapsed.contains(agent_id) { "▸ " } else { "▾ " }
+            if app.collapsed.contains(agent_id) {
+                "▸ "
+            } else {
+                "▾ "
+            }
         } else {
             "  "
         };
@@ -212,7 +214,9 @@ fn draw_agents_panel(frame: &mut Frame, app: &App, area: Rect) {
 
         let selected = panel_active && idx == app.agents_cursor;
         let row_style = if selected {
-            Style::default().bg(Color::DarkGray).add_modifier(Modifier::BOLD)
+            Style::default()
+                .bg(Color::DarkGray)
+                .add_modifier(Modifier::BOLD)
         } else {
             Style::default()
         };
@@ -224,7 +228,9 @@ fn draw_agents_panel(frame: &mut Frame, app: &App, area: Rect) {
             Span::raw(" "),
             Span::styled(
                 agent.role.clone(),
-                Style::default().fg(Color::Magenta).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(Color::Magenta)
+                    .add_modifier(Modifier::BOLD),
             ),
         ];
 
@@ -261,7 +267,9 @@ fn draw_agents_panel(frame: &mut Frame, app: &App, area: Rect) {
                 Span::raw(format!("{}    ", indent)),
                 Span::styled(
                     format!("→ {}", tool),
-                    Style::default().fg(Color::Blue).add_modifier(Modifier::ITALIC),
+                    Style::default()
+                        .fg(Color::Blue)
+                        .add_modifier(Modifier::ITALIC),
                 ),
             ])));
         }
@@ -293,12 +301,12 @@ fn draw_tools_panel(frame: &mut Frame, app: &App, area: Rect) {
 
     // Show active tools at the top
     if !app.active_tools.is_empty() {
-        items.push(ListItem::new(Line::from(vec![
-            Span::styled(
-                "Active:",
-                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
-            ),
-        ])));
+        items.push(ListItem::new(Line::from(vec![Span::styled(
+            "Active:",
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        )])));
         for (agent_id, tool) in &app.active_tools {
             let agent_label = app
                 .agents
@@ -308,7 +316,10 @@ fn draw_tools_panel(frame: &mut Frame, app: &App, area: Rect) {
             items.push(ListItem::new(Line::from(vec![
                 Span::styled("→ ", Style::default().fg(Color::Blue)),
                 Span::styled(tool.clone(), Style::default().fg(Color::Cyan)),
-                Span::styled(format!(" ({})", agent_label), Style::default().fg(Color::DarkGray)),
+                Span::styled(
+                    format!(" ({})", agent_label),
+                    Style::default().fg(Color::DarkGray),
+                ),
             ])));
         }
         items.push(ListItem::new(""));
@@ -324,12 +335,12 @@ fn draw_tools_panel(frame: &mut Frame, app: &App, area: Rect) {
         .collect();
 
     if !recent.is_empty() {
-        items.push(ListItem::new(Line::from(vec![
-            Span::styled(
-                "Recent:",
-                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
-            ),
-        ])));
+        items.push(ListItem::new(Line::from(vec![Span::styled(
+            "Recent:",
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        )])));
         for tc in recent {
             let dur = tc.duration_ms.unwrap_or(0);
             let dur_str = if dur >= 1000 {
@@ -340,7 +351,10 @@ fn draw_tools_panel(frame: &mut Frame, app: &App, area: Rect) {
             items.push(ListItem::new(Line::from(vec![
                 Span::styled("✓ ", Style::default().fg(Color::Green)),
                 Span::raw(tc.tool.clone()),
-                Span::styled(format!(" ({})", dur_str), Style::default().fg(Color::DarkGray)),
+                Span::styled(
+                    format!(" ({})", dur_str),
+                    Style::default().fg(Color::DarkGray),
+                ),
             ])));
         }
     }
@@ -430,7 +444,9 @@ fn draw_memory_panel(frame: &mut Frame, app: &App, area: Rect) {
         items.push(ListItem::new(Line::from(vec![
             Span::styled(
                 format!("agent:{} ", snap.agent_active),
-                Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 format!("user:{} ", snap.user_active),
@@ -466,10 +482,7 @@ fn draw_memory_panel(frame: &mut Frame, app: &App, area: Rect) {
                         .to_string(),
                         Style::default().fg(Color::DarkGray),
                     ),
-                    Span::styled(
-                        format!(" {} ", line.id),
-                        Style::default().fg(Color::Blue),
-                    ),
+                    Span::styled(format!(" {} ", line.id), Style::default().fg(Color::Blue)),
                     Span::raw(preview),
                 ])));
             }
@@ -494,10 +507,7 @@ fn draw_memory_panel(frame: &mut Frame, app: &App, area: Rect) {
 fn draw_right_panel(frame: &mut Frame, app: &App, area: Rect) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Percentage(60),
-            Constraint::Percentage(40),
-        ])
+        .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
         .split(area);
 
     draw_output_panel(frame, app, chunks[0]);
@@ -512,16 +522,13 @@ fn draw_output_panel(frame: &mut Frame, app: &App, area: Rect) {
     };
 
     // If thinking is active and not collapsed, split into thinking + output
-    let has_thinking = !app.should_auto_hide_thinking()
-        && app.thinking.values().any(|t| !t.content.is_empty());
+    let has_thinking =
+        !app.should_auto_hide_thinking() && app.thinking.values().any(|t| !t.content.is_empty());
 
     if has_thinking && !app.thinking_collapsed {
         let inner_chunks = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Length(8),
-                Constraint::Min(4),
-            ])
+            .constraints([Constraint::Length(8), Constraint::Min(4)])
             .split(area);
 
         draw_thinking_subpanel(frame, app, inner_chunks[0]);
@@ -553,7 +560,11 @@ fn draw_thinking_subpanel(frame: &mut Frame, app: &App, area: Rect) {
     let display_text: String = lines[start..].join("\n");
 
     let thinking_para = Paragraph::new(display_text)
-        .style(Style::default().fg(Color::DarkGray).add_modifier(Modifier::ITALIC))
+        .style(
+            Style::default()
+                .fg(Color::DarkGray)
+                .add_modifier(Modifier::ITALIC),
+        )
         .wrap(Wrap { trim: false })
         .block(
             Block::default()
@@ -674,7 +685,8 @@ fn draw_footer(frame: &mut Frame, app: &App, area: Rect) {
             (
                 "> ",
                 current_line.to_string(),
-                " Enter: submit | Shift+Enter: newline | Esc: normal mode | Up/Down: history".to_string(),
+                " Enter: submit | Shift+Enter: newline | Esc: normal mode | Up/Down: history"
+                    .to_string(),
             )
         }
         InputMode::Paste => (
@@ -685,13 +697,15 @@ fn draw_footer(frame: &mut Frame, app: &App, area: Rect) {
         InputMode::Normal => (
             "",
             String::new(),
-            " i: insert | q: quit | Tab: panels | ?: help | t: thinking | c: clear | b: sessions".to_string(),
+            " i: insert | q: quit | Tab: panels | ?: help | t: thinking | c: clear | b: sessions"
+                .to_string(),
         ),
     };
 
     let help_text = pending_hint.unwrap_or(help_text);
 
-    let display_text = if app.input_mode == InputMode::Insert || app.input_mode == InputMode::Paste {
+    let display_text = if app.input_mode == InputMode::Insert || app.input_mode == InputMode::Paste
+    {
         format!("{}{}", prompt, input_text)
     } else {
         help_text.clone()
@@ -711,14 +725,12 @@ fn draw_footer(frame: &mut Frame, app: &App, area: Rect) {
         " Query Input "
     };
 
-    let input = Paragraph::new(display_text)
-        .style(style)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(title)
-                .border_style(border_style),
-        );
+    let input = Paragraph::new(display_text).style(style).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title(title)
+            .border_style(border_style),
+    );
 
     frame.render_widget(input, area);
 }
@@ -732,7 +744,9 @@ fn draw_help_overlay(frame: &mut Frame, area: Rect) {
     let lines = vec![
         Line::from(Span::styled(
             "Fathom — keymap",
-            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
         )),
         Line::from(""),
         Line::from("  q / Ctrl+C      quit"),
@@ -808,16 +822,24 @@ fn draw_session_browser(frame: &mut Frame, app: &App, area: Rect) {
             };
             let query_preview: String = session.query.chars().take(40).collect();
             let style = if selected {
-                Style::default().bg(Color::DarkGray).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .bg(Color::DarkGray)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default()
             };
-            items.push(ListItem::new(Line::from(vec![
-                Span::styled(format!("{} ", status_icon), style),
-                Span::styled(&session.id.0[..8.min(session.id.0.len())], Style::default().fg(Color::Blue)),
-                Span::raw(" "),
-                Span::styled(query_preview, style),
-            ])).style(style));
+            items.push(
+                ListItem::new(Line::from(vec![
+                    Span::styled(format!("{} ", status_icon), style),
+                    Span::styled(
+                        &session.id.0[..8.min(session.id.0.len())],
+                        Style::default().fg(Color::Blue),
+                    ),
+                    Span::raw(" "),
+                    Span::styled(query_preview, style),
+                ]))
+                .style(style),
+            );
         }
     }
 
@@ -874,9 +896,10 @@ fn draw_file_picker(frame: &mut Frame, app: &App, area: Rect) {
     frame.render_widget(Clear, box_area);
 
     let mut items: Vec<ListItem> = Vec::new();
-    items.push(ListItem::new(Line::from(vec![
-        Span::styled(format!("@{} ", app.file_ref_query), Style::default().fg(Color::Yellow)),
-    ])));
+    items.push(ListItem::new(Line::from(vec![Span::styled(
+        format!("@{} ", app.file_ref_query),
+        Style::default().fg(Color::Yellow),
+    )])));
     items.push(ListItem::new(""));
 
     if app.file_refs.is_empty() {
@@ -888,15 +911,20 @@ fn draw_file_picker(frame: &mut Frame, app: &App, area: Rect) {
         for (idx, file) in app.file_refs.iter().take(10).enumerate() {
             let selected = idx == app.file_ref_selected;
             let style = if selected {
-                Style::default().bg(Color::DarkGray).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .bg(Color::DarkGray)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default()
             };
             let icon = if file.ends_with('/') { "📁" } else { "📄" };
-            items.push(ListItem::new(Line::from(vec![
-                Span::styled(format!("{} ", icon), style),
-                Span::styled(file.clone(), style),
-            ])).style(style));
+            items.push(
+                ListItem::new(Line::from(vec![
+                    Span::styled(format!("{} ", icon), style),
+                    Span::styled(file.clone(), style),
+                ]))
+                .style(style),
+            );
         }
     }
 

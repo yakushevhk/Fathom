@@ -53,8 +53,7 @@ with the skill name to read its complete workflow before following it."
             Ok(p) => p,
             Err(e) => return Ok(ToolOutput::err(format!("Invalid arguments: {e}"))),
         };
-        let home = dirs::home_dir()
-            .ok_or_else(|| anyhow::anyhow!("no home directory"))?;
+        let home = dirs::home_dir().ok_or_else(|| anyhow::anyhow!("no home directory"))?;
         let mut registry = pr_core::skill::SkillRegistry::new(&home);
         if let Err(e) = registry.discover() {
             return Ok(ToolOutput::err(format!("Skill discovery failed: {e}")));
@@ -67,8 +66,11 @@ with the skill name to read its complete workflow before following it."
         {
             Some(skill) => Ok(ToolOutput::ok(skill.content.clone())),
             None => {
-                let known: Vec<String> =
-                    registry.all_skills().iter().map(|s| s.name.clone()).collect();
+                let known: Vec<String> = registry
+                    .all_skills()
+                    .iter()
+                    .map(|s| s.name.clone())
+                    .collect();
                 Ok(ToolOutput::err(format!(
                     "Skill '{}' not found. Available: {}",
                     params.name,
@@ -163,11 +165,7 @@ Before starting collection work, `read` the ledger to see what other agents alre
                     .create(true)
                     .append(true)
                     .open(&path)?;
-                writeln!(
-                    file,
-                    "- [{}] {text}",
-                    chrono::Utc::now().format("%H:%M:%S")
-                )?;
+                writeln!(file, "- [{}] {text}", chrono::Utc::now().format("%H:%M:%S"))?;
                 Ok(ToolOutput::ok("appended"))
             }
             other => Ok(ToolOutput::err(format!(
@@ -333,10 +331,7 @@ mod tests {
         let tmp = tempfile::TempDir::new().unwrap();
         let c = ctx(tmp.path());
         let tool = UndoTool;
-        let out = tool
-            .execute(serde_json::json!({}), &c)
-            .await
-            .unwrap();
+        let out = tool.execute(serde_json::json!({}), &c).await.unwrap();
         assert!(!out.success);
         assert!(out.content.contains("no file-history checkpoints"));
     }
@@ -347,7 +342,10 @@ mod tests {
         let tool = SkillTool;
         let c = ctx(&PathBuf::from("/tmp"));
         let out = tool
-            .execute(serde_json::json!({"name": "definitely-not-a-skill-xyz"}), &c)
+            .execute(
+                serde_json::json!({"name": "definitely-not-a-skill-xyz"}),
+                &c,
+            )
             .await
             .unwrap();
         assert!(!out.success);

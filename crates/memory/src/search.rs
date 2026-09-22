@@ -158,21 +158,34 @@ pub async fn hybrid_search(
         b.score
             .partial_cmp(&a.score)
             .unwrap_or(std::cmp::Ordering::Equal)
-            .then(b.memory.importance.partial_cmp(&a.memory.importance).unwrap_or(std::cmp::Ordering::Equal))
+            .then(
+                b.memory
+                    .importance
+                    .partial_cmp(&a.memory.importance)
+                    .unwrap_or(std::cmp::Ordering::Equal),
+            )
     });
     hits.truncate(params.top_k);
     db.record_access(&hits.iter().map(|h| h.memory.id.clone()).collect::<Vec<_>>());
     Ok(hits)
 }
 
-fn apply_temporal_decay(score: f32, created_at: &str, now: chrono::DateTime<chrono::Utc>, decay: f32) -> f32 {
+fn apply_temporal_decay(
+    score: f32,
+    created_at: &str,
+    now: chrono::DateTime<chrono::Utc>,
+    decay: f32,
+) -> f32 {
     if decay <= 0.0 {
         return score;
     }
     let Ok(created) = chrono::DateTime::parse_from_rfc3339(created_at) else {
         return score;
     };
-    let days = (now - created.with_timezone(&chrono::Utc)).num_seconds().max(0) as f32 / 86_400.0;
+    let days = (now - created.with_timezone(&chrono::Utc))
+        .num_seconds()
+        .max(0) as f32
+        / 86_400.0;
     score * (1.0 - decay * days).max(0.0)
 }
 
@@ -185,9 +198,15 @@ fn apply_temporal_decay(score: f32, created_at: &str, now: chrono::DateTime<chro
 /// - `FullHistory`: the whole chain oldest→newest (the requested id
 ///   resolved backwards to the chain root first).
 pub fn resolve_follow(db: &MemoryDb, id: &str, follow: Follow) -> anyhow::Result<Vec<MemoryRow>> {
-    let Some(row) = db.get(id)? else { return Ok(Vec::new()) };
+    let Some(row) = db.get(id)? else {
+        return Ok(Vec::new());
+    };
     match follow {
-        Follow::Active => Ok(if row.status == "active" { vec![row] } else { Vec::new() }),
+        Follow::Active => Ok(if row.status == "active" {
+            vec![row]
+        } else {
+            Vec::new()
+        }),
         Follow::Latest => {
             let mut cur = row;
             let mut hops = 0;
@@ -207,14 +226,13 @@ pub fn resolve_follow(db: &MemoryDb, id: &str, follow: Follow) -> anyhow::Result
             // given row along outgoing supersedes edges to the end, then rebuild).
             let mut chain = vec![row];
             // Extend backwards (older versions): follow edges from current to older.
-            loop {
-                let Some(last_row) = chain.last() else { break; };
-                let edges = db.edges_of(&last_row.id)?;
+            while let Some(last_id) = chain.last().map(|r| r.id.clone()) {
+                let edges = db.edges_of(&last_id)?;
                 let older = edges
                     .iter()
-                    .find(|e| e.edge_type == "supersedes" && e.from_id == last_row.id)
+                    .find(|e| e.edge_type == "supersedes" && e.from_id == last_id)
                     .map(|e| e.to_id.clone());
-                match older.and_then(|oid| db.get(&oid).ok()).flatten() {
+                match older.map(|oid| db.get(&oid)).transpose()?.flatten() {
                     Some(r) => chain.push(r),
                     None => break,
                 }
@@ -223,9 +241,7 @@ pub fn resolve_follow(db: &MemoryDb, id: &str, follow: Follow) -> anyhow::Result
                 }
             }
             // Extend forwards (newer versions) from the requested id.
-            loop {
-                let Some(newest) = chain.first() else { break; };
-                let newest_id = newest.id.clone();
+            while let Some(newest_id) = chain.first().map(|r| r.id.clone()) {
                 match db.superseded_by(&newest_id)? {
                     Some(nid) => match db.get(&nid)? {
                         Some(r) => chain.insert(0, r),
@@ -278,7 +294,11 @@ impl Digest {
                     "- [{}] {} (source: {}, confidence: {:.2})\n",
                     short_id(&hit.memory.id),
                     hit.memory.content,
-                    if hit.memory.source.is_empty() { "unknown" } else { &hit.memory.source },
+                    if hit.memory.source.is_empty() {
+                        "unknown"
+                    } else {
+                        &hit.memory.source
+                    },
                     hit.memory.confidence,
                 ));
             }
@@ -304,7 +324,10 @@ impl Digest {
             return block;
         }
         // Over budget: keep relevant memories only, trimmed entry by entry.
-        let mut trimmed = format!("## Long-term memory digest (topic: {})\n\n### Relevant memories\n", self.topic);
+        let mut trimmed = format!(
+            "## Long-term memory digest (topic: {})\n\n### Relevant memories\n",
+            self.topic
+        );
         for hit in &self.relevant {
             let line = format!("- {}\n", hit.memory.content);
             if trimmed.len() + line.len() > max_chars {
@@ -319,7 +342,13 @@ impl Digest {
 /// Short display id: UUIDv7 leads with a timestamp, so the discriminating
 /// part is the random tail — show the last 8 chars.
 fn short_id(id: &str) -> String {
-    id.chars().rev().take(8).collect::<Vec<_>>().into_iter().rev().collect()
+    id.chars()
+        .rev()
+        .take(8)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect()
 }
 
 /// Second-pass LLM reranking of hybrid search hits.
@@ -358,7 +387,11 @@ pub async fn llm_rerank(
     let Ok(resp) = llm.complete(&req).await else {
         return hits;
     };
-    let pr_core::message::Message::Assistant { content: Some(text), .. } = &resp.message else {
+    let pr_core::message::Message::Assistant {
+        content: Some(text),
+        ..
+    } = &resp.message
+    else {
         return hits;
     };
     let Some(order) = parse_rerank_order(text, hits.len()) else {
@@ -453,7 +486,10 @@ pub async fn build_digest(
             .and_then(|s| s.as_str())
             .map(|s| matches!(s.to_lowercase().as_str(), "closed" | "done" | "completed"))
             .unwrap_or(false)
-            || row.tags.iter().any(|t| matches!(t.to_lowercase().as_str(), "done" | "closed"));
+            || row
+                .tags
+                .iter()
+                .any(|t| matches!(t.to_lowercase().as_str(), "done" | "closed"));
         if !closed {
             open_todos.push(row);
         }
@@ -537,7 +573,9 @@ mod tests {
             store(&db, &emb, r).await;
         }
 
-        let hits = hybrid_search(&db, &emb, &params("cargo workspace crates rust")).await.unwrap();
+        let hits = hybrid_search(&db, &emb, &params("cargo workspace crates rust"))
+            .await
+            .unwrap();
         assert!(!hits.is_empty());
         assert_eq!(hits[0].memory.id, r1.id, "exact-topic memory should win");
         assert!(hits.iter().any(|h| h.memory.id == r2.id));
@@ -563,9 +601,17 @@ mod tests {
             chrono::Utc::now(),
             0.01,
         );
-        let fresh = apply_temporal_decay(1.0, &chrono::Utc::now().to_rfc3339(), chrono::Utc::now(), 0.01);
+        let fresh = apply_temporal_decay(
+            1.0,
+            &chrono::Utc::now().to_rfc3339(),
+            chrono::Utc::now(),
+            0.01,
+        );
         assert!(fresh > old);
-        assert!((old - 0.0).abs() < 1e-6, "100 days × 0.01 decay bottoms out at 0");
+        assert!(
+            (old - 0.0).abs() < 1e-6,
+            "100 days × 0.01 decay bottoms out at 0"
+        );
         // Disabled decay keeps the score.
         let same = apply_temporal_decay(0.8, "not-a-date", chrono::Utc::now(), 0.0);
         assert!((same - 0.8).abs() < 1e-6);
@@ -586,8 +632,13 @@ mod tests {
         db.set_status(&v2.id, "superseded").unwrap();
 
         // Active: superseded rows resolve to nothing.
-        assert!(resolve_follow(&db, &v1.id, Follow::Active).unwrap().is_empty());
-        assert_eq!(resolve_follow(&db, &v3.id, Follow::Active).unwrap().len(), 1);
+        assert!(resolve_follow(&db, &v1.id, Follow::Active)
+            .unwrap()
+            .is_empty());
+        assert_eq!(
+            resolve_follow(&db, &v3.id, Follow::Active).unwrap().len(),
+            1
+        );
 
         // Latest from the oldest version reaches the newest.
         let latest = resolve_follow(&db, &v1.id, Follow::Latest).unwrap();
@@ -596,8 +647,10 @@ mod tests {
 
         // FullHistory: oldest → newest.
         let chain = resolve_follow(&db, &v2.id, Follow::FullHistory).unwrap();
-        assert_eq!(chain.iter().map(|r| r.content.clone()).collect::<Vec<_>>(),
-                   vec!["CEO is Alice", "CEO is Bob", "CEO is Carol"]);
+        assert_eq!(
+            chain.iter().map(|r| r.content.clone()).collect::<Vec<_>>(),
+            vec!["CEO is Alice", "CEO is Bob", "CEO is Carol"]
+        );
     }
 
     #[tokio::test]
@@ -615,12 +668,24 @@ mod tests {
         done.tags = vec!["todo".into(), "done".into()];
         db.insert(&done).unwrap();
 
-        let digest = build_digest(&db, &emb, "PostgreSQL billing", &ScopeFilter::persistent(), 5, 0.0, 0.7, 0.0)
-            .await
-            .unwrap();
+        let digest = build_digest(
+            &db,
+            &emb,
+            "PostgreSQL billing",
+            &ScopeFilter::persistent(),
+            5,
+            0.0,
+            0.7,
+            0.0,
+        )
+        .await
+        .unwrap();
         assert!(!digest.relevant.is_empty());
         assert_eq!(digest.open_todos.len(), 1);
-        assert_eq!(digest.open_todos[0].content, "verify emails for the Acme team");
+        assert_eq!(
+            digest.open_todos[0].content,
+            "verify emails for the Acme team"
+        );
         assert!(!digest.recent.is_empty());
 
         let block = digest.to_prompt_block(4000);
@@ -635,9 +700,18 @@ mod tests {
         let emb = embedder();
         let long = format!("xenon {}", "y".repeat(3000));
         store(&db, &emb, &row(&long)).await;
-        let digest = build_digest(&db, &emb, "xenon", &ScopeFilter::persistent(), 5, 0.0, 1.0, 0.0)
-            .await
-            .unwrap();
+        let digest = build_digest(
+            &db,
+            &emb,
+            "xenon",
+            &ScopeFilter::persistent(),
+            5,
+            0.0,
+            1.0,
+            0.0,
+        )
+        .await
+        .unwrap();
         assert!(!digest.relevant.is_empty());
         let block = digest.to_prompt_block(500);
         assert!(block.len() <= 500, "block {} exceeds budget", block.len());
@@ -648,15 +722,24 @@ mod tests {
         assert_eq!("active".parse::<Follow>().unwrap(), Follow::Active);
         assert_eq!("".parse::<Follow>().unwrap(), Follow::Active);
         assert_eq!("latest".parse::<Follow>().unwrap(), Follow::Latest);
-        assert_eq!("full_history".parse::<Follow>().unwrap(), Follow::FullHistory);
+        assert_eq!(
+            "full_history".parse::<Follow>().unwrap(),
+            Follow::FullHistory
+        );
         assert!("bogus".parse::<Follow>().is_err());
     }
 
     #[test]
     fn parse_rerank_order_validates_indexes() {
-        assert_eq!(parse_rerank_order(r#"{"order": [2, 0, 1]}"#, 3), Some(vec![2, 0, 1]));
+        assert_eq!(
+            parse_rerank_order(r#"{"order": [2, 0, 1]}"#, 3),
+            Some(vec![2, 0, 1])
+        );
         // Out-of-range and duplicate indexes are dropped.
-        assert_eq!(parse_rerank_order(r#"{"order": [5, 1, 1, 0]}"#, 2), Some(vec![1, 0]));
+        assert_eq!(
+            parse_rerank_order(r#"{"order": [5, 1, 1, 0]}"#, 2),
+            Some(vec![1, 0])
+        );
         assert_eq!(parse_rerank_order(r#"{"order": []}"#, 3), None);
         assert_eq!(parse_rerank_order("no json", 3), None);
         // Chatty models: JSON is extracted from the prose.
