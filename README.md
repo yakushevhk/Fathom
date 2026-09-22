@@ -21,7 +21,7 @@
 <p align="center">
   <a href="whitepaper/Fathom_Whitepaper.pdf"><strong>📄 Read Master Whitepaper (PDF)</strong></a> •
   <a href="whitepaper/index.html"><strong>🖥️ Interactive Slide Deck (42 Slides)</strong></a> •
-  <a href="#quick-start"><strong>🚀 Quick Start</strong></a> •
+  <a href="#-quick-start"><strong>🚀 Quick Start</strong></a> •
   <a href="docs/ARCHITECTURE.md"><strong>🏗️ Architecture</strong></a> •
   <a href="docs/BENCHMARKS.md"><strong>⚡ Benchmarks</strong></a>
 </p>

@@ -22,7 +22,7 @@ The architecture follows a layered design:
 
 ## lib.rs
 
-The [lib.rs](file:///Users/yakushev/Documents/GitHub/Parallel/research-agent/crates/mcp/src/lib.rs) file declares three public modules and re-exports all of their contents:
+The [lib.rs](src/lib.rs) file declares three public modules and re-exports all of their contents:
 
 ```rust
 pub mod client;
@@ -40,7 +40,7 @@ Any public item from `client.rs`, `server.rs`, or `bridge.rs` is available at th
 
 ## client.rs
 
-The [client.rs](file:///Users/yakushev/Documents/GitHub/Parallel/research-agent/crates/mcp/src/client.rs) file is the main MCP client, supporting the stdio and HTTP transports, OAuth authentication, tool caching, and reconnection.
+The [client.rs](src/client.rs) file is the main MCP client, supporting the stdio and HTTP transports, OAuth authentication, tool caching, and reconnection.
 
 ### Design Philosophy
 
@@ -573,7 +573,7 @@ The client uses `anyhow::Result` throughout. Specific error conditions:
 
 ## server.rs
 
-The [server.rs](file:///Users/yakushev/Documents/GitHub/Parallel/research-agent/crates/mcp/src/server.rs) file implements a simple stdio-based MCP server that exposes the agent's tools to external MCP clients (Claude Desktop, ZCode, etc.).
+The [server.rs](src/server.rs) file implements a simple stdio-based MCP server that exposes the agent's tools to external MCP clients (Claude Desktop, ZCode, etc.).
 
 ### Design
 
@@ -710,7 +710,7 @@ The server has comprehensive tests covering:
 
 ## bridge.rs
 
-The [bridge.rs](file:///Users/yakushev/Documents/GitHub/Parallel/research-agent/crates/mcp/src/bridge.rs) file implements the bridge between MCP servers and the agent's local tool registry. Remote MCP tools are wrapped in `McpBridgeTool`, which implements the `Tool` trait from `pr_tools`. This allows agents to call remote MCP tools as if they were built-in, using the same `ToolRegistry::execute()` interface.
+The [bridge.rs](src/bridge.rs) file implements the bridge between MCP servers and the agent's local tool registry. Remote MCP tools are wrapped in `McpBridgeTool`, which implements the `Tool` trait from `pr_tools`. This allows agents to call remote MCP tools as if they were built-in, using the same `ToolRegistry::execute()` interface.
 
 ### Design
 

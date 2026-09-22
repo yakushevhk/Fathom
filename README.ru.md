@@ -21,7 +21,7 @@
 <p align="center">
   <a href="whitepaper/Fathom_Whitepaper.pdf"><strong>📄 Белая книга (PDF)</strong></a> •
   <a href="whitepaper/index.html"><strong>🖥️ Интерактивная слайд-дека (42 слайда)</strong></a> •
-  <a href="#быстрый-старт"><strong>🚀 Быстрый старт</strong></a> •
+  <a href="#-быстрый-старт"><strong>🚀 Быстрый старт</strong></a> •
   <a href="docs/ARCHITECTURE.md"><strong>🏗️ Архитектура</strong></a> •
   <a href="docs/BENCHMARKS.md"><strong>⚡ Бенчмарки</strong></a>
 </p>

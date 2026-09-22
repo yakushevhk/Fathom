@@ -1740,73 +1740,49 @@ Resets `history`, `consecutive_same`, and `nudge_count` to their initial state.
 
 ## 12. resume.rs
 
-**File:** `src/resume.rs` — a CLI utility for selecting and launching session resumption.
+**File:** `src/resume.rs` — crash recovery: finds interrupted sessions and reconstructs their state for resumption.
 
-### 12.1. The `SessionSummary` struct
+### 12.1. The `SessionInfo` struct
 
 | Field | Type | Description |
 |------|-----|----------|
-| `session_id` | `SessionId` | Session ID |
-| `query` | `String` | Query |
+| `session_id` | `SessionId` | Stored session ID |
+| `query` | `String` | Original query |
 | `created_at` | `DateTime<Utc>` | Creation date |
-| `completed_agents` | `u32` | Completed agents |
-| `failed_agents` | `u32` | Failed agents |
-| `running_agents` | `u32` | Running agents |
-| `total_tokens` | `u64` | Total tokens |
-| `sub_tasks` | `Vec<SubtaskRecord>` | Subtasks |
+| `updated_at` | `DateTime<Utc>` | Last DB activity (heartbeat) |
+| `total_agents` | `usize` | Agents recorded for the session |
+| `completed_agents` | `usize` | Agents that finished successfully |
 
-### 12.2. The `ResumeOption` enum
+### 12.2. The `ResumeState` struct
 
-```rust
-enum ResumeOption {
-    Resume(RecoveredSession),
-    Fresh,
-    Exit,
-}
-```
+| Field | Type | Description |
+|------|-----|----------|
+| `session_id` | `SessionId` | Session to resume |
+| `query` | `String` | Original query |
+| `completed_agents` | `Vec<AgentOutput>` | Recovered outputs of finished agents |
+| `pending_tasks` | `Vec<String>` | Tasks of unfinished agents to re-run |
 
-### 12.3. `format_summary(summary, index) -> String`
+### 12.3. `SessionResumer::new(db)` / `with_staleness(db, staleness)`
 
-**Algorithm:**
-1. Computes `age` — the difference between `Utc::now()` and `created_at`.
-2. Formats the age in a human-readable way: `< 1 hour`, `N hours`, `N days`.
-3. Computes `done_pct = completed_agents * 100 / total_agents`.
-4. Builds the string:
-   ```
-   [{index}] {query (first 60 chars)}... ({age} ago)
-       Agents: {completed} done / {failed} failed / {running} running ({done_pct}%)
-       Tokens: {total_tokens}
-   ```
+Creates a resumer over the shared persistence layer. A session is considered interrupted when it still has status `running` but `updated_at` is older than `DEFAULT_STALENESS_MINUTES` (5 minutes) — a live session constantly updates that column via the heartbeat.
 
-### 12.4. `interactive_select(summaries) -> ResumeOption`
+### 12.4. `find_interrupted_sessions(&self) -> Vec<SessionInfo>`
 
 **Algorithm:**
-1. If `summaries` is empty — logs "No resumable sessions found", returns `Fresh`.
-2. Prints the header: `"Found {n} resumable session(s):"`.
-3. For each summary with an index — prints `format_summary(summary, i+1)`.
-4. Prints the options: `"[N] Resume session N`, `[F] Start fresh`, `[Q] Quit"`.
-5. Reads stdin:
-   - Empty input — `Exit`.
-   - `"f"` or `"F"` — `Fresh`.
-   - `"q"` or `"Q"` — `Exit`.
-   - A number — parses it, checks `1 <= n <= summaries.len()`, returns `Resume(summaries[n-1])`.
-   - Invalid input — `Exit`.
+1. Calls `db.list_sessions_with_status("running")`.
+2. Keeps only rows whose `updated_at` is older than the staleness window.
+3. For each candidate, counts agents via `db.count_session_agents()` and builds `SessionInfo`.
 
-### 12.5. `handle_resume_interactive(db, config, event_tx) -> Option<Coordinator>` — async
+### 12.5. `resume_session(&self, session_id) -> Result<ResumeState>` — async
 
 **Algorithm:**
-1. Creates `SessionResumer::new(db, config, event_tx)`.
-2. Calls `resumer.find_resumable()`.
-3. If `summaries` is empty — returns `None`.
-4. Calls `interactive_select(&summaries)`.
-5. Matches the result:
-   - **`Fresh`** — returns `None`.
-   - **`Exit`** — `process::exit(0)`.
-   - **`Resume(selected)`:**
-     - Calls `resumer.resume(&selected.session_id).await`.
-     - Creates `Coordinator::new(...)` with the same `session_id` and the `query` from the recovered session.
-     - Connects `contact_db`, `crm`, `steer_rx`.
-     - Returns `Some(coordinator)`.
+1. Loads the session via `db.get_session()`.
+2. Loads agent rows via `db.get_session_agent_rows()` and findings via `db.get_session_findings()` (grouped by agent).
+3. Computes subtree token accounting via `compute_subtree_tokens()` (`descendant_tokens` per agent).
+4. Each `completed` agent row becomes an `AgentOutput` in `completed_agents`; every other agent's `task` goes into `pending_tasks`.
+5. Returns `ResumeState`.
+
+The CLI driver lives in `src/main.rs` (`fathom resume [id]`): it lists interrupted sessions, picks the most recent one, verifies `status == "running"`, takes the atomic `db.claim_session_for_resume()` lock, then hands the `ResumeState` to `Coordinator::execute_resume` (see section 3.16). There is no interactive picker; the newest interrupted session is resumed automatically.
 
 ---
 

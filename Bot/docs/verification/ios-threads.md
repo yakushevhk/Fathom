@@ -53,7 +53,7 @@ only the disposable simulators you created.
 
 The offline UI checks do **not** prove real-device pairing, HTTPS/Tailscale,
 live network reconnects, dictation or attachment uploads. Validate those with
-the [iOS end-to-end runbook](../../ios/TESTING.md) against an isolated companion
+the iOS end-to-end runbook (`ios/TESTING.md`, in the iOS app repo) against an isolated companion
 before claiming them tested. No new server routes or pairing changes are
 introduced by the thread UI.
 

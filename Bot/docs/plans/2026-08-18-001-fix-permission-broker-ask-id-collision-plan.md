@@ -12,13 +12,13 @@ created: 2026-08-18
 
 ## Summary
 
-`createPermissionBroker()` in [server/drivers/claude.ts](server/drivers/claude.ts) registers every incoming `{t:"ask", id, ...}` message into a shared `pending` Map keyed by `askId`, with no check for an existing entry. Two asks arriving with the same id — across any connection on the broker, since `pending` is server-scoped, not per-connection — silently collide: the second `pending.set()` overwrites the first, `onAsk` still fires for both (two `request.opened` cards can appear), and when the *first* ask's `finish()` later runs, `pending.delete(askId)` removes the second (still-displayed) entry too, leaving it permanently unanswerable — a zombie card via id collision, distinct from the post-close timing class fixed for #211.
+`createPermissionBroker()` in [server/drivers/claude.ts](../../server/drivers/claude.ts) registers every incoming `{t:"ask", id, ...}` message into a shared `pending` Map keyed by `askId`, with no check for an existing entry. Two asks arriving with the same id — across any connection on the broker, since `pending` is server-scoped, not per-connection — silently collide: the second `pending.set()` overwrites the first, `onAsk` still fires for both (two `request.opened` cards can appear), and when the *first* ask's `finish()` later runs, `pending.delete(askId)` removes the second (still-displayed) entry too, leaving it permanently unanswerable — a zombie card via id collision, distinct from the post-close timing class fixed for #211.
 
 This plan adds an ingestion-time guard that detects a colliding id **before** `onAsk` fires or `pending` is touched, auto-denies the colliding ask directly on its own connection, and leaves the original pending entry untouched. It also documents why real-world collision is very unlikely (both ask producers mint a fresh `randomUUID()` per ask, with no retry/replay path that reuses one) and adds regression coverage for the guard.
 
 ## Problem Frame
 
-**Root cause:** [server/drivers/claude.ts:245](server/drivers/claude.ts#L245) — `pending.set(askId, { ask, finish })` runs unconditionally on every parsed `ask` line, regardless of whether `askId` is already a key in `pending`.
+**Root cause:** [server/drivers/claude.ts:245](../../server/drivers/claude.ts#L245) — `pending.set(askId, { ask, finish })` runs unconditionally on every parsed `ask` line, regardless of whether `askId` is already a key in `pending`.
 
 **Why it matters even though collision is rare:** the failure mode is silent and asymmetric — a legitimate first ask can be permanently orphaned by a later id collision it has no way to detect, and the user is left with an unanswerable UI card and no diagnostic. A cheap ingestion-time guard turns an unbounded, hard-to-debug failure into an observable, fail-safe one.
 
@@ -29,7 +29,7 @@ This plan adds an ingestion-time guard that detects a colliding id **before** `o
 Both ask producers mint a fresh id per ask, with no path that resends an existing id:
 
 - [server/permission-proxy.ts:107](server/permission-proxy.ts#L107) — `const askId = randomUUID();` runs once per `tools/call` (`approve` or `ask_user`), inside the MCP `tools/call` handler. Each call gets its own `Promise` registered in the proxy's local `waiting` map keyed by that same id; there is no retry loop that reuses an id after a timeout or error — a fresh `tools/call` from the CLI always mints a fresh id.
-- [server/drivers/claude.ts:226](server/drivers/claude.ts#L226) — the broker's own fallback, `const askId = String(msg.id ?? newId())`, only fires when the incoming message omits `id` entirely, and `newId()` ([server/contracts.ts:304](server/contracts.ts#L304)) is `crypto.randomUUID()` — cryptographically random, not a counter.
+- [server/drivers/claude.ts:226](../../server/drivers/claude.ts#L226) — the broker's own fallback, `const askId = String(msg.id ?? newId())`, only fires when the incoming message omits `id` entirely, and `newId()` ([server/contracts.ts:304](../../server/contracts.ts#L304)) is `crypto.randomUUID()` — cryptographically random, not a counter.
 
 Realistic collision sources are therefore: (a) astronomically unlikely UUID collision, or (b) a buggy or adversarial client on the permission socket sending a hand-crafted duplicate `id`. Neither is a legitimate retry/replay path — this confirms the guard is a defense-in-depth fix for a currently-hypothetical but real class of bug (and for any future ask producer that does not mint ids as carefully), not a fix for an observed collision.
 

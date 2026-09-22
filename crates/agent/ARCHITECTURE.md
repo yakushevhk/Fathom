@@ -15,11 +15,11 @@
 7. [hooks.rs — Lifecycle Hooks](#7-hooksrs)
 8. [ipc.rs — Inter-Process Protocol](#8-ipcrs)
 9. [process_manager.rs — Worker Process Management](#9-process_managerrs)
-10. [background.rs — Background Tasks](#10-backgroundrs)
+10. [async_job.rs (pr-core) — Async Job Results](#10-async_jors-pr-core)
 11. [budget.rs — Result Budget](#11-budgetrs)
 12. [doom_loop.rs — Loop Detection](#12-doom_looprs)
-13. [recovery.rs — Crash Recovery](#13-recoveryrs)
-14. [resume.rs — Session Resumption](#14-resumers)
+13. [resume.rs — Crash Recovery & Session Resumption](#13-resumers)
+14. [fathom resume (src/main.rs) — CLI Resumption Flow](#14-fathom-resume-srcmainrs)
 15. [tool_executor.rs — Parallel Tool Executor](#15-tool_executorrs)
 
 ---
@@ -34,16 +34,17 @@ Declares all public submodules of the crate and re-exports their contents via `p
 
 ### Design Decisions
 
-The module structure is designed around a **layered runtime architecture**. The `runtime` module provides the core agent loop, `coordinator` orchestrates multi-agent sessions, and the remaining modules provide supporting infrastructure (compaction, hooks, IPC, process management, tool execution, budget, and recovery). The `ipc` and `process_manager` modules are intentionally kept private — they are only used by `coordinator.rs` for multiprocess fan-out, and exposing them would create an unnecessary public API surface. This encapsulation ensures that the multiprocess communication protocol can evolve without affecting external consumers.
+The module structure is designed around a **layered runtime architecture**. The `runtime` module provides the core agent loop, `coordinator` orchestrates multi-agent sessions, and the remaining modules provide supporting infrastructure (lifecycle, compaction, hooks, IPC, process management, tool execution, budget, resume, loop detection, control, task tree, improvement, and reflection). The `ipc` and `process_manager` modules are intentionally kept private — they are only used by `coordinator.rs` for multiprocess fan-out, and exposing them would create an unnecessary public API surface. This encapsulation ensures that the multiprocess communication protocol can evolve without affecting external consumers.
 
-### Declared Modules (14 total)
+### Declared Modules (16 total)
 
 ```
-runtime, coordinator, compaction, ipc, process_manager, prompt,
-tool_executor, budget, background, resume, doom_loop, recovery, hooks
+lifecycle, runtime, coordinator, compaction, ipc, process_manager,
+prompt, tool_executor, budget, resume, doom_loop, hooks,
+control, task_tree, improvement, reflection
 ```
 
-### Re-exports (11 total)
+### Re-exports (14 total)
 
 All modules except `ipc` and `process_manager` re-export their public API to the crate root. The `ipc` and `process_manager` modules remain internal — they are used only inside `coordinator.rs`.
 
@@ -1506,79 +1507,64 @@ The design ensures that no worker is ever left orphaned:
 
 ---
 
-## 10. background.rs
+## 10. async_job.rs (pr-core)
 
-**File:** `src/background.rs` — background task management for the agent (fleet E2).
+**File:** `crates/core/src/async_job.rs` — async job registry for background agent results (fleet E2).
 
 ### Architecture Overview
 
-The background task system lets an agent **fire-and-forget non-blocking work**. When the `spawn_agent` tool is invoked with `"background": true`, the runtime wraps the child in a background task instead of awaiting it. The results are collected asynchronously and injected into the parent's conversation at the next turn boundary (via the `bg_results` buffer that `AgentRuntime::run` drains in step 1b).
+The async job system lets an agent **fire-and-forget non-blocking work**. When the `spawn_agent` tool is invoked with `"background": true`, the runtime wraps the child in an async job instead of awaiting it. Job results are delivered back to the owner agent through a per-agent **sink**: the agent runtime registers `AsyncJobManager::register_sink(agent_id)` to obtain an `mpsc::UnboundedReceiver<JobResult>` and drains it between turns, injecting `[background job N completed]` / `[background job N failed]` lines into the parent's conversation (see `runtime.rs` — "AsyncJobManager results (background spawns) — drained at the next turn boundary").
 
-The concurrency model is a simple **job vector + token handle** design:
+The concurrency model is a **global registry + per-agent channels** design:
 
-- The `BackgroundManager` owns a list of `BackgroundJob`s, each wrapping a `JoinHandle<()>`. The child's `run()` future is spawned detached (`tokio::spawn`); the spawned task computes the result and pushes it to the shared `bg_results: Arc<Mutex<Vec<...>>>`.
-- `poll_completed()` is invoked by the parent (typically between turns or during `agent.run()`) to check `JoinHandle::is_finished()` and harvest results with their elapsed duration.
-- `cancel_all()` aborts every living handle — used during shutdown so background work doesn't outlive the session.
+- `AsyncJobManager::global()` returns a process-wide singleton. Jobs are created via `create_job(owner_id, label)` which allocates a `JobId`.
+- The spawned child runs detached (`tokio::spawn`); on finish it calls `complete(id, result, tokens)` or `fail(id, error)`; the manager routes the `JobResult` into the owner's sink channel.
+- `attach_abort_handle(id, handle)` wires cancellation; `cancel(id)` aborts the job. `set_max_running(n)` bounds concurrency.
+- `list_by_owner`, `snapshot`, and `running_count` expose job state for observability.
 
-The key coordination point is the `bg_results` channel. Because it is an `Arc<Mutex<Vec<_>>>`, it is shareable between the spawned background task (which appends results) and the agent runtime (which drains them at the next turn boundary via `std::mem::take`). Drain happens at the start of each turn, so results appear in the conversation exactly when the model next composes a response.
+Because delivery uses `tokio::sync::mpsc` rather than a shared buffer, results arrive as messages and are surfaced exactly when the model next composes a response — the same turn-boundary semantics the old buffer design had.
 
-### 10.1. Structure `BackgroundJob`
-
-| Field | Type | Description |
-|------|------|-------------|
-| `id` | `AgentId` | Background agent identifier |
-| `label` | `String` | Human-readable label (task, truncated to 30 chars) |
-| `handle` | `JoinHandle<()>` | Async task handle |
-| `started_at` | `Instant` | Start time |
-
-### 10.2. Structure `BackgroundManager`
+### 10.1. Structure `JobInfo`
 
 | Field | Type | Description |
 |------|------|-------------|
-| `jobs` | `Vec<BackgroundJob>` | List of active background tasks |
+| `id` | `JobId` | Background job identifier |
+| `owner_id` | `AgentId` | Agent that owns the job |
+| `label` | `String` | Human-readable label |
+| `status` | `JobStatus` | `Pending` / `Running` / `Completed` / `Failed` / `Cancelled` |
+| `created_at` / `started_at` / `finished_at` | timestamps | Lifecycle timing |
 
-### 10.3. `BackgroundManager::new()`
+### 10.2. Structure `AsyncJobManager`
 
-Creates an empty vector `jobs`.
+| Member | Description |
+|------|-------------|
+| `jobs` | Map of `JobId -> JobInfo` |
+| `sinks` | Per-owner `mpsc::UnboundedSender<JobResult>` channels |
+| `abort_handles` | Abort handles for cancellation |
+| `max_running` | Concurrency bound |
 
-### 10.4. `spawn(&mut self, label, agent_id, child, bg_results)` — async
+### 10.3. `AsyncJobManager::global()`
 
-**Algorithm:**
-1. Clones `bg_results` (Arc).
-2. Launches `tokio::spawn`:
-   - Calls `child.run().await`.
-   - On success `output`:
-     - Computes `total = output.tokens_used + output.descendant_tokens`.
-     - Forms `capped_summary` — truncates `output.summary` to 4000 chars at UTF-8 boundary.
-     - Acquires lock on `bg_results`, pushes `(label, Ok(capped_summary), total)`.
-   - On error `e`:
-     - Acquires lock on `bg_results`, pushes `(label, Err(e.to_string()), 0)`.
-3. Saves `BackgroundJob { id: agent_id, label: label.to_string(), handle, started_at: Instant::now() }` to `jobs`.
+Returns the process-wide `&'static AsyncJobManager` singleton (lazy `OnceLock` initialization).
 
-### 10.5. `poll_completed(&mut self) -> Vec<(AgentId, String, Duration)>`
-
-**Algorithm:**
-1. Creates `completed: Vec`.
-2. Iterates `jobs` by index:
-   - For each `job` checks `job.handle.is_finished()`.
-   - If finished:
-     - Computes `elapsed = job.started_at.elapsed()`.
-     - Pushes `(job.id, job.label, elapsed)`.
-3. Removes completed jobs from `jobs` (iteration in reverse order for correct index removal).
-4. Returns `completed`.
-
-### 10.6. `cancel_all(&self)`
+### 10.4. `create_job(owner_id, label) -> JobId`
 
 **Algorithm:**
-For each `job` in `jobs` — calls `job.handle.abort()`.
+1. Allocates a new `JobId` (monotonic counter).
+2. Inserts `JobInfo { id, owner_id, label, status: Pending, created_at }` into `jobs`.
+3. Returns the id to the caller so the runtime can track the launch.
 
-### 10.7. `active_count(&self) -> usize`
+### 10.5. `register_sink(agent_id) -> UnboundedReceiver<JobResult>` / `unregister_sink(agent_id)`
 
-Returns `jobs.len()`.
+Each agent runtime registers a sink at startup. Completed job results for that owner are pushed into the channel; the runtime drains it at the next turn boundary and injects the outcome as a synthetic message (`[background job N completed]` / `[background job N failed: e]`). Unregistering on shutdown prevents results from outliving the session.
 
-### 10.8. `is_empty(&self) -> bool`
+### 10.6. `complete(id, result, tokens)` / `fail(id, error)` / `cancel(id)`
 
-Returns `jobs.is_empty()`.
+`complete`/`fail` mark the `JobInfo` terminal and route a `JobResult` into the owner's sink. `cancel` aborts via the stored `AbortHandle` (see `attach_abort_handle`) and records `Cancelled`.
+
+### 10.7. `list_by_owner(owner_id)` / `snapshot()` / `running_count()`
+
+Read-only views used for observability: per-owner job lists, a global snapshot for the jobs panel/API, and the current running count checked against `set_max_running`.
 
 ---
 
@@ -1806,174 +1792,87 @@ Resets `history`, `consecutive_same`, and `nudge_count` to their initial state.
 
 ---
 
-## 13. recovery.rs
+## 13. resume.rs
 
-**File:** `src/recovery.rs` — session recovery after crashes (fleet H1, H3).
+**File:** `src/resume.rs` — session recovery after crashes (fleet H1, H3).
 
 ### Architecture Overview
 
-The recovery system provides **crash resilience through persistence**. Because all messages, tool results, and agent states are written to the SQLite DB as they happen, a crashed session can be reconstructed: completed agents are re-read from the DB, their final summaries regenerated from the persisted message history, and only the pending (never-completed) subtasks are re-executed.
+The recovery system provides **crash resilience through persistence**. Because all messages, tool results, and agent states are written to the SQLite DB as they happen, a crashed session can be reconstructed: completed agents are re-read from the DB, their persisted outputs and findings restored, and only the pending (never-completed) subtasks are re-executed.
 
-The key concept is the **staleness threshold** (`stale_threshold`, default 5 minutes). A live session keeps touching its `updated_at` via the heartbeat (see [section 3.9](#39-start_heartbeatdb-session_id---heartbeatguard)); if a session has been `Running` but hasn't been updated for 5 minutes, it's presumed dead — the previous heartbeat thread died with the process, or the whole host went down. Only such stale sessions are offered for resumption.
+The key concept is the **staleness threshold** (`DEFAULT_STALENESS_MINUTES = 5`). A live session keeps touching its `updated_at` via the heartbeat (see [section 3.9](#39-start_heartbeatdb-session_id---heartbeatguard)); if a session has been `running` but hasn't been updated for 5 minutes, it's presumed dead — the previous heartbeat thread died with the process, or the whole host went down. Only such stale sessions are offered for resumption.
 
-The recovery flow integrates with the CLI (`resume.rs`) to offer the user a choice at startup: resume a `Running` stale session, or start fresh. After resumption, the `Coordinator::execute_resume` path reuses the existing `session_id`, restores accumulated tokens and agent counts, re-runs pending tasks, then re-synthesizes and rewrites the output files, so the final report is complete and idempotent.
+The `fathom resume` CLI (see [section 14](#14-fathom-resume-srcmainrs)) lists stale sessions and resumes the most recent one. After resumption, the `Coordinator::execute_resume` path reuses the existing `session_id`, restores accumulated tokens and agent counts, re-runs pending tasks, then re-synthesizes and rewrites the output files, so the final report is complete and idempotent.
 
-### 13.1. Structure `RecoveredSession`
+### 13.1. Structure `SessionInfo`
 
 | Field | Type | Description |
 |------|------|-------------|
-| `session_id` | `SessionId` | Recovered session ID |
+| `session_id` | `SessionId` | Stored session ID |
 | `query` | `String` | Original query |
-| `sub_tasks` | `Vec<String>` | List of subtasks |
-| `completed_agents` | `Vec<AgentOutput>` | Completed agent results |
-| `pending_tasks` | `Vec<String>` | Subtasks without completed agents |
 | `created_at` | `DateTime<Utc>` | Session creation time |
+| `updated_at` | `DateTime<Utc>` | Last DB activity (heartbeat) |
+| `total_agents` | `usize` | Agents recorded for the session |
+| `completed_agents` | `usize` | Agents that finished successfully |
 
-### 13.2. Structure `SessionResumer`
+### 13.2. Structure `ResumeState`
+
+| Field | Type | Description |
+|------|------|-------------|
+| `session_id` | `SessionId` | Session to resume |
+| `query` | `String` | Original query |
+| `completed_agents` | `Vec<AgentOutput>` | Recovered outputs of finished agents |
+| `pending_tasks` | `Vec<String>` | Tasks of unfinished agents to re-run |
+
+### 13.3. Structure `SessionResumer`
 
 | Field | Type | Description |
 |------|------|-------------|
 | `db` | `Arc<Persistence>` | Persistence layer |
-| `config` | `AppConfig` | Configuration |
-| `event_tx` | `Option<broadcast::Sender<AgentEvent>>` | Event bus |
-| `stale_threshold` | `Duration` | Session staleness threshold (default 5 minutes) |
+| `staleness` | `chrono::Duration` | Inactivity window marking a session interrupted (default 5 minutes) |
 
-### 13.3. `SessionResumer::new(db, config, event_tx)`
+### 13.4. `SessionResumer::new(db)` / `with_staleness(db, staleness)`
 
-Initializes with `stale_threshold = Duration::from_secs(300)`.
+Creates a resumer over the shared persistence layer. The default staleness window is `DEFAULT_STALENESS_MINUTES` (5 minutes); `with_staleness` exists mainly for tests.
 
-### 13.4. `find_resumable(&self) -> Vec<SessionSummary>`
+### 13.5. `find_interrupted_sessions(&self) -> Vec<SessionInfo>`
 
 **Algorithm:**
-1. Calls `db.active_sessions()?` — gets a list of sessions with status `Running`.
-2. Filters: keeps only sessions where `updated_at` is older than `stale_threshold` (5 minutes).
-3. For each filtered session:
-   - Gets session agents via `db.agents_for_session()`.
-   - Counts agents by status: `completed`, `failed`, `running`.
-   - Gets `sub_tasks` via `db.get_subtasks()`.
-   - Forms `SessionSummary { session_id, query, created_at, completed_agents, failed_agents, running_agents, total_tokens, sub_tasks }`.
-4. Sorts by `created_at` (newest first).
-5. Returns the vector.
+1. Calls `db.list_sessions_with_status("running")` — live sessions continuously heartbeat `updated_at`, so any `running` row older than the staleness window belongs to a dead process.
+2. For each stale session, counts agents via `db.count_session_agents()` and builds `SessionInfo`.
+3. Returns the list of interrupted candidates.
 
-### 13.5. `resume(&self, session_id) -> Result<RecoveredSession>` — async
+### 13.6. `resume_session(&self, session_id) -> Result<ResumeState>` — async
 
 **Algorithm:**
-1. Calls `db.get_session(&session_id)?`.
-2. Checks `session.status != Running` — if not Running, bail.
-3. Gets agents via `db.agents_for_session()`.
-4. Gets subtasks via `db.get_subtasks()`.
-5. **For each completed agent:**
-   - Gets messages via `db.messages_for_agent(&agent_id)`.
-   - Generates a summary via `summarize_agent_messages(&messages)`.
-   - Gets findings via `db.findings_for_agent(&agent_id)`.
-   - Pushes `AgentOutput { agent_id, summary, tokens_used, descendant_tokens: 0, findings, aborted: false }`.
-6. **Determines pending_tasks:**
-   - Collects the set of tasks from completed agents.
-   - From subtasks, selects those not in the completed set.
-7. Emits `SessionResumed { session_id, completed, pending }`.
-8. Returns `RecoveredSession`.
+1. Loads the session row via `db.get_session()` (errors if not found).
+2. Loads all agent rows via `db.get_session_agent_rows()` and findings via `db.get_session_findings()` (grouped by agent).
+3. Computes subtree token accounting via `compute_subtree_tokens()` — `descendant_tokens(agent)` = sum of `tokens_used` over the whole subtree below it, matching the runtime's semantics.
+4. For each agent row:
+   - **completed** — pushes `AgentOutput { agent_id, summary, tokens_used, descendant_tokens, findings, aborted: false }` into `completed_agents`.
+   - **anything else** (spawned, running, failed, cancelled) — pushes the agent's `task` into `pending_tasks`.
+5. Returns `ResumeState { session_id, query, completed_agents, pending_tasks }`.
 
-### 13.6. `mark_stale_sessions_running(&self) -> Result<()>`
-
-**Algorithm:**
-1. Calls `db.active_sessions()`.
-2. For each session:
-   - If `updated_at` is older than 5 minutes:
-     - Calls `db.mark_session_status(&session_id, "running")`.
-     - Logs.
-3. Errors for individual sessions are logged, do not interrupt processing.
-
-### 13.7. `summarize_agent_messages(messages) -> String`
-
-**Algorithm:**
-1. Takes the **last** `Message::Assistant` from the list.
-2. If found — returns its `content`.
-3. If not found — looks for the last `Message::Tool`.
-4. If neither found — `"(no summary available)"`.
+This design means **no re-summarization is needed**: completed agents' outputs and findings were persisted at write time, so recovery is pure reconstruction, and only genuinely unfinished work is re-executed.
 
 ---
 
-## 14. resume.rs
+## 14. fathom resume (src/main.rs)
 
-**File:** `src/resume.rs` — CLI utility for selecting and launching session resumption.
+**File:** `src/main.rs` — the CLI resumption flow that drives `SessionResumer`.
 
 ### Architecture Overview
 
-The resume module is the **user-facing CLI gateway** to the recovery system. When the application starts, it calls `handle_resume_interactive()`, which:
+`fathom resume [session_id]` is the user-facing gateway to the recovery system. Without an id it picks the most recent interrupted session automatically — there is no interactive picker. The flow is **claim-then-resume**, so two concurrent `fathom resume` processes cannot both take the same session:
 
-1. Scans the DB for stale `Running` sessions via `SessionResumer::find_resumable()`.
-2. If found, presents an interactive menu showing each session's query, age, progress (% done), agent counts, and token usage.
-3. The user chooses: resume a session, start fresh, or quit.
+1. Opens the persistence layer (`Persistence::open(db_path)`), creates `SessionResumer::new(db)`.
+2. If no explicit `session_id` was passed: calls `find_interrupted_sessions()`; prints each candidate (`session_id — "query" (N agents, M completed) — updated T`) and selects the one with the max `updated_at`.
+3. Verifies the session row still has `status == "running"` — resuming a completed/cancelled session would clobber its accounting and outputs.
+4. Calls `db.claim_session_for_resume(&session_id)` — an **atomic claim**; if another resume process already claimed it, this run bails.
+5. Calls `resumer.resume_session(&session_id)` → `ResumeState`.
+6. Hands the state to `Coordinator::execute_resume(state)` (see [section 3.16](#316-execute_resumemut-self-state---resultsessionoutput)): it replans over `pending_tasks`, injects the recovered `completed_agents` into the result set, re-synthesizes, and rewrites the output files under the same `session_id` (idempotent — files are overwritten, not duplicated).
 
-The user experience is designed to be **zero-surprise**: each session is displayed with its completion percentage and human-readable age, so the user can recognize which sessions matter. The `format_summary` function renders this in a compact, scannable format.
-
-The `interactive_select` function reads from stdin and handles empty input, invalid numbers, and explicit quit commands. After selection, the coordinator is initialized with the recovered session's `session_id` and `query`, so the output files overwrite (not duplicate) the previous ones.
-
-### 14.1. Structure `SessionSummary`
-
-| Field | Type | Description |
-|------|------|-------------|
-| `session_id` | `SessionId` | Session ID |
-| `query` | `String` | Query |
-| `created_at` | `DateTime<Utc>` | Creation date |
-| `completed_agents` | `u32` | Completed agents |
-| `failed_agents` | `u32` | Failed agents |
-| `running_agents` | `u32` | Running agents |
-| `total_tokens` | `u64` | Total tokens |
-| `sub_tasks` | `Vec<SubtaskRecord>` | Subtasks |
-
-### 14.2. Structure `ResumeOption`
-
-```rust
-enum ResumeOption {
-    Resume(RecoveredSession),
-    Fresh,
-    Exit,
-}
-```
-
-### 14.3. `format_summary(summary, index) -> String`
-
-**Algorithm:**
-1. Computes `age` — the difference between `Utc::now()` and `created_at`.
-2. Formats age human-readably: `< 1 hour`, `N hours`, `N days`.
-3. Computes `done_pct = completed_agents * 100 / total_agents`.
-4. Forms the string:
-   ```
-   [{index}] {query (first 60 chars)}... ({age} ago)
-       Agents: {completed} done / {failed} failed / {running} running ({done_pct}%)
-       Tokens: {total_tokens}
-   ```
-
-### 14.4. `interactive_select(summaries) -> ResumeOption`
-
-**Algorithm:**
-1. If `summaries` is empty — logs "No resumable sessions found", returns `Fresh`.
-2. Prints header: `"Found {n} resumable session(s):"`.
-3. For each summary with index — prints `format_summary(summary, i+1)`.
-4. Prints options: `"[N] Resume session N`, `[F] Start fresh`, `[Q] Quit"`.
-5. Reads stdin:
-   - Empty input — `Exit`.
-   - `"f"` or `"F"` — `Fresh`.
-   - `"q"` or `"Q"` — `Exit`.
-   - Number — parses, checks `1 <= n <= summaries.len()`, returns `Resume(summaries[n-1])`.
-   - Invalid input — `Exit`.
-
-### 14.5. `handle_resume_interactive(db, config, event_tx) -> Option<Coordinator>` — async
-
-**Algorithm:**
-1. Creates `SessionResumer::new(db, config, event_tx)`.
-2. Calls `resumer.find_resumable()`.
-3. If `summaries` is empty — returns `None`.
-4. Calls `interactive_select(&summaries)`.
-5. Matches result:
-   - **`Fresh`** — returns `None`.
-   - **`Exit`** — `process::exit(0)`.
-   - **`Resume(selected)`:**
-     - Calls `resumer.resume(&selected.session_id).await`.
-     - Creates `Coordinator::new(...)` with the same `session_id` and `query` from the recovered session.
-     - Connects `contact_db`, `crm`, `steer_rx`.
-     - Returns `Some(coordinator)`.
+Because the claim is atomic and the outputs are rewritten under the same id, resume is safe to invoke repeatedly and produces a complete final report exactly once.
 
 ---
 

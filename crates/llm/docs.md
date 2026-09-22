@@ -29,7 +29,7 @@ Two orthogonal throttles protect against self-inflicted rate limits in a multi-a
 
 ## lib.rs
 
-The file [lib.rs](file:///Users/yakushev/Documents/GitHub/Parallel/research-agent/crates/llm/src/lib.rs) declares **six** public modules and re-exports all their contents via `pub use`:
+The file [lib.rs](src/lib.rs) declares **six** public modules and re-exports all their contents via `pub use`:
 
 ```rust
 pub mod provider;
@@ -53,7 +53,7 @@ This means crate consumers can write `use llm::LlmProvider`, `use llm::Completio
 
 ## types.rs
 
-The file [types.rs](file:///Users/yakushev/Documents/GitHub/Parallel/research-agent/crates/llm/src/types.rs) defines four key structures and one enum that serve as the lingua franca of the entire LLM layer. These types are serialized/deserialized with `serde` and are designed to match the OpenAI chat-completions JSON schema.
+The file [types.rs](src/types.rs) defines four key structures and one enum that serve as the lingua franca of the entire LLM layer. These types are serialized/deserialized with `serde` and are designed to match the OpenAI chat-completions JSON schema.
 
 ### `CompletionRequest`
 
@@ -132,7 +132,7 @@ An enum with an internal `"type"` tag (serde attribute `#[serde(tag = "type")]`)
 
 ## provider.rs
 
-The file [provider.rs](file:///Users/yakushev/Documents/GitHub/Parallel/research-agent/crates/llm/src/provider.rs) defines the `LlmProvider` trait — the central abstraction for any LLM provider.
+The file [provider.rs](src/provider.rs) defines the `LlmProvider` trait — the central abstraction for any LLM provider.
 
 ```rust
 #[async_trait]
@@ -162,7 +162,7 @@ The trait requires `Send + Sync`, allowing safe use of the provider from multipl
 
 ## deepseek.rs
 
-The file [deepseek.rs](file:///Users/yakushev/Documents/GitHub/Parallel/research-agent/crates/llm/src/deepseek.rs) is the main and only implementation of `LlmProvider`. Despite the name, it works with any API compatible with OpenAI chat-completions. It implements the full lifecycle: request construction, HTTP transport with retry, SSE stream decoding, response parsing, reasoning-model diagnostics, and rate-limit cooldown tracking.
+The file [deepseek.rs](src/deepseek.rs) is the main and only implementation of `LlmProvider`. Despite the name, it works with any API compatible with OpenAI chat-completions. It implements the full lifecycle: request construction, HTTP transport with retry, SSE stream decoding, response parsing, reasoning-model diagnostics, and rate-limit cooldown tracking.
 
 ### Constants
 
@@ -397,7 +397,7 @@ Algorithm for parsing a single SSE line:
 
 ## retry.rs
 
-The file [retry.rs](file:///Users/yakushev/Documents/GitHub/Parallel/research-agent/crates/llm/src/retry.rs) implements a generic retry mechanism with exponential backoff and jitter. It is designed to be reusable across any async operation, not just LLM calls.
+The file [retry.rs](src/retry.rs) implements a generic retry mechanism with exponential backoff and jitter. It is designed to be reusable across any async operation, not just LLM calls.
 
 ### Global jitter counter
 
@@ -471,7 +471,7 @@ And **non-retryable**:
 
 ## concurrency.rs
 
-The file [concurrency.rs](file:///Users/yakushev/Documents/GitHub/Parallel/research-agent/crates/llm/src/concurrency.rs) provides two orthogonal throttles that protect a multi-agent swarm from self-inflicting provider rate limits. Inspired by the ouroboros `model_concurrency.py` and `fallback_cooldown.py` patterns.
+The file [concurrency.rs](src/concurrency.rs) provides two orthogonal throttles that protect a multi-agent swarm from self-inflicting provider rate limits. Inspired by the ouroboros `model_concurrency.py` and `fallback_cooldown.py` patterns.
 
 ### Constants
 
@@ -547,7 +547,7 @@ pub struct FallbackCooldown {
 
 ## factory.rs
 
-The file [factory.rs](file:///Users/yakushev/Documents/GitHub/Parallel/research-agent/crates/llm/src/factory.rs) provides a factory function for creating a provider from configuration. It supports both a primary model and an optional "fast" model for high-volume auxiliary calls.
+The file [factory.rs](src/factory.rs) provides a factory function for creating a provider from configuration. It supports both a primary model and an optional "fast" model for high-volume auxiliary calls.
 
 ### List of known providers
 
