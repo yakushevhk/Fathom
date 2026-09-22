@@ -1,0 +1,67 @@
+# Multi-document AX manifest: a Workspace (git context), an egress-scoped
+# Gateway, a Model credential reference, and a Task binding all three —
+# the same shapes google/ax applies to Kubernetes, running here against
+# Fathom's local single-writer controller.
+apiVersion: ax.io/v1alpha1
+kind: Workspace
+metadata:
+  name: fathom-src
+spec:
+  git:
+    - name: fathom
+      repo: https://github.com/yakushevhk/Fathom.git
+      branch: main
+      depth: 1
+  mcp:
+    servers:
+      - name: local-echo
+        command: fathom
+        args: ["mcp-serve"]
+  skills:
+    path: .agents/skills
+---
+apiVersion: ax.io/v1alpha1
+kind: Gateway
+metadata:
+  name: corp-egress
+spec:
+  listeners:
+    - name: https
+      port: 443
+      protocol: https
+  egress:
+    allowlist:
+      hosts:
+        - host: api.openai.com
+          port: 443
+        - host: api.deepseek.com
+          port: 443
+---
+apiVersion: ax.io/v1alpha1
+kind: Model
+metadata:
+  name: default-deepseek
+spec:
+  provider: deepseek
+  model: deepseek-chat
+  secretKey:
+    name: DEEPSEEK_API_KEY
+  parameters:
+    temperature: 0.3
+---
+apiVersion: ax.io/v1alpha1
+kind: Task
+metadata:
+  name: research-agent
+spec:
+  # No command -> the built-in Fathom harness runs
+  # `fathom run <goal> -o <workspace>/output` inside this spec.
+  workspaces:
+    - name: fathom-src
+      path: src
+      goal: "Audit the repository for security issues and write a report"
+  gateway:
+    name: corp-egress
+  env:
+    - name: AX_TASK_LABEL
+      value: research

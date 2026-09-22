@@ -24,6 +24,7 @@ members = [
     "crates/governance",
     "crates/supervisor",
     "crates/desktop",
+    "crates/fathom_ax",
 ]
 
 [workspace.package]
@@ -50,6 +51,7 @@ futures = "0.3"
 async-trait = "0.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+serde_yaml = "0.9"
 toml = "0.8"
 # rustls instead of default native-tls: the bench/sandbox containers have no
 # system CA bundle and (on alpine-based images) no libssl at all. rustls with
@@ -92,6 +94,7 @@ pr-lsp = { path = "crates/lsp" }
 pr-governance = { path = "crates/governance" }
 pr-supervisor = { path = "crates/supervisor" }
 pr-desktop = { path = "crates/desktop" }
+pr-ax = { path = "crates/fathom_ax" }
 
 [dependencies]
 pr-core.workspace = true
@@ -105,6 +108,7 @@ pr-mcp = { path = "crates/mcp" }
 pr-tui.workspace = true
 pr-lsp.workspace = true
 pr-governance.workspace = true
+pr-ax.workspace = true
 ratatui = "0.29"
 crossterm = "0.28"
 tokio.workspace = true
@@ -117,6 +121,8 @@ anyhow.workspace = true
 toml.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+serde_yaml.workspace = true
+dirs = "5"
 rusqlite.workspace = true
 
 [dev-dependencies]

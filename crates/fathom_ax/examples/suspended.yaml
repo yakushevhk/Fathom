@@ -1,0 +1,13 @@
+# Declarative suspend/resume + forking demo:
+#   fathom ax apply -f crates/fathom_ax/examples/suspended.yaml
+#   fathom ax resume sleeper -n default
+#   fathom ax fork sleeper --fork-name sleeper-branch --at-seq 4
+#   fathom ax watch sleeper-branch
+apiVersion: ax.io/v1alpha1
+kind: Task
+metadata:
+  name: sleeper
+spec:
+  suspend: true          # created, validated, never started until resumed
+  command: ["sh", "-c", "echo tick && sleep 30 && echo tock"]
+  debug: true

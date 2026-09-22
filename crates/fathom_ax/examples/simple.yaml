@@ -1,0 +1,6 @@
+apiVersion: ax.io/v1alpha1
+kind: Task
+metadata:
+  name: hello-fathom
+spec:
+  command: ["sh", "-c", "echo 'hello from AX' && sleep 1"]

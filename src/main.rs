@@ -157,6 +157,129 @@ enum Commands {
         #[command(subcommand)]
         action: ProfilesAction,
     },
+    /// AX orchestrator: declarative ax.io/v1alpha1 manifests (Task,
+    /// Gateway, Workspace, Model) with a durable event log, suspendable
+    /// actors, resume-from-crash and execution forking.
+    Ax {
+        #[command(subcommand)]
+        action: AxAction,
+    },
+}
+
+#[derive(Subcommand)]
+enum AxAction {
+    /// Apply a manifest file (single- or multi-document YAML).
+    Apply {
+        /// Path to the manifest YAML ("-" reads stdin)
+        #[arg(short, long)]
+        file: String,
+    },
+    /// Apply a manifest and stream task events until it is terminal
+    /// (upstream `ax run` equivalent).
+    Run {
+        /// Path to the manifest YAML ("-" reads stdin)
+        #[arg(short, long)]
+        file: String,
+    },
+    /// List AX resources of a kind.
+    List {
+        /// task | gateway | workspace | model
+        kind: String,
+        /// Filter by atespace (default: all)
+        #[arg(short = 'n', long, default_value = "")]
+        atespace: String,
+    },
+    /// Show one resource (YAML).
+    Get {
+        /// task | gateway | workspace | model
+        kind: String,
+        /// Resource name
+        name: String,
+        #[arg(short = 'n', long, default_value = "default")]
+        atespace: String,
+    },
+    /// Compact task table (phase / pid / actor).
+    Status {
+        /// Optional task name — shows all tasks when omitted
+        name: Option<String>,
+        #[arg(short = 'n', long, default_value = "")]
+        atespace: String,
+    },
+    /// Full object dump: manifest + status + conditions + recent events.
+    Describe {
+        /// Resource kind (usually "task")
+        kind: String,
+        name: String,
+        #[arg(short = 'n', long, default_value = "default")]
+        atespace: String,
+    },
+    /// Stream live status events until the task reaches a terminal phase
+    /// (or Ctrl-C). Includes the durable history since --from-seq.
+    Watch {
+        /// Task name
+        name: String,
+        #[arg(short = 'n', long, default_value = "default")]
+        atespace: String,
+        /// Replay the event log from this sequence number first
+        #[arg(long, default_value = "0")]
+        from_seq: i64,
+    },
+    /// Print (or follow) a task's actor log.
+    Logs {
+        /// Task name
+        name: String,
+        #[arg(short = 'n', long, default_value = "default")]
+        atespace: String,
+        /// Keep streaming as the actor writes (upstream `ax logs -f`)
+        #[arg(short = 'f', long)]
+        follow: bool,
+        /// Number of trailing lines to print first
+        #[arg(long, default_value = "0")]
+        tail: usize,
+    },
+    /// Suspend a running task (SIGSTOP the actor).
+    Suspend {
+        name: String,
+        #[arg(short = 'n', long, default_value = "default")]
+        atespace: String,
+    },
+    /// Resume a suspended/interrupted/failed task — SIGCONT when the actor
+    /// still lives, otherwise a durable respawn.
+    Resume {
+        name: String,
+        #[arg(short = 'n', long, default_value = "default")]
+        atespace: String,
+    },
+    /// Fork a task into a sibling at event sequence --at-seq (default: its
+    /// latest event). The fork runs the same spec as a new chain.
+    Fork {
+        /// Source task name
+        name: String,
+        /// New task name for the fork
+        #[arg(long)]
+        fork_name: String,
+        /// Event sequence to diverge from (recorded as provenance)
+        #[arg(long)]
+        at_seq: Option<i64>,
+        #[arg(short = 'n', long, default_value = "default")]
+        atespace: String,
+    },
+    /// Delete a resource (tasks go through two-phase Terminating first).
+    Delete {
+        kind: String,
+        name: String,
+        #[arg(short = 'n', long, default_value = "default")]
+        atespace: String,
+    },
+    /// Dump the durable event log (debugging / inspection).
+    Events {
+        /// Start at this sequence number
+        #[arg(long, default_value = "0")]
+        from_seq: i64,
+        /// Max events
+        #[arg(long, default_value = "100")]
+        limit: i64,
+    },
 }
 
 #[derive(Subcommand)]
@@ -483,6 +606,9 @@ async fn main() -> anyhow::Result<()> {
         }
         Commands::Profiles { action } => {
             cmd_profiles(action)?;
+        }
+        Commands::Ax { action } => {
+            cmd_ax(action).await?;
         }
     }
 
@@ -2508,6 +2634,294 @@ async fn cmd_job_run(id: String) -> anyhow::Result<()> {
         truncate(&last_error, 300)
     );
     std::process::exit(1);
+}
+
+// ─── AX orchestrator (pr_ax) ────────────────────────────────────────────
+
+/// AX state root: `$FATHOM_AX_HOME` or `~/.fathom/ax`.
+fn ax_home() -> anyhow::Result<std::path::PathBuf> {
+    if let Ok(p) = std::env::var("FATHOM_AX_HOME") {
+        return Ok(p.into());
+    }
+    Ok(dirs::home_dir()
+        .ok_or_else(|| anyhow::anyhow!("no home dir"))?
+        .join(".fathom")
+        .join("ax"))
+}
+
+async fn cmd_ax(action: AxAction) -> anyhow::Result<()> {
+    let ctl = pr_ax::AxController::open(ax_home()?)?;
+    match action {
+        AxAction::Apply { file } => {
+            let yaml = read_manifest_file(&file)?;
+            let n = ctl.apply_documents(&yaml)?;
+            println!("applied {n} manifest(s)");
+        }
+        AxAction::Run { file } => {
+            let yaml = read_manifest_file(&file)?;
+            let n = ctl.apply_documents(&yaml)?;
+            println!("applied {n} manifest(s); watching for terminal phase…");
+            // Watch every task that was just applied.
+            let docs = pr_ax::AxManifest::parse_documents(&yaml)?;
+            let mut watches = Vec::new();
+            for m in docs {
+                if let pr_ax::AxManifest::Task(t) = m {
+                    watches.push((
+                        t.metadata.atespace_or_default().to_string(),
+                        t.metadata.name.clone(),
+                    ));
+                }
+            }
+            for (atespace, name) in watches {
+                ax_watch_task(&ctl, &atespace, &name, 0).await?;
+            }
+        }
+        AxAction::List { kind, atespace } => {
+            let docs = ctl.list(&kind, &atespace)?;
+            if kind.eq_ignore_ascii_case("task") {
+                let rows = pr_ax::ops::task_rows(docs);
+                println!(
+                    "{:<30} {:<12} {:<12} {:<8} ACTOR",
+                    "NAME", "ATESPACE", "PHASE", "PID"
+                );
+                for r in rows {
+                    let fork = if r.forked_from.is_empty() {
+                        String::new()
+                    } else {
+                        format!(" (fork of {})", r.forked_from)
+                    };
+                    println!(
+                        "{:<30} {:<12} {:<12} {:<8} {}{}",
+                        r.name, r.atespace, r.phase, r.pid, r.actor, fork
+                    );
+                }
+            } else {
+                for m in docs {
+                    println!(
+                        "{}/{}\t{}",
+                        m.kind().to_lowercase(),
+                        m.metadata().name,
+                        m.metadata().atespace_or_default()
+                    );
+                }
+            }
+        }
+        AxAction::Get {
+            kind,
+            name,
+            atespace,
+        } => {
+            let m = ctl.get(&kind, &atespace, &name)?;
+            println!("{}", serde_yaml::to_string(&m)?);
+        }
+        AxAction::Status { name, atespace } => {
+            let docs = match &name {
+                Some(n) => vec![ctl.get("task", nonempty(&atespace), n)?],
+                None => ctl.list("task", &atespace)?,
+            };
+            let rows = pr_ax::ops::task_rows(docs);
+            println!(
+                "{:<30} {:<12} {:<12} {:<8} ACTOR",
+                "NAME", "ATESPACE", "PHASE", "PID"
+            );
+            for r in rows {
+                println!(
+                    "{:<30} {:<12} {:<12} {:<8} {}",
+                    r.name, r.atespace, r.phase, r.pid, r.actor
+                );
+            }
+        }
+        AxAction::Describe {
+            kind,
+            name,
+            atespace,
+        } => {
+            if kind.eq_ignore_ascii_case("task") {
+                println!("{}", pr_ax::ops::describe_task(&ctl, &atespace, &name)?);
+            } else {
+                let m = ctl.get(&kind, &atespace, &name)?;
+                println!("{}", serde_yaml::to_string(&m)?);
+            }
+        }
+        AxAction::Watch {
+            name,
+            atespace,
+            from_seq,
+        } => {
+            ax_watch_task(&ctl, &atespace, &name, from_seq).await?;
+        }
+        AxAction::Logs {
+            name,
+            atespace,
+            follow,
+            tail,
+        } => {
+            ax_logs(&ctl, &atespace, &name, follow, tail).await?;
+        }
+        AxAction::Suspend { name, atespace } => {
+            let t = ctl.suspend_task(&atespace, &name).await?;
+            println!(
+                "{}/{} → {}",
+                t.metadata.atespace_or_default(),
+                t.metadata.name,
+                t.status.phase
+            );
+        }
+        AxAction::Resume { name, atespace } => {
+            let t = ctl.resume_task(&atespace, &name).await?;
+            println!(
+                "{}/{} → {}",
+                t.metadata.atespace_or_default(),
+                t.metadata.name,
+                t.status.phase
+            );
+        }
+        AxAction::Fork {
+            name,
+            fork_name,
+            at_seq,
+            atespace,
+        } => {
+            let t = ctl.fork_task(&atespace, &name, &fork_name, at_seq)?;
+            println!(
+                "forked {atespace}/{name} → {}/{} (at seq {})",
+                t.metadata.atespace_or_default(),
+                t.metadata.name,
+                t.status.fork_seq
+            );
+        }
+        AxAction::Delete {
+            kind,
+            name,
+            atespace,
+        } => {
+            if kind.eq_ignore_ascii_case("task") {
+                ctl.delete_task(&atespace, &name).await?;
+            } else {
+                ctl.delete_resource(&kind, &atespace, &name)?;
+            }
+            println!("deleted {}/{}", kind.to_lowercase(), name);
+        }
+        AxAction::Events { from_seq, limit } => {
+            for e in ctl.store().scan_all(from_seq, limit)? {
+                println!(
+                    "{:>6}  {:<10} {:<24} {:<10} {}",
+                    e.seq,
+                    e.kind,
+                    format!("{}/{}", e.atespace, e.name),
+                    e.action,
+                    e.created_at
+                );
+            }
+        }
+    }
+    Ok(())
+}
+
+fn nonempty(s: &str) -> &str {
+    if s.is_empty() {
+        "default"
+    } else {
+        s
+    }
+}
+
+fn read_manifest_file(file: &str) -> anyhow::Result<String> {
+    if file == "-" {
+        use std::io::Read;
+        let mut s = String::new();
+        std::io::stdin().read_to_string(&mut s)?;
+        Ok(s)
+    } else {
+        Ok(std::fs::read_to_string(file)?)
+    }
+}
+
+/// Stream task events: replay the durable log from `from_seq`, then follow
+/// the live broadcast until the task is terminal.
+async fn ax_watch_task(
+    ctl: &Arc<pr_ax::AxController>,
+    atespace: &str,
+    name: &str,
+    from_seq: i64,
+) -> anyhow::Result<()> {
+    use pr_ax::manifest::phase;
+
+    let mut rx = ctl.watch();
+    // Durable replay first (missed events are in the log, not the broadcast).
+    let mut seen = 0i64;
+    for e in ctl.store().scan_events("task", atespace, name, from_seq)? {
+        seen = e.seq;
+        println!("seq={} {:<10} {}", e.seq, e.action, e.payload);
+    }
+    let t = ctl.store().get_task(atespace, name)?;
+    if phase::is_terminal(&t.status.phase) {
+        println!("terminal: {}", t.status.phase);
+        return Ok(());
+    }
+    loop {
+        match rx.recv().await {
+            Ok(ev) => {
+                let m = &ev.task.metadata;
+                if m.name == name && m.atespace_or_default() == atespace && ev.seq > seen {
+                    seen = ev.seq;
+                    println!("seq={} {:<10} {}", ev.seq, ev.action, ev.task.status.phase);
+                    if phase::is_terminal(&ev.task.status.phase) {
+                        println!("terminal: {}", ev.task.status.phase);
+                        return Ok(());
+                    }
+                }
+            }
+            Err(tokio::sync::broadcast::error::RecvError::Closed) => return Ok(()),
+            Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
+                eprintln!("(lagged {n} events — re-check `fathom ax status`)");
+            }
+        }
+    }
+}
+
+async fn ax_logs(
+    ctl: &Arc<pr_ax::AxController>,
+    atespace: &str,
+    name: &str,
+    follow: bool,
+    tail: usize,
+) -> anyhow::Result<()> {
+    use std::io::Write;
+    let task = ctl.store().get_task(atespace, name)?;
+    if task.status.log_path.is_empty() {
+        println!("(no actor log yet — task is {})", task.status.phase);
+        return Ok(());
+    }
+    let mut offset = 0u64;
+    if tail > 0 {
+        let text = std::fs::read_to_string(&task.status.log_path).unwrap_or_default();
+        let lines: Vec<&str> = text.lines().collect();
+        let start = lines.len().saturating_sub(tail);
+        for l in &lines[start..] {
+            println!("{l}");
+        }
+        offset = text.len() as u64;
+    }
+    loop {
+        let (new_off, chunk) = pr_ax::ops::read_task_log(&task.status.log_path, offset)?;
+        if !chunk.is_empty() {
+            std::io::stdout().write_all(&chunk)?;
+            std::io::stdout().flush()?;
+            offset = new_off;
+        }
+        if !follow {
+            break;
+        }
+        // Stop following once the task is terminal and the log is drained.
+        if let Ok(t) = ctl.store().get_task(atespace, name) {
+            if pr_ax::manifest::phase::is_terminal(&t.status.phase) && chunk.is_empty() {
+                break;
+            }
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(400)).await;
+    }
+    Ok(())
 }
 
 #[cfg(test)]
