@@ -314,6 +314,15 @@ export function decideApproval(id: string, decision: 'approved' | 'rejected', de
     id
   )
   const updated = getApproval(id)!
+  // Backfill the request card so decided gates render their outcome everywhere.
+  db.prepare(
+    `UPDATE events SET meta = json_set(meta, '$.approvalStatus', ?, '$.decidedBy', ?, '$.decidedAt', ?)
+     WHERE id = (SELECT event_id FROM approvals WHERE id = ?)`
+  ).run(decision, decidedBy, updated.decidedAt, id)
+  const req = db
+    .prepare('SELECT * FROM events WHERE id = (SELECT event_id FROM approvals WHERE id = ?)')
+    .get(id) as Record<string, unknown> | undefined
+  if (req) publish({ type: 'event', data: toEvent(req) })
   publish({ type: 'approval', data: updated })
   insertEvent(
     updated.channelId,
@@ -521,7 +530,7 @@ function seed(db: DatabaseSync) {
     285
   )
   ev('c_releases', 'm_you', 'message', 'Notes look right. Hold the actual tag push until I’m back at a keyboard.', {}, 270)
-  const ap2Ev = ev('c_releases', 'a_quill', 'approval', '**Approval requested** — Post release notes to the public changelog channel.', { approvalId: 'ap_changelog', risk: 'low', scope: 'publish:changelog' }, 260)
+  const ap2Ev = ev('c_releases', 'a_quill', 'approval', '**Approval requested** — Post release notes to the public changelog channel.', { approvalId: 'ap_changelog', risk: 'low', scope: 'publish:changelog', approvalStatus: 'approved', decidedBy: 'm_you' }, 260)
   ev('c_releases', 'm_you', 'system', 'Approved `Post release notes to the public changelog channel` requested by agent.', { approvalId: 'ap_changelog', approvalStatus: 'approved' }, 250)
   const ap1Ev = ev(
     'c_releases',

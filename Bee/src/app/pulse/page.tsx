@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Activity } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { relTime } from '@/lib/format'
@@ -24,15 +24,20 @@ export default function PulsePage() {
       .catch(() => {})
   }, [kind])
 
-  // New events merge in at render time — no effect needed.
-  const shown = (() => {
-    if (!lastEvent || (kind !== 'all' && lastEvent.kind !== kind)) return events
-    const i = events.findIndex((e) => e.id === lastEvent.id)
-    if (i === -1) return [lastEvent, ...events]
-    const copy = [...events]
-    copy[i] = lastEvent
-    return copy
-  })()
+  // Accumulate every SSE event (not just the latest) — render-phase adjust.
+  const [live, setLive] = useState(() => new Map<number, HiveEvent>())
+  const [seen, setSeen] = useState(lastEvent)
+  if (lastEvent !== seen) {
+    setSeen(lastEvent)
+    if (lastEvent) setLive((prev) => new Map(prev).set(lastEvent.id, lastEvent))
+  }
+
+  const shown = useMemo(() => {
+    const byId = new Map<number, HiveEvent>()
+    for (const e of events) byId.set(e.id, e)
+    for (const e of live.values()) byId.set(e.id, e)
+    return [...byId.values()].filter((e) => kind === 'all' || e.kind === kind).sort((a, b) => b.id - a.id)
+  }, [events, live, kind])
 
   const memberById = new Map(members.map((m) => [m.id, m]))
   const chById = new Map(channels.map((c) => [c.id, c]))

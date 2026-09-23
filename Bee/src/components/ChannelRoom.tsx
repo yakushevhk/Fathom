@@ -93,6 +93,11 @@ export function ChannelRoom({ slug }: { slug: string }) {
       .catch(() => setMissing(true))
   }, [slug, markRead])
 
+  // Accumulate every SSE event for this room (render-phase adjust) — merging
+  // only lastEvent would drop earlier arrivals until the next refetch.
+  const [live, setLive] = useState(() => new Map<number, HiveEvent>())
+  const [seenEvent, setSeenEvent] = useState(lastEvent)
+
   // Render-phase reset when navigating between rooms.
   const [prevSlug, setPrevSlug] = useState(slug)
   if (prevSlug !== slug) {
@@ -100,6 +105,13 @@ export function ChannelRoom({ slug }: { slug: string }) {
     setChannel(null)
     setMissing(false)
     setEvents([])
+    setLive(new Map())
+    setSeenEvent(lastEvent)
+  } else if (lastEvent !== seenEvent) {
+    setSeenEvent(lastEvent)
+    if (channel && lastEvent && lastEvent.channelId === channel.id) {
+      setLive((prev) => new Map(prev).set(lastEvent.id, lastEvent))
+    }
   }
 
   useEffect(() => {
@@ -113,17 +125,13 @@ export function ChannelRoom({ slug }: { slug: string }) {
     }
   }, [lastEvent, channel, markRead])
 
-  // Live events merge into the feed at render time.
-  const shownEvents = (() => {
-    if (!channel || !lastEvent || lastEvent.channelId !== channel.id) return events
-    const i = events.findIndex((e) => e.id === lastEvent.id)
-    if (i === -1) {
-      return lastEvent.id > (events[events.length - 1]?.id ?? 0) ? [...events, lastEvent] : events
-    }
-    const copy = [...events]
-    copy[i] = lastEvent
-    return copy
-  })()
+  const shownEvents = useMemo(() => {
+    if (live.size === 0) return events
+    const byId = new Map<number, HiveEvent>()
+    for (const e of events) byId.set(e.id, e)
+    for (const e of live.values()) byId.set(e.id, e)
+    return [...byId.values()].sort((a, b) => a.id - b.id)
+  }, [events, live])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })

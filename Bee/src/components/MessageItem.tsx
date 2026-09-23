@@ -108,8 +108,11 @@ export function ApprovalCard({ event, compact }: { event: HiveEvent; compact?: b
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ decision: d }),
     })
+    if (r.ok) {
+      const resp = (await r.json()) as { approval?: { status: string } }
+      if (resp.approval) setStatus(resp.approval.status)
+    }
     setBusy(false)
-    if (r.ok) setStatus(d)
   }
   const final = status ?? decided ?? (compact ? 'pending' : 'pending')
   return (
