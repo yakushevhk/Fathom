@@ -1,11 +1,9 @@
 // NOTE: this module carries the full translation dictionary (heavy). Layouts
 // should import language navigation from './langnav.js' instead — this file is
 // only loaded lazily in dev to translate untranslated pages in place.
-import { LANGS, DEFAULT_LANG, LANGS_SET } from './langnav.js';
 import { unifiedTranslations as translations } from './unified.js';
 
 export { LANGS, DEFAULT_LANG, LANGS_SET, langUrl, currentLangFromPath, getLang, applyLanguage, initI18n } from './langnav.js';
-import { langUrl, currentLangFromPath, getLang, applyLanguage, initI18n } from './langnav.js';
 
 export function resolveKey(key, lang) {
   // Deep resolve from the module-loaded dictionary. Used by the dev-mode

@@ -120,7 +120,7 @@ open http://localhost:8080/dashboard
   .sec-head--mt64 { margin-top: 64px; }
   .h2-sec { font-size: clamp(26px, 3.5vw, 48px); font-weight: 500; letter-spacing: -0.025em; line-height: 1.08; margin-top: 12px; }
 
-  .dash-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .dash-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 16px; }
   .dash-card { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 24px; transition: box-shadow .25s, transform .25s var(--ease-out), border-color .25s; }
   .dash-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--grey-400); }
   .dash-name { font-family: var(--font-mono); font-weight: 600; font-size: 14px; margin-bottom: 10px; }

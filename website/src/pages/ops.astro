@@ -110,7 +110,7 @@ fathom mcp-serve            # MCP server</code></pre>
   .ops-hero h1 { font-size: clamp(34px, 5vw, 68px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.02; margin-top: 12px; }
   .ops-hero .copy-lg { margin-top: 20px; }
 
-  .ops-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .ops-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 16px; }
   .ops-card { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 24px; transition: box-shadow .25s, transform .25s var(--ease-out), border-color .25s; }
   .ops-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--grey-400); }
   .ops-name { font-family: var(--font-mono); font-weight: 600; font-size: 14px; margin-bottom: 10px; }

@@ -1,6 +1,6 @@
 // Dev-only audit: broken links, missing i18n keys, missing ru translations,
 // SEO head gaps. Run: node scripts/audit.mjs
-import { readFileSync, readdirSync, statSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
 import { join, relative } from 'path';
 
 const ROOT = process.cwd();
@@ -85,7 +85,6 @@ const missingRu = [];
 
 // ---------- 3. SEO head ----------
 const seo = [];
-const DEFAULT_DESC = 'Fathom is a self-hosted Rust runtime for autonomous remote AI workers';
 for (const f of pageFiles) {
   const src = readFileSync(f, 'utf8');
   const tm = src.match(/pageTitle="([^"]*)"/) || src.match(/<Layout[^>]*\stitle="([^"]*)"/) || src.match(/title="([^"]*)"/);

@@ -51,7 +51,7 @@ function convertPage(id) {
   }
   
   // Convert code blocks to dangerouslySetInnerHTML to prevent MDX parsing issues
-  body = body.replace(/<pre><code>([\s\S]*?)<\/code><\/pre>/g, (match, inner) => {
+  body = body.replace(/<pre><code>([\s\S]*?)<\/code><\/pre>/g, (_match, inner) => {
     const escaped = escapeTemplateLiteral(inner);
     return '<pre><code dangerouslySetInnerHTML={{__html: `' + escaped + '`}} /></pre>';
   });

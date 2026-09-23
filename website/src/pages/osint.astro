@@ -28,13 +28,6 @@ const schema = [
   ['notes', 'contact_id, note'],
 ];
 
-const verification = [
-  { t: 'Syntax + MX + SMTP', d: 'Every email passes syntax, MX-record and SMTP handshake checks. Disposable domains and role-based addresses (info@, admin@) are flagged with lower confidence.' },
-  { t: 'E.164 phone validation', d: 'Phones are normalized to E.164 via libphonenumber — country, line type and carrier are extracted before a confidence score is assigned.' },
-  { t: 'Deobfuscation', d: 'When enabled, obfuscated addresses like name [at] domain [dot] com may be decoded and scored lower than plain addresses.' },
-  { t: 'Append-only receipts', d: 'Enabled verification gates can emit typed receipts into an append-only JSONL ledger. A PASS on one gate does not mask a FAIL on another, keeping review context intact.' },
-];
-
 const ethics = [
   { t: 'GDPR & Law 152-FZ', d: 'Personal data is processed in line with GDPR and Russia\'s Federal Law 152-FZ on Personal Data: lawful basis, scoped purpose, deletion on request.' },
   { t: 'Public data only', d: 'Agents read open, publicly available sources — nothing scraped behind logins, paywalls or private APIs.' },

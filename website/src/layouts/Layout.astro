@@ -755,17 +755,17 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
       });
 
       // Auto scroll-reveal: reveal elements when in view or when page is rendered/tested
-      const revealEls = Array.from(document.querySelectorAll('.reveal, [data-reveal]'));
-      document.querySelectorAll('.sec-head:not(.in-hero)').forEach((el) => {
+      const revealEls = Array.from(document.querySelectorAll<HTMLElement>('.reveal, [data-reveal]'));
+      document.querySelectorAll<HTMLElement>('.sec-head:not(.in-hero)').forEach((el) => {
         if (el.dataset.in !== 'true' && !el.dataset.reveal) { el.dataset.reveal = ''; revealEls.push(el); }
       });
-      document.querySelectorAll('[class$="-grid"], .flow, .stages, .quote-grid').forEach((g) => {
+      document.querySelectorAll<HTMLElement>('[class$="-grid"], .flow, .stages, .quote-grid').forEach((g) => {
         if (g.closest('[class$="-hero"], .reveal, [data-reveal]')) return;
         if (g.dataset.reveal) return;
         g.dataset.reveal = ''; revealEls.push(g);
       });
 
-      const markInView = (el) => {
+      const markInView = (el: HTMLElement) => {
         el.classList.add('in-view');
         el.dataset.in = 'true';
       };
@@ -774,7 +774,7 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
         const ro = new IntersectionObserver((es) => {
           es.forEach((e) => {
             if (e.isIntersecting) {
-              markInView(e.target);
+              markInView(e.target as HTMLElement);
               ro.unobserve(e.target);
             }
           });
@@ -790,7 +790,7 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
       // ---- D2: perspective tilt on marketing cards (desktop only) ----
       if (window.matchMedia('(hover: hover) and (min-width: 768px)').matches &&
           !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        document.querySelectorAll('.cap-card, .price-card, .tilt').forEach((card) => {
+        document.querySelectorAll<HTMLElement>('.cap-card, .price-card, .tilt').forEach((card) => {
           card.classList.add('tilt');
           card.addEventListener('pointermove', (e) => {
             const r = card.getBoundingClientRect();
@@ -807,7 +807,6 @@ const crumbName = title.replace(/\s*[—–]\s*Fathom.*$/, '');
       }
 
       const toggle = document.getElementById('menu-toggle');
-      const mobileMenu = document.getElementById('mobile-menu');
       toggle?.addEventListener('click', () => {
         const isOpen = document.body.classList.toggle('mobile-nav-open');
         toggle.setAttribute('aria-expanded', String(isOpen));

@@ -9,7 +9,7 @@ function fixSetHtml(content) {
   // The content is a template literal starting with {' and ending with '}
   const regex = /<pre><code\s+set:html=\{`([\s\S]*?)`\}><\/code><\/pre>/g;
   
-  return content.replace(regex, (match, inner) => {
+  return content.replace(regex, (_match, inner) => {
     // Escape the content for template literal
     const escaped = inner
       .replace(/\\/g, '\\\\')

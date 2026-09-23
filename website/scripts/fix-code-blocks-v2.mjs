@@ -13,7 +13,7 @@ for (const file of files) {
   // if the </pre> is missing
   content = content.replace(
     /<pre><code dangerouslySetInnerHTML=\{\{__html: `([\s\S]*?)`\}\} \/>/g,
-    (match, inner) => {
+    (_match, inner) => {
       return '<pre><code dangerouslySetInnerHTML={{__html: `' + inner + '`}} /></pre>';
     }
   );

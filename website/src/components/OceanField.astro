@@ -24,7 +24,8 @@
 </style>
 
 <script>
-  const canvas = document.querySelector('[data-ocean]');
+  import type * as T from 'three';
+  const canvas = document.querySelector<HTMLCanvasElement>('[data-ocean]');
   if (canvas) import('three').then((THREE) => {
     const wrap = canvas.parentElement;
     if (!wrap) return;
@@ -33,7 +34,7 @@
     let W = Math.max(320, wrap.clientWidth);
     let H = Math.max(280, wrap.clientHeight);
 
-    let renderer;
+    let renderer: T.WebGLRenderer;
     try {
       renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'low-power' });
     } catch {
@@ -54,7 +55,7 @@
     // Optimized grid resolution for smooth 60fps on mobile
     const SEG_X = 76, SEG_Y = 46;
     const geo = new THREE.PlaneGeometry(52, 34, SEG_X, SEG_Y);
-    const pos = geo.attributes.position;
+    const pos = geo.attributes.position as T.BufferAttribute;
     const count = pos.count;
     const colors = new Float32Array(count * 3);
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
@@ -93,7 +94,7 @@
     const posArray2 = mesh2.geometry.attributes.position.array;
     const colorArray2 = mesh2.geometry.attributes.color.array;
 
-    function deformFast(posArr, colArr, t, phase) {
+    function deformFast(posArr: T.TypedArray, colArr: T.TypedArray, t: number, phase: number) {
       for (let i = 0; i < count; i++) {
         const x = baseX[i];
         const y = baseY[i];
@@ -158,7 +159,7 @@
       startLoop();
     }
 
-    let resizeTimer;
+    let resizeTimer: ReturnType<typeof setTimeout>;
     function resize() {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {

@@ -34,7 +34,7 @@ const tiers = [
   { name: 'Semantic archive', d: 'A durable SQLite knowledge base: hybrid search, typed edges, entity graph, supersession chains, and a history journal.' },
 ];
 
-const hood = [
+const hood: [string, string][] = [
   ['Store', 'SQLite · append-only rows · FTS5 (BM25) · embeddings · history journal'],
   ['Hybrid score', 'score = 0.7·cosine + 0.3·BM25, both signals normalized'],
   ['Freshness decay', 'score × max(0, 1 − 0.01·days) — 1% per day'],

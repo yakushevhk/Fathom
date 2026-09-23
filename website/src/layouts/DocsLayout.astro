@@ -819,16 +819,16 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
         document.body.style.overflow = isOpen ? 'hidden' : '';
       });
 
-      const filterInput = document.getElementById('sidebar-filter-input');
+      const filterInput = document.getElementById('sidebar-filter-input') as HTMLInputElement | null;
       const sidebarEmpty = document.getElementById('sidebar-empty');
       function applyFilter() {
         const q = (filterInput?.value || '').trim().toLowerCase();
         let any = false;
-        document.querySelectorAll('.sidebar-section').forEach((sec) => {
+        document.querySelectorAll<HTMLElement>('.sidebar-section').forEach((sec) => {
           let visible = 0;
           sec.querySelectorAll('.sidebar-link').forEach((a) => {
-            const hit = !q || a.textContent.toLowerCase().includes(q);
-            a.parentElement.style.display = hit ? '' : 'none';
+            const hit = !q || (a.textContent || '').toLowerCase().includes(q);
+            a.parentElement!.style.display = hit ? '' : 'none';
             if (hit) visible++;
           });
           sec.style.display = visible ? '' : 'none';
@@ -838,7 +838,7 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
       }
       filterInput?.addEventListener('input', applyFilter);
       document.addEventListener('keydown', (e) => {
-        if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
+        if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName || '')) {
           const inViewport = sidebar && sidebar.getBoundingClientRect().top < window.innerHeight;
           if (inViewport) {
             e.preventDefault();
@@ -846,7 +846,7 @@ const nextItem = curIdx >= 0 && curIdx < flatNav.length - 1 ? flatNav[curIdx + 1
           }
         }
         if (e.key === 'Escape') {
-          if (document.activeElement === filterInput) {
+          if (filterInput && document.activeElement === filterInput) {
             filterInput.value = '';
             applyFilter();
             filterInput.blur();

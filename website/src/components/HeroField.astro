@@ -25,15 +25,17 @@
 </style>
 
 <script>
-  const canvas = document.querySelector('[data-herofield]');
+  import type * as T from 'three';
+  const canvas = document.querySelector<HTMLCanvasElement>('[data-herofield]');
   if (canvas) import('three').then((THREE) => {
     const wrap = canvas.parentElement;
+    if (!wrap) return;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     let W = Math.max(320, wrap.clientWidth);
     let H = Math.max(320, wrap.clientHeight);
 
-    let renderer;
+    let renderer: T.WebGLRenderer;
     try {
       renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     } catch {
@@ -56,6 +58,7 @@
     const cv = document.createElement('canvas');
     cv.width = cv.height = 32;
     const cx = cv.getContext('2d');
+    if (!cx) return;
     const g = cx.createRadialGradient(16, 16, 0, 16, 16, 16);
     g.addColorStop(0, 'rgba(255,255,255,1)');
     g.addColorStop(0.6, 'rgba(255,255,255,.5)');
@@ -65,8 +68,10 @@
     const dot = new THREE.CanvasTexture(cv);
 
     const SPACING = 44;
-    let geo = null, points = null;
-    let baseX = [], baseY = [];
+    let geo: T.BufferGeometry | null = null;
+    let points: T.Points | null = null;
+    let baseX: number[] = [];
+    let baseY: number[] = [];
 
     const mat = new THREE.PointsMaterial({
       size: 3.1, map: dot, transparent: true,
@@ -83,7 +88,7 @@
     mat.opacity = tc.opacity;
 
     function rebuild() {
-      if (points) { scene.remove(points); geo.dispose(); }
+      if (points) { scene.remove(points); geo!.dispose(); }
       baseX = []; baseY = [];
       const cols = Math.ceil(W / SPACING) + 2;
       const rows = Math.ceil(H / SPACING) + 2;
@@ -113,9 +118,9 @@
     rebuild();
 
     const tmpC = new THREE.Color();
-    function draw(t) {
-      const p = geo.attributes.position;
-      const c = geo.attributes.color;
+    function draw(t: number) {
+      const p = geo!.attributes.position;
+      const c = geo!.attributes.color;
       for (let i = 0; i < baseX.length; i++) {
         const x = baseX[i];
         const y = baseY[i];
@@ -160,7 +165,7 @@
       if (reduced) draw(2.4);
     }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
-    let heroResizeTimer;
+    let heroResizeTimer: ReturnType<typeof setTimeout>;
     new ResizeObserver(() => {
       clearTimeout(heroResizeTimer);
       heroResizeTimer = setTimeout(() => {

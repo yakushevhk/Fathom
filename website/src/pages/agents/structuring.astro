@@ -29,7 +29,7 @@ const flow = [
   { t: 'Sync', d: 'Contacts push to amoCRM, Bitrix24 or HubSpot four at a time with retry; the returned crm_id is stored so re-syncs update instead of duplicating.' },
 ];
 
-const hood = [
+const hood: [string, string][] = [
   ['Schema', 'contacts(id, email, phone, phone_norm, name, title, company, source, crm_id, created_at, updated_at) · social_profiles · companies · tags · notes'],
   ['Storage', 'SQLite with WAL + busy_timeout 5000 out of the box · PostgreSQL behind the same interface via [contacts] pg_url'],
   ['Dedup keys', 'normalized email first, then digits-only phone_norm · lowest id wins — the oldest record survives'],

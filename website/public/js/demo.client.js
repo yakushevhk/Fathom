@@ -367,7 +367,6 @@ function updateThinking(div, text) {
 
 function finalizeThinking(div, tag, text) {
   const bubble = div.querySelector('.pd-bubble');
-  const body = div.querySelector('.pd-bubble__body');
   const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   bubble.className = 'pd-bubble pd-bubble--' + (tag || 'bot');
   const content = tag === 'done' || tag === 'plan' ? renderMarkdown(text) : escapeHtml(text);

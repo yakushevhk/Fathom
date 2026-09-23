@@ -224,12 +224,12 @@ import PageHero from '../components/PageHero.astro';
   .res-amount { font-size: 3rem; font-weight: 900; letter-spacing: -0.03em; color: #10b981; margin: 8px 0 4px; }
   .res-sub { font-size: 0.78rem; color: #64748b; }
 
-  .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .res-mini { background: rgba(255, 255, 255, 0.05); padding: 14px; border-radius: var(--radius-sm); }
-  .res-mini-lbl { font-size: 0.74rem; color: #94a3b8; margin-bottom: 4px; }
-  .res-mini-val { font-size: 1rem; font-weight: 700; color: #ffffff; }
+  .res-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .res-mini { background: rgba(255, 255, 255, 0.05); padding: 14px; border-radius: var(--radius-sm); min-width: 0; }
+  .res-mini-lbl { font-size: 0.74rem; color: #94a3b8; margin-bottom: 4px; overflow-wrap: break-word; }
+  .res-mini-val { font-size: 1rem; font-weight: 700; color: #ffffff; overflow-wrap: break-word; }
 
-  .includes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; margin-top: 24px; }
+  .includes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 18px; margin-top: 24px; }
   .include-card { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 24px; }
   .include-name { font-weight: 600; font-size: 16px; margin-bottom: 8px; }
   .include-card p { color: var(--grey-600); font-size: 14px; line-height: 1.55; }

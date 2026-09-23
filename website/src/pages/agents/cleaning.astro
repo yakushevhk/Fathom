@@ -29,7 +29,7 @@ const flow = [
   { t: 'Rank & review', d: 'Pattern-matched candidates receive confidence signals; blocked and inconclusive records remain visible for operator review before any governed action.' },
 ];
 
-const hood = [
+const hood: [string, string][] = [
   ['Confidence formula', 'invalid syntax 0.0 · base 0.5 + 0.4 live domain · capped 0.9 without SMTP · ≥ 0.95 SMTP-accepted · ≤ 0.2 SMTP-rejected · disposable −0.3'],
   ['Syntax rules', 'RFC 5322 subset: local part ≤ 64 chars, domain ≤ 253, no leading/trailing/consecutive dots, non-numeric TLD'],
   ['MX lookup', 'DNS-over-HTTPS: dns.google → cloudflare-dns.com fallback, 5 s timeout · RFC 5321 A-record fallback · RFC 7505 null MX means "accepts no mail"'],

@@ -8,12 +8,17 @@
 //   agents — массив { name, mode, hue, lit? },
 //   compact — уменьшенный размер canvas (для тизер-секций)
 
+interface Props {
+  agents: { name: string; mode: string; hue: number; lit?: number; href?: string }[];
+  compact?: boolean;
+}
+
 const {
   agents,
   compact = false,
 } = Astro.props;
 
-const STATUS = {
+const STATUS: Record<string, string> = {
   researcher: 'breathing · scanning sources',
   extracting: 'pulse · pulling fields',
   structuring: 'firing · building schema',
@@ -59,7 +64,7 @@ const STATUS = {
 
   // ===================== 3D MATH =====================
 
-  function fibDir(i, n) {
+  function fibDir(i: number, n: number): [number, number, number] {
     const golden = Math.PI * (3 - Math.sqrt(5));
     const y = 1 - (2 * (i + 0.5)) / n;
     const rad = Math.sqrt(1 - y * y);
@@ -67,10 +72,10 @@ const STATUS = {
     return [rad * Math.cos(a), y, rad * Math.sin(a)];
   }
 
-  function makeProj(yaw, tilt, cx, cy, scale) {
+  function makeProj(yaw: number, tilt: number, cx: number, cy: number, scale: number) {
     const st = Math.sin(tilt), ct = Math.cos(tilt);
     const sy = Math.sin(yaw), cyw = Math.cos(yaw);
-    return (x, y, z) => {
+    return (x: number, y: number, z: number): [number, number, number] => {
       const x1 = x * cyw + z * sy;
       const z1 = -x * sy + z * cyw;
       const y1 = y * ct - z1 * st;
@@ -79,18 +84,14 @@ const STATUS = {
     };
   }
 
-  function hashD(a, b) {
+  function hashD(a: number, b: number) {
     const h = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453;
     return h - Math.floor(h);
   }
 
-  function lerp(a, b, f) { return a + (b - a) * f; }
-
-  function smoothstep(x) { return x * x * (3 - 2 * x); }
-
   // ===================== PAINT =====================
 
-  function paintDot(ctx, x, y, r, hue, sat, lit, alpha) {
+  function paintDot(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, hue: number, sat: number, lit: number, alpha: number) {
     if (alpha < 0.015) return;
     const a = Math.max(0, Math.min(1, alpha));
     ctx.fillStyle = `hsla(${((hue % 360) + 360) % 360} ${sat}% ${lit}% / ${a})`;
@@ -99,7 +100,7 @@ const STATUS = {
     ctx.fill();
   }
 
-  function paintGlow(ctx, x, y, r, hue, alpha) {
+  function paintGlow(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, hue: number, alpha: number) {
     if (alpha < 0.15) return;
     const a = Math.max(0, Math.min(1, alpha * 0.5));
     ctx.fillStyle = `hsla(${((hue % 360) + 360) % 360} 80% 65% / ${a})`;
@@ -108,7 +109,7 @@ const STATUS = {
     ctx.fill();
   }
 
-  function clear(ctx) {
+  function clear(ctx: CanvasRenderingContext2D) {
     ctx.fillStyle = '#0a0a0a';
     ctx.fillRect(0, 0, SIZE, SIZE);
   }
@@ -120,11 +121,20 @@ const STATUS = {
   const cx = SIZE / 2, cy = SIZE / 2;
 
   // Fib lattice indices — precomputed once
-  const fibDots = [];
+  const fibDots: [number, number, number][] = [];
   for (let i = 0; i < DOT_N; i++) fibDots.push(fibDir(i, DOT_N));
 
+  interface Dot {
+    px: number; py: number; z: number; depth: number; i: number;
+    core: number; trail: number; wave: number; active: boolean; rnd: number;
+    boost: number; dimBase: number; pulse: number;
+    type: string; tf: number; x3: number; y3: number; z3: number;
+    r: number; hue: number; lit: number; a: number; glow: boolean;
+  }
+  interface ModeCfg { speed: number; hue: number; lit: number }
+
   // Pre-allocated object pool for dot rendering to eliminate GC pressure
-  const dotPool = Array.from({ length: DOT_N + 32 }, () => ({
+  const dotPool: Dot[] = Array.from({ length: DOT_N + 32 }, () => ({
     px: 0, py: 0, z: 0, depth: 0, i: 0,
     core: 0, trail: 0, wave: 0, active: false, rnd: 0,
     boost: 0, dimBase: 0, pulse: 0,
@@ -132,7 +142,7 @@ const STATUS = {
     r: 0, hue: 0, lit: 0, a: 0, glow: false
   }));
 
-  const MODES = {
+  const MODES: Record<string, (ctx: CanvasRenderingContext2D, cfg: ModeCfg, t: number) => void> = {
     // ---------- researcher: breathing sphere + orbiting particles ----------
     researcher(ctx, cfg, t) {
       const yaw = t * 0.15;
@@ -141,7 +151,7 @@ const STATUS = {
       const hue = cfg.hue;
       const breath = 0.92 + 0.08 * Math.sin(t * 0.8);
 
-      const dots = [];
+      const dots: Dot[] = [];
       for (let i = 0; i < DOT_N; i++) {
         const d = fibDots[i];
         const r3 = R * breath;
@@ -181,7 +191,7 @@ const STATUS = {
       const hue = cfg.hue;
       const phase = t * 1.5;
 
-      const dots = [];
+      const dots: Dot[] = [];
       for (let i = 0; i < DOT_N; i++) {
         const d = fibDots[i];
         const [px, py, z] = pt(d[0] * R, d[1] * R, d[2] * R);
@@ -212,7 +222,7 @@ const STATUS = {
       const hue = cfg.hue;
       const seed = Math.floor(t / 500);
 
-      const dots = [];
+      const dots: Dot[] = [];
       for (let i = 0; i < DOT_N; i++) {
         const d = fibDots[i];
         const rnd = hashD(i, seed + 0.3);
@@ -244,7 +254,7 @@ const STATUS = {
       const hue = cfg.hue;
       const scan = t * (spin + 1.2);
 
-      const dots = [];
+      const dots: Dot[] = [];
       for (let i = 0; i < DOT_N; i++) {
         const d = fibDots[i];
         const [px, py, z] = pt(d[0] * R, d[1] * R, d[2] * R);
@@ -276,7 +286,7 @@ const STATUS = {
       const hue = cfg.hue;
       const sweepPos = ((t * 0.6) % (Math.PI * 2)) - Math.PI;
 
-      const dots = [];
+      const dots: Dot[] = [];
       for (let i = 0; i < DOT_N; i++) {
         const d = fibDots[i];
         const [px, py, z] = pt(d[0] * R, d[1] * R, d[2] * R);
@@ -308,7 +318,7 @@ const STATUS = {
       const pt = makeProj(yaw, tilt, cx, cy, 1);
       const hue = cfg.hue;
 
-      const dots = [];
+      const dots: Dot[] = [];
       for (let i = 0; i < DOT_N; i++) {
         const d = fibDots[i];
         const [px, py, z] = pt(d[0] * R, d[1] * R, d[2] * R);
@@ -338,12 +348,11 @@ const STATUS = {
       const ph = t * 0.8;
 
       // ghost sphere dots
-      const dots = [];
+      const dots: Dot[] = [];
       for (let i = 0; i < DOT_N; i++) {
-        const d = fibDots[i];
-        const [px, py, z] = pt(d[0] * R, d[1] * R, d[2] * R);
-        const depth = (z / R + 1) / 2;
-        dots.push({ px, py, z, depth, type: 'ghost', i });
+        const g = dotPool[i];
+        g.type = 'ghost'; g.i = i;
+        dots.push(g);
       }
 
       // the plane body — a few bright dots forming a shape
@@ -384,7 +393,7 @@ const STATUS = {
       }
 
       // project and render
-      const rendered = [];
+      const rendered: Dot[] = [];
       for (let idx = 0; idx < dots.length; idx++) {
         const d = dots[idx];
         const rObj = dotPool[idx];
@@ -400,7 +409,6 @@ const STATUS = {
           rendered.push(rObj);
         } else {
           const [px, py, z] = pt(d.x3, d.y3, d.z3);
-          const depth = (z / R + 1) / 2;
           const isNose = d.type === 'nose';
           const isTrail = d.type === 'trail';
           rObj.px = px; rObj.py = py; rObj.z = z;
@@ -420,7 +428,7 @@ const STATUS = {
     },
   };
 
-  const CONFIGS = {
+  const CONFIGS: Record<string, { speed: number }> = {
     researcher: { speed: 1 },
     extracting: { speed: 1 },
     structuring: { speed: 1 },
@@ -434,7 +442,7 @@ const STATUS = {
 
   // Landing pages use role names (coordinator, coder, …) that map onto the
   // visual modes below; unknown modes fall back to the researcher sphere.
-  const ALIAS = {
+  const ALIAS: Record<string, string> = {
     coordinator: 'structuring',
     coder: 'extracting',
     operator: 'cleaning',
@@ -442,21 +450,22 @@ const STATUS = {
     reviewer: 'outreach',
   };
 
-  const items = Array.from(document.querySelectorAll('.agent-canvas canvas')).map((cv) => {
-    const m = cv.dataset.mode;
+  const items = Array.from(document.querySelectorAll<HTMLCanvasElement>('.agent-canvas canvas')).flatMap((cv) => {
+    const m = cv.dataset.mode ?? '';
     const mode = MODES[m] ? m : (ALIAS[m] && MODES[ALIAS[m]] ? ALIAS[m] : 'researcher');
     cv.width = SIZE * SCALE;
     cv.height = SIZE * SCALE;
     const ctx = cv.getContext('2d');
+    if (!ctx) return [];
     ctx.scale(SCALE, SCALE);
-    return {
+    return [{
       ctx,
       mode: MODES[mode],
       cfg: { ...(CONFIGS[mode] || { speed: 1 }), hue: Number(cv.dataset.hue) || 0, lit: Number(cv.dataset.lit) || 55 },
-    };
+    }];
   });
 
-  function drawAll(t) {
+  function drawAll(t: number) {
     for (const it of items) {
       clear(it.ctx);
       it.mode(it.ctx, it.cfg, t / 1000 * (it.cfg.speed || 1));
@@ -472,7 +481,7 @@ const STATUS = {
     : null;
   document.querySelectorAll('.agent-grid').forEach((g) => io && io.observe(g));
 
-  let raf = null;
+  let raf: number | null = null;
   function loop() { drawAll(performance.now()); raf = requestAnimationFrame(loop); }
   function start() { if (!raf && !reduced) loop(); }
   function stop() { if (raf) { cancelAnimationFrame(raf); raf = null; } }

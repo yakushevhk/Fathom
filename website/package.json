@@ -9,7 +9,8 @@
     "build:base": "astro build",
     "i18n": "node scripts/i18n-generate.mjs",
     "preview": "astro preview",
-    "preview:test": "astro preview --ignore-lock"
+    "preview:test": "astro preview --ignore-lock",
+    "check": "astro check"
   },
   "dependencies": {
     "@astrojs/mdx": "^8.0.0",
@@ -19,6 +20,12 @@
     "three": "^0.185.1"
   },
   "devDependencies": {
-    "parse5": "^8.0.1"
+    "@astrojs/check": "^0.9.10",
+    "@types/three": "^0.185.4",
+    "parse5": "^8.0.1",
+    "typescript": "^6.0.3"
+  },
+  "overrides": {
+    "path-to-regexp": "^6.3.0"
   }
 }

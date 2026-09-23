@@ -28,7 +28,7 @@ const flow = [
   { t: 'Handoff or deny', d: 'Grants execution clearance upon approval or triggers a safe fail-closed denial.' },
 ];
 
-const hood = [
+const hood: [string, string][] = [
   ['policy engine', 'Fail-closed rule evaluation with configurable risk tiers'],
   ['vault integration', 'AES-256-GCM hardware key isolation via Rust ring crate'],
   ['receipt ledger', 'Append-only JSONL receipt ledger keyed by (kind, value)'],

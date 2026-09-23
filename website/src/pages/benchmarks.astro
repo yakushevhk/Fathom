@@ -331,7 +331,7 @@ import PageHero from '../components/PageHero.astro';
 
 <script>
   const nav = document.querySelector('[data-bench-nav]');
-  function activateTab(panelId) {
+  function activateTab(panelId: string) {
     if (!panelId) return;
     const btn = nav?.querySelector(`button[data-panel="${panelId}"]`);
     const body = document.querySelector(`[data-panel-body="${panelId}"]`);
@@ -344,7 +344,7 @@ import PageHero from '../components/PageHero.astro';
   }
 
   nav?.addEventListener('click', (e) => {
-    const btn = e.target.closest('button');
+    const btn = (e.target as HTMLElement | null)?.closest('button') as HTMLElement | null;
     if (!btn || !btn.dataset.panel) return;
     activateTab(btn.dataset.panel);
     if (window.location.hash !== `#${btn.dataset.panel}` && history.replaceState) {

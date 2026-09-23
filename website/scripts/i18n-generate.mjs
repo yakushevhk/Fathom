@@ -6,7 +6,7 @@
 //   - rewrites internal href="/..." to "/<lang>/..." and <a href> / link URLs
 // Uses parse5 (available transitively) for robust HTML handling.
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, statSync } from 'fs';
-import { join, dirname, relative, sep } from 'path';
+import { join, dirname, relative } from 'path';
 import * as parse5 from 'parse5';
 
 const DIST = 'dist';
@@ -189,7 +189,6 @@ function translateHtml(html, lang, langRoot, pageUrl) {
   // validate data-i18n elements & replace text
   function processElement(node) {
     if (!node.tagName) return;
-    const keys = node.attrs || [];
     const i18n = getAttr(node, 'data-i18n');
     const htmlKey = getAttr(node, 'data-i18n-html');
     if (htmlKey) {

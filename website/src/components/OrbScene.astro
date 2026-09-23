@@ -73,7 +73,8 @@ const { hue = 206, mode = 'researcher', height = 340, label = '' } = Astro.props
 </style>
 
 <script>
-  const canvases = document.querySelectorAll('[data-orb]');
+  import type * as T from 'three';
+  const canvases = document.querySelectorAll<HTMLCanvasElement>('[data-orb]');
   if (canvases.length) import('three').then((THREE) => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -81,6 +82,7 @@ const { hue = 206, mode = 'researcher', height = 340, label = '' } = Astro.props
       const c = document.createElement('canvas');
       c.width = c.height = 64;
       const x = c.getContext('2d');
+      if (!x) return new THREE.CanvasTexture(c);
       const g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
       g.addColorStop(0, 'rgba(255,255,255,1)');
       g.addColorStop(0.35, 'rgba(255,255,255,.85)');
@@ -90,10 +92,11 @@ const { hue = 206, mode = 'researcher', height = 340, label = '' } = Astro.props
       return new THREE.CanvasTexture(c);
     }
 
-    function glowTexture(hue) {
+    function glowTexture(hue: number) {
       const c = document.createElement('canvas');
       c.width = c.height = 256;
       const x = c.getContext('2d');
+      if (!x) return new THREE.CanvasTexture(c);
       const g = x.createRadialGradient(128, 128, 0, 128, 128, 128);
       g.addColorStop(0, `hsla(${hue}, 45%, 62%, 0.55)`);
       g.addColorStop(0.5, `hsla(${hue}, 45%, 55%, 0.14)`);
@@ -107,7 +110,7 @@ const { hue = 206, mode = 'researcher', height = 340, label = '' } = Astro.props
     const N = 460;
 
     // Fibonacci lattice directions
-    const dirs = [];
+    const dirs: T.Vector3[] = [];
     const golden = Math.PI * (3 - Math.sqrt(5));
     for (let i = 0; i < N; i++) {
       const y = 1 - (2 * (i + 0.5)) / N;
@@ -120,8 +123,9 @@ const { hue = 206, mode = 'researcher', height = 340, label = '' } = Astro.props
       return h - Math.floor(h);
     });
 
-    function initOrb(canvas) {
+    function initOrb(canvas: HTMLCanvasElement) {
       const wrap = canvas.parentElement;
+      if (!wrap) return;
       const hue = Number(canvas.dataset.hue || 206);
       const rawMode = canvas.dataset.mode || 'researcher';
       const mode = (rawMode === 'coder') ? 'extracting' :
@@ -133,7 +137,7 @@ const { hue = 206, mode = 'researcher', height = 340, label = '' } = Astro.props
       let W = Math.max(200, wrap.clientWidth);
       let H = Math.max(200, wrap.clientHeight);
 
-      let renderer;
+      let renderer: T.WebGLRenderer;
       try {
         renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
       } catch {
@@ -174,7 +178,8 @@ const { hue = 206, mode = 'researcher', height = 340, label = '' } = Astro.props
       scene.add(glow);
 
       // coordinator extras: rings + satellites
-      let rings = [], sats = null;
+      let rings: { line: T.LineLoop; rx: number; ry: number; r: number }[] = [];
+      let sats: T.Points | null = null;
       if (mode === 'coordinator') {
         const ringTilts = [
           { rx: 1.15, ry: 0.3, r: 1.45 },
@@ -182,7 +187,7 @@ const { hue = 206, mode = 'researcher', height = 340, label = '' } = Astro.props
           { rx: 0.35, ry: -0.7, r: 1.3 },
         ];
         rings = ringTilts.map((t) => {
-          const pts = [];
+          const pts: T.Vector3[] = [];
           for (let i = 0; i <= 96; i++) {
             const a = (i / 96) * Math.PI * 2;
             pts.push(new THREE.Vector3(Math.cos(a) * t.r, 0, Math.sin(a) * t.r));
@@ -210,7 +215,7 @@ const { hue = 206, mode = 'researcher', height = 340, label = '' } = Astro.props
       const view = new THREE.Vector3();
       const cTmp = new THREE.Color();
 
-      function frame(t) {
+      function frame(t: number) {
         const yaw = t * (mode === 'coordinator' ? 0.22 : 0.16);
         const tilt = 0.24 + 0.08 * Math.sin(t * 0.35);
         points.rotation.set(tilt, yaw, 0);
@@ -305,7 +310,7 @@ const { hue = 206, mode = 'researcher', height = 340, label = '' } = Astro.props
         startLoop();
       }
 
-      let resizeTimer;
+      let resizeTimer: ReturnType<typeof setTimeout>;
       new ResizeObserver(() => {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(() => {

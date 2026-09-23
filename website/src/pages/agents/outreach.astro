@@ -28,7 +28,7 @@ const flow = [
   { t: 'Watch', d: 'An operator-triggered or configured schedule can rerun the workflow and diff results, sending notifications when tracked records change.' },
 ];
 
-const hood = [
+const hood: [string, string][] = [
   ['Approval gate', '[agent] approval_tools defaults to save_contacts, git_push · timeout + headless fallback'],
   ['Local dedup', 'save_contacts merges on normalized email/phone — atomic check-and-insert, never a duplicate'],
   ['amoCRM', 'POST /api/v4/contacts on your account subdomain · bearer auth · PHONE/EMAIL field codes'],

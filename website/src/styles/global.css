@@ -756,9 +756,13 @@ html.js .reveal[data-in="true"] {
 
 @media (max-width: 900px) {
   .whitepaper-banner {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     padding: 32px 24px;
     gap: 24px;
+  }
+  .whitepaper-banner > * {
+    min-width: 0;
+    overflow-wrap: break-word;
   }
 }
 

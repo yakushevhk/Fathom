@@ -149,7 +149,7 @@ const categories = [
   .tools-hero .copy-lg { margin-top: 20px; }
   .inline-code { font-family: var(--font-mono); font-size: 0.85em; background: var(--grey-100); border: 1px solid var(--grey-200); padding: 1px 6px; border-radius: 5px; }
 
-  .tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+  .tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 18px; }
 
   .tool-cat { background: var(--bg-card); border: 1px solid var(--grey-200); border-radius: var(--radius-lg); padding: 24px; transition: box-shadow .25s, transform .25s var(--ease-out), border-color .25s; }
   .tool-cat:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); border-color: var(--grey-400); }

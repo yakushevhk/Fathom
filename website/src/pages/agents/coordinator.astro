@@ -28,7 +28,7 @@ const flow = [
   { t: 'Synthesis & delivery', d: 'Compiles final deliverables, updates memory graph nodes, and dispatches webhook notifications.' },
 ];
 
-const hood = [
+const hood: [string, string][] = [
   ['concurrency', 'Tokio JoinSet async I/O multiplexer across multi-core CPU pools'],
   ['budgeting', 'Session token limit split dynamically with floor caps per worker'],
   ['reflection', 'LLM judge evaluate pass: up to replan_rounds gap-filling iterations'],

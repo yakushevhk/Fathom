@@ -28,7 +28,7 @@ const flow = [
   { t: 'Alert dispatch', d: 'Delivers formatted PDF/HTML reports to configured team communication channels.' },
 ];
 
-const hood = [
+const hood: [string, string][] = [
   ['durability', 'Durable background job queue persisted in SQLite with state replay'],
   ['scheduler', 'Cron-syntax scheduler with microsecond precision and atomic claim locks'],
   ['telemetry', 'Prometheus metrics (/metrics) and structured tracing spans'],

@@ -12,7 +12,7 @@ function fixSetHtml(content) {
   
   // Handle single-quoted variant: set:html={'...'}
   const regex1 = /<pre><code\s+set:html=\{'(.*?)'\}><\/code><\/pre>/gs;
-  result = result.replace(regex1, (match, inner) => {
+  result = result.replace(regex1, (_match, inner) => {
     // Convert the literal escape sequences to actual characters
     // \n → newline, \t → tab, \" → ", etc.
     const decoded = inner
@@ -30,7 +30,7 @@ function fixSetHtml(content) {
   
   // Handle already-backtick variant (from earlier conversion): set:html={`...`}
   const regex2 = /<pre><code\s+set:html=\{`([\s\S]*?)`\}><\/code><\/pre>/g;
-  result = result.replace(regex2, (match, inner) => {
+  result = result.replace(regex2, (_match, inner) => {
     const escaped = inner
       .replace(/\\/g, '\\\\')
       .replace(/`/g, '\\`')

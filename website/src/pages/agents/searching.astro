@@ -28,7 +28,7 @@ const flow = [
   { t: 'Feed forward', d: 'Ranked results with source metadata go to fetching and extraction; the session’s fetch and MX caches (10-minute TTL) make follow-up reads instant.' },
 ];
 
-const hood = [
+const hood: [string, string][] = [
   ['[search] backend', 'hybrid (default) · smart · or a selected configured engine; provider availability is surfaced to the operator'],
   ['hybrid order', 'Configured engines are tried in priority order; the first non-empty result set wins and unavailable sources remain visible'],
   ['smart fusion', 'all configured engines in parallel; dedup by normalized URL; RRF score Σ 1 / (60 + rank)'],

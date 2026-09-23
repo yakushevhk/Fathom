@@ -17,7 +17,7 @@ function fixCodeBlocks(content) {
   // Match <pre><code>...</code></pre> with optional attributes
   const regex = /<pre><code>([\s\S]*?)<\/code><\/pre>/g;
 
-  return content.replace(regex, (match, inner) => {
+  return content.replace(regex, (_match, inner) => {
     const escaped = escapeTemplateLiteral(inner);
     return '<pre><code dangerouslySetInnerHTML={{__html: `' + escaped + '`}} /></pre>';
   });

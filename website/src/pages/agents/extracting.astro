@@ -29,7 +29,7 @@ const flow = [
   { t: 'Emit', d: 'Structured contacts with confidence and provenance flow on — and the runtime autosaves them to the contact DB before the model can move on.' },
 ];
 
-const hood = [
+const hood: [string, string][] = [
   ['Email confidence ladder', 'mailto link 0.98 · plain text 0.95 · raw HTML/JSON-LD 0.90 · obfuscated 0.70'],
   ['Email plausibility', 'local part ≤ 64 chars, total ≤ 254, asset TLDs rejected (png, jpg, svg, woff2, mp4, pdf…)'],
   ['Obfuscation forms', '[at] (at) {at} &#64; and [dot] (dot) {.} &#46; · word forms need whitespace, so prose like "look at this" never matches'],

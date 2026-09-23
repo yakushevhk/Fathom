@@ -199,11 +199,11 @@ const logs = [
   if (wrap) {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const nodes = [...wrap.querySelectorAll('.rt-node')];
-    const mets = [...wrap.querySelectorAll('[data-rt-met]')];
+    const mets = [...wrap.querySelectorAll<HTMLElement>('[data-rt-met]')];
     const lines = [...wrap.querySelectorAll('.rt-log-line')];
     const times = [...wrap.querySelectorAll('[data-rt-t]')];
-    const status = wrap.querySelector('[data-rt-status]');
-    const targets = mets.map((m) => parseInt(m.textContent, 10) || Number(m.closest('.rt-node')?.querySelector('.rt-met b')?.textContent) || 0);
+    const status = wrap.querySelector<HTMLElement>('[data-rt-status]');
+    const targets = mets.map((m) => parseInt(m.textContent || '', 10) || Number(m.closest('.rt-node')?.querySelector('.rt-met b')?.textContent) || 0);
 
     const STAGE_MS = 1700;
     const HOLD_MS = 3200;
@@ -213,19 +213,19 @@ const logs = [
     let timer = 0;
     let running = false;
 
-    function fmt(sec) {
+    function fmt(sec: number) {
       const s = Math.floor(sec);
       return `00:${String(s).padStart(2, '0')}`;
     }
 
-    function setStage(i) {
+    function setStage(i: number) {
       nodes.forEach((n, j) => {
         n.classList.toggle('active', j === i);
         n.classList.toggle('done', j < i);
       });
     }
 
-    function reveal(i, elapsed) {
+    function reveal(i: number, elapsed: number) {
       lines[i]?.classList.add('on');
       if (times[i]) times[i].textContent = fmt(elapsed);
     }
@@ -280,8 +280,8 @@ const logs = [
       if (status) { status.textContent = 'complete'; status.style.color = '#8fb6cc'; }
     } else {
       // metric targets come from the server-rendered final values
-      mets.forEach((m) => { m.dataset.final = m.textContent; m.textContent = '0'; });
-      targets.forEach((_, i) => { targets[i] = parseInt(mets[i].dataset.final, 10) || 0; });
+      mets.forEach((m) => { m.dataset.final = m.textContent || ''; m.textContent = '0'; });
+      targets.forEach((_, i) => { targets[i] = parseInt(mets[i].dataset.final || '', 10) || 0; });
       new IntersectionObserver((es) => {
         if (es[0].isIntersecting) start(); else stop();
       }, { rootMargin: '100px' }).observe(wrap);

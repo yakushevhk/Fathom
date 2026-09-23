@@ -28,7 +28,7 @@ const flow = [
   { t: 'Hand off', d: 'Budget-capped summaries, structured findings, and deduped sources flow into synthesis and memory — reusable context for any downstream operation.' },
 ];
 
-const hood = [
+const hood: [string, string][] = [
   ['agent loop', 'LLM → tool calls → repeat, max_iterations default 50; steering messages and background notices injected at turn boundaries'],
   ['streaming', 'stream: true — live text deltas, tool calls assembled from fragments, automatic non-streaming fallback on broken or empty streams'],
   ['spawn_agent', 'hierarchy up to max_depth (default 2); roles researcher / analyst / verifier / writer; explicit context handoff; background mode'],
