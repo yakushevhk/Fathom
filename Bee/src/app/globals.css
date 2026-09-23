@@ -1,0 +1,351 @@
+@import "tailwindcss";
+
+/* ─── Fathom Hive — "abyss" design system ───────────────────────────────
+   Deep-water surfaces, bioluminescent accents, hexagonal agent marks.
+   Dark by default; [data-theme="light"] for the reef theme. */
+
+:root {
+  --bg: #04090d;
+  --bg-2: #071119;
+  --panel: #0a1720;
+  --panel-2: #0d1e29;
+  --glass: rgba(9, 21, 29, 0.78);
+  --line: rgba(126, 220, 205, 0.09);
+  --line-2: rgba(126, 220, 205, 0.16);
+  --fg: #d9efe9;
+  --mut: #7da69e;
+  --dim: #54716c;
+  --acc: #2dd4bf;
+  --acc-2: #22d3ee;
+  --acc-soft: rgba(45, 212, 191, 0.13);
+  --gold: #f2c679;
+  --danger: #fb7185;
+  --ok: #34d399;
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  --glow: 0 0 18px rgba(45, 212, 191, 0.18);
+}
+
+[data-theme="light"] {
+  --bg: #eef4f3;
+  --bg-2: #e4edec;
+  --panel: #ffffff;
+  --panel-2: #f2f8f7;
+  --glass: rgba(255, 255, 255, 0.82);
+  --line: rgba(13, 90, 84, 0.1);
+  --line-2: rgba(13, 90, 84, 0.18);
+  --fg: #12312e;
+  --mut: #4d6f6a;
+  --dim: #7f9a95;
+  --acc: #0d9488;
+  --acc-2: #0891b2;
+  --acc-soft: rgba(13, 148, 136, 0.1);
+  --gold: #b07f28;
+  --danger: #d6455c;
+  --ok: #15915f;
+  --shadow: 0 8px 24px rgba(18, 49, 46, 0.1);
+  --glow: none;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg2: var(--bg-2);
+  --color-panel: var(--panel);
+  --color-panel2: var(--panel-2);
+  --color-glass: var(--glass);
+  --color-line: var(--line);
+  --color-line2: var(--line-2);
+  --color-fg: var(--fg);
+  --color-mut: var(--mut);
+  --color-dim: var(--dim);
+  --color-acc: var(--acc);
+  --color-acc2: var(--acc-2);
+  --color-accsoft: var(--acc-soft);
+  --color-gold: var(--gold);
+  --color-danger: var(--danger);
+  --color-ok: var(--ok);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: ui-sans-serif, -apple-system, "Segoe UI", Inter, Roboto, sans-serif;
+  font-size: 13.5px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.mono {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+}
+
+/* bioluminescent dot grid behind app surfaces */
+.dotgrid {
+  background-image: radial-gradient(circle at 1px 1px, rgba(126, 220, 205, 0.07) 1px, transparent 0);
+  background-size: 22px 22px;
+}
+
+/* hexagon avatar for agents */
+.hex {
+  clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.card-hover:hover {
+  border-color: var(--line-2);
+  box-shadow: var(--glow);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--line-2);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 8px;
+  border: 1px solid var(--line-2);
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg);
+  background: var(--panel-2);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+.btn:hover {
+  border-color: var(--acc);
+  color: var(--acc);
+  box-shadow: var(--glow);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--acc), var(--acc-2));
+  color: #04231f;
+  border: none;
+}
+.btn-primary:hover {
+  filter: brightness(1.1);
+  color: #04231f;
+}
+.btn-danger:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.navlink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 9px;
+  border-radius: 7px;
+  color: var(--mut);
+  font-size: 12.5px;
+  font-weight: 500;
+  transition: all 0.12s ease;
+}
+.navlink:hover {
+  color: var(--fg);
+  background: var(--acc-soft);
+}
+.navlink.active {
+  color: var(--acc);
+  background: var(--acc-soft);
+}
+
+.chan {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 9px;
+  border-radius: 7px;
+  color: var(--mut);
+  font-size: 12.5px;
+}
+.chan:hover {
+  color: var(--fg);
+  background: rgba(126, 220, 205, 0.06);
+}
+.chan.active {
+  color: var(--fg);
+  background: var(--acc-soft);
+}
+.chan.unread {
+  color: var(--fg);
+  font-weight: 700;
+}
+
+.msg-body {
+  color: var(--fg);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.msg-body p {
+  margin: 0 0 6px;
+}
+.msg-body p:last-child {
+  margin-bottom: 0;
+}
+.msg-body code {
+  background: var(--acc-soft);
+  border: 1px solid var(--line);
+  padding: 0 4px;
+  border-radius: 4px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  color: var(--acc-2);
+}
+.msg-body pre {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 6px 0;
+}
+.msg-body pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--fg);
+}
+.msg-body ul,
+.msg-body ol {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+.msg-body strong {
+  color: var(--fg);
+  font-weight: 650;
+}
+.msg-body a {
+  color: var(--acc-2);
+}
+
+.syscard {
+  border: 1px dashed var(--line-2);
+  border-radius: 8px;
+  color: var(--mut);
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+.pulse-dot {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+@keyframes pulseGlow {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.5);
+  }
+  50% {
+    opacity: 0.75;
+    box-shadow: 0 0 0 5px rgba(45, 212, 191, 0);
+  }
+}
+
+.typing-dots span {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--acc);
+  margin-right: 3px;
+  animation: bounce 1.2s infinite;
+}
+.typing-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.typing-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.msg-in {
+  animation: msgIn 0.22s ease-out;
+}
+@keyframes msgIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line-2);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(126, 220, 205, 0.28);
+}
+
+.skip-link {
+  background: var(--fg);
+  color: var(--bg);
+  left: 8px;
+  padding: 8px 12px;
+  position: fixed;
+  top: 8px;
+  transform: translateY(-160%);
+  transition: transform 0.15s ease;
+  z-index: 100;
+  border-radius: 6px;
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: rgba(45, 212, 191, 0.28);
+}
