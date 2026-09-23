@@ -46,7 +46,7 @@ export class SnapshotManager {
   async capture(page: Page, tabId: string): Promise<PageSnapshot> {
     if (!tabId) throw new Error("tab id is required");
     const state = this.state(tabId);
-    const rawAria = await page.locator("body").ariaSnapshot({ mode: "default" });
+    const rawAria = await page.locator("body").ariaSnapshot();
     const aria = rawAria.slice(0, 100_000);
     const elements = await page.locator("body *").evaluateAll((nodes) => nodes.map((node) => {
       const element = node as HTMLElement;
