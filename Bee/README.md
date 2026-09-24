@@ -55,6 +55,12 @@ src/
 - **Realtime**: one SSE endpoint (`/api/events/stream`); the client store
   fans messages out to rooms, unread badges, typing dots and page refreshes.
 
+## Documentation
+
+Full documentation lives in [`docs/`](docs/README.md): architecture, data
+model, REST/SSE reference, realtime merge semantics, the agent engine, the
+design system, per-surface guides and development notes.
+
 ## Scripts
 
 ```bash
