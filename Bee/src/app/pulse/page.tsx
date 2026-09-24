@@ -13,7 +13,7 @@ const KINDS = ['all', 'message', 'patch', 'ci', 'approval', 'workflow', 'member'
 
 // Pulse: the whole community as one stream — every event kind, one index.
 export default function PulsePage() {
-  const { lastEvent, members, channels } = useHive()
+  const { liveEvents, members, channels } = useHive()
   const [kind, setKind] = useState<(typeof KINDS)[number]>('all')
   const [events, setEvents] = useState<HiveEvent[]>([])
 
@@ -24,20 +24,14 @@ export default function PulsePage() {
       .catch(() => {})
   }, [kind])
 
-  // Accumulate every SSE event (not just the latest) — render-phase adjust.
-  const [live, setLive] = useState(() => new Map<number, HiveEvent>())
-  const [seen, setSeen] = useState(lastEvent)
-  if (lastEvent !== seen) {
-    setSeen(lastEvent)
-    if (lastEvent) setLive((prev) => new Map(prev).set(lastEvent.id, lastEvent))
-  }
-
+  // Merge the store's full SSE queue by id — a single lastEvent slot can drop
+  // events that coalesce into one React render.
   const shown = useMemo(() => {
     const byId = new Map<number, HiveEvent>()
     for (const e of events) byId.set(e.id, e)
-    for (const e of live.values()) byId.set(e.id, e)
+    for (const e of liveEvents) byId.set(e.id, e)
     return [...byId.values()].filter((e) => kind === 'all' || e.kind === kind).sort((a, b) => b.id - a.id)
-  }, [events, live, kind])
+  }, [events, liveEvents, kind])
 
   const memberById = new Map(members.map((m) => [m.id, m]))
   const chById = new Map(channels.map((c) => [c.id, c]))

@@ -9,7 +9,8 @@ interface HiveState {
   community: Bootstrap['community'] | null
   members: Member[]
   channels: Channel[]
-  lastEvent: HiveEvent | null
+  /** Every SSE event received, deduped by id, newest last. Consumers merge by id. */
+  liveEvents: HiveEvent[]
   typing: Record<string, { memberId: string; until: number }[]>
   liveVersion: number
   refreshChannels: () => void
@@ -26,7 +27,7 @@ export function useHive(): HiveState {
 
 export function HiveProvider({ children }: { children: React.ReactNode }) {
   const [boot, setBoot] = useState<Bootstrap | null>(null)
-  const [lastEvent, setLastEvent] = useState<HiveEvent | null>(null)
+  const [liveEvents, setLiveEvents] = useState<HiveEvent[]>([])
   const [typing, setTyping] = useState<HiveState['typing']>({})
   const [liveVersion, setLiveVersion] = useState(0)
   const openChannel = useRef<string | null>(null)
@@ -59,7 +60,13 @@ export function HiveProvider({ children }: { children: React.ReactNode }) {
       const msg = JSON.parse(m.data)
       if (msg.type === 'event') {
         const ev = msg.data as HiveEvent
-        setLastEvent(ev)
+        setLiveEvents((prev) => {
+          const i = prev.findIndex((e) => e.id === ev.id)
+          if (i === -1) return prev.length >= 500 ? [...prev.slice(-499), ev] : [...prev, ev]
+          const copy = [...prev]
+          copy[i] = ev
+          return copy
+        })
         setBoot((prev) =>
           prev
             ? {
@@ -121,13 +128,13 @@ export function HiveProvider({ children }: { children: React.ReactNode }) {
       community: boot?.community ?? null,
       members: boot?.members ?? [],
       channels: boot?.channels ?? [],
-      lastEvent,
+      liveEvents,
       typing,
       liveVersion,
       refreshChannels,
       markRead,
     }),
-    [boot, lastEvent, typing, liveVersion, refreshChannels, markRead]
+    [boot, liveEvents, typing, liveVersion, refreshChannels, markRead]
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
